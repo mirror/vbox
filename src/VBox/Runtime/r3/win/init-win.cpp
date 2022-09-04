@@ -323,7 +323,11 @@ static void rtR3InitWindowsVersion(void)
 
     /*
      * Use the NT version of RtlGetVersion (since w2k) so we don't get fooled
-     * by compatability shims.
+     * by the standard compatibility shims.  (Sandboxes may still fool us.)
+     *
+     * Note! This API was added in windows 2000 together with the extended
+     *       version info structure (OSVERSIONINFOEXW), so there is no need
+     *       to retry with the smaller version (OSVERSIONINFOW).
      */
     RT_ZERO(g_WinOsInfoEx);
     g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
@@ -337,7 +341,9 @@ static void rtR3InitWindowsVersion(void)
     {
         /*
          * Couldn't find it or it failed, try the windows version of the API.
-         * The GetVersionExW API was added in NT 3.51.
+         * The GetVersionExW API was added in NT 3.51, however only the small
+         * structure version existed till windows 2000.  We'll try the larger
+         * structure version first, anyway, just in case.
          */
         RT_ZERO(g_WinOsInfoEx);
         g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
@@ -352,12 +358,13 @@ static void rtR3InitWindowsVersion(void)
              */
             RT_ZERO(g_WinOsInfoEx);
             g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-            if (!pfnGetVersionExW || !pfnGetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
+            if (!pfnGetVersionExW && pfnGetVersionExW((POSVERSIONINFOW)&g_WinOsInfoEx))
                 Assert(g_WinOsInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT || g_WinOsInfoEx.dwMajorVersion < 5);
             else
             {
                 /*
                  * Okay, nothing worked, so use GetVersion.
+                 *
                  * This should only happen if we're on NT 3.1 or NT 3.50.
                  * It should never happen for 64-bit builds.
                  */
@@ -366,20 +373,31 @@ static void rtR3InitWindowsVersion(void)
                 DWORD const dwVersion = GetVersion();
 
                 /* Common fields: */
-                g_WinOsInfoEx.dwMajorVersion    = dwVersion & 0xff;
-                g_WinOsInfoEx.dwMinorVersion    = (dwVersion >> 8) & 0xff;
+                g_WinOsInfoEx.dwMajorVersion        = dwVersion & 0xff;
+                g_WinOsInfoEx.dwMinorVersion        = (dwVersion >> 8) & 0xff;
                 if (!(dwVersion & RT_BIT_32(31)))
-                    g_WinOsInfoEx.dwBuildNumber = dwVersion >> 16;
+                    g_WinOsInfoEx.dwBuildNumber     = dwVersion >> 16;
                 else
-                    g_WinOsInfoEx.dwBuildNumber = 511;
-                g_WinOsInfoEx.dwPlatformId      = VER_PLATFORM_WIN32_NT;
-                g_WinOsInfoEx.wProductType      = VER_NT_WORKSTATION;
+                    g_WinOsInfoEx.dwBuildNumber     = 511;
+                g_WinOsInfoEx.dwPlatformId          = VER_PLATFORM_WIN32_NT;
                 /** @todo get CSD from registry. */
 #else
                 AssertBreakpoint();
                 RT_ZERO(g_WinOsInfoEx);
 #endif
             }
+
+#ifdef RT_ARCH_X86
+            /*
+             * Fill in some of the extended info too.
+             */
+            g_WinOsInfoEx.dwOSVersionInfoSize       = sizeof(OSVERSIONINFOEXW); /* Pretend. */
+            g_WinOsInfoEx.wProductType              = VER_NT_WORKSTATION;
+            NT_PRODUCT_TYPE enmProdType = NtProductWinNt;
+            if (RtlGetNtProductType(&enmProdType))
+                g_WinOsInfoEx.wProductType = (BYTE)enmProdType;
+            /** @todo parse the CSD string to figure that version. */
+#endif
         }
     }
 

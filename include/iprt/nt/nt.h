@@ -198,6 +198,8 @@
 # undef SystemLookasideInformation
 # undef SystemPolicyInformation
 
+# define RTNT_NEED_NT_GET_PRODUCT_TYPE
+
 #else
 /*
  * Use ntifs.h and wdm.h.
@@ -284,6 +286,12 @@
 # undef NtQueryVirtualMemory
 
 # define IPRT_NT_NEED_API_GROUP_NTIFS
+# ifndef NTDDI_WIN10_RS1
+#  define RTNT_NEED_NT_GET_PRODUCT_TYPE
+# elif NTDDI_VERSION < NTDDI_WIN10_RS1
+#  define RTNT_NEED_NT_GET_PRODUCT_TYPE
+# endif
+
 #endif
 
 #undef RtlFreeUnicodeString
@@ -2831,6 +2839,10 @@ RT_DECL_NTAPI(NTSTATUS) RtlSetDaclSecurityDescriptor(PSECURITY_DESCRIPTOR, BOOLE
 RT_DECL_NTAPI(PULONG)   RtlSubAuthoritySid(PSID, ULONG);
 
 #endif /* IPRT_NT_USE_WINTERNL */
+
+#ifdef RTNT_NEED_NT_GET_PRODUCT_TYPE
+RT_DECL_NTAPI(BOOLEAN)  RtlGetNtProductType(enum _NT_PRODUCT_TYPE *); /**< @since NT 3.1 */
+#endif
 
 /** For use with ObjectBasicInformation.
  * A watered down version of this struct appears under the name

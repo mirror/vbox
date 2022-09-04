@@ -147,6 +147,7 @@ EXPORTS
     RtlGetLastNtStatus                    ;;= _RtlGetLastNtStatus@0
     RtlGetLastWin32Error                  ;;= _RtlGetLastWin32Error@0
     RtlGetVersion                         ;;= _RtlGetVersion@4
+    RtlGetNtProductType                   ;;= _RtlGetNtProductType@4
     RtlInitializeSid                      ;;= _RtlInitializeSid@12
     RtlNtStatusToDosError                 ;;= _RtlNtStatusToDosError@4
     RtlReAllocateHeap                     ;;= _RtlReAllocateHeap@16
