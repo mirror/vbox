@@ -85,8 +85,13 @@ static int rtTerminateProcess(int32_t rcExit, bool fDoAtExit)
 }
 
 
-DECLASM(void) CustomMainEntrypoint(PPEB pPeb)
+DECLASM(void) CustomMainEntrypoint(void)
 {
+    /* Looks like might have gotten the PPEB as parameter here before NT4,
+       however, there the EXE entry function clearly takes no parameters.
+       So, we have to retrieve the PEB our selves here. */
+    PPEB_COMMON const pPeb = RTNtCurrentPeb();
+
     /*
      * Initialize stuff.
      */
