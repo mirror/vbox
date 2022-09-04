@@ -6373,7 +6373,9 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 
  ifdef VBOX_WITH_NOCRT_STATIC
-  TEMPLATE_VBOXR3STATIC_LDFLAGS            = $(TEMPLATE_VBOXR3EXE_LDFLAGS) /NODEFAULTLIB
+  # .0000cfg normally merges into .idata, but the linker won't let us do so via /MERGE. Doesn't matter much,
+  # because .idata can be writable when targeting x86 (NT 3.1 fun) and we don't want .0000cfg to be writable.
+  TEMPLATE_VBOXR3STATIC_LDFLAGS            = $(TEMPLATE_VBOXR3EXE_LDFLAGS) /NODEFAULTLIB /Merge:.0000cfg=.rdata
  else
   TEMPLATE_VBOXR3STATIC_LDFLAGS            = $(filter-out /DISALLOWLIB:libcmt$(VBOX_VCC_CRT_TYPE).lib /DISALLOWLIB:libcpmt$(VBOX_VCC_CRT_TYPE).lib, $(TEMPLATE_VBOXR3EXE_LDFLAGS))
  endif
