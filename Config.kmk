@@ -5261,6 +5261,9 @@ TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
 TEMPLATE_VBoxR0_CXXFLAGS           += -Gw
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+TEMPLATE_VBoxR0_CXXFLAGS           += /volatileMetadata-
+ endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
 TEMPLATE_VBoxR0_CXXFLAGS           += /analyze
  endif
@@ -5274,7 +5277,10 @@ TEMPLATE_VBoxR0_LDFLAGS             = -Ignore:4197 \
 TEMPLATE_VBoxR0_LDFLAGS            += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
  ifdef VBOX_SIGNING_MODE
-  TEMPLATE_VBoxR0_LDFLAGS          += -IntegrityCheck
+TEMPLATE_VBoxR0_LDFLAGS            += -IntegrityCheck
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+TEMPLATE_VBoxR0_LDFLAGS            += -EmitVolatileMetadata:NO
  endif
 TEMPLATE_VBoxR0_LDFLAGS.win.amd64   = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
  ifneq ($(VBOX_VCC_CC_GUARD_CF),)
@@ -5448,6 +5454,9 @@ ifeq ($(KBUILD_TARGET),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXR0DRV_CXXFLAGS         += -Gw
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+  TEMPLATE_VBOXR0DRV_CXXFLAGS         += /volatileMetadata-
+ endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBOXR0DRV_CXXFLAGS         += /analyze
  endif
@@ -5462,6 +5471,9 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBOXR0DRV_LDFLAGS          += -IntegrityCheck
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+  TEMPLATE_VBOXR0DRV_LDFLAGS          += -EmitVolatileMetadata:NO
  endif
  TEMPLATE_VBOXR0DRV_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
  TEMPLATE_VBOXR0DRV_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
@@ -6010,6 +6022,9 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += /analyze
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+  TEMPLATE_VBOXR3EXE_CXXFLAGS         += /volatileMetadata-
+ endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXR3EXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile  = -Gh -GH
@@ -6038,7 +6053,10 @@ ifeq ($(KBUILD_TARGET),win)
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
    TEMPLATE_VBOXR3EXE_LDFLAGS         += -IntegrityCheck
  endif
- TEMPLATE_VBOXR3EXE_LDFLAGS.win.amd64	= $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
+ TEMPLATE_VBOXR3EXE_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+  TEMPLATE_VBOXR3EXE_LDFLAGS          += -EmitVolatileMetadata:NO
+ endif
 
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXR3EXE_LIBS.x86           = \
@@ -7831,6 +7849,7 @@ ifdef VBOX_WITH_QTGUI
    #   -wd5219: qpoint.h(187): warning C5219: implicit conversion from 'const int' to 'float', possible loss of data
    #   -wd5240: qcolor.h(235): warning C5240: 'nodiscard': attribute is ignored in this syntactic position
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd5219 -wd5240
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += /volatileMetadata- # Don't waste space on x86/amd64-on-arm emulation optimizations.
   endif
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -Gy
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
@@ -7853,6 +7872,9 @@ ifdef VBOX_WITH_QTGUI
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
   if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -IntegrityCheck
+  endif
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -EmitVolatileMetadata:NO
   endif
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.win.amd64 = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
 
@@ -8150,6 +8172,9 @@ ifeq ($(KBUILD_HOST),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxBldProg_CXXFLAGS         += -Gw
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+  TEMPLATE_VBoxBldProg_CXXFLAGS         += /volatileMetadata-
+ endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBoxBldProg_CXXFLAGS         += /analyze
  endif
@@ -8186,6 +8211,9 @@ ifeq ($(KBUILD_HOST),win)
 	/DISALLOWLIB:ucrt.lib \
 	/DISALLOWLIB:ucrtd.lib
  TEMPLATE_VBoxBldProg_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
+  TEMPLATE_VBoxBldProg_LDFLAGS          += -EmitVolatileMetadata:NO
+ endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBoxBldProg_LIBS               = \
   	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
