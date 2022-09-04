@@ -676,7 +676,7 @@ IEM_STATIC const PFNIEMOP g_apfnThreeByte0f3a[] =
     /* 0xdc */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xdd */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xde */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
-    /* 0xdf */  iemOp_aeskeygen_Vdq_Wdq_Ib, iemOp_InvalidNeedRMImm8,   iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
+    /* 0xdf */  iemOp_InvalidNeedRMImm8, iemOp_aeskeygen_Vdq_Wdq_Ib,   iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
 
     /* 0xe0 */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xe1 */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
