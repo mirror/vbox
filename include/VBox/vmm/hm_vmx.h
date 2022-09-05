@@ -470,17 +470,29 @@
 /** Bits 12-51 - Physical Page number of the next level. */
 #define EPT_E_PG_MASK           UINT64_C(0x000ffffffffff000)
 
+/** Bit 58 - Page-write access (leaf only, ignored).
+ * @note Ignored if EPT page-write control is disabled. */
+#define EPT_E_BIT_PAGING_WRITE              58
+#define EPT_E_PAGING_WRITE                  RT_BIT_64(EPT_E_BIT_PAGING_WRITE)       /**< @see EPT_E_BIT_PAGING_WRITE*/
+
+/* Bit 59 is always ignored. */
+
 /** Bit 60 - Supervisor shadow stack (leaf only, ignored).
  * @note Ignored if EPT bit 7 is 0. */
-#define EPT_E_BIT_SHADOW_STACK  60
-#define EPT_E_SHADOW_STACK      RT_BIT_64(EPT_E_BIT_SHADOW_STACK)   /**< @see EPT_E_BIT_SHADOW_STACK*/
+#define EPT_E_BIT_SUPER_SHW_STACK           60
+#define EPT_E_SUPER_SHW_STACK               RT_BIT_64(EPT_E_BIT_SUPER_SHW_STACK)    /**< @see EPT_E_BIT_SUPER_SHW_STACK */
 
-/* Bit 61, 62 are always ignored at time of writing. */
+/** Bit 61 - Sub-page write permission (leaf only, ignored).
+ * @note Ignored if sub-page write permission for EPT is disabled. */
+#define EPT_E_BIT_SUBPAGE_WRITE_PERM        61
+#define EPT_E_SUBPAGE_WRITE_PERM            RT_BIT_64(EPT_E_BIT_SUBPAGE_WRITE_PERM) /**< @see EPT_E_BIT_SUBPAGE_WRITE_PERM*/
+
+/* Bit 62 is always ignored. */
 
 /** Bit 63 - Suppress \#VE (leaf only, ignored).
  * @note Ignored if EPT violation to \#VE conversion is disabled. */
-#define EPT_E_BIT_SUPPRESS_VE   63
-#define EPT_E_SUPPRESS_VE       RT_BIT_64(EPT_E_BIT_SUPPRESS_VE)     /**< @see EPT_E_BIT_SUPPRESS_VE*/
+#define EPT_E_BIT_SUPPRESS_VE               63
+#define EPT_E_SUPPRESS_VE                   RT_BIT_64(EPT_E_BIT_SUPPRESS_VE)        /**< @see EPT_E_BIT_SUPPRESS_VE */
 /** @} */
 
 
@@ -542,8 +554,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_PT_, UINT64_C(0), UINT64_MAX,
 
 /**
  * EPT present mask.
- * This is common to all EPT page-table entries and does not rely on any CPU
- * features.
+ * These are ONLY the common bits in all EPT page-table entries which does
+ * not rely on any CPU feature. It isn't necessarily the complete mask (e.g. when
+ * mode-based excute control is active).
  */
 #define EPT_PRESENT_MASK       (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
 
@@ -3301,7 +3314,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
 #define VMX_EXIT_QUAL_EPT_ACCESS_WRITE                          RT_BIT_64(1)
 /** Set if the violation was caused by an instruction fetch. */
 #define VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH                    RT_BIT_64(2)
-/** AND of the present bit of all EPT structures. */
+/** AND of the read bit of all EPT structures. */
 #define VMX_EXIT_QUAL_EPT_ENTRY_READ                            RT_BIT_64(3)
 /** AND of the write bit of all EPT structures. */
 #define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                           RT_BIT_64(4)
