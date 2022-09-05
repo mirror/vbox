@@ -176,7 +176,6 @@ Function ExtractFiles
 
 !if $%KBUILD_TARGET_ARCH% == "x86"
   SetOutPath "$0\Tools\NT4"
-  FILE "$%PATH_OUT%\bin\additions\VBoxGuestDrvInst.exe"
   FILE "$%PATH_OUT%\bin\additions\RegCleanup.exe"
 !endif
 

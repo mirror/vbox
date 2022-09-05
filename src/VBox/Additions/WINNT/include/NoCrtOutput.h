@@ -148,6 +148,16 @@ DECLINLINE(int) ErrorMsgSWSWS(const char *pszMsg1, const wchar_t *pwszMsg2, cons
 }
 
 
+DECLINLINE(int) ErrorMsgSUSUS(const char *pszMsg1, uint64_t uValue1, const char *pszMsg2, uint64_t uValue2, const char *pszMsg3)
+{
+    ErrorMsgBegin(pszMsg1);
+    ErrorMsgU64(uValue1);
+    ErrorMsgStr(pszMsg2);
+    ErrorMsgU64(uValue2);
+    return ErrorMsgEnd(pszMsg3);
+}
+
+
 DECLINLINE(void) ErrorMsgErrVal(uint32_t uErrVal, bool fSigned)
 {
     char    szVal[128];

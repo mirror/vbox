@@ -38,6 +38,8 @@
 
 #include <iprt/win/windows.h>
 #include <iprt/win/setupapi.h>
+#include <devguid.h>
+#include <RegStr.h>
 
 #include <iprt/asm.h>
 #include <iprt/mem.h>
@@ -79,8 +81,13 @@
 #define VBOX_REG_STRINGLIST_ALLOW_DUPLICATES    0x00000001        /**< Allows duplicates in list when adding a value. */
 
 #ifdef DEBUG
-# define VBOX_DRVINST_LOGFILE                 "C:\\Temp\\VBoxDrvInstDIFx.log"
+# define VBOX_DRVINST_LOGFILE                   "C:\\Temp\\VBoxDrvInstDIFx.log"
 #endif
+
+/** NT4: The video service name. */
+#define VBOXGUEST_NT4_VIDEO_NAME                "VBoxVideo"
+/** NT4: The video inf file name */
+#define VBOXGUEST_NT4_VIDEO_INF_NAME            "VBoxVideo.inf"
 
 
 /*********************************************************************************************************************************
@@ -624,6 +631,367 @@ static int handleDriverExecuteInf(unsigned cArgs, wchar_t **papwszArgs)
 {
     RT_NOREF(cArgs);
     return ExecuteInfFile(L"DefaultInstall", papwszArgs[0]);
+}
+
+
+/**
+ * Inner NT4 video driver installation function.
+ *
+ * This can normally return immediately on errors as the parent will do the
+ * cleaning up.
+ */
+static int InstallNt4VideoDriverInner(WCHAR const * const pwszDriverDir, HDEVINFO hDevInfo, HINF *phInf)
+{
+    /*
+     * Get the first found driver - our Inf file only contains one so this is ok.
+     *
+     * Note! We must use the V1 structure here as it is the only NT4 recognizes.
+     *       There are four versioned structures:
+     *          - SP_ALTPLATFORM_INFO
+     *          - SP_DRVINFO_DATA_W
+     *          - SP_BACKUP_QUEUE_PARAMS_W
+     *          - SP_INF_SIGNER_INFO_W,
+     *       but we only make use of SP_DRVINFO_DATA_W.
+     */
+    SetLastError(NO_ERROR);
+    SP_DRVINFO_DATA_V1_W drvInfoData = { sizeof(drvInfoData) };
+    if (!SetupDiEnumDriverInfoW(hDevInfo, NULL, SPDIT_CLASSDRIVER, 0, &drvInfoData))
+        return ErrorMsgLastErr("SetupDiEnumDriverInfoW");
+
+    /*
+     * Get necessary driver details
+     */
+    union
+    {
+        SP_DRVINFO_DETAIL_DATA_W s;
+        uint64_t                 au64Padding[(sizeof(SP_DRVINFO_DETAIL_DATA_W) + 256) / sizeof(uint64_t)];
+    } DriverInfoDetailData = { { sizeof(DriverInfoDetailData.s) } };
+    DWORD                    cbReqSize            = NULL;
+    if (   !SetupDiGetDriverInfoDetailW(hDevInfo, NULL, &drvInfoData,
+                                        &DriverInfoDetailData.s, sizeof(DriverInfoDetailData), &cbReqSize)
+        && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        return ErrorMsgLastErr("SetupDiGetDriverInfoDetailW");
+
+    HINF hInf = *phInf = SetupOpenInfFileW(DriverInfoDetailData.s.InfFileName, NULL, INF_STYLE_WIN4, NULL);
+    if (hInf == INVALID_HANDLE_VALUE)
+        return ErrorMsgLastErr("SetupOpenInfFileW");
+
+    /*
+     * First install the service.
+     */
+    WCHAR wszServiceSection[LINE_LEN];
+    int rc = RTUtf16Copy(wszServiceSection, RT_ELEMENTS(wszServiceSection), DriverInfoDetailData.s.SectionName);
+    if (RT_SUCCESS(rc))
+        rc = RTUtf16CatAscii(wszServiceSection, RT_ELEMENTS(wszServiceSection), ".Services");
+    if (RT_FAILURE(rc))
+        return ErrorMsg("wszServiceSection too small");
+
+    INFCONTEXT SvcCtx;
+    if (!SetupFindFirstLineW(hInf, wszServiceSection, NULL, &SvcCtx))
+        return ErrorMsgLastErr("SetupFindFirstLine"); /* impossible... */
+
+    /*
+     * Get the name
+     */
+    WCHAR wszServiceData[LINE_LEN] = {0};
+    if (!SetupGetStringFieldW(&SvcCtx, 1, wszServiceData, RT_ELEMENTS(wszServiceData), NULL))
+        return ErrorMsgLastErr("SetupGetStringFieldW");
+
+    WCHAR wszDevInstanceId[LINE_LEN];
+    rc = RTUtf16CopyAscii(wszDevInstanceId, RT_ELEMENTS(wszDevInstanceId), "Root\\LEGACY_");
+    if (RT_SUCCESS(rc))
+        rc = RTUtf16Cat(wszDevInstanceId, RT_ELEMENTS(wszDevInstanceId), wszServiceData);
+    if (RT_SUCCESS(rc))
+        rc = RTUtf16CatAscii(wszDevInstanceId, RT_ELEMENTS(wszDevInstanceId), "\\0000");
+    if (RT_FAILURE(rc))
+        return ErrorMsg("wszDevInstanceId too small");
+
+    /*
+     * ...
+     */
+    SP_DEVINFO_DATA deviceInfoData = { sizeof(deviceInfoData) };
+    /* Check for existing first. */
+    BOOL fDevInfoOkay = SetupDiOpenDeviceInfoW(hDevInfo, wszDevInstanceId, NULL, 0, &deviceInfoData);
+    if (!fDevInfoOkay)
+    {
+        /* Okay, try create a new device info element. */
+        if (SetupDiCreateDeviceInfoW(hDevInfo, wszDevInstanceId, (LPGUID)&GUID_DEVCLASS_DISPLAY,
+                                     NULL, // Do we need a description here?
+                                     NULL, // No user interface
+                                     0, &deviceInfoData))
+        {
+            if (SetupDiRegisterDeviceInfo(hDevInfo, &deviceInfoData, 0, NULL, NULL, NULL))
+                fDevInfoOkay = TRUE;
+            else
+                return ErrorMsgLastErr("SetupDiRegisterDeviceInfo"); /** @todo Original code didn't return here. */
+        }
+        else
+            return ErrorMsgLastErr("SetupDiCreateDeviceInfoW"); /** @todo Original code didn't return here. */
+    }
+    if (fDevInfoOkay) /** @todo if not needed if it's okay to fail on failure above */
+    {
+        /* We created a new key in the registry */ /* bogus... */
+
+        /*
+         * Redo the install parameter thing with deviceInfoData.
+         */
+        SP_DEVINSTALL_PARAMS_W DeviceInstallParams = { sizeof(DeviceInstallParams) };
+        if (!SetupDiGetDeviceInstallParamsW(hDevInfo, &deviceInfoData, &DeviceInstallParams))
+            return ErrorMsgLastErr("SetupDiGetDeviceInstallParamsW(#2)"); /** @todo Original code didn't return here. */
+
+        DeviceInstallParams.cbSize = sizeof(DeviceInstallParams);
+        DeviceInstallParams.Flags |= DI_NOFILECOPY      /* We did our own file copying */
+                                   | DI_DONOTCALLCONFIGMG
+                                   | DI_ENUMSINGLEINF;  /* .DriverPath specifies an inf file */
+        rc = RTUtf16Copy(DeviceInstallParams.DriverPath, RT_ELEMENTS(DeviceInstallParams.DriverPath), pwszDriverDir);
+        if (RT_SUCCESS(rc))
+            rc = RTUtf16CatAscii(DeviceInstallParams.DriverPath, RT_ELEMENTS(DeviceInstallParams.DriverPath),
+                                 VBOXGUEST_NT4_VIDEO_INF_NAME);
+        if (RT_FAILURE(rc))
+            return ErrorMsg("Install dir too deep (long)");
+
+        if (!SetupDiSetDeviceInstallParamsW(hDevInfo, &deviceInfoData, &DeviceInstallParams))
+            return ErrorMsgLastErr("SetupDiSetDeviceInstallParamsW(#2)"); /** @todo Original code didn't return here. */
+
+        if (!SetupDiBuildDriverInfoList(hDevInfo, &deviceInfoData, SPDIT_CLASSDRIVER))
+            return ErrorMsgLastErr("SetupDiBuildDriverInfoList(#2)");
+
+        /*
+         * Repeat the query at the start of the function.
+         */
+        drvInfoData.cbSize = sizeof(drvInfoData);
+        if (!SetupDiEnumDriverInfoW(hDevInfo, &deviceInfoData, SPDIT_CLASSDRIVER, 0, &drvInfoData))
+            return ErrorMsgLastErr("SetupDiEnumDriverInfoW(#2)");
+
+        /*
+         * ...
+         */
+        if (!SetupDiSetSelectedDriverW(hDevInfo, &deviceInfoData, &drvInfoData))
+            return ErrorMsgLastErr("SetupDiSetSelectedDriverW(#2)");
+
+        if (!SetupDiInstallDevice(hDevInfo, &deviceInfoData))
+            return ErrorMsgLastErr("SetupDiInstallDevice(#2)");
+    }
+
+    /*
+     * Make sure the device is enabled.
+     */
+    DWORD fConfig = 0;
+    if (SetupDiGetDeviceRegistryPropertyW(hDevInfo, &deviceInfoData, SPDRP_CONFIGFLAGS,
+                                          NULL, (LPBYTE)&fConfig, sizeof(DWORD), NULL))
+    {
+        if (fConfig & CONFIGFLAG_DISABLED)
+        {
+            fConfig &= ~CONFIGFLAG_DISABLED;
+            if (!SetupDiSetDeviceRegistryPropertyW(hDevInfo, &deviceInfoData, SPDRP_CONFIGFLAGS,
+                                                   (LPBYTE)&fConfig, sizeof(fConfig)))
+                ErrorMsg("SetupDiSetDeviceRegistryPropertyW");
+        }
+    }
+    else
+        ErrorMsg("SetupDiGetDeviceRegistryPropertyW");
+
+    /*
+     * Open the service key.
+     */
+    WCHAR wszSvcRegKey[LINE_LEN + 64];
+    rc = RTUtf16CopyAscii(wszSvcRegKey, RT_ELEMENTS(wszSvcRegKey), "System\\CurrentControlSet\\Services\\");
+    if (RT_SUCCESS(rc))
+        rc = RTUtf16Cat(wszSvcRegKey, RT_ELEMENTS(wszSvcRegKey), wszServiceData);
+    if (RT_SUCCESS(rc))
+        rc = RTUtf16CatAscii(wszSvcRegKey, RT_ELEMENTS(wszSvcRegKey), "\\Device0"); /* We only have one device. */
+    if (RT_FAILURE(rc))
+        return ErrorMsg("Service key name too long");
+
+    DWORD   dwIgn;
+    HKEY    hKey = NULL;
+    LSTATUS lrc  = RegCreateKeyExW(HKEY_LOCAL_MACHINE, wszSvcRegKey, 0, NULL, REG_OPTION_NON_VOLATILE,
+                                   KEY_READ | KEY_WRITE, NULL, &hKey, &dwIgn);
+    if (lrc == ERROR_SUCCESS)
+    {
+        /*
+         * Insert service description.
+         */
+        lrc = RegSetValueExW(hKey, L"Device Description", 0, REG_SZ, (LPBYTE)DriverInfoDetailData.s.DrvDescription,
+                            (DWORD)((RTUtf16Len(DriverInfoDetailData.s.DrvDescription) + 1) * sizeof(WCHAR)));
+        if (lrc != ERROR_SUCCESS)
+            ErrorMsgLStatus("RegSetValueExW", lrc);
+
+        /*
+         * Execute the SoftwareSettings section of the INF-file or something like that.
+         */
+        BOOL fOkay = FALSE;
+        WCHAR wszSoftwareSection[LINE_LEN + 32];
+        rc = RTUtf16Copy(wszSoftwareSection, RT_ELEMENTS(wszSoftwareSection), wszServiceData);
+        if (RT_SUCCESS(rc))
+            rc = RTUtf16CatAscii(wszSoftwareSection, RT_ELEMENTS(wszSoftwareSection), ".SoftwareSettings");
+        if (RT_SUCCESS(rc))
+        {
+            if (SetupInstallFromInfSectionW(NULL, hInf, wszSoftwareSection, SPINST_REGISTRY, hKey,
+                                            NULL, 0, NULL, NULL, NULL, NULL))
+                fOkay = TRUE;
+            else
+                ErrorMsgLastErr("SetupInstallFromInfSectionW");
+        }
+        else
+            ErrorMsg("Software settings section name too long");
+        RegCloseKey(hKey);
+        if (!fOkay)
+            return EXIT_FAIL;
+    }
+    else
+        ErrorMsgLStatus("RegCreateKeyExW/Service", lrc);
+
+    /*
+     * Install OpenGL stuff.
+     */
+    lrc = RegCreateKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\OpenGLDrivers", 0, NULL,
+                          REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hKey, &dwIgn);
+    if (lrc == ERROR_SUCCESS)
+    {
+        /* Do installation here if ever necessary. Currently there is no OpenGL stuff */
+        RegCloseKey(hKey);
+    }
+    else
+        ErrorMsgLStatus("RegCreateKeyExW/OpenGLDrivers", lrc);
+
+#if 0
+    /* If this key is inserted into the registry, windows will show the desktop
+       applet on next boot. We decide in the installer if we want that so the code
+       is disabled here. */
+    lrc = RegCreateKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\NewDisplay",
+                          0, NULL, REG_OPTION_NON_VOLATILE,
+                          KEY_READ | KEY_WRITE, NULL, &hHey, &dwIgn)
+    if (lrc == ERROR_SUCCESS)
+        RegCloseKey(hHey);
+    else
+        ErrorMsgLStatus("RegCreateKeyExW/NewDisplay", lrc);
+#endif
+
+    /*
+     * We must reboot at some point
+     */
+    lrc = RegCreateKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\RebootNecessary", 0, NULL,
+                          REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hKey, &dwIgn);
+    if (lrc == ERROR_SUCCESS)
+        RegCloseKey(hKey);
+    else
+        ErrorMsgLStatus("RegCreateKeyExW/RebootNecessary", lrc);
+
+    return EXIT_OK;
+}
+
+
+
+/**
+ * Install the VBox video driver.
+ *
+ * @param   pwszDriverDir     The base directory where we find the INF.
+ */
+static int InstallNt4VideoDriver(WCHAR const * const pwszDriverDir)
+{
+    /*
+     * Create an empty list
+     */
+    HDEVINFO hDevInfo = SetupDiCreateDeviceInfoList((LPGUID)&GUID_DEVCLASS_DISPLAY, NULL);
+    if (hDevInfo == INVALID_HANDLE_VALUE)
+        return ErrorMsgLastErr("SetupDiCreateDeviceInfoList");
+
+    /*
+     * Get the default install parameters.
+     */
+    int rcExit = EXIT_FAIL;
+    SP_DEVINSTALL_PARAMS_W DeviceInstallParams = { sizeof(DeviceInstallParams) };
+    if (SetupDiGetDeviceInstallParamsW(hDevInfo, NULL, &DeviceInstallParams))
+    {
+        /*
+         * Insert our install parameters and update hDevInfo with them.
+         */
+        DeviceInstallParams.cbSize = sizeof(DeviceInstallParams);
+        DeviceInstallParams.Flags |= DI_NOFILECOPY /* We did our own file copying */
+                                   | DI_DONOTCALLCONFIGMG
+                                   | DI_ENUMSINGLEINF; /* .DriverPath specifies an inf file */
+        int rc = RTUtf16Copy(DeviceInstallParams.DriverPath, RT_ELEMENTS(DeviceInstallParams.DriverPath), pwszDriverDir);
+        if (RT_SUCCESS(rc))
+            rc = RTUtf16CatAscii(DeviceInstallParams.DriverPath, RT_ELEMENTS(DeviceInstallParams.DriverPath),
+                                 VBOXGUEST_NT4_VIDEO_INF_NAME);
+        if (RT_SUCCESS(rc))
+        {
+            if (SetupDiSetDeviceInstallParamsW(hDevInfo, NULL, &DeviceInstallParams))
+            {
+                /*
+                 * Read the drivers from the INF-file.
+                 */
+                if (SetupDiBuildDriverInfoList(hDevInfo, NULL, SPDIT_CLASSDRIVER))
+                {
+                    HINF hInf = NULL;
+                    rcExit = InstallNt4VideoDriverInner(pwszDriverDir, hDevInfo, &hInf);
+
+                    if (hInf)
+                        SetupCloseInfFile(hInf);
+                    SetupDiDestroyDriverInfoList(hDevInfo, NULL, SPDIT_CLASSDRIVER);
+                }
+                else
+                    ErrorMsgLastErr("SetupDiBuildDriverInfoList");
+            }
+            else
+                ErrorMsgLastErr("SetupDiSetDeviceInstallParamsW");
+
+        }
+        else
+            ErrorMsg("Install dir too deep (long)");
+        SetupDiDestroyDeviceInfoList(hDevInfo);
+    }
+    else
+        ErrorMsgLastErr("SetupDiGetDeviceInstallParams"); /** @todo Original code didn't return here. */
+    SetupDiDestroyDeviceInfoList(hDevInfo);
+    return rcExit;
+}
+
+
+/** Handles 'driver nt4-install-video'. */
+static int handleDriverNt4InstallVideo(unsigned cArgs, wchar_t **papwszArgs)
+{
+    /* One optional parameter: installation directory containing INF file. */
+    WCHAR wszInstallDir[MAX_PATH];
+    DWORD cwcInstallDir;
+    if (cArgs < 1)
+    {
+        cwcInstallDir = GetModuleFileNameW(GetModuleHandle(NULL), &wszInstallDir[0], RT_ELEMENTS(wszInstallDir));
+        if (cwcInstallDir > 0)
+        {
+            while (cwcInstallDir > 0 && !RTPATH_IS_SEP(wszInstallDir[cwcInstallDir - 1]))
+                cwcInstallDir--;
+            if (!cwcInstallDir) /* paranoia^3 */
+            {
+                wszInstallDir[cwcInstallDir++] = '.';
+                wszInstallDir[cwcInstallDir++] = '\\';
+            }
+            wszInstallDir[cwcInstallDir] = '\0';
+        }
+    }
+    else
+    {
+        WCHAR *pwszFilenameIgn;
+        cwcInstallDir = GetFullPathNameW(papwszArgs[0], RT_ELEMENTS(wszInstallDir) - 1, wszInstallDir, &pwszFilenameIgn);
+        if (cwcInstallDir == 0 || cwcInstallDir > RT_ELEMENTS(wszInstallDir) - 2)
+            return ErrorMsgLastErrSWS("GetFullPathNameW failed for '", papwszArgs[0], "'!");
+        if (!RTPATH_IS_SEP(wszInstallDir[cwcInstallDir - 1]))
+        {
+            wszInstallDir[cwcInstallDir++] = '\\';
+            wszInstallDir[cwcInstallDir] = '\0';
+        }
+    }
+
+    /* Make sure we're on NT4 before continuing: */
+    OSVERSIONINFO VerInfo = { sizeof(VerInfo) };
+    GetVersionEx(&VerInfo);
+    if (   VerInfo.dwPlatformId != VER_PLATFORM_WIN32_NT
+        || VerInfo.dwMajorVersion != 4)
+        return ErrorMsgSUSUS("This command is only for NT 4. GetVersionEx reports ", VerInfo.dwMajorVersion, ".",
+                             VerInfo.dwMinorVersion, ".");
+
+    return (int)InstallNt4VideoDriver(wszInstallDir);
 }
 
 
@@ -1772,6 +2140,7 @@ static int handleHelp(unsigned cArgs, wchar_t **papwszArgs)
              "    VBoxDrvInst driver install <inf-file> [log-file]\r\n"
              "    VBoxDrvInst driver uninstall <inf-file> [log-file]\r\n"
              "    VBoxDrvInst driver executeinf <inf-file>\r\n"
+             "    VBoxDrvInst driver nt4-install-video [install-dir]\r\n"
              "\r\n"
              "Service:\r\n"
              "    VBoxDrvInst service create <name> <display-name> <service-type>\r\n"
@@ -1815,30 +2184,31 @@ int wmain(int argc, wchar_t **argv)
         int       (*pfnHandler)(unsigned cArgs, wchar_t **papwszArgs);
     } s_aActions[] =
     {
-        { "driver",         "install",      1,  2, handleDriverInstall },
-        { "driver",         "uninstall",    1,  2, handleDriverUninstall },
-        { "driver",         "executeinf",   1,  1, handleDriverExecuteInf },
-        { "service",        "create",       5,  9, handleServiceCreate },
-        { "service",        "delete",       1,  1, handleServiceDelete },
-        { "netprovider",    "add",          1,  2, handleNetProviderAdd },
-        { "netprovider",    "remove",       1,  2, handleNetProviderRemove },
-        { "registry",       "addlistitem",  4,  6, handleRegistryAddListItem },
-        { "registry",       "dellistitem",  4,  4, handleRegistryDelListItem },
-        { "registry",       "addmultisz",   4,  4, handleRegistryAddMultiSz },
-        { "registry",       "delmultisz",   3,  3, handleRegistryDelMultiSz },
-        { "registry",       "write",        5,  7, handleRegistryWrite },
-        { "registry",       "delete",       3,  3, handleRegistryDelete },
+        { "driver",         "install",              1,  2, handleDriverInstall },
+        { "driver",         "uninstall",            1,  2, handleDriverUninstall },
+        { "driver",         "executeinf",           1,  1, handleDriverExecuteInf },
+        { "driver",         "nt4-install-video",    0,  1, handleDriverNt4InstallVideo },
+        { "service",        "create",               5,  9, handleServiceCreate },
+        { "service",        "delete",               1,  1, handleServiceDelete },
+        { "netprovider",    "add",                  1,  2, handleNetProviderAdd },
+        { "netprovider",    "remove",               1,  2, handleNetProviderRemove },
+        { "registry",       "addlistitem",          4,  6, handleRegistryAddListItem },
+        { "registry",       "dellistitem",          4,  4, handleRegistryDelListItem },
+        { "registry",       "addmultisz",           4,  4, handleRegistryAddMultiSz },
+        { "registry",       "delmultisz",           3,  3, handleRegistryDelMultiSz },
+        { "registry",       "write",                5,  7, handleRegistryWrite },
+        { "registry",       "delete",               3,  3, handleRegistryDelete },
 
-        { "help",           NULL,           0, ~0U, handleHelp },
-        { "--help",         NULL,           0, ~0U, handleHelp },
-        { "/help",          NULL,           0, ~0U, handleHelp },
-        { "-h",             NULL,           0, ~0U, handleHelp },
-        { "/h",             NULL,           0, ~0U, handleHelp },
-        { "-?",             NULL,           0, ~0U, handleHelp },
-        { "/?",             NULL,           0, ~0U, handleHelp },
-        { "version",        NULL,           0, ~0U, handleVersion },
-        { "--version",      NULL,           0, ~0U, handleVersion },
-        { "-V",             NULL,           0, ~0U, handleVersion },
+        { "help",           NULL,                   0, ~0U, handleHelp },
+        { "--help",         NULL,                   0, ~0U, handleHelp },
+        { "/help",          NULL,                   0, ~0U, handleHelp },
+        { "-h",             NULL,                   0, ~0U, handleHelp },
+        { "/h",             NULL,                   0, ~0U, handleHelp },
+        { "-?",             NULL,                   0, ~0U, handleHelp },
+        { "/?",             NULL,                   0, ~0U, handleHelp },
+        { "version",        NULL,                   0, ~0U, handleVersion },
+        { "--version",      NULL,                   0, ~0U, handleVersion },
+        { "-V",             NULL,                   0, ~0U, handleVersion },
     };
 
     /*

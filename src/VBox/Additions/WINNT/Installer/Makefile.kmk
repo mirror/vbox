@@ -56,14 +56,6 @@ VBoxDrvInst_SOURCES = \
 	VBoxDrvInst.cpp \
 	VBoxDrvInst.rc
 
-PROGRAMS += VBoxGuestDrvInst
-VBoxGuestDrvInst_TEMPLATE     := VBoxGuestR3Exe
-VBoxGuestDrvInst_DEFS         :=  _WIN32_WINNT=0x0400
-VBoxGuestDrvInst_BLD_TRG_ARCH := x86
-VBoxGuestDrvInst_SOURCES      := \
-	VBoxGuestDrvInst.cpp \
-	VBoxGuestDrvInst.rc
-
 PROGRAMS += RegCleanup
 RegCleanup_TEMPLATE     := VBoxGuestR3Exe
 RegCleanup_BLD_TRG_ARCH := x86
@@ -83,7 +75,6 @@ OTHER_CLEAN += \
 ## @todo r=andy Rename DRIVER_FILES to INST_FILES or something, as those files are not strictly driver-related files.
 
 DRIVER_FILES := \
-	$(PATH_STAGE_BIN)/additions/VBoxGuestDrvInst.exe \
 	$(PATH_STAGE_BIN)/additions/RegCleanup.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxMouse.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxGuest.sys \
