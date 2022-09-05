@@ -424,8 +424,10 @@ time on documenting it. -->
         </group></arg>
       <arg>--audio=<group choice="plain">
           <arg choice="plain">none</arg>
+          <arg choice="plain">default</arg>
           <arg choice="plain">null</arg>
           <arg choice="plain">dsound</arg>
+          <arg choice="plain">was</arg>
           <arg choice="plain">oss</arg>
           <arg choice="plain">alsa</arg>
           <arg choice="plain">pulse</arg>
@@ -1883,8 +1885,9 @@ it unless this changes. -->
           <listitem><para>
               Указывает, что ВМ имеет поддержку аудио определенного типа.
               Допустимые значения:
-              <literal>none</literal>, <literal>null</literal>,
-              <literal>dsound</literal>, <literal>oss</literal>,
+              <literal>none</literal>, <literal>default</literal>,
+              <literal>null</literal>, <literal>dsound</literal>,
+              <literal>was</literal>, <literal>oss</literal>,
               <literal>alsa</literal>, <literal>pulse</literal> и
               <literal>coreaudio</literal>.
             </para><para>
