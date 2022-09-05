@@ -414,7 +414,7 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
                 IoOpts.fWithMixer = true;
                 break;
 
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdSelfTest);
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);

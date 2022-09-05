@@ -47,6 +47,76 @@
 
 
 /*********************************************************************************************************************************
+*   Command: backends                                                                                                                *
+*********************************************************************************************************************************/
+
+/**
+ * Options for 'backends'.
+ */
+static const RTGETOPTDEF g_aCmdBackendsOptions[] =
+{
+    { "--dummy", 'd',  RTGETOPT_REQ_NOTHING  }, /* just a placeholder */
+};
+
+
+/** The 'backends' command option help. */
+static DECLCALLBACK(const char *) audioTestCmdBackendsHelp(PCRTGETOPTDEF pOpt)
+{
+    RT_NOREF(pOpt);
+    return NULL;
+}
+
+/**
+ * The 'backends' command handler.
+ *
+ * @returns Program exit code.
+ * @param   pGetState   RTGetOpt state.
+ */
+static DECLCALLBACK(RTEXITCODE) audioTestCmdBackendsHandler(PRTGETOPTSTATE pGetState)
+{
+    /*
+     * Parse options.
+     */
+    int           ch;
+    RTGETOPTUNION ValueUnion;
+    while ((ch = RTGetOpt(pGetState, &ValueUnion)) != 0)
+    {
+        switch (ch)
+        {
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdBackends);
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+
+    /*
+     * List the backends.
+     */
+    RTPrintf("Backends (%u):\n", g_cBackends);
+    for (size_t i = 0; i < g_cBackends; i++)
+        RTPrintf(" %12s - %s\n", g_aBackends[i].pszName, g_aBackends[i].pDrvReg->pszDescription);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Command table entry for 'backends'.
+ */
+const VKATCMD g_CmdBackends =
+{
+    /* .pszCommand = */         "backends",
+    /* .pfnHandler = */         audioTestCmdBackendsHandler,
+    /* .pszDesc = */            "Lists the compiled in audio backends.",
+    /* .paOptions = */          g_aCmdBackendsOptions,
+    /* .cOptions = */           0 /*RT_ELEMENTS(g_aCmdBackendsOptions)*/,
+    /* .pfnOptionHelp = */      audioTestCmdBackendsHelp,
+    /* .fNeedsTransport = */    false
+};
+
+
+/*********************************************************************************************************************************
 *   Command: enum                                                                                                                *
 *********************************************************************************************************************************/
 
@@ -113,7 +183,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
                 fProbeBackends = true;
                 break;
 
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdEnum);
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -672,7 +742,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 break;
             }
 
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdPlay);
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -1073,7 +1143,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
                 break;
             }
 
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdRec);
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);

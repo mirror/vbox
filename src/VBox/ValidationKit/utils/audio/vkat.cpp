@@ -925,7 +925,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 TstEnv.TcpOpts.uConnectPort = ValueUnion.u16;
                 break;
 
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdTest);
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -1217,7 +1217,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
                 apszSets[iTestSet++] = ValueUnion.psz;
                 break;
 
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, &g_CmdVerify);
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -1308,6 +1308,7 @@ static const VKATCMD * const g_apCommands[] =
 {
     &g_CmdTest,
     &g_CmdVerify,
+    &g_CmdBackends,
     &g_CmdEnum,
     &g_CmdPlay,
     &g_CmdRec,
@@ -1317,10 +1318,9 @@ static const VKATCMD * const g_apCommands[] =
 /**
  * Shows tool usage text.
  */
-RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
+RTEXITCODE audioTestUsage(PRTSTREAM pStrm, PCVKATCMD pOnlyCmd)
 {
-    RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n",
-                 RTPathFilename(RTProcExecutablePath()));
+    RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n", RTProcShortName());
     RTStrmPrintf(pStrm,
                  "\n"
                  "Global Options:\n"
@@ -1341,34 +1341,46 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
     for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_apCommands); iCmd++)
     {
         PCVKATCMD const pCmd = g_apCommands[iCmd];
-        RTStrmPrintf(pStrm,
-                     "\n"
-                     "Command '%s':\n"
-                     "    %s\n"
-                     "Options for '%s':\n",
-                     pCmd->pszCommand, pCmd->pszDesc, pCmd->pszCommand);
-        PCRTGETOPTDEF const paOptions = pCmd->paOptions;
-        for (unsigned i = 0; i < pCmd->cOptions; i++)
+        if (!pOnlyCmd || pCmd == pOnlyCmd)
         {
-            if (RT_C_IS_PRINT(paOptions[i].iShort))
-                RTStrmPrintf(pStrm, "  -%c, %s\n", paOptions[i].iShort, paOptions[i].pszLong);
-            else
-                RTStrmPrintf(pStrm, "  %s\n", paOptions[i].pszLong);
+            RTStrmPrintf(pStrm,
+                         "\n"
+                         "Command '%s':\n"
+                         "    %s\n"
+                         "Options for '%s':\n",
+                         pCmd->pszCommand, pCmd->pszDesc, pCmd->pszCommand);
+            PCRTGETOPTDEF const paOptions = pCmd->paOptions;
+            for (unsigned i = 0; i < pCmd->cOptions; i++)
+            {
+                if (RT_C_IS_PRINT(paOptions[i].iShort))
+                    RTStrmPrintf(pStrm, "  -%c, %s\n", paOptions[i].iShort, paOptions[i].pszLong);
+                else
+                    RTStrmPrintf(pStrm, "  %s\n", paOptions[i].pszLong);
 
-            const char *pszHelp = NULL;
-            if (pCmd->pfnOptionHelp)
-                pszHelp = pCmd->pfnOptionHelp(&paOptions[i]);
-            if (pszHelp)
-                RTStrmPrintf(pStrm, "    %s\n", pszHelp);
-        }
+                const char *pszHelp = NULL;
+                if (pCmd->pfnOptionHelp)
+                    pszHelp = pCmd->pfnOptionHelp(&paOptions[i]);
+                if (pszHelp)
+                    RTStrmPrintf(pStrm, "    %s\n", pszHelp);
+            }
 
-        if (pCmd->fNeedsTransport)
-        {
-            for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
-                g_apTransports[iTx]->pfnUsage(pStrm);
+            if (pCmd->fNeedsTransport)
+                for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
+                    g_apTransports[iTx]->pfnUsage(pStrm);
         }
     }
 
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Lists the commands and their descriptions.
+ */
+static RTEXITCODE audioTestListCommands(PRTSTREAM pStrm)
+{
+    RTStrmPrintf(pStrm, "Commands:\n");
+    for (uintptr_t iCmd = 0; iCmd < RT_ELEMENTS(g_apCommands); iCmd++)
+        RTStrmPrintf(pStrm, "%8s - %s\n", g_apCommands[iCmd]->pszCommand, g_apCommands[iCmd]->pszDesc);
     return RTEXITCODE_SUCCESS;
 }
 
@@ -1405,6 +1417,23 @@ int main(int argc, char **argv)
      * Handle special command line options which need parsing before
      * everything else.
      */
+    /** @todo r=bird: this isn't at all syntactically sane, because you don't know
+     * how to parse past the command (can almost be done safely thought, since
+     * you've got the option definitions for every command at hand).  So, if someone
+     * wants to play a file named "-v.wav", you'll incorrectly take that as two 'v'
+     * options. The parsing has to stop when you get to the command, i.e. first
+     * VINF_GETOPT_NOT_OPTION or anything that isn't a common option. Daemonizing
+     * when for instance encountering an invalid command, is not correct.
+     *
+     * Btw. you MUST however process the 'q' option in parallel to 'v' here, they
+     * are oposites.  For instance '-vqvvv' is supposed to give you level 3 logging,
+     * not quiet!  So, either you process both 'v' and 'q' here, or you pospone them
+     * (better option).
+     */
+    /** @todo r=bird: Is the daemonizing needed? The testcase doesn't seem to use
+     *        it... If you don't need it, drop it as it make the parsing complex
+     *        and illogical.  The --daemonized / --damonize options should be
+     *        required to before the command, then okay.  */
     bool fDaemonize  = false;
     bool fDaemonized = false;
 
@@ -1438,6 +1467,7 @@ int main(int argc, char **argv)
         }
     }
 
+    /** @todo add something to suppress this stuff.   */
     audioTestShowLogo(g_pStdOut);
 
     if (fDaemonize)
@@ -1543,7 +1573,7 @@ int main(int argc, char **argv)
     {
         switch (ch)
         {
-            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
+            AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion, NULL);
 
             case VINF_GETOPT_NOT_OPTION:
             {
@@ -1552,30 +1582,32 @@ int main(int argc, char **argv)
                     PCVKATCMD const pCmd = g_apCommands[iCmd];
                     if (strcmp(ValueUnion.psz, pCmd->pszCommand) == 0)
                     {
+                        /* Count the combined option definitions:  */
                         size_t cCombinedOptions  = pCmd->cOptions + RT_ELEMENTS(g_aCmdCommonOptions);
                         if (pCmd->fNeedsTransport)
-                        {
                             for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
                                 cCombinedOptions += g_apTransports[iTx]->cOpts;
-                        }
+
+                        /* Combine the option definitions: */
                         PRTGETOPTDEF paCombinedOptions = (PRTGETOPTDEF)RTMemAlloc(cCombinedOptions * sizeof(RTGETOPTDEF));
                         if (paCombinedOptions)
                         {
                             uint32_t idxOpts = 0;
                             memcpy(paCombinedOptions, g_aCmdCommonOptions, sizeof(g_aCmdCommonOptions));
                             idxOpts += RT_ELEMENTS(g_aCmdCommonOptions);
+
                             memcpy(&paCombinedOptions[idxOpts], pCmd->paOptions, pCmd->cOptions * sizeof(RTGETOPTDEF));
                             idxOpts += (uint32_t)pCmd->cOptions;
+
                             if (pCmd->fNeedsTransport)
-                            {
                                 for (uintptr_t iTx = 0; iTx < g_cTransports; iTx++)
                                 {
                                     memcpy(&paCombinedOptions[idxOpts],
                                            g_apTransports[iTx]->paOpts, g_apTransports[iTx]->cOpts * sizeof(RTGETOPTDEF));
                                     idxOpts += (uint32_t)g_apTransports[iTx]->cOpts;
                                 }
-                            }
 
+                            /* Re-initialize the option getter state and pass it to the command handler. */
                             rc = RTGetOptInit(&GetState, argc, argv, paCombinedOptions, cCombinedOptions,
                                               GetState.iNext /*idxFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
                             if (RT_SUCCESS(rc))
@@ -1584,13 +1616,14 @@ int main(int argc, char **argv)
                                 RTMemFree(paCombinedOptions);
                                 return rcExit;
                             }
+                            RTMemFree(paCombinedOptions);
                             return RTMsgErrorExitFailure("RTGetOptInit failed for '%s': %Rrc", ValueUnion.psz, rc);
                         }
                         return RTMsgErrorExitFailure("Out of memory!");
                     }
                 }
                 RTMsgError("Unknown command '%s'!\n", ValueUnion.psz);
-                audioTestUsage(g_pStdErr);
+                audioTestListCommands(g_pStdErr);
                 return RTEXITCODE_SYNTAX;
             }
 
@@ -1600,6 +1633,6 @@ int main(int argc, char **argv)
     }
 
     RTMsgError("No command specified!\n");
-    audioTestUsage(g_pStdErr);
+    audioTestListCommands(g_pStdErr);
     return RTEXITCODE_SYNTAX;
 }

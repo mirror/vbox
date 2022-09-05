@@ -377,10 +377,14 @@ extern bool             g_fDrvAudioDebug;
 /** DrvAudio: The debug output path. */
 extern const char      *g_pszDrvAudioDebug;
 
+extern const VKATCMD    g_CmdTest;
+extern const VKATCMD    g_CmdVerify;
+extern const VKATCMD    g_CmdBackends;
 extern const VKATCMD    g_CmdEnum;
 extern const VKATCMD    g_CmdPlay;
 extern const VKATCMD    g_CmdRec;
 extern const VKATCMD    g_CmdSelfTest;
+
 
 extern AUDIOTESTDESC    g_aTests[];
 extern unsigned         g_cTests;
@@ -395,7 +399,7 @@ extern unsigned                   g_cBackends;
 
 /** @name Command line handlers
  * @{ */
-RTEXITCODE audioTestUsage(PRTSTREAM pStrm);
+RTEXITCODE audioTestUsage(PRTSTREAM pStrm, PCVKATCMD pOnlyCmd);
 RTEXITCODE audioTestVersion(void);
 void       audioTestShowLogo(PRTSTREAM pStream);
 /** @}  */
@@ -493,6 +497,7 @@ void        audioTestToneParmsInit(PAUDIOTESTTONEPARMS pToneParms);
 
 void        audioTestIoOptsInitDefaults(PAUDIOTESTIOOPTS pIoOpts);
 
+
 /*********************************************************************************************************************************
 *   Common command line stuff                                                                                                    *
 *********************************************************************************************************************************/
@@ -509,7 +514,7 @@ enum
 };
 
 /** For use in the option switch to handle common options. */
-#define AUDIO_TEST_COMMON_OPTION_CASES(a_ValueUnion) \
+#define AUDIO_TEST_COMMON_OPTION_CASES(a_ValueUnion, a_pCmd) \
             case 'q': \
                 g_uVerbosity = 0; \
                 if (g_pRelLogger) \
@@ -517,14 +522,14 @@ enum
                 break; \
             \
             case 'v': \
-                /* No-op here, has been handled by main() already. */ \
+                /* No-op here, has been handled by main() already. */ /** @todo r-bird: -q works, so -v must too! */ \
                 break; \
             \
             case 'V': \
                 return audioTestVersion(); \
             \
             case 'h': \
-                return audioTestUsage(g_pStdOut); \
+                return audioTestUsage(g_pStdOut, a_pCmd); \
             \
             case AUDIO_TEST_OPT_CMN_DEBUG_AUDIO_ENABLE: \
                 g_fDrvAudioDebug = true; \
