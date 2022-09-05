@@ -97,18 +97,26 @@ static RTEXITCODE ErrorMsgLStatus(const char *pszMsg, LSTATUS lrc)
 
 
 /**
- * Inner video driver installation function.
+ * Inner NT4 video driver installation function.
  *
  * This can normally return immediately on errors as the parent will do the
  * cleaning up.
  */
-static RTEXITCODE InstallVideoDriverInner(WCHAR const * const pwszDriverDir, HDEVINFO hDevInfo, HINF *phInf)
+static RTEXITCODE InstallNt4VideoDriverInner(WCHAR const * const pwszDriverDir, HDEVINFO hDevInfo, HINF *phInf)
 {
     /*
-     * Get the first found driver.
-     * Our Inf file only contains one so this is fine.
+     * Get the first found driver - our Inf file only contains one so this is ok.
+     *
+     * Note! We must use the V1 structure here as it is the only NT4 recognizes.
+     *       There are four versioned structures:
+     *          - SP_ALTPLATFORM_INFO
+     *          - SP_DRVINFO_DATA_W
+     *          - SP_BACKUP_QUEUE_PARAMS_W
+     *          - SP_INF_SIGNER_INFO_W,
+     *       but we only make use of SP_DRVINFO_DATA_W.
      */
-    SP_DRVINFO_DATA_W drvInfoData = { sizeof(SP_DRVINFO_DATA) };
+    SetLastError(NO_ERROR);
+    SP_DRVINFO_DATA_V1_W drvInfoData = { sizeof(drvInfoData) };
     if (!SetupDiEnumDriverInfoW(hDevInfo, NULL, SPDIT_CLASSDRIVER, 0, &drvInfoData))
         return ErrorMsgLastErr("SetupDiEnumDriverInfoW");
 
@@ -119,7 +127,7 @@ static RTEXITCODE InstallVideoDriverInner(WCHAR const * const pwszDriverDir, HDE
     {
         SP_DRVINFO_DETAIL_DATA_W s;
         uint64_t                 au64Padding[(sizeof(SP_DRVINFO_DETAIL_DATA_W) + 256) / sizeof(uint64_t)];
-    } DriverInfoDetailData = { { sizeof(SP_DRVINFO_DETAIL_DATA) } };
+    } DriverInfoDetailData = { { sizeof(DriverInfoDetailData.s) } };
     DWORD                    cbReqSize            = NULL;
     if (   !SetupDiGetDriverInfoDetailW(hDevInfo, NULL, &drvInfoData,
                                         &DriverInfoDetailData.s, sizeof(DriverInfoDetailData), &cbReqSize)
@@ -163,7 +171,7 @@ static RTEXITCODE InstallVideoDriverInner(WCHAR const * const pwszDriverDir, HDE
     /*
      * ...
      */
-    SP_DEVINFO_DATA deviceInfoData = { sizeof(SP_DEVINFO_DATA) };
+    SP_DEVINFO_DATA deviceInfoData = { sizeof(deviceInfoData) };
     /* Check for existing first. */
     BOOL fDevInfoOkay = SetupDiOpenDeviceInfoW(hDevInfo, wszDevInstanceId, NULL, 0, &deviceInfoData);
     if (!fDevInfoOkay)
@@ -189,11 +197,11 @@ static RTEXITCODE InstallVideoDriverInner(WCHAR const * const pwszDriverDir, HDE
         /*
          * Redo the install parameter thing with deviceInfoData.
          */
-        SP_DEVINSTALL_PARAMS_W DeviceInstallParams = { sizeof(SP_DEVINSTALL_PARAMS) };
+        SP_DEVINSTALL_PARAMS_W DeviceInstallParams = { sizeof(DeviceInstallParams) };
         if (!SetupDiGetDeviceInstallParamsW(hDevInfo, &deviceInfoData, &DeviceInstallParams))
             return ErrorMsgLastErr("SetupDiGetDeviceInstallParamsW(#2)"); /** @todo Original code didn't return here. */
 
-        DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
+        DeviceInstallParams.cbSize = sizeof(DeviceInstallParams);
         DeviceInstallParams.Flags |= DI_NOFILECOPY      /* We did our own file copying */
                                    | DI_DONOTCALLCONFIGMG
                                    | DI_ENUMSINGLEINF;  /* .DriverPath specifies an inf file */
@@ -211,9 +219,9 @@ static RTEXITCODE InstallVideoDriverInner(WCHAR const * const pwszDriverDir, HDE
             return ErrorMsgLastErr("SetupDiBuildDriverInfoList(#2)");
 
         /*
-         * Repeate the query at the start of the function.
+         * Repeat the query at the start of the function.
          */
-        drvInfoData.cbSize = sizeof(SP_DRVINFO_DATA);
+        drvInfoData.cbSize = sizeof(drvInfoData);
         if (!SetupDiEnumDriverInfoW(hDevInfo, &deviceInfoData, SPDIT_CLASSDRIVER, 0, &drvInfoData))
             return ErrorMsgLastErr("SetupDiEnumDriverInfoW(#2)");
 
@@ -342,7 +350,7 @@ static RTEXITCODE InstallVideoDriverInner(WCHAR const * const pwszDriverDir, HDE
  *
  * @param   pwszDriverDir     The base directory where we find the INF.
  */
-static RTEXITCODE InstallVideoDriver(WCHAR const * const pwszDriverDir)
+static RTEXITCODE InstallNt4VideoDriver(WCHAR const * const pwszDriverDir)
 {
     /*
      * Create an empty list
@@ -355,13 +363,13 @@ static RTEXITCODE InstallVideoDriver(WCHAR const * const pwszDriverDir)
      * Get the default install parameters.
      */
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
-    SP_DEVINSTALL_PARAMS_W DeviceInstallParams = { sizeof(SP_DEVINSTALL_PARAMS) };
+    SP_DEVINSTALL_PARAMS_W DeviceInstallParams = { sizeof(DeviceInstallParams) };
     if (SetupDiGetDeviceInstallParamsW(hDevInfo, NULL, &DeviceInstallParams))
     {
         /*
          * Insert our install parameters and update hDevInfo with them.
          */
-        DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
+        DeviceInstallParams.cbSize = sizeof(DeviceInstallParams);
         DeviceInstallParams.Flags |= DI_NOFILECOPY /* We did our own file copying */
                                    | DI_DONOTCALLCONFIGMG
                                    | DI_ENUMSINGLEINF; /* .DriverPath specifies an inf file */
@@ -379,7 +387,7 @@ static RTEXITCODE InstallVideoDriver(WCHAR const * const pwszDriverDir)
                 if (SetupDiBuildDriverInfoList(hDevInfo, NULL, SPDIT_CLASSDRIVER))
                 {
                     HINF hInf = NULL;
-                    rcExit = InstallVideoDriverInner(pwszDriverDir, hDevInfo, &hInf);
+                    rcExit = InstallNt4VideoDriverInner(pwszDriverDir, hDevInfo, &hInf);
 
                     if (hInf)
                         SetupCloseInfFile(hInf);
@@ -478,7 +486,7 @@ int main(int argc, char **argv)
         DWORD cwcInstallDir = GetModuleFileNameW(GetModuleHandle(NULL), &wszInstallDir[0], RT_ELEMENTS(wszInstallDir));
         if (cwcInstallDir > 0)
         {
-            while (cwcInstallDir > 0 && RTPATH_IS_SEP(wszInstallDir[cwcInstallDir - 1]))
+            while (cwcInstallDir > 0 && !RTPATH_IS_SEP(wszInstallDir[cwcInstallDir - 1]))
                 cwcInstallDir--;
             if (!cwcInstallDir) /* paranoia^3 */
             {
@@ -491,7 +499,7 @@ int main(int argc, char **argv)
              * Do the install/uninstall.
              */
             if (fInstall)
-                rcExit = InstallVideoDriver(wszInstallDir);
+                rcExit = InstallNt4VideoDriver(wszInstallDir);
             else
                 rcExit = UninstallDrivers();
 
