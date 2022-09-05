@@ -66,6 +66,9 @@
 #define LA_UTCINFO_PROP_VALUE 1
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 typedef struct _VBOXLACONTEXT
 {
     const VBOXSERVICEENV *pEnv;
@@ -114,39 +117,45 @@ typedef struct _ACTIONENTRY
 } ACTIONENTRY, *PACTIONENTRY;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static VBOXLACONTEXT g_Ctx = { 0 };
 
-static const char *g_pszPropActiveClient = "/VirtualBox/HostInfo/VRDP/ActiveClient";
+static const char * const g_pszPropActiveClient = "/VirtualBox/HostInfo/VRDP/ActiveClient";
 
-static const char *g_pszPropAttachTemplate = "/VirtualBox/HostInfo/VRDP/Client/%u/Attach";
+static const char * const g_pszPropAttachTemplate = "/VirtualBox/HostInfo/VRDP/Client/%u/Attach";
 
-static const char *g_pszVolatileEnvironment = "Volatile Environment";
+static const char * const g_pszVolatileEnvironment = "Volatile Environment";
 
-static const WCHAR *g_pwszClientName = L"CLIENTNAME";
+static const WCHAR *const g_pwszClientName = L"CLIENTNAME";
 
-static const WCHAR *g_pwszUTCINFOClientInfo[] = {
-                                                  L"UTCINFO_CLIENTNAME",
-                                                  L"UTCINFO_CLIENTIPA",
-                                                  L"UTCINFO_CLIENTLOCATION",
-                                                  L"UTCINFO_CLIENTOTHERINFO"
-                                                };
+static const WCHAR * const g_pwszUTCINFOClientInfo[] =
+{
+    L"UTCINFO_CLIENTNAME",
+    L"UTCINFO_CLIENTIPA",
+    L"UTCINFO_CLIENTLOCATION",
+    L"UTCINFO_CLIENTOTHERINFO"
+};
 
-static const char *g_pszPropInfoTemplates[] = {
-                                                "/VirtualBox/HostInfo/VRDP/Client/%u/Name",
-                                                "/VirtualBox/HostInfo/VRDP/Client/%u/IPAddr",
-                                                "/VirtualBox/HostInfo/VRDP/Client/%u/Location",
-                                                "/VirtualBox/HostInfo/VRDP/Client/%u/OtherInfo"
-                                              };
+static const char * const g_pszPropInfoTemplates[] =
+{
+    "/VirtualBox/HostInfo/VRDP/Client/%u/Name",
+    "/VirtualBox/HostInfo/VRDP/Client/%u/IPAddr",
+    "/VirtualBox/HostInfo/VRDP/Client/%u/Location",
+    "/VirtualBox/HostInfo/VRDP/Client/%u/OtherInfo"
+};
 
 #ifdef RT_ARCH_AMD64
-const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
-const WCHAR *g_pwszRegKeyReconnectActions = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\ReconnectActions";
+static const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
+static const WCHAR *g_pwszRegKeyReconnectActions  = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\ReconnectActions";
 #else
-const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
-const WCHAR *g_pwszRegKeyReconnectActions = L"Software\\Oracle\\Sun Ray\\ClientInfoAgent\\ReconnectActions";
+static const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
+static const WCHAR *g_pwszRegKeyReconnectActions  = L"Software\\Oracle\\Sun Ray\\ClientInfoAgent\\ReconnectActions";
 #endif /* !RT_ARCH_AMD64 */
 
-const char g_szCommandPrefix[] = "Command";
+static const char g_szCommandPrefix[] = "Command";
+
 
 static BOOL laGetRegistryDWORD(WCHAR *pwszRegKey, WCHAR *pwszName, DWORD *pdwValue)
 {

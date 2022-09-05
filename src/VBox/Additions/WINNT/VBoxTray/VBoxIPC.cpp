@@ -244,8 +244,7 @@ DECLCALLBACK(int) VBoxIPCInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
                 *ppInstance = pCtx;
 
                 /* GetLastInputInfo only is available starting at Windows 2000 -- might fail. */
-                g_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)
-                    RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
+                g_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
 
                 LogRelFunc(("Local IPC server now running at \"%s\"\n", szPipeName));
                 return VINF_SUCCESS;
