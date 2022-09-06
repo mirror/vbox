@@ -108,7 +108,6 @@
 \documentclass[oneside,a4paper,10pt,DIV10]{scrbook}
 \usepackage{geometry}
 \geometry{top=3cm,bottom=4cm}
-\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{tabulary}
 \usepackage[pdftex,
