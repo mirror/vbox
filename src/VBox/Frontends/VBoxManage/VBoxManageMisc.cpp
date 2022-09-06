@@ -2039,6 +2039,8 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
     SafeArray<ULONG> aImageIndices;
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedImageIndices)(ComSafeArrayAsOutParam(aImageIndices)), RTEXITCODE_FAILURE);
     Assert(aImageNames.size() == aImageIndices.size());
+    BOOL fInstallSupported = FALSE;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(IsUnattendedInstallSupported)(&fInstallSupported), RTEXITCODE_FAILURE);
 
     if (fMachineReadable)
     {
@@ -2052,6 +2054,7 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
             Bstr const bstrName = aImageNames[i];
             outputMachineReadableStringWithFmtName(&bstrName, false, "ImageIndex%u", aImageIndices[i]);
         }
+        outputMachineReadableBool("IsInstallSupported", &fInstallSupported);
     }
     else
     {
@@ -2068,6 +2071,10 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
                  bstrDetectedHints.raw());
         for (size_t i = 0; i < aImageNames.size(); i++)
             RTPrintf("    Image #%-3u   = %ls\n", aImageIndices[i], aImageNames[i]);
+        if (fInstallSupported)
+            RTPrintf(Misc::tr("    Unattended installation supported = yes\n"));
+        else
+            RTPrintf(Misc::tr("    Unattended installation supported = no\n"));
     }
 
     return rcExit;
