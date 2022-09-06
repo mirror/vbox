@@ -153,6 +153,11 @@ Rules for adding a changelog entry to make them look more uniform:
           in (disabled by default, please consult the manual)</para>
       </listitem>
 
+      <listitem>
+        <para>Linux Guest Additions: Reworked guest screen re-size functionality,
+          added basic integration with some of guest Desktop Environments</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
