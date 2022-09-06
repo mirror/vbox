@@ -112,7 +112,7 @@ static int vbsfCorrectCasing(SHFLCLIENTDATA *pClient, char *pszFullPath, char *p
     /** @todo Use RTDirOpen here and drop the whole uncessary path copying? */
     int rc = RTPathJoinEx(pDirEntry->szName, cbDirEntry - RT_OFFSETOF(RTDIRENTRYEX, szName),
                           pszFullPath, cchParentDir,
-                          RT_STR_TUPLE("*"));
+                          RT_STR_TUPLE("*"), RTPATH_STR_F_STYLE_HOST);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {

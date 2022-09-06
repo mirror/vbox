@@ -835,77 +835,76 @@ int main()
      * RTPathAppend.
      */
     RTTestSub(hTest, "RTPathAppend");
-    static const char *s_apszAppendTests[] =
+    static struct { uint32_t fFlags; const char *pszInput, *pszAppend, *pszExpect; } s_aAppendTests[] =
     {
-        /* base                 append                  result */
-        "/",                    "",                     "/",
-        "",                     "/",                    "/",
-        "/",                    "/",                    "/",
-        "/x",                   "",                     "/x",
-        "/x",                   "/",                    "/x/",
-        "/",                    "x",                    "/x",
-        "dir",                  "file",                 "dir" RTPATH_SLASH_STR "file",
-        "dir",                  "/file",                "dir/file",
-        "dir",                  "//file",               "dir/file",
-        "dir",                  "///file",              "dir/file",
-        "dir/",                 "/file",                "dir/file",
-        "dir/",                 "//file",               "dir/file",
-        "dir/",                 "///file",              "dir/file",
-        "dir//",                "file",                 "dir/file",
-        "dir//",                "/file",                "dir/file",
-        "dir//",                "//file",               "dir/file",
-        "dir///",               "///file",              "dir/file",
-        "/bin/testcase",        "foo.r0",               "/bin/testcase" RTPATH_SLASH_STR "foo.r0",
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-        "/",                    "\\",                   "/",
-        "\\",                   "/",                    "\\",
-        "\\\\srv\\shr",         "dir//",                "\\\\srv\\shr" RTPATH_SLASH_STR "dir//",
-        "\\\\srv\\shr",         "dir//file",            "\\\\srv\\shr" RTPATH_SLASH_STR "dir//file",
-        "\\\\srv\\shr",         "//dir//",              "\\\\srv\\shr/dir//",
-        "\\\\srv\\shr",         "/\\dir//",             "\\\\srv\\shr\\dir//",
-        "\\\\",                 "not-srv/not-shr/file", "\\not-srv/not-shr/file",
-        "C:",                   "autoexec.bat",         "C:autoexec.bat",
-        "C:",                   "/autoexec.bat",        "C:/autoexec.bat",
-        "C:",                   "\\autoexec.bat",       "C:\\autoexec.bat",
-        "C:\\",                 "/autoexec.bat",        "C:\\autoexec.bat",
-        "C:\\\\",               "autoexec.bat",         "C:\\autoexec.bat",
-        "E:\\bin\\testcase",    "foo.r0",               "E:\\bin\\testcase" RTPATH_SLASH_STR "foo.r0",
-#endif
+        /* fFlags,                 input                   append                  expected result */
+        { RTPATH_STR_F_STYLE_HOST, "/",                    "",                     "/" },
+        { RTPATH_STR_F_STYLE_HOST, "",                     "/",                    "/" },
+        { RTPATH_STR_F_STYLE_HOST, "/",                    "/",                    "/" },
+        { RTPATH_STR_F_STYLE_HOST, "/x",                   "",                     "/x" },
+        { RTPATH_STR_F_STYLE_HOST, "/x",                   "/",                    "/x/" },
+        { RTPATH_STR_F_STYLE_HOST, "/",                    "x",                    "/x" },
+        { RTPATH_STR_F_STYLE_HOST, "dir",                  "file",                 "dir" RTPATH_SLASH_STR "file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir",                  "/file",                "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir",                  "//file",               "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir",                  "///file",              "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir/",                 "/file",                "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir/",                 "//file",               "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir/",                 "///file",              "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir//",                "file",                 "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir//",                "/file",                "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir//",                "//file",               "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "dir///",               "///file",              "dir/file" },
+        { RTPATH_STR_F_STYLE_HOST, "/bin/testcase",        "foo.r0",               "/bin/testcase" RTPATH_SLASH_STR "foo.r0" },
+        { RTPATH_STR_F_STYLE_DOS,  "/",                    "\\",                   "/"  },
+        { RTPATH_STR_F_STYLE_DOS,  "\\",                   "/",                    "\\" },
+        { RTPATH_STR_F_STYLE_DOS,  "\\\\srv\\shr",         "dir//",                "\\\\srv\\shr\\dir//" },
+        { RTPATH_STR_F_STYLE_DOS,  "\\\\srv\\shr",         "dir//file",            "\\\\srv\\shr\\dir//file" },
+        { RTPATH_STR_F_STYLE_DOS,  "\\\\srv\\shr",         "//dir//",              "\\\\srv\\shr/dir//" },
+        { RTPATH_STR_F_STYLE_DOS,  "\\\\srv\\shr",         "/\\dir//",             "\\\\srv\\shr\\dir//" },
+        { RTPATH_STR_F_STYLE_DOS,  "\\\\",                 "not-srv/not-shr/file", "\\not-srv/not-shr/file" },
+        { RTPATH_STR_F_STYLE_DOS,  "C:",                   "autoexec.bat",         "C:autoexec.bat" },
+        { RTPATH_STR_F_STYLE_DOS,  "C:",                   "/autoexec.bat",        "C:/autoexec.bat" },
+        { RTPATH_STR_F_STYLE_DOS,  "C:",                   "\\autoexec.bat",       "C:\\autoexec.bat" },
+        { RTPATH_STR_F_STYLE_DOS,  "C:\\",                 "/autoexec.bat",        "C:\\autoexec.bat" },
+        { RTPATH_STR_F_STYLE_DOS,  "C:\\\\",               "autoexec.bat",         "C:\\autoexec.bat" },
+        { RTPATH_STR_F_STYLE_DOS,  "E:\\bin\\testcase",    "foo.r0",               "E:\\bin\\testcase\\foo.r0" },
+        { RTPATH_STR_F_STYLE_UNIX, "dir\\",                "\\file",               "dir\\/\\file" },
     };
-    for (unsigned i = 0; i < RT_ELEMENTS(s_apszAppendTests); i += 3)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aAppendTests); i++)
     {
-        const char *pszInput  = s_apszAppendTests[i];
-        const char *pszAppend = s_apszAppendTests[i + 1];
-        const char *pszExpect = s_apszAppendTests[i + 2];
+        const char * const pszInput  = s_aAppendTests[i].pszInput;
+        const char * const pszAppend = s_aAppendTests[i].pszAppend;
+        const char * const pszExpect = s_aAppendTests[i].pszExpect;
+        uint32_t     const fFlags    = s_aAppendTests[i].fFlags;
+
         strcpy(szPath, pszInput);
-        RTTESTI_CHECK_RC(rc = RTPathAppend(szPath, sizeof(szPath), pszAppend), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(rc = RTPathAppendEx(szPath, sizeof(szPath), pszAppend, RTSTR_MAX, fFlags), VINF_SUCCESS);
         if (RT_FAILURE(rc))
             continue;
         if (strcmp(szPath, pszExpect))
-        {
             RTTestIFailed("Unexpected result\n"
-                          "   input: '%s'\n"
+                          "   input: '%s', fFlags=%#x\n"
                           "  append: '%s'\n"
                           "  output: '%s'\n"
                           "expected: '%s'",
-                          pszInput, pszAppend, szPath, pszExpect);
-        }
+                          pszInput, fFlags, pszAppend, szPath, pszExpect);
         else
         {
             size_t const cchResult = strlen(szPath);
 
             strcpy(szPath, pszInput);
-            RTTESTI_CHECK_RC(rc = RTPathAppend(szPath, cchResult + 2, pszAppend), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc = RTPathAppendEx(szPath, cchResult + 2, pszAppend, RTSTR_MAX, fFlags), VINF_SUCCESS);
             RTTESTI_CHECK(RT_FAILURE(rc) || !strcmp(szPath, pszExpect));
 
             strcpy(szPath, pszInput);
-            RTTESTI_CHECK_RC(rc = RTPathAppend(szPath, cchResult + 1, pszAppend), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc = RTPathAppendEx(szPath, cchResult + 1, pszAppend, RTSTR_MAX, fFlags), VINF_SUCCESS);
             RTTESTI_CHECK(RT_FAILURE(rc) || !strcmp(szPath, pszExpect));
 
             if (strlen(pszInput) < cchResult)
             {
                 strcpy(szPath, pszInput);
-                RTTESTI_CHECK_RC(RTPathAppend(szPath, cchResult, pszAppend), VERR_BUFFER_OVERFLOW);
+                RTTESTI_CHECK_RC(RTPathAppendEx(szPath, cchResult, pszAppend, RTSTR_MAX, fFlags), VERR_BUFFER_OVERFLOW);
             }
         }
     }
@@ -914,39 +913,38 @@ int main()
      * RTPathJoin - reuse the append tests.
      */
     RTTestSub(hTest, "RTPathJoin");
-    for (unsigned i = 0; i < RT_ELEMENTS(s_apszAppendTests); i += 3)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aAppendTests); i++)
     {
-        const char *pszInput  = s_apszAppendTests[i];
-        const char *pszAppend = s_apszAppendTests[i + 1];
-        const char *pszExpect = s_apszAppendTests[i + 2];
+        const char * const pszInput  = s_aAppendTests[i].pszInput;
+        const char * const pszAppend = s_aAppendTests[i].pszAppend;
+        const char * const pszExpect = s_aAppendTests[i].pszExpect;
+        uint32_t     const fFlags    = s_aAppendTests[i].fFlags;
 
         memset(szPath, 'a', sizeof(szPath)); szPath[sizeof(szPath) - 1] = '\0';
 
-        RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, sizeof(szPath), pszInput, pszAppend), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(rc = RTPathJoinEx(szPath, sizeof(szPath), pszInput, RTSTR_MAX, pszAppend, RTSTR_MAX, fFlags), VINF_SUCCESS);
         if (RT_FAILURE(rc))
             continue;
         if (strcmp(szPath, pszExpect))
-        {
             RTTestIFailed("Unexpected result\n"
-                          "   input: '%s'\n"
+                          "   input: '%s', fFlags=%#x\n"
                           "  append: '%s'\n"
                           "  output: '%s'\n"
                           "expected: '%s'",
-                          pszInput, pszAppend, szPath, pszExpect);
-        }
+                          pszInput, fFlags, pszAppend, szPath, pszExpect);
         else
         {
             size_t const cchResult = strlen(szPath);
 
             memset(szPath, 'a', sizeof(szPath)); szPath[sizeof(szPath) - 1] = '\0';
-            RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, cchResult + 2, pszInput, pszAppend), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc = RTPathJoinEx(szPath, cchResult + 2, pszInput, RTSTR_MAX, pszAppend, RTSTR_MAX, fFlags), VINF_SUCCESS);
             RTTESTI_CHECK(RT_FAILURE(rc) || !strcmp(szPath, pszExpect));
 
             memset(szPath, 'a', sizeof(szPath)); szPath[sizeof(szPath) - 1] = '\0';
-            RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, cchResult + 1, pszInput, pszAppend), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc = RTPathJoinEx(szPath, cchResult + 1, pszInput, RTSTR_MAX, pszAppend, RTSTR_MAX, fFlags), VINF_SUCCESS);
             RTTESTI_CHECK(RT_FAILURE(rc) || !strcmp(szPath, pszExpect));
 
-            RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, cchResult, pszInput, pszAppend), VERR_BUFFER_OVERFLOW);
+            RTTESTI_CHECK_RC(rc = RTPathJoinEx(szPath, cchResult, pszInput, RTSTR_MAX, pszAppend, RTSTR_MAX, fFlags), VERR_BUFFER_OVERFLOW);
         }
     }
 
@@ -954,26 +952,29 @@ int main()
      * RTPathJoinA - reuse the append tests.
      */
     RTTestSub(hTest, "RTPathJoinA");
-    for (unsigned i = 0; i < RT_ELEMENTS(s_apszAppendTests); i += 3)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aAppendTests); i++)
     {
-        const char *pszInput  = s_apszAppendTests[i];
-        const char *pszAppend = s_apszAppendTests[i + 1];
-        const char *pszExpect = s_apszAppendTests[i + 2];
+        const char * const pszInput  = s_aAppendTests[i].pszInput;
+        const char * const pszAppend = s_aAppendTests[i].pszAppend;
+        const char * const pszExpect = s_aAppendTests[i].pszExpect;
+        uint32_t     const fFlags    = s_aAppendTests[i].fFlags;
+        if (   (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_HOST
+            || (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STYLE)
 
-        char *pszPathDst;
-        RTTESTI_CHECK(pszPathDst = RTPathJoinA(pszInput, pszAppend));
-        if (!pszPathDst)
-            continue;
-        if (strcmp(pszPathDst, pszExpect))
         {
-            RTTestIFailed("Unexpected result\n"
-                          "   input: '%s'\n"
-                          "  append: '%s'\n"
-                          "  output: '%s'\n"
-                          "expected: '%s'",
-                          pszInput, pszAppend, pszPathDst, pszExpect);
+            char *pszPathDst;
+            RTTESTI_CHECK(pszPathDst = RTPathJoinA(pszInput, pszAppend));
+            if (!pszPathDst)
+                continue;
+            if (strcmp(pszPathDst, pszExpect))
+                RTTestIFailed("Unexpected result\n"
+                              "   input: '%s'\n"
+                              "  append: '%s'\n"
+                              "  output: '%s'\n"
+                              "expected: '%s'",
+                              pszInput, pszAppend, pszPathDst, pszExpect);
+            RTStrFree(pszPathDst);
         }
-        RTStrFree(pszPathDst);
     }
 
     /*

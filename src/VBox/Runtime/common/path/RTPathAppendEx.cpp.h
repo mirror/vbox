@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathAppendEx
+ * IPRT - rtPathAppendEx - Code Template.
  */
 
 /*
@@ -35,21 +35,6 @@
  */
 
 
-/*********************************************************************************************************************************
-*   Header Files                                                                                                                 *
-*********************************************************************************************************************************/
-#include "internal/iprt.h"
-#include <iprt/path.h>
-
-#include <iprt/assert.h>
-#include <iprt/ctype.h>
-#include <iprt/errcore.h>
-#include <iprt/string.h>
-
-#define RTPATH_TEMPLATE_CPP_H "RTPathAppendEx.cpp.h"
-#include "rtpath-expand-template.cpp.h"
-
-
 /**
  * Figures the length of the root part of the path.
  *
@@ -62,7 +47,7 @@
  *          to deal with it where it matters.  (Unlike rtPathRootSpecLen which
  *          counts them.)
  */
-static size_t rtPathRootSpecLen2(const char *pszPath)
+DECLINLINE(size_t) RTPATH_STYLE_FN(rtPathRootSpecLen2)(const char *pszPath)
 {
     /* fend of wildlife. */
     if (!pszPath)
@@ -71,7 +56,7 @@ static size_t rtPathRootSpecLen2(const char *pszPath)
     /* Root slash? */
     if (RTPATH_IS_SLASH(pszPath[0]))
     {
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
         /* UNC? */
         if (    RTPATH_IS_SLASH(pszPath[1])
             &&  pszPath[2] != '\0'
@@ -102,7 +87,7 @@ static size_t rtPathRootSpecLen2(const char *pszPath)
         return 1;
     }
 
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
     /* Drive specifier? */
     if (   pszPath[0] != '\0'
         && pszPath[1] == ':'
@@ -117,48 +102,65 @@ static size_t rtPathRootSpecLen2(const char *pszPath)
 }
 
 
-RTDECL(int) RTPathAppendEx(char *pszPath, size_t cbPathDst, const char *pszAppend, size_t cchAppendMax, uint32_t fFlags)
+/** Internal worker for RTPathAppendEx. */
+DECLINLINE(int) RTPATH_STYLE_FN(rtPathAppendEx)(char *pszPath, size_t cbPathDst, char *pszPathEnd,
+                                                const char *pszAppend, size_t cchAppend)
 {
-    char *pszPathEnd = RTStrEnd(pszPath, cbPathDst);
-    AssertReturn(pszPathEnd, VERR_INVALID_PARAMETER);
-    Assert(RTPATH_STR_F_IS_VALID(fFlags, 0));
-
     /*
-     * Special cases.
+     * Balance slashes and check for buffer overflow.
      */
-    if (!pszAppend)
-        return VINF_SUCCESS;
-    size_t cchAppend = RTStrNLen(pszAppend, cchAppendMax);
-    if (!cchAppend)
-        return VINF_SUCCESS;
-    if (pszPathEnd == pszPath)
+    if (!RTPATH_IS_SLASH(pszPathEnd[-1]))
     {
-        if (cchAppend >= cbPathDst)
-            return VERR_BUFFER_OVERFLOW;
-        memcpy(pszPath, pszAppend, cchAppend);
-        pszPath[cchAppend] = '\0';
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Go to path style specific code now.
-     */
-    switch (fFlags & RTPATH_STR_F_STYLE_MASK)
-    {
+        if (!RTPATH_IS_SLASH(pszAppend[0]))
+        {
 #if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-        case RTPATH_STR_F_STYLE_HOST:
+            if (    (size_t)(pszPathEnd - pszPath) == 2
+                &&  pszPath[1] == ':'
+                &&  RT_C_IS_ALPHA(pszPath[0]))
+            {
+                if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cbPathDst)
+                    return VERR_BUFFER_OVERFLOW;
+            }
+            else
 #endif
-        case RTPATH_STR_F_STYLE_DOS:
-            return rtPathAppendExStyleDos(pszPath, cbPathDst, pszPathEnd, pszAppend, cchAppend);
+            {
+                if ((size_t)(pszPathEnd - pszPath) + 1 + cchAppend >= cbPathDst)
+                    return VERR_BUFFER_OVERFLOW;
+                *pszPathEnd++ = RTPATH_SLASH;
+            }
+        }
+        else
+        {
+            /* One slash is sufficient at this point. */
+            while (cchAppend > 1 && RTPATH_IS_SLASH(pszAppend[1]))
+                pszAppend++, cchAppend--;
 
-#if RTPATH_STYLE != RTPATH_STR_F_STYLE_DOS
-        case RTPATH_STR_F_STYLE_HOST:
-#endif
-        case RTPATH_STR_F_STYLE_UNIX:
-            return rtPathAppendExStyleUnix(pszPath, cbPathDst, pszPathEnd, pszAppend, cchAppend);
-
-        default:
-            AssertFailedReturn(VERR_INVALID_FLAGS); /* impossible */
+            if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cbPathDst)
+                return VERR_BUFFER_OVERFLOW;
+        }
     }
+    else
+    {
+        /* No slashes needed in the appended bit. */
+        while (cchAppend && RTPATH_IS_SLASH(*pszAppend))
+            pszAppend++, cchAppend--;
+
+        /* In the leading path we can skip unnecessary trailing slashes, but
+           be sure to leave one. */
+        size_t const cchRoot = RTPATH_STYLE_FN(rtPathRootSpecLen2)(pszPath);
+        while (     (size_t)(pszPathEnd - pszPath) > RT_MAX(1, cchRoot)
+               &&   RTPATH_IS_SLASH(pszPathEnd[-2]))
+            pszPathEnd--;
+
+        if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cbPathDst)
+            return VERR_BUFFER_OVERFLOW;
+    }
+
+    /*
+     * What remains now is the just the copying.
+     */
+    memcpy(pszPathEnd, pszAppend, cchAppend);
+    pszPathEnd[cchAppend] = '\0';
+    return VINF_SUCCESS;
 }
 

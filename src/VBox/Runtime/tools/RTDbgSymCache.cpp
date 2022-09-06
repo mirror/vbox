@@ -815,7 +815,7 @@ static int rtDbgSymCacheConstructBundlePath(char *pszPath, size_t cchPath, size_
      * Check the immediate directory first, in case it's layed out like
      * IOPCIFamily.kext.
      */
-    int rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName);
+    int rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName, RTPATH_STR_F_STYLE_HOST);
     if (RT_FAILURE(rc) || !RTFileExists(pszPath))
     {
         /*
@@ -824,7 +824,7 @@ static int rtDbgSymCacheConstructBundlePath(char *pszPath, size_t cchPath, size_
         pszPath[cchPath + cchOrgName] = '\0';
         rc = RTPathAppend(pszPath, RTPATH_MAX, pszSubDir);
         if (RT_SUCCESS(rc))
-            rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName);
+            rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName, RTPATH_STR_F_STYLE_HOST);
         if (RT_FAILURE(rc))
         {
             pszPath[cchPath + cchOrgName] = '\0';

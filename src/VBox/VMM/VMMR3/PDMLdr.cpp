@@ -1226,7 +1226,7 @@ static char *pdmR3File(const char *pszFile, const char *pszDefaultExt, const cha
                 pszNext = pszEnd + 1;
             if (pszEnd != psz)
             {
-                rc = RTPathJoinEx(szPath, sizeof(szPath), psz, pszEnd - psz, pszFile, cchFile);
+                rc = RTPathJoinEx(szPath, sizeof(szPath), psz, pszEnd - psz, pszFile, cchFile, RTPATH_STR_F_STYLE_HOST);
                 if (RT_SUCCESS(rc))
                 {
                     if (RTFileExists(szPath))

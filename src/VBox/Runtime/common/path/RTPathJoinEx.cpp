@@ -49,11 +49,12 @@
 
 RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
                          const char *pszPathSrc, size_t cchPathSrcMax,
-                         const char *pszAppend, size_t cchAppendMax)
+                         const char *pszAppend, size_t cchAppendMax, uint32_t fFlags)
 {
     AssertPtr(pszPathDst);
     AssertPtr(pszPathSrc);
     AssertPtr(pszAppend);
+    Assert(RTPATH_STR_F_IS_VALID(fFlags, 0));
 
     /*
      * The easy way: Copy the path into the buffer and call RTPathAppend.
@@ -64,6 +65,6 @@ RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
     memcpy(pszPathDst, pszPathSrc, cchPathSrc);
     pszPathDst[cchPathSrc] = '\0';
 
-    return RTPathAppendEx(pszPathDst, cbPathDst, pszAppend, cchAppendMax);
+    return RTPathAppendEx(pszPathDst, cbPathDst, pszAppend, cchAppendMax, fFlags);
 }
 

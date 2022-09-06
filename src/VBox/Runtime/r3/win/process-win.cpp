@@ -2121,7 +2121,7 @@ static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, voi
 {
     const char *pszExec     = (const char *)pvUser1;
     char       *pszRealExec = (char *)pvUser2;
-    int rc = RTPathJoinEx(pszRealExec, RTPATH_MAX, pchPath, cchPath, pszExec, RTSTR_MAX);
+    int rc = RTPathJoinEx(pszRealExec, RTPATH_MAX, pchPath, cchPath, pszExec, RTSTR_MAX, RTPATH_STR_F_STYLE_HOST);
     if (RT_FAILURE(rc))
         return rc;
     if (RTFileExists(pszRealExec))

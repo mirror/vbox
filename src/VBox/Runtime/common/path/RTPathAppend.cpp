@@ -46,6 +46,6 @@
 
 RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
 {
-    return RTPathAppendEx(pszPath, cbPathDst, pszAppend, RTSTR_MAX);
+    return RTPathAppendEx(pszPath, cbPathDst, pszAppend, RTSTR_MAX, RTPATH_STR_F_STYLE_HOST);
 }
 

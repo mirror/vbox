@@ -1643,7 +1643,8 @@ static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, voi
 {
     const char      *pszExec = (const char *)pvUser1;
     PRTPATHINTSEARCH pResult = (PRTPATHINTSEARCH)pvUser2;
-    int rc = RTPathJoinEx(pResult->szFound, sizeof(pResult->szFound), pchPath, cchPath, pszExec, RTSTR_MAX);
+    int rc = RTPathJoinEx(pResult->szFound, sizeof(pResult->szFound), pchPath, cchPath, pszExec, RTSTR_MAX,
+                          RTPATH_STR_F_STYLE_HOST);
     if (RT_SUCCESS(rc))
     {
         const char *pszNativeExec = NULL;
