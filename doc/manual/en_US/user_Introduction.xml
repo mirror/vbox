@@ -3986,7 +3986,7 @@
                   <literal>qemu</literal> module, as follows:
                 </para>
 
-<screen># dracut –-logfile /var/log/Dracut.log –-force –-add qemu</screen>
+<screen># dracut --logfile /var/log/Dracut.log --force --add qemu</screen>
               </listitem>
 
               <listitem>
