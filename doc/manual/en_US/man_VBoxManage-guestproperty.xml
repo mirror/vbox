@@ -125,9 +125,11 @@
     </refsect2>
     <refsect2 id="vboxmanage-guestproperty-enumerate">
       <title>List All Properties for a Virtual Machine</title>
+      <remark role="help-copy-synopsis"/>
       <para>
-        The <command>VBoxManage guestproperty enumerate</command>
-        command lists each guest property and value for the specified
+        <!-- @todo the help output doesn't correctly insert a space after the /command tag if it comes last on a line...  -->
+        The <command>VBoxManage guestproperty enumerate</command> command
+        lists each guest property and value for the specified
         VM. Note that the output is limited if the guest's service
         process cannot be contacted, for example because the VM is not
         running or because the Guest Additions are not installed.
