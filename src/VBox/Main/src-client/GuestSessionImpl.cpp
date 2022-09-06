@@ -3598,9 +3598,7 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
 
         HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
-        {
             hrc = GuestSession::i_directoryCopyFlagFromStr(strFlags, &source.Type.Dir.fCopyFlags);
-        }
         else if (source.enmType == FsObjType_File)
             hrc = GuestSession::i_fileCopyFlagFromStr(strFlags, &source.Type.File.fCopyFlags);
         else

@@ -1338,13 +1338,9 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
             }
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-        {
             vrc = VERR_IS_A_FILE;
-        }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
-        {
             vrc = VERR_IS_A_SYMLINK;
-        }
         else
             vrc = VERR_NOT_SUPPORTED;
     }
@@ -1604,7 +1600,7 @@ int GuestSessionTaskCopyFrom::Run(void)
         const bool     fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
         const bool     fFollowSymlinks   = true; /** @todo */
         const uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
-              uint32_t fDirCreate        = 0;
+        uint32_t       fDirCreate        = 0;
 
         if (!fFollowSymlinks)
             fDirCreate |= RTDIRCREATE_FLAGS_NO_SYMLINKS;
@@ -1620,8 +1616,6 @@ int GuestSessionTaskCopyFrom::Run(void)
                 break;
         }
 
-        char szPath[RTPATH_MAX];
-
         FsEntries::const_iterator itEntry = pList->mVecEntries.begin();
         while (itEntry != pList->mVecEntries.end())
         {
@@ -1635,6 +1629,8 @@ int GuestSessionTaskCopyFrom::Run(void)
 
             if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
+                char szPath[RTPATH_MAX];
+
                 /* Build the source path on the guest. */
                 vrc = RTStrCopy(szPath, sizeof(szPath), pList->mSrcRootAbs.c_str());
                 if (RT_SUCCESS(vrc))
@@ -1743,7 +1739,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
     ULONG cOperations = 0;
     Utf8Str strErrorInfo;
 
-    /**
+    /*
      * Note: We need to build up the file/directory here instead of GuestSessionTaskCopyTo::Run
      *       because the caller expects a ready-for-operation progress object on return.
      *       The progress object will have a variable operation count, based on the elements to
@@ -1807,9 +1803,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                 if (RT_SUCCESS(vrc))
                 {
                     if (itSrc->enmType == FsObjType_Directory)
-                    {
                         vrc = pFsList->AddDirFromHost(strSrc);
-                    }
                     else
                         vrc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);
                 }
