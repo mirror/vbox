@@ -108,8 +108,7 @@
 \documentclass[oneside,a4paper,10pt,DIV10]{scrbook}
 \usepackage{geometry}
 \geometry{top=3cm,bottom=4cm}
-\usepackage{ucs}
-\usepackage[utf8x]{inputenc}
+\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{tabulary}
 \usepackage[pdftex,
@@ -1260,7 +1259,31 @@
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="$subst13" />
+        <xsl:variable name="subst14">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$subst13" />
+            <xsl:with-param name="replace" select="'→'" />
+            <xsl:with-param name="with" select="'\ensuremath{\rightarrow}'" />
+            <xsl:with-param name="disable-output-escaping" select="no" />
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:variable name="subst15">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$subst14" />
+            <xsl:with-param name="replace" select="'←'" />
+            <xsl:with-param name="with" select="'\ensuremath{\leftarrow}'" />
+            <xsl:with-param name="disable-output-escaping" select="no" />
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:variable name="subst16">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$subst15" />
+            <xsl:with-param name="replace" select="'↔'" />
+            <xsl:with-param name="with" select="'\ensuremath{\leftrightarrow}'" />
+            <xsl:with-param name="disable-output-escaping" select="no" />
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:value-of select="$subst16" />
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
