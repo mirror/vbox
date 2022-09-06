@@ -3714,45 +3714,68 @@ HRESULT Unattended::getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIn
 
 HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSupported)
 {
+    /*
+     * Take the initial position that it's not supported, so we can return
+     * right away when we decide it's not possible.
+     */
+    *aIsUnattendedInstallSupported = false;
+
     /* Unattended is disabled by default if we could not detect OS type. */
-    if (mStrDetectedOSTypeId.isEmpty() || mStrDetectedOSVersion.isEmpty())
-    {
-        *aIsUnattendedInstallSupported = false;
+    if (mStrDetectedOSTypeId.isEmpty())
         return S_OK;
-    }
-    /* We cannot install Ubuntus older than 11.04. */
-    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Ubuntu)
-    {
-        if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "11.04") < 0)
-        {
-            *aIsUnattendedInstallSupported = false;
-            return S_OK;
-        }
-    }
-    /* Earlier than OL 6.4 cannot be installed. OL 6.x fails with unsupported hardware error (CPU family). */
-    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Oracle)
-    {
-        if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "6.4") < 0)
-        {
-            *aIsUnattendedInstallSupported = false;
-            return S_OK;
-        }
-    }
+
+    const VBOXOSTYPE enmOsTypeMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_OsTypeMask);
+
+    /* We require a version to have been detected, except for windows where the
+       field is generally only used for the service pack number at present and
+       will be empty for RTMs isos. */
+    if (   (   enmOsTypeMasked <= VBOXOSTYPE_WinNT
+            || enmOsTypeMasked >= VBOXOSTYPE_OS2)
+        && mStrDetectedOSVersion.isEmpty())
+        return S_OK;
+
+    /*
+     * Sort out things that we know doesn't work.  Order by VBOXOSTYPE value.
+     */
+
+    /* We do not support any of the DOS based windows version, nor DOS, in case
+       any of that gets detected (it shouldn't): */
+    if (enmOsTypeMasked >= VBOXOSTYPE_DOS && enmOsTypeMasked < VBOXOSTYPE_WinNT)
+        return S_OK;
+
+    /* Windows NT 3.x doesn't work, also skip unknown windows NT version: */
+    if (enmOsTypeMasked >= VBOXOSTYPE_WinNT && enmOsTypeMasked < VBOXOSTYPE_WinNT4)
+        return S_OK;
+
+    /* For OS/2 we only support OS2 4.5 (actually only 4.52 server has been
+       tested, but we'll get to the others eventually): */
+    if (   enmOsTypeMasked >= VBOXOSTYPE_OS2
+        && enmOsTypeMasked < VBOXOSTYPE_Linux
+        && enmOsTypeMasked != VBOXOSTYPE_OS2Warp45 /* probably works */ )
+        return S_OK;
+
     /* Old Debians fail since package repos have been move to some other mirror location. */
-    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Debian)
-    {
-        if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "9.0") < 0)
-        {
-            *aIsUnattendedInstallSupported = false;
-            return S_OK;
-        }
-    }
-    /* Skip all OpenSUSE variants for now. */
-    if ((mEnmOsType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_OpenSUSE)
-    {
-        *aIsUnattendedInstallSupported = false;
+    if (   enmOsTypeMasked == VBOXOSTYPE_Debian
+        && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "9.0") < 0)
         return S_OK;
-    }
+
+    /* Skip all OpenSUSE variants for now. */
+    if (enmOsTypeMasked == VBOXOSTYPE_OpenSUSE)
+        return S_OK;
+
+    /* We cannot install Ubuntus older than 11.04. */
+    if (   enmOsTypeMasked == VBOXOSTYPE_Ubuntu
+        && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "11.04") < 0)
+        return S_OK;
+
+    /* Earlier than OL 6.4 cannot be installed. OL 6.x fails with unsupported hardware error (CPU family). */
+    if (   enmOsTypeMasked == VBOXOSTYPE_Oracle
+        && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "6.4") < 0)
+        return S_OK;
+
+    /*
+     * Assume the rest works.
+     */
     *aIsUnattendedInstallSupported = true;
     return S_OK;
 }
