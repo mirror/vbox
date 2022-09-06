@@ -151,9 +151,12 @@ for %%d in (%_MY_DRIVER_BASE_NAMES%) do (
     @echo * Verifying %%d against %%d.cat...
     "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d.cat"        "%_MY_OPT_BINDIR%\%%d.inf" || goto end_failed
     "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d.cat"        "%_MY_OPT_BINDIR%\%%d.sys" || goto end_failed
-    @echo * Verifying %%d against %%d-PreW10.cat...
-    "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d-PreW10.cat" "%_MY_OPT_BINDIR%\%%d.inf" || goto end_failed
-    "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d-PreW10.cat" "%_MY_OPT_BINDIR%\%%d.sys" || goto end_failed
+    rem The following is disabled because signtool.exe does not accept these
+    rem signatures because it fails to look at the timestamp. Eventually should
+    rem replace this by doing out own signature verification in RTSignTool.
+    rem @echo * Verifying %%d against %%d-PreW10.cat...
+    rem "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d-PreW10.cat" "%_MY_OPT_BINDIR%\%%d.inf" || goto end_failed
+    rem "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d-PreW10.cat" "%_MY_OPT_BINDIR%\%%d.sys" || goto end_failed
 )
 :no_sign_verify
 
