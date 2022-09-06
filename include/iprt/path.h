@@ -1090,6 +1090,8 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
  *                          NULL, in which case nothing is done.
  * @param   cchAppendMax    The maximum number or characters to take from @a
  *                          pszAppend.  RTSTR_MAX is fine.
+ * @param   fFlags          Combination of RTPATH_STR_F_STYLE_XXX.
+ *                          Most users will pass 0 / RTPATH_STR_F_STYLE_HOST.
  *
  * @remarks On OS/2, Window and similar systems, concatenating a drive letter
  *          specifier with a slash prefixed path will result in an absolute
@@ -1102,7 +1104,7 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
  *          absolute path. Meaning, RTPathAppend(strcpy(szBuf, "C:"),
  *          sizeof(szBuf), "bar") will result in "C:bar".
  */
-RTDECL(int) RTPathAppendEx(char *pszPath, size_t cbPathDst, const char *pszAppend, size_t cchAppendMax);
+RTDECL(int) RTPathAppendEx(char *pszPath, size_t cbPathDst, const char *pszAppend, size_t cchAppendMax, uint32_t fFlags);
 
 /**
  * Like RTPathAppend, but with the base path as a separate argument instead of
@@ -1159,11 +1161,13 @@ RTDECL(char *) RTPathJoinA(const char *pszPathSrc, const char *pszAppend);
  *                          be NULL, in which case nothing is done.
  * @param   cchAppendMax    The maximum number of bytes to copy from @a
  *                          pszAppend.  RTSTR_MAX is find.
+ * @param   fFlags          Combination of RTPATH_STR_F_STYLE_XXX.
+ *                          Most users will pass 0 / RTPATH_STR_F_STYLE_HOST.
  *
  */
 RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
                          const char *pszPathSrc, size_t cchPathSrcMax,
-                         const char *pszAppend, size_t cchAppendMax);
+                         const char *pszAppend, size_t cchAppendMax, uint32_t fFlags);
 
 /**
  * Callback for RTPathTraverseList that's called for each element.
