@@ -2229,6 +2229,19 @@ FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vpalignr_u256, iemAImpl_vpalignr_u256_fall
 FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vpblendw_u256, iemAImpl_vpblendw_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vblendps_u256, iemAImpl_vblendps_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vblendpd_u256, iemAImpl_vblendpd_u256_fallback;
+
+
+typedef struct IEMPCMPISTRISRC
+{
+    RTUINT128U              uSrc1;
+    RTUINT128U              uSrc2;
+} IEMPCMPISTRISRC;
+typedef IEMPCMPISTRISRC *PIEMPCMPISTRISRC;
+typedef const IEMPCMPISTRISRC *PCIEMPCMPISTRISRC;
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRISRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRISRC pSrc, uint8_t bEvil));
+
 /** @} */
 
 /** @name Media Odds and Ends

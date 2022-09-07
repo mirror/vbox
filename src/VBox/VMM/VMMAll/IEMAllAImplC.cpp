@@ -15409,3 +15409,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vblendpd_u256_fallback,(PRTUINT256U puDst, PCRT
         else
             puDst->au64[i] = puSrc1->au64[i];
 }
+
+
+/**
+ * [V]PCMPISTRI
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRISRC pSrc, uint8_t bEvil))
+{
+    RT_NOREF(pu32Ecx, pEFlags, pSrc, bEvil);
+    AssertReleaseFailed();
+}

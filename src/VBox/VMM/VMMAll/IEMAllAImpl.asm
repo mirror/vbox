@@ -5181,3 +5181,50 @@ IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendps
 IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendpd
 IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpblendw
 IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpalignr
+
+
+;;
+; Need to move this as well somewhere better?
+;
+struc IEMPCMPISTRISRC
+    .uSrc1        resd 4
+    .uSrc2        resd 4
+endstruc
+
+;;
+; The pcmpistri instruction.
+;
+; @param    A0      Pointer to the ECX register to store the result to (output).
+; @param    A1      Pointer to the EFLAGS register.
+; @param    A2      Pointer to the structure containing the source operands (input).
+; @param    A3      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A2 + IEMPCMPISTRISRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMPCMPISTRISRC.uSrc2]
+        mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
+        lea     T1, [T1 + T0*2]
+        call    T1
+
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+        mov    [T2], ecx
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       pcmpistri xmm0, xmm1, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*8 == 0x800
+dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_pcmpistri_u128
