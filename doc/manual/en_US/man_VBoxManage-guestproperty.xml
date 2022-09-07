@@ -67,7 +67,7 @@
       <arg>--no-flags</arg>
       <arg>--relative</arg>
       <arg>--old-format</arg>
-      <arg ret="repeat"><replaceable>patterns</replaceable></arg>
+      <arg rep="repeat"><replaceable>patterns</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-guestproperty-set">
