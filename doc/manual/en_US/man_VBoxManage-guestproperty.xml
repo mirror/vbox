@@ -63,7 +63,11 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg>--patterns=<replaceable>patterns</replaceable></arg>
+      <arg>--no-timestamp</arg>
+      <arg>--no-flags</arg>
+      <arg>--relative</arg>
+      <arg>--old-format</arg>
+      <arg ret="repeat"><replaceable>patterns</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-guestproperty-set">
@@ -130,13 +134,29 @@
         <!-- @todo the help output doesn't correctly insert a space after the /command tag if it comes last on a line...  -->
         The <command>VBoxManage guestproperty enumerate</command> command
         lists each guest property and value for the specified
-        VM. Note that the output is limited if the guest's service
-        process cannot be contacted, for example because the VM is not
+        VM. Note that the output is limited if the guest's service is
+        not updating the properties, for example because the VM is not
         running or because the Guest Additions are not installed.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--patterns=<replaceable>pattern</replaceable></option></term>
+          <term><option>--relative</option></term>
+          <listitem><para>Display the timestamp relative to current time.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--no-timestamp</option></term>
+          <listitem><para>Do not display the timestamp of the last update.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--no-flags</option></term>
+          <listitem><para>Do not display the flags.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--old-format</option></term>
+          <listitem><para>Use the output format from VirtualBox 6.1 and earlier.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option><replaceable>pattern</replaceable></option></term>
           <listitem><para>
               Filters the list of properties based on the specified
               pattern, which can contain the following wildcard
@@ -171,7 +191,8 @@
               </varlistentry>
             </variablelist></listitem>
         </varlistentry>
-      </variablelist>
+
+        </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestproperty-get">
       <title>Retrieve a Property Value for a Virtual Machine</title>
