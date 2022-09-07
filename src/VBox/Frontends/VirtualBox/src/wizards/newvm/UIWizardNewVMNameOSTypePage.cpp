@@ -268,13 +268,7 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
     /* Append default architecture bit-count (64/32) if not already in the name, unless
        it's XP or similar which is predominantly 32-bit: */
     if (!strNewName.contains("32") && !strNewName.contains("64") && !strNewName.contains(gs_Prefer32BitNamePatterns))
-    {
-        /** @todo cache this result, no need to re-query it for each keystroke... */
-        CHost host = uiCommon().host();
-        bool fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
-        bool fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
-        strNewName += ARCH_BITS == 64 && fSupportsHWVirtEx && fSupportsLongMode ? "64" : "32";
-    }
+        strNewName += ARCH_BITS == 64 ? "64" : "32";
 
     /* Search for a matching OS type based on the string the user typed already. */
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
