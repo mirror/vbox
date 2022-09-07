@@ -9425,7 +9425,6 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
     if ((pFpuCtx->FTW & (RT_BIT(iReg1) | RT_BIT(iReg2))) == (RT_BIT(iReg1) | RT_BIT(iReg2)))
     {
         uint32_t u32Eflags = pfnAImpl(pFpuCtx, &u16Fsw, &pFpuCtx->aRegs[0].r80, &pFpuCtx->aRegs[iStReg].r80);
-        NOREF(u32Eflags);
 
         pFpuCtx->FSW &= ~X86_FSW_C1;
         pFpuCtx->FSW |= u16Fsw & ~X86_FSW_TOP_MASK;
@@ -9433,7 +9432,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
             || (pFpuCtx->FCW & X86_FCW_IM) )
         {
             pVCpu->cpum.GstCtx.eflags.u &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
-            pVCpu->cpum.GstCtx.eflags.u |= pVCpu->cpum.GstCtx.eflags.u & (X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
+            pVCpu->cpum.GstCtx.eflags.u |= u32Eflags & (X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
         }
     }
     else if (pFpuCtx->FCW & X86_FCW_IM)
@@ -9460,8 +9459,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
     if (fPop)
     {
         pFpuCtx->FTW &= ~RT_BIT(iReg1);
-        pFpuCtx->FSW &= X86_FSW_TOP_MASK;
-        pFpuCtx->FSW |= ((iReg1 + 7) & X86_FSW_TOP_SMASK) << X86_FSW_TOP_SHIFT;
+        iemFpuStackIncTop(pVCpu);
     }
 
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
