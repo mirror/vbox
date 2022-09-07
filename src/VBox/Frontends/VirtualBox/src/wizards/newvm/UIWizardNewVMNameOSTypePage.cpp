@@ -63,9 +63,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegularExpression(  "Wi.*Me",                         QRegularExpression::CaseInsensitiveOption), "WindowsMe" },
     { QRegularExpression( "(Wi.*NT)|(NT[-._v]*4)",           QRegularExpression::CaseInsensitiveOption), "WindowsNT4" },
     { QRegularExpression( "NT[-._v]*3[.,]*[51x]",            QRegularExpression::CaseInsensitiveOption), "WindowsNT3x" },
-    /* Note: Do not automatically set WindowsXP_64 on 64-bit hosts, as Windows XP 64-bit
-     *       is extremely rare -- most users never heard of it even. So always default to 32-bit. */
-    { QRegularExpression("((Wi.*XP)|(XP)).*",                QRegularExpression::CaseInsensitiveOption), "WindowsXP" },
+    { QRegularExpression("(Wi.*XP.*64)|(XP.*64)",            QRegularExpression::CaseInsensitiveOption), "WindowsXP_64" },
+    { QRegularExpression("(XP)",                             QRegularExpression::CaseInsensitiveOption), "WindowsXP" },
     { QRegularExpression("((Wi.*2003)|(W2K3)|(Win2K3)).*64", QRegularExpression::CaseInsensitiveOption), "Windows2003_64" },
     { QRegularExpression("((Wi.*2003)|(W2K3)|(Win2K3)).*32", QRegularExpression::CaseInsensitiveOption), "Windows2003" },
     { QRegularExpression("((Wi.*Vis)|(Vista)).*64",          QRegularExpression::CaseInsensitiveOption), "WindowsVista_64" },
@@ -259,11 +258,16 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegularExpression("Ot",                   QRegularExpression::CaseInsensitiveOption), "Other" },
 };
 
+static const QRegularExpression gs_Prefer32BitNamePatterns = QRegularExpression("(XP)", QRegularExpression::CaseInsensitiveOption);
+
+
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
 {
     AssertReturn(pNameAndSystemEditor, false);
-    /* Append default architecture bit-count (64/32) if not already in the name: */
-    if (!strNewName.contains("32") && !strNewName.contains("64"))
+
+    /* Append default architecture bit-count (64/32) if not already in the name, unless
+       it's XP or similar which is predominantly 32-bit: */
+    if (!strNewName.contains("32") && !strNewName.contains("64") && !strNewName.contains(gs_Prefer32BitNamePatterns))
     {
         /** @todo cache this result, no need to re-query it for each keystroke... */
         CHost host = uiCommon().host();
@@ -287,26 +291,22 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSystemEditor *pNameAndSystemEditor, QString strDetectedOSType)
 {
     AssertReturn(pNameAndSystemEditor, false);
-    if (strDetectedOSType.isEmpty())
+    if (!strDetectedOSType.isEmpty())
     {
-        pNameAndSystemEditor->setType(uiCommon().vmGuestOSType("Other"));
-        /* Return false to allow OS type guessing from name. See caller code: */
-        return false;
-    }
-    /* Append 32 as bit-count if the name has no 64 and 32 in the name since API returns a type name with no arch bit count for 32-bit OSs: */
-    if (!strDetectedOSType.contains("32") && !strDetectedOSType.contains("64"))
-        strDetectedOSType += "32";
-
-    /* Search for a matching OS type based on the string the user typed already. */
-    for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
-    {
-        if (strDetectedOSType.contains(gs_OSTypePattern[i].pattern))
+        CGuestOSType const osType = uiCommon().vmGuestOSType(strDetectedOSType);
+        if (!osType.isNull())
         {
-
-            pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            pNameAndSystemEditor->setType(osType);
             return true;
         }
+        /* The detectedOSType shall be a valid OS type ID. So, unless the UI is
+           out of sync with the types in main this shouldn't ever happen. */
+        AssertFailed();
     }
+    pNameAndSystemEditor->setType(uiCommon().vmGuestOSType("Other"));
+    /* Return false to allow OS type guessing from name. See caller code: */
+    /** @todo the caller doesn't actually re-guess from the name, which leaves it
+     *        with this annoying 'other' selection. */
     return false;
 }
 
@@ -616,7 +616,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     /* Populate the editions selector: */
     if (m_pNameAndSystemEditor)
          m_pNameAndSystemEditor->setEditionNameAndIndices(pWizard->detectedWindowsImageNames(),
-                                                         pWizard->detectedWindowsImageIndices());
+                                                          pWizard->detectedWindowsImageIndices());
 
     setSkipCheckBoxEnable();
     setEditionSelectorEnabled();
