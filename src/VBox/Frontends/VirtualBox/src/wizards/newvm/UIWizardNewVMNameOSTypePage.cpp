@@ -621,7 +621,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     /* Disable OS type selector(s) to prevent user from changing guest OS type manually: */
     if (m_pNameAndSystemEditor)
     {
-        m_pNameAndSystemEditor->setOSTypeStuffEnabled(fOsTypeFixed);
+        m_pNameAndSystemEditor->setOSTypeStuffEnabled(!fOsTypeFixed);
 
         /* Redetect the OS type using the name if detection or the step above failed: */
         if (!fOsTypeFixed)
