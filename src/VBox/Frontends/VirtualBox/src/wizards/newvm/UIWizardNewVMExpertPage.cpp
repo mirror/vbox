@@ -166,7 +166,8 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
 
     pWizard->setISOFilePath(strISOPath);
 
-    bool const fOsTypeFixed = UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+    bool const fOsTypeFixed = UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor,
+                                                                                             pWizard->detectedOSTypeId());
     if (fOsTypeFixed)
         m_userModifiedParameters << "GuestOSTypeFromISO";
     else /* Remove GuestOSTypeFromISO from the set if it is there: */
@@ -185,7 +186,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 
     /* Redetect the OS type using the name if detection or the step above failed: */
-    if (!fOsTypeFixed)
+    if (!fOsTypeFixed && m_pNameAndSystemEditor)
         sltNameChanged(m_pNameAndSystemEditor->name());
 
     emit completeChanged();
