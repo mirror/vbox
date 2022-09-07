@@ -3929,13 +3929,13 @@ ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
   VBOX_UTF8_MANIFEST_FN = \
 	$(QUIET)$(APPEND) -tn "$(1).manifest" \
 		'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' \
-		'<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">' \
+		'<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">' \
 		' <assemblyIdentity type="win32" name="$(notdir $(1))" version="$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(expr $(VBOX_SVN_REV) % 50000)"/>' \
-		' <application>' \
-		'  <windowsSettings>' \
+		' <asmv3:application>' \
+		'  <asmv3:windowsSettings>' \
 		'   <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>' \
-		'  </windowsSettings>' \
-		' </application>' \
+		'  </asmv3:windowsSettings>' \
+		' </asmv3:application>' \
 		'</assembly>' \
 	$(NLTAB)$(QUIET)$(REDIRECT) -- $(requote sh,$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/mt.exe) \
 		-nologo -manifest '$(subst /,\,$(1).manifest)' '-outputresource:$(subst /,\,$(1));$(HASH)1' \
@@ -8439,9 +8439,13 @@ ifeq ($(KBUILD_TARGET),win)
  #     flag (!K) on the .bss section make it incompatible with .data.
  #     VBOX_PE_SET_VERSION will clear the !K flag.  (Not needed in no-CRT mode,
  #     as the init code zeros uninitialized data there when running on NT 3.1.)
+ # Similarly, for XP64 and 64-bit W2K3 we need to make sure the subsystem version
+ # in the binaries are set to 5.2.  The Visual C++ 2019 linker defaults to 6.0.
  # HACK ALERT! Double expansion of $$(NLTAB).
- TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_POST_CMDS))
- TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
+ TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_POST_CMDS))
+ TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.x86    = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
+ TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_POST_CMDS))
+ TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.win.x86   = $(TEMPLATE_$(TEMPLATE_VBOXGUESTR3EXE_EXTENDS)_LDFLAGS.win.x86) -NoOptIData
  else
@@ -8498,7 +8502,7 @@ TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux    = \
 	$(VBOX_GCC_fno-stack-protector)
 TEMPLATE_VBOXGUESTR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux)
 # The GNU_HASH ELF tag is not supported by older systems.
-TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += $(VBOX_LD_hash_style_sysv)
+TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux    += $(VBOX_LD_hash_style_sysv)
 
 #
 # Template for building normal R3 programs for the guest additions.
@@ -8606,8 +8610,6 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
  TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --w2k,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --w2k3 $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
- TEMPLATE_VBoxGuestR3DllMinW2K_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestR3Dll_LNK_DEPS.win.amd64)
 endif
 
 #
@@ -8621,9 +8623,8 @@ ifeq ($(KBUILD_TARGET),win)
  else
   TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
- TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
- TEMPLATE_VBoxGuestR3DllMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestR3Dll_LNK_DEPS.win.amd64)
+ TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.x86   = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
+ TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
 endif
 
 #
@@ -8669,9 +8670,8 @@ ifeq ($(KBUILD_TARGET),win)
  else
   TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
- TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.amd64))
- TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_NewerVccVBoxGuestR3Dll_LNK_DEPS.win.amd64)
+ TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.x86   = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.x86))
+ TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.amd64))
 endif
 
 #
