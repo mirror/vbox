@@ -8658,10 +8658,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
 
         uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
         for (uint32_t i = 0; i < cXmmRegs; i++)
-        {
-            pCompDst->aYmmHi[i].au64[0] = pCompSrc->aYmmHi[i].au64[0];
-            pCompDst->aYmmHi[i].au64[1] = pCompSrc->aYmmHi[i].au64[1];
-        }
+            pCompDst->aYmmHi[i] = pCompSrc->aYmmHi[i];
 
         rcStrict = iemMemCommitAndUnmap(pVCpu, pCompDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
         if (rcStrict != VINF_SUCCESS)
