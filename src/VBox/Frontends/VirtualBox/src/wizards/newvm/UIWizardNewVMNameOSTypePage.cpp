@@ -597,9 +597,11 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
 
     pWizard->setISOFilePath(strPath);
 
-    if (UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId()))
+    bool const fOsTypeFixed = UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor,
+                                                                                             pWizard->detectedOSTypeId());
+    if (fOsTypeFixed)
         m_userModifiedParameters << "GuestOSTypeFromISO";
-    else /* Remove GuestOSTypeFromISO fromthe set if it is there: */
+    else /* Remove GuestOSTypeFromISO from the set if it is there: */
         m_userModifiedParameters.remove("GuestOSTypeFromISO");
 
     /* Update the global recent ISO path: */
@@ -618,7 +620,13 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
 
     /* Disable OS type selector(s) to prevent user from changing guest OS type manually: */
     if (m_pNameAndSystemEditor)
-        m_pNameAndSystemEditor->setOSTypeStuffEnabled(pWizard->detectedOSTypeId().isEmpty());
+    {
+        m_pNameAndSystemEditor->setOSTypeStuffEnabled(fOsTypeFixed);
+
+        /* Redetect the OS type using the name if detection or the step above failed: */
+        if (!fOsTypeFixed)
+            sltNameChanged(m_pNameAndSystemEditor->name());
+    }
 
     emit completeChanged();
 }
