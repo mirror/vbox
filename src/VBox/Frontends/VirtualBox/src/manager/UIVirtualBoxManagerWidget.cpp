@@ -1113,12 +1113,6 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
         if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
             sltHandleToolsPaneIndexChange();
-
-        /* Propagate current items to update the Details-pane: */
-        m_pPaneToolsMachine->setItems(currentItems());
-        /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
-        if (pItem->itemType() == UIVirtualMachineItemType_Local)
-            m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
     }
     else
     {
@@ -1132,10 +1126,8 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
             if (pItem)
                 m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
         }
-
-        /* Propagate current items to update the Details-pane (in any case): */
-        m_pPaneToolsMachine->setItems(currentItems());
-        /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane (in any case): */
-        m_pPaneToolsMachine->setMachine(CMachine());
     }
+
+    /* Propagate current items to update the Details-pane: */
+    m_pPaneToolsMachine->setItems(currentItems());
 }

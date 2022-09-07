@@ -56,6 +56,8 @@
 #include "UITakeSnapshotDialog.h"
 #include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVirtualMachineItem.h"
+#include "UIVirtualMachineItemLocal.h"
 #include "UIWizardCloneVM.h"
 
 /* COM includes: */
@@ -499,20 +501,18 @@ UISnapshotPane::UISnapshotPane(UIActionPool *pActionPool, bool fShowToolbar /* =
     , m_pCurrentStateItem(0)
     , m_pDetailsWidget(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UISnapshotPane::~UISnapshotPane()
 {
-    /* Cleanup: */
     cleanup();
 }
 
-void UISnapshotPane::setMachine(const CMachine &comMachine)
+void UISnapshotPane::setMachineItems(const QList<UIVirtualMachineItem*> &items)
 {
     /* Cache passed machine: */
-    m_comMachine = comMachine;
+    m_comMachine = items.isEmpty() ? CMachine() : items.first()->toLocal()->machine();
 
     /* Cache machine details: */
     if (m_comMachine.isNull())
@@ -523,8 +523,8 @@ void UISnapshotPane::setMachine(const CMachine &comMachine)
     }
     else
     {
-        m_uMachineId = comMachine.GetId();
-        m_enmSessionState = comMachine.GetSessionState();
+        m_uMachineId = m_comMachine.GetId();
+        m_enmSessionState = m_comMachine.GetSessionState();
         m_fShapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(m_uMachineId);
     }
 
@@ -1212,7 +1212,7 @@ void UISnapshotPane::prepare()
     /* Load settings: */
     loadSettings();
 
-
+    /* Register help topic: */
     uiCommon().setHelpKeyword(this, "snapshots");
 
     /* Apply language settings: */
@@ -1431,8 +1431,8 @@ void UISnapshotPane::refreshAll()
 void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QITreeWidgetItem *pItem)
 {
     /* Create a child of passed item: */
-    UISnapshotItem *pSnapshotItem = pItem ? new UISnapshotItem(this, pItem, comSnapshot) :
-                                            new UISnapshotItem(this, m_pSnapshotTree, comSnapshot);
+    UISnapshotItem *pSnapshotItem = pItem ? new UISnapshotItem(this, pItem, comSnapshot)
+                                          : new UISnapshotItem(this, m_pSnapshotTree, comSnapshot);
     /* And recache it's content: */
     pSnapshotItem->recache();
 

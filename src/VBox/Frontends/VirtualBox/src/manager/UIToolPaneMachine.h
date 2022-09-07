@@ -104,9 +104,6 @@ public:
     /** Defines the machine @a items. */
     void setItems(const QList<UIVirtualMachineItem*> &items);
 
-    /** Defines the @a comMachine object. */
-    void setMachine(const CMachine &comMachine);
-
     /** Returns whether current-state item of Snapshot pane is selected. */
     bool isCurrentStateItemSelected() const;
 
@@ -151,8 +148,6 @@ private:
 
     /** Holds the cache of passed items. */
     QList<UIVirtualMachineItem*>  m_items;
-    /** Holds the cache of passed machine. */
-    CMachine                      m_comMachine;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIToolPaneMachine_h */

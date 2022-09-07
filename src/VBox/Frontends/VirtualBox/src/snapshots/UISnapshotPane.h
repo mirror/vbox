@@ -50,6 +50,7 @@ class UIActionPool;
 class UISnapshotDetailsWidget;
 class UISnapshotItem;
 class UISnapshotTree;
+class UIVirtualMachineItem;
 
 
 /** Snapshot age format. */
@@ -80,8 +81,8 @@ public:
     /** Destructs snapshot pane. */
     virtual ~UISnapshotPane() RT_OVERRIDE;
 
-    /** Defines the @a comMachine object to be parsed. */
-    void setMachine(const CMachine &comMachine);
+    /** Defines the machine @a items to be parsed. */
+    void setMachineItems(const QList<UIVirtualMachineItem*> &items);
 
     /** Returns cached snapshot-item icon depending on @a fOnline flag. */
     const QIcon *snapshotItemIcon(bool fOnline) const;
