@@ -5769,6 +5769,7 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, size_
     if (cbMem < sizeof(pVCpu->iem.s.aBounceBuffers[iMemMap].ab))
         memset(pbBuf + cbMem, 0xaa, sizeof(pVCpu->iem.s.aBounceBuffers[iMemMap].ab) - cbMem);
 #endif
+    AssertCompileMemberAlignment(VMCPU, iem.s.aBounceBuffers, 64);
 
     /*
      * Commit the bounce buffer entry.

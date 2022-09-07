@@ -641,6 +641,9 @@ typedef struct IEMCPU
         bool                afAlignment5[3];
     } aMemBbMappings[3];
 
+    /* Ensure that aBounceBuffers are aligned at a 32 byte boundrary. */
+    uint64_t                abAlignment7[1];
+
     /** Bounce buffer storage.
      * This runs in parallel to aMemMappings and aMemBbMappings. */
     struct
@@ -718,7 +721,7 @@ typedef struct IEMCPU
     /** Counts WRMSR \#GP(0) LogRel(). */
     uint8_t                 cLogRelWrMsr;
     /** Alignment padding. */
-    uint8_t                 abAlignment8[50];
+    uint8_t                 abAlignment8[42];
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
@@ -740,8 +743,13 @@ typedef struct IEMCPU
 #endif
 } IEMCPU;
 AssertCompileMemberOffset(IEMCPU, fCurXcpt, 0x48);
+AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 8);
+AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 16);
+AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 32);
+AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 64);
 AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
 AssertCompileMemberAlignment(IEMCPU, CodeTlb, 64);
+
 /** Pointer to the per-CPU IEM state. */
 typedef IEMCPU *PIEMCPU;
 /** Pointer to the const per-CPU IEM state. */
