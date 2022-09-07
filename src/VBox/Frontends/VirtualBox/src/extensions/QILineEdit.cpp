@@ -261,6 +261,6 @@ void UIMarkableLineEdit::prepare()
     AssertReturnVoid(m_pIconLabel);
     pMainLayout->addWidget(m_pLineEdit);
     pMainLayout->addWidget(m_pIconLabel);
-
+    setFocusProxy(m_pLineEdit);
     connect(m_pLineEdit, &QILineEdit::textChanged, this, &UIMarkableLineEdit::textChanged);
 }
