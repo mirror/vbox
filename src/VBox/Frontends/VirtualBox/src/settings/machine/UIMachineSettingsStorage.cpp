@@ -493,7 +493,10 @@ void UIMachineSettingsStorage::prepareWidgets()
         /* Create storage settings editor: */
         m_pEditorStorageSettings = new UIStorageSettingsEditor(this);
         if (m_pEditorStorageSettings)
+        {
+            m_pEditorStorageSettings->setActionPool(m_pActionPool);
             pLayout->addWidget(m_pEditorStorageSettings);
+        }
     }
 }
 

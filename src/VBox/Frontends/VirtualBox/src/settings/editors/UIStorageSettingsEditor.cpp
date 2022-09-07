@@ -2890,6 +2890,11 @@ UIStorageSettingsEditor::~UIStorageSettingsEditor()
     cleanup();
 }
 
+void UIStorageSettingsEditor::setActionPool(UIActionPool *pActionPool)
+{
+    m_pActionPool = pActionPool;
+}
+
 void UIStorageSettingsEditor::setMachineId(const QUuid &uMachineId)
 {
     m_uMachineId = uMachineId;

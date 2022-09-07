@@ -180,6 +180,9 @@ public:
     /** Destructs editor. */
     virtual ~UIStorageSettingsEditor() RT_OVERRIDE;
 
+    /** Defines @a pActionPool. */
+    void setActionPool(UIActionPool *pActionPool);
+
     /** Defines machine @a uMachineId. */
     void setMachineId(const QUuid &uMachineId);
     /** Defines machine @a strName. */
