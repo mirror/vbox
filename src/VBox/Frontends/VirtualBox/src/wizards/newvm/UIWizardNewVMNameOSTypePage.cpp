@@ -299,8 +299,6 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSys
     }
     pNameAndSystemEditor->setType(uiCommon().vmGuestOSType("Other"));
     /* Return false to allow OS type guessing from name. See caller code: */
-    /** @todo the caller doesn't actually re-guess from the name, which leaves it
-     *        with this annoying 'other' selection. */
     return false;
 }
 

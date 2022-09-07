@@ -166,7 +166,8 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
 
     pWizard->setISOFilePath(strISOPath);
 
-    if (UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId()))
+    bool const fOsTypeFixed = UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+    if (fOsTypeFixed)
         m_userModifiedParameters << "GuestOSTypeFromISO";
     else /* Remove GuestOSTypeFromISO from the set if it is there: */
         m_userModifiedParameters.remove("GuestOSTypeFromISO");
@@ -182,6 +183,11 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
                                                          pWizard->detectedWindowsImageIndices());
     setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+
+    /* Redetect the OS type using the name if detection or the step above failed: */
+    if (!fOsTypeFixed)
+        sltNameChanged(m_pNameAndSystemEditor->name());
+
     emit completeChanged();
 }
 
