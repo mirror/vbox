@@ -663,6 +663,47 @@ RTDECL(char *) RTTimeSpecToString(PCRTTIMESPEC pTime, char *psz, size_t cb);
  */
 RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszString);
 
+/**
+ * Formats duration as best we can according to ISO-8601, with no fraction.
+ *
+ * See RTTimeFormatDurationEx for details.
+ *
+ * @returns Number of characters in the output on success. VERR_BUFFER_OVEFLOW
+ *          on failure.
+ * @param   pszDst          Pointer to the output buffer.  In case of overflow,
+ *                          the max number of characters will be written and
+ *                          zero terminated, provided @a cbDst isn't zero.
+ * @param   cbDst           The size of the output buffer.
+ * @param   pDuration       The duration to format.
+ */
+RTDECL(int) RTTimeFormatDuration(char *pszDst, size_t cbDst, PCRTTIMESPEC pDuration);
+
+/**
+ * Formats duration as best we can according to ISO-8601.
+ *
+ * The returned value is on the form "[-]PnnnnnWnDTnnHnnMnn.fffffffffS", where a
+ * sequence of 'n' can be between 1 and the given lenght, and all but the
+ * "nn.fffffffffS" part is optional and will only be outputted when the duration
+ * is sufficiently large.  The code currently does not omit any inbetween
+ * elements other than the day count (D), so an exactly 7 day duration is
+ * formatted as "P1WT0H0M0.000000000S" when @a cFractionDigits is 9.
+ *
+ * @returns Number of characters in the output on success. VERR_BUFFER_OVEFLOW
+ *          on failure.
+ * @retval  VERR_OUT_OF_RANGE if @a cFractionDigits is too large.
+ * @param   pszDst          Pointer to the output buffer.  In case of overflow,
+ *                          the max number of characters will be written and
+ *                          zero terminated, provided @a cbDst isn't zero.
+ * @param   cbDst           The size of the output buffer.
+ * @param   pDuration       The duration to format.
+ * @param   cFractionDigits Number of digits in the second fraction part. Zero
+ *                          for whole no fraction. Max is 9 (nano seconds).
+ */
+RTDECL(ssize_t) RTTimeFormatDurationEx(char *pszDst, size_t cbDst, PCRTTIMESPEC pDuration, uint32_t cFractionDigits);
+
+/** Max length of a RTTimeFormatDurationEx output string. */
+#define RTTIME_DURATION_STR_LEN     (sizeof("-P99999W7D23H59M59.123456789S") + 2)
+
 /** @} */
 
 

@@ -716,6 +716,46 @@ int main()
     RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Thu, 00006 Sep 2018 04:09:08 GMT"));
     RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, " 00006 Sep 2018 04:09:08 GMT "));
 
+
+    /*
+     * Duration.
+     */
+    RTTestSub(hTest, "Duration Formatting");
+    static struct { int64_t cNanoSecs; uint8_t cFractionDigits; const char *pszExpect; } const s_aDuration[] =
+    {
+        {   0, 0, "PT0S" },
+        {   0, 9, "PT0S" },
+        {   RT_NS_1WEEK*52 + RT_NS_1DAY*3 + RT_NS_1HOUR*11 + RT_NS_1MIN*29 + RT_NS_1SEC_64*42 + 123456789, 9,
+            "P52W3DT11H29M42.123456789S" },
+        {   RT_NS_1WEEK*52 + RT_NS_1DAY*3 + RT_NS_1HOUR*11 + RT_NS_1MIN*29 + RT_NS_1SEC_64*42 + 123456789, 0,
+            "P52W3DT11H29M42S" },
+        {   RT_NS_1WEEK*9999 + RT_NS_1SEC_64*22 + 905964245, 0,
+            "P9999WT0H0M22S" },
+        {   RT_NS_1WEEK*9999 + RT_NS_1SEC_64*22 + 905964245, 6,
+            "P9999WT0H0M22.905964S" },
+        {   -(int64_t)(RT_NS_1WEEK*9999 + RT_NS_1SEC_64*22 + 905964245), 7,
+            "-P9999WT0H0M22.9059642S" },
+        {   -(int64_t)(RT_NS_1WEEK*9999 + RT_NS_1SEC_64*22 + 905964245), 7,
+            "-P9999WT0H0M22.9059642S" },
+        {   RT_NS_1WEEK*1 + RT_NS_1DAY*1 + RT_NS_1HOUR*1 + RT_NS_1MIN*2 + RT_NS_1SEC_64*1 + 111111111, 9,
+            "P1W1DT1H2M1.111111111S" },
+        {   1, 9, "PT0.000000001S" },
+        {   1, 3, "PT0.000S" },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aDuration); i++)
+    {
+        RTTIMESPEC TimeSpec;
+        RTTimeSpecSetNano(&TimeSpec, s_aDuration[i].cNanoSecs);
+        ssize_t cchRet = RTTimeFormatDurationEx(szValue, sizeof(szValue), &TimeSpec, s_aDuration[i].cFractionDigits);
+        if (   cchRet != (ssize_t)strlen(s_aDuration[i].pszExpect)
+            || memcmp(szValue, s_aDuration[i].pszExpect, cchRet + 1) != 0)
+            RTTestIFailed("RTTimeFormatDurationEx/#%u: cchRet=%zd\n"
+                          "  szValue: '%s', length %zu\n"
+                          " expected: '%s', length %zu",
+                          i, cchRet, szValue, strlen(szValue), s_aDuration[i].pszExpect, strlen(s_aDuration[i].pszExpect));
+    }
+
+
     /*
      * Check that RTTimeZoneGetCurrent works (not really timespec, but whatever).
      */

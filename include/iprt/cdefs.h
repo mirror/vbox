@@ -4203,6 +4203,10 @@
 /** @defgroup grp_rt_cdefs_time     Time Constants
  * @{
  */
+/** 1 week expressed in nanoseconds (64-bit). */
+#define RT_NS_1WEEK             UINT64_C(604800000000000)
+/** 1 day expressed in nanoseconds (64-bit). */
+#define RT_NS_1DAY              UINT64_C(86400000000000)
 /** 1 hour expressed in nanoseconds (64-bit). */
 #define RT_NS_1HOUR             UINT64_C(3600000000000)
 /** 30 minutes expressed in nanoseconds (64-bit). */
@@ -4255,6 +4259,10 @@
 /** 1 microsecond expressed in nanoseconds - 64-bit type. */
 #define RT_NS_1US_64            UINT64_C(1000)
 
+/** 1 week expressed in microseconds (64-bit). */
+#define RT_US_1WEEK             UINT64_C(604800000000)
+/** 1 day expressed in microseconds (64-bit). */
+#define RT_US_1DAY              UINT64_C(86400000000)
 /** 1 hour expressed in microseconds. */
 #define RT_US_1HOUR             UINT32_C(3600000000)
 /** 30 minutes expressed in microseconds. */
@@ -4313,6 +4321,10 @@
 /** 1 millsecond expressed in microseconds - 64-bit type. */
 #define RT_US_1MS_64            UINT64_C(1000)
 
+/** 1 week expressed in milliseconds. */
+#define RT_MS_1WEEK             UINT32_C(604800000)
+/** 1 day expressed in milliseconds. */
+#define RT_MS_1DAY              UINT32_C(86400000)
 /** 1 hour expressed in milliseconds. */
 #define RT_MS_1HOUR             UINT32_C(3600000)
 /** 30 minutes expressed in milliseconds. */
@@ -4336,6 +4348,10 @@
 /** 1 second expressed in milliseconds. */
 #define RT_MS_1SEC              UINT32_C(1000)
 
+/** 1 week expressed in milliseconds - 64-bit type. */
+#define RT_MS_1WEEK_64          UINT64_C(604800000)
+/** 1 day expressed in milliseconds - 64-bit type. */
+#define RT_MS_1DAY_64           UINT64_C(86400000)
 /** 1 hour expressed in milliseconds - 64-bit type. */
 #define RT_MS_1HOUR_64          UINT64_C(3600000)
 /** 30 minutes expressed in milliseconds - 64-bit type. */

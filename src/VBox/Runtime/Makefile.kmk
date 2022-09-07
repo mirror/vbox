@@ -730,6 +730,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/time/timeprog.cpp \
 	common/time/timesup.cpp \
 	common/time/timezoneinfo.cpp \
+	common/time/RTTimeFormatDurationEx.cpp \
 	common/vfs/vfsbase.cpp \
 	common/vfs/vfschain.cpp \
 	common/vfs/vfsfss2dir.cpp \
