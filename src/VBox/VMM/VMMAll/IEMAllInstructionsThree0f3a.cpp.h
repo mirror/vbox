@@ -393,13 +393,13 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
         IEM_MC_LOCAL(IEMPCMPISTRISRC,          Src);
         IEM_MC_ARG_LOCAL_REF(PIEMPCMPISTRISRC, pSrc,           Src, 2);
         IEM_MC_ARG_CONST(uint8_t,              bImmArg, /*=*/ bImm, 3);
-        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_GREG_U32(pu32Ecx, X86_GREG_xCX);
         IEM_MC_FETCH_XREG_U128(Src.uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_FETCH_XREG_U128(Src.uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_REF_EFLAGS(pEFlags);
-        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse41,
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse42,
                                                              iemAImpl_pcmpistri_u128,
                                                              iemAImpl_pcmpistri_u128_fallback),
                                  pu32Ecx, pEFlags, pSrc, bImmArg);
@@ -422,14 +422,14 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 3);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U128_ALIGN_SSE(Src.uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_GREG_U32(pu32Ecx, X86_GREG_xCX);
         IEM_MC_FETCH_XREG_U128(Src.uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_EFLAGS(pEFlags);
-        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse41,
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse42,
                                                              iemAImpl_pcmpistri_u128,
                                                              iemAImpl_pcmpistri_u128_fallback),
                                  pu32Ecx, pEFlags, pSrc, bImmArg);
