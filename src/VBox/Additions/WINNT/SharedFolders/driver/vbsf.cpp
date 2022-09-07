@@ -973,6 +973,19 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                                 break;
                             }
 
+#if 0 /* 2022-09-07 bird: I've disabled this as it prevents VBoxService from accessing the redirector on Windows XP RTM.
+       *
+       * The default is:     Administrators=RWDPO, Everyone=R, LOCAL=RW, RESTRICTED=R, SYSTEM=RWDPO
+       * This changes it to: LOCAL=RW
+       * (R=read, W=write, D=delete, P=Change Permissions, O=Change Owner. WinObj advanced permissions view.)
+       *
+       * I'm not sure if the intention here is to create a NULL DACL, which grants unrestricted access to the device.
+       * However, it's somehow now working for Windows XP RTM.
+       * (See https://docs.microsoft.com/en-us/windows/win32/secauthz/null-dacls-and-empty-dacls for NULL DACL.)
+       *
+       * If the problem is that RESTRICTED should have RWS access, read the descriptor and modify the ACE for RESTRICTED
+       * to grant them write access.
+       */
                             /* Allow restricted users to use shared folders; works only in XP and Vista. (@@todo hack) */
                             if (Status == STATUS_SUCCESS)
                             {
@@ -1023,6 +1036,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                                     return Status;
                                 }
                             }
+#endif
                             break;
 
                         case MRX_VBOX_STARTED:
