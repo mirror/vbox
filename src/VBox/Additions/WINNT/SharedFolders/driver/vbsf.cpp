@@ -980,11 +980,13 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
        * (R=read, W=write, D=delete, P=Change Permissions, O=Change Owner. WinObj advanced permissions view.)
        *
        * I'm not sure if the intention here is to create a NULL DACL, which grants unrestricted access to the device.
-       * However, it's somehow now working for Windows XP RTM.
-       * (See https://docs.microsoft.com/en-us/windows/win32/secauthz/null-dacls-and-empty-dacls for NULL DACL.)
+       * However, it's somehow now working for Windows XP RTM.  I think an explicit call to RtlSetDaclSecurityDescriptor
+       * is required for that to work, indicating that a DACL is present but NULL.
+       * (See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-rtlsetdaclsecuritydescriptor and
+       *  https://docs.microsoft.com/en-us/windows/win32/secauthz/null-dacls-and-empty-dacls for NULL DACL details.)
        *
-       * If the problem is that RESTRICTED should have RWS access, read the descriptor and modify the ACE for RESTRICTED
-       * to grant them write access.
+       * If the problem is that RESTRICTED (S-1-5-12) should have RWS access, read the descriptor and modify the ACE
+       * for RESTRICTED to grant them write access.
        */
                             /* Allow restricted users to use shared folders; works only in XP and Vista. (@@todo hack) */
                             if (Status == STATUS_SUCCESS)
