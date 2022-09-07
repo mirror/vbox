@@ -3477,7 +3477,9 @@ class TestDriver(base.TestDriver):                                              
 
         # Upload the screen video recordings if appropriate.
         if self.fAlwaysUploadRecordings or reporter.testErrorCount() > 0:
+            reporter.log2('Uploading %d screen recordings ...' % (self.adRecordingFile,));
             for dRecFile in self.adRecordingFiles:
+                reporter.log2('Uploading screen recording "%s" (screen %d)' % (dRecFile['file'], dRecFile['id']));
                 reporter.addLogFile(dRecFile['file'],
                                     'screenrecording/failure' if reporter.testErrorCount() > 0 else 'screenrecording/success',
                                     'Recording of screen #%d' % (dRecFile['id'],));
