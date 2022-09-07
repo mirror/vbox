@@ -2043,7 +2043,7 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
         /* If the region block size and requested sector matches we can just pass the request through. */
         if (cbBlockRegion == cbATAPISector)
             rc = pDevR3->pDrvMedia->pfnRead(pDevR3->pDrvMedia, (uint64_t)iATAPILBA * cbATAPISector,
-                                       s->abIOBuffer, cbATAPISector * cSectors);
+                                            s->abIOBuffer, cbATAPISector * cSectors);
         else
         {
             uint32_t const iEndSector = iATAPILBA + cSectors;
@@ -2304,7 +2304,7 @@ static bool atapiR3PassthroughSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADE
             }
             AssertLogRelReturn((uintptr_t)(pbBuf - &s->abIOBuffer[0]) + cbCurrTX <= sizeof(s->abIOBuffer), false);
             rc = pDevR3->pDrvMedia->pfnSendCmd(pDevR3->pDrvMedia, abATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
-                                          pbBuf, &cbCurrTX, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
+                                               pbBuf, &cbCurrTX, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
             if (rc != VINF_SUCCESS)
                 break;
             iATAPILBA += cReqSectors;
@@ -2348,7 +2348,7 @@ static bool atapiR3PassthroughSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADE
     {
         AssertLogRelReturn(cbTransfer <= sizeof(s->abIOBuffer), false);
         rc = pDevR3->pDrvMedia->pfnSendCmd(pDevR3->pDrvMedia, s->abATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
-                                      s->abIOBuffer, &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
+                                           s->abIOBuffer, &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
     }
     if (pProf) { STAM_PROFILE_ADV_STOP(pProf, b); }
 
@@ -3181,7 +3181,7 @@ static bool atapiR3ModeSenseCDStatusSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, 
     pbBuf[12] = 0x71; /* multisession support, mode 2 form 1/2 support, audio play */
     pbBuf[13] = 0x00; /* no subchannel reads supported */
     pbBuf[14] = (1 << 0) | (1 << 3) | (1 << 5); /* lock supported, eject supported, tray type loading mechanism */
-    if (pDevR3->pDrvMount->pfnIsLocked(pDevR3->pDrvMount))
+    if (pDevR3->pDrvMount && pDevR3->pDrvMount->pfnIsLocked(pDevR3->pDrvMount))
         pbBuf[14] |= 1 << 1; /* report lock state */
     pbBuf[15] = 0; /* no subchannel reads supported, no separate audio volume control, no changer etc. */
     scsiH2BE_U16(&pbBuf[16], 5632); /* (obsolete) claim 32x speed support */
@@ -3494,10 +3494,14 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 else
                     atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
             }
-            else if (pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
-                atapiR3CmdOK(pCtl, s);
             else
-                atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+            {
+                PPDMIMOUNT const pDrvMount = pDevR3->pDrvMount;
+                if (pDrvMount && pDrvMount->pfnIsMounted(pDrvMount))
+                    atapiR3CmdOK(pCtl, s);
+                else
+                    atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+            }
             break;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
             cbMax = scsiBE2H_U16(pbPacket + 7);
@@ -3540,17 +3544,20 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
             ataR3StartTransfer(pDevIns, pCtl, s, RT_MIN(cbMax, 18), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_REQUEST_SENSE, true);
             break;
         case SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL:
-            if (pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+        {
+            PPDMIMOUNT const pDrvMount = pDevR3->pDrvMount;
+            if (pDrvMount && pDrvMount->pfnIsMounted(pDrvMount))
             {
                 if (pbPacket[4] & 1)
-                    pDevR3->pDrvMount->pfnLock(pDevR3->pDrvMount);
+                    pDrvMount->pfnLock(pDrvMount);
                 else
-                    pDevR3->pDrvMount->pfnUnlock(pDevR3->pDrvMount);
+                    pDrvMount->pfnUnlock(pDrvMount);
                 atapiR3CmdOK(pCtl, s);
             }
             else
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
             break;
+        }
         case SCSI_READ_10:
         case SCSI_READ_12:
         {
@@ -3560,7 +3567,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount || !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3580,7 +3587,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
             /* Check that the sector size is valid. */
             VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
             int rc = pDevR3->pDrvMedia->pfnQueryRegionPropertiesForLba(pDevR3->pDrvMedia, iATAPILBA,
-                                                                  NULL, NULL, NULL, &enmDataForm);
+                                                                       NULL, NULL, NULL, &enmDataForm);
             if (RT_UNLIKELY(   rc == VERR_NOT_FOUND
                             || ((uint64_t)iATAPILBA + cSectors > s->cTotalSectors)))
             {
@@ -3626,7 +3633,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount || !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3730,7 +3737,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount || !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3767,21 +3774,27 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 {
                     /* This must be done from EMT. */
                     PATASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PATASTATER3);
-
-                    ataR3LockLeave(pDevIns, pCtl);
-                    rc = PDMDevHlpVMReqPriorityCallWait(pDevIns, VMCPUID_ANY,
-                                                        (PFNRT)pDevR3->pDrvMount->pfnUnmount, 3,
-                                                        pDevR3->pDrvMount, false /*=fForce*/, true /*=fEject*/);
-                    Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc == VERR_PDM_MEDIA_NOT_MOUNTED);
-                    if (RT_SUCCESS(rc) && pThisCC->pMediaNotify)
+                    PPDMIMOUNT  pDrvMount = pDevR3->pDrvMount;
+                    if (pDrvMount)
                     {
-                        rc = PDMDevHlpVMReqCallNoWait(pDevIns, VMCPUID_ANY,
-                                                      (PFNRT)pThisCC->pMediaNotify->pfnEjected, 2,
-                                                      pThisCC->pMediaNotify, s->iLUN);
-                        AssertRC(rc);
-                    }
+                        ataR3LockLeave(pDevIns, pCtl);
 
-                    ataR3LockEnter(pDevIns, pCtl);
+                        rc = PDMDevHlpVMReqPriorityCallWait(pDevIns, VMCPUID_ANY,
+                                                            (PFNRT)pDrvMount->pfnUnmount, 3,
+                                                            pDrvMount, false /*=fForce*/, true /*=fEject*/);
+                        Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc == VERR_PDM_MEDIA_NOT_MOUNTED);
+                        if (RT_SUCCESS(rc) && pThisCC->pMediaNotify)
+                        {
+                            rc = PDMDevHlpVMReqCallNoWait(pDevIns, VMCPUID_ANY,
+                                                          (PFNRT)pThisCC->pMediaNotify->pfnEjected, 2,
+                                                          pThisCC->pMediaNotify, s->iLUN);
+                            AssertRC(rc);
+                        }
+
+                        ataR3LockEnter(pDevIns, pCtl);
+                    }
+                    else
+                        rc = VINF_SUCCESS;
                     break;
                 }
                 case 3: /* 11 - Load media */
@@ -3813,7 +3826,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount || !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3848,7 +3861,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount && !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3862,7 +3875,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount || !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3877,7 +3890,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                 break;
             }
-            else if (!pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
+            if (!pDevR3->pDrvMount || !pDevR3->pDrvMount->pfnIsMounted(pDevR3->pDrvMount))
             {
                 atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
@@ -3895,11 +3908,9 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
             ataR3StartTransfer(pDevIns, pCtl, s, RT_MIN(cbMax, 36), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_INQUIRY, true);
             break;
         case SCSI_READ_DVD_STRUCTURE:
-        {
             cbMax = scsiBE2H_U16(pbPacket + 8);
             ataR3StartTransfer(pDevIns, pCtl, s, RT_MIN(cbMax, 4), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DVD_STRUCTURE, true);
             break;
-        }
         default:
             atapiR3CmdErrorSimple(pCtl, s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
             break;
@@ -4067,8 +4078,7 @@ static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
     for (uint32_t i = 0; i < cRegions; i++)
     {
         uint64_t cBlocks = 0;
-        int rc = pIfR3->pDrvMedia->pfnQueryRegionProperties(pIfR3->pDrvMedia, i, NULL, &cBlocks,
-                                                          NULL, NULL);
+        int rc = pIfR3->pDrvMedia->pfnQueryRegionProperties(pIfR3->pDrvMedia, i, NULL, &cBlocks, NULL, NULL);
         AssertRC(rc);
         pIf->cTotalSectors += cBlocks;
     }
