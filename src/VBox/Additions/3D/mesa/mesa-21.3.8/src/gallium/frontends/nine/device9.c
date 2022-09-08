@@ -580,7 +580,10 @@ NineDevice9_ctor( struct NineDevice9 *This,
 
     nine_state_init_sw(This);
 
+#ifndef VBOX /* VBox: Releasing this here would mean the constructor consumes a reference. This is inconsistent with how the
+                      pD3D9 parameter is treated, so, assume this is wrong and pD3D9 is right. */
     ID3DPresentGroup_Release(This->present);
+#endif
     nine_context_update_state(This); /* Some drivers needs states to be initialized */
     nine_csmt_process(This);
 

@@ -73,6 +73,16 @@ HRESULT GaDirect3DDevice9Ex::Init(D3DDEVTYPE DeviceType,
     HRESULT hr = WDDMPresentGroupCreate(this, &mpPresentationGroup);
     if (SUCCEEDED(hr))
     {
+        /** @todo r=bird: The mpPresentationGroup parameter seems to always have been
+         * consumed by the NineDevice9_ctor() code, while for the mpD3D9Ex parameter
+         * it grabs a reference.  I've commented out the bogus looking
+         * ID3DPresentGroup_Release call from NineDevice9_ctor() rather than balancing
+         * reference to mpPresentionGroup here based on the hr value. See r153545.
+         * Please verify and rework the fix to your liking.
+         *
+         * (The release call in cleanup() would call into no man's land early during
+         * vlc.exe (v3.0.17.4) video startup on 32-bit w7 rtm.)
+         */
         hr = D3DAdapter9_CreateDeviceEx(mpD3D9Ex->GetAdapter9(),
                                         D3DADAPTER_DEFAULT, DeviceType,
                                         hFocusWindow, BehaviorFlags,
