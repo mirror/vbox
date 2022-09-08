@@ -904,6 +904,13 @@ Function .onInstFailed
     ${LogToVBoxTray} "2" "Error while installing ${PRODUCT_NAME}!"
   ${EndIf}
 
+  ; Dump UI log to see what happend.
+  ; Only works with non-silent installs.
+  IfSilent +4 +1
+    StrCpy $0 "$INSTDIR\install_ui.log"
+    Push $0
+    Call DumpLog
+
   ; Set overall exit code
   SetErrorLevel 1
 
