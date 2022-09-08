@@ -11308,7 +11308,7 @@ BS3_DECL(void) Main_pe32()
 {
     static const BS3TESTMODEBYONEENTRY g_aTests[] =
     {
-#ifndef DEBUG_bird
+#if 1 /*ndef DEBUG_bird*/
 # define ALL_TESTS
 #endif
 #if defined(ALL_TESTS)
