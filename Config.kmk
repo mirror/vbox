@@ -3911,26 +3911,24 @@ endif
 endef # VBOX_GENERATE_IMPORT_TARGET_DEF
 
 
-## VBOX_UTF8_MANIFEST_FN
-# Adds a manifest resource with ID 1 that tells windows 10 1903 and later to
-# use UTF-8 for the ANSI and OEM code pages.  We only do this when using UCRT
-# as the VCC100 CRT typically ends up with its internal code page not being
-# CP_UTF8 but the default codepage for the locale.
-#
-# @param 1 the output filename.
-#
+## VBOX_UTF8_MANIFEST_CMDS
+# Wrapper around VBOX_UTF8_MANIFEST_FN that makes sure it's an EXE link target,
+# as this UTF-8 manifest doesn't make sense for non-executables.
 ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
+ ## VBOX_UTF8_MANIFEST_FN
+ # Adds a manifest resource with ID 1 that tells windows 10 1903 and later to
+ # use UTF-8 for the ANSI and OEM code pages.  We only do this when using UCRT
+ # as the VCC100 CRT typically ends up with its internal code page not being
+ # CP_UTF8 but the default codepage for the locale.
  #
- # We don't use this for old x86-only stuff like NT4, 2K or WinXP,
- # as this breaks loading our binaries.
- # (unless we're also wanting support for exotic stuff like WinXP 64-bit).
+ # @param 1 the output filename.
+ # @param 2 the architecture (required for xp rtm)
  #
- ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86)
-  VBOX_UTF8_MANIFEST_FN = \
+ VBOX_UTF8_MANIFEST_FN = \
 	$(QUIET)$(APPEND) -tn "$(1).manifest" \
 		'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' \
 		'<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">' \
-		' <assemblyIdentity type="win32" name="$(notdir $(1))" version="$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(expr $(VBOX_SVN_REV) % 50000)"/>' \
+		' <assemblyIdentity type="win32" name="$(notdir $(1))" processorArchitecture="$(2)" version="$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(expr $(VBOX_SVN_REV) % 50000)" />' \
 		' <asmv3:application>' \
 		'  <asmv3:windowsSettings>' \
 		'   <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>' \
@@ -3940,11 +3938,7 @@ ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
 	$(NLTAB)$(QUIET)$(REDIRECT) -- $(requote sh,$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/mt.exe) \
 		-nologo -manifest '$(subst /,\,$(1).manifest)' '-outputresource:$(subst /,\,$(1));$(HASH)1' \
 	$(NLTAB)$(QUIET)$(RM) -f -- "$(1).manifest"
-  ## VBOX_UTF8_MANIFEST_CMDS
-  # Wrapper around VBOX_UTF8_MANIFEST_FN that makes sure it's an EXE link target,
-  # as this UTF-8 manifest doesn't make sense for non-executables.
-  VBOX_UTF8_MANIFEST_CMDS ?= $(if-expr "$(tool_do)" != "LINK_LIBRARY" && "$(EXT)" == "EXE",$(call VBOX_UTF8_MANIFEST_FN,$(out),),)
- endif
+ VBOX_UTF8_MANIFEST_CMDS ?= $(if-expr "$(tool_do)" == "LINK_PROGRAM",$(call VBOX_UTF8_MANIFEST_FN,$(out),$(bld_trg_arch)),)
 else
  VBOX_UTF8_MANIFEST_CMDS =
 endif
