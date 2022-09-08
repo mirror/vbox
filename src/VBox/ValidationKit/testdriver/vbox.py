@@ -908,7 +908,8 @@ class TestDriver(base.TestDriver):                                              
         self.fRecordingAudio          = False; # Don't record audio by default.
         self.cSecsRecordingMax        = 0;     # No recording time limit in seconds.
         self.cMbRecordingMax          = 195;   # The test manager web server has a configured upload limit of 200 MiBs.
-                                               ## @todo Can we query the configured value here (via `from testmanager import config`)?
+                                               ## @todo Can we query the configured value here
+                                               # (via `from testmanager import config`)?
 
         # Drop LD_PRELOAD and enable memory leak detection in LSAN_OPTIONS from vboxinstall.py
         # before doing build detection. This is a little crude and inflexible...
