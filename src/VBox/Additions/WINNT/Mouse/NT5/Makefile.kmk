@@ -32,7 +32,11 @@ include $(KBUILD_PATH)/subheader.kmk
 # VBoxMouse - Windows NT5+ Guest Additions Mouse Filter Driver
 #
 SYSMODS                += VBoxMouse
-VBoxMouse_TEMPLATE      = VBOXGUESTR0
+VBoxMouse_TEMPLATE     := VBOXGUESTR0
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
+ VBoxMouse_INSTTYPE    := none
+ VBoxMouse_DEBUG_INSTTYPE := both
+endif
 VBoxMouse_DEFS          = LOG_TO_BACKDOOR
 VBoxMouse_SDKS.x86      = ReorderCompilerIncs $(VBOX_WINDDK_GST_W2K)
 #VBoxMouse_DEFS         += LOG_ENABLED
@@ -60,6 +64,7 @@ VBoxMouse_LIBS          = \
 VBoxMouse_USES.win += vboximportchecker
 VBoxMouse_VBOX_IMPORT_CHECKER.win.x86 = w2k/r0
 VBoxMouse_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
+
 
 #
 # Install the inf & cat.
