@@ -141,6 +141,119 @@ int main(void)
 
     printf("};\n");
 
+    mpfr_init2(Val, 112 + 1);
+    mpfr_const_pi(Val, MPFR_RNDN);
+    PrintF128(Val, "g_r128pi", "The pi constant as 128-bit floating point value.");
+    mpfr_div_ui(Val, Val, 2, MPFR_RNDD);
+    PrintF128(Val, "g_r128pi2", "The pi/2 constant as 128-bit floating point value.");
+
+    printf("\n"
+           "/** CORDIC constants for fsin and fcos, defined by c(i)=atan(2^(-i)) */\n"
+           "const RTFLOAT128U g_ar128FsincosCORDICConsts[] =\n"
+           "{\n");
+    mpfr_init2(Val, 112 + 1);
+    signed kmax = 68;
+
+    for (signed k = 0; k < kmax; k++)
+    {
+        // mpfr_mul_2si ?
+        mpfr_set_si_2exp(Val, 1, -k, MPFR_RNDD);
+        mpfr_atan(Val, Val, MPFR_RNDD);
+        PrintF128(Val, NULL, "c%u", k);
+    }
+
+    printf("};\n");
+
+    printf("\n"
+           "/** CORDIC multipliers for fsin and fcos, defined by K(i)=1/sqrt(1+2^(-2i)) */\n"
+           "const RTFLOAT128U g_ar128FsincosCORDICConsts2[] =\n"
+           "{\n");
+
+    mpfr_init2(Val, 112 + 1);
+    mpfr_init2(Val2, 112 + 1);
+
+    mpfr_set_ui(Val, 2, MPFR_RNDD);
+    mpfr_sqrt(Val, Val, MPFR_RNDD);
+    mpfr_ui_div(Val2, 1, Val, MPFR_RNDD);
+    PrintF128(Val2, NULL, "K_%u", 0);
+
+    for (signed k = 1; k < kmax; k++)
+    {
+        mpfr_set_si_2exp(Val, 1, -2 * k, MPFR_RNDD);
+        mpfr_add_ui(Val, Val, 1, MPFR_RNDD);
+        mpfr_sqrt(Val, Val, MPFR_RNDD);
+        mpfr_div(Val2, Val2, Val, MPFR_RNDD);
+        PrintF128(Val2, NULL, "K_%u", k);
+    }
+
+    printf("};\n");
+
+    printf("\n"
+           "/** Chebyshev coeffs for log2 function in [1, 2] interval */\n"
+           "const RTFLOAT128U g_ar128ChebLog2Consts[] =\n"
+           "{\n");
+    signed j, d, dmax = 22;
+    mpfr_t ValX, ValXX, ValA, ValB, ValBmA, ValCos, ValSum;
+    mpfr_init2(Val, 112 + 1);
+    mpfr_init2(Val2, 112 + 1);
+    mpfr_init2(ValX, 112 + 1);
+    mpfr_init2(ValXX, 112 + 1);
+    mpfr_init2(ValA, 112 + 1);
+    mpfr_init2(ValB, 112 + 1);
+    mpfr_init2(ValBmA, 112 + 1);
+    mpfr_init2(ValCos, 112 + 1);
+    mpfr_init2(ValSum, 112 + 1);
+
+    /* Setting the desired interpolation range [1.0, 2.0] */
+    mpfr_set_d(ValA, 1.0, MPFR_RNDD);
+    mpfr_set_d(ValB, 2.0, MPFR_RNDD);
+    mpfr_sub(ValBmA, ValB, ValA, MPFR_RNDD);
+
+    for (signed d = 0; d < dmax; d++)
+    {
+        mpfr_set_si(ValSum, 0, MPFR_RNDD);
+
+        for(j = 0; j < dmax; j++)
+        {
+            mpfr_set_si_2exp(Val, 1, -1, MPFR_RNDD);
+            mpfr_add_ui(Val, Val, j, MPFR_RNDD);
+            mpfr_const_pi(Val2, MPFR_RNDN);
+            mpfr_mul(Val, Val2, Val, MPFR_RNDN);
+            mpfr_div_si(Val, Val, dmax, MPFR_RNDN);
+            /* Val = M_PIq * (j + 0.5Q) / N */
+
+            mpfr_cos(ValX, Val, MPFR_RNDN);
+            /* ValX = cos(M_PIq * (j + 0.5Q) / N) */
+
+            mpfr_mul_si(Val, Val, d, MPFR_RNDN);
+            mpfr_cos(ValCos, Val, MPFR_RNDN);
+            /* ValCos = cos(M_PIq * d * (j + 0.5Q) / N) */
+
+            mpfr_add_si(Val, ValX, 1, MPFR_RNDN);
+            mpfr_div_si(Val, Val, 2, MPFR_RNDN);
+            mpfr_mul(Val, ValBmA, Val, MPFR_RNDN);
+            mpfr_add(ValXX, ValA, Val, MPFR_RNDN);
+            /* ValXX = a + (b - a) * (x + 1.0Q) / 2.0Q */
+
+            mpfr_sub_si(Val, ValXX, 1, MPFR_RNDN);
+            mpfr_log2(Val2, ValXX, MPFR_RNDN);
+            mpfr_div(Val, Val2, Val, MPFR_RNDN);
+            mpfr_mul(Val, Val, ValCos, MPFR_RNDN);
+            mpfr_add(ValSum, ValSum, Val, MPFR_RNDN);
+        }
+
+        mpfr_div_si(ValSum, ValSum, dmax, MPFR_RNDN);
+
+        if (d != 0)
+            mpfr_mul_si(ValSum, ValSum, 2, MPFR_RNDN);
+
+        PrintF128(ValSum, NULL, "c%u", d);
+    }
+
+    printf("};\n");
+
+    mpfr_clear(ValXX);
+    mpfr_clear(ValX);
     mpfr_clear(Val);
     mpfr_clear(Val2);
     mpfr_clear(One);
