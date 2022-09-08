@@ -401,22 +401,22 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThreadSelf, void *pvSess
                 || Hdr.uVersion != VBOXTRAY_IPC_HDR_VERSION)
             {
                 LogRelFunc(("Session %p: Invalid header magic/version: %#x, %#x, %#x, %#x\n",
-                            Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload));
+                            pThis, Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload));
                 rc = VERR_INVALID_MAGIC;
                 break;
             }
             if (Hdr.cbPayload > VBOXTRAY_IPC_MAX_PAYLOAD)
             {
                 LogRelFunc(("Session %p: Payload to big: %#x, %#x, %#x, %#x - max %#x\n",
-                            Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload, VBOXTRAY_IPC_MAX_PAYLOAD));
+                            pThis, Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload, VBOXTRAY_IPC_MAX_PAYLOAD));
                 rc = VERR_TOO_MUCH_DATA;
                 break;
             }
-            if (   Hdr.enmMsgType > VBOXTRAYIPCMSGTYPE_INVALID
-                && Hdr.enmMsgType < VBOXTRAYIPCMSGTYPE_END)
+            if (   Hdr.enmMsgType <= VBOXTRAYIPCMSGTYPE_INVALID
+                || Hdr.enmMsgType >= VBOXTRAYIPCMSGTYPE_END)
             {
                 LogRelFunc(("Session %p: Unknown message: %#x, %#x, %#x, %#x\n",
-                            Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload));
+                            pThis, Hdr.uMagic, Hdr.uVersion, Hdr.enmMsgType, Hdr.cbPayload));
                 rc = VERR_INVALID_FUNCTION;
                 break;
             }
