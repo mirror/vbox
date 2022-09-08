@@ -2250,6 +2250,8 @@ typedef const IEMPCMPISTRISRC *PCIEMPCMPISTRISRC;
 IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRISRC pSrc, uint8_t bEvil));
 IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRISRC pSrc, uint8_t bEvil));
 
+FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_pclmulqdq_u128, iemAImpl_pclmulqdq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpclmulqdq_u128, iemAImpl_vpclmulqdq_u128_fallback;
 /** @} */
 
 /** @name Media Odds and Ends

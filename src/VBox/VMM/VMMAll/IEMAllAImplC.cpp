@@ -15419,3 +15419,45 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uin
     RT_NOREF(pu32Ecx, pEFlags, pSrc, bEvil);
     AssertReleaseFailed();
 }
+
+
+/*
+ * [V]PCLMULQDQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_pclmulqdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    iemAImpl_vpclmulqdq_u128_fallback(puDst, puDst, puSrc, bEvil);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpclmulqdq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint8_t bEvil))
+{
+    uint64_t uSrc1 = puSrc1->au64[bEvil & 0x1];
+    uint64_t uSrc2 = puSrc2->au64[(bEvil >> 4) & 0x1];
+
+    puDst->au64[0] = 0;
+    puDst->au64[1] = 0;
+
+    /*
+     * See https://en.wikipedia.org/wiki/Carry-less_product#Example (as of 2022-09-08) for the algorithm.
+     * Do the first round outside the loop to avoid ASAN complaining about shift exponent being too large (64)
+     * and squeeze out some optimizations.
+     */
+    if (uSrc1 & 0x1)
+        puDst->au64[0] = uSrc2;
+
+    uSrc1 >>= 1;
+
+    uint8_t iDigit = 1;
+    while (uSrc1)
+    {
+        if (uSrc1 & 0x1)
+        {
+            puDst->au64[0] ^= (uSrc2 << iDigit);
+            puDst->au64[1] ^= uSrc2 >> (64 - iDigit);
+        }
+
+        uSrc1 >>= 1;
+        iDigit++;
+    }
+}

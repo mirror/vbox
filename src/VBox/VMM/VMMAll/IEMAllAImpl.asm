@@ -5107,6 +5107,7 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_6 blendps
 IEMIMPL_MEDIA_SSE_INSN_IMM8_6 blendpd
 IEMIMPL_MEDIA_SSE_INSN_IMM8_6 pblendw
 IEMIMPL_MEDIA_SSE_INSN_IMM8_6 palignr
+IEMIMPL_MEDIA_SSE_INSN_IMM8_6 pclmulqdq
 
 
 ;;
@@ -5115,13 +5116,14 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_6 palignr
 ; where the instruction encoding takes up 6 bytes.
 ;
 ; @param    1       The instruction name.
+; @param    2       Whether the instruction has a 256-bit variant (1) or not (0).
 ;
 ; @param    A0      Pointer to the destination media register size operand (output).
 ; @param    A1      Pointer to the first source media register size operand (input).
 ; @param    A2      Pointer to the second source media register size operand (input).
 ; @param    A3      The 8-bit immediate
 ;
-%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_6 1
+%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_6 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -5149,6 +5151,7 @@ dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too 
 dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
+ %if %2 == 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -5175,12 +5178,14 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
 dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
 dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
 ENDPROC iemAImpl_ %+ %1 %+ _u256
+ %endif
 %endmacro
 
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendps
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendpd
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpblendw
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpalignr
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendps,   1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendpd,   1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpblendw,   1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpalignr,   1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpclmulqdq, 0
 
 
 ;;

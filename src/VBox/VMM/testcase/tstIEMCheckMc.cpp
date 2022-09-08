@@ -575,6 +575,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT()              do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() do { (void)fMcBegin; } while (0)
+#define IEM_MC_MAYBE_RAISE_PCLMUL_RELATED_XCPT()        do { (void)fMcBegin; } while (0)
 
 #define IEM_MC_LOCAL(a_Type, a_Name) (void)fMcBegin; \
     a_Type a_Name; NOREF(a_Name); (void)fMcBegin
