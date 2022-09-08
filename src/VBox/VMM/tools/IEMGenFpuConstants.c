@@ -132,11 +132,10 @@ int main(void)
     PrintF128(One, NULL, "a0");
 
     mpfr_init2(Val, 112 + 1);
-    unsigned long uFactorial = 1; AssertCompile(sizeof(uFactorial) >= 8);
+    mpfr_set_ui(Val, 1, MPFR_RNDD);
     for (unsigned a = 1; a < 22; a++)
     {
-        uFactorial *= (a + 1);
-        mpfr_div_ui(Val, One, uFactorial, MPFR_RNDD);
+        mpfr_div_ui(Val, Val, a + 1, MPFR_RNDD);
         PrintF128(Val, NULL, "a%u", a);
     }
 
