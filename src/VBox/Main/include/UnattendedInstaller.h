@@ -621,6 +621,20 @@ protected:
                                       it includes the kernel command line with our preseed file and command line argument.
      */
     virtual HRESULT editIsoLinuxCfg(GeneralTextScript *pEditor, const char *pszMenuConfigFileName);
+
+private:
+
+    /**
+     * Tries to set label name of a label line.
+     *
+     * @returns                 true if label line is found and label name can be set.
+     * @param   pEditor         Editor with the menu configuration file loaded and parsed.
+     * @param   vecLineNumbers  Indices of the label lines (within pEditor data).
+     * @param   pszKeyWord      The keyword searched within the original label name.
+     * @param   pszNewLabelName The new name of the label.
+     */
+    bool modifyLabelLine(GeneralTextScript *pEditor, const std::vector<size_t> &vecLineNumbers,
+                         const char *pszKeyWord, const char *pszNewLabelName);
 };
 
 

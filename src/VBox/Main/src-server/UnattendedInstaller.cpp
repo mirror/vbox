@@ -1169,6 +1169,16 @@ HRESULT UnattendedDebianInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor, c
                 if (FAILED(hrc))
                     return hrc;
             }
+
+        /* Comment out "ui gfxboot bootlogo" line as it somehow messes things up on Kubuntu 20.04 (possibly others as well). */
+        vecLineNumbers =  pEditor->findTemplate("ui gfxboot", RTCString::CaseInsensitive);
+        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("ui gfxboot", RTCString::CaseInsensitive))
+            {
+                HRESULT hrc = pEditor->prependToLine(vecLineNumbers.at(i), "#");
+                if (FAILED(hrc))
+                    return hrc;
+            }
     }
     catch (std::bad_alloc &)
     {
@@ -1182,35 +1192,18 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
     /*
      * Unlike Redhats, Debian variants define boot menu not in isolinux.cfg but some other
      * menu configuration files. They are mostly called txt.cfg and/or menu.cfg (and possibly some other names)
-     * In this functions we attempt to set menu's default label (default menu item) to the one containing the word 'install'.
+     * In this functions we attempt to set menu's default label (default menu item) to the one containing the word 'install',
+     * failing to find such a label (on Kubuntu 20.04 for example) we pick the first label with name 'live'.
      */
     try
     {
         HRESULT hrc = S_OK;
-        const char *pszNewLabel = "VBoxUnatendedInstall";
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("label", RTCString::CaseInsensitive);
-        bool fLabelFound = false;
-        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-        {
-            RTCString const &rContent = pEditor->getContentOfLine(vecLineNumbers[i]);
-            /* Skip this line if it does not start with the word 'label'. */
-            if (!RTStrIStartsWith(rContent.c_str(), "label"))
-                continue;
-            /* Use the first menu item starting with word label and includes the word 'install'.*/
-            if (RTStrIStr(rContent.c_str(), "install") != NULL)
-            {
-                /* Set the content of the line. It looks like multiple word labels (like label Debian Installer)
-                 * does not work very well in some cases. */
-                Utf8Str strNewLabel("label ");
-                strNewLabel.append(pszNewLabel);
-                hrc = pEditor->setContentOfLine(vecLineNumbers[i], strNewLabel);
-                if (SUCCEEDED(hrc))
-                {
-                    fLabelFound = true;
-                    break;
-                }
-            }
-        }
+        const char *pszNewLabelName = "VBoxUnatendedInstall";
+        bool fLabelFound = modifyLabelLine(pEditor, vecLineNumbers, "install", pszNewLabelName);
+        if (!fLabelFound)
+            fLabelFound = modifyLabelLine(pEditor, vecLineNumbers, "live", pszNewLabelName);
+
         if (!fLabelFound)
             hrc = E_FAIL;;
 
@@ -1218,7 +1211,7 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
         {
             /* Modify the content of default lines so that they point to label we have chosen above. */
             Utf8Str strNewContent("default ");
-            strNewContent.append(pszNewLabel);
+            strNewContent.append(pszNewLabelName);
 
             std::vector<size_t> vecDefaultLineNumbers = pEditor->findTemplate("default", RTCString::CaseInsensitive);
             if (!vecDefaultLineNumbers.empty())
@@ -1242,6 +1235,33 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
         return E_OUTOFMEMORY;
     }
     return UnattendedLinuxInstaller::editIsoLinuxCommon(pEditor);
+}
+
+bool UnattendedDebianInstaller::modifyLabelLine(GeneralTextScript *pEditor, const std::vector<size_t> &vecLineNumbers,
+                                                const char *pszKeyWord, const char *pszNewLabelName)
+{
+    if (!pEditor)
+        return false;
+    Utf8Str strNewLabel("label ");
+    strNewLabel.append(pszNewLabelName);
+    HRESULT hrc = S_OK;
+    for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+    {
+        RTCString const &rContent = pEditor->getContentOfLine(vecLineNumbers[i]);
+        /* Skip this line if it does not start with the word 'label'. */
+        if (!RTStrIStartsWith(rContent.c_str(), "label"))
+            continue;
+        /* Use the first menu item starting with word label and includes pszKeyWord.*/
+        if (RTStrIStr(rContent.c_str(), pszKeyWord) != NULL)
+        {
+            /* Set the content of the line. It looks like multiple word labels (like label Debian Installer)
+             * does not work very well in some cases. */
+            hrc = pEditor->setContentOfLine(vecLineNumbers[i], strNewLabel);
+            if (SUCCEEDED(hrc))
+                return true;
+        }
+    }
+    return false;
 }
 
 HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor)
