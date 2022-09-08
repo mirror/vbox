@@ -184,7 +184,7 @@ private:
         /** Refreshes everything. */
         void refreshAll();
         /** Populates snapshot items for corresponding @a comSnapshot using @a pItem as parent. */
-        void populateSnapshots(const CSnapshot &comSnapshot, QITreeWidgetItem *pItem);
+        void populateSnapshots(const QUuid &uMachineId, const CSnapshot &comSnapshot, QITreeWidgetItem *pItem);
 
         /** Cleanups all. */
         void cleanup();
@@ -223,18 +223,16 @@ private:
     /** @name General variables.
       * @{ */
         /** Holds the action-pool reference. */
-        UIActionPool  *m_pActionPool;
+        UIActionPool *m_pActionPool;
         /** Holds whether we should show toolbar. */
-        bool           m_fShowToolbar;
-        /** Holds the COM machine object. */
-        CMachine       m_comMachine;
-        /** Holds the machine object ID. */
-        QUuid        m_uMachineId;
-        /** Holds the cached session state. */
-        KSessionState  m_enmSessionState;
+        bool          m_fShowToolbar;
 
-        /** Holds whether the snapshot operations are allowed. */
-        bool  m_fShapshotOperationsAllowed;
+        /** Holds the COM machine object list. */
+        QMap<QUuid, CMachine>       m_machines;
+        /** Holds the cached session state list. */
+        QMap<QUuid, KSessionState>  m_sessionStates;
+        /** Holds the list of operation allowance states. */
+        QMap<QUuid, bool>           m_operationAllowed;
 
         /** Holds the snapshot item editing protector. */
         QReadWriteLock *m_pLockReadWrite;
@@ -258,10 +256,11 @@ private:
 
         /** Holds the snapshot tree instance. */
         UISnapshotTree *m_pSnapshotTree;
-        /** Holds the "current snapshot" item reference. */
-        UISnapshotItem *m_pCurrentSnapshotItem;
-        /** Holds the "current state" item reference. */
-        UISnapshotItem *m_pCurrentStateItem;
+
+        /** Holds the "current snapshot" item list. */
+        QMap<QUuid, UISnapshotItem*>  m_currentSnapshotItems;
+        /** Holds the "current state" item list. */
+        QMap<QUuid, UISnapshotItem*>  m_currentStateItems;
 
         /** Holds the details-widget instance. */
         UISnapshotDetailsWidget *m_pDetailsWidget;
