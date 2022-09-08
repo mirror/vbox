@@ -779,14 +779,14 @@ void UISnapshotDetailsWidget::retranslateButtons()
 
 void UISnapshotDetailsWidget::sltHandleNameChange()
 {
-    m_newData.m_strName = m_pEditorName->text();
+    m_newData.setName(m_pEditorName->text());
     revalidate(m_pErrorPaneName);
     updateButtonStates();
 }
 
 void UISnapshotDetailsWidget::sltHandleDescriptionChange()
 {
-    m_newData.m_strDescription = m_pBrowserDescription->toPlainText();
+    m_newData.setDescription(m_pBrowserDescription->toPlainText());
     revalidate(m_pErrorPaneDescription);
     updateButtonStates();
 }
@@ -1149,8 +1149,8 @@ UISnapshotDetailsElement *UISnapshotDetailsWidget::createDetailsElement(DetailsE
 void UISnapshotDetailsWidget::loadSnapshotData()
 {
     /* Read general snapshot properties: */
-    m_pEditorName->setText(m_newData.m_strName);
-    m_pBrowserDescription->setText(m_newData.m_strDescription);
+    m_pEditorName->setText(m_newData.name());
+    m_pBrowserDescription->setText(m_newData.description());
     revalidate();
 
     /* If there is a machine: */
@@ -1196,7 +1196,7 @@ void UISnapshotDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
 {
     if (!pWidget || pWidget == m_pErrorPaneName)
     {
-        const bool fError = m_newData.m_strName.isEmpty();
+        const bool fError = m_newData.name().isEmpty();
         m_pErrorPaneName->setVisible(fError && m_comMachine.isNull());
     }
     if (!pWidget || pWidget == m_pErrorPaneDescription)

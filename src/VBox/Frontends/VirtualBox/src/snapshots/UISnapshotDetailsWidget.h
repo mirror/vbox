@@ -58,14 +58,26 @@ class QIDialogButtonBox;
 class UISnapshotDetailsElement;
 
 
-/** Snapshot pane: Snapshot data structure. */
-struct UIDataSnapshot
+/** Snapshot pane: Snapshot data. */
+class UIDataSnapshot
 {
+public:
+
     /** Constructs data. */
     UIDataSnapshot()
         : m_strName(QString())
         , m_strDescription(QString())
     {}
+
+    /** Returns name. */
+    QString name() const { return m_strName; }
+    /** Defines @a strName. */
+    void setName(const QString &strName) { m_strName = strName; }
+
+    /** Returns description. */
+    QString description() const { return m_strDescription; }
+    /** Defines @a strDescription. */
+    void setDescription(const QString &strDescription) { m_strDescription = strDescription; }
 
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSnapshot &other) const
@@ -81,10 +93,12 @@ struct UIDataSnapshot
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSnapshot &other) const { return !equal(other); }
 
-    /** Holds the snapshot name. */
-    QString m_strName;
-    /** Holds the snapshot description. */
-    QString m_strDescription;
+protected:
+
+    /** Holds the name. */
+    QString  m_strName;
+    /** Holds the description. */
+    QString  m_strDescription;
 };
 
 

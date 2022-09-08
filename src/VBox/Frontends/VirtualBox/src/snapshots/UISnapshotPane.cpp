@@ -86,14 +86,22 @@ public:
     static const UISnapshotItem *toSnapshotItem(const QTreeWidgetItem *pItem);
 
     /** Constructs normal snapshot item (child of tree-widget). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CSnapshot &comSnapshot);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                   QITreeWidget *pTreeWidget,
+                   const CSnapshot &comSnapshot);
     /** Constructs normal snapshot item (child of tree-widget-item). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CSnapshot &comSnapshot);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                   QITreeWidgetItem *pRootItem,
+                   const CSnapshot &comSnapshot);
 
     /** Constructs "current state" item (child of tree-widget). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CMachine &comMachine);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                   QITreeWidget *pTreeWidget,
+                   const CMachine &comMachine);
     /** Constructs "current state" item (child of tree-widget-item). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CMachine &comMachine);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                   QITreeWidgetItem *pRootItem,
+                   const CMachine &comMachine);
 
     /** Returns item machine. */
     CMachine machine() const { return m_comMachine; }
@@ -199,7 +207,9 @@ const UISnapshotItem *UISnapshotItem::toSnapshotItem(const QTreeWidgetItem *pIte
     return qobject_cast<const UISnapshotItem*>(pIItem);
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                               QITreeWidget *pTreeWidget,
+                               const CSnapshot &comSnapshot)
     : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(false)
@@ -211,7 +221,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
 {
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CSnapshot &comSnapshot)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                               QITreeWidgetItem *pRootItem,
+                               const CSnapshot &comSnapshot)
     : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(false)
@@ -223,7 +235,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
 {
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CMachine &comMachine)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                               QITreeWidget *pTreeWidget,
+                               const CMachine &comMachine)
     : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(true)
@@ -243,7 +257,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
     setMachineState(m_comMachine.GetState());
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CMachine &comMachine)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget,
+                               QITreeWidgetItem *pRootItem,
+                               const CMachine &comMachine)
     : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(true)
@@ -451,7 +467,7 @@ void UISnapshotItem::recacheToolTip()
 
     /* Prepare tool-tip: */
     QString strToolTip = QString("<nobr><b>%1</b>%2</nobr><br><nobr>%3</nobr>")
-                             .arg(text(Column_Name)).arg(strDetails).arg(strDateTime);
+                             .arg(name()).arg(strDetails).arg(strDateTime);
 
     /* Append description if any: */
     if (!m_strDescription.isEmpty())
@@ -967,8 +983,8 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
 
         /* Take snapshot: */
         UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(m_comMachine,
-                                                                                                   newData.m_strName,
-                                                                                                   newData.m_strDescription);
+                                                                                                   newData.name(),
+                                                                                                   newData.description());
         gpNotificationCenter->append(pNotification);
     }
     /* For snapshot items: */
@@ -1002,23 +1018,23 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
             do
             {
                 /* Save snapshot name: */
-                if (newData.m_strName != oldData.m_strName)
+                if (newData.name() != oldData.name())
                 {
-                    comSnapshot.SetName(newData.m_strName);
+                    comSnapshot.SetName(newData.name());
                     if (!comSnapshot.isOk())
                     {
-                        UINotificationMessage::cannotChangeSnapshot(comSnapshot, oldData.m_strName, comMachine.GetName());
+                        UINotificationMessage::cannotChangeSnapshot(comSnapshot, oldData.name(), comMachine.GetName());
                         break;
                     }
                 }
 
                 /* Save snapshot description: */
-                if (newData.m_strDescription != oldData.m_strDescription)
+                if (newData.description() != oldData.description())
                 {
-                    comSnapshot.SetDescription(newData.m_strDescription);
+                    comSnapshot.SetDescription(newData.description());
                     if (!comSnapshot.isOk())
                     {
-                        UINotificationMessage::cannotChangeSnapshot(comSnapshot, oldData.m_strName, comMachine.GetName());
+                        UINotificationMessage::cannotChangeSnapshot(comSnapshot, oldData.name(), comMachine.GetName());
                         break;
                     }
                 }
@@ -1125,7 +1141,7 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
         if (comSnapshot.isNotNull())
         {
             /* Rename corresponding snapshot if necessary: */
-            if (comSnapshot.GetName() != pSnapshotItem->text(Column_Name))
+            if (comSnapshot.GetName() != pSnapshotItem->name())
             {
                 /* We need to open a session when we manipulate the snapshot data of a machine: */
                 CSession comSession = uiCommon().openExistingSession(comSnapshot.GetMachine().GetId());
@@ -1134,7 +1150,7 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
                     /// @todo Add settings save validation.
 
                     /* Save snapshot name: */
-                    comSnapshot.SetName(pSnapshotItem->text(Column_Name));
+                    comSnapshot.SetName(pSnapshotItem->name());
 
                     /* Close the session again: */
                     comSession.UnlockMachine();
@@ -1546,7 +1562,7 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
     QTreeWidgetItemIterator iterator(m_pSnapshotTree);
     while (*iterator)
     {
-        const QString strName = static_cast<UISnapshotItem*>(*iterator)->text(Column_Name);
+        const QString strName = static_cast<UISnapshotItem*>(*iterator)->name();
         const int iPosition = reName.indexIn(strName);
         if (iPosition != -1)
             iMaximumIndex = reName.cap(1).toInt() > iMaximumIndex
