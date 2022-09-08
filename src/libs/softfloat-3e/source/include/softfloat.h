@@ -299,6 +299,9 @@ extFloat80_t extF80_rem( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA )
 extFloat80_t extF80_partialRem( extFloat80_t a, extFloat80_t b, uint8_t roundingMode,                   /* VBox: FPREM/FPREM1 */
                                 uint16_t *pfCxFlags, softfloat_state_t *pState );                       /* VBox: FPREM/FPREM1 */
 extFloat80_t extF80_sqrt( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
+extFloat80_t extF80_sin( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
+extFloat80_t extF80_cos( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
+void extF80_sincos( extFloat80_t, extFloat80_t*, extFloat80_t* SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_scale_extF80( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_eq( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_le( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
