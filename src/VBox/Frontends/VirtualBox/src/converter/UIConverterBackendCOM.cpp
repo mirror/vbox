@@ -63,6 +63,7 @@ template<> bool canConvert<KAuthType>() { return true; }
 template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
+template<> bool canConvert<KTpmType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
 template<> bool canConvert<KGuestSessionStatus>() { return true; }
 template<> bool canConvert<KProcessStatus>() { return true; }
@@ -719,6 +720,21 @@ template<> QString toString(const KChipsetType &type)
     {
         case KChipsetType_PIIX3: return QApplication::translate("UICommon", "PIIX3", "ChipsetType");
         case KChipsetType_ICH9:  return QApplication::translate("UICommon", "ICH9", "ChipsetType");
+        default: AssertMsgFailed(("No text for %d", type)); break;
+    }
+    return QString();
+}
+
+/* QString <= KTpmType: */
+template<> QString toString(const KTpmType &type)
+{
+    switch (type)
+    {
+        case KTpmType_None:  return QApplication::translate("UICommon", "None", "TpmType");
+        case KTpmType_v1_2:  return QApplication::translate("UICommon", "v1.2", "TpmType");
+        case KTpmType_v2_0:  return QApplication::translate("UICommon", "v2.0", "TpmType");
+        case KTpmType_Host:  return QApplication::translate("UICommon", "Host", "TpmType");
+        case KTpmType_Swtpm: return QApplication::translate("UICommon", "SWTPM", "TpmType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();

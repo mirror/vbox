@@ -42,11 +42,13 @@
 #include "UIParavirtProviderEditor.h"
 #include "UIPointingHIDEditor.h"
 #include "UIProcessorFeaturesEditor.h"
+#include "UITpmEditor.h"
 #include "UITranslator.h"
 #include "UIVirtualCPUEditor.h"
 
 /* COM includes: */
 #include "CBIOSSettings.h"
+#include "CTrustedPlatformModule.h"
 
 
 /** Machine settings: System page data structure. */
@@ -91,6 +93,7 @@ struct UIDataSettingsMachineSystem
                && (m_iMemorySize == other.m_iMemorySize)
                && (m_bootItems == other.m_bootItems)
                && (m_chipsetType == other.m_chipsetType)
+               && (m_tpmType == other.m_tpmType)
                && (m_pointingHIDType == other.m_pointingHIDType)
                && (m_fEnabledIoApic == other.m_fEnabledIoApic)
                && (m_fEnabledEFI == other.m_fEnabledEFI)
@@ -127,6 +130,8 @@ struct UIDataSettingsMachineSystem
     UIBootItemDataList  m_bootItems;
     /** Holds the chipset type. */
     KChipsetType        m_chipsetType;
+    /** Holds the TPM type. */
+    KTpmType            m_tpmType;
     /** Holds the pointing HID type. */
     KPointingHIDType    m_pointingHIDType;
     /** Holds whether the IO APIC is enabled. */
@@ -162,6 +167,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_pEditorBaseMemory(0)
     , m_pEditorBootOrder(0)
     , m_pEditorChipset(0)
+    , m_pEditorTpm(0)
     , m_pEditorPointingHID(0)
     , m_pEditorMotherboardFeatures(0)
     , m_pTabProcessor(0)
@@ -266,6 +272,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
     oldSystemData.m_bootItems = loadBootItems(m_machine);
     oldSystemData.m_chipsetType = m_machine.GetChipsetType();
+    oldSystemData.m_tpmType = m_machine.GetTrustedPlatformModule().GetType();
     oldSystemData.m_pointingHIDType = m_machine.GetPointingHIDType();
     oldSystemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
     oldSystemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
@@ -305,6 +312,8 @@ void UIMachineSettingsSystem::getFromCache()
         m_pEditorBootOrder->setValue(oldSystemData.m_bootItems);
     if (m_pEditorChipset)
         m_pEditorChipset->setValue(oldSystemData.m_chipsetType);
+    if (m_pEditorTpm)
+        m_pEditorTpm->setValue(oldSystemData.m_tpmType);
     if (m_pEditorPointingHID)
         m_pEditorPointingHID->setValue(oldSystemData.m_pointingHIDType);
     if (m_pEditorMotherboardFeatures)
@@ -363,6 +372,8 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_bootItems = m_pEditorBootOrder->value();
     if (m_pEditorChipset)
         newSystemData.m_chipsetType = m_pEditorChipset->value();
+    if (m_pEditorTpm)
+        newSystemData.m_tpmType = m_pEditorTpm->value();
     if (m_pEditorPointingHID)
         newSystemData.m_pointingHIDType = m_pEditorPointingHID->value();
     if (   m_pEditorMotherboardFeatures
@@ -601,7 +612,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pTabWidget->focusProxy(), m_pEditorBaseMemory);
     setTabOrder(m_pEditorBaseMemory, m_pEditorBootOrder);
     setTabOrder(m_pEditorBootOrder, m_pEditorChipset);
-    setTabOrder(m_pEditorChipset, m_pEditorPointingHID);
+    setTabOrder(m_pEditorChipset, m_pEditorTpm);
+    setTabOrder(m_pEditorTpm, m_pEditorPointingHID);
     setTabOrder(m_pEditorPointingHID, m_pEditorMotherboardFeatures);
     setTabOrder(m_pEditorMotherboardFeatures, m_pEditorVCPU);
 
@@ -625,11 +637,13 @@ void UIMachineSettingsSystem::retranslateUi()
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBaseMemory->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBootOrder->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorTpm->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorPointingHID->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMotherboardFeatures->minimumLabelHorizontalHint());
     m_pEditorBaseMemory->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorBootOrder->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorTpm->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorPointingHID->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorMotherboardFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
     iMinimumLayoutHint = 0;
@@ -655,6 +669,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pEditorBaseMemory->setEnabled(isMachineOffline());
     m_pEditorBootOrder->setEnabled(isMachineOffline());
     m_pEditorChipset->setEnabled(isMachineOffline());
+    m_pEditorTpm->setEnabled(isMachineOffline());
     m_pEditorPointingHID->setEnabled(isMachineOffline());
     m_pEditorMotherboardFeatures->setEnabled(isMachineOffline());
 
@@ -733,7 +748,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
         if (pLayoutMotherboard)
         {
             pLayoutMotherboard->setColumnStretch(1, 1);
-            pLayoutMotherboard->setRowStretch(5, 1);
+            pLayoutMotherboard->setRowStretch(6, 1);
 
             /* Prepare base memory editor: */
             m_pEditorBaseMemory = new UIBaseMemoryEditor(m_pTabMotherboard);
@@ -750,15 +765,20 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             if (m_pEditorChipset)
                 pLayoutMotherboard->addWidget(m_pEditorChipset, 2, 0);
 
+            /* Prepare TPM editor: */
+            m_pEditorTpm = new UITpmEditor(m_pTabMotherboard);
+            if (m_pEditorTpm)
+                pLayoutMotherboard->addWidget(m_pEditorTpm, 3, 0);
+
             /* Prepare pointing HID editor: */
             m_pEditorPointingHID = new UIPointingHIDEditor(m_pTabMotherboard);
             if (m_pEditorPointingHID)
-                pLayoutMotherboard->addWidget(m_pEditorPointingHID, 3, 0);
+                pLayoutMotherboard->addWidget(m_pEditorPointingHID, 4, 0);
 
             /* Prepare motherboard features editor: */
             m_pEditorMotherboardFeatures = new UIMotherboardFeaturesEditor(m_pTabMotherboard);
             if (m_pEditorMotherboardFeatures)
-                pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 4, 0);
+                pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 5, 0);
         }
 
         m_pTabWidget->addTab(m_pTabMotherboard, QString());
@@ -830,6 +850,8 @@ void UIMachineSettingsSystem::prepareConnections()
 {
     /* Configure 'Motherboard' connections: */
     connect(m_pEditorChipset, &UIChipsetEditor::sigValueChanged,
+            this, &UIMachineSettingsSystem::revalidate);
+    connect(m_pEditorTpm, &UITpmEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorPointingHID, &UIPointingHIDEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
@@ -918,6 +940,14 @@ bool UIMachineSettingsSystem::saveMotherboardData()
         {
             m_machine.SetChipsetType(newSystemData.m_chipsetType);
             fSuccess = m_machine.isOk();
+        }
+        /* Save TPM type: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_tpmType != oldSystemData.m_tpmType)
+        {
+            CTrustedPlatformModule comModule = m_machine.GetTrustedPlatformModule();
+            comModule.SetType(newSystemData.m_tpmType);
+            fSuccess = comModule.isOk();
+            /// @todo convey error info ..
         }
         /* Save pointing HID type: */
         if (fSuccess && isMachineOffline() && newSystemData.m_pointingHIDType != oldSystemData.m_pointingHIDType)

@@ -166,6 +166,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<KAuthType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageBus>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageControllerType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KChipsetType>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<KTpmType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KNATProtocol>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KGuestSessionStatus>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KProcessStatus>();
@@ -336,6 +337,7 @@ template<> SHARED_LIBRARY_STUFF KStorageBus fromString<KStorageBus>(const QStrin
 template<> SHARED_LIBRARY_STUFF QString toString(const KStorageControllerType &type);
 template<> SHARED_LIBRARY_STUFF KStorageControllerType fromString<KStorageControllerType>(const QString &strType);
 template<> SHARED_LIBRARY_STUFF QString toString(const KChipsetType &type);
+template<> SHARED_LIBRARY_STUFF QString toString(const KTpmType &type);
 template<> SHARED_LIBRARY_STUFF QString toString(const KNATProtocol &protocol);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const KNATProtocol &protocol);
 template<> SHARED_LIBRARY_STUFF KNATProtocol fromInternalString<KNATProtocol>(const QString &strProtocol);
