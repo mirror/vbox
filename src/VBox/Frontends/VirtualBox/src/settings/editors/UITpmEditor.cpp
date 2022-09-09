@@ -36,10 +36,8 @@
 #include "UIConverter.h"
 #include "UITpmEditor.h"
 
-#if 0 // no API currently
 /* COM includes: */
 #include "CSystemProperties.h"
-#endif // no API currently
 
 
 UITpmEditor::UITpmEditor(QWidget *pParent /* = 0 */)
@@ -148,15 +146,9 @@ void UITpmEditor::populateCombo()
         /* Clear combo first of all: */
         m_pCombo->clear();
 
-#if 0 // no API currently
         /* Load currently supported values: */
         CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
         m_supportedValues = comProperties.GetSupportedTpmTypes();
-#else
-        m_supportedValues = QVector<KTpmType>() << KTpmType_None
-                                                << KTpmType_v1_2
-                                                << KTpmType_v2_0;
-#endif // no API currently
 
         /* Make sure requested value if sane is present as well: */
         if (   m_enmValue != KTpmType_Max
