@@ -770,6 +770,7 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          haddps_u
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          hsubps_u128              );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          sqrtps_u128              );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          addsubps_u128            );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_TEST_T,          cvtps2pd_u128            );
 
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R32_TEST_T, addss_u128_r32           );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_U128_R32_TEST_T, mulss_u128_r32           );

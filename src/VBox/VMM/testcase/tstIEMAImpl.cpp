@@ -4499,6 +4499,7 @@ static const SSE_BINARY_R32_T g_aSseBinaryR32[] =
     ENTRY_BIN(hsubps_u128),
     ENTRY_BIN(sqrtps_u128),
     ENTRY_BIN(addsubps_u128),
+    ENTRY_BIN(cvtps2pd_u128),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
