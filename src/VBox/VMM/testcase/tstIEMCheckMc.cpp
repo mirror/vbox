@@ -493,6 +493,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_addsubps_u128          NULL
 #define iemAImpl_addsubpd_u128          NULL
 #define iemAImpl_cvtpd2ps_u128          NULL
+#define iemAImpl_cvtps2pd_u128          NULL
 #define iemAImpl_shufpd_u128            NULL
 #define iemAImpl_shufps_u128            NULL
 
