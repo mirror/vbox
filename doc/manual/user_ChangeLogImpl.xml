@@ -89,10 +89,24 @@ Rules for adding a changelog entry to make them look more uniform:
 
     <title>Version 7.0.0_BETA1 (2022-08-25)</title>
 
-    <para>This is a maintenance release. The following items were fixed and/or
-      added:</para>
+    <para>This is a major update. The following major new features were added:</para>
 
     <itemizedlist>
+
+      <listitem>
+        <para>GUI: Added a new top (of Linux) like utility which lists peformance statistics
+        (CPU usage, RAM usage, disk I/O rate, etc.) of running guests</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Reworked the new vm wizard to integrate the unattended
+        guest OS installation and to have a more streamlined work flow</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added a new help viewer widget which enables the user manual to be navigated
+        and searched</para>
+      </listitem>
 
       <listitem>
         <para>Audio recording: Now using Vorbis as the default audio format for WebM containers.
@@ -158,20 +172,11 @@ Rules for adding a changelog entry to make them look more uniform:
           added basic integration with some of guest Desktop Environments</para>
       </listitem>
 
-      <listitem>
-        <para>GUI: Added a new top (of Linux) like utility which lists peformance statistics
-        (CPU usage, RAM usage, disk I/O rate, etc.) of running guests</para>
-      </listitem>
+    </itemizedlist>
 
-      <listitem>
-        <para>GUI: Reworked the new vm wizard to integrate the unattended
-        guest OS installation and to have a more streamlined work flow</para>
-      </listitem>
+    <para>In addition, the following items were fixed and/or added:</para>
 
-      <listitem>
-        <para>GUI: Added a new help viewer widget which enables the user manual to be navigated
-        and searched</para>
-      </listitem>
+    <itemizedlist>
 
       <listitem>
         <para>GUI: Improved behavior of the virtual machine list in case multiple items
@@ -180,6 +185,14 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>GUI: On available platforms, added a new option to disable the host's screensaver</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Reworked the wizards to improve stability and usability</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Improved accessibility</para>
       </listitem>
 
     </itemizedlist>
