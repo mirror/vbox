@@ -173,7 +173,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>Devices: Added virtual IOMMU support (Intel and AMD variant)</para>
+        <para>Devices: Added virtual IOMMU devices (Intel and AMD variant)</para>
       </listitem>
     </itemizedlist>
 
