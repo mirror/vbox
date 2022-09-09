@@ -288,6 +288,126 @@ cleanup_modules()
     rm -f "$SKIPFILE_BASE"-*
 }
 
+# Secure boot state.
+case "`mokutil --sb-state 2>/dev/null`" in
+    *"disabled in shim"*) unset HAVE_SEC_BOOT;;
+    *"SecureBoot enabled"*) HAVE_SEC_BOOT=true;;
+    *) unset HAVE_SEC_BOOT;;
+esac
+# So far we can only sign modules on Ubuntu and on Debian 10 and later.
+DEB_PUB_KEY=/var/lib/shim-signed/mok/MOK.der
+DEB_PRIV_KEY=/var/lib/shim-signed/mok/MOK.priv
+# Check if key already enrolled.
+unset HAVE_DEB_KEY
+case "`mokutil --test-key "$DEB_PUB_KEY" 2>/dev/null`" in
+    *"is already"*) DEB_KEY_ENROLLED=true;;
+    *) unset DEB_KEY_ENROLLED;;
+esac
+
+# Try to find a tool for modules signing.
+SIGN_TOOL=$(which kmodsign 2>/dev/null)
+# Attempt to use in-kernel signing tool if kmodsign not found.
+if test -z "$SIGN_TOOL"; then
+    if test -x "/lib/modules/$KERN_VER/build/scripts/sign-file"; then
+        SIGN_TOOL="/lib/modules/$KERN_VER/build/scripts/sign-file"
+    fi
+fi
+
+if type update-secureboot-policy >/dev/null 2>&1; then
+    HAVE_UPDATE_SECUREBOOT_POLICY_TOOL=true
+fi
+
+# Reads CONFIG_MODULE_SIG_HASH from kernel config.
+kernel_module_sig_hash()
+{
+    /lib/modules/"$KERN_VER"/build/scripts/config \
+        --file /lib/modules/"$KERN_VER"/build/.config \
+        --state CONFIG_MODULE_SIG_HASH 2>/dev/null
+}
+
+# Returns "1" if kernel module signature hash algorithm
+# is supported by us. Or empty string otherwise.
+module_sig_hash_supported()
+{
+    sig_hashalgo="$1"
+    [ -n "$sig_hashalgo" ] || return
+
+    # Go through supported list.
+    [    "$sig_hashalgo" = "sha1"   \
+      -o "$sig_hashalgo" = "sha224" \
+      -o "$sig_hashalgo" = "sha256" \
+      -o "$sig_hashalgo" = "sha384" \
+      -o "$sig_hashalgo" = "sha512" ] || return
+
+    echo "1"
+}
+
+sign_modules()
+{
+    KERN_VER="$1"
+    test -n "$KERN_VER" || return 1
+
+    # Make list of mudules to sign.
+    MODULE_LIST="vboxguest vboxsf"
+    # vboxvideo might not present on for older kernels.
+    [ -f "/lib/modules/"$KERN_VER"/misc/vboxvideo.ko" ] && MODULE_LIST="$MODULE_LIST vboxvideo"
+
+    # Secure boot on Ubuntu, Debian and Oracle Linux.
+    if test -n "$HAVE_SEC_BOOT"; then
+        begin "Signing VirtualBox Guest Additions kernel modules"
+
+        # Generate new signing key if needed.
+        [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && SHIM_NOTRIGGER=y update-secureboot-policy --new-key
+
+        # Check if signing keys are in place.
+        if test ! -f "$DEB_PUB_KEY" || ! test -f "$DEB_PRIV_KEY"; then
+            # update-secureboot-policy tool present in the system, but keys were not generated.
+            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && failure "Unable to find signing keys, aborting"
+            # update-secureboot-policy not present in the system, recommend generate keys manually.
+            fail "
+
+System is running in Secure Boot mode, however your distribution
+does not provide tools for automatic generation of keys needed for
+modules signing. Please consider to generate and enroll them manually:
+
+    sudo mkdir -p /var/lib/shim-signed/mok
+    sudo openssl req -nodes -new -x509 -newkey rsa:2048 -outform DER -keyout $DEB_PRIV_KEY -out $DEB_PUB_KEY
+    sudo sudo mokutil --import $DEB_PUB_KEY
+    sudo reboot
+
+Restart \"rcvboxadd setup\" after system is rebooted.
+"
+        fi
+
+        # Check if signing tool is available.
+        [ -n "$SIGN_TOOL" ] || fail "Unable to find signing tool"
+
+        # Get kernel signature hash algorithm from kernel config and validate it.
+        sig_hashalgo=$(kernel_module_sig_hash)
+        [ "$(module_sig_hash_supported $sig_hashalgo)" = "1" ] \
+            || failure "Unsupported kernel signature hash algorithm $sig_hashalgo"
+
+        # Sign modules.
+        for i in $MODULE_LIST; do
+            "$SIGN_TOOL" "$sig_hashalgo" "$DEB_PRIV_KEY" "$DEB_PUB_KEY" \
+                /lib/modules/"$KERN_VER"/misc/"$i".ko || fail "Unable to sign $i.ko"
+        done
+        # Enroll signing key if needed.
+        if test -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL"; then
+            # update-secureboot-policy "expects" DKMS modules.
+            # Work around this and talk to the authors as soon
+            # as possible to fix it.
+            mkdir -p /var/lib/dkms/vbox-temp
+            update-secureboot-policy --enroll-key 2>/dev/null ||
+                fail "Failed to enroll secure boot key."
+            rmdir -p /var/lib/dkms/vbox-temp 2>/dev/null
+
+            # Indicate that key has been enrolled and reboot is needed.
+            HAVE_DEB_KEY=true
+        fi
+    fi
+}
+
 # Build and install the VirtualBox guest kernel modules
 setup_modules()
 {
@@ -295,7 +415,7 @@ setup_modules()
     test -n "$KERN_VER" || return 1
     # Match (at least): vboxguest.o; vboxguest.ko; vboxguest.ko.xz
     set /lib/modules/"$KERN_VER"/misc/vboxguest.*o*
-    test ! -f "$1" || return 0
+    #test ! -f "$1" || return 0
     test -d /lib/modules/"$KERN_VER"/build || return 0
     export KERN_VER
     info "Building the modules for kernel $KERN_VER."
@@ -342,6 +462,9 @@ setup_modules()
     echo "override vboxguest * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     echo "override vboxsf * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
     echo "override vboxvideo * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
+
+    sign_modules "${KERN_VER}"
+
     update_initramfs "${KERN_VER}"
     return 0
 }
@@ -457,6 +580,54 @@ module_revision()
     modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
 }
 
+
+# Returns "1" if module is signed and signature can be verified
+# with public key provided in DEB_PUB_KEY. Or empty string otherwise.
+module_signed()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    extraction_tool=/lib/modules/"$(uname -r)"/build/scripts/extract-module-sig.pl
+    mod_path=$(module_path "$mod" 2>/dev/null)
+    openssl_tool=$(which openssl 2>/dev/null)
+    # Do not use built-in printf!
+    printf_tool=$(which printf 2>/dev/null)
+
+    # Make sure all the tools required for signature validation are available.
+    [ -x "$extraction_tool" ] || return
+    [ -n "$mod_path"        ] || return
+    [ -n "$openssl_tool"    ] || return
+    [ -n "$printf_tool"     ] || return
+
+    # Make sure openssl can handle hash algorithm.
+    sig_hashalgo=$(modinfo -F sig_hashalgo vboxdrv 2>/dev/null)
+    [ "$(module_sig_hash_supported $sig_hashalgo)" = "1" ] || return
+
+    # Generate file names for temporary stuff.
+    mod_pub_key=$(mktemp -u)
+    mod_signature=$(mktemp -u)
+    mod_unsigned=$(mktemp -u)
+
+    # Convert public key in DER format into X509 certificate form.
+    "$openssl_tool" x509 -pubkey -inform DER -in "$DEB_PUB_KEY" -out "$mod_pub_key" 2>/dev/null
+    # Extract raw module signature and convert it into binary format.
+    "$printf_tool" \\x$(modinfo -F signature "$mod" | sed -z 's/[ \t\n]//g' | sed -e "s/:/\\\x/g") 2>/dev/null > "$mod_signature"
+    # Extract unsigned module for further digest calculation.
+    "$extraction_tool" -0 "$mod_path" 2>/dev/null > "$mod_unsigned"
+
+    # Verify signature.
+    rc=""
+    "$openssl_tool" dgst "-$sig_hashalgo" -binary -verify "$mod_pub_key" -signature "$mod_signature" "$mod_unsigned" 2>&1 >/dev/null && rc="1"
+    # Clean up.
+    rm -f $mod_pub_key $mod_signature $mod_unsigned
+
+    # Check result.
+    [ "$rc" = "1" ] || return
+
+    echo "1"
+}
+
 # Returns "1" if externally built module is available in the system and its
 # version and revision number do match to current VirtualBox installation.
 # Or empty string otherwise.
@@ -486,6 +657,11 @@ module_available()
     mod_dir="$(dirname "$mod_path" | sed 's;^.*/;;')"
     [ "$mod_dir" = "misc" ] || return
 
+    # In case if system is running in Secure Boot mode, check if module is signed.
+    if test -n "$HAVE_SEC_BOOT"; then
+        [ "$(module_signed "$mod")" = "1" ] || return
+    fi
+
     echo "1"
 }
 
@@ -502,6 +678,8 @@ setup_complete()
 # setup_script
 setup()
 {
+    info "Setting up modules"
+
     # chcon is needed on old Fedora/Redhat systems.  No one remembers which.
     test ! -e /etc/selinux/config ||
         chcon -t bin_t "$BUILDINTMP" 2>/dev/null
@@ -510,8 +688,8 @@ setup()
         # Check whether modules setup is already complete for currently running kernel.
         # Prevent unnecessary rebuilding in order to speed up booting process.
         if test "$(setup_complete)" = "1"; then
-            info "VirtualBox Guest Additions kernel modules $VBOX_VERSION $VBOX_REVISION are"
-            info "already available for kernel $TARGET_VER and do not require to be rebuilt."
+            info "VirtualBox Guest Additions kernel modules $VBOX_VERSION $VBOX_REVISION are \
+already available for kernel $TARGET_VER and do not require to be rebuilt."
         else
             info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
             info "To build modules for other installed kernels, run"
@@ -589,6 +767,19 @@ start()
         done
     fi
     setup
+
+    # Warn if Secure Boot setup not yet complete.
+    if test -n "$HAVE_SEC_BOOT" && test -z "$DEB_KEY_ENROLLED"; then
+        if test -n "$HAVE_DEB_KEY"; then
+            info "You must re-start your system to finish secure boot set-up."
+        else
+            info "You must sign vboxguest, vboxsf and
+vboxvideo (if present) kernel modules before using
+VirtualBox Guest Additions. See the documentation
+for your Linux distribution."
+        fi
+    fi
+
     if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
         test -d /sys &&
             ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
