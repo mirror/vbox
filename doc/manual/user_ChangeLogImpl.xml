@@ -172,9 +172,9 @@ Rules for adding a changelog entry to make them look more uniform:
           added basic integration with some of guest Desktop Environments</para>
       </listitem>
 
-	  <listitem>
-		<para>Devices: Added virtual IOMMU support (Intel and AMD variant)</para>
-	  </listitem>
+      <listitem>
+        <para>Devices: Added virtual IOMMU support (Intel and AMD variant)</para>
+      </listitem>
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
