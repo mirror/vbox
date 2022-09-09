@@ -12394,7 +12394,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="068decf8-335d-4ec5-8265-ccfd910c4f9d"
+    uuid="aac6c7cb-a371-4c58-ab51-0616896b2f2c"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12953,6 +12953,13 @@
     <attribute name="supportedIommuTypes" type="IommuType" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="IommuType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedTpmTypes" type="TpmType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="TpmType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>

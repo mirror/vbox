@@ -1956,6 +1956,19 @@ HRESULT SystemProperties::getSupportedIommuTypes(std::vector<IommuType_T> &aSupp
     return S_OK;
 }
 
+HRESULT SystemProperties::getSupportedTpmTypes(std::vector<TpmType_T> &aSupportedTpmTypes)
+{
+    static const TpmType_T aTpmTypes[] =
+    {
+        TpmType_None,
+        TpmType_v1_2,
+        TpmType_v2_0
+    };
+    aSupportedTpmTypes.assign(aTpmTypes,
+                              aTpmTypes + RT_ELEMENTS(aTpmTypes));
+    return S_OK;
+}
+
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////

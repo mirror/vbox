@@ -156,6 +156,7 @@ private:
     HRESULT getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes) RT_OVERRIDE;
     HRESULT getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes) RT_OVERRIDE;
     HRESULT getSupportedIommuTypes(std::vector<IommuType_T> &aSupportedIommuTypes) RT_OVERRIDE;
+    HRESULT getSupportedTpmTypes(std::vector<TpmType_T> &aSupportedTpmTypes) RT_OVERRIDE;
     HRESULT getLanguageId(com::Utf8Str &aLanguageId) RT_OVERRIDE;
     HRESULT setLanguageId(const com::Utf8Str &aLanguageId) RT_OVERRIDE;
 
