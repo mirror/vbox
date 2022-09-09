@@ -5245,7 +5245,7 @@ DECLINLINE(uint16_t) iemFpuSoftF128ToFloat80(PRTFLOAT80U pr80Dst, float128_t r12
     else if (RTFLOAT128U_IS_INF(&Tmp))
     {
         pr80Dst->s.fSign     = Tmp.s64.fSign;
-        pr80Dst->s.uExponent = 0;
+        pr80Dst->s.uExponent = 0x7fff;
         pr80Dst->s.uMantissa = 0;
     }
     return fFsw;
