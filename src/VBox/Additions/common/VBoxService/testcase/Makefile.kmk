@@ -29,16 +29,14 @@ SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
-# Target lists.
-#
-PROGRAMS.win += tstUserInfo
-
-#
 # tstUserInfo
 #
+PROGRAMS.win += tstUserInfo
 tstUserInfo_TEMPLATE    = VBoxGuestR3Exe
 tstUserInfo_SOURCES     = \
 	tstUserInfo.cpp
+tstUserInfo_VBOX_IMPORT_CHECKER.win.x86 = xp
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

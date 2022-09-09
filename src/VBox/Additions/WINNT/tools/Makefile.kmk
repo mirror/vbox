@@ -32,12 +32,13 @@ include $(KBUILD_PATH)/subheader.kmk
 # Certificate utility.
 #
 PROGRAMS += VBoxCertUtil
-
 VBoxCertUtil_TEMPLATE = VBoxGuestR3Exe
 VBoxCertUtil_SOURCES = \
 	VBoxCertUtil.cpp
 VBoxCertUtil_LIBS = \
 	crypt32.lib
+VBoxCertUtil_VBOX_IMPORT_CHECKER.win.x86 = w2k
+
 $(call VBOX_SET_VER_INFO_EXE,VBoxCertUtil,VirtualBox Certificate Utility,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))
 
 

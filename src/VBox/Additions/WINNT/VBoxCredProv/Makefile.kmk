@@ -47,13 +47,11 @@ VBoxCredProv_SOURCES  = \
 	VBoxCredProvCredential.cpp \
 	VBoxCredProvPoller.cpp \
 	VBoxCredProvUtils.cpp
-
 ifdef VBOX_WITH_WIN_SENS
  # To use com::Bstr for BSTR handling.
  VBoxCredProv_SOURCES += \
-	$(PATH_ROOT)/src/VBox/Main/glue/string.cpp
+ 	$(PATH_ROOT)/src/VBox/Main/glue/string.cpp
 endif
-
 VBoxCredProv_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
@@ -61,6 +59,8 @@ VBoxCredProv_LIBS    += \
 	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/credui.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/Secur32.Lib \
 	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/NetAPI32.Lib
+VBoxCredProv_VBOX_IMPORT_CHECKER.win.x86   := vista
+VBoxCredProv_VBOX_IMPORT_CHECKER.win.amd64 := vista
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

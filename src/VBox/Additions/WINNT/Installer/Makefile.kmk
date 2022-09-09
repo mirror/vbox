@@ -36,10 +36,11 @@ include $(PATH_SUB_CURRENT)/InstallHelper/Makefile.kmk
 VBOX_PATH_WIN_ADD_INS_SRC := $(PATH_SUB_CURRENT)
 VBOX_PATH_ADDITIONS.win.x86 := $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
 VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
-
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
-
+#
+# VBoxDrvInst - Helps with driver installation.
+#
 PROGRAMS += VBoxDrvInst
 VBoxDrvInst_TEMPLATE= VBoxGuestR3Exe
 VBoxDrvInst_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
@@ -55,7 +56,12 @@ VBoxDrvInst_LIBS    = \
 VBoxDrvInst_SOURCES = \
 	VBoxDrvInst.cpp \
 	VBoxDrvInst.rc
+VBoxDrvInst_VBOX_IMPORT_CHECKER.win.x86 := nt4 # setupapi was introduced in NT4
 
+#
+# RegCleanup - A NT4 post-install registry cleanup helper preventing the
+#              display config dialog from popping up on subsequent reboots.
+#
 PROGRAMS += RegCleanup
 RegCleanup_TEMPLATE     := VBoxGuestR3Exe
 RegCleanup_BLD_TRG_ARCH := x86
@@ -63,7 +69,7 @@ RegCleanup_DEFS         := _WIN32_WINNT=0x0400
 RegCleanup_SOURCES      := \
 	RegCleanup.cpp \
 	RegCleanup.rc
-
+RegCleanup_VBOX_IMPORT_CHECKER.win.x86 := nt4
 
 #
 # The installer.
