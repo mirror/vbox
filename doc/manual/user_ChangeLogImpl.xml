@@ -158,6 +158,30 @@ Rules for adding a changelog entry to make them look more uniform:
           added basic integration with some of guest Desktop Environments</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: Added a new top (of Linux) like utility which lists peformance statistics
+        (CPU usage, RAM usage, disk I/O rate, etc.) of running guests.</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Reworked the new vm wizard to integrate the unattended
+        guest OS installation and to have a more streamlined work flow.</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added a new help viewer widget which enables the user manual to be navigated
+        and searched.</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Improved behavior of the virtual machine list in case multiple items
+        are selected.</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: On available platforms, added a new option to disable the host's screensaver</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
