@@ -6164,10 +6164,129 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80_intel,(PCX86FXSTATE pFpuState, PI
 
 
 #ifdef IEM_WITHOUT_ASSEMBLY
+
+static uint16_t iemAImpl_fsin_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80Result, uint16_t fFcw, uint16_t fFsw)
+{
+    softfloat_state_t SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
+    extFloat80_t x = iemFpuSoftF80FromIprt(pr80Val);
+    extFloat80_t v;
+    (void)fFcw;
+
+    v = extF80_sin(x, &SoftState);
+
+    iemFpuSoftF80ToIprt(pr80Result, v);
+
+    return fFsw;
+}
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | /*X86_FSW_C2 |*/ X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_ZERO(pr80Val))
+    {
+        pFpuRes->r80Result = *pr80Val;
+    }
+    else if (RTFLOAT80U_IS_NORMAL(pr80Val))
+    {
+        if (pr80Val->s.uExponent >= RTFLOAT80U_EXP_BIAS + 63)
+        {
+            fFsw |= X86_FSW_C2;
+            pFpuRes->r80Result = *pr80Val;
+        }
+        else
+        {
+            if (pr80Val->s.uExponent <= RTFLOAT80U_EXP_BIAS - 63)
+            {
+                pFpuRes->r80Result = *pr80Val;
+
+            }
+            else
+            {
+                fFsw = iemAImpl_fsin_r80_normal(pr80Val, &pFpuRes->r80Result, fFcw, fFsw);
+            }
+            fFsw |= X86_FSW_PE;
+            if (!(fFcw & X86_FCW_PM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else if (RTFLOAT80U_IS_INF(pr80Val))
+    {
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+        {
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+            pFpuRes->r80Result = *pr80Val;
+        }
+        else
+        {
+            pFpuRes->r80Result = g_r80Indefinite;
+        }
+    }
+    else if (RTFLOAT80U_IS_DENORMAL(pr80Val))
+    {
+        pFpuRes->r80Result = *pr80Val;
+        fFsw |= X86_FSW_DE;
+
+        if (fFcw & X86_FCW_DM)
+        {
+            fFsw |= X86_FSW_UE | X86_FSW_PE;
+
+            if (!(fFcw & X86_FCW_UM) || !(fFcw & X86_FCW_PM))
+            {
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+        }
+        else
+        {
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else if (RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    {
+        pFpuRes->r80Result = *pr80Val;
+        fFsw |= X86_FSW_DE;
+
+        if (fFcw & X86_FCW_DM)
+        {
+            if (fFcw & X86_FCW_PM)
+            {
+                fFsw |= X86_FSW_PE;
+            }
+            else
+            {
+                fFsw |= X86_FSW_ES | X86_FSW_B | X86_FSW_PE;
+            }
+
+            pFpuRes->r80Result.sj64.uExponent = 1;
+        }
+        else
+        {
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    } else if (   RTFLOAT80U_IS_QUIET_NAN(pr80Val)
+             || RTFLOAT80U_IS_INDEFINITE(pr80Val))
+    {
+        pFpuRes->r80Result = *pr80Val;
+    } else {
+        if (   (   RTFLOAT80U_IS_UNNORMAL(pr80Val)
+                || RTFLOAT80U_IS_PSEUDO_NAN(pr80Val))
+            && (fFcw & X86_FCW_IM))
+            pFpuRes->r80Result = g_r80Indefinite;
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            if (RTFLOAT80U_IS_SIGNALLING_NAN(pr80Val) && (fFcw & X86_FCW_IM))
+                pFpuRes->r80Result.s.uMantissa |= RT_BIT_64(62); /* make it quiet */
+        }
+
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    pFpuRes->FSW = fFsw;
 }
 #endif /* IEM_WITHOUT_ASSEMBLY */
 
@@ -6182,29 +6301,111 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPU
 }
 
 #ifdef IEM_WITHOUT_ASSEMBLY
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
-    AssertReleaseFailed();
-}
-#endif /* IEM_WITHOUT_ASSEMBLY */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+static uint16_t iemAImpl_fcos_r80_normal(PCRTFLOAT80U pr80Val, PRTFLOAT80U pr80Result, uint16_t fFcw, uint16_t fFsw)
 {
-    iemAImpl_fsincos_r80_r80(pFpuState, pFpuResTwo, pr80Val);
-}
+    softfloat_state_t SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
+    extFloat80_t x = iemFpuSoftF80FromIprt(pr80Val);
+    extFloat80_t v;
+    (void)fFcw;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
-{
-    iemAImpl_fsincos_r80_r80(pFpuState, pFpuResTwo, pr80Val);
+    v = extF80_cos(x, &SoftState);
+
+    iemFpuSoftF80ToIprt(pr80Result, v);
+
+    return fFsw;
 }
 
-
-#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | /*X86_FSW_C2 |*/ X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_ZERO(pr80Val))
+    {
+        pFpuRes->r80Result = g_ar80One[0];
+    }
+    else if (RTFLOAT80U_IS_NORMAL(pr80Val))
+    {
+        if (pr80Val->s.uExponent >= RTFLOAT80U_EXP_BIAS + 63)
+        {
+            fFsw |= X86_FSW_C2;
+            pFpuRes->r80Result = *pr80Val;
+        }
+        else
+        {
+            if (pr80Val->s.uExponent <= RTFLOAT80U_EXP_BIAS - 63)
+            {
+                pFpuRes->r80Result = g_ar80One[0];
+
+            }
+            else
+            {
+                fFsw = iemAImpl_fcos_r80_normal(pr80Val, &pFpuRes->r80Result, fFcw, fFsw);
+                fFsw |= X86_FSW_C1; // TBD: If the inexact result was rounded up (C1 is set) or “not rounded up” (C1 is cleared).
+            }
+            fFsw |= X86_FSW_PE;
+            if (!(fFcw & X86_FCW_PM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else if (RTFLOAT80U_IS_INF(pr80Val))
+    {
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+        {
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+            pFpuRes->r80Result = *pr80Val;
+        }
+        else
+        {
+            pFpuRes->r80Result = g_r80Indefinite;
+        }
+    }
+    else if (RTFLOAT80U_IS_DENORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    {
+        fFsw |= X86_FSW_DE;
+
+        if (fFcw & X86_FCW_DM)
+        {
+            pFpuRes->r80Result = g_ar80One[0];
+
+            if (fFcw & X86_FCW_PM)
+            {
+                fFsw |= X86_FSW_PE;
+            }
+            else
+            {
+                fFsw |= X86_FSW_PE | X86_FSW_ES | X86_FSW_B;
+            }
+        }
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    } else if (   RTFLOAT80U_IS_QUIET_NAN(pr80Val)
+             || RTFLOAT80U_IS_INDEFINITE(pr80Val))
+    {
+        pFpuRes->r80Result = *pr80Val;
+    } else {
+        if (   (   RTFLOAT80U_IS_UNNORMAL(pr80Val)
+                || RTFLOAT80U_IS_PSEUDO_NAN(pr80Val))
+            && (fFcw & X86_FCW_IM))
+            pFpuRes->r80Result = g_r80Indefinite;
+        else
+        {
+            pFpuRes->r80Result = *pr80Val;
+            if (RTFLOAT80U_IS_SIGNALLING_NAN(pr80Val) && (fFcw & X86_FCW_IM))
+                pFpuRes->r80Result.s.uMantissa |= RT_BIT_64(62); /* make it quiet */
+        }
+
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    pFpuRes->FSW = fFsw;
 }
 #endif /* IEM_WITHOUT_ASSEMBLY */
 
@@ -6216,6 +6417,205 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURE
 IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
     iemAImpl_fcos_r80(pFpuState, pFpuRes, pr80Val);
+}
+
+#ifdef IEM_WITHOUT_ASSEMBLY
+
+static uint16_t iemAImpl_fsincos_r80_r80_normal(PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val, uint16_t fFcw, uint16_t fFsw)
+{
+    softfloat_state_t SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
+    extFloat80_t x = iemFpuSoftF80FromIprt(pr80Val);
+    extFloat80_t r80Sin, r80Cos;
+    (void)fFcw;
+
+    extF80_sincos(x, &r80Sin, &r80Cos, &SoftState);
+
+    iemFpuSoftF80ToIprt(&pFpuResTwo->r80Result1, r80Sin);
+    iemFpuSoftF80ToIprt(&pFpuResTwo->r80Result2, r80Cos);
+
+    return fFsw;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | /*X86_FSW_C2 |*/ X86_FSW_C3)) | (7 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_ZERO(pr80Val))
+    {
+        pFpuResTwo->r80Result1 = *pr80Val;
+        pFpuResTwo->r80Result2 = g_ar80One[0];
+        fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+    }
+    else if (RTFLOAT80U_IS_NORMAL(pr80Val))
+    {
+        if (pr80Val->s.uExponent >= RTFLOAT80U_EXP_BIAS + 63)
+        {
+            fFsw |= X86_FSW_C2;
+
+            if (fFcw & X86_FCW_IM)
+            {
+                pFpuResTwo->r80Result1 = g_r80Indefinite;
+            }
+            else
+            {
+                pFpuResTwo->r80Result1 = g_ar80Zero[0];
+            }
+
+            pFpuResTwo->r80Result2 = *pr80Val;
+        }
+        else
+        {
+            fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+
+            if (pr80Val->s.uExponent <= RTFLOAT80U_EXP_BIAS - 63)
+            {
+                pFpuResTwo->r80Result1 = *pr80Val;
+                pFpuResTwo->r80Result2 = g_ar80One[0];
+            }
+            else
+            {
+                fFsw = iemAImpl_fsincos_r80_r80_normal(pFpuResTwo, pr80Val, fFcw, fFsw);
+                fFsw |= X86_FSW_C1; // TBD: If the inexact result was rounded up (C1 is set) or “not rounded up” (C1 is cleared).
+            }
+            fFsw |= X86_FSW_PE;
+            if (!(fFcw & X86_FCW_PM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else if (RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val))
+    {
+        fFsw |= X86_FSW_DE;
+
+        if (fFcw & X86_FCW_DM)
+        {
+            pFpuResTwo->r80Result1 = *pr80Val;
+            pFpuResTwo->r80Result2 = g_ar80One[0];
+            fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+
+            if (fFcw & X86_FCW_PM)
+            {
+                fFsw |= X86_FSW_PE;
+            }
+            else
+            {
+                fFsw |= X86_FSW_PE | X86_FSW_ES | X86_FSW_B;
+            }
+
+            pFpuResTwo->r80Result1.sj64.uExponent = 1;
+        }
+        else
+        {
+            pFpuResTwo->r80Result1 = g_ar80Zero[0];
+            pFpuResTwo->r80Result2 = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else if (RTFLOAT80U_IS_DENORMAL(pr80Val))
+    {
+        fFsw |= X86_FSW_DE;
+
+        if (fFcw & X86_FCW_DM)
+        {
+            pFpuResTwo->r80Result1 = *pr80Val;
+            pFpuResTwo->r80Result2 = g_ar80One[0];
+
+            fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+            fFsw |= X86_FSW_UE | X86_FSW_PE;
+
+            if (fFcw & X86_FCW_PM)
+            {
+                if (!(fFcw & X86_FCW_UM))
+                    fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+            else
+            {
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+        }
+        else
+        {
+            pFpuResTwo->r80Result1 = g_ar80Zero[0];
+            pFpuResTwo->r80Result2 = *pr80Val;
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else if (RTFLOAT80U_IS_QUIET_NAN(pr80Val) || RTFLOAT80U_IS_INDEFINITE(pr80Val))
+    {
+        pFpuResTwo->r80Result1 = *pr80Val;
+        pFpuResTwo->r80Result2 = *pr80Val;
+        fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+    }
+    else if (RTFLOAT80U_IS_UNNORMAL(pr80Val) || RTFLOAT80U_IS_PSEUDO_NAN(pr80Val))
+    {
+        if (fFcw & X86_FCW_IM)
+        {
+            pFpuResTwo->r80Result1 = g_r80Indefinite;
+            pFpuResTwo->r80Result2 = g_r80Indefinite;
+            fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+        }
+        else
+        {
+            pFpuResTwo->r80Result1 = g_ar80Zero[0];
+            pFpuResTwo->r80Result2 = *pr80Val;
+        }
+
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+    else if (RTFLOAT80U_IS_SIGNALLING_NAN(pr80Val))
+    {
+        pFpuResTwo->r80Result1 = *pr80Val;
+        pFpuResTwo->r80Result2 = *pr80Val;
+
+        if (fFcw & X86_FCW_IM)
+        {
+            pFpuResTwo->r80Result1.s.uMantissa |= RT_BIT_64(62); /* make it quiet */
+            pFpuResTwo->r80Result2.s.uMantissa |= RT_BIT_64(62);
+            fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+        }
+        else
+        {
+            pFpuResTwo->r80Result1 = g_ar80Zero[0];
+            pFpuResTwo->r80Result2 = *pr80Val;
+        }
+
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+    else if (RTFLOAT80U_IS_INF(pr80Val))
+    {
+        if (fFcw & X86_FCW_IM)
+        {
+            pFpuResTwo->r80Result1 = g_r80Indefinite;
+            pFpuResTwo->r80Result2 = g_r80Indefinite;
+            fFsw &= ~X86_FSW_TOP_MASK | (6 << X86_FSW_TOP_SHIFT);
+        }
+        else
+        {
+            pFpuResTwo->r80Result1 = g_ar80Zero[0];
+            pFpuResTwo->r80Result2 = *pr80Val;
+        }
+
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    pFpuResTwo->FSW = fFsw;
+}
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fsincos_r80_r80(pFpuState, pFpuResTwo, pr80Val);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    iemAImpl_fsincos_r80_r80(pFpuState, pFpuResTwo, pr80Val);
 }
 
 #ifdef IEM_WITHOUT_ASSEMBLY
