@@ -39,10 +39,33 @@
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/utf16.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define VCU_COMMON_OPTION_DEFINITIONS() \
+        { "--verbose",                  'v',                                RTGETOPT_REQ_NOTHING }, \
+        { "--quiet",                    'q',                                RTGETOPT_REQ_NOTHING }
+
+#define VCU_COMMON_OPTION_HANDLING() \
+            case 'v': \
+                g_cVerbosityLevel++; \
+                break; \
+            \
+            case 'q': \
+                if (g_cVerbosityLevel > 0) \
+                    g_cVerbosityLevel--; \
+                break; \
+            \
+            case 'V': \
+                return displayVersion()
+
 
 
 /*********************************************************************************************************************************
@@ -118,6 +141,17 @@ static const char *errorToString(DWORD dwErr)
         }
     }
 }
+
+
+/**
+ * Deals with -V and --version.
+ */
+static RTEXITCODE displayVersion(void)
+{
+    RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
+    return RTEXITCODE_SUCCESS;
+}
+
 
 #if 0 /* hacking */
 static RTEXITCODE addToStore(const char *pszFilename, PCRTUTF16 pwszStore)
@@ -282,25 +316,103 @@ static HCERTSTORE openCertStore(DWORD dwDst, const char *pszStoreNm)
     return hStore;
 }
 
+
+/**
+ * Worker for 'root-exists', searching by exact relative distinguished name.
+ */
+static RTEXITCODE checkIfCertExistsInStoreByRdn(DWORD dwStore, const char *pszStoreNm, const char *pszStoreDesc,
+                                                const char *pszName, RTEXITCODE rcExit, uint32_t *pcFound)
+{
+    /*
+     * Convert the name into something that can be searched for.
+     */
+    PRTUTF16 pwszName = NULL;
+    int rc = RTStrToUtf16(pszName, &pwszName);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("RTStrToUtf16 failed: %Rrc", rc);
+
+
+    BYTE            abNameBuf[16384]; /* this should be more than sufficient... */
+    CERT_NAME_BLOB  NameBlob = { sizeof(abNameBuf), abNameBuf };
+    PCRTUTF16       pwszErr  = NULL;
+    if (CertStrToNameW(X509_ASN_ENCODING, pwszName, CERT_X500_NAME_STR | CERT_NAME_STR_SEMICOLON_FLAG, NULL /*pvReserved*/,
+                       NameBlob.pbData, &NameBlob.cbData, &pwszErr))
+    {
+        /*
+         * Now perform the search.
+         */
+        HCERTSTORE hDstStore = openCertStore(dwStore, pszStoreNm);
+        if (hDstStore)
+        {
+            uint32_t        cFound  = 0;
+            uint32_t        idxCur  = 0;
+            PCCERT_CONTEXT  pCurCtx = NULL;
+            while ((pCurCtx = CertEnumCertificatesInStore(hDstStore, pCurCtx)) != NULL)
+            {
+                if (pCurCtx->pCertInfo)
+                {
+                    if (g_cVerbosityLevel > 1)
+                    {
+                        WCHAR wszCurName[1024];
+                        if (CertNameToStrW(X509_ASN_ENCODING, &pCurCtx->pCertInfo->Subject,
+                                           CERT_X500_NAME_STR | CERT_NAME_STR_SEMICOLON_FLAG,
+                                           wszCurName, sizeof(wszCurName)))
+                            RTMsgInfo("Considering #%u: '%ls' ...", idxCur, wszCurName);
+                        else
+                            RTMsgInfo("Considering #%u: CertNameToStrW -> %u ...", idxCur, GetLastError());
+                    }
+
+                    if (CertCompareCertificateName(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, &pCurCtx->pCertInfo->Subject, &NameBlob))
+                    {
+                        if (g_cVerbosityLevel > 0)
+                            RTMsgInfo("Found '%ls' in the %s store...", pwszName, pszStoreDesc);
+                        cFound++;
+                    }
+                }
+                idxCur++;
+            }
+
+            *pcFound += cFound;
+            if (!cFound && g_cVerbosityLevel > 0)
+                RTMsgInfo("Certificate with subject '%ls' was _NOT_ found in the %s store.", pwszName, pszStoreDesc);
+
+            CertCloseStore(hDstStore, CERT_CLOSE_STORE_CHECK_FLAG);
+        }
+        else
+            rcExit = RTEXITCODE_FAILURE;
+    }
+    else
+        rcExit = RTMsgErrorExitFailure("CertStrToNameW failed at position %zu: %s\n"
+                                       " '%ls'\n"
+                                       "  %*s",
+                                       pwszErr - pwszName, errorToString(GetLastError()), pwszName, pwszErr - pwszName, "^");
+    RTUtf16Free(pwszName);
+    return rcExit;
+}
+
+
 /**
  * Removes a certificate, given by file, from a store
  *
- * @returns true on success, false on failure (error message written).
+ * @returns Command exit code.
  * @param   dwDst           The destination, like
  *                          CERT_SYSTEM_STORE_LOCAL_MACHINE or
  *                          CERT_SYSTEM_STORE_CURRENT_USER.
  * @param   pszStoreNm      The store name.
+ * @param   pszStoreDesc    The store descriptor (all lower case).
  * @param   pszCertFile     The file containing the certificate to add.
+ * @param   rcExit          Incoming exit status.
  */
-static bool removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm, const char *pszCertFile)
+static RTEXITCODE removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm, const char *pszStoreDesc,
+                                            const char *pszCertFile, RTEXITCODE rcExit)
 {
     /*
-     * Read the certificate file first.
+     * Read the certificate file first and get the certificate name from it.
      */
     PCCERT_CONTEXT  pSrcCtx   = NULL;
     HCERTSTORE      hSrcStore = NULL;
     if (!readCertFile(pszCertFile, &pSrcCtx, &hSrcStore))
-        return false;
+        return RTEXITCODE_FAILURE;
 
     WCHAR wszName[1024];
     if (!CertGetNameStringW(pSrcCtx, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0 /*dwFlags*/, NULL /*pvTypePara*/,
@@ -313,13 +425,11 @@ static bool removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm, const
     /*
      * Open the destination store.
      */
-    bool fRc = false;
     HCERTSTORE hDstStore = openCertStore(dwDst, pszStoreNm);
     if (hDstStore)
     {
         if (pSrcCtx)
         {
-            fRc = true;
             unsigned        cDeleted = 0;
             PCCERT_CONTEXT  pCurCtx  = NULL;
             while ((pCurCtx = CertEnumCertificatesInStore(hDstStore, pCurCtx)) != NULL)
@@ -332,12 +442,18 @@ static bool removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm, const
                     if (pDeleteCtx)
                     {
                         if (CertDeleteCertificateFromStore(pDeleteCtx))
+                        {
                             cDeleted++;
+                            if (g_cVerbosityLevel > 0)
+                                RTMsgInfo("Successfully removed '%s' ('%ls') from the %s store", pszCertFile, wszName, pszStoreDesc);
+                        }
                         else
-                            RTMsgError("CertDeleteFromStore('%ls') failed: %s\n", wszName, errorToString(GetLastError()));
+                            rcExit = RTMsgErrorExitFailure("CertDeleteFromStore('%ls') failed: %s\n",
+                                                           wszName, errorToString(GetLastError()));
                     }
                     else
-                        RTMsgError("CertDuplicateCertificateContext('%ls') failed: %s\n", wszName, errorToString(GetLastError()));
+                        rcExit = RTMsgErrorExitFailure("CertDuplicateCertificateContext('%ls') failed: %s\n",
+                                                       wszName, errorToString(GetLastError()));
                 }
             }
 
@@ -345,18 +461,20 @@ static bool removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm, const
                 RTMsgInfo("Found no matching certificates to remove.");
         }
         else
-        {
-            RTMsgError("Path not implemented at line %d\n",  __LINE__);
-        }
+            rcExit = RTMsgErrorExitFailure("Code path not implemented at line %d\n",  __LINE__);
+
 
         CertCloseStore(hDstStore, CERT_CLOSE_STORE_CHECK_FLAG);
     }
+    else
+        rcExit = RTEXITCODE_FAILURE;
     if (pSrcCtx)
         CertFreeCertificateContext(pSrcCtx);
     if (hSrcStore)
         CertCloseStore(hSrcStore, CERT_CLOSE_STORE_CHECK_FLAG);
-    return fRc;
+    return rcExit;
 }
+
 
 /**
  * Adds a certificate to a store.
@@ -370,7 +488,7 @@ static bool removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm, const
  * @param   dwDisposition   The disposition towards existing certificates when
  *                          adding it.  CERT_STORE_ADD_NEW is a safe one.
  */
-static bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const char *pszCertFile, DWORD dwDisposition)
+static bool addCertToStoreByFile(DWORD dwDst, const char *pszStoreNm, const char *pszCertFile, DWORD dwDisposition)
 {
     /*
      * Read the certificate file first.
@@ -398,7 +516,7 @@ static bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const char *pszC
                 RTMsgError("CertAddCertificateContextToStore returned %s", errorToString(GetLastError()));
         }
         else
-            RTMsgError("Path not implemented at line %d\n",  __LINE__);
+            RTMsgError("Code path not implemented at line %d\n",  __LINE__);
 
         CertCloseStore(hDstStore, CERT_CLOSE_STORE_CHECK_FLAG);
     }
@@ -408,6 +526,36 @@ static bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const char *pszC
         CertCloseStore(hSrcStore, CERT_CLOSE_STORE_CHECK_FLAG);
     return fRc;
 }
+
+
+/**
+ * Handle adding one or more certificates to a store.
+ */
+static RTEXITCODE addCertToStoreByFilePattern(DWORD dwDst, const char *pszStoreNm, const char *pszStoreDesc,
+                                              const char *pszFilePattern, RTEXITCODE rcExit, uint32_t *pcImports)
+{
+    PCRTPATHGLOBENTRY pResultHead;
+    int rc = RTPathGlob(pszFilePattern, RTPATHGLOB_F_NO_DIRS, &pResultHead, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        for (PCRTPATHGLOBENTRY pCur = pResultHead; pCur; pCur = pCur->pNext)
+        {
+            if (addCertToStoreByFile(dwDst, pszStoreNm, pCur->szPath, CERT_STORE_ADD_NEW))
+                RTMsgInfo("Successfully added '%s' as %s", pCur->szPath, pszStoreDesc);
+            else
+                rcExit = RTEXITCODE_FAILURE;
+            *pcImports += 1;
+        }
+        RTPathGlobFree(pResultHead);
+    }
+    else
+    {
+        rcExit = RTMsgErrorExit(RTEXITCODE_SUCCESS, "glob failed on '%s': %Rrc", pszFilePattern, rc);
+        *pcImports += 1;
+    }
+    return rcExit;
+}
+
 
 /**
  * Worker for cmdDisplayAll.
@@ -488,6 +636,7 @@ static BOOL WINAPI displaySystemStoreCallback(const void *pvSystemStore, DWORD d
     return TRUE;
 }
 
+
 /**
  * Worker for cmdDisplayAll.
  */
@@ -503,20 +652,151 @@ displaySystemStoreLocation(LPCWSTR pwszStoreLocation, DWORD dwFlags, void *pvRes
     return TRUE;
 }
 
+
 /**
  * Handler for the 'display-all' command.
  */
 static RTEXITCODE cmdDisplayAll(int argc, char **argv)
 {
-    RT_NOREF(argv);
-    if (argc != 1)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "the display-all command takes no arguments\n");
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        VCU_COMMON_OPTION_DEFINITIONS(),
+    };
 
+    int             rc;
+    RTGETOPTUNION   ValueUnion;
+    RTGETOPTSTATE   GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            VCU_COMMON_OPTION_HANDLING();
+
+            case 'h':
+                RTPrintf("Usage: VBoxCertUtil display-all [-v|--verbose] [-q|--quiet]\n");
+                return RTEXITCODE_SUCCESS;
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Do the enumerating.
+     */
     if (!CertEnumSystemStoreLocation(0, NULL /*pvArg*/, displaySystemStoreLocation))
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "CertEnumSystemStoreLocation failed: %s\n", errorToString(GetLastError()));
-
     return RTEXITCODE_SUCCESS;
 }
+
+
+/**
+ * Handler for the 'root-exists' command.
+ */
+static RTEXITCODE cmdRootExists(int argc, char **argv)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        VCU_COMMON_OPTION_DEFINITIONS(),
+    };
+
+    RTEXITCODE      rcExit    = RTEXITCODE_SUCCESS;
+    uint32_t        cFound    = 0;
+    uint32_t        cSearched = 0;
+
+    int             rc;
+    RTGETOPTUNION   ValueUnion;
+    RTGETOPTSTATE   GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            VCU_COMMON_OPTION_HANDLING();
+
+            case 'h':
+                RTPrintf("Usage: VBoxCertUtil root-exists <full-subject-name> [alternative-subject-name [...]]\n"
+                         "\n"
+                         "Exit code: 10 if not found, 0 if found.\n"
+                         "\n"
+                         "The names are on the form 'C=US; O=Company; OU=some unit; CN=a cert name'\n"
+                         "where semi-colon is the X.500 attribute separator and spaces surrounding it\n"
+                         "the type (CN, OU, ) and '=' are generally ignored.\n"
+                         "\n"
+                         "At verbosity level 2, the full subject name of each certificate in the store\n"
+                         "will be listed as the search progresses.  These can be used as search input.\n"
+                         );
+                return RTEXITCODE_SUCCESS;
+
+            case VINF_GETOPT_NOT_OPTION:
+                rcExit = checkIfCertExistsInStoreByRdn(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root",
+                                                       ValueUnion.psz, rcExit, &cFound);
+                cSearched++;
+                break;
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    if (!cSearched)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No certificate name specified.");
+    return cFound ? RTEXITCODE_SUCCESS : rcExit == RTEXITCODE_SUCCESS ? (RTEXITCODE)10 : rcExit;
+}
+
+
+
+/**
+ * Handler for the 'remove-root' command.
+ */
+static RTEXITCODE cmdRemoveRoot(int argc, char **argv)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        VCU_COMMON_OPTION_DEFINITIONS(),
+    };
+
+    RTEXITCODE      rcExit = RTEXITCODE_SUCCESS;
+    uint32_t        cRemoved = 0;
+
+    int             rc;
+    RTGETOPTUNION   ValueUnion;
+    RTGETOPTSTATE   GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            VCU_COMMON_OPTION_HANDLING();
+
+            case 'h':
+                RTPrintf("Usage: VBoxCertUtil remove-root <root-cert-file>\n");
+                return RTEXITCODE_SUCCESS;
+
+            case VINF_GETOPT_NOT_OPTION:
+                rcExit = removeCertFromStoreByFile(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root", ValueUnion.psz, rcExit);
+                cRemoved++;
+                break;
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    if (!cRemoved)
+        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No certificate specified.");
+    return rcExit;
+}
+
 
 /**
  * Handler for the 'remove-trusted-publisher' command.
@@ -529,10 +809,11 @@ static RTEXITCODE cmdRemoveTrustedPublisher(int argc, char **argv)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--root",     'r',    RTGETOPT_REQ_STRING },
+        VCU_COMMON_OPTION_DEFINITIONS(),
     };
 
-    const char *pszRootCert    = NULL;
-    const char *pszTrustedCert = NULL;
+    RTEXITCODE      rcExit = RTEXITCODE_SUCCESS;
+    uint32_t        cRemoved = 0;
 
     int             rc;
     RTGETOPTUNION   ValueUnion;
@@ -542,54 +823,74 @@ static RTEXITCODE cmdRemoveTrustedPublisher(int argc, char **argv)
     {
         switch (rc)
         {
+            VCU_COMMON_OPTION_HANDLING();
+
             case 'h':
                 RTPrintf("Usage: VBoxCertUtil remove-trusted-publisher [--root <root-cert>] <trusted-cert>\n");
-                break;
-
-            case 'V':
-                RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
                 return RTEXITCODE_SUCCESS;
 
             case 'r':
-                if (pszRootCert)
-                    return RTMsgErrorExit(RTEXITCODE_SUCCESS,
-                                          "You've already specified '%s' as root certificate.",
-                                          pszRootCert);
-                pszRootCert = ValueUnion.psz;
+                rcExit = removeCertFromStoreByFile(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root", ValueUnion.psz, rcExit);
+                cRemoved++;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                if (pszTrustedCert)
-                    return RTMsgErrorExit(RTEXITCODE_SUCCESS,
-                                          "You've already specified '%s' as trusted certificate.",
-                                          pszRootCert);
-                pszTrustedCert = ValueUnion.psz;
+                rcExit = removeCertFromStoreByFile(CERT_SYSTEM_STORE_LOCAL_MACHINE, "TrustedPublisher", "trusted publisher",
+                                                   ValueUnion.psz, rcExit);
+                cRemoved++;
                 break;
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
-    if (!pszTrustedCert)
-        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No trusted certificate specified.");
+    if (!cRemoved)
+        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No certificate specified.");
+    return rcExit;
+}
 
+
+/**
+ * Handler for the 'add-root' command.
+ */
+static RTEXITCODE cmdAddRoot(int argc, char **argv)
+{
     /*
-     * Do the job.
+     * Parse arguments and execute imports as we move along.
      */
-    if (   pszRootCert
-        && !removeCertFromStoreByFile(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", pszRootCert))
-        return RTEXITCODE_FAILURE;
-    if (!removeCertFromStoreByFile(CERT_SYSTEM_STORE_LOCAL_MACHINE, "TrustedPublisher", pszTrustedCert))
-        return RTEXITCODE_FAILURE;
-
-    if (g_cVerbosityLevel > 0)
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        if (pszRootCert)
-            RTMsgInfo("Successfully removed '%s' as root and '%s' as trusted publisher", pszRootCert, pszTrustedCert);
-        else
-            RTMsgInfo("Successfully removed '%s' as trusted publisher", pszTrustedCert);
+        VCU_COMMON_OPTION_DEFINITIONS(),
+    };
+
+    RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
+    unsigned            cImports = 0;
+    RTGETOPTUNION       ValueUnion;
+    RTGETOPTSTATE       GetState;
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    AssertRC(rc);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            VCU_COMMON_OPTION_HANDLING();
+
+            case 'h':
+                RTPrintf("Usage: VBoxCertUtil add-root <root-cert>\n");
+                return RTEXITCODE_SUCCESS;
+
+            case VINF_GETOPT_NOT_OPTION:
+                rcExit = addCertToStoreByFilePattern(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root",
+                                                     ValueUnion.psz, rcExit, &cImports);
+                break;
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
     }
-    return RTEXITCODE_SUCCESS;
+    if (cImports == 0)
+        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No trusted or root certificates specified.");
+    return rcExit;
 }
 
 
@@ -604,6 +905,7 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--root",     'r',    RTGETOPT_REQ_STRING },
+        VCU_COMMON_OPTION_DEFINITIONS(),
     };
 
     RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
@@ -616,40 +918,21 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
     {
         switch (rc)
         {
+            VCU_COMMON_OPTION_HANDLING();
+
             case 'h':
                 RTPrintf("Usage: VBoxCertUtil add-trusted-publisher [--root <root-cert>] <trusted-cert>\n");
-                break;
-
-            case 'V':
-                RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
                 return RTEXITCODE_SUCCESS;
 
             case 'r':
-            case VINF_GETOPT_NOT_OPTION:
-            {
-                const char * const  pszStoreNm   = rc == 'r' ? "Root" : "TrustedPublisher";
-                const char * const  pszStoreDesc = rc == 'r' ? "root" : "trusted publisher";
-                PCRTPATHGLOBENTRY   pResultHead;
-                rc = RTPathGlob(ValueUnion.psz, RTPATHGLOB_F_NO_DIRS, &pResultHead, NULL);
-                if (RT_SUCCESS(rc))
-                {
-                    for (PCRTPATHGLOBENTRY pCur = pResultHead; pCur; pCur = pCur->pNext)
-                    {
-                        if (addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, pszStoreNm, pCur->szPath, CERT_STORE_ADD_NEW))
-                            RTMsgInfo("Successfully added '%s' as %s", pCur->szPath, pszStoreDesc);
-                        else
-                            rcExit = RTEXITCODE_FAILURE;
-                        cImports++;
-                    }
-                    RTPathGlobFree(pResultHead);
-                }
-                else
-                {
-                    rcExit = RTMsgErrorExit(RTEXITCODE_SUCCESS, "glob failed on '%s': %Rrc", ValueUnion.psz, rc);
-                    cImports++;
-                }
+                rcExit = addCertToStoreByFilePattern(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root",
+                                                     ValueUnion.psz, rcExit, &cImports);
                 break;
-            }
+
+            case VINF_GETOPT_NOT_OPTION:
+                rcExit = addCertToStoreByFilePattern(CERT_SYSTEM_STORE_LOCAL_MACHINE, "TrustedPublisher", "trusted publisher",
+                                                     ValueUnion.psz, rcExit, &cImports);
+                break;
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -663,18 +946,21 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
 
 /**
  * Displays the usage info.
- * @param   argv0               Program name.
  */
-static void showUsage(const char *argv0)
+static void showUsage(void)
 {
-    RTPrintf("Usage: %Rbn [-v[v]] <command>\n"
+    const char * const pszShortNm = RTProcShortName();
+    RTPrintf("Usage: %Rbn [-v[v]|--verbose] [-q[q]|--quiet] <command>\n"
              "   or  %Rbn <-V|--version>\n"
              "   or  %Rbn <-h|--help>\n"
              "\n"
              "Available commands:\n"
-             "    add-trusted-publisher, remove-trusted-publisher,\n"
+             "    add-trusted-publisher\n"
+             "    add-root\n"
+             "    remove-trusted-publisher\n"
+             "    remove-root\n"
              "    display-all\n"
-             , argv0, argv0, argv0);
+             , pszShortNm, pszShortNm, pszShortNm);
 }
 
 
@@ -690,18 +976,23 @@ int main(int argc, char **argv)
     typedef enum
     {
         VCUACTION_ADD_TRUSTED_PUBLISHER = 1000,
+        VCUACTION_ADD_ROOT,
         VCUACTION_REMOVE_TRUSTED_PUBLISHER,
+        VCUACTION_REMOVE_ROOT,
+        VCUACTION_ROOT_EXISTS,
         VCUACTION_DISPLAY_ALL,
         VCUACTION_END
     } VCUACTION;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--verbose",                  'v',                                RTGETOPT_REQ_NOTHING },
-        { "--quiet",                    'q',                                RTGETOPT_REQ_NOTHING },
         { "add-trusted-publisher",      VCUACTION_ADD_TRUSTED_PUBLISHER,    RTGETOPT_REQ_NOTHING },
+        { "add-root",                   VCUACTION_ADD_ROOT,                 RTGETOPT_REQ_NOTHING },
         { "remove-trusted-publisher",   VCUACTION_REMOVE_TRUSTED_PUBLISHER, RTGETOPT_REQ_NOTHING },
+        { "remove-root",                VCUACTION_REMOVE_ROOT,              RTGETOPT_REQ_NOTHING },
+        { "root-exists",                VCUACTION_ROOT_EXISTS,              RTGETOPT_REQ_NOTHING },
         { "display-all",                VCUACTION_DISPLAY_ALL,              RTGETOPT_REQ_NOTHING },
+        VCU_COMMON_OPTION_DEFINITIONS(),
     };
 
     RTGETOPTUNION   ValueUnion;
@@ -711,31 +1002,29 @@ int main(int argc, char **argv)
     {
         switch (rc)
         {
-            case 'v':
-                g_cVerbosityLevel++;
-                break;
-
-            case 'q':
-                if (g_cVerbosityLevel > 0)
-                    g_cVerbosityLevel--;
-                break;
-
-            case 'h':
-                showUsage(argv[0]);
-                return RTEXITCODE_SUCCESS;
-
-            case 'V':
-                RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
-                return RTEXITCODE_SUCCESS;
-
             case VCUACTION_ADD_TRUSTED_PUBLISHER:
                 return cmdAddTrustedPublisher(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
+
+            case VCUACTION_ADD_ROOT:
+                return cmdAddRoot(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
 
             case VCUACTION_REMOVE_TRUSTED_PUBLISHER:
                 return cmdRemoveTrustedPublisher(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
 
+            case VCUACTION_REMOVE_ROOT:
+                return cmdRemoveRoot(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
+
+            case VCUACTION_ROOT_EXISTS:
+                return cmdRootExists(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
+
             case VCUACTION_DISPLAY_ALL:
                 return cmdDisplayAll(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
+
+            case 'h':
+                showUsage();
+                return RTEXITCODE_SUCCESS;
+
+            VCU_COMMON_OPTION_HANDLING();
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -743,7 +1032,7 @@ int main(int argc, char **argv)
     }
 
     RTMsgError("Missing command...");
-    showUsage(argv[0]);
+    showUsage();
     return RTEXITCODE_SYNTAX;
 }
 
