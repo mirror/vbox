@@ -603,7 +603,9 @@ Function CheckForInstalledComponents
 
 FunctionEnd
 
+;
 ; Main Files
+;
 Section $(VBOX_COMPONENT_MAIN) SEC01
 
   SectionIn RO ; Section cannot be unselected (read-only)
@@ -648,23 +650,24 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
 
   ; Which OS are we using?
   ; @todo Use logic lib here
-!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
+!if $%KBUILD_TARGET_ARCH% == "x86"                  ; 32-bit
+  StrCmp $g_strWinVersion "NT4"   nt4               ; Windows NT 4.0
 !endif
-  StrCmp $g_strWinVersion "2000" w2k    ; Windows 2000
-  StrCmp $g_strWinVersion "XP" w2k      ; Windows XP
-  StrCmp $g_strWinVersion "2003" w2k    ; Windows 2003 Server
-  StrCmp $g_strWinVersion "Vista" vista ; Windows Vista
-  StrCmp $g_strWinVersion "7" vista     ; Windows 7
-  StrCmp $g_strWinVersion "8" vista     ; Windows 8
-  StrCmp $g_strWinVersion "8_1" vista   ; Windows 8.1 / Windows 2012 Server R2
-  StrCmp $g_strWinVersion "10" vista    ; Windows 10
+  StrCmp $g_strWinVersion "2000"  w2k_xp_w2k3       ; Windows 2000
+  StrCmp $g_strWinVersion "XP"    w2k_xp_w2k3       ; Windows XP
+  StrCmp $g_strWinVersion "2003"  w2k_xp_w2k3       ; Windows 2003 Server
+  StrCmp $g_strWinVersion "Vista" vista_and_later   ; Windows Vista
+  StrCmp $g_strWinVersion "7"     vista_and_later   ; Windows 7
+  StrCmp $g_strWinVersion "8"     vista_and_later   ; Windows 8
+  StrCmp $g_strWinVersion "8_1"   vista_and_later   ; Windows 8.1 / Windows 2012 Server R2
+  StrCmp $g_strWinVersion "10"    vista_and_later   ; Windows 10
 
   ${If} $g_bForceInstall == "true"
-    Goto vista ; Assume newer OS than we know of ...
+    Goto vista_and_later ; Assume newer OS than we know of ...
   ${EndIf}
 
-  Goto notsupported
+  MessageBox MB_ICONSTOP $(VBOX_PLATFORM_UNSUPPORTED) /SD IDOK
+  goto exit
 
 !if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
 nt4: ; Windows NT4
@@ -686,7 +689,10 @@ nt4: ; Windows NT4
   goto success
 !endif
 
-w2k: ; Windows 2000 and XP ...
+  ;
+  ; Windows 2000, XP and Windows Server 2003 / XP64
+  ;
+w2k_xp_w2k3:
 
   ; Copy some common files ...
   Call Common_CopyFiles
@@ -694,7 +700,10 @@ w2k: ; Windows 2000 and XP ...
   Call W2K_Main
   goto success
 
-vista: ; Windows Vista / Windows 7 / Windows 8(.1)
+  ;
+  ; Windows Vista, Windows 7, Windows 8, Windows 8.1, Windows 10 and related server products.
+  ;
+vista_and_later:
 
   ; Check requirments; this function can abort the installation if necessary!
   Call Vista_CheckForRequirements
@@ -702,14 +711,9 @@ vista: ; Windows Vista / Windows 7 / Windows 8(.1)
   ; Copy some common files ...
   Call Common_CopyFiles
 
-  Call W2K_Main     ; First install stuff from Windows 2000 / XP
-  Call Vista_Main   ; ... and some specific stuff for Vista / Windows 7
+  Call W2K_Main     ; First install stuff for Windows 2000, XP, W2K3/XP64 ...
+  Call Vista_Main   ; ... and some specific stuff for Vista and later.
   goto success
-
-notsupported:
-
-  MessageBox MB_ICONSTOP $(VBOX_PLATFORM_UNSUPPORTED) /SD IDOK
-  goto exit
 
 success:
 
@@ -727,7 +731,9 @@ exit:
 
 SectionEnd
 
+;;
 ; Auto-logon support (section is hidden at the moment -- only can be enabled via command line switch)
+;
 Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
 
   Call SetAppMode64
@@ -871,7 +877,6 @@ Function .onSelChange
     ; If we're able to use the WDDM driver just use it.
     ${If} $g_bCapWDDM == "true"
       StrCpy $g_bWithWDDM "true"
-      Goto exit
     ${EndIf}
 
 !endif ; $%VBOX_WITH_WDDM% == "1"
@@ -885,9 +890,6 @@ Function .onSelChange
     ${EndIf}
 
   ${EndIf}
-  Goto exit
-
-exit:
 
   Pop $0
 
@@ -929,7 +931,9 @@ Function .onInstSuccess
 
 FunctionEnd
 
+;;
 ; This function is called at the very beginning of installer execution
+;
 Function .onInit
 
   Push $0

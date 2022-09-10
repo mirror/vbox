@@ -25,11 +25,12 @@
 ; SPDX-License-Identifier: GPL-3.0-only
 ;
 
+;;
+; Macro for executing external applications.
 ;
-; Macro for executing external applications. Uses the nsExec plugin
-; in different styles, depending on whether this installer runs in silent mode
-; or not. If the external program reports an exit code other than 0 the installer
-; will be aborted.
+; Uses the nsExec plugin in different styles, depending on whether this
+; installer runs in silent mode or not. If the external program reports an exit
+; code other than 0 the installer will be aborted.
 ;
 ; @param   Command line (full qualified and quoted).
 ; @param   If set to "false" the installer aborts if the external program reports
@@ -37,48 +38,40 @@
 ;          execution.
 ;
 !macro _cmdExecute cmdline optional
-
+  ; Save $0 & $1
   Push $0
   Push $1
 
-  !define _macroLoc ${__LINE__}
-
+  ;
+  ; Execute the command, putting the exit code in $0 when done.
+  ;
   ${LogVerbose} "Executing: ${cmdline}"
-  IfSilent silent_${_macroLoc} +1
+  ${If} ${Silent}
+    nsExec::ExecToStack "${cmdline}"
+    Pop $0 ; Return value (exit code)
+    Pop $1 ; Stdout/stderr output (up to ${NSIS_MAX_STRLEN})
+    ${LogVerbose} "$1"
+  ${Else}
     nsExec::ExecToLog "${cmdline}"
     Pop $0 ; Return value (exit code)
-    goto done_${_macroLoc}
-
-silent_${_macroLoc}:
-
-  nsExec::ExecToStack "${cmdline}"
-  Pop $0 ; Return value (exit code)
-  Pop $1 ; Stdout/stderr output (up to ${NSIS_MAX_STRLEN})
-  ${LogVerbose} "$1"
-  goto done_${_macroLoc}
-
-done_${_macroLoc}:
+  ${EndIf}
 
   ${LogVerbose} "Execution returned exit code: $0"
-  IntCmp $0 0 +1 error_${_macroLoc} error_${_macroLoc} ; Check ret value (0=OK, 1=Error)
-  goto return_${_macroLoc}
 
-error_${_macroLoc}:
-
-  ${If} ${optional} == "false"
-    ${LogVerbose} "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
-    Abort "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
-  ${Else}
-    ${LogVerbose} "Warning: Executing $\"${cmdline}$\" returned with exit code $0"
+  ;
+  ; Check if it failed and take action according to the 2nd argument.
+  ;
+  ${If} $0 <> 0
+    ${If} ${optional} == "false"
+      ${LogVerbose} "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
+      Abort "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
+    ${Else}
+      ${LogVerbose} "Warning: Executing $\"${cmdline}$\" returned with exit code $0"
+    ${EndIf}
   ${EndIf}
-  goto return_${_macroLoc}
 
-return_${_macroLoc}:
-
+  ; Restore $0 and $1.
   Pop $1
   Pop $0
-
-  !undef _macroLoc
-
 !macroend
 !define CmdExecute "!insertmacro _cmdExecute"

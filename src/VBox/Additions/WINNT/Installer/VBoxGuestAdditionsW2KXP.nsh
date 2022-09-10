@@ -237,8 +237,9 @@ Function W2K_CopyFiles
 
   ; Guest driver files
   FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
-  FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe" ; Not used by W2K and up, but required by the .INF file
+  FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe"
 
+  ; Misc
 !ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
   FILE "$%PATH_OUT%\bin\additions\VBoxAudioTest.exe"
 !endif
@@ -306,11 +307,8 @@ Function W2K_CopyFiles
       !endif
     !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
 
-    Goto doneCr
   ${EndIf}
 !endif ; $%VBOX_WITH_WDDM% == "1"
-
-doneCr:
 
   Pop $0
 
@@ -372,6 +370,9 @@ Function W2K_InstallFiles
     ${LogVerbose} "Video driver installation skipped!"
   ${EndIf}
 
+  ;
+  ; Mouse driver.
+  ;
   ${If} $g_bNoMouseDrv == "false"
     ${LogVerbose} "Installing mouse driver ..."
     ; The mouse filter does not contain any device IDs but a "DefaultInstall" section;
@@ -382,16 +383,20 @@ Function W2K_InstallFiles
     ${LogVerbose} "Mouse driver installation skipped!"
   ${EndIf}
 
+  ;
   ; Create the VBoxService service
   ; No need to stop/remove the service here! Do this only on uninstallation!
+  ;
   ${LogVerbose} "Installing VirtualBox service ..."
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service create $\"VBoxService$\" $\"VirtualBox Guest Additions Service$\" 16 2 $\"%SystemRoot%\System32\VBoxService.exe$\" $\"Base$\"" "false"
 
   ; Set service description
   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\VBoxService" "Description" "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
 
-sf:
 
+  ;
+  ; Shared folders.
+  ;
   ${LogVerbose} "Installing Shared Folders service ..."
 
   ; Create the Shared Folders service ...
@@ -412,9 +417,6 @@ sf:
   ${LogVerbose} "Adding network provider (Order = $g_iSfOrder) ..."
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" netprovider add VBoxSF $g_iSfOrder" "false"
 
-  Goto done
-
-done:
 
   Pop $0
 

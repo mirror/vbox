@@ -52,6 +52,9 @@ Function Common_CopyFiles
 FunctionEnd
 
 !ifndef UNINSTALLER_ONLY
+;;
+; Extract files to the install dir + arch.
+;
 Function ExtractFiles
 
   ; @todo: Use a define for all the file specs to group the files per module
@@ -184,10 +187,15 @@ Function ExtractFiles
 FunctionEnd
 !endif ; UNINSTALLER_ONLY
 
+;;
+; Checks that the installer target architecture matches the host,
+; i.e. that we're not trying to install 32-bit binaries on a 64-bit
+; host from WOW64 mode.
+;
 !macro CheckArchitecture un
 Function ${un}CheckArchitecture
 
-  Push $0
+  Push $0   ;; @todo r=bird: Why ??
 
   System::Call "kernel32::GetCurrentProcess() i .s"
   System::Call "kernel32::IsWow64Process(i s, *i .r0)"
@@ -342,7 +350,7 @@ svc_stop:
   ${If} $g_strWinVersion == "NT4"
     nsExec::Exec '"$SYSDIR\net.exe" stop VBoxService'
   ${Else}
-    nsExec::Exec '"$SYSDIR\SC.exe" stop VBoxService'
+    nsExec::Exec '"$SYSDIR\sc.exe" stop VBoxService'
   ${EndIf}
   Sleep "1000"           ; Wait a bit
 
@@ -469,6 +477,9 @@ FunctionEnd
 !insertmacro AbortShutdown ""
 !insertmacro AbortShutdown "un."
 
+;;
+; Sets $g_bCapDllCache, $g_bCapXPDM, $g_bWithWDDM and $g_bCapWDDM.
+;
 !macro CheckForCapabilities un
 Function ${un}CheckForCapabilities
 
@@ -479,7 +490,7 @@ Function ${un}CheckForCapabilities
   StrCpy $g_iSystemMode $0
 
   ; Does the guest have a DLL cache?
-  ${If}   $g_strWinVersion == "NT4"
+  ${If}   $g_strWinVersion == "NT4"     ; bird: NT4 doesn't have a DLL cache, WTP is 5.0 <= NtVersion < 6.0.
   ${OrIf} $g_strWinVersion == "2000"
   ${OrIf} $g_strWinVersion == "XP"
     StrCpy $g_bCapDllCache "true"
