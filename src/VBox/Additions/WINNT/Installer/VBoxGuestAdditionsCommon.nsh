@@ -467,7 +467,7 @@ Function ${un}AbortShutdown
 
   ${If} ${FileExists} "$g_strSystemDir\shutdown.exe"
     ; Try to abort the shutdown
-    ${CmdExecute} "$\"$g_strSystemDir\shutdown.exe$\" -a" "true"
+    ${CmdExecute} "$\"$g_strSystemDir\shutdown.exe$\" -a" 'non-zero-exitcode=log'
   ${Else}
     ${LogVerbose} "Shutting down not supported: Binary $\"$g_strSystemDir\shutdown.exe$\" not found"
   ${EndIf}

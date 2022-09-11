@@ -32,15 +32,22 @@
 ; installer runs in silent mode or not. If the external program reports an exit
 ; code other than 0 the installer will be aborted.
 ;
-; @param   Command line (full qualified and quoted).
-; @param   If set to "false" the installer aborts if the external program reports
-;          an exit code other than 0, "true" just prints a warning and continues
-;          execution.
+; @param   ${cmdline}   Command line (full qualified and quoted).
+; @param   ${options}   Either 'non-zero-exitcode=log' or 'non-zero-exitcode=abort'.
+;                       Controls how to handle non-zero exit codes, in the latter
+;                       case they will trigger an installation abort, while in the
+;                       form only a warning in the log file.
 ;
-!macro _cmdExecute cmdline optional
+!macro _cmdExecute cmdline options
   ; Save $0 & $1
   Push $0
   Push $1
+
+  ; Check that the options are valid.
+  ${IfNot}    ${options} != "exitcode=0"
+  ${AndIfNot} ${options} != "ignore-exitcode"
+    Abort "Internal error in _cmdExecute: options=${options} cmdline=${cmdline}"
+  ${EndIf}
 
   ;
   ; Execute the command, putting the exit code in $0 when done.
@@ -62,7 +69,7 @@
   ; Check if it failed and take action according to the 2nd argument.
   ;
   ${If} $0 <> 0
-    ${If} ${optional} == "false"
+    ${If} ${options} == "exitcode=0"
       ${LogVerbose} "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
       Abort "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
     ${Else}
