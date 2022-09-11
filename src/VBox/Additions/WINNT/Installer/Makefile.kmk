@@ -92,34 +92,48 @@ RegCleanup_VBOX_IMPORT_CHECKER.win.x86 := nt4
 PACKING     += $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
 OTHER_CLEAN += $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
 
-VBOX_WINDOWS_ADDITIONS_DEPS := \
-	$(PATH_STAGE_BIN)/additions/RegCleanup.exe \
-	$(PATH_STAGE_BIN)/additions/VBoxMouse.sys \
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES := \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.inf \
 	$(PATH_STAGE_BIN)/additions/VBoxGuest.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxVideo.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxDisp.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxSF.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxMRXNP.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxTray.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxControl.exe \
-	$(PATH_STAGE_BIN)/additions/VBoxService.exe
-ifeq ($(KBUILD_TARGET_ARCH),amd64)
-# Also include 32-bit network provider DLLs on 64-bit guests to enable
-# running 32-bit apps which use that.
-VBOX_WINDOWS_ADDITIONS_DEPS += \
+       \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse.sys \
+       \
+	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxVideo.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxDisp.dll \
+       \
+	$(PATH_STAGE_BIN)/additions/VBoxSF.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxMRXNP.dll
+
+ifeq ($(KBUILD_TARGET_ARCH),amd64) # 32-bit network provider DLLs for 32-bit apps running on a 64-bit system
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxMRXNP-x86.dll
 endif
+
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES := \
+	$(PATH_STAGE_BIN)/additions/VBoxService.exe \
+	$(PATH_STAGE_BIN)/additions/RegCleanup.exe
+
+ifdef VBOX_SIGN_ADDITIONS
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest-PreW10.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
+endif
+
 ifeq ($(KBUILD_TARGET_ARCH),x86)
-VBOX_WINDOWS_ADDITIONS_DEPS += \
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxMouseNT.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxSFW2K.sys
 endif
-VBOX_WINDOWS_ADDITIONS_DEPS += \
-	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \
-	$(PATH_STAGE_BIN)/additions/VBoxGuest.inf \
-	$(PATH_STAGE_BIN)/additions/VBoxMouse.inf
 ifdef VBOX_SIGN_ADDITIONS
-VBOX_WINDOWS_ADDITIONS_DEPS += \
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
 	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat \
@@ -128,43 +142,46 @@ VBOX_WINDOWS_ADDITIONS_DEPS += \
 	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
 endif
 ifdef VBOX_WITH_WDDM
-VBOX_WINDOWS_ADDITIONS_DEPS += \
-	$(PATH_STAGE_BIN)/additions/VBoxWddm.sys \
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxWddm.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxDispD3D.dll
- ifdef VBOX_WITH_WDDM_DX
-VBOX_WINDOWS_ADDITIONS_DEPS += \
-	$(PATH_STAGE_BIN)/additions/VBoxDX.dll
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxDispD3D-x86.dll
  endif
+
+ ifdef VBOX_WITH_WDDM_DX
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxDX.dll
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxDX-x86.dll
+  endif
+ endif
+
  ifdef VBOX_WITH_MESA3D
-VBOX_WINDOWS_ADDITIONS_DEPS += \
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxNine.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxSVGA.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxGL.dll
- endif
- ifdef VBOX_SIGN_ADDITIONS
-VBOX_WINDOWS_ADDITIONS_DEPS += \
-	$(PATH_STAGE_BIN)/additions/VBoxWddm.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxWddm-PreW10.cat
- endif
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-VBOX_WINDOWS_ADDITIONS_DEPS += \
-	$(PATH_STAGE_BIN)/additions/VBoxDispD3D-x86.dll
-  ifdef VBOX_WITH_WDDM_DX
-VBOX_WINDOWS_ADDITIONS_DEPS += \
-	$(PATH_STAGE_BIN)/additions/VBoxDX-x86.dll
-  endif
-  ifdef VBOX_WITH_MESA3D
-VBOX_WINDOWS_ADDITIONS_DEPS += \
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxNine-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxSVGA-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxGL-x86.dll
   endif
  endif
+
+ ifdef VBOX_SIGN_ADDITIONS
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxWddm.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxWddm-PreW10.cat
+ endif
 endif
 
 ifdef env.VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
-VBOX_WINDOWS_ADDITIONS_DEPS += \
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxAudioTest.exe
 endif
 
@@ -209,7 +226,8 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
-		$(VBOX_WINDOWS_ADDITIONS_DEPS) \
+		$(VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES) \
+		$(VBOX_WINDOWS_ADDITIONS_OTHER_FILES) \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
 		$(if $(VBOX_SIGNING_MODE),$(PATH_TARGET)/uninst.exe) \
@@ -217,7 +235,7 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(VBOX_VERSION_STAMP) \
 		$$(VBoxDrvInst_1_STAGE_TARGET)
 	$(call MSG_L1,Creating $@, from $<)
-ifdef VBOX_GA_ATTESTATION_SIGNING # Unpack the attestation signed drivers
+ifdef VBOX_GA_ATTESTATION_SIGNING # Unpack the attestation signed drivers - this is an ugly has 'ing heck hack!
 	$(TOOL_ZIP_UNPACK) -voj $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME) -d $(PATH_STAGE_BIN)/additions/
 endif
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
@@ -250,7 +268,8 @@ $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
-		$(VBOX_WINDOWS_ADDITIONS_DEPS) \
+		$(VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES) \
+		$(VBOX_WINDOWS_ADDITIONS_OTHER_FILES) \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
 		$(VBOX_VERSION_STAMP) \
@@ -292,7 +311,8 @@ $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME): \
 # This creates a .CAB file of the driver files that should be attestation signed.
 #
 $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME): \
-		$(PATH_OUT)/repackadd/PackDriversForSubmission.cmd ## @todo r=bird: Missing almost all driver file dependencies.
+		$(PATH_OUT)/repackadd/PackDriversForSubmission.cmd \
+#		$(VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES) - is is unsafe, because of the 'ing ugly hack replacing most of them above during packing.
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.cab
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.ddf
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.inf
