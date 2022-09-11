@@ -67,7 +67,7 @@ $$(VBoxICD_0_OUTDIR)/pfns.c: \
 	$(call MSG_GENERATE,python,$@,$(VBOX_GL_ICD_DEF_FILE))
 	$(QUIET)$(VBOX_BLD_PYTHON) $< $(VBOX_GL_ICD_DEF_FILE) $@
 
-ifdef VBOX_SIGN_ADDITIONS
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
 VBoxICD_INSTTYPE       = none
 VBoxICD_DEBUG_INSTTYPE = both
 endif

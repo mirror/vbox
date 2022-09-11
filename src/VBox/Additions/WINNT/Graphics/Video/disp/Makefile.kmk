@@ -94,17 +94,16 @@ VBoxDisp_USES.win += vboximportchecker
 VBoxDisp_VBOX_IMPORT_CHECKER.win.x86 = nt4/r0
 VBoxDisp_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
 
-# Signing requires both miniport and display drivers
-# so it'd be dealt with in the parent makefile.
-ifdef VBOX_SIGN_ADDITIONS
- VBoxDisp_INSTTYPE           = none
- VBoxDisp_DEBUG_INSTTYPE     = both
+# Signing requires both miniport and display drivers so it'll be dealt with in the parent makefile.
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
+ VBoxDisp_INSTTYPE           := none
+ VBoxDisp_DEBUG_INSTTYPE     := both
  ifdef VBOX_WITH_WDDM
-  VBoxDispD3D_INSTTYPE       = none
-  VBoxDispD3D_DEBUG_INSTTYPE = both
+  VBoxDispD3D_INSTTYPE       := none
+  VBoxDispD3D_DEBUG_INSTTYPE := both
   ifdef VBOX_WITH_WDDM_DX
-   VBoxDX_INSTTYPE           = none
-   VBoxDX_DEBUG_INSTTYPE     = both
+   VBoxDX_INSTTYPE           := none
+   VBoxDX_DEBUG_INSTTYPE     := both
   endif
  endif
 endif

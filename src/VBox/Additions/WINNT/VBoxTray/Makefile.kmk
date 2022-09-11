@@ -30,9 +30,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxTray
 VBoxTray_TEMPLATE = VBoxGuestR3Exe
-ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
- VBoxTray_INSTTYPE = none
- VBoxTray_DEBUG_INSTTYPE = both
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS) # (See the parent makefile.)
+ VBoxTray_INSTTYPE       := none
+ VBoxTray_DEBUG_INSTTYPE := both
 endif
 VBoxTray_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST)
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING

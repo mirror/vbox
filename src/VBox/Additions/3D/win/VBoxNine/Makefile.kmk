@@ -52,7 +52,7 @@ VBoxNine_LIBS     = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaNineLib$(VBOX_SUFF_LIB)
 
-ifdef VBOX_SIGN_ADDITIONS
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  VBoxNine_INSTTYPE       = none
  VBoxNine_DEBUG_INSTTYPE = both
 endif

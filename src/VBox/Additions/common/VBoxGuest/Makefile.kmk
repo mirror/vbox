@@ -52,7 +52,7 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
  VBoxGuest_NAME.netbsd   = vboxguest
  VBoxGuest_NAME.solaris  = vboxguest
  VBoxGuest_INST.darwin   = $(INST_ADDITIONS)VBoxGuest.kext/Contents/MacOS/
- ifdef VBOX_SIGN_ADDITIONS # See Additions/WINNT/Makefile.kmk?
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS) # See Additions/WINNT/Makefile.kmk?
   VBoxGuest_INSTTYPE.win = none
   VBoxGuest_DEBUG_INSTTYPE.win = both
  endif

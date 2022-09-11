@@ -113,11 +113,7 @@ VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxMRXNP-x86.dll
 endif
 
-VBOX_WINDOWS_ADDITIONS_OTHER_FILES := \
-	$(PATH_STAGE_BIN)/additions/VBoxService.exe \
-	$(PATH_STAGE_BIN)/additions/RegCleanup.exe
-
-ifdef VBOX_SIGN_ADDITIONS
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
@@ -126,21 +122,18 @@ VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat \
 	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
 endif
+
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES := \
+	$(PATH_STAGE_BIN)/additions/VBoxService.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxHook.dll \
+	$(PATH_STAGE_BIN)/additions/RegCleanup.exe
 
 ifeq ($(KBUILD_TARGET_ARCH),x86)
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxMouseNT.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxSFW2K.sys
 endif
-ifdef VBOX_SIGN_ADDITIONS
-VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxGuest-PreW10.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
-endif
+
 ifdef VBOX_WITH_WDDM
 VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm.inf \
@@ -173,12 +166,12 @@ VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
   endif
  endif
 
- ifdef VBOX_SIGN_ADDITIONS
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm.cat \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm-PreW10.cat
  endif
-endif
+endif # VBOX_WITH_WDDM
 
 ifdef env.VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
@@ -296,7 +289,7 @@ $(PATH_TARGET)/uninst.exe: $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_A
 endif # VBOX_SIGNING_MODE
 
 
-ifdef VBOX_GA_ATTESTATION_SIGNING
+if defined(VBOX_GA_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
 #
 # This automagically attestation signs the GA drivers.
 #
@@ -320,7 +313,7 @@ $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME): \
 	$(EXEC_X86_WIN32) cmd /c $(PATH_OUT)/repackadd/PackDriversForSubmission.cmd -b $(PATH_STAGE_BIN) -a $(KBUILD_TARGET_ARCH) \
 		-x -n --no-main --ga -o $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(call VBOX_SIGN_EV_FILE_FN,$@)
-endif # VBOX_GA_ATTESTATION_SIGNING
+endif # VBOX_GA_ATTESTATION_SIGNING && VBOX_SIGNING_MODE && VBOX_SIGN_ADDITIONS
 
 
 #
