@@ -10060,12 +10060,75 @@ FNIEMOP_DEF(iemOp_pinsrw_Vdq_RyMw_Ib)
 /*  Opcode 0xf3 0x0f 0xc4 - invalid */
 /*  Opcode 0xf2 0x0f 0xc4 - invalid */
 
+
 /** Opcode      0x0f 0xc5 - pextrw Gd, Nq, Ib */
-FNIEMOP_STUB(iemOp_pextrw_Gd_Nq_Ib);
+FNIEMOP_DEF(iemOp_pextrw_Gd_Nq_Ib)
+{
+    /*IEMOP_MNEMONIC3(RMI_REG, PEXTRW, pinsrw, Gd, Nq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);*/ /** @todo */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(3, 1);
+        IEM_MC_LOCAL(uint16_t,              u16Dst);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Dst,  u16Dst,      0);
+        IEM_MC_ARG(uint64_t,                u64Src,                1);
+        IEM_MC_ARG_CONST(uint8_t,           bEvilArg, /*=*/ bEvil, 2);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_FETCH_MREG_U64(u64Src, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_pextrw_u64, pu16Dst, u64Src, bEvilArg);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u16Dst);
+        IEM_MC_FPU_TO_MMX_MODE();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    /* No memory operand. */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 /** Opcode 0x66 0x0f 0xc5 - pextrw Gd, Udq, Ib */
-FNIEMOP_STUB(iemOp_pextrw_Gd_Udq_Ib);
+FNIEMOP_DEF(iemOp_pextrw_Gd_Udq_Ib)
+{
+    IEMOP_MNEMONIC3(RMI_REG, PEXTRW, pextrw, Gd, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(3, 1);
+        IEM_MC_LOCAL(uint16_t,              u16Dst);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Dst,  u16Dst,      0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc,                 1);
+        IEM_MC_ARG_CONST(uint8_t,           bEvilArg, /*=*/ bEvil, 2);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128_CONST(puSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_pextrw_u128, pu16Dst, puSrc, bEvilArg);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u16Dst);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    /* No memory operand. */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 /*  Opcode 0xf3 0x0f 0xc5 - invalid */
 /*  Opcode 0xf2 0x0f 0xc5 - invalid */
+
 
 /** Opcode      0x0f 0xc6 - shufps Vps, Wps, Ib */
 FNIEMOP_DEF(iemOp_shufps_Vps_Wps_Ib)
