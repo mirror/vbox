@@ -5245,3 +5245,94 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
 dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
 dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
 ENDPROC iemAImpl_pcmpistri_u128
+
+
+;;
+; pinsrw instruction.
+;
+; @param    A0      Pointer to the first media register size operand (input/output).
+; @param    A1      The 16 bit input operand (input).
+; @param    A2      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_pinsrw_u64, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movq    mm0,  [A0]
+        lea     T0, [A2 + A2*4]         ; sizeof(pinsrw+ret) == 5
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T1, [T1 + T0]
+        call    T1
+        movq    [A0], mm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       pinsrw   mm0, A1_32, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*5 == 0x500
+dw 0xfaff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x104ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_pinsrw_u64
+
+BEGINPROC_FASTCALL iemAImpl_pinsrw_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A0]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A2 + A2*2]         ; sizeof(pinsrw+ret) == 6: (A2 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       pinsrw   xmm0, A1_32, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_pinsrw_u128
+
+;;
+; vpinsrw instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the source media register size operand (input).
+; @param    A2      The 16 bit input operand (input).
+; @param    A3      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_vpinsrw_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*2]         ; sizeof(vpinsrw+ret) == 6: (A3 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       vpinsrw   xmm0, xmm0, A2_32, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_vpinsrw_u128
