@@ -26,4 +26,4 @@ Function ${un}GetServicePack
 FunctionEnd
 !macroend
 !insertmacro GetServicePack ""
-!insertmacro GetServicePack "un."
+;!insertmacro GetServicePack "un." - unused

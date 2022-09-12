@@ -770,5 +770,7 @@ Function ${un}W2K_Uninstall
 
 FunctionEnd
 !macroend
-!insertmacro W2K_Uninstall ""
+!ifndef UNINSTALLER_ONLY
+  !insertmacro W2K_Uninstall ""
+!endif
 !insertmacro W2K_Uninstall "un."

@@ -192,7 +192,7 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 !endif
 
 ; Must come after MUI includes to have certain defines set for DumpLog
-!include "dumplog.nsh"        ; Dump log to file function
+!include "dumplog.nsh"                  ; Dump log to file function
 
 ; Language files
 !include "Languages\English.nsh"
@@ -471,6 +471,7 @@ usage:
   ; No stack restore needed, we're about to quit
   Quit
 
+!ifdef UNUSED_CODE
 done:
 
 !ifdef _DEBUG
@@ -479,6 +480,7 @@ done:
   ${LogVerbose} "Property: BPP: $g_iScreenBpp"
   ${LogVerbose} "Property: Logging enabled: $g_bLogEnable"
 !endif
+!endif ;UNUSED_CODE
 
 exit:
 
@@ -786,10 +788,6 @@ install:
 
 skip:
 
-  ; Nothing to do here right now
-
-exit:
-
 SectionEnd
 
 ; Direct3D support
@@ -1045,11 +1043,11 @@ Function .onInit
   Call CheckArchitecture
   Pop $0
   ${If} $0 <> 0 ; Wrong architecture? Tell the world
-!if $%KBUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_AMD64) /SD IDOK
-!else
+  !else
     MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_X86) /SD IDOK
-!endif
+  !endif
     Abort "$(VBOX_NOTICE_ARCH_AMD64)"
   ${EndIf}
 
@@ -1104,12 +1102,12 @@ Function .onInit
     !insertmacro SelectSection ${SEC04}
   ${EndIf}
 
-!ifdef USE_MUI
-  ; Display language selection dialog (will be hidden in silent mode!)
-  !ifdef VBOX_INSTALLER_ADD_LANGUAGES
-    !insertmacro MUI_LANGDLL_DISPLAY
+  !ifdef USE_MUI
+    ; Display language selection dialog (will be hidden in silent mode!)
+    !ifdef VBOX_INSTALLER_ADD_LANGUAGES
+      !insertmacro MUI_LANGDLL_DISPLAY
+    !endif
   !endif
-!endif
 
   Call SetAppMode64
 
@@ -1197,7 +1195,9 @@ Section Uninstall
 
   Goto exit
 
+!ifndef _DEBUG
 restart:
+!endif
 
   ${LogVerbose} "Rebooting ..."
   Reboot

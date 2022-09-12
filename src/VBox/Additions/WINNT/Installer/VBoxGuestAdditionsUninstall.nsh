@@ -133,7 +133,9 @@ exit:
 
 FunctionEnd
 !macroend
-!insertmacro Uninstall ""
+!ifndef UNINSTALLER_ONLY
+  !insertmacro Uninstall ""
+!endif
 !insertmacro Uninstall "un."
 
 !macro UninstallInstDir un

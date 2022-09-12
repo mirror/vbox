@@ -233,9 +233,14 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsLog.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstall.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstallOld.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
-		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
+		$(PATH_SUB_CURRENT)/dumplog.nsh \
+		$(PATH_SUB_CURRENT)/ReplaceDLL.nsh \
+		$(PATH_SUB_CURRENT)/servicepack.nsh \
+		$(PATH_SUB_CURRENT)/strstr.nsh \
+		$(PATH_SUB_CURRENT)/winver.nsh \
 		$(PATH_SUB_CURRENT)/Languages/English.nsh \
 		$(PATH_SUB_CURRENT)/Languages/German.nsh \
 		$(PATH_SUB_CURRENT)/Languages/French.nsh \
@@ -283,10 +288,14 @@ $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsExternal.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsLog.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstall.nsh \
-		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstallOld.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
-		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
+		$(PATH_SUB_CURRENT)/dumplog.nsh \
+		$(PATH_SUB_CURRENT)/ReplaceDLL.nsh \
+		$(PATH_SUB_CURRENT)/servicepack.nsh \
+		$(PATH_SUB_CURRENT)/strstr.nsh \
+		$(PATH_SUB_CURRENT)/winver.nsh \
 		$(PATH_SUB_CURRENT)/Languages/English.nsh \
 		$(PATH_SUB_CURRENT)/Languages/German.nsh \
 		$(PATH_SUB_CURRENT)/Languages/French.nsh \

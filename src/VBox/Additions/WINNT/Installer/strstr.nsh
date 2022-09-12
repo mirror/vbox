@@ -42,7 +42,9 @@
    Exch $R1
  FunctionEnd
 !macroend
-!insertmacro StrStr ""
+!ifndef UNINSTALLER_ONLY
+  !insertmacro StrStr ""
+!endif
 !insertmacro StrStr "un."
 
 !macro StrStrAdv un
@@ -303,4 +305,4 @@ Function ${un}StrStrAdv
 FunctionEnd
 !macroend
 !insertmacro StrStrAdv ""
-!insertmacro StrStrAdv "un."
+;!insertmacro StrStrAdv "un."

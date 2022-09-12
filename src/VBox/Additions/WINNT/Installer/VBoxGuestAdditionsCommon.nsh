@@ -219,8 +219,10 @@ exit:
 
 FunctionEnd
 !macroend
-!insertmacro CheckArchitecture ""
-!insertmacro CheckArchitecture "un."
+!ifndef UNINSTALLER_ONLY
+  !insertmacro CheckArchitecture ""
+  !insertmacro CheckArchitecture "un."
+!endif
 
 ;
 ; Macro for retrieving the Windows version this installer is running on.
@@ -265,7 +267,9 @@ Function ${un}GetWindowsVersionEx
 
 FunctionEnd
 !macroend
-!insertmacro GetWindowsVersionEx ""
+!ifndef UNINSTALLER_ONLY
+  !insertmacro GetWindowsVersionEx ""
+!endif
 !insertmacro GetWindowsVersionEx "un."
 
 !ifndef UNINSTALLER_ONLY
@@ -323,8 +327,6 @@ Function ${un}GetAdditionsVersion
   Push "0"        ; CaseSensitive
   Call ${un}StrStrAdv
   Pop $g_strAddVerBuild
-
-exit:
 
   Pop $1
   Pop $0
@@ -523,7 +525,9 @@ Function ${un}CheckForCapabilities
 
 FunctionEnd
 !macroend
-!insertmacro CheckForCapabilities ""
+!ifndef UNINSTALLER_ONLY
+  !insertmacro CheckForCapabilities ""
+!endif
 !insertmacro CheckForCapabilities "un."
 
 ; Switches (back) the path + registry view to
@@ -536,8 +540,10 @@ Function ${un}SetAppMode32
   !endif
 FunctionEnd
 !macroend
-!insertmacro SetAppMode32 ""
-!insertmacro SetAppMode32 "un."
+!ifndef UNINSTALLER_ONLY
+  !insertmacro SetAppMode32 ""
+  !insertmacro SetAppMode32 "un."
+!endif
 
 ; Because this NSIS installer is always built in 32-bit mode, we have to
 ; do some tricks for the Windows paths + registry on 64-bit guests

@@ -69,6 +69,7 @@ Function Vista_InstallFiles
   SetOutPath "$INSTDIR"
   ; Nothing here yet
 
+!ifdef UNUSED_CODE
   Goto done
 
 error:
@@ -76,6 +77,7 @@ error:
   Abort "ERROR: Could not install files! Installation aborted."
 
 done:
+!endif ; UNUSED_CODE
 
 FunctionEnd
 
@@ -114,7 +116,9 @@ Function ${un}Vista_Uninstall
 
 FunctionEnd
 !macroend
-!insertmacro Vista_Uninstall ""
+!ifndef UNINSTALLER_ONLY
+  !insertmacro Vista_Uninstall ""
+!endif
 !insertmacro Vista_Uninstall "un."
 
 !macro VBoxMMR_Uninstall un

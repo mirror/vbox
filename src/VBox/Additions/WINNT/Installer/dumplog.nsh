@@ -51,4 +51,4 @@ Function ${un}DumpLog
 FunctionEnd
 !macroend
 !insertmacro DumpLog ""
-!insertmacro DumpLog "un."
+;!insertmacro DumpLog "un." - not used
