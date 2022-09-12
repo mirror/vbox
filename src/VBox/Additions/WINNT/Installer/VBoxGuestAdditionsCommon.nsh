@@ -334,7 +334,7 @@ Function ${un}GetAdditionsVersion
 FunctionEnd
 !macroend
 !insertmacro GetAdditionsVersion ""
-!insertmacro GetAdditionsVersion "un."
+; !insertmacro GetAdditionsVersion "un." - not used.
 !endif ; UNINSTALLER_ONLY
 
 !macro StopVBoxService un
