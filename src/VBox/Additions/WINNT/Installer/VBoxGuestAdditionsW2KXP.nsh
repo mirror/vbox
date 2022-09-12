@@ -649,7 +649,7 @@ Function ${un}W2K_UninstallInstDir
 
 FunctionEnd
 !macroend
-!insertmacro W2K_UninstallInstDir ""
+;!insertmacro W2K_UninstallInstDir "" - only .un version used
 !insertmacro W2K_UninstallInstDir "un."
 
 !macro W2K_Uninstall un

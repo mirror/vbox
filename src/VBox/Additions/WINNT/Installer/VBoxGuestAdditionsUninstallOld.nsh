@@ -25,6 +25,7 @@
 ; SPDX-License-Identifier: GPL-3.0-only
 ;
 
+!ifdef UNUSED_CODE
 !macro Uninstall_RunExtUnInstaller un
 Function ${un}Uninstall_RunExtUnInstaller
 
@@ -90,6 +91,7 @@ FunctionEnd
 !macroend
 !insertmacro Uninstall_RunExtUnInstaller ""
 !insertmacro Uninstall_RunExtUnInstaller "un."
+!endif ; UNUSED_CODE
 
 !macro Uninstall_WipeInstallationDirectory un
 Function ${un}Uninstall_WipeInstallationDirectory

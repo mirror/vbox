@@ -268,6 +268,7 @@ FunctionEnd
 !insertmacro GetWindowsVersionEx ""
 !insertmacro GetWindowsVersionEx "un."
 
+!ifndef UNINSTALLER_ONLY
 !macro GetAdditionsVersion un
 Function ${un}GetAdditionsVersion
 
@@ -332,6 +333,7 @@ FunctionEnd
 !macroend
 !insertmacro GetAdditionsVersion ""
 !insertmacro GetAdditionsVersion "un."
+!endif ; UNINSTALLER_ONLY
 
 !macro StopVBoxService un
 Function ${un}StopVBoxService
@@ -344,8 +346,6 @@ Function ${un}StopVBoxService
   StrCpy $3 "0" ; Init counter
   ${LogVerbose} "Stopping VBoxService ..."
 
-svc_stop:
-
   ${LogVerbose} "Stopping VBoxService via SCM ..."
   ${If} $g_strWinVersion == "NT4"
     nsExec::Exec '"$SYSDIR\net.exe" stop VBoxService'
@@ -353,8 +353,6 @@ svc_stop:
     nsExec::Exec '"$SYSDIR\sc.exe" stop VBoxService'
   ${EndIf}
   Sleep "1000"           ; Wait a bit
-
-exe_stop:
 
 !ifdef _DEBUG
   ${LogVerbose} "Stopping VBoxService (as exe) ..."
@@ -462,6 +460,7 @@ FunctionEnd
   WriteRegBin "${ROOT}" "${KEY}" "${NAME}" "${VALUE}"
 !macroend
 
+!ifdef UNUSED_CODE ; Only used by unused Uninstall_RunExtUnInstaller function in VBoxguestAdditionsUninstallOld.nsh.
 !macro AbortShutdown un
 Function ${un}AbortShutdown
 
@@ -476,6 +475,7 @@ FunctionEnd
 !macroend
 !insertmacro AbortShutdown ""
 !insertmacro AbortShutdown "un."
+!endif ; UNUSED_CODE
 
 ;;
 ; Sets $g_bCapDllCache, $g_bCapXPDM, $g_bWithWDDM and $g_bCapWDDM.

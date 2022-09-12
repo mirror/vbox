@@ -98,7 +98,7 @@ Function ${un}Vista_UninstallInstDir
 
 FunctionEnd
 !macroend
-!insertmacro Vista_UninstallInstDir ""
+;!insertmacro Vista_UninstallInstDir "" - only .un version used
 !insertmacro Vista_UninstallInstDir "un."
 
 !macro Vista_Uninstall un

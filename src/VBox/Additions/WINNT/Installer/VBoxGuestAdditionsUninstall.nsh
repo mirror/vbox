@@ -73,7 +73,7 @@ Function ${un}UninstallCommon
 
 FunctionEnd
 !macroend
-!insertmacro UninstallCommon ""
+;!insertmacro UninstallCommon "" - only .un version used
 !insertmacro UninstallCommon "un."
 
 !macro Uninstall un
@@ -195,5 +195,5 @@ exit:
 
 FunctionEnd
 !macroend
-!insertmacro UninstallInstDir ""
+;!insertmacro UninstallInstDir "" - only un. version is used.
 !insertmacro UninstallInstDir "un."

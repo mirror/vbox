@@ -234,7 +234,7 @@ Function ${un}NT4_UninstallInstDir
 
 FunctionEnd
 !macroend
-!insertmacro NT4_UninstallInstDir ""
+;!insertmacro NT4_UninstallInstDir "" - only .un version used
 !insertmacro NT4_UninstallInstDir "un."
 
 !macro NT4_Uninstall un
