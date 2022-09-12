@@ -178,10 +178,20 @@ VBOX_PATH_PACKAGES    = $(patsubst %/,%,$(PATH_STAGE)/$(INST_PACKAGES))
 VBOX_PATH_TOOLS       = $(patsubst %/,%,$(PATH_STAGE)/$(VBOX_INST_TOOLS))
 
 
+#
+# Some source paths of global interest.
+#
+VBOX_PATH_SRC_CERTIFICATES = $(PATH_ROOT)/src/VBox/HostDrivers/Support/Certificates
+
+
+#
 # Delete targets on failure.
+#
 .DELETE_ON_ERROR:
 
+#
 # Notify about important kBuild updates.
+#
 if  $(KBUILD_VERSION_MAJOR) == 0 \
  && (   $(KBUILD_VERSION_MINOR) >= 2 \
      || (   $(KBUILD_VERSION_MINOR) == 1 \
@@ -329,6 +339,7 @@ if1of ($(KBUILD_TARGET), darwin) # Work in progress.
  VBOX_SUPPORTED_HOST_ARCHS += arm64
 endif
 
+
 #
 # The VirtualBox Configuration Defaults.
 #
@@ -408,7 +419,20 @@ endif
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1
+# Include root certs in the windows GAs installer and on the ISO (ignore when
+# signing is disabled).  Since we don't have any runtime detection of which
+# roots are actually being used, we expect shipping of the non-default root
+# with the signing setup in LocalConfig.kmk.  Following root cert selectors
+# are available (more details in GA tools & installer):
+# 	- VBOX_WITH_GA_ROOT_VERISIGN_G5
+# 	- VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
+# 	- VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
+VBOX_WITH_GA_ROOT_CERTS_INCLUDED := 1
+if (!defined(VBOX_CERTIFICATE_SUBJECT_NAME) || !defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME)) && "$(VBOX_SIGNING_MODE)" == "release"
+ VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID := 1
+endif
 ## @}
+
 # Set build options right for building the Additions as an RPM package.
 # VBOX_ONLY_RPM_ADDITIONS = 1
 ifdef VBOX_ONLY_RPM_ADDITIONS
@@ -4270,7 +4294,8 @@ ifdef VBOX_SIGNING_MODE
    VBOX_SIGN_IMAGE_CMDS           ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
    VBOX_SIGN_IMAGE_CMDS_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_SIGN_IMAGE_ORDERDEPS))
   endif
-  ## Enable signing of the additions.
+  ## Enable signing of the additions drivers, i.e. create CAT files.
+  ## @todo r=bird: This bugger is entirely misplaced, as it belongs in the additions config section so it can be properly overriden.
   VBOX_SIGN_ADDITIONS   ?= 1
   ## Set if we should include the legacy timestamp CA.
   ifndef VBOX_WITH_VBOX_LEGACY_TS_CA
@@ -4278,7 +4303,7 @@ ifdef VBOX_SIGNING_MODE
     VBOX_WITH_VBOX_LEGACY_TS_CA = 1
    endif
   endif
-  VBOX_LEGACY_TS_CA_FILE = $(PATH_ROOT)/src/VBox/HostDrivers/Support/Certificates/Timestamp-VBoxLegacyWinCA.crt
+  VBOX_LEGACY_TS_CA_FILE = $(VBOX_PATH_SRC_CERTIFICATES)/Timestamp-VBoxLegacyWinCA.crt
 
  else ifeq ($(KBUILD_HOST),darwin)
   #

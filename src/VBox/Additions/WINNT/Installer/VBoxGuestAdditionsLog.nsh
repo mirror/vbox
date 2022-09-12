@@ -66,7 +66,7 @@
 ;
 !macro _logToVBoxTray type text
 
-    ${LogVerbose} "${text}"
+    ${LogVerbose} "To VBoxTray: ${text}"
 !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
     Push $0
     ; Parameters:

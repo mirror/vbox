@@ -70,6 +70,20 @@ ifdef VBOX_SIGNING_MODE
  ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
 AdditionsInstCertFiles_SOURCES += $(VBOX_LEGACY_TS_CA_FILE)=>vbox-legacy-timestamp-ca.cer
  endif
+ ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
+  ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
+AdditionsInstCertFiles_SOURCES += \
+	$(VBOX_PATH_SRC_CERTIFICATES)/CaRoot-VeriSignPca3G5-18dad19e267de8bb4a2158cdcc6b3b4a.crt=>root-versign-pca3-g5.cer
+  endif
+  ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
+AdditionsInstCertFiles_SOURCES += \
+	$(VBOX_PATH_SRC_CERTIFICATES)/CaRoot-DigiCertAssuredIDRootCA-0ce7e0e517d846fe8fe560fc1bf03039.crt=>root-digicert-assured-id.cer
+  endif
+  ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
+AdditionsInstCertFiles_SOURCES += \
+	$(VBOX_PATH_SRC_CERTIFICATES)/CaRoot-DigiCertHighAssuranceEVRootCA-02ac5c266a0b409b8f0b79f2ae462577.crt=>root-digicert-high-assurance-ev.cer
+  endif
+ endif
 endif
 
 #

@@ -305,6 +305,17 @@ if defined(VBOX_WITH_ADDITIONS_ISO.win.amd64) || defined(VBOX_WITH_ADDITIONS_ISO
  ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
   GUESTADDITIONS_FILESPEC.win += cert/vbox-legacy-timestamp-ca.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-legacy-timestamp-ca.cer
  endif
+ ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
+  ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
+   GUESTADDITIONS_FILESPEC.win += cert/root-versign-pca3-g5.cer=$(VBOX_PATH_ADDITIONS.win)/root-versign-pca3-g5.cer
+  endif
+  ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
+   GUESTADDITIONS_FILESPEC.win += cert/root-digicert-assured-id.cer=$(VBOX_PATH_ADDITIONS.win)/root-digicert-assured-id.cer
+  endif
+  ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
+   GUESTADDITIONS_FILESPEC.win += cert/root-digicert-high-assurance-ev.cer=$(VBOX_PATH_ADDITIONS.win)/root-digicert-high-assurance-ev.cer
+  endif
+ endif
  GUESTADDITIONS_FILESPEC.win += windows11-bypass.reg=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/tools/windows11-bypass.reg
 endif
 

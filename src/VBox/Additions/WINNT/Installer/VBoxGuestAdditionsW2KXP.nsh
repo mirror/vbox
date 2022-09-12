@@ -159,7 +159,90 @@ exit:
 
 FunctionEnd
 
+!ifdef VBOX_SIGN_ADDITIONS
+  !ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5 | VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID | VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
+
+;;
+; Checks
+;
+; @param    pop1    The RDN of the certificate.
+; @param    pop2    Filename (cert dir) if we're shipping it (VBOX_WITH_GA_ROOT_CERTS_INCLUDED).
+; @param    pop3    The direct download URL link.
+; @param    pop4    The message to display if missing.
+;
+Function W2K_RootCertCheck
+  ;
+  ; Prolog: Save $0, $1, $2, $3 and move the parameters into them. Also save $4 for results.
+  ;
+  Push    $0
+  Exch    4
+  Push    $1
+  Exch    4
+  Push    $2
+  Exch    4
+  Push    $3
+  Exch    4
+  Pop     $0                                ; RDN
+  Pop     $1                                ; Filename
+  Pop     $2                                ; Direct URL
+  Pop     $3                                ; Missing message
+  Push    $4
+
+  ;
+  ; Run VBoxCertUtil to check.
+  ;
+  ${LogVerbose} "Checking if $0 is installed ..."
+  ${If} ${Silent}
+    nsExec::ExecToStack "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" root-exists $\"$0$\""
+    Exch 1
+    Pop  $4                                 ; output
+    ${LogVerbose} "$4"
+    Pop  $4                                 ; exit code
+  ${Else}
+    nsExec::ExecToLog   "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" root-exists $\"$0$\""
+    Pop  $4                                 ; exit code
+  ${EndIf}
+  ${LogVerbose} "Exit code: $4"
+
+  ;
+  ; VBoxCertUtil terminates with exit code 10 if not found, 0 if found and something else on failure.
+  ;
+  ${If} $4 == 0
+    ${LogVerbose} "Root certificate is present."
+  ${ElseIf} $4 == 10
+  !ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
+    ${LogVerbose} "Root certificate is _NOT_ present.  Installing it ..."
+    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-root $\"$INSTDIR\cert\$1$\"" 'non-zero-exitcode=abort'
+  !else
+    ${LogVerbose} "Root certificate is _NOT_ present.  The certificate can be downloaded from $2 and installed using '$INSTDIR\cert\VBoxCertUtil.exe'."
+    MessageBox MB_YESNO $3 /SD IDYES IDYES l_dont_abort
+    Abort "Missing signing root certificate $0"
+l_dont_abort:
+  !endif
+  ${ElseIf} $R4 <> 0
+    ${LogVerbose} "Unable to determine whether the root certificate was present. Assuming the worst."
+    Abort "Error when checking whether signing root certificate '$0' was present: $4"
+  ${EndIf}
+
+  ;
+  ; Epilog: Restore $0-$4 (we return nothing).
+  ;
+  Pop     $4
+  Pop     $3
+  Pop     $2
+  Pop     $1
+  Pop     $0
+FunctionEnd
+  !endif
+!endif
+
 Function W2K_Prepare
+  ; Save registers
+  Push  $R0
+  Push  $R1
+  Push  $R2
+  Push  $R3
+  Push  $R4
 
   ${If} $g_bNoVBoxServiceExit == "false"
     ; Stop / kill VBoxService
@@ -177,8 +260,62 @@ Function W2K_Prepare
   ; Delete old VBoxService.exe from install directory (replaced by VBoxTray.exe)
   Delete /REBOOTOK "$INSTDIR\VBoxService.exe"
 
-!ifdef VBOX_SIGN_ADDITIONS && VBOX_WITH_VBOX_LEGACY_TS_CA
-  ; NSIS only supports global vars, even in functions -- great
+!ifdef VBOX_SIGN_ADDITIONS
+  ;
+  ; When installing signed GAs, we need to check whether the root certs are
+  ; present, we use VBoxCertUtil for this task.  This utility is also used
+  ; for installing missing root certs we can ship, like the special timestamp
+  ; root further down.
+  ;
+  ${LogVerbose} "Installing VBoxCertUtil.exe ..."
+  SetOutPath "$INSTDIR\cert"
+  FILE "$%PATH_OUT%\bin\additions\VBoxCertUtil.exe"
+  !ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+  FILE "$%PATH_OUT%\bin\additions\vbox-legacy-timestamp-ca.cer"
+  !endif
+  !ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
+    !ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
+  FILE "$%PATH_OUT%\bin\additions\root-versign-pca3-g5.cer"
+    !endif
+    !ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
+  FILE "$%PATH_OUT%\bin\additions\root-digicert-assured-id.cer"
+    !endif
+    !ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
+  FILE "$%PATH_OUT%\bin\additions\root-digicert-high-assurance-ev.cer"
+    !endif
+  !endif
+
+  ; Now that the files are in place, do the checking.
+  !ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
+  Push $(VBOX_CA_CHECK_VERISIGN_G5)
+  Push "http://cacerts.digicert.com/pca3-g5.crt"
+  Push "root-versign-pca3-g5.cer"
+  Push "C=US; O=VeriSign, Inc.; OU=VeriSign Trust Network; OU=(c) 2006 VeriSign, Inc. - For authorized use only; CN=VeriSign Class 3 Public Primary Certification Authority - G5"
+  Call W2K_RootCertCheck
+  !endif
+
+  !ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
+  Push $(VBOX_CA_CHECK_DIGICERT_ASSURED_ID)
+  Push "https://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt"
+  Push "root-digicert-assured-id.cer"
+  Push "C=US; O=DigiCert Inc; OU=www.digicert.com; CN=DigiCert Assured ID Root CA"
+  Call W2K_RootCertCheck
+  !endif
+
+  !ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
+  Push $(VBOX_CA_CHECK_DIGICERT_HIGH_ASSURANCE_EV)
+  Push "https://cacerts.digicert.com/DigiCertHighAssuranceEVRootCA.crt"
+  Push "root-digicert-high-assurance-ev.cer"
+  Push "C=US; O=DigiCert Inc; OU=www.digicert.com; CN=DigiCert High Assurance EV Root CA"
+  Call W2K_RootCertCheck
+  !endif
+
+  !ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+  ;
+  ; Install the legacy timestamp CA if required/requested.
+  ;
+
+  ; NSIS only supports global vars, even in functions -- great ;; @todo r=bird: why don't you just change $g_bInstallTimestampCA?
   Var /GLOBAL bDoInstallCA
   StrCpy $bDoInstallCA "false" ; Set a default value
 
@@ -194,14 +331,19 @@ Function W2K_Prepare
 
   ${If} $bDoInstallCA == "true"
     ${LogVerbose} "Installing legacy timestamp CA certificate ..."
-    SetOutPath "$INSTDIR\cert"
-    FILE "$%PATH_OUT%\bin\additions\vbox-legacy-timestamp-ca.cer"
-    FILE "$%PATH_OUT%\bin\additions\VBoxCertUtil.exe"
-    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-trusted-publisher --root $\"$INSTDIR\cert\vbox-legacy-timestamp-ca.cer$\"" 'non-zero-exitcode=log'
+    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-root $\"$INSTDIR\cert\vbox-legacy-timestamp-ca.cer$\"" 'non-zero-exitcode=log'
     ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" display-all" 'non-zero-exitcode=log'
   ${EndIf}
-!endif
+  !endif ; VBOX_WITH_VBOX_LEGACY_TS_CA
 
+!endif ; VBOX_SIGN_ADDITIONS
+
+  ; Restore registers
+  Pop $R4
+  Pop $R3
+  Pop $R2
+  Pop $R1
+  Pop $R0
 FunctionEnd
 
 Function W2K_CopyFiles

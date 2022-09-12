@@ -33,6 +33,11 @@ LangString VBOX_NOTICE_ARCH_X86 ${LANG_GERMAN}                      "Diese Appli
 LangString VBOX_NOTICE_ARCH_AMD64 ${LANG_GERMAN}                    "Diese Applikation läuft nur auf 64-bit Windows-Systemen. Bitte installieren Sie die 32-bit Version der $(^Name)!"
 LangString VBOX_NT4_NO_SP6 ${LANG_GERMAN}                           "Es ist kein Service Pack 6 für NT 4.0 installiert.$\r$\nEs wird empfohlen das Service-Pack vor dieser Installation zu installieren. Trotzdem jetzt ohne Service-Pack installieren?"
 
+;; @todo translate:
+LangString VBOX_CA_CHECK_VERISIGN_G5 ${LANG_GERMAN}                 "A root certificate needed for driver signature verification during installation is missing:$\r$\n$\t'VeriSign Trust Network; OU=(c) 2006 VeriSign, Inc. - For authorized use only'$\r$\nThis can be downloaded from https://www.digicert.com/kb/digicert-root-certificates.htm and installed using $\"$INSTDIR$\".$\r$\nThe installation is likely to fail without the certificate.  Do you wish to continue anyway?"
+LangString VBOX_CA_CHECK_DIGICERT_ASSURED_ID ${LANG_GERMAN}         "A root certificate needed for driver signature verification during installation is missing:$\r$\n$\t'DigiCert Assured ID Root CA'$\r$\nThis can be downloaded from https://www.digicert.com/kb/digicert-root-certificates.htm and installed using $\"$INSTDIR$\".$\r$\nThe installation is likely to fail without the certificate.  Do you wish to continue anyway?"
+LangString VBOX_CA_CHECK_DIGICERT_HIGH_ASSURANCE_EV ${LANG_GERMAN}  "A root certificate needed for driver signature verification during installation is missing:$\r$\n$\t'DigiCert High Assurance EV Root CA'$\r$\nThis can be downloaded from https://www.digicert.com/kb/digicert-root-certificates.htm and installed using $\"$INSTDIR$\".$\r$\nThe installation is likely to fail without the certificate.  Do you wish to continue anyway?"
+
 LangString VBOX_PLATFORM_UNSUPPORTED ${LANG_GERMAN}                 "Diese Plattform wird noch nicht durch diese Guest Additions unterstützt!"
 
 LangString VBOX_SUN_FOUND ${LANG_GERMAN}                            "Eine veraltete Version der Sun Guest Additions ist auf diesem System bereits installiert. Diese muss erst deinstalliert werden bevor aktuelle Guest Additions installiert werden können.$\r$\n$\r$\nJetzt die alten Guest Additions deinstallieren?"
