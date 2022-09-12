@@ -315,21 +315,14 @@ Function W2K_Prepare
   ; Install the legacy timestamp CA if required/requested.
   ;
 
-  ; NSIS only supports global vars, even in functions -- great ;; @todo r=bird: why don't you just change $g_bInstallTimestampCA?
-  Var /GLOBAL bDoInstallCA
-  StrCpy $bDoInstallCA "false" ; Set a default value
-
   ; If not explicitly specified, let the detected Windows version decide what to do.
-  ${If} $g_bInstallTimestampCA == "unset"
-    ${If} $g_strWinVersion != "10"
-      ; On guest OSes < Windows 10 we always go for the PreW10 drivers and install our legacy timestamp CA.
-      StrCpy $bDoInstallCA "true"
-    ${EndIf}
-  ${Else}
-    StrCpy $bDoInstallCA $g_bInstallTimestampCA
+  ; On guest OSes < Windows 10 we always go for the PreW10 drivers and install our legacy timestamp CA.
+  ${If}    $g_bInstallTimestampCA == "unset"
+  ${AndIf} $g_strWinVersion != "10"
+      StrCpy $g_bInstallTimestampCA "true"
   ${EndIf}
 
-  ${If} $bDoInstallCA == "true"
+  ${If} $g_bInstallTimestampCA == "true"
     ${LogVerbose} "Installing legacy timestamp CA certificate ..."
     ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-root $\"$INSTDIR\cert\vbox-legacy-timestamp-ca.cer$\"" 'non-zero-exitcode=log'
     ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" display-all" 'non-zero-exitcode=log'
