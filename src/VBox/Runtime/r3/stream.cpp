@@ -1217,26 +1217,31 @@ static int rtStrmBufFlushWrite(PRTSTREAM pStream, size_t cbToFlush)
 {
     Assert(cbToFlush <= pStream->offBufEnd - pStream->offBufFirst);
 
-    /** @todo do nonblocking & incomplete writes?   */
-    size_t offBufFirst = pStream->offBufFirst;
-    int rc = RTFileWrite(rtStrmGetFile(pStream), &pStream->pchBuf[offBufFirst], cbToFlush, NULL);
-    if (RT_SUCCESS(rc))
+    RTFILE const hFile = rtStrmGetFile(pStream);
+    if (hFile != NIL_RTFILE)
     {
-        offBufFirst += cbToFlush;
-        if (offBufFirst >= pStream->offBufEnd)
-            pStream->offBufEnd = 0;
-        else
+        /** @todo do nonblocking & incomplete writes?   */
+        size_t offBufFirst = pStream->offBufFirst;
+        int rc = RTFileWrite(hFile, &pStream->pchBuf[offBufFirst], cbToFlush, NULL);
+        if (RT_SUCCESS(rc))
         {
-            /* Shift up the remaining content so the next write can take full
-               advantage of the buffer size. */
-            size_t cbLeft = pStream->offBufEnd - offBufFirst;
-            memmove(pStream->pchBuf, &pStream->pchBuf[offBufFirst], cbLeft);
-            pStream->offBufEnd = cbLeft;
+            offBufFirst += cbToFlush;
+            if (offBufFirst >= pStream->offBufEnd)
+                pStream->offBufEnd = 0;
+            else
+            {
+                /* Shift up the remaining content so the next write can take full
+                   advantage of the buffer size. */
+                size_t cbLeft = pStream->offBufEnd - offBufFirst;
+                memmove(pStream->pchBuf, &pStream->pchBuf[offBufFirst], cbLeft);
+                pStream->offBufEnd = cbLeft;
+            }
+            pStream->offBufFirst = 0;
+            return VINF_SUCCESS;
         }
-        pStream->offBufFirst = 0;
-        return VINF_SUCCESS;
+        return rc;
     }
-    return rc;
+    return VERR_INVALID_HANDLE;
 }
 
 
@@ -1452,79 +1457,84 @@ static int rtStrmBufFill(PRTSTREAM pStream)
     /*
      * Read data till the buffer is full.
      */
-    size_t cbRead = 0;
-    int rc = RTFileRead(rtStrmGetFile(pStream), &pStream->pchBuf[cbInBuffer], pStream->cbBufAlloc - cbInBuffer, &cbRead);
-    if (RT_SUCCESS(rc))
+    int          rc     = VERR_INVALID_HANDLE;
+    RTFILE const hFile  = rtStrmGetFile(pStream);
+    if (hFile != NIL_RTFILE)
     {
-        cbInBuffer        += cbRead;
-        pStream->offBufEnd = cbInBuffer;
-
-        if (cbInBuffer != 0)
+        size_t   cbRead = 0;
+        rc = RTFileRead(hFile, &pStream->pchBuf[cbInBuffer], pStream->cbBufAlloc - cbInBuffer, &cbRead);
+        if (RT_SUCCESS(rc))
         {
+            cbInBuffer        += cbRead;
+            pStream->offBufEnd = cbInBuffer;
+
+            if (cbInBuffer != 0)
+            {
 # ifdef RTSTREAM_WITH_TEXT_MODE
             if (pStream->fBinary)
 # endif
                 return VINF_SUCCESS;
-        }
-        else
-        {
-            /** @todo this shouldn't be sticky, should it? */
-            ASMAtomicWriteS32(&pStream->i32Error, VERR_EOF);
-            return VERR_EOF;
-        }
+            }
+            else
+            {
+                /** @todo this shouldn't be sticky, should it? */
+                ASMAtomicWriteS32(&pStream->i32Error, VERR_EOF);
+                return VERR_EOF;
+            }
 
 # ifdef RTSTREAM_WITH_TEXT_MODE
-        /*
-         * Do CRLF -> LF conversion in the buffer.
-         */
-        ASMBitClearRange(pStream->pbmBuf, offCrLfConvStart, RT_ALIGN_Z(cbInBuffer, 64));
-        char  *pchCur = &pStream->pchBuf[offCrLfConvStart];
-        size_t cbLeft = cbInBuffer - offCrLfConvStart;
-        while (cbLeft > 0)
-        {
-            Assert(&pchCur[cbLeft] == &pStream->pchBuf[pStream->offBufEnd]);
-            char *pchCr = (char *)memchr(pchCur, '\r', cbLeft);
-            if (pchCr)
+            /*
+             * Do CRLF -> LF conversion in the buffer.
+             */
+            ASMBitClearRange(pStream->pbmBuf, offCrLfConvStart, RT_ALIGN_Z(cbInBuffer, 64));
+            char  *pchCur = &pStream->pchBuf[offCrLfConvStart];
+            size_t cbLeft = cbInBuffer - offCrLfConvStart;
+            while (cbLeft > 0)
             {
-                size_t offCur = (size_t)(pchCr - pchCur);
-                if (offCur + 1 < cbLeft)
+                Assert(&pchCur[cbLeft] == &pStream->pchBuf[pStream->offBufEnd]);
+                char *pchCr = (char *)memchr(pchCur, '\r', cbLeft);
+                if (pchCr)
                 {
-                    if (pchCr[1] == '\n')
+                    size_t offCur = (size_t)(pchCr - pchCur);
+                    if (offCur + 1 < cbLeft)
                     {
-                        /* Found one '\r\n' sequence. Look for more before shifting the buffer content. */
-                        cbLeft -= offCur;
-                        pchCur  = pchCr;
-
-                        do
+                        if (pchCr[1] == '\n')
                         {
-                            ASMBitSet(pStream->pbmBuf, (int32_t)(pchCur - pStream->pchBuf));
-                            *pchCur++  = '\n'; /* dst */
-                            cbLeft    -= 2;
-                            pchCr     += 2;    /* src */
-                        } while  (cbLeft >= 2 && pchCr[0] == '\r' && pchCr[1] == '\n');
+                            /* Found one '\r\n' sequence. Look for more before shifting the buffer content. */
+                            cbLeft -= offCur;
+                            pchCur  = pchCr;
 
-                        memmove(&pchCur, pchCr, cbLeft);
+                            do
+                            {
+                                ASMBitSet(pStream->pbmBuf, (int32_t)(pchCur - pStream->pchBuf));
+                                *pchCur++  = '\n'; /* dst */
+                                cbLeft    -= 2;
+                                pchCr     += 2;    /* src */
+                            } while  (cbLeft >= 2 && pchCr[0] == '\r' && pchCr[1] == '\n');
+
+                            memmove(&pchCur, pchCr, cbLeft);
+                        }
+                        else
+                        {
+                            cbLeft -= offCur + 1;
+                            pchCur  = pchCr  + 1;
+                        }
                     }
                     else
                     {
-                        cbLeft -= offCur + 1;
-                        pchCur  = pchCr  + 1;
+                        Assert(pchCr == &pStream->pchBuf[pStream->offBufEnd - 1]);
+                        pStream->fPendingCr = true;
+                        pStream->offBufEnd  = --cbInBuffer;
+                        break;
                     }
                 }
                 else
-                {
-                    Assert(pchCr == &pStream->pchBuf[pStream->offBufEnd - 1]);
-                    pStream->fPendingCr = true;
-                    pStream->offBufEnd  = --cbInBuffer;
                     break;
-                }
             }
-            else
-                break;
-        }
 
-        return VINF_SUCCESS;
+            return VINF_SUCCESS;
 # endif
+        }
     }
 
     /*
@@ -1761,28 +1771,34 @@ RTR3DECL(RTFOFF) RTStrmTell(PRTSTREAM pStream)
     int rc = pStream->i32Error;
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileSeek(rtStrmGetFile(pStream), 0, RTFILE_SEEK_CURRENT, &off);
-        if (RT_SUCCESS(rc))
+        RTFILE const hFile = rtStrmGetFile(pStream);
+        if (hFile != NIL_RTFILE)
         {
-            switch (pStream->enmBufDir)
+            rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &off);
+            if (RT_SUCCESS(rc))
             {
-                case RTSTREAMBUFDIR_READ:
-                    /* Subtract unconsumed chars and removed '\r' characters. */
-                    off -= pStream->offBufEnd - pStream->offBufFirst;
-                    if (!pStream->fBinary)
-                        for (size_t offBuf = pStream->offBufFirst; offBuf < pStream->offBufEnd; offBuf++)
-                            off -= ASMBitTest(pStream->pbmBuf, (int32_t)offBuf);
-                    break;
-                case RTSTREAMBUFDIR_WRITE:
-                    /* Add unwrittend chars in the buffer. */
-                    off += pStream->offBufEnd - pStream->offBufFirst;
-                    break;
-                default:
-                    AssertFailed();
-                case RTSTREAMBUFDIR_NONE:
-                    break;
+                switch (pStream->enmBufDir)
+                {
+                    case RTSTREAMBUFDIR_READ:
+                        /* Subtract unconsumed chars and removed '\r' characters. */
+                        off -= pStream->offBufEnd - pStream->offBufFirst;
+                        if (!pStream->fBinary)
+                            for (size_t offBuf = pStream->offBufFirst; offBuf < pStream->offBufEnd; offBuf++)
+                                off -= ASMBitTest(pStream->pbmBuf, (int32_t)offBuf);
+                        break;
+                    case RTSTREAMBUFDIR_WRITE:
+                        /* Add unwrittend chars in the buffer. */
+                        off += pStream->offBufEnd - pStream->offBufFirst;
+                        break;
+                    default:
+                        AssertFailed();
+                    case RTSTREAMBUFDIR_NONE:
+                        break;
+                }
             }
         }
+        else
+            rc = VERR_INVALID_HANDLE;
     }
     if (RT_FAILURE(rc))
     {
