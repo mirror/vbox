@@ -68,6 +68,19 @@ Rules for adding a changelog entry to make them look more uniform:
 
 <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
+  <sect1>
+
+    <title>Version TBD (TBD)</title>
+
+    <para>This is a major update. The following major new features were added:</para>
+
+    <itemizedlist>
+
+      <listitem>TBD</listitem>
+
+    </itemizedlist>
+
+  </sect1>
 
   <sect1>
 
