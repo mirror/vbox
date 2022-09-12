@@ -93,7 +93,12 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>GUI: Added a new top (of Linux) like utility which lists peformance statistics
+         <para>OCI: Cloud virtual machines can be added to Virtual Machine Manager and controlled
+           as local VMs </para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added a new utility similar to "top" or "resource monitor" which lists peformance statistics
         (CPU usage, RAM usage, disk I/O rate, etc.) of running guests</para>
       </listitem>
 
@@ -110,33 +115,6 @@ Rules for adding a changelog entry to make them look more uniform:
       <listitem>
         <para>Audio recording: Now using Vorbis as the default audio format for WebM containers.
           Opus is no longer being used.</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: Added "default" host driver type to make it possible to move VMs (appliances) between different platforms
-          without the need of changing the audio driver explicitly. When the "default" driver is selected, the best audio backend
-          option for a platform will be used. This is the default for newly created VMs.</para>
-      </listitem>
-
-      <listitem>
-        <para>Guest Control: Implemented initial support for automatic updating
-          of Guest Additions for Linux guests</para>
-      </listitem>
-
-      <listitem>
-        <para>Guest Control: Implemented ability to wait for and/or reboot the
-          guest when updating Guest Additions via VBoxManage</para>
-      </listitem>
-
-      <listitem>
-        <para>VBoxManage: Added Guest Control "waitrunlevel" sub-command to
-          make it possible to wait for a guest to reach a certain run level</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows hosts: Added experimental support of running autostarted VMs
-          in session 0, to allow running VMS even when a usser is not being logged
-          in (disabled by default, please consult the manual)</para>
       </listitem>
 
       <listitem>
@@ -195,6 +173,11 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>GUI: Improved accessibility</para>
+      </listitem>
+
+      <listitem>
+         <para>OCI: Cloud networking functionality is enhanced for local VMs, now local VMs could
+         be connected to cloud networking easily</para>
       </listitem>
 
     </itemizedlist>
