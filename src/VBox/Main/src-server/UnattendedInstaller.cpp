@@ -897,12 +897,12 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCommon(GeneralTextScript *pEditor)
 {
     try
     {
-        /* Set timeouts to 10 seconds. */
+        /* Set timeouts to 4 seconds. */
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("timeout", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
             if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("timeout", RTCString::CaseInsensitive))
             {
-                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "timeout 10");
+                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "timeout 4");
                 if (FAILED(hrc))
                     return hrc;
             }
@@ -1016,7 +1016,9 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         /* On Debian Live ISOs (at least from 9 to 11) the there is only menu.cfg. */
         if (hlpVfsFileExists(hVfsOrgIso, "/isolinux/menu.cfg"))
             pszMenuConfigFilename     =  "/isolinux/menu.cfg";
-
+        /* On Linux Mint 20.3, 21, and 19 (at least) there is only isolinux.cfg. */
+        else if (hlpVfsFileExists(hVfsOrgIso, "/isolinux/isolinux.cfg"))
+            pszMenuConfigFilename     =  "/isolinux/isolinux.cfg";
         /* Ubuntus 21.10+ are UEFI only. No isolinux directory. We modify grub.cfg. */
         else if (hlpVfsFileExists(hVfsOrgIso, "/boot/grub/grub.cfg"))
         {
@@ -1057,14 +1059,22 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
             rVecArgs.append().append("isolinux/isolinux.cfg=").append(strIsoLinuxCfg);
         }
 
-        /* Replace menu configuration file as well. */
-        rVecArgs.append().assign(pszMenuConfigFilename).append("=:must-remove:");
-        strTxtCfg = mpParent->i_getAuxiliaryBasePath();
-        if (fMenuConfigIsGrub)
-            strTxtCfg.append("grub.cfg");
-        else
-            strTxtCfg.append("isolinux-txt.cfg");
-        rVecArgs.append().assign(pszMenuConfigFilename).append("=").append(strTxtCfg);
+        /*
+         * Replace menu configuration file as well.
+         * Some distros (Linux Mint) has only isolinux.cfg. No menu.cfg or txt.cfg.
+         */
+        if (RTStrICmp(pszMenuConfigFilename, "/isolinux/isolinux.cfg") != 0)
+        {
+
+            /* Replace menu configuration file as well. */
+            rVecArgs.append().assign(pszMenuConfigFilename).append("=:must-remove:");
+            strTxtCfg = mpParent->i_getAuxiliaryBasePath();
+            if (fMenuConfigIsGrub)
+                strTxtCfg.append("grub.cfg");
+            else
+                strTxtCfg.append("isolinux-txt.cfg");
+            rVecArgs.append().assign(pszMenuConfigFilename).append("=").append(strTxtCfg);
+        }
     }
     catch (std::bad_alloc &)
     {
@@ -1102,7 +1112,9 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
     /*
      * Edit the menu config file.
-     */
+     * Some distros (Linux Mint) has only isolinux.cfg. No menu.cfg or txt.cfg.
+    */
+    if (RTStrICmp(pszMenuConfigFilename, "/isolinux/isolinux.cfg") != 0)
     {
         GeneralTextScript Editor(mpParent);
         HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszMenuConfigFilename, &Editor);
@@ -1111,7 +1123,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
             if (fMenuConfigIsGrub)
                 hrc = editDebianGrubCfg(&Editor);
             else
-                hrc = editDebianMenuCfg(&Editor);
+                    hrc = editDebianMenuCfg(&Editor);
             if (SUCCEEDED(hrc))
             {
                 hrc = Editor.save(strTxtCfg, fOverwrite);
@@ -1163,7 +1175,8 @@ HRESULT UnattendedDebianInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor, c
         /* Comment out default directives since in Debian case default is handled in menu config file. */
         std::vector<size_t> vecLineNumbers =  pEditor->findTemplate("default", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("default", RTCString::CaseInsensitive))
+            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("default", RTCString::CaseInsensitive)
+                && !pEditor->getContentOfLine(vecLineNumbers[i]).contains("default vesa", RTCString::CaseInsensitive))
             {
                 HRESULT hrc = pEditor->prependToLine(vecLineNumbers.at(i), "#");
                 if (FAILED(hrc))
@@ -1269,12 +1282,12 @@ HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor)
     /* Default menu entry of grub.cfg is set in /etc/deafult/grub file. */
     try
     {
-        /* Set timeouts to 10 seconds. */
+        /* Set timeouts to 4 seconds. */
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("set timeout", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
             if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("set timeout", RTCString::CaseInsensitive))
             {
-                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=10");
+                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=4");
                 if (FAILED(hrc))
                     return hrc;
             }

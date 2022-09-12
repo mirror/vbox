@@ -1407,6 +1407,12 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
+    else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Linux Mint")) == 0
+             && !RT_C_IS_ALNUM(pszOsAndVersion[10]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 10);
+    }
     else if (    (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Xubuntu")) == 0
                   || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Kubuntu")) == 0
                   || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Lubuntu")) == 0)
@@ -1454,6 +1460,8 @@ static bool detectLinuxDistroNameII(const char *pszOsAndVersion, VBOXOSTYPE *pen
     else if (RTStrIStr(pszOsAndVersion, "Fedora") != NULL)
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
     else if (RTStrIStr(pszOsAndVersion, "Ubuntu") != NULL)
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+    else if (RTStrIStr(pszOsAndVersion, "Mint") != NULL)
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
     else if (RTStrIStr(pszOsAndVersion, "Debian"))
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Debian);
