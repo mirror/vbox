@@ -135,7 +135,6 @@ exit:
 FunctionEnd
 !macroend
 !insertmacro Uninstall_WipeInstallationDirectory ""
-!insertmacro Uninstall_WipeInstallationDirectory "un."
 
 ; This function cleans up an old Sun installation
 !macro Uninstall_Sun un
@@ -207,7 +206,6 @@ exit:
 FunctionEnd
 !macroend
 !insertmacro Uninstall_Sun ""
-!insertmacro Uninstall_Sun "un."
 
 ; This function cleans up an old xVM Sun installation
 !macro Uninstall_SunXVM un
@@ -279,7 +277,6 @@ exit:
 FunctionEnd
 !macroend
 !insertmacro Uninstall_SunXVM ""
-!insertmacro Uninstall_SunXVM "un."
 
 ; This function cleans up an old innotek installation
 !macro Uninstall_Innotek un
@@ -370,4 +367,3 @@ exit:
 FunctionEnd
 !macroend
 !insertmacro Uninstall_Innotek ""
-!insertmacro Uninstall_Innotek "un."
