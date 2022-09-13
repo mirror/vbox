@@ -1485,6 +1485,27 @@ static bool detectLinuxDistroNameII(const char *pszOsAndVersion, VBOXOSTYPE *pen
     return fRet;
 }
 
+
+/**
+ * Helps detecting linux distro flavor by finding substring position of non numerical
+ * part of the disk name.
+ *
+ * @returns true if detected, false if not.
+ * @param   pszDiskName          Name of the disk as it is read from .disk/info or README.diskdefines file.
+ * @param   cchVersionPosition   String position where first numerical character is found. We use substring upto this position as OS flavor
+ */
+static bool detectLinuxDistroFlavor(const char *pszDiskName, size_t *cchVersionPosition)
+{
+    if (!pszDiskName || !cchVersionPosition)
+        return false;
+    while (*pszDiskName != '\0' && !RT_C_IS_DIGIT(*pszDiskName))
+    {
+        ++pszDiskName;
+        ++(*cchVersionPosition);
+    }
+    return true;
+}
+
 /**
  * Detect Linux distro ISOs.
  *
@@ -1552,6 +1573,13 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                         LogRelFlow(("Unattended: .treeinfo: version=%s\n", pBuf->sz));
                         try { mStrDetectedOSVersion = RTStrStrip(pBuf->sz); }
                         catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+
+                        size_t cchVersionPosition = 0;
+                        if (detectLinuxDistroFlavor(pBuf->sz, &cchVersionPosition))
+                        {
+                            try { mStrDetectedOSFlavor = Utf8Str(pBuf->sz, cchVersionPosition); }
+                            catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                        }
                     }
                 }
                 else
@@ -1684,6 +1712,12 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     }
                 }
             }
+            size_t cchVersionPosition = 0;
+            if (detectLinuxDistroFlavor(apszLines[1], &cchVersionPosition))
+            {
+                try { mStrDetectedOSFlavor = Utf8Str(apszLines[1], cchVersionPosition); }
+                catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+            }
         }
         else
             LogRel(("Unattended: .discinfo: Unknown: arch='%s'\n", apszLines[2]));
@@ -1693,7 +1727,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
     }
 
     /*
-     * Ubuntu has a README.diskdefins file on their ISO (already on 4.10 / warty warthog).
+     * Ubuntu has a README.diskdefines file on their ISO (already on 4.10 / warty warthog).
      * Example content:
      *  #define DISKNAME  Ubuntu 4.10 "Warty Warthog" - Preview amd64 Binary-1
      *  #define TYPE  binary
@@ -1787,6 +1821,13 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
                     try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
                     catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+
+                    size_t cchVersionPosition = 0;
+                    if (detectLinuxDistroFlavor(pszDiskName, &cchVersionPosition))
+                    {
+                        try { mStrDetectedOSFlavor = Utf8Str(pszDiskName, cchVersionPosition); }
+                        catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                    }
                 }
                 else
                     LogRel(("Unattended: README.diskdefines: Unknown: diskname='%s'\n", pszDiskName));
@@ -1870,6 +1911,13 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                 LogRelFlow(("Unattended: .disk/info: version=%s\n", pszVersion));
                 try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
                 catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+
+                size_t cchVersionPosition = 0;
+                if (detectLinuxDistroFlavor(pszDiskName, &cchVersionPosition))
+                {
+                    try { mStrDetectedOSFlavor = Utf8Str(pszDiskName, cchVersionPosition); }
+                    catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                }
             }
             else
                 LogRel(("Unattended: .disk/info: Unknown: diskname='%s'\n", pszDiskName));
@@ -3771,10 +3819,16 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
     if (enmOsTypeMasked == VBOXOSTYPE_OpenSUSE)
         return S_OK;
 
-    /* We cannot install Ubuntus older than 11.04. */
-    if (   enmOsTypeMasked == VBOXOSTYPE_Ubuntu
-        && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "11.04") < 0)
-        return S_OK;
+    if (enmOsTypeMasked == VBOXOSTYPE_Ubuntu)
+    {
+        /* We cannot install Ubuntus older than 11.04. */
+        if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "11.04") < 0)
+            return S_OK;
+        /* Lubuntu, starting with 20.04, has switched to calamares, which cannot be automated. */
+        if (   RTStrIStr(mStrDetectedOSFlavor.c_str(), "lubuntu")
+            && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "20.04") > 0)
+            return S_OK;
+    }
 
     /* Earlier than OL 6.4 cannot be installed. OL 6.x fails with unsupported hardware error (CPU family). */
     if (   enmOsTypeMasked == VBOXOSTYPE_Oracle
