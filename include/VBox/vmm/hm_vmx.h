@@ -408,87 +408,79 @@
 #define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                    (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 /** @} */
 
-/** @name VMX Extended Page Tables (EPT) Common Bits
+
+/** @name VMX Extended Page Tables (EPT) Common Bits.
  * @{ */
 /** Bit 0 - Readable (we often think of it as present). */
-#define EPT_E_BIT_READ          0
-#define EPT_E_READ              RT_BIT_64(EPT_E_BIT_READ)       /**< @see EPT_E_BIT_READ */
+#define EPT_E_BIT_READ                      0
+#define EPT_E_READ                          RT_BIT_64(EPT_E_BIT_READ)               /**< @see EPT_E_BIT_READ */
 /** Bit 1 - Writable. */
-#define EPT_E_BIT_WRITE         1
-#define EPT_E_WRITE             RT_BIT_64(EPT_E_BIT_WRITE)      /**< @see EPT_E_BIT_WRITE */
+#define EPT_E_BIT_WRITE                     1
+#define EPT_E_WRITE                         RT_BIT_64(EPT_E_BIT_WRITE)              /**< @see EPT_E_BIT_WRITE */
 /** Bit 2 - Executable.
  * @note This controls supervisor instruction fetching if mode-based
  *       execution control is enabled. */
-#define EPT_E_BIT_EXECUTE       2
-#define EPT_E_EXECUTE           RT_BIT_64(EPT_E_BIT_EXECUTE)    /**< @see EPT_E_BIT_EXECUTE */
+#define EPT_E_BIT_EXECUTE                   2
+#define EPT_E_EXECUTE                       RT_BIT_64(EPT_E_BIT_EXECUTE)            /**< @see EPT_E_BIT_EXECUTE */
 /** Bits 3-5 - Memory type mask (leaf only, MBZ).
  * The memory type is only applicable for leaf entries and MBZ for
  * non-leaf (causes miconfiguration exit). */
-#define EPT_E_MEMTYPE_MASK      UINT64_C(0x0038)
+#define EPT_E_MEMTYPE_MASK                  UINT64_C(0x0038)
 /** Bits 3-5 - Memory type shifted mask. */
-#define EPT_E_MEMTYPE_SMASK     UINT64_C(0x0007)
+#define EPT_E_MEMTYPE_SMASK                 UINT64_C(0x0007)
 /** Bits 3-5 - Memory type shift count. */
-#define EPT_E_MEMTYPE_SHIFT     3
+#define EPT_E_MEMTYPE_SHIFT                 3
 /** Bits 3-5 - Memory type: UC (Uncacheable). */
-#define EPT_E_MEMTYPE_UC        (UINT64_C(0) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_UC                    (UINT64_C(0) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WC (Write Combining). */
-#define EPT_E_MEMTYPE_WC        (UINT64_C(1) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WC                    (UINT64_C(1) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (2). */
-#define EPT_E_MEMTYPE_INVALID_2 (UINT64_C(2) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_2             (UINT64_C(2) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (3). */
-#define EPT_E_MEMTYPE_INVALID_3 (UINT64_C(3) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_3             (UINT64_C(3) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WT (Write Through). */
-#define EPT_E_MEMTYPE_WT        (UINT64_C(4) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WT                    (UINT64_C(4) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WP (Write Protected). */
-#define EPT_E_MEMTYPE_WP        (UINT64_C(5) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WP                    (UINT64_C(5) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WB (Write Back). */
-#define EPT_E_MEMTYPE_WB        (UINT64_C(6) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WB                    (UINT64_C(6) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (7). */
-#define EPT_E_MEMTYPE_INVALID_7 (UINT64_C(7) << EPT_E_MEMTYPE_SHIFT)
-
+#define EPT_E_MEMTYPE_INVALID_7             (UINT64_C(7) << EPT_E_MEMTYPE_SHIFT)
 /** Bit 6 - Ignore page attribute table (leaf, MBZ). */
-#define EPT_E_BIT_IGNORE_PAT    6
-#define EPT_E_IGNORE_PAT        RT_BIT_64(EPT_E_BIT_IGNORE_PAT) /**< @see EPT_E_BIT_IGNORE_PAT */
+#define EPT_E_BIT_IGNORE_PAT                6
+#define EPT_E_IGNORE_PAT                    RT_BIT_64(EPT_E_BIT_IGNORE_PAT)         /**< @see EPT_E_BIT_IGNORE_PAT */
 /** Bit 7 - Leaf entry (MBZ in PML4, ignored in PT). */
-#define EPT_E_BIT_LEAF          7
-#define EPT_E_LEAF              RT_BIT_64(EPT_E_BIT_LEAF)       /**< @see EPT_E_BIT_LEAF */
+#define EPT_E_BIT_LEAF                      7
+#define EPT_E_LEAF                          RT_BIT_64(EPT_E_BIT_LEAF)               /**< @see EPT_E_BIT_LEAF */
 /** Bit 8 - Accessed (all levels).
  * @note Ignored and not written when EPTP bit 6 is 0. */
-#define EPT_E_BIT_ACCESSED      8
-#define EPT_E_ACCESSED          RT_BIT_64(EPT_E_BIT_ACCESSED)   /**< @see EPT_E_BIT_ACCESSED */
+#define EPT_E_BIT_ACCESSED                  8
+#define EPT_E_ACCESSED                      RT_BIT_64(EPT_E_BIT_ACCESSED)           /**< @see EPT_E_BIT_ACCESSED */
 /** Bit 9 - Dirty (leaf only).
  * @note Ignored and not written when EPTP bit 6 is 0. */
-#define EPT_E_BIT_DIRTY         9
-#define EPT_E_DIRTY             RT_BIT_64(EPT_E_BIT_DIRTY)      /**< @see EPT_E_BIT_DIRTY */
+#define EPT_E_BIT_DIRTY                     9
+#define EPT_E_DIRTY                         RT_BIT_64(EPT_E_BIT_DIRTY)              /**< @see EPT_E_BIT_DIRTY */
 /** Bit 10 - Executable for usermode.
  * @note This ignored if mode-based execution control is disabled. */
-#define EPT_E_BIT_USER_EXECUTE  10
-#define EPT_E_USER_EXECUTE      RT_BIT_64(EPT_E_BIT_USER_EXECUTE) /**< @see EPT_E_BIT_USER_EXECUTE */
-
-/* 11 is always ignored (at time of writing) */
-
+#define EPT_E_BIT_USER_EXECUTE              10
+#define EPT_E_USER_EXECUTE                  RT_BIT_64(EPT_E_BIT_USER_EXECUTE)       /**< @see EPT_E_BIT_USER_EXECUTE */
+/* Bit 11 is always ignored. */
 /** Bits 12-51 - Physical Page number of the next level. */
-#define EPT_E_PG_MASK           UINT64_C(0x000ffffffffff000)
-
+#define EPT_E_PG_MASK                       UINT64_C(0x000ffffffffff000)
 /** Bit 58 - Page-write access (leaf only, ignored).
  * @note Ignored if EPT page-write control is disabled. */
 #define EPT_E_BIT_PAGING_WRITE              58
 #define EPT_E_PAGING_WRITE                  RT_BIT_64(EPT_E_BIT_PAGING_WRITE)       /**< @see EPT_E_BIT_PAGING_WRITE*/
-
 /* Bit 59 is always ignored. */
-
 /** Bit 60 - Supervisor shadow stack (leaf only, ignored).
  * @note Ignored if EPT bit 7 is 0. */
 #define EPT_E_BIT_SUPER_SHW_STACK           60
 #define EPT_E_SUPER_SHW_STACK               RT_BIT_64(EPT_E_BIT_SUPER_SHW_STACK)    /**< @see EPT_E_BIT_SUPER_SHW_STACK */
-
 /** Bit 61 - Sub-page write permission (leaf only, ignored).
  * @note Ignored if sub-page write permission for EPT is disabled. */
 #define EPT_E_BIT_SUBPAGE_WRITE_PERM        61
 #define EPT_E_SUBPAGE_WRITE_PERM            RT_BIT_64(EPT_E_BIT_SUBPAGE_WRITE_PERM) /**< @see EPT_E_BIT_SUBPAGE_WRITE_PERM*/
-
 /* Bit 62 is always ignored. */
-
 /** Bit 63 - Suppress \#VE (leaf only, ignored).
  * @note Ignored if EPT violation to \#VE conversion is disabled. */
 #define EPT_E_BIT_SUPPRESS_VE               63
