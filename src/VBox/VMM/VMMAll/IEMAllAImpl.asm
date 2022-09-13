@@ -5426,3 +5426,54 @@ BEGINPROC_FASTCALL iemAImpl_vpextrw_u128, 16
 dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
 dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
 ENDPROC iemAImpl_vpextrw_u128
+
+
+;;
+; movmskp{s,d} SSE instruction template
+;
+; @param    1       The SSE instruction name.
+; @param    2       The AVX instruction name.
+;
+; @param    A0      Pointer to the output register (output/byte sized).
+; @param    A1      Pointer to the source media register size operand (input).
+;
+%macro IEMIMPL_MEDIA_MOVMSK_P 2
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_2_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A1]
+        %1      T0, xmm0
+        mov     byte [A0], T0_8
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %2 %+ _u128, 16
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movdqu  xmm0, [A1]
+        %2      T0, xmm0
+        mov     byte [A0], T0_8
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %2 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %2 %+ _u256, 16
+        PROLOGUE_2_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu ymm0, [A1]
+        %2      T0, ymm0
+        mov     byte [A0], T0_8
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_ %+ %2 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_MOVMSK_P movmskps, vmovmskps
+IEMIMPL_MEDIA_MOVMSK_P movmskpd, vmovmskpd

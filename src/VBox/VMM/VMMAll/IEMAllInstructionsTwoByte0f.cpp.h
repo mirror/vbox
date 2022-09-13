@@ -4018,9 +4018,66 @@ FNIEMOP_DEF(iemOp_cmovnle_Gv_Ev)
 #undef CMOV_X
 
 /** Opcode      0x0f 0x50 - movmskps Gy, Ups */
-FNIEMOP_STUB(iemOp_movmskps_Gy_Ups);
+FNIEMOP_DEF(iemOp_movmskps_Gy_Ups)
+{
+    IEMOP_MNEMONIC2(RM_REG, MOVMSKPS, movmskps, Gy, Ux, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0); /** @todo */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 1);
+        IEM_MC_LOCAL(uint8_t,           u8Dst);
+        IEM_MC_ARG_LOCAL_REF(uint8_t *, pu8Dst,  u8Dst, 0);
+        IEM_MC_ARG(PCRTUINT128U,        puSrc,          1);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128_CONST(puSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_movmskps_u128, pu8Dst, puSrc);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u8Dst);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    /* No memory operand. */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 /** Opcode 0x66 0x0f 0x50 - movmskpd Gy, Upd */
-FNIEMOP_STUB(iemOp_movmskpd_Gy_Upd);
+FNIEMOP_DEF(iemOp_movmskpd_Gy_Upd)
+{
+    IEMOP_MNEMONIC2(RM_REG, MOVMSKPD, movmskpd, Gy, Ux, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0); /** @todo */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 1);
+        IEM_MC_LOCAL(uint8_t,           u8Dst);
+        IEM_MC_ARG_LOCAL_REF(uint8_t *, pu8Dst,  u8Dst, 0);
+        IEM_MC_ARG(PCRTUINT128U,        puSrc,          1);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128_CONST(puSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_movmskpd_u128, pu8Dst, puSrc);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u8Dst);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    /* No memory operand. */
+    return IEMOP_RAISE_INVALID_OPCODE();
+
+}
+
+
 /*  Opcode 0xf3 0x0f 0x50 - invalid */
 /*  Opcode 0xf2 0x0f 0x50 - invalid */
 

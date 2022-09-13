@@ -15934,3 +15934,67 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpextrw_u128_fallback,(uint16_t *pu16Dst, PCRTU
 {
     *pu16Dst = puSrc->au16[bEvil & 0x7];
 }
+
+
+/**
+ * [V]MOVMSKPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_movmskps_u128,(uint8_t *pu8Dst, PCRTUINT128U puSrc))
+{
+    *pu8Dst  =  puSrc->au32[0] >> 31;
+    *pu8Dst |= (puSrc->au32[1] >> 31) << 1;
+    *pu8Dst |= (puSrc->au32[2] >> 31) << 2;
+    *pu8Dst |= (puSrc->au32[3] >> 31) << 3;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovmskps_u128_fallback,(uint8_t *pu8Dst, PCRTUINT128U puSrc))
+{
+    *pu8Dst  =  puSrc->au32[0] >> 31;
+    *pu8Dst |= (puSrc->au32[1] >> 31) << 1;
+    *pu8Dst |= (puSrc->au32[2] >> 31) << 2;
+    *pu8Dst |= (puSrc->au32[3] >> 31) << 3;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovmskps_u256_fallback,(uint8_t *pu8Dst, PCRTUINT256U puSrc))
+{
+    *pu8Dst  =  puSrc->au32[0] >> 31;
+    *pu8Dst |= (puSrc->au32[1] >> 31) << 1;
+    *pu8Dst |= (puSrc->au32[2] >> 31) << 2;
+    *pu8Dst |= (puSrc->au32[3] >> 31) << 3;
+    *pu8Dst |= (puSrc->au32[4] >> 31) << 4;
+    *pu8Dst |= (puSrc->au32[5] >> 31) << 5;
+    *pu8Dst |= (puSrc->au32[6] >> 31) << 6;
+    *pu8Dst |= (puSrc->au32[7] >> 31) << 7;
+}
+
+
+/**
+ * [V]MOVMSKPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_movmskpd_u128,(uint8_t *pu8Dst, PCRTUINT128U puSrc))
+{
+    *pu8Dst  =  puSrc->au64[0] >> 63;
+    *pu8Dst |= (puSrc->au64[1] >> 63) << 1;
+}
+
+#endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovmskpd_u128_fallback,(uint8_t *pu8Dst, PCRTUINT128U puSrc))
+{
+    *pu8Dst  =  puSrc->au64[0] >> 63;
+    *pu8Dst |= (puSrc->au64[1] >> 63) << 1;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovmskpd_u256_fallback,(uint8_t *pu8Dst, PCRTUINT256U puSrc))
+{
+    *pu8Dst  =  puSrc->au64[0] >> 63;
+    *pu8Dst |= (puSrc->au64[1] >> 63) << 1;
+    *pu8Dst |= (puSrc->au64[2] >> 63) << 2;
+    *pu8Dst |= (puSrc->au64[3] >> 63) << 3;
+}
