@@ -94,28 +94,12 @@ static inline bool rtcsTrue() { return true; }
  */
 typedef struct USBPROXYURBLNX
 {
-    /** The kernel URB data. */
-#if RT_GNUC_PREREQ(6, 0)
-    /* gcc 6.2 complains about the [] member of KUrb */
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-    union
-    {
-        struct usbdevfs_urb         KUrb;
-        /** Make sure we've got sufficient space for isochronous packets. */
-        uint8_t                     abKUrbPadding[  RT_UOFFSETOF(struct usbdevfs_urb, iso_frame_desc)
-                                                  + sizeof(struct usbdevfs_iso_packet_desc) * 8];
-    };
-#if RT_GNUC_PREREQ(6, 0)
-# pragma GCC diagnostic pop
-#endif
     /** Node to link the URB in of the existing lists. */
     RTLISTNODE                      NodeList;
     /** If we've split the VUSBURB up into multiple linux URBs, this is points to the head. */
-    struct USBPROXYURBLNX           *pSplitHead;
+    struct USBPROXYURBLNX          *pSplitHead;
     /** The next linux URB if split up. */
-    struct USBPROXYURBLNX           *pSplitNext;
+    struct USBPROXYURBLNX          *pSplitNext;
     /** Don't report these back. */
     bool                            fCanceledBySubmit;
     /** This split element is reaped. */
@@ -124,6 +108,16 @@ typedef struct USBPROXYURBLNX
     bool                            fDiscarded;
     /** Size to transfer in remaining fragments of a split URB */
     uint32_t                        cbSplitRemaining;
+
+#if RT_GNUC_PREREQ(6, 0) /* gcc 6.2 complains about the [] member of KUrb */
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+    /** The kernel URB data (variable size array included). */
+    struct usbdevfs_urb             KUrb;
+#if RT_GNUC_PREREQ(6, 0)
+# pragma GCC diagnostic pop
+#endif
 } USBPROXYURBLNX, *PUSBPROXYURBLNX;
 
 /**
@@ -277,8 +271,10 @@ static void usbProxyLinuxUrbLinkInFlight(PUSBPROXYDEVLNX pDevLnx, PUSBPROXYURBLN
     RTListAppend(&pDevLnx->ListInFlight, &pUrbLnx->NodeList);
 }
 
+
 /**
  * Unlinks the given URB from the in flight list.
+ *
  * @returns nothing.
  * @param   pDevLnx         The proxy device instance - Linux specific data.
  * @param   pUrbLnx         The URB to link into the in flight list.
@@ -298,8 +294,10 @@ static void usbProxyLinuxUrbUnlinkInFlight(PUSBPROXYDEVLNX pDevLnx, PUSBPROXYURB
     RTCritSectLeave(&pDevLnx->CritSect);
 }
 
+
 /**
  * Allocates a linux URB request structure.
+ *
  * @returns Pointer to an active URB request.
  * @returns NULL on failure.
  * @param   pProxyDev       The proxy device instance.
@@ -326,7 +324,9 @@ static PUSBPROXYURBLNX usbProxyLinuxUrbAlloc(PUSBPROXYDEV pProxyDev, PUSBPROXYUR
     else
     {
         RTCritSectLeave(&pDevLnx->CritSect);
-        pUrbLnx = (PUSBPROXYURBLNX)RTMemAlloc(sizeof(*pUrbLnx));
+        PVUSBURB pVUrbDummy; RT_NOREF(pVUrbDummy);
+        pUrbLnx = (PUSBPROXYURBLNX)RTMemAlloc(RT_UOFFSETOF_DYN(USBPROXYURBLNX,
+                                                               KUrb.iso_frame_desc[RT_ELEMENTS(pVUrbDummy->aIsocPkts)]));
         if (!pUrbLnx)
             return NULL;
     }
@@ -995,7 +995,8 @@ static void usbProxyLinuxUrbSwapSetup(PVUSBSETUP pSetup)
 /**
  * Clean up after a failed URB submit.
  */
-static void usbProxyLinuxCleanupFailedSubmit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx, PUSBPROXYURBLNX pCur, PVUSBURB pUrb, bool *pfUnplugged)
+static void usbProxyLinuxCleanupFailedSubmit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx, PUSBPROXYURBLNX pCur,
+                                             PVUSBURB pUrb, bool *pfUnplugged)
 {
     if (pUrb->enmType == VUSBXFERTYPE_MSG)
         usbProxyLinuxUrbSwapSetup((PVUSBSETUP)pUrb->abData);
@@ -1502,7 +1503,7 @@ static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
                     Log(("usb-linux: Reap URB. errno=%d pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
                 return NULL;
             }
-        pUrbLnx = (PUSBPROXYURBLNX)pKUrb;
+        pUrbLnx = RT_FROM_MEMBER(pKUrb, USBPROXYURBLNX, KUrb);
 
         /* split list: Is the entire split list done yet? */
         if (pUrbLnx->pSplitHead)
@@ -1577,9 +1578,6 @@ static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
             pUrb->cbData = pUrbLnx->KUrb.actual_length;
             if (pUrb->enmType == VUSBXFERTYPE_ISOC)
             {
-                AssertCompile(   sizeof(pUrbLnx->abKUrbPadding)
-                              >=   RT_UOFFSETOF(struct usbdevfs_urb, iso_frame_desc)
-                                 + sizeof(struct usbdevfs_iso_packet_desc) * RT_ELEMENTS(pUrb->aIsocPkts));
                 unsigned i, off;
                 for (i = 0, off = 0; i < pUrb->cIsocPkts; i++)
                 {
