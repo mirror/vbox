@@ -56,7 +56,7 @@
 #undef PSLATPTE
 #undef PSLATPTWALK
 
-#define SLAT_IS_PGENTRY_PRESENT(a_pVCpu, a_Pge)             ((a_Pge.u) & EPT_PRESENT_MASK)
+#define SLAT_IS_PGENTRY_PRESENT(a_pVCpu, a_Pge)             ((a_Pge.u) & (a_pVCpu)->pgm.s.fGstEptPresentMask)
 #define SLAT_IS_PML4E_VALID(a_pVCpu, a_Pml4e)               (!( (a_Pml4e).u & (a_pVCpu)->pgm.s.fGstEptMbzPml4eMask ))
 #define SLAT_IS_PDPE_VALID(a_pVCpu, a_Pdpte)                (!( (a_Pdpte).u & (a_pVCpu)->pgm.s.fGstEptMbzPdpteMask ))
 #define SLAT_IS_BIG_PDPE_VALID(a_pVCpu, a_Pdpe)             (!( (a_Pdpe).u  & (a_pVCpu)->pgm.s.fGstEptMbzBigPdpteMask ))
