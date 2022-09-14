@@ -401,6 +401,23 @@ typedef struct SSE_BINARY_I64_R64_TEST_T
     RTFLOAT64U              r64ValIn;
 } SSE_BINARY_I64_R64_TEST_T;
 
+typedef struct SSE_BINARY_I32_R32_TEST_T
+{
+    uint32_t                fMxcsrIn;
+    uint32_t                fMxcsrOut;
+    uint32_t                u32Padding;
+    int32_t                 i32ValOut;
+    RTFLOAT32U              r32ValIn;
+} SSE_BINARY_I32_R32_TEST_T;
+
+typedef struct SSE_BINARY_I64_R32_TEST_T
+{
+    uint32_t                fMxcsrIn;
+    uint32_t                fMxcsrOut;
+    int64_t                 i64ValOut;
+    RTFLOAT32U              r32ValIn;
+} SSE_BINARY_I64_R32_TEST_T;
+
 /** @} */
 
 
@@ -824,6 +841,12 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I32_R64_TEST_T,  cvtsd2si
 
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I64_R64_TEST_T,  cvttsd2si_i64_r64        );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I64_R64_TEST_T,  cvtsd2si_i64_r64         );
+
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I32_R32_TEST_T,  cvttss2si_i32_r32        );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I32_R32_TEST_T,  cvtss2si_i32_r32         );
+
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I64_R32_TEST_T,  cvttss2si_i64_r32        );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseBinary,    SSE_BINARY_I64_R32_TEST_T,  cvtss2si_i64_r32         );
 
 RT_C_DECLS_END
 
