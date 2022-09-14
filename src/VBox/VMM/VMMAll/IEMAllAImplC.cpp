@@ -16060,3 +16060,66 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cvtsd2si_i64_r64,(PCX86FXSTATE pFpuState, uint3
     *pfMxcsr = pFpuState->MXCSR | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
 }
 #endif
+
+
+/**
+ * CVTTSS2SI
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvttss2si_i32_r32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int32_t *pi32Dst, const uint32_t *pu32Src))
+{
+    RTFLOAT32U r32Src;
+
+    r32Src.u = *pu32Src;
+    iemSsePrepareValueR32(&r32Src, pFpuState->MXCSR, &r32Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(pFpuState->MXCSR);
+    *pi32Dst = f32_to_i32_r_minMag(iemFpSoftF32FromIprt(&r32Src), true /*exact*/, &SoftState);
+    *pfMxcsr = pFpuState->MXCSR | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvttss2si_i64_r32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int64_t *pi64Dst, const uint32_t *pu32Src))
+{
+    RTFLOAT32U r32Src;
+
+    r32Src.u = *pu32Src;
+    iemSsePrepareValueR32(&r32Src, pFpuState->MXCSR, &r32Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(pFpuState->MXCSR);
+    *pi64Dst = f32_to_i64_r_minMag(iemFpSoftF32FromIprt(&r32Src), true /*exact*/, &SoftState);
+    *pfMxcsr = pFpuState->MXCSR | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+#endif
+
+
+/**
+ * CVTSS2SI
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtss2si_i32_r32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int32_t *pi32Dst, const uint32_t *pu32Src))
+{
+    RTFLOAT32U r32Src;
+
+    r32Src.u = *pu32Src;
+    iemSsePrepareValueR32(&r32Src, pFpuState->MXCSR, &r32Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(pFpuState->MXCSR);
+    *pi32Dst = f32_to_i32(iemFpSoftF32FromIprt(&r32Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    *pfMxcsr = pFpuState->MXCSR | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtss2si_i64_r32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int64_t *pi64Dst, const uint32_t *pu32Src))
+{
+    RTFLOAT32U r32Src;
+
+    r32Src.u = *pu32Src;
+    iemSsePrepareValueR32(&r32Src, pFpuState->MXCSR, &r32Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(pFpuState->MXCSR);
+    *pi64Dst = f32_to_i64(iemFpSoftF32FromIprt(&r32Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    *pfMxcsr = pFpuState->MXCSR | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+#endif
+

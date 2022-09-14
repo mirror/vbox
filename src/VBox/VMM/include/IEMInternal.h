@@ -2297,12 +2297,22 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I32U64,(PCX86FXSTATE pFpuState, 
 typedef FNIEMAIMPLSSEF2I32U64 *PFNIEMAIMPLSSEF2I32U64;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I64U64,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int64_t *pi64Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */
 typedef FNIEMAIMPLSSEF2I64U64 *PFNIEMAIMPLSSEF2I64U64;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I32U32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int32_t *pi32Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
+typedef FNIEMAIMPLSSEF2I32U32 *PFNIEMAIMPLSSEF2I32U32;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I64U32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int64_t *pi64Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
+typedef FNIEMAIMPLSSEF2I64U32 *PFNIEMAIMPLSSEF2I64U32;
 
 FNIEMAIMPLSSEF2I32U64 iemAImpl_cvttsd2si_i32_r64;
 FNIEMAIMPLSSEF2I32U64 iemAImpl_cvtsd2si_i32_r64;
 
 FNIEMAIMPLSSEF2I64U64 iemAImpl_cvttsd2si_i64_r64;
 FNIEMAIMPLSSEF2I64U64 iemAImpl_cvtsd2si_i64_r64;
+
+FNIEMAIMPLSSEF2I32U32 iemAImpl_cvttss2si_i32_r32;
+FNIEMAIMPLSSEF2I32U32 iemAImpl_cvtss2si_i32_r32;
+
+FNIEMAIMPLSSEF2I64U32 iemAImpl_cvttss2si_i64_r32;
+FNIEMAIMPLSSEF2I64U32 iemAImpl_cvtss2si_i64_r32;
 
 /** @} */
 

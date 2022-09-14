@@ -741,6 +741,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_STORE_XREG_HI_U64(a_iXReg, a_u64Value)       do { CHK_TYPE(uint64_t,  a_u64Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)           do { (a_pu128Dst) = (PRTUINT128U)((uintptr_t)0);        CHK_PTYPE(PRTUINT128U, a_pu128Dst);     (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg)     do { (a_pu128Dst) = (PCRTUINT128U)((uintptr_t)0);       CHK_PTYPE(PCRTUINT128U, a_pu128Dst);    (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_REF_XREG_U32_CONST(a_pu32Dst, a_iXReg)       do { (a_pu32Dst)  = (uint32_t const *)((uintptr_t)0);   CHK_PTYPE(uint32_t const *, a_pu32Dst); (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg)       do { (a_pu64Dst)  = (uint64_t const *)((uintptr_t)0);   CHK_PTYPE(uint64_t const *, a_pu64Dst); (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_R32_CONST(a_pr32Dst, a_iXReg)       do { (a_pr32Dst)  = (RTFLOAT32U const *)((uintptr_t)0); CHK_PTYPE(RTFLOAT32U const *, a_pr32Dst); (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_R64_CONST(a_pr64Dst, a_iXReg)       do { (a_pr64Dst)  = (RTFLOAT64U const *)((uintptr_t)0); CHK_PTYPE(RTFLOAT64U const *, a_pr64Dst); (void)fSseWrite; (void)fMcBegin; } while (0)

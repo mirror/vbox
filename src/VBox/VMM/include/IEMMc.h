@@ -476,6 +476,8 @@
     (a_pu128Dst) = ((PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].uXmm)
 #define IEM_MC_REF_XREG_XMM_CONST(a_pXmmDst, a_iXReg) \
     (a_pXmmDst) = (&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)])
+#define IEM_MC_REF_XREG_U32_CONST(a_pu32Dst, a_iXReg) \
+    (a_pu32Dst) = ((uint32_t const *)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[0])
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
     (a_pu64Dst) = ((uint64_t const *)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0])
 #define IEM_MC_REF_XREG_R32_CONST(a_pr32Dst, a_iXReg) \
