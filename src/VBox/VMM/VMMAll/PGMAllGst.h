@@ -141,15 +141,15 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
     do { \
         if ((a_pVCpu)->pgm.s.enmGuestSlatMode == PGMSLAT_EPT) \
         { \
-            PGMPTWALK    SlatWalk; \
-            PGMPTWALKGST SlatGstWalk; \
-            int const rcX = pgmGstSlatWalk(a_pVCpu, a_GCPhysNested, true /* fIsLinearAddrValid */, a_GCPtrNested, &SlatWalk, \
-                                           &SlatGstWalk); \
+            PGMPTWALK    WalkSlat; \
+            PGMPTWALKGST WalkGstSlat; \
+            int const rcX = pgmGstSlatWalk(a_pVCpu, a_GCPhysNested, true /* fIsLinearAddrValid */, a_GCPtrNested, &WalkSlat, \
+                                           &WalkGstSlat); \
             if (RT_SUCCESS(rcX)) \
-                (a_GCPhysOut) = SlatWalk.GCPhys; \
+                (a_GCPhysOut) = WalkSlat.GCPhys; \
             else \
             { \
-                *(a_pWalk) = SlatWalk; \
+                *(a_pWalk) = WalkSlat; \
                 return rcX; \
             } \
         } \
@@ -378,18 +378,18 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
     {
-        PGMPTWALK    SlatWalk;
-        PGMPTWALKGST SlatGstWalk;
-        int const rc = pgmGstSlatWalk(pVCpu, GCPtr, true /* fIsLinearAddrValid */, GCPtr, &SlatWalk, &SlatGstWalk);
+        PGMPTWALK    WalkSlat;
+        PGMPTWALKGST WalkGstSlat;
+        int const rc = pgmGstSlatWalk(pVCpu, GCPtr, true /* fIsLinearAddrValid */, GCPtr, &WalkSlat, &WalkGstSlat);
         if (RT_SUCCESS(rc))
         {
             pWalk->fSucceeded = true;
             pWalk->GCPtr      = GCPtr;
-            pWalk->GCPhys     = SlatWalk.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+            pWalk->GCPhys     = WalkSlat.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
             pWalk->fEffective = X86_PTE_P | X86_PTE_RW | X86_PTE_US;
         }
         else
-            *pWalk = SlatWalk;
+            *pWalk = WalkSlat;
         return rc;
     }
 #  endif
