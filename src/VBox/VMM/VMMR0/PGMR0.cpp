@@ -1236,31 +1236,30 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
  *                              EMT.
  * @param   uErr                The trap error code.
  * @param   pRegFrame           Trap register frame.
- * @param   GCPhysNested        The nested-guest physical address causing the fault.
+ * @param   GCPhysNestedFault   The nested-guest physical address causing the fault.
  * @param   fIsLinearAddrValid  Whether translation of a nested-guest linear address
- *                              caused this fault. If @c false, GCPtrNested must be
- *                              0.
- * @param   GCPtrNested         The nested-guest linear address that caused this
+ *                              caused this fault. If @c false, GCPtrNestedFault
+ *                              must be 0.
+ * @param   GCPtrNestedFault    The nested-guest linear address that caused this
  *                              fault.
  * @param   pWalk               Where to store the SLAT walk result.
  */
 VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
-                                                             bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk)
+                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNestedFault,
+                                                             bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk)
 {
     Assert(enmShwPagingMode == PGMMODE_EPT);
     NOREF(enmShwPagingMode);
 
     bool fLockTaken;
-    VBOXSTRICTRC rcStrict = PGM_BTH_NAME_EPT_PROT(NestedTrap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysNested, fIsLinearAddrValid,
-                                                                       GCPtrNested, pWalk, &fLockTaken);
+    VBOXSTRICTRC rcStrict = PGM_BTH_NAME_EPT_PROT(NestedTrap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysNestedFault,
+                                                                       fIsLinearAddrValid, GCPtrNestedFault, pWalk, &fLockTaken);
     if (fLockTaken)
     {
         PGM_LOCK_ASSERT_OWNER(pGVCpu->CTX_SUFF(pVM));
         PGM_UNLOCK(pGVCpu->CTX_SUFF(pVM));
     }
-    if (rcStrict == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
-        rcStrict = VINF_SUCCESS;
+    Assert(rcStrict != VINF_PGM_SYNCPAGE_MODIFIED_PDE); /* This rc isn't used with Nested Paging and nested-EPT. */
     return rcStrict;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */

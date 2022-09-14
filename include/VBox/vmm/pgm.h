@@ -413,37 +413,59 @@ typedef PGMPTATTRS *PPGMPTATTRS;
 /** Ignore PAT memory type - EPT only. */
 #define PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT            19
 #define PGM_PTATTRS_EPT_IGNORE_PAT_MASK             RT_BIT_64(PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT)
-/** Reserved (bits 22:20) unused. */
-#define PGM_PTATTRS_RSVD_22_20_SHIFT                20
-#define PGM_PTATTRS_RSVD_22_20_MASK                 UINT64_C(0x0000000000700000)
+/** Leaf paging entry (big or regular) - EPT only. */
+#define PGM_PTATTRS_EPT_LEAF_SHIFT                  20
+#define PGM_PTATTRS_EPT_LEAF_MASK                   RT_BIT_64(PGM_PTATTRS_EPT_LEAF_SHIFT)
+/** Accessed bit - EPT only. */
+#define PGM_PTATTRS_EPT_A_SHIFT                     21
+#define PGM_PTATTRS_EPT_A_MASK                      RT_BIT_64(PGM_PTATTRS_EPT_A_SHIFT)
+/** Dirty bit - EPT only. */
+#define PGM_PTATTRS_EPT_D_SHIFT                     22
+#define PGM_PTATTRS_EPT_D_MASK                      RT_BIT_64(PGM_PTATTRS_EPT_D_SHIFT)
 /** Execute access for user-mode linear addresses - EPT only. */
 #define PGM_PTATTRS_EPT_X_USER_SHIFT                23
 #define PGM_PTATTRS_EPT_X_USER_MASK                 RT_BIT_64(PGM_PTATTRS_EPT_X_USER_SHIFT)
-/** Reserved (bit 23) - unused. */
-#define PGM_PTATTRS_RSVD_23_SHIFT                   24
-#define PGM_PTATTRS_RSVD_23_MASK                    UINT64_C(0x0000000001000000)
+/** Reserved (bits 29:24) - unused. */
+#define PGM_PTATTRS_RSVD_29_24_SHIFT                24
+#define PGM_PTATTRS_RSVD_29_24_MASK                 UINT64_C(0x000000003f000000)
+/** Verify Guest Paging - EPT only. */
+#define PGM_PTATTRS_EPT_VGP_SHIFT                   30
+#define PGM_PTATTRS_EPT_VGP_MASK                    RT_BIT_64(PGM_PTATTRS_EPT_VGP_SHIFT)
+/** Paging-write - EPT only. */
+#define PGM_PTATTRS_EPT_PW_SHIFT                    31
+#define PGM_PTATTRS_EPT_PW_MASK                     RT_BIT_64(PGM_PTATTRS_EPT_PW_SHIFT)
+/** Reserved (bit 32) - unused. */
+#define PGM_PTATTRS_RSVD_32_SHIFT                   32
+#define PGM_PTATTRS_RSVD_32_MASK                    UINT64_C(0x0000000100000000)
 /** Supervisor shadow stack - EPT only. */
-#define PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT       25
-#define PGM_PTATTRS_EPT_SUPER_SHW_STACK_MASK        RT_BIT_64(PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT)
+#define PGM_PTATTRS_EPT_SSS_SHIFT                   33
+#define PGM_PTATTRS_EPT_SSS_MASK                    RT_BIT_64(PGM_PTATTRS_EPT_SSS_SHIFT)
+/** Sub-page write permission - EPT only. */
+#define PGM_PTATTRS_EPT_SPP_SHIFT                   34
+#define PGM_PTATTRS_EPT_SPP_MASK                    RT_BIT_64(PGM_PTATTRS_EPT_SPP_SHIFT)
+/** Reserved (bit 35) - unused. */
+#define PGM_PTATTRS_RSVD_35_SHIFT                   35
+#define PGM_PTATTRS_RSVD_35_MASK                    UINT64_C(0x0000000800000000)
 /** Suppress \#VE exception - EPT only. */
-#define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT      26
-#define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_MASK       RT_BIT_64(PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT)
-/** Reserved (bits 62:27) - unused. */
-#define PGM_PTATTRS_RSVD_62_27_SHIFT                27
-#define PGM_PTATTRS_RSVD_62_27_MASK                 UINT64_C(0x7ffffffff8000000)
+#define PGM_PTATTRS_EPT_SVE_SHIFT                   36
+#define PGM_PTATTRS_EPT_SVE_MASK                    RT_BIT_64(PGM_PTATTRS_EPT_SVE_SHIFT)
+/** Reserved (bits 62:37) - unused. */
+#define PGM_PTATTRS_RSVD_62_37_SHIFT                37
+#define PGM_PTATTRS_RSVD_62_37_MASK                 UINT64_C(0x7fffffe000000000)
 /** No-execute bit. */
 #define PGM_PTATTRS_NX_SHIFT                        63
 #define PGM_PTATTRS_NX_MASK                         RT_BIT_64(PGM_PTATTRS_NX_SHIFT)
 
 RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
                             (R, W, US, PWT, PCD, A, D, PAT, G, RSVD_12_9, EPT_R, EPT_W, EPT_X_SUPER, EPT_MEMTYPE, EPT_IGNORE_PAT,
-                             RSVD_22_20, EPT_X_USER, RSVD_23, EPT_SUPER_SHW_STACK, EPT_SUPPRESS_VE_XCPT, RSVD_62_27, NX));
+                             EPT_LEAF, EPT_A, EPT_D, EPT_X_USER, RSVD_29_24, EPT_VGP, EPT_PW, RSVD_32, EPT_SSS, EPT_SPP,
+                             RSVD_35, EPT_SVE, RSVD_62_37, NX));
 
 /** The bit position where the EPT specific attributes begin. */
 #define PGM_PTATTRS_EPT_SHIFT                       PGM_PTATTRS_EPT_R_SHIFT
-/** The mask of EPT bits (bits 26:ATTR_SHIFT). In the future we might choose to
+/** The mask of EPT bits (bits 36:ATTR_SHIFT). In the future we might choose to
  *  use higher unused bits for something else, in that case adjust this mask. */
-#define PGM_PTATTRS_EPT_MASK                        UINT64_C(0x0000000007ffe000)
+#define PGM_PTATTRS_EPT_MASK                        UINT64_C(0x0000001fffffe000)
 
 /** The mask of all PGM page attribute bits for regular page-tables. */
 #define PGM_PTATTRS_PT_VALID_MASK                   (  PGM_PTATTRS_R_MASK \
@@ -458,21 +480,23 @@ RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
                                                      | PGM_PTATTRS_NX_MASK)
 
 /** The mask of all PGM page attribute bits for EPT. */
-#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_R_MASK \
-                                                     | PGM_PTATTRS_W_MASK \
-                                                     | PGM_PTATTRS_A_MASK \
-                                                     | PGM_PTATTRS_D_MASK \
-                                                     | PGM_PTATTRS_EPT_R_MASK \
+#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_EPT_R_MASK \
                                                      | PGM_PTATTRS_EPT_W_MASK \
-                                                     | PGM_PTATTRS_EPT_X_SUPER \
-                                                     | PGM_PTATTRS_EPT_MEMTYPE \
-                                                     | PGM_PTATTRS_EPT_IGNORE_PAT \
-                                                     | PGM_PTATTRS_EPT_X_USER \
-                                                     | PGM_PTATTRS_EPT_SUPER_SHW_STACK \
-                                                     | PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT)
+                                                     | PGM_PTATTRS_EPT_X_SUPER_MASK \
+                                                     | PGM_PTATTRS_EPT_MEMTYPE_MASK \
+                                                     | PGM_PTATTRS_EPT_IGNORE_PAT_MASK \
+                                                     | PGM_PTATTRS_EPT_LEAF_MASK \
+                                                     | PGM_PTATTRS_EPT_A_MASK \
+                                                     | PGM_PTATTRS_EPT_D_MASK \
+                                                     | PGM_PTATTRS_EPT_X_USER_MASK \
+                                                     | PGM_PTATTRS_EPT_VGP_MASK \
+                                                     | PGM_PTATTRS_EPT_PW_MASK \
+                                                     | PGM_PTATTRS_EPT_SSS_MASK \
+                                                     | PGM_PTATTRS_EPT_SPP_MASK \
+                                                     | PGM_PTATTRS_EPT_SVE_MASK)
 
 /* The mask of all PGM page attribute bits (combined). */
-#define PGM_PTATTRS_VALID_MASK                      (PGM_PTATTRS_PT_VALID_MASK | PGM_PTATTRS_PT_VALID_MASK)
+#define PGM_PTATTRS_VALID_MASK                      (PGM_PTATTRS_PT_VALID_MASK | PGM_PTATTRS_EPT_VALID_MASK)
 
 /* Verify bits match the regular PT bits. */
 AssertCompile(PGM_PTATTRS_W_SHIFT   == X86_PTE_BIT_RW);
@@ -961,8 +985,8 @@ VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu);
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
-                                                             bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk);
+                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNestedFault,
+                                                             bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk);
 # endif
 /** @} */
 #endif /* IN_RING0 */
