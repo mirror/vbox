@@ -739,6 +739,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# if 0
 /**
  * Gets the pointer to a page map level-4 entry when the guest using EPT paging.
  *
@@ -759,6 +760,7 @@ DECLINLINE(PEPTPML4E) pgmGstGetEptPML4EPtr(PVMCPUCC pVCpu, unsigned int iPml4)
     }
     return &pEptPml4->a[iPml4];
 }
+# endif
 
 
 /**
@@ -771,13 +773,15 @@ DECLINLINE(PEPTPML4E) pgmGstGetEptPML4EPtr(PVMCPUCC pVCpu, unsigned int iPml4)
  */
 DECLINLINE(int) pgmGstGetEptPML4PtrEx(PVMCPUCC pVCpu, PEPTPML4 *ppEptPml4)
 {
+    /* Shadow CR3 might not have been mapped at this point, see PGMHCChangeMode. */
     *ppEptPml4 = pVCpu->pgm.s.CTX_SUFF(pGstEptPml4);
-    if (RT_UNLIKELY(!*ppEptPml4))
+    if (!*ppEptPml4)
         return pgmGstLazyMapEptPml4(pVCpu, ppEptPml4);
     return VINF_SUCCESS;
 }
 
 
+# if 0
 /**
  * Gets the page map level-4 pointer for the guest when the guest is using EPT
  * paging.
@@ -792,6 +796,7 @@ DECLINLINE(PEPTPML4) pgmGstGetEptPML4Ptr(PVMCPUCC pVCpu)
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc);
     return pEptPml4;
 }
+# endif
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
