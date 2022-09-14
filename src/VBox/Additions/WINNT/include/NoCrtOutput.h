@@ -129,6 +129,14 @@ DECLINLINE(int) ErrorMsg(const char *pszMsg)
 }
 
 
+DECLINLINE(int) ErrorMsgSU(const char *pszMsg1, uint64_t uValue1)
+{
+    ErrorMsgBegin(pszMsg1);
+    ErrorMsgU64(uValue1);
+    return ErrorMsgEnd(NULL);
+}
+
+
 DECLINLINE(int) ErrorMsgSWS(const char *pszMsg1, const wchar_t *pwszMsg2, const char *pszMsg3)
 {
     ErrorMsgBegin(pszMsg1);
