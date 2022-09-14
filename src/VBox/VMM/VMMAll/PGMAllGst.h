@@ -30,18 +30,19 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
+/** @todo Do we really need any of these forward declarations? */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PGSTPTWALK pGstWalk);
 #endif
+PGM_GST_DECL(int,  Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int,  GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk);
 PGM_GST_DECL(int,  ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_GST_DECL(int,  Exit)(PVMCPUCC pVCpu);
 
 #ifdef IN_RING3 /* r3 only for now.  */
-PGM_GST_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, Relocate)(PVMCPUCC pVCpu, RTGCPTR offDelta);
-PGM_GST_DECL(int, Exit)(PVMCPUCC pVCpu);
 #endif
 RT_C_DECLS_END
 
