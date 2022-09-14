@@ -40,6 +40,10 @@
 #include <iprt/win/setupapi.h>
 #include <devguid.h>
 #include <RegStr.h>
+#ifdef RT_ARCH_X86
+# include <wintrust.h>
+# include <softpub.h>
+#endif
 
 #include <iprt/asm.h>
 #include <iprt/mem.h>
@@ -110,16 +114,18 @@ typedef enum
     DIFXAPI_ERROR
 } DIFXAPI_LOG;
 
-typedef void (__cdecl * DIFXAPILOGCALLBACK_W)(DIFXAPI_LOG Event, DWORD Error, PCWSTR EventDescription, PVOID CallbackContext);
+typedef void (__cdecl *DIFXAPILOGCALLBACK_W)(DIFXAPI_LOG Event, DWORD Error, PCWSTR EventDescription, PVOID CallbackContext);
+typedef DWORD (WINAPI *PFN_DriverPackageInstall_T)(PCTSTR DriverPackageInfPath, DWORD Flags, PCINSTALLERINFO pInstallerInfo, BOOL *pNeedReboot);
+typedef DWORD (WINAPI *PFN_DriverPackageUninstall_T)(PCTSTR DriverPackageInfPath, DWORD Flags, PCINSTALLERINFO pInstallerInfo, BOOL *pNeedReboot);
+typedef VOID  (WINAPI *PFN_DIFXAPISetLogCallback_T)(DIFXAPILOGCALLBACK_W LogCallback, PVOID CallbackContext);
 
-typedef DWORD (WINAPI *fnDriverPackageInstall)(PCTSTR DriverPackageInfPath, DWORD Flags, PCINSTALLERINFO pInstallerInfo, BOOL *pNeedReboot);
-fnDriverPackageInstall g_pfnDriverPackageInstall = NULL;
 
-typedef DWORD (WINAPI *fnDriverPackageUninstall)(PCTSTR DriverPackageInfPath, DWORD Flags, PCINSTALLERINFO pInstallerInfo, BOOL *pNeedReboot);
-fnDriverPackageUninstall g_pfnDriverPackageUninstall = NULL;
-
-typedef VOID (WINAPI *fnDIFXAPISetLogCallback)(DIFXAPILOGCALLBACK_W LogCallback, PVOID CallbackContext);
-fnDIFXAPISetLogCallback g_pfnDIFXAPISetLogCallback = NULL;
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static PFN_DriverPackageInstall_T   g_pfnDriverPackageInstall   = NULL;
+static PFN_DriverPackageUninstall_T g_pfnDriverPackageUninstall = NULL;
+static PFN_DIFXAPISetLogCallback_T  g_pfnDIFXAPISetLogCallback  = NULL;
 
 
 
@@ -228,7 +234,7 @@ static void __cdecl VBoxDIFxLogCallback(DIFXAPI_LOG enmEvent, DWORD dwError, PCW
     PrintStr("\r\n");
 
     /*
-     * Write to the log file if we have one (wide char format).
+     * Write to the log file if we have one (wide char format, used to be ansi).
      */
     HANDLE const hLogFile = (HANDLE)pvCtx;
     if (hLogFile != INVALID_HANDLE_VALUE)
@@ -249,6 +255,297 @@ static void __cdecl VBoxDIFxLogCallback(DIFXAPI_LOG enmEvent, DWORD dwError, PCW
     }
 }
 
+
+/**
+ * Writes a header to the DIFx log file.
+ */
+static void VBoxDIFxWriteLogHeader(HANDLE hLogFile, char const *pszOperation, wchar_t const *pwszInfFile)
+{
+    /* Don't want to use RTUtf16Printf here as it drags in a lot of code, thus this tedium... */
+    wchar_t wszBuf[168];
+    RTUtf16CopyAscii(wszBuf, RT_ELEMENTS(wszBuf), "\r\n");
+
+    SYSTEMTIME SysTime = {0};
+    GetSystemTime(&SysTime);
+
+    char szVal[128];
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wYear, 10, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "-");
+
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wMonth, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "-");
+
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wDay, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "T");
+
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wHour, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ":");
+
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wMinute, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ":");
+
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wSecond, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ".");
+
+    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wMilliseconds, 10, 3, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "Z: Opened log file for ");
+
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), pszOperation);
+    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), " of '");
+
+    DWORD dwIgn;
+    WriteFile(hLogFile, wszBuf, (DWORD)(RTUtf16Len(wszBuf) * sizeof(wchar_t)), &dwIgn, NULL);
+    WriteFile(hLogFile, pwszInfFile, (DWORD)(RTUtf16Len(pwszInfFile) * sizeof(wchar_t)), &dwIgn, NULL);
+    WriteFile(hLogFile, L"'\r\n", 3 * sizeof(wchar_t), &dwIgn, NULL);
+}
+
+#ifdef RT_ARCH_X86
+
+/**
+ * Interceptor WinVerifyTrust function for SetupApi.dll on Windows 2000, XP,
+ * W2K3 and XP64.
+ *
+ * This crudely modifies the driver verification request from a WHQL/logo driver
+ * check to a simple Authenticode check.
+ */
+static LONG WINAPI InterceptedWinVerifyTrust(HWND hwnd, GUID *pActionId, void *pvData)
+{
+    /*
+     * Resolve the real WinVerifyTrust function.
+     */
+    static decltype(WinVerifyTrust) * volatile s_pfnRealWinVerifyTrust = NULL;
+    decltype(WinVerifyTrust) *pfnRealWinVerifyTrust = s_pfnRealWinVerifyTrust;
+    if (!pfnRealWinVerifyTrust)
+    {
+        HMODULE hmod = GetModuleHandleW(L"WINTRUST.DLL");
+        if (!hmod)
+            hmod = LoadLibraryW(L"WINTRUST.DLL");
+        if (!hmod)
+        {
+            ErrorMsgLastErr("InterceptedWinVerifyTrust: Failed to load wintrust.dll");
+            return TRUST_E_SYSTEM_ERROR;
+        }
+        pfnRealWinVerifyTrust = (decltype(WinVerifyTrust) *)GetProcAddress(hmod, "WinVerifyTrust");
+        if (!pfnRealWinVerifyTrust)
+        {
+            ErrorMsg("InterceptedWinVerifyTrust: Failed to locate WinVerifyTrust in wintrust.dll");
+            return TRUST_E_SYSTEM_ERROR;
+        }
+        s_pfnRealWinVerifyTrust = pfnRealWinVerifyTrust;
+    }
+
+    /*
+     * Modify the ID if appropriate.
+     */
+    static const GUID s_GuidDriverActionVerify       = DRIVER_ACTION_VERIFY;
+    static const GUID s_GuidActionGenericChainVerify = WINTRUST_ACTION_GENERIC_CHAIN_VERIFY;
+    static const GUID s_GuidActionGenericVerify2     = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+    if (pActionId)
+    {
+        if (memcmp(pActionId, &s_GuidDriverActionVerify, sizeof(*pActionId)) == 0)
+        {
+            /** @todo don't apply to obvious NT components... */
+            PrintStr("DRIVER_ACTION_VERIFY: Changing it to WINTRUST_ACTION_GENERIC_VERIFY_V2\r\n");
+            pActionId = (GUID *)&s_GuidActionGenericVerify2;
+        }
+        else if (memcmp(pActionId, &s_GuidActionGenericChainVerify, sizeof(*pActionId)) == 0)
+            PrintStr("WINTRUST_ACTION_GENERIC_CHAIN_VERIFY\r\n");
+        else if (memcmp(pActionId, &s_GuidActionGenericVerify2, sizeof(*pActionId)) == 0)
+            PrintStr("WINTRUST_ACTION_GENERIC_VERIFY_V2\r\n");
+        else
+            PrintStr("WINTRUST_ACTION_UNKNOWN\r\n");
+    }
+
+    /*
+     * Log the data.
+     */
+    if (pvData)
+    {
+        WINTRUST_DATA *pData = (WINTRUST_DATA *)pvData;
+        PrintSXS("                  cbStruct = ", pData->cbStruct, "\r\n");
+# ifdef DEBUG
+        PrintSXS("                dwUIChoice = ", pData->dwUIChoice, "\r\n");
+        PrintSXS("       fdwRevocationChecks = ", pData->fdwRevocationChecks, "\r\n");
+        PrintSXS("             dwStateAction = ", pData->dwStateAction, "\r\n");
+        PrintSXS("             hWVTStateData = ", (uintptr_t)pData->hWVTStateData, "\r\n");
+# endif
+        if (pData->cbStruct >= 7*sizeof(uint32_t))
+        {
+            switch (pData->dwUnionChoice)
+            {
+                case WTD_CHOICE_FILE:
+                    PrintSXS("                     pFile = ", (uintptr_t)pData->pFile, "\r\n");
+                    if (RT_VALID_PTR(pData->pFile))
+                    {
+                        PrintSXS("           pFile->cbStruct = ", pData->pFile->cbStruct, "\r\n");
+# ifndef DEBUG
+                        if (pData->pFile->hFile)
+# endif
+                            PrintSXS("              pFile->hFile = ", (uintptr_t)pData->pFile->hFile, "\r\n");
+                        if (RT_VALID_PTR(pData->pFile->pcwszFilePath))
+                            PrintSWS("      pFile->pcwszFilePath = '", pData->pFile->pcwszFilePath, "'\r\n");
+# ifdef DEBUG
+                        else
+                            PrintSXS("      pFile->pcwszFilePath = ", (uintptr_t)pData->pFile->pcwszFilePath, "\r\n");
+                        PrintSXS("     pFile->pgKnownSubject = ", (uintptr_t)pData->pFile->pgKnownSubject, "\r\n");
+# endif
+                    }
+                    break;
+
+                case WTD_CHOICE_CATALOG:
+                    PrintSXS("                  pCatalog = ", (uintptr_t)pData->pCatalog, "\r\n");
+                    if (RT_VALID_PTR(pData->pCatalog))
+                    {
+                        PrintSXS("            pCat->cbStruct = ", pData->pCatalog->cbStruct, "\r\n");
+# ifdef DEBUG
+                        PrintSXS("    pCat->dwCatalogVersion = ", pData->pCatalog->dwCatalogVersion, "\r\n");
+# endif
+                        if (RT_VALID_PTR(pData->pCatalog->pcwszCatalogFilePath))
+                            PrintSWS("pCat->pcwszCatalogFilePath = '", pData->pCatalog->pcwszCatalogFilePath, "'\r\n");
+# ifdef DEBUG
+                        else
+                            PrintSXS("pCat->pcwszCatalogFilePath = ", (uintptr_t)pData->pCatalog->pcwszCatalogFilePath, "\r\n");
+# endif
+                        if (RT_VALID_PTR(pData->pCatalog->pcwszMemberTag))
+                            PrintSWS("      pCat->pcwszMemberTag = '", pData->pCatalog->pcwszMemberTag, "'\r\n");
+# ifdef DEBUG
+                        else
+                            PrintSXS("      pCat->pcwszMemberTag = ", (uintptr_t)pData->pCatalog->pcwszMemberTag, "\r\n");
+# endif
+                        if (RT_VALID_PTR(pData->pCatalog->pcwszMemberFilePath))
+                            PrintSWS(" pCat->pcwszMemberFilePath = '", pData->pCatalog->pcwszMemberFilePath, "'\r\n");
+# ifdef DEBUG
+                        else
+                            PrintSXS(" pCat->pcwszMemberFilePath = ", (uintptr_t)pData->pCatalog->pcwszMemberFilePath, "\r\n");
+# else
+                        if (pData->pCatalog->hMemberFile)
+# endif
+                            PrintSXS("         pCat->hMemberFile = ", (uintptr_t)pData->pCatalog->hMemberFile, "\r\n");
+# ifdef DEBUG
+                        PrintSXS("pCat->pbCalculatedFileHash = ", (uintptr_t)pData->pCatalog->pbCalculatedFileHash, "\r\n");
+                        PrintSXS("pCat->cbCalculatedFileHash = ", pData->pCatalog->cbCalculatedFileHash, "\r\n");
+                        PrintSXS("    pCat->pcCatalogContext = ", (uintptr_t)pData->pCatalog->pcCatalogContext, "\r\n");
+# endif
+                    }
+                    break;
+
+                case WTD_CHOICE_BLOB:
+                    PrintSXS("                     pBlob = ", (uintptr_t)pData->pBlob, "\r\n");
+                    break;
+
+                case WTD_CHOICE_SIGNER:
+                    PrintSXS("                     pSgnr = ", (uintptr_t)pData->pSgnr, "\r\n");
+                    break;
+
+                case WTD_CHOICE_CERT:
+                    PrintSXS("                     pCert = ", (uintptr_t)pData->pCert, "\r\n");
+                    break;
+
+                default:
+                    PrintSXS("             dwUnionChoice = ", pData->dwUnionChoice, "\r\n");
+                    break;
+            }
+        }
+    }
+
+    /*
+     * Make the call.
+     */
+    PrintStr("Calling WinVerifyTrust ...\r\n");
+    LONG iRet = pfnRealWinVerifyTrust(hwnd, pActionId, pvData);
+    PrintSXS("WinVerifyTrust returns ", (ULONG)iRet, "\r\n");
+
+    return iRet;
+}
+
+
+/**
+ * Installs an WinVerifyTrust interceptor in setupapi.dll on Windows 2000, XP,
+ * W2K3 and XP64.
+ *
+ * This is a very crude hack to lower the WHQL check to just require a valid
+ * Authenticode signature by intercepting the verification call.
+ *
+ * @return Ignored, just a convenience for saving space in error paths.
+ */
+static int InstallWinVerifyTrustInterceptorInSetupApi(void)
+{
+    /* Check the version: */
+    OSVERSIONINFOW VerInfo = { sizeof(VerInfo) };
+    GetVersionExW(&VerInfo);
+    if (VerInfo.dwMajorVersion != 5)
+        return 1;
+
+    /* The the target module: */
+    HMODULE hModSetupApi = GetModuleHandleW(L"SETUPAPI.DLL");
+    if (!hModSetupApi)
+        return ErrorMsgLastErr("Failed to locate SETUPAPI.DLL in the process");
+
+    /*
+     * Find the delayed import table (at least that's how it's done in the RTM).
+     */
+    IMAGE_DOS_HEADER const *pDosHdr = (IMAGE_DOS_HEADER const *)hModSetupApi;
+    IMAGE_NT_HEADERS const *pNtHdrs = (IMAGE_NT_HEADERS const *)(  (uintptr_t)hModSetupApi
+                                                                 + (  pDosHdr->e_magic == IMAGE_DOS_SIGNATURE
+                                                                    ? pDosHdr->e_lfanew : 0));
+    if (pNtHdrs->Signature != IMAGE_NT_SIGNATURE)
+        return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 1);
+    if (pNtHdrs->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
+        return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 2);
+    if (pNtHdrs->OptionalHeader.NumberOfRvaAndSizes <= IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT)
+        return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 3);
+
+    uint32_t const cbDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].Size;
+    if (cbDir < sizeof(IMAGE_DELAYLOAD_DESCRIPTOR))
+        return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 4);
+    uint32_t const cbImages = pNtHdrs->OptionalHeader.SizeOfImage;
+    if (cbDir >= cbImages)
+        return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 5);
+    uint32_t const offDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].VirtualAddress;
+    if (offDir > cbImages - cbDir)
+        return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 6);
+
+    /*
+     * Scan the entries looking for wintrust.dll.
+     */
+    IMAGE_DELAYLOAD_DESCRIPTOR const * const paEntries = (IMAGE_DELAYLOAD_DESCRIPTOR const *)((uintptr_t)hModSetupApi + offDir);
+    uint32_t const                           cEntries  = cbDir / sizeof(paEntries[0]);
+    for (uint32_t iImp = 0; iImp < cEntries; iImp++)
+    {
+        const char * const pchRva2Ptr = paEntries[iImp].Attributes.RvaBased ? (const char *)hModSetupApi : (const char *)0;
+        const char * const pszDllName = &pchRva2Ptr[paEntries[iImp].DllNameRVA];
+        if (RTStrICmpAscii(pszDllName, "WINTRUST.DLL") == 0)
+        {
+            /*
+             * Scan the symbol names.
+             */
+            uint32_t const    cbHdrs      = pNtHdrs->OptionalHeader.SizeOfHeaders;
+            uint32_t * const  pauNameRvas = (uint32_t  *)&pchRva2Ptr[paEntries[iImp].ImportNameTableRVA];
+            uintptr_t * const paIat       = (uintptr_t *)&pchRva2Ptr[paEntries[iImp].ImportAddressTableRVA];
+            for (uint32_t iSym = 0; pauNameRvas[iSym] != NULL; iSym++)
+            {
+                IMAGE_IMPORT_BY_NAME const * const pName = (IMAGE_IMPORT_BY_NAME const *)&pchRva2Ptr[pauNameRvas[iSym]];
+                if (RTStrCmp(pName->Name, "WinVerifyTrust") == 0)
+                {
+                    PrintSXS("Intercepting WinVerifyTrust for SETUPAPI.DLL (old: ", paIat[iSym], ")\r\n");
+                    paIat[iSym] = (uintptr_t)InterceptedWinVerifyTrust;
+                    return 0;
+                }
+            }
+            return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 9);
+        }
+    }
+    return ErrorMsgSU("Failed to parse SETUPAPI.DLL for WinVerifyTrust interception: #", 10);
+}
+
+#endif /* RT_ARCH_X86 */
 
 /**
  * Loads a DLL from the same directory as the installer.
@@ -322,8 +619,8 @@ static int VBoxInstallDriver(const BOOL fInstall, const wchar_t *pwszDriverPath,
     /*
      * Windows 2000 and later.
      */
-    OSVERSIONINFO VerInfo = { sizeof(VerInfo) };
-    GetVersionEx(&VerInfo);
+    OSVERSIONINFOW VerInfo = { sizeof(VerInfo) };
+    GetVersionExW(&VerInfo);
     if (VerInfo.dwPlatformId != VER_PLATFORM_WIN32_NT)
         return ErrorMsg("Platform not supported for driver (un)installation!");
     if (VerInfo.dwMajorVersion < 5)
@@ -366,13 +663,18 @@ static int VBoxInstallDriver(const BOOL fInstall, const wchar_t *pwszDriverPath,
     {
         hLogFile = CreateFileW(pwszLogFile, FILE_GENERIC_WRITE & ~FILE_WRITE_DATA /* append mode */, FILE_SHARE_READ,
                                NULL /*pSecAttr*/, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL /*hTemplateFile*/);
-        if (hLogFile == INVALID_HANDLE_VALUE)
+        if (hLogFile != INVALID_HANDLE_VALUE)
+            VBoxDIFxWriteLogHeader(hLogFile, fInstall ? "install" : "uninstall", pwszDriverPath);
+        else
             ErrorMsgLastErrSWS("Failed to open/create log file '", pwszLogFile, "'");
         g_pfnDIFXAPISetLogCallback(VBoxDIFxLogCallback, (void *)hLogFile);
     }
 
     PrintStr(fInstall ? "Installing driver ...\r\n" : "Uninstalling driver ...\r\n");
     PrintSWS("INF-File: '", wszFullDriverInf, "'\r\n");
+#ifdef RT_ARCH_X86
+    InstallWinVerifyTrustInterceptorInSetupApi();
+#endif
 
     INSTALLERINFO InstInfo =
     {
@@ -588,6 +890,9 @@ vboxDrvInstExecuteInfFileCallback(PVOID pvContext, UINT uNotification, UINT_PTR 
 static int ExecuteInfFile(const wchar_t *pwszSection, const wchar_t *pwszInf)
 {
     PrintSWSWS("Installing from INF-File: '", pwszInf, "', Section: '", pwszSection, "' ...\r\n");
+#ifdef RT_ARCH_X86
+    InstallWinVerifyTrustInterceptorInSetupApi();
+#endif
 
     UINT uErrorLine = 0;
     HINF hInf = SetupOpenInfFileW(pwszInf, NULL, INF_STYLE_WIN4, &uErrorLine);
@@ -984,11 +1289,11 @@ static int handleDriverNt4InstallVideo(unsigned cArgs, wchar_t **papwszArgs)
     }
 
     /* Make sure we're on NT4 before continuing: */
-    OSVERSIONINFO VerInfo = { sizeof(VerInfo) };
-    GetVersionEx(&VerInfo);
+    OSVERSIONINFOW VerInfo = { sizeof(VerInfo) };
+    GetVersionExW(&VerInfo);
     if (   VerInfo.dwPlatformId != VER_PLATFORM_WIN32_NT
         || VerInfo.dwMajorVersion != 4)
-        return ErrorMsgSUSUS("This command is only for NT 4. GetVersionEx reports ", VerInfo.dwMajorVersion, ".",
+        return ErrorMsgSUSUS("This command is only for NT 4. GetVersionExW reports ", VerInfo.dwMajorVersion, ".",
                              VerInfo.dwMinorVersion, ".");
 
     return (int)InstallNt4VideoDriver(wszInstallDir);
