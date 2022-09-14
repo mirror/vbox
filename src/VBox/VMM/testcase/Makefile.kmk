@@ -287,7 +287,11 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-cvttss2si_i32_r32.bin \
 	tstIEMAImplDataSseBinary-cvtss2si_i32_r32.bin \
 	tstIEMAImplDataSseBinary-cvttss2si_i64_r32.bin \
-	tstIEMAImplDataSseBinary-cvtss2si_i64_r32.bin
+	tstIEMAImplDataSseBinary-cvtss2si_i64_r32.bin \
+	tstIEMAImplDataSseBinary-cvtsi2ss_r32_i32.bin \
+	tstIEMAImplDataSseBinary-cvtsi2ss_r32_i64.bin \
+	tstIEMAImplDataSseBinary-cvtsi2sd_r64_i32.bin \
+	tstIEMAImplDataSseBinary-cvtsi2sd_r64_i64.bin
 
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT

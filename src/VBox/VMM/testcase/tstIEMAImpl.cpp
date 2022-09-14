@@ -265,13 +265,11 @@ static int32_t  RandI32Src2(uint32_t iTest)
 }
 
 
-#if 0
 static int64_t  RandI64Src(uint32_t iTest)
 {
     RT_NOREF(iTest);
     return (int64_t)RandU64();
 }
-#endif
 
 
 static uint16_t  RandFcw(void)
@@ -5918,6 +5916,642 @@ static void SseBinaryI64R32Test(void)
 }
 
 
+/*
+ * SSE operations converting single signed double-word integers to double-precision floating point values (probably only cvtsi2sd).
+ */
+TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R64_I32_T, SSE_BINARY_R64_I32_TEST_T, PFNIEMAIMPLSSEF2R64I32);
+
+static const SSE_BINARY_R64_I32_T g_aSseBinaryR64I32[] =
+{
+    ENTRY_BIN(cvtsi2sd_r64_i32)
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static int32_t const s_aSpecials[] =
+    {
+        INT32_MIN,
+        INT32_MAX,
+        /** @todo More specials. */
+    };
+
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64I32); iFn++)
+    {
+        PFNIEMAIMPLSSEF2R64I32 const pfn = g_aSseBinaryR64I32[iFn].pfnNative ? g_aSseBinaryR64I32[iFn].pfnNative : g_aSseBinaryR64I32[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR64I32[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR64I32[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_BINARY_R64_I32_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.i32ValIn = iTest < cTests ? RandI32Src2(iTest) : s_aSpecials[iTest - cTests];
+
+            uint32_t const fMxcsr = RandMxcsr() & X86_MXCSR_XCPT_FLAGS;
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+                for (uint8_t iDaz = 0; iDaz < 2; iDaz++)
+                    for (uint8_t iFz = 0; iFz < 2; iFz++)
+                    {
+                        State.MXCSR = (fMxcsr & ~X86_MXCSR_RC_MASK)
+                                    | (iRounding  << X86_MXCSR_RC_SHIFT)
+                                    | (iDaz ? X86_MXCSR_DAZ : 0)
+                                    | (iFz  ? X86_MXCSR_FZ  : 0)
+                                    | X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrM; RTFLOAT64U r64OutM;
+                        pfn(&State, &fMxcsrM, &r64OutM, &TestData.i32ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrM;
+                        TestData.r64ValOut = r64OutM;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrU; RTFLOAT64U r64OutU;
+                        pfn(&State, &fMxcsrU, &r64OutU, &TestData.i32ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrU;
+                        TestData.r64ValOut = r64OutU;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
+                        if (fXcpt)
+                        {
+                            State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | fXcpt;
+                            uint32_t fMxcsr1; RTFLOAT64U r64Out1;
+                            pfn(&State, &fMxcsr1, &r64Out1, &TestData.i32ValIn);
+                            TestData.fMxcsrIn  = State.MXCSR;
+                            TestData.fMxcsrOut = fMxcsr1;
+                            TestData.r64ValOut = r64Out1;
+                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                            if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
+                            {
+                                fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
+                                State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
+                                uint32_t fMxcsr2; RTFLOAT64U r64Out2;
+                                pfn(&State, &fMxcsr2, &r64Out2, &TestData.i32ValIn);
+                                TestData.fMxcsrIn  = State.MXCSR;
+                                TestData.fMxcsrOut = fMxcsr2;
+                                TestData.r64ValOut = r64Out2;
+                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            }
+                            if (!RT_IS_POWER_OF_TWO(fXcpt))
+                                for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
+                                    if (fUnmasked & fXcpt)
+                                    {
+                                        State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
+                                        uint32_t fMxcsr3; RTFLOAT64U r64Out3;
+                                        pfn(&State, &fMxcsr3, &r64Out3, &TestData.i32ValIn);
+                                        TestData.fMxcsrIn  = State.MXCSR;
+                                        TestData.fMxcsrOut = fMxcsr3;
+                                        TestData.r64ValOut = r64Out3;
+                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    }
+                        }
+                    }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR64I32[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+
+static void SseBinaryR64I32Test(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64I32); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR64I32[iFn].pszName))
+            continue;
+
+        uint32_t const                           cTests  = *g_aSseBinaryR64I32[iFn].pcTests;
+        SSE_BINARY_R64_I32_TEST_T const * const  paTests = g_aSseBinaryR64I32[iFn].paTests;
+        PFNIEMAIMPLSSEF2R64I32                   pfn     = g_aSseBinaryR64I32[iFn].pfn;
+        uint32_t const                           cVars   = COUNT_VARIATIONS(g_aSseBinaryR64I32[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_R64_I32_TEST_T); iTest++)
+            {
+                uint32_t fMxcsr = 0;
+                RTFLOAT64U r64Dst; RT_ZERO(r64Dst);
+
+                State.MXCSR = paTests[iTest].fMxcsrIn;
+                pfn(&State, &fMxcsr, &r64Dst, &paTests[iTest].i32ValIn);
+                if (   fMxcsr != paTests[iTest].fMxcsrOut
+                    || !RTFLOAT64U_ARE_IDENTICAL(&r64Dst, &paTests[iTest].r64ValOut))
+                    RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x in1=%RI32\n"
+                                          "%s               -> mxcsr=%#08x    %s\n"
+                                          "%s               expected %#08x    %s%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fMxcsrIn,
+                                 &paTests[iTest].i32ValIn,
+                                 iVar ? "  " : "", fMxcsr, FormatR64(&r64Dst),
+                                 iVar ? "  " : "", paTests[iTest].fMxcsrOut, FormatR64(&paTests[iTest].r64ValOut),
+                                 MxcsrDiff(fMxcsr, paTests[iTest].fMxcsrOut),
+                                   !RTFLOAT64U_ARE_IDENTICAL(&r64Dst, &paTests[iTest].r64ValOut)
+                                 ? " - val" : "",
+                                 FormatMxcsr(paTests[iTest].fMxcsrIn) );
+            }
+        }
+    }
+}
+
+
+/*
+ * SSE operations converting single signed quad-word integers to double-precision floating point values (probably only cvtsi2sd).
+ */
+TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R64_I64_T, SSE_BINARY_R64_I64_TEST_T, PFNIEMAIMPLSSEF2R64I64);
+
+static const SSE_BINARY_R64_I64_T g_aSseBinaryR64I64[] =
+{
+    ENTRY_BIN(cvtsi2sd_r64_i64),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static int64_t const s_aSpecials[] =
+    {
+        INT64_MIN,
+        INT64_MAX
+        /** @todo More specials. */
+    };
+
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64I64); iFn++)
+    {
+        PFNIEMAIMPLSSEF2R64I64 const pfn = g_aSseBinaryR64I64[iFn].pfnNative ? g_aSseBinaryR64I64[iFn].pfnNative : g_aSseBinaryR64I64[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR64I64[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR64I64[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_BINARY_R64_I64_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.i64ValIn = iTest < cTests ? RandI64Src(iTest) : s_aSpecials[iTest - cTests];
+
+            uint32_t const fMxcsr = RandMxcsr() & X86_MXCSR_XCPT_FLAGS;
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+                for (uint8_t iDaz = 0; iDaz < 2; iDaz++)
+                    for (uint8_t iFz = 0; iFz < 2; iFz++)
+                    {
+                        State.MXCSR = (fMxcsr & ~X86_MXCSR_RC_MASK)
+                                    | (iRounding  << X86_MXCSR_RC_SHIFT)
+                                    | (iDaz ? X86_MXCSR_DAZ : 0)
+                                    | (iFz  ? X86_MXCSR_FZ  : 0)
+                                    | X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrM; RTFLOAT64U r64OutM;
+                        pfn(&State, &fMxcsrM, &r64OutM, &TestData.i64ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrM;
+                        TestData.r64ValOut = r64OutM;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrU; RTFLOAT64U r64OutU;
+                        pfn(&State, &fMxcsrU, &r64OutU, &TestData.i64ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrU;
+                        TestData.r64ValOut = r64OutU;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
+                        if (fXcpt)
+                        {
+                            State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | fXcpt;
+                            uint32_t fMxcsr1; RTFLOAT64U r64Out1;
+                            pfn(&State, &fMxcsr1, &r64Out1, &TestData.i64ValIn);
+                            TestData.fMxcsrIn  = State.MXCSR;
+                            TestData.fMxcsrOut = fMxcsr1;
+                            TestData.r64ValOut = r64Out1;
+                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                            if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
+                            {
+                                fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
+                                State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
+                                uint32_t fMxcsr2; RTFLOAT64U r64Out2;
+                                pfn(&State, &fMxcsr2, &r64Out2, &TestData.i64ValIn);
+                                TestData.fMxcsrIn  = State.MXCSR;
+                                TestData.fMxcsrOut = fMxcsr2;
+                                TestData.r64ValOut = r64Out2;
+                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            }
+                            if (!RT_IS_POWER_OF_TWO(fXcpt))
+                                for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
+                                    if (fUnmasked & fXcpt)
+                                    {
+                                        State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
+                                        uint32_t fMxcsr3; RTFLOAT64U r64Out3;
+                                        pfn(&State, &fMxcsr3, &r64Out3, &TestData.i64ValIn);
+                                        TestData.fMxcsrIn  = State.MXCSR;
+                                        TestData.fMxcsrOut = fMxcsr3;
+                                        TestData.r64ValOut = r64Out3;
+                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    }
+                        }
+                    }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR64I64[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+
+static void SseBinaryR64I64Test(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64I64); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR64I64[iFn].pszName))
+            continue;
+
+        uint32_t const                           cTests  = *g_aSseBinaryR64I64[iFn].pcTests;
+        SSE_BINARY_R64_I64_TEST_T const * const  paTests = g_aSseBinaryR64I64[iFn].paTests;
+        PFNIEMAIMPLSSEF2R64I64                   pfn     = g_aSseBinaryR64I64[iFn].pfn;
+        uint32_t const                           cVars   = COUNT_VARIATIONS(g_aSseBinaryR64I64[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_R64_I64_TEST_T); iTest++)
+            {
+                uint32_t fMxcsr = 0;
+                RTFLOAT64U r64Dst; RT_ZERO(r64Dst);
+
+                State.MXCSR = paTests[iTest].fMxcsrIn;
+                pfn(&State, &fMxcsr, &r64Dst, &paTests[iTest].i64ValIn);
+                if (   fMxcsr != paTests[iTest].fMxcsrOut
+                    || !RTFLOAT64U_ARE_IDENTICAL(&r64Dst, &paTests[iTest].r64ValOut))
+                    RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x in1=%RI64\n"
+                                          "%s               -> mxcsr=%#08x    %s\n"
+                                          "%s               expected %#08x    %s%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fMxcsrIn,
+                                 &paTests[iTest].i64ValIn,
+                                 iVar ? "  " : "", fMxcsr, FormatR64(&r64Dst),
+                                 iVar ? "  " : "", paTests[iTest].fMxcsrOut, FormatR64(&paTests[iTest].r64ValOut),
+                                 MxcsrDiff(fMxcsr, paTests[iTest].fMxcsrOut),
+                                   !RTFLOAT64U_ARE_IDENTICAL(&r64Dst, &paTests[iTest].r64ValOut)
+                                 ? " - val" : "",
+                                 FormatMxcsr(paTests[iTest].fMxcsrIn) );
+            }
+        }
+    }
+}
+
+
+/*
+ * SSE operations converting single signed double-word integers to single-precision floating point values (probably only cvtsi2ss).
+ */
+TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_I32_T, SSE_BINARY_R32_I32_TEST_T, PFNIEMAIMPLSSEF2R32I32);
+
+static const SSE_BINARY_R32_I32_T g_aSseBinaryR32I32[] =
+{
+    ENTRY_BIN(cvtsi2ss_r32_i32),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static int32_t const s_aSpecials[] =
+    {
+        INT32_MIN,
+        INT32_MAX,
+        /** @todo More specials. */
+    };
+
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32I32); iFn++)
+    {
+        PFNIEMAIMPLSSEF2R32I32 const pfn = g_aSseBinaryR32I32[iFn].pfnNative ? g_aSseBinaryR32I32[iFn].pfnNative : g_aSseBinaryR32I32[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR32I32[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR32I32[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_BINARY_R32_I32_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.i32ValIn = iTest < cTests ? RandI32Src2(iTest) : s_aSpecials[iTest - cTests];
+
+            uint32_t const fMxcsr = RandMxcsr() & X86_MXCSR_XCPT_FLAGS;
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+                for (uint8_t iDaz = 0; iDaz < 2; iDaz++)
+                    for (uint8_t iFz = 0; iFz < 2; iFz++)
+                    {
+                        State.MXCSR = (fMxcsr & ~X86_MXCSR_RC_MASK)
+                                    | (iRounding  << X86_MXCSR_RC_SHIFT)
+                                    | (iDaz ? X86_MXCSR_DAZ : 0)
+                                    | (iFz  ? X86_MXCSR_FZ  : 0)
+                                    | X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrM; RTFLOAT32U r32OutM;
+                        pfn(&State, &fMxcsrM, &r32OutM, &TestData.i32ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrM;
+                        TestData.r32ValOut = r32OutM;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrU; RTFLOAT32U r32OutU;
+                        pfn(&State, &fMxcsrU, &r32OutU, &TestData.i32ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrU;
+                        TestData.r32ValOut = r32OutU;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
+                        if (fXcpt)
+                        {
+                            State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | fXcpt;
+                            uint32_t fMxcsr1; RTFLOAT32U r32Out1;
+                            pfn(&State, &fMxcsr1, &r32Out1, &TestData.i32ValIn);
+                            TestData.fMxcsrIn  = State.MXCSR;
+                            TestData.fMxcsrOut = fMxcsr1;
+                            TestData.r32ValOut = r32Out1;
+                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                            if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
+                            {
+                                fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
+                                State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
+                                uint32_t fMxcsr2; RTFLOAT32U r32Out2;
+                                pfn(&State, &fMxcsr2, &r32Out2, &TestData.i32ValIn);
+                                TestData.fMxcsrIn  = State.MXCSR;
+                                TestData.fMxcsrOut = fMxcsr2;
+                                TestData.r32ValOut = r32Out2;
+                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            }
+                            if (!RT_IS_POWER_OF_TWO(fXcpt))
+                                for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
+                                    if (fUnmasked & fXcpt)
+                                    {
+                                        State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
+                                        uint32_t fMxcsr3; RTFLOAT32U r32Out3;
+                                        pfn(&State, &fMxcsr3, &r32Out3, &TestData.i32ValIn);
+                                        TestData.fMxcsrIn  = State.MXCSR;
+                                        TestData.fMxcsrOut = fMxcsr3;
+                                        TestData.r32ValOut = r32Out3;
+                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    }
+                        }
+                    }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR32I32[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+
+static void SseBinaryR32I32Test(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32I32); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR32I32[iFn].pszName))
+            continue;
+
+        uint32_t const                           cTests  = *g_aSseBinaryR32I32[iFn].pcTests;
+        SSE_BINARY_R32_I32_TEST_T const * const  paTests = g_aSseBinaryR32I32[iFn].paTests;
+        PFNIEMAIMPLSSEF2R32I32                   pfn     = g_aSseBinaryR32I32[iFn].pfn;
+        uint32_t const                           cVars   = COUNT_VARIATIONS(g_aSseBinaryR32I32[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_R32_I32_TEST_T); iTest++)
+            {
+                uint32_t fMxcsr = 0;
+                RTFLOAT32U r32Dst; RT_ZERO(r32Dst);
+
+                State.MXCSR = paTests[iTest].fMxcsrIn;
+                pfn(&State, &fMxcsr, &r32Dst, &paTests[iTest].i32ValIn);
+                if (   fMxcsr != paTests[iTest].fMxcsrOut
+                    || !RTFLOAT32U_ARE_IDENTICAL(&r32Dst, &paTests[iTest].r32ValOut))
+                    RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x in1=%RI32\n"
+                                          "%s               -> mxcsr=%#08x    %RI32\n"
+                                          "%s               expected %#08x    %RI32%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fMxcsrIn,
+                                 &paTests[iTest].i32ValIn,
+                                 iVar ? "  " : "", fMxcsr, FormatR32(&r32Dst),
+                                 iVar ? "  " : "", paTests[iTest].fMxcsrOut, FormatR32(&paTests[iTest].r32ValOut),
+                                 MxcsrDiff(fMxcsr, paTests[iTest].fMxcsrOut),
+                                   !RTFLOAT32U_ARE_IDENTICAL(&r32Dst, &paTests[iTest].r32ValOut)
+                                 ? " - val" : "",
+                                 FormatMxcsr(paTests[iTest].fMxcsrIn) );
+            }
+        }
+    }
+}
+
+
+/*
+ * SSE operations converting single signed quad-word integers to single-precision floating point values (probably only cvtsi2ss).
+ */
+TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_I64_T, SSE_BINARY_R32_I64_TEST_T, PFNIEMAIMPLSSEF2R32I64);
+
+static const SSE_BINARY_R32_I64_T g_aSseBinaryR32I64[] =
+{
+    ENTRY_BIN(cvtsi2ss_r32_i64),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static int64_t const s_aSpecials[] =
+    {
+        INT64_MIN,
+        INT64_MAX
+        /** @todo More specials. */
+    };
+
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32I64); iFn++)
+    {
+        PFNIEMAIMPLSSEF2R32I64 const pfn = g_aSseBinaryR32I64[iFn].pfnNative ? g_aSseBinaryR32I64[iFn].pfnNative : g_aSseBinaryR32I64[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR32I64[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR32I64[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_BINARY_R32_I64_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.i64ValIn = iTest < cTests ? RandI64Src(iTest) : s_aSpecials[iTest - cTests];
+
+            uint32_t const fMxcsr = RandMxcsr() & X86_MXCSR_XCPT_FLAGS;
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+                for (uint8_t iDaz = 0; iDaz < 2; iDaz++)
+                    for (uint8_t iFz = 0; iFz < 2; iFz++)
+                    {
+                        State.MXCSR = (fMxcsr & ~X86_MXCSR_RC_MASK)
+                                    | (iRounding  << X86_MXCSR_RC_SHIFT)
+                                    | (iDaz ? X86_MXCSR_DAZ : 0)
+                                    | (iFz  ? X86_MXCSR_FZ  : 0)
+                                    | X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrM; RTFLOAT32U r32OutM;
+                        pfn(&State, &fMxcsrM, &r32OutM, &TestData.i64ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrM;
+                        TestData.r32ValOut = r32OutM;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrU; RTFLOAT32U r32OutU;
+                        pfn(&State, &fMxcsrU, &r32OutU, &TestData.i64ValIn);
+                        TestData.fMxcsrIn  = State.MXCSR;
+                        TestData.fMxcsrOut = fMxcsrU;
+                        TestData.r32ValOut = r32OutU;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
+                        if (fXcpt)
+                        {
+                            State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | fXcpt;
+                            uint32_t fMxcsr1; RTFLOAT32U r32Out1;
+                            pfn(&State, &fMxcsr1, &r32Out1, &TestData.i64ValIn);
+                            TestData.fMxcsrIn  = State.MXCSR;
+                            TestData.fMxcsrOut = fMxcsr1;
+                            TestData.r32ValOut = r32Out1;
+                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                            if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
+                            {
+                                fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
+                                State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
+                                uint32_t fMxcsr2; RTFLOAT32U r32Out2;
+                                pfn(&State, &fMxcsr2, &r32Out2, &TestData.i64ValIn);
+                                TestData.fMxcsrIn  = State.MXCSR;
+                                TestData.fMxcsrOut = fMxcsr2;
+                                TestData.r32ValOut = r32Out2;
+                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            }
+                            if (!RT_IS_POWER_OF_TWO(fXcpt))
+                                for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
+                                    if (fUnmasked & fXcpt)
+                                    {
+                                        State.MXCSR = (State.MXCSR & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
+                                        uint32_t fMxcsr3; RTFLOAT32U r32Out3;
+                                        pfn(&State, &fMxcsr3, &r32Out3, &TestData.i64ValIn);
+                                        TestData.fMxcsrIn  = State.MXCSR;
+                                        TestData.fMxcsrOut = fMxcsr3;
+                                        TestData.r32ValOut = r32Out3;
+                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    }
+                        }
+                    }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR32I64[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+
+static void SseBinaryR32I64Test(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32I64); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR32I64[iFn].pszName))
+            continue;
+
+        uint32_t const                           cTests  = *g_aSseBinaryR32I64[iFn].pcTests;
+        SSE_BINARY_R32_I64_TEST_T const * const  paTests = g_aSseBinaryR32I64[iFn].paTests;
+        PFNIEMAIMPLSSEF2R32I64                   pfn     = g_aSseBinaryR32I64[iFn].pfn;
+        uint32_t const                           cVars   = COUNT_VARIATIONS(g_aSseBinaryR32I64[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_R32_I64_TEST_T); iTest++)
+            {
+                uint32_t fMxcsr = 0;
+                RTFLOAT32U r32Dst; RT_ZERO(r32Dst);
+
+                State.MXCSR = paTests[iTest].fMxcsrIn;
+                pfn(&State, &fMxcsr, &r32Dst, &paTests[iTest].i64ValIn);
+                if (   fMxcsr != paTests[iTest].fMxcsrOut
+                    || !RTFLOAT32U_ARE_IDENTICAL(&r32Dst, &paTests[iTest].r32ValOut))
+                    RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x in1=%RI64\n"
+                                          "%s               -> mxcsr=%#08x    %RI32\n"
+                                          "%s               expected %#08x    %RI32%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fMxcsrIn,
+                                 &paTests[iTest].i64ValIn,
+                                 iVar ? "  " : "", fMxcsr, FormatR32(&r32Dst),
+                                 iVar ? "  " : "", paTests[iTest].fMxcsrOut, FormatR32(&paTests[iTest].r32ValOut),
+                                 MxcsrDiff(fMxcsr, paTests[iTest].fMxcsrOut),
+                                   !RTFLOAT32U_ARE_IDENTICAL(&r32Dst, &paTests[iTest].r32ValOut)
+                                 ? " - val" : "",
+                                 FormatMxcsr(paTests[iTest].fMxcsrIn) );
+            }
+        }
+    }
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -6260,6 +6894,7 @@ int main(int argc, char **argv)
                 rcExit = SseBinaryU128R32Generate(pszDataFileFmt, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
                 rcExit = SseBinaryU128R64Generate(pszDataFileFmt, cTests);
+
             if (rcExit == RTEXITCODE_SUCCESS)
                 rcExit = SseBinaryI32R64Generate(pszDataFileFmt, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
@@ -6268,6 +6903,16 @@ int main(int argc, char **argv)
                 rcExit = SseBinaryI32R32Generate(pszDataFileFmt, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
                 rcExit = SseBinaryI64R32Generate(pszDataFileFmt, cTests);
+
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseBinaryR64I32Generate(pszDataFileFmt, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseBinaryR64I64Generate(pszDataFileFmt, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseBinaryR32I32Generate(pszDataFileFmt, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseBinaryR32I64Generate(pszDataFileFmt, cTests);
+
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
         }
@@ -6367,10 +7012,16 @@ int main(int argc, char **argv)
                 SseBinaryR64Test();
                 SseBinaryU128R32Test();
                 SseBinaryU128R64Test();
+
                 SseBinaryI32R64Test();
                 SseBinaryI64R64Test();
                 SseBinaryI32R32Test();
                 SseBinaryI64R32Test();
+
+                SseBinaryR64I32Test();
+                SseBinaryR64I64Test();
+                SseBinaryR32I32Test();
+                SseBinaryR32I64Test();
             }
         }
         return RTTestSummaryAndDestroy(g_hTest);

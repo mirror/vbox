@@ -112,3 +112,9 @@ IEM_TEST_DATA cvtss2si_i32_r32,  "tstIEMAImplDataSseBinary-cvtss2si_i32_r32.bin"
 
 IEM_TEST_DATA cvttss2si_i64_r32, "tstIEMAImplDataSseBinary-cvttss2si_i64_r32.bin"
 IEM_TEST_DATA cvtss2si_i64_r32,  "tstIEMAImplDataSseBinary-cvtss2si_i64_r32.bin"
+
+IEM_TEST_DATA cvtsi2ss_r32_i32,  "tstIEMAImplDataSseBinary-cvtsi2ss_r32_i32.bin"
+IEM_TEST_DATA cvtsi2ss_r32_i64,  "tstIEMAImplDataSseBinary-cvtsi2ss_r32_i64.bin"
+
+IEM_TEST_DATA cvtsi2sd_r64_i32,  "tstIEMAImplDataSseBinary-cvtsi2sd_r64_i32.bin"
+IEM_TEST_DATA cvtsi2sd_r64_i64,  "tstIEMAImplDataSseBinary-cvtsi2sd_r64_i64.bin"
