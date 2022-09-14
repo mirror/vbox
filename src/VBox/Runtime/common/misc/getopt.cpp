@@ -101,6 +101,8 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
     for (size_t i = 0; i < cOptions; i++)
     {
         Assert(!(paOptions[i].fFlags & ~RTGETOPT_VALID_MASK));
+        Assert(   !(paOptions[i].fFlags & (RTGETOPT_FLAG_INDEX_DEF_MASK | RTGETOPT_FLAG_INDEX_DEF_DASH))
+               || (paOptions[i].fFlags & RTGETOPT_FLAG_INDEX) );
         Assert(paOptions[i].iShort > 0);
         Assert(paOptions[i].iShort != VINF_GETOPT_NOT_OPTION);
         Assert(paOptions[i].iShort != '-');
@@ -174,7 +176,8 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
     {
         if (pOpt->pszLong)
         {
-            if ((pOpt->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
+            uint32_t const fOptFlags = pOpt->fFlags;
+            if ((fOptFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
             {
                 /*
                  * A value is required with the argument. We're trying to be
@@ -188,10 +191,14 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
                 if (   !strncmp(pszOption, pOpt->pszLong, cchLong)
-                    || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                    || (   (fOptFlags & RTGETOPT_FLAG_ICASE)
                         && !RTStrNICmp(pszOption, pOpt->pszLong, cchLong)))
                 {
-                    if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+                    if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
+                        && pszOption[cchLong] == '-'
+                        && RT_C_IS_DIGIT(pszOption[cchLong + 1])) /* given "--long" we match "--long-1" but not "--long-". */
+                        cchLong++;
+                    if (fOptFlags & RTGETOPT_FLAG_INDEX)
                         while (RT_C_IS_DIGIT(pszOption[cchLong]))
                             cchLong++;
                     if (   pszOption[cchLong] == '\0'
@@ -200,7 +207,7 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                         return pOpt;
                 }
             }
-            else if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+            else if (fOptFlags & RTGETOPT_FLAG_INDEX)
             {
                 /*
                  * The option takes an index but no value.
@@ -208,9 +215,13 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
                 if (   !strncmp(pszOption, pOpt->pszLong, cchLong)
-                    || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                    || (   (fOptFlags & RTGETOPT_FLAG_ICASE)
                         && !RTStrNICmp(pszOption, pOpt->pszLong, cchLong)))
                 {
+                    if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
+                        && pszOption[cchLong] == '-'
+                        && RT_C_IS_DIGIT(pszOption[cchLong + 1]))
+                        cchLong++;
                     while (RT_C_IS_DIGIT(pszOption[cchLong]))
                         cchLong++;
                     if (pszOption[cchLong] == '\0')
@@ -218,7 +229,7 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                 }
             }
             else if (   !strcmp(pszOption, pOpt->pszLong)
-                     || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                     || (   (fOptFlags & RTGETOPT_FLAG_ICASE)
                          && !RTStrICmp(pszOption, pOpt->pszLong)))
                 return pOpt;
         }
@@ -659,7 +670,8 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
     {
         pValueUnion->pDef = pOpt; /* in case of no value or error. */
 
-        if ((pOpt->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
+        uint32_t const fOptFlags = pOpt->fFlags;
+        if ((fOptFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
         {
             /*
              * Find the argument value.
@@ -691,34 +703,46 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             else
             {
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+                if (fOptFlags & RTGETOPT_FLAG_INDEX)
                 {
-
-                    if (pszArgThis[cchLong] == '\0')
-                        return VERR_GETOPT_INDEX_MISSING;
-
-                    uint32_t uIndex;
-                    char *pszRet = NULL;
-                    int rc = RTStrToUInt32Ex(&pszArgThis[cchLong], &pszRet, 10, &uIndex);
-                    if (rc == VWRN_TRAILING_CHARS)
+                    if (   pszArgThis[cchLong] != '\0'
+                        || (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK))
                     {
-                        if (   pszRet[0] != ':'
-                            && pszRet[0] != '=')
-                            return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-                        pState->uIndex = uIndex;
-                        pszValue = pszRet + 1;
-                    }
-                    else if (rc == VINF_SUCCESS)
-                    {
-                        if (iThis + 1 + pState->cNonOptions >= pState->argc)
-                            return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                        pState->uIndex = uIndex;
-                        pszValue = pState->argv[iThis + pState->cNonOptions + 1];
-                        rtGetOptMoveArgvEntries(&pState->argv[iThis + 1], &pState->argv[iThis + pState->cNonOptions + 1]);
-                        pState->iNext++;
+                        if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
+                            && pszArgThis[cchLong] == '-')
+                            cchLong++;
+
+                        uint32_t uIndex;
+                        char *pszRet = NULL;
+                        int rc = RTStrToUInt32Ex(&pszArgThis[cchLong], &pszRet, 10, &uIndex);
+                        if (   rc == VERR_NO_DIGITS
+                            && (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK))
+                        {
+                            uIndex = ((fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK) >> RTGETOPT_FLAG_INDEX_DEF_SHIFT) - 1;
+                            rc = pszRet[0] == '\0' ? VINF_SUCCESS : VWRN_TRAILING_CHARS;
+                        }
+                        if (rc == VWRN_TRAILING_CHARS)
+                        {
+                            if (   pszRet[0] != ':'
+                                && pszRet[0] != '=')
+                                return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+                            pState->uIndex = uIndex;
+                            pszValue = pszRet + 1;
+                        }
+                        else if (rc == VINF_SUCCESS)
+                        {
+                            if (iThis + 1 + pState->cNonOptions >= pState->argc)
+                                return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
+                            pState->uIndex = uIndex;
+                            pszValue = pState->argv[iThis + pState->cNonOptions + 1];
+                            rtGetOptMoveArgvEntries(&pState->argv[iThis + 1], &pState->argv[iThis + pState->cNonOptions + 1]);
+                            pState->iNext++;
+                        }
+                        else
+                            AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
                     }
                     else
-                        AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
+                        return VERR_GETOPT_INDEX_MISSING;
                 }
                 else
                 {
@@ -738,7 +762,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             /*
              * Set up the ValueUnion.
              */
-            int rc = rtGetOptProcessValue(pOpt->fFlags, pszValue, pValueUnion);
+            int rc = rtGetOptProcessValue(fOptFlags, pszValue, pValueUnion);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -764,17 +788,24 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 pState->iNext++;
             }
         }
-        else if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+        else if (fOptFlags & RTGETOPT_FLAG_INDEX)
         {
-            size_t cchLong = strlen(pOpt->pszLong);
-            if (pszArgThis[cchLong] == '\0')
-                return VERR_GETOPT_INDEX_MISSING;
-
+            size_t   cchLong = strlen(pOpt->pszLong);
             uint32_t uIndex;
-            if (RTStrToUInt32Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
-                pState->uIndex = uIndex;
+            if (pszArgThis[cchLong] != '\0')
+            {
+                if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
+                    && pszArgThis[cchLong] == '-')
+                    cchLong++;
+                if (RTStrToUInt32Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
+                    pState->uIndex = uIndex;
+                else
+                    AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
+            }
+            else if (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK)
+                uIndex = ((fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK) >> RTGETOPT_FLAG_INDEX_DEF_SHIFT) - 1;
             else
-                AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
+                return VERR_GETOPT_INDEX_MISSING;
         }
 
         pState->pDef = pOpt;

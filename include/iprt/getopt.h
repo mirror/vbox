@@ -129,15 +129,36 @@ RT_C_DECLS_BEGIN
 #define RTGETOPT_FLAG_DEC                       RT_BIT(18)
 /** The index value is attached to the argument - only valid for long arguments. */
 #define RTGETOPT_FLAG_INDEX                     RT_BIT(19)
+/** Used with RTGETOPT_FLAG_INDEX, setting index to zero if none given.
+ * (The default is to fail with VERR_GETOPT_INDEX_MISSING.)  */
+#define RTGETOPT_FLAG_INDEX_DEF_0               RT_BIT(20)
+/** Used with RTGETOPT_FLAG_INDEX, setting index to one if none given.
+ * (The default is to fail with VERR_GETOPT_INDEX_MISSING.)  */
+#define RTGETOPT_FLAG_INDEX_DEF_1               RT_BIT(21)
+/** For simplicity. */
+#define RTGETOPT_FLAG_INDEX_DEF_MASK            (RT_BIT(20) | RT_BIT(21))
+/** For simple conversion. */
+#define RTGETOPT_FLAG_INDEX_DEF_SHIFT           20
+/** For use with RTGETOPT_FLAG_INDEX_DEF_0 or RTGETOPT_FLAG_INDEX_DEF_1 to
+ *  imply a dash before the index when a digit is specified.
+ * This is for transitioning from options without index to optionally allow
+ * index options, i.e. "--long" defaults to either index 1 or 1 using the above
+ * flags, while "--long-1" explicitly gives the index ("--long-" is not valid).
+ * This flag matches an "-" separating the "--long" string
+ * (RTGETOPTDEFS::pszLong) from the index value.  */
+#define RTGETOPT_FLAG_INDEX_DEF_DASH            RT_BIT(22)
 /** Treat the long option as case insensitive. */
-#define RTGETOPT_FLAG_ICASE                     RT_BIT(20)
+#define RTGETOPT_FLAG_ICASE                     RT_BIT(23)
 /** Mask of valid bits - for validation. */
 #define RTGETOPT_VALID_MASK                     (  RTGETOPT_REQ_MASK \
                                                  | RTGETOPT_FLAG_HEX \
                                                  | RTGETOPT_FLAG_OCT \
                                                  | RTGETOPT_FLAG_DEC \
                                                  | RTGETOPT_FLAG_INDEX \
-                                                 | RTGETOPT_FLAG_ICASE)
+                                                 | RTGETOPT_FLAG_INDEX_DEF_0 \
+                                                 | RTGETOPT_FLAG_INDEX_DEF_1 \
+                                                 | RTGETOPT_FLAG_INDEX_DEF_DASH \
+                                                 | RTGETOPT_FLAG_ICASE )
 /** @} */
 
 /**
@@ -164,11 +185,6 @@ typedef const RTGETOPTDEF *PCRTGETOPTDEF;
  * Option argument union.
  *
  * What ends up here depends on argument format in the option definition.
- *
- * @remarks Integers will bet put in the \a i and \a u members and sign/zero extended
- *          according to the signedness indicated by the \a fFlags. So, you can choose
- *          use which ever of the integer members for accessing the value regardless
- *          of restrictions indicated in the \a fFlags.
  */
 typedef union RTGETOPTUNION
 {

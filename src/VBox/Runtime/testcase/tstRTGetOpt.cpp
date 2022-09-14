@@ -118,6 +118,9 @@ int main()
         { "--pair32",           410, RTGETOPT_REQ_UINT32_PAIR  },
         { "--optpair32",        411, RTGETOPT_REQ_UINT32_OPTIONAL_PAIR  },
         { "--optpair64",        412, RTGETOPT_REQ_UINT64_OPTIONAL_PAIR  },
+        { "--boolean0index",    413, RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX | RTGETOPT_FLAG_INDEX_DEF_0 },
+        { "--boolean1index",    414, RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX | RTGETOPT_FLAG_INDEX_DEF_1 },
+        { "--boolean-dash-idx", 415, RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX | RTGETOPT_FLAG_INDEX_DEF_0 | RTGETOPT_FLAG_INDEX_DEF_DASH },
     };
 
     const char *argv2[] =
@@ -190,6 +193,16 @@ int main()
         "--booleanindex2",   "on",
         "--booleanindex7",   "off",
         "--booleanindex9",   "invalid",
+
+        /* bool on/off with optional index */
+        "--boolean0index9",     "on",
+        "--boolean0index",      "off",
+        "--boolean1index42",    "off",
+        "--boolean1index",      "on",
+        "--boolean-dash-idx",   "off",
+        "--boolean-dash-idx-2", "on",
+        "--boolean-dash-idx-3=off",
+        "--boolean-dash-idx:on",
 
         /* standard options */
         "--help",
@@ -436,6 +449,39 @@ int main()
     CHECK(GetState.uIndex == 7);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VERR_GETOPT_UNKNOWN_OPTION, 2);
     CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
+
+    /* bool on/off with optional indexed argument  */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 413, 2);
+    CHECK(Val.f);
+    CHECK(GetState.uIndex == 9);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 413, 2);
+    CHECK(!Val.f);
+    CHECK(GetState.uIndex == 0);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 414, 2);
+    CHECK(!Val.f);
+    CHECK(GetState.uIndex == 42);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 414, 2);
+    CHECK(Val.f);
+    CHECK(GetState.uIndex == 1);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 415, 2);
+    CHECK(!Val.f);
+    CHECK(GetState.uIndex == 0);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 415, 2);
+    CHECK(Val.f);
+    CHECK(GetState.uIndex == 2);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 415, 1);
+    CHECK(!Val.f);
+    CHECK(GetState.uIndex == 3);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 415, 1);
+    CHECK(Val.f);
+    CHECK(GetState.uIndex == 0);
 
     /* standard options. */
     RTTestSub(hTest, "Standard options");
