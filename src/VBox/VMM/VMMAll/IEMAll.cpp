@@ -5163,9 +5163,25 @@ void iemSseStoreResult(PVMCPUCC pVCpu, PCIEMSSERESULT pResult, uint8_t iXmmReg) 
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     pFpuCtx->MXCSR |= pResult->MXCSR & X86_MXCSR_XCPT_FLAGS;
-    pVCpu->cpum.GstCtx.XState.x87.aXMM[iXmmReg] = pResult->uResult;
+
+    /* The result is only updated if there is no unmasked exception pending. */
+    if ((  ~((pFpuCtx->MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+         & (pFpuCtx->MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0)
+        pVCpu->cpum.GstCtx.XState.x87.aXMM[iXmmReg] = pResult->uResult;
 }
 
+
+/**
+ * Updates the MXCSR.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   fMxcsr              The new MXCSR value.
+ */
+void iemSseUpdateMxcsr(PVMCPUCC pVCpu, uint32_t fMxcsr) RT_NOEXCEPT
+{
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
+    pFpuCtx->MXCSR |= fMxcsr & X86_MXCSR_XCPT_FLAGS;
+}
 /** @}  */
 
 

@@ -204,7 +204,7 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
     do { \
-        if ((  ((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+        if ((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
              & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0) \
         { \
             if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)\
@@ -212,6 +212,13 @@
             else \
                 return iemRaiseUndefinedOpcode(pVCpu); \
         } \
+    } while (0)
+#define IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
+    do { \
+        if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)\
+            return iemRaiseSimdFpException(pVCpu); \
+        else \
+            return iemRaiseUndefinedOpcode(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_PCLMUL_RELATED_XCPT() \
     do { \
@@ -286,7 +293,9 @@
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8( pVCpu, (a_iGReg)) = (a_u8Value)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *iemGRegRefU16(pVCpu, (a_iGReg)) = (a_u16Value)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      *iemGRegRefU64(pVCpu, (a_iGReg)) = (uint32_t)(a_u32Value) /* clear high bits. */
+#define IEM_MC_STORE_GREG_I32(a_iGReg, a_i32Value)      *iemGRegRefI64(pVCpu, (a_iGReg)) = (int64_t)(a_i32Value) /* Sign extension. */
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      *iemGRegRefU64(pVCpu, (a_iGReg)) = (a_u64Value)
+#define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)      *iemGRegRefI64(pVCpu, (a_iGReg)) = (a_i64Value)
 #define IEM_MC_STORE_GREG_U8_CONST                      IEM_MC_STORE_GREG_U8
 #define IEM_MC_STORE_GREG_U16_CONST                     IEM_MC_STORE_GREG_U16
 #define IEM_MC_STORE_GREG_U32_CONST                     IEM_MC_STORE_GREG_U32
@@ -1310,9 +1319,13 @@
 /** Actualizes the guest FPU state so it can be accessed and modified. */
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() iemFpuActualizeStateForChange(pVCpu)
 
-/** Stores SSE SIMD result in a stack register. */
+/** Stores SSE SIMD result updating MXCSR. */
 #define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg) \
     iemSseStoreResult(pVCpu, &a_SseData, a_iXmmReg)
+/** Updates MXCSR. */
+#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr) \
+    iemSseUpdateMxcsr(pVCpu, a_fMxcsr)
+
 /** Prepares for using the SSE state.
  * Ensures that we can use the host SSE/FPU in the current context (RC+R0.
  * Ensures the guest SSE state in the CPUMCTX is up to date. */
@@ -1497,6 +1510,9 @@
     if (iemFpu2StRegsNotEmptyRefFirst(pVCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1)) == VINF_SUCCESS) {
 #define IEM_MC_IF_FCW_IM() \
     if (pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_IM) {
+#define IEM_MC_IF_MXCSR_XCPT_PENDING() \
+        if ((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+             & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0) {
 
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)

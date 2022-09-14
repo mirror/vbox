@@ -576,6 +576,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT()              do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() do { (void)fMcBegin; } while (0)
+#define IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT()       do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_PCLMUL_RELATED_XCPT()        do { (void)fMcBegin; } while (0)
 
 #define IEM_MC_LOCAL(a_Type, a_Name) (void)fMcBegin; \
@@ -648,7 +649,9 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        do { CHK_TYPE(uint8_t, a_u8Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      do { CHK_TYPE(uint16_t, a_u16Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      do { (void)fMcBegin;  } while (0)
+#define IEM_MC_STORE_GREG_I32(a_iGReg, a_i32Value)      do { (void)fMcBegin;  } while (0)
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      do { (void)fMcBegin;  } while (0)
+#define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)      do { (void)fMcBegin;  } while (0)
 #define IEM_MC_STORE_GREG_U8_CONST(a_iGReg, a_u8C)      do { AssertCompile((uint8_t )(a_u8C)  == (a_u8C) ); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16C)    do { AssertCompile((uint16_t)(a_u16C) == (a_u16C)); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U32_CONST(a_iGReg, a_u32C)    do { AssertCompile((uint32_t)(a_u32C) == (a_u32C)); (void)fMcBegin; } while (0)
@@ -914,6 +917,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()   (void)fMcBegin; const int fFpuRead = 1, fSseRead = 1
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() (void)fMcBegin; const int fFpuRead = 1, fFpuWrite = 1, fSseRead = 1, fSseWrite = 1
 #define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg)                                           do { (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr)                                                       do { (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_PREPARE_SSE_USAGE()              (void)fMcBegin; const int fSseRead = 1, fSseWrite = 1, fSseHost = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()   (void)fMcBegin; const int fSseRead = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE() (void)fMcBegin; const int fSseRead = 1, fSseWrite = 1
@@ -969,6 +973,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
     p0 = NULL; \
     if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_FCW_IM()                                              (void)fMcBegin; if (g_fRandom != fFpuRead) {
+#define IEM_MC_IF_MXCSR_XCPT_PENDING()                                  (void)fMcBegin; if (g_fRandom != fSseRead) {
 #define IEM_MC_ELSE()                                                   } else {
 #define IEM_MC_ENDIF()                                                  } do { (void)fMcBegin; } while (0)
 
