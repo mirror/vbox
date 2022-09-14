@@ -5892,7 +5892,7 @@ static void SseBinaryI64R32Test(void)
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
-            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_I64_R64_TEST_T); iTest++)
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_I64_R32_TEST_T); iTest++)
             {
                 uint32_t fMxcsr = 0;
                 int64_t i64Dst = 0;
