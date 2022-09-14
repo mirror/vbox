@@ -9520,7 +9520,7 @@ FNIEMOP_DEF_1(iemOp_fnsave,      uint8_t, bRm)
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
-    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE(); /* Note! Implicit fninit after the save, do not use FOR_READ here! */
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fnsave, enmEffOpSize, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
