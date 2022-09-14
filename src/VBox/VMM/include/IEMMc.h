@@ -320,7 +320,11 @@
 /** @todo User of IEM_MC_REF_GREG_U32 needs to clear the high bits on commit.
  *        Use IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF! */
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = iemGRegRefU32(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I32(a_pi32Dst, a_iGReg)         (a_pi32Dst) = (int32_t *)iemGRegRefU32(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I32_CONST(a_pi32Dst, a_iGReg)   (a_pi32Dst) = (int32_t const *)iemGRegRefU32(pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = iemGRegRefU64(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg)         (a_pi64Dst) = (int64_t *)iemGRegRefU64(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)   (a_pi64Dst) = (int64_t const *)iemGRegRefU64(pVCpu, (a_iGReg))
 /** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &pVCpu->cpum.GstCtx.eflags.u
 
@@ -464,6 +468,10 @@
     } while (0)
 #define IEM_MC_STORE_XREG_U32(a_iXReg, a_u32Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[0] = (a_u32Value); } while (0)
+#define IEM_MC_STORE_XREG_R32(a_iXReg, a_r32Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar32[0] = (a_r32Value); } while (0)
+#define IEM_MC_STORE_XREG_R64(a_iXReg, a_r64Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar64[0] = (a_r64Value); } while (0)
 #define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (uint32_t)(a_u32Value); \
          pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1] = 0; \

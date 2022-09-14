@@ -3582,10 +3582,258 @@ FNIEMOP_DEF(iemOp_movapd_Wpd_Vpd)
 FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi); //NEXT
 /** Opcode 0x66 0x0f 0x2a - cvtpi2pd Vpd, Qpi */
 FNIEMOP_STUB(iemOp_cvtpi2pd_Vpd_Qpi); //NEXT
+
+
 /** Opcode 0xf3 0x0f 0x2a - vcvtsi2ss Vss, Hss, Ey */
-FNIEMOP_STUB(iemOp_cvtsi2ss_Vss_Ey); //NEXT
+FNIEMOP_DEF(iemOp_cvtsi2ss_Vss_Ey)
+{
+    IEMOP_MNEMONIC2(RM, CVTSI2SS, cvtsi2ss, Vss, Ey, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+    {
+        if (IEM_IS_MODRM_REG_MODE(bRm))
+        {
+            /* XMM, greg64 */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(uint32_t,    fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT32U,  r32Dst);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,    pfMxcsr, fMxcsr,  0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT32U,   pr32Dst, r32Dst,  1);
+            IEM_MC_ARG(const int64_t *,         pi64Src,          2);
+
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_REF_GREG_I64_CONST(pi64Src, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2ss_r32_i64, pfMxcsr, pr32Dst, pi64Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R32(IEM_GET_MODRM_RM(pVCpu, bRm), r32Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            /* XMM, [mem64] */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+            IEM_MC_LOCAL(uint32_t,   fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT32U, r32Dst);
+            IEM_MC_LOCAL(int64_t,    i64Src);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,        pfMxcsr, fMxcsr,     0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT32U,       pr32Dst, r32Dst,     1);
+            IEM_MC_ARG_LOCAL_REF(const int64_t *,   pi64Src, i64Src,     2);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_FETCH_MEM_I64(i64Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2ss_r32_i64, pfMxcsr, pr32Dst, pi64Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R32(IEM_GET_MODRM_RM(pVCpu, bRm), r32Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        if (IEM_IS_MODRM_REG_MODE(bRm))
+        {
+            /* greg, XMM */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(uint32_t,   fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT32U, r32Dst);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,  pfMxcsr, fMxcsr,     0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT32U, pr32Dst, r32Dst,     1);
+            IEM_MC_ARG(const int32_t *,       pi32Src,             2);
+
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_REF_GREG_I32_CONST(pi32Src, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2ss_r32_i32, pfMxcsr, pr32Dst, pi32Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R32(IEM_GET_MODRM_RM(pVCpu, bRm), r32Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            /* greg, [mem] */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+            IEM_MC_LOCAL(uint32_t,   fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT32U, r32Dst);
+            IEM_MC_LOCAL(int32_t,    i32Src);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,       pfMxcsr, fMxcsr,     0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT32U,      pr32Dst, r32Dst,     1);
+            IEM_MC_ARG_LOCAL_REF(const int32_t *,  pi32Src, i32Src,     2);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_FETCH_MEM_I32(i32Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2ss_r32_i32, pfMxcsr, pr32Dst, pi32Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R32(IEM_GET_MODRM_RM(pVCpu, bRm), r32Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0xf2 0x0f 0x2a - vcvtsi2sd Vsd, Hsd, Ey */
-FNIEMOP_STUB(iemOp_cvtsi2sd_Vsd_Ey); //NEXT
+FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
+{
+    IEMOP_MNEMONIC2(RM, CVTSI2SD, cvtsi2sd, Vsd, Ey, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+    {
+        if (IEM_IS_MODRM_REG_MODE(bRm))
+        {
+            /* XMM, greg64 */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(uint32_t,    fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT64U,  r64Dst);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,    pfMxcsr, fMxcsr,  0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,   pr64Dst, r64Dst,  1);
+            IEM_MC_ARG(const int64_t *,         pi64Src,          2);
+
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_REF_GREG_I64_CONST(pi64Src, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2sd_r64_i64, pfMxcsr, pr64Dst, pi64Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R64(IEM_GET_MODRM_RM(pVCpu, bRm), r64Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            /* XMM, [mem64] */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+            IEM_MC_LOCAL(uint32_t,   fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT64U, r64Dst);
+            IEM_MC_LOCAL(int64_t,    i64Src);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,        pfMxcsr, fMxcsr,     0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,       pr64Dst, r64Dst,     1);
+            IEM_MC_ARG_LOCAL_REF(const int64_t *,   pi64Src, i64Src,     2);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_FETCH_MEM_I64(i64Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2sd_r64_i64, pfMxcsr, pr64Dst, pi64Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R64(IEM_GET_MODRM_RM(pVCpu, bRm), r64Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        if (IEM_IS_MODRM_REG_MODE(bRm))
+        {
+            /* greg, XMM */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(uint32_t,   fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT64U, r64Dst);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,  pfMxcsr, fMxcsr,     0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U, pr64Dst, r64Dst,     1);
+            IEM_MC_ARG(const int32_t *,       pi32Src,             2);
+
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_REF_GREG_I32_CONST(pi32Src, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2sd_r64_i32, pfMxcsr, pr64Dst, pi32Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R64(IEM_GET_MODRM_RM(pVCpu, bRm), r64Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            /* greg, [mem] */
+            IEM_MC_BEGIN(3, 4);
+            IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+            IEM_MC_LOCAL(uint32_t,   fMxcsr);
+            IEM_MC_LOCAL(RTFLOAT64U, r64Dst);
+            IEM_MC_LOCAL(int32_t,    i32Src);
+            IEM_MC_ARG_LOCAL_REF(uint32_t *,       pfMxcsr, fMxcsr,     0);
+            IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,      pr64Dst, r64Dst,     1);
+            IEM_MC_ARG_LOCAL_REF(const int32_t *,  pi32Src, i32Src,     2);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
+
+            IEM_MC_FETCH_MEM_I32(i32Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_cvtsi2sd_r64_i32, pfMxcsr, pr64Dst, pi32Src);
+            IEM_MC_SSE_UPDATE_MXCSR(fMxcsr);
+            IEM_MC_IF_MXCSR_XCPT_PENDING()
+                IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_ELSE()
+                IEM_MC_STORE_XREG_R64(IEM_GET_MODRM_RM(pVCpu, bRm), r64Dst);
+            IEM_MC_ENDIF();
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    return VINF_SUCCESS;
+}
 
 
 /**

@@ -5674,3 +5674,89 @@ BEGINPROC_FASTCALL iemAImpl_cvtss2si_i64_r32, 16
         IEMIMPL_SSE_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtss2si_i64_r32
+
+
+;;
+; cvtsi2ss instruction - 32-bit variant.
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the MXCSR value.
+; @param    A2      Pointer to the result operand (output).
+; @param    A3      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i32, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        cvtsi2ss  xmm0, dword [A3]
+        movd      dword [A2], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_cvtsi2ss_r32_i32
+
+;;
+; cvtsi2ss instruction - 64-bit variant.
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the MXCSR value.
+; @param    A2      Pointer to the result operand (output).
+; @param    A3      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i64, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        cvtsi2ss  xmm0, qword [A3]
+        movd      dword [A2], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_cvtsi2ss_r32_i64
+
+
+;;
+; cvtsi2sd instruction - 32-bit variant.
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the MXCSR value.
+; @param    A2      Pointer to the result operand (output).
+; @param    A3      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i32, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        cvtsi2sd  xmm0, dword [A3]
+        movq      [A2], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_cvtsi2sd_r64_i32
+
+;;
+; cvtsi2ss instruction - 64-bit variant.
+;
+; @param    A0      FPU context (FXSTATE or XSAVEAREA).
+; @param    A1      Where to return the MXCSR value.
+; @param    A2      Pointer to the result operand (output).
+; @param    A3      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i64, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR A0
+
+        cvtsi2sd  xmm0, qword [A3]
+        movq      [A2], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        IEMIMPL_SSE_PROLOGUE
+        EPILOGUE_4_ARGS
+ENDPROC iemAImpl_cvtsi2sd_r64_i64
