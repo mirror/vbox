@@ -100,5 +100,7 @@ IEM_TEST_DATA cvtsd2ss_u128_r64,    "tstIEMAImplDataSseBinary-cvtsd2ss_u128_r64.
 IEM_TEST_DATA sqrtsd_u128_r64,      "tstIEMAImplDataSseBinary-sqrtsd_u128_r64.bin"
 
 IEM_TEST_DATA cvttsd2si_i32_r64,    "tstIEMAImplDataSseBinary-cvttsd2si_i32_r64.bin"
+IEM_TEST_DATA cvtsd2si_i32_r64,     "tstIEMAImplDataSseBinary-cvtsd2si_i32_r64.bin"
 
 IEM_TEST_DATA cvttsd2si_i64_r64,    "tstIEMAImplDataSseBinary-cvttsd2si_i64_r64.bin"
+IEM_TEST_DATA cvtsd2si_i64_r64,     "tstIEMAImplDataSseBinary-cvtsd2si_i64_r64.bin"
