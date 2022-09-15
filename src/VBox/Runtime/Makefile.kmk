@@ -2233,6 +2233,7 @@ RuntimeBldProg_SOURCES          = \
 	common/checksum/alt-sha1.cpp \
 	common/checksum/alt-sha256.cpp \
 	common/checksum/alt-sha512.cpp \
+	common/checksum/alt-sha3.cpp \
 	common/checksum/crc16ccitt.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc32c.cpp \
@@ -2243,17 +2244,33 @@ RuntimeBldProg_SOURCES          = \
 	common/checksum/sha1str.cpp \
 	common/checksum/sha256str.cpp \
 	common/checksum/sha512str.cpp \
+	common/crypto/digest-builtin.cpp \
 	common/crypto/digest-core.cpp \
+	common/crypto/key.cpp \
 	common/crypto/pemfile-read.cpp \
 	common/crypto/pkcs7-asn1-decoder.cpp \
 	common/crypto/pkcs7-core.cpp \
 	common/crypto/pkcs7-init.cpp \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkix-signature-builtin.cpp \
+	common/crypto/pkix-signature-core.cpp \
+	common/crypto/pkix-signature-rsa.cpp \
+	common/crypto/pkix-util.cpp \
+	common/crypto/pkix-verify.cpp \
+	common/crypto/rsa-asn1-decoder.cpp \
+	common/crypto/rsa-core.cpp \
+	common/crypto/rsa-init.cpp \
+	common/crypto/rsa-sanity.cpp \
+	common/crypto/RTCrStoreCertAddFromJavaKeyStore.cpp \
+	common/crypto/RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts.cpp \
 	common/crypto/spc-asn1-decoder.cpp \
 	common/crypto/spc-core.cpp \
 	common/crypto/spc-init.cpp \
 	common/crypto/spc-sanity.cpp \
+	common/crypto/store-cert-add-basic.cpp \
+	common/crypto/store-inmem.cpp \
+	common/crypto/store.cpp \
 	common/crypto/taf-asn1-decoder.cpp \
 	common/crypto/taf-core.cpp \
 	common/crypto/taf-init.cpp \
@@ -2263,10 +2280,12 @@ RuntimeBldProg_SOURCES          = \
 	common/crypto/tsp-init.cpp \
 	common/crypto/tsp-sanity.cpp \
 	common/crypto/x509-asn1-decoder.cpp \
+	common/crypto/x509-certpaths.cpp \
 	common/crypto/x509-core.cpp \
 	common/crypto/x509-file.cpp \
 	common/crypto/x509-init.cpp \
 	common/crypto/x509-sanity.cpp \
+	common/crypto/x509-verify.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgcfg.cpp \
 	common/dbg/dbgmod.cpp \
@@ -2379,6 +2398,7 @@ RuntimeBldProg_SOURCES          = \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
+       common/string/RTStrICmpAscii.cpp \
 	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNICmpAscii.cpp \
@@ -2498,7 +2518,6 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/utf16locale-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
-	r3/darwin/RTCrStoreCreateSnapshotById-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/systemmem-darwin.cpp \
 	r3/darwin/krnlmod-darwin.cpp \
@@ -2563,6 +2582,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/pathint-win.cpp \
 	r3/win/pipe-win.cpp \
 	r3/win/process-win.cpp \
+	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
 	r3/win/rtProcInitExePath-win.cpp \

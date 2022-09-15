@@ -94,26 +94,13 @@ if !defined(VBOX_ONLY_DOCS)
    bldRTSignTool_SDKS     += VBOX_OPENSSL_BLDPROG
    bldRTSignTool_DEFS     += IPRT_WITH_OPENSSL
    bldRTSignTool_SOURCES  += \
-       ../common/string/RTStrICmpAscii.cpp \
-	../common/checksum/alt-sha3.cpp \
-       ../common/crypto/store-inmem.cpp \
-       ../common/crypto/store-cert-add-basic.cpp \
-       ../common/crypto/rsa-core.cpp \
-       ../common/crypto/rsa-asn1-decoder.cpp \
-       ../common/crypto/rsa-init.cpp \
-       ../common/crypto/rsa-sanity.cpp \
-       ../common/crypto/RTCrStoreCertAddFromJavaKeyStore.cpp \
-       ../common/crypto/pkix-signature-core.cpp \
        ../common/crypto/pkix-signature-builtin.cpp \
-       ../common/crypto/pkix-signature-rsa.cpp \
-       \
        ../common/crypto/store.cpp \
        ../common/crypto/digest-builtin.cpp \
 	../common/crypto/iprt-openssl.cpp\
        ../common/crypto/key.cpp \
        ../common/crypto/key-file.cpp \
 	../common/crypto/key-openssl.cpp \
-	../common/crypto/pkcs7-core.cpp \
 	../common/crypto/pkcs7-sign.cpp \
 	../common/crypto/RTCrRandBytes-openssl.cpp
    if1of ($(KBUILD_HOST), darwin win)
