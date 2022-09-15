@@ -9720,7 +9720,14 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
             rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
 #endif
             if (rcStrict == VINF_SUCCESS)
+            {
                 pVCpu->iem.s.cInstructions++;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                             | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
+                    rcStrict = iemHandleNestedInstructionBoundraryFFs(pVCpu, rcStrict);
+#endif
+            }
             if (pVCpu->iem.s.cActiveMappings > 0)
             {
                 Assert(rcStrict != VINF_SUCCESS);
@@ -10048,7 +10055,14 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                 {
                     Assert(pVCpu->iem.s.cActiveMappings == 0);
                     pVCpu->iem.s.cInstructions++;
-                    if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                    /* Perform any VMX nested-guest instruction boundary actions. */
+                    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                                 | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
+                        rcStrict = iemHandleNestedInstructionBoundraryFFs(pVCpu, rcStrict);
+#endif
+                    if (   RT_LIKELY(rcStrict == VINF_SUCCESS)
+                        && RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
                     {
                         uint64_t fCpu = pVCpu->fLocalForcedActions
                                       & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
@@ -10209,7 +10223,14 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
                     pVCpu->iem.s.cInstructions++;
                     pStats->cInstructions++;
                     cInstructionSinceLastExit++;
-                    if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                    /* Perform any VMX nested-guest instruction boundary actions. */
+                    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                                 | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
+                        rcStrict = iemHandleNestedInstructionBoundraryFFs(pVCpu, rcStrict);
+#endif
+                    if (   RT_LIKELY(rcStrict == VINF_SUCCESS)
+                        && RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
                     {
                         uint64_t fCpu = pVCpu->fLocalForcedActions
                                       & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
