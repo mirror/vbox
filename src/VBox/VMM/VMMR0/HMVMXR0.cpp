@@ -4857,7 +4857,6 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
     if (RT_LIKELY(pVmxTransient))
     {
         AssertCompile(sizeof(fWhat) == sizeof(pVmxTransient->fVmcsFieldsRead));
-        fWhat &= ~pVmxTransient->fVmcsFieldsRead;
 
         /* The exit reason is always available. */
         pVmxExitAux->uReason = pVmxTransient->uExitReason;
@@ -4865,74 +4864,94 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
         if (fWhat & HMVMX_READ_EXIT_QUALIFICATION)
         {
             vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_EXIT_QUALIFICATION;
             pVmxExitAux->u64Qual = pVmxTransient->uExitQual;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_EXIT_QUALIFICATION;
+#endif
         }
 
         if (fWhat & HMVMX_READ_IDT_VECTORING_INFO)
         {
             vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_IDT_VECTORING_INFO;
             pVmxExitAux->uIdtVectoringInfo = pVmxTransient->uIdtVectoringInfo;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_IDT_VECTORING_INFO;
+#endif
         }
 
         if (fWhat & HMVMX_READ_IDT_VECTORING_ERROR_CODE)
         {
             vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_IDT_VECTORING_ERROR_CODE;
             pVmxExitAux->uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_IDT_VECTORING_ERROR_CODE;
+#endif
         }
 
         if (fWhat & HMVMX_READ_EXIT_INSTR_LEN)
         {
             vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_EXIT_INSTR_LEN;
             pVmxExitAux->cbInstr = pVmxTransient->cbExitInstr;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_EXIT_INSTR_LEN;
+#endif
         }
 
         if (fWhat & HMVMX_READ_EXIT_INTERRUPTION_INFO)
         {
             vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_INFO;
             pVmxExitAux->uExitIntInfo = pVmxTransient->uExitIntInfo;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_INFO;
+#endif
         }
 
         if (fWhat & HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE)
         {
             vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE;
             pVmxExitAux->uExitIntErrCode = pVmxTransient->uExitIntErrorCode;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE;
+#endif
         }
 
         if (fWhat & HMVMX_READ_EXIT_INSTR_INFO)
         {
             vmxHCReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_EXIT_INSTR_INFO;
             pVmxExitAux->InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_EXIT_INSTR_INFO;
+#endif
         }
 
         if (fWhat & HMVMX_READ_GUEST_LINEAR_ADDR)
         {
             vmxHCReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_GUEST_LINEAR_ADDR;
             pVmxExitAux->u64GuestLinearAddr = pVmxTransient->uGuestLinearAddr;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_GUEST_LINEAR_ADDR;
+#endif
         }
 
         if (fWhat & HMVMX_READ_GUEST_PHYSICAL_ADDR)
         {
             vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
-            fWhat &= ~HMVMX_READ_GUEST_PHYSICAL_ADDR;
             pVmxExitAux->u64GuestPhysAddr = pVmxTransient->uGuestPhysicalAddr;
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_GUEST_PHYSICAL_ADDR;
+#endif
         }
 
         if (fWhat & HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
         {
-            fWhat &= ~HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
             pVmxExitAux->u64GuestPendingDbgXcpts = pVmxTransient->uGuestPendingDbgXcpts;
 #else
             pVmxExitAux->u64GuestPendingDbgXcpts = 0;
+#endif
+#ifdef VBOX_STRICT
+            fWhat &= ~HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
 #endif
         }
 
