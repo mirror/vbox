@@ -109,17 +109,23 @@ typedef enum RTCRPKCS7ATTRIBUTETYPE
     RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS,
     /** Octet strings, use pOctetStrings. */
     RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS,
-    /** Counter signatures (PKCS \#9), use pCounterSignatures. */
+    /** Counter signatures (PKCS \#9), use pCounterSignatures.
+     * RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID - 1.2.840.113549.1.9.6.  */
     RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES,
-    /** Signing time (PKCS \#9), use pSigningTime. */
+    /** Signing time (PKCS \#9), use pSigningTime.
+     * RTCR_PKCS9_ID_SIGNING_TIME_OID - 1.2.840.113549.1.9.5.  */
     RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME,
-    /** Microsoft timestamp info (RFC-3161) signed data, use pContentInfo. */
+    /** Microsoft timestamp info (RFC-3161) signed data, use pContentInfo.
+     * RTCR_PKCS9_ID_MS_TIMESTAMP - 1.3.6.1.4.1.311.3.3.1. */
     RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP,
-    /** Microsoft nested PKCS\#7 signature (signtool /as). */
+    /** Microsoft nested PKCS\#7 signature (signtool /as).
+     * RTCR_PKCS9_ID_MS_NESTED_SIGNATURE  - 1.3.6.1.4.1.311.2.4.1. */
     RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE,
-    /** Microsoft statement type, use pObjIdSeqs. */
+    /** Microsoft statement type, use pObjIdSeqs.
+     * RTCR_PKCS9_ID_MS_STATEMENT_TYPE - 1.3.6.1.4.1.311.2.1.11. */
     RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE,
-    /** Apple plist with the all code directory digests, use pOctetStrings. */
+    /** Apple plist with the all code directory digests, use pOctetStrings.
+     * RTCR_PKCS9_ID_APPLE_MULTI_CD_PLIST - 1.2.840.113635.100.9.1.  */
     RTCRPKCS7ATTRIBUTETYPE_APPLE_MULTI_CD_PLIST,
     /** Blow the type up to 32-bits. */
     RTCRPKCS7ATTRIBUTETYPE_32BIT_HACK = 0x7fffffff
