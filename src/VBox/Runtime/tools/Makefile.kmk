@@ -87,6 +87,9 @@ if !defined(VBOX_ONLY_DOCS)
   bldRTSignTool_INCS      := ../include
   bldRTSignTool_SOURCES   := RTSignTool.cpp
   bldRTSignTool_DEFS      := IPRT_IN_BUILD_TOOL
+  bldRTSignTool_LDFLAGS.darwin := \
+	-framework CoreFoundation \
+	-framework Security
   bldRTSignTool_LIBS.win  := Crypt32.lib NCrypt.lib
   ifndef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
    bldRTSignTool_DEFS     += IPRT_SIGNTOOL_NO_SIGNING
@@ -106,7 +109,7 @@ if !defined(VBOX_ONLY_DOCS)
    if1of ($(KBUILD_HOST), darwin win)
     bldRTSignTool_SOURCES += ../r3/$(KBUILD_HOST)/RTCrStoreCreateSnapshotById-$(KBUILD_HOST).cpp
    else
-    bldRTSignTool_SOURCES += ../genericc/RTCrStoreCreateSnapshotById-generic.cpp
+    bldRTSignTool_SOURCES += ../generic/RTCrStoreCreateSnapshotById-generic.cpp
    endif
   endif
  endif
