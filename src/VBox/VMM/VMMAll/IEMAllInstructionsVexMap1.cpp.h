@@ -2325,7 +2325,8 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_XMM_CONST(puSrc2,      IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vucomiss_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomiss_u128, iemAImpl_vucomiss_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2357,7 +2358,8 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
         IEM_MC_PREPARE_AVX_USAGE();
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vucomiss_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomiss_u128, iemAImpl_vucomiss_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2394,7 +2396,8 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_XMM_CONST(puSrc2,      IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vucomisd_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomisd_u128, iemAImpl_vucomisd_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2426,7 +2429,8 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
         IEM_MC_PREPARE_AVX_USAGE();
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vucomisd_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomisd_u128, iemAImpl_vucomisd_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2466,7 +2470,8 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_XMM_CONST(puSrc2,      IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vcomiss_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomiss_u128, iemAImpl_vcomiss_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2498,7 +2503,8 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
         IEM_MC_PREPARE_AVX_USAGE();
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vcomiss_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomiss_u128, iemAImpl_vcomiss_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2535,7 +2541,8 @@ FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_XMM_CONST(puSrc2,      IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vcomisd_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomisd_u128, iemAImpl_vcomisd_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
@@ -2567,7 +2574,8 @@ FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
         IEM_MC_PREPARE_AVX_USAGE();
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_vcomisd_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
+        IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomisd_u128, iemAImpl_vcomisd_u128_fallback),
+                                 pfMxcsr, pEFlags, puSrc1, puSrc2);
         IEM_MC_IF_MXCSR_XCPT_PENDING()
             IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_ELSE()
