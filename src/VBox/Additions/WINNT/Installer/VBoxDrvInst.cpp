@@ -234,24 +234,31 @@ static void __cdecl VBoxDIFxLogCallback(DIFXAPI_LOG enmEvent, DWORD dwError, PCW
     PrintStr("\r\n");
 
     /*
-     * Write to the log file if we have one (wide char format, used to be ansi).
+     * Write to the log file if we have one - have to convert the input to UTF-8.
      */
     HANDLE const hLogFile = (HANDLE)pvCtx;
     if (hLogFile != INVALID_HANDLE_VALUE)
     {
         /* "event: err - desc\r\n" */
-        wchar_t wszBuf[168];
-        RTUtf16CopyAscii(wszBuf, RT_ELEMENTS(wszBuf), pszEvent);
-        RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ": ");
-        char szVal[128];
-        RTStrFormatU32(szVal, sizeof(szVal), dwError, 10, 0, 0, 0);
-        RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-        RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), " - ");
-
+        char szBuf[256];
+        RTStrCopy(szBuf, sizeof(szBuf), pszEvent);
+        RTStrCat(szBuf, sizeof(szBuf), ": ");
+        size_t offVal = strlen(szBuf);
+        RTStrFormatU32(&szBuf[offVal], sizeof(szBuf) - offVal, dwError, 10, 0, 0, 0);
+        RTStrCat(szBuf, sizeof(szBuf), " - ");
         DWORD dwIgn;
-        WriteFile(hLogFile, wszBuf,        (DWORD)(RTUtf16Len(wszBuf)        * sizeof(wchar_t)), &dwIgn, NULL);
-        WriteFile(hLogFile, pwszEventDesc, (DWORD)(RTUtf16Len(pwszEventDesc) * sizeof(wchar_t)), &dwIgn, NULL);
-        WriteFile(hLogFile, L"\r\n", 2 * sizeof(wchar_t), &dwIgn, NULL);
+        WriteFile(hLogFile, szBuf, (DWORD)strlen(szBuf), &dwIgn, NULL);
+
+        char *pszUtf8 = NULL;
+        int vrc = RTUtf16ToUtf8(pwszEventDesc, &pszUtf8);
+        if (RT_SUCCESS(vrc))
+        {
+            WriteFile(hLogFile, pszUtf8, (DWORD)strlen(pszUtf8), &dwIgn, NULL);
+            RTStrFree(pszUtf8);
+            WriteFile(hLogFile, RT_STR_TUPLE("\r\n"), &dwIgn, NULL);
+        }
+        else
+            WriteFile(hLogFile, RT_STR_TUPLE("<RTUtf16ToUtf8 failed>\r\n"), &dwIgn, NULL);
     }
 }
 
@@ -261,49 +268,57 @@ static void __cdecl VBoxDIFxLogCallback(DIFXAPI_LOG enmEvent, DWORD dwError, PCW
  */
 static void VBoxDIFxWriteLogHeader(HANDLE hLogFile, char const *pszOperation, wchar_t const *pwszInfFile)
 {
-    /* Don't want to use RTUtf16Printf here as it drags in a lot of code, thus this tedium... */
-    wchar_t wszBuf[168];
-    RTUtf16CopyAscii(wszBuf, RT_ELEMENTS(wszBuf), "\r\n");
+    /* Don't want to use RTStrPrintf here as it drags in a lot of code, thus this tedium... */
+    char   szBuf[256];
+    size_t offBuf = 2;
+    RTStrCopy(szBuf, sizeof(szBuf), "\r\n");
 
     SYSTEMTIME SysTime = {0};
     GetSystemTime(&SysTime);
 
-    char szVal[128];
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wYear, 10, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "-");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wYear, 10, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    szBuf[offBuf++] = '-';
 
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wMonth, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "-");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wMonth, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    szBuf[offBuf++] = '-';
 
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wDay, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "T");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wDay, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    szBuf[offBuf++] = 'T';
 
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wHour, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ":");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wHour, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    szBuf[offBuf++] = ':';
 
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wMinute, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ":");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wMinute, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    szBuf[offBuf++] = ':';
 
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wSecond, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), ".");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wSecond, 10, 2, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    szBuf[offBuf++] = '.';
 
-    RTStrFormatU32(szVal, sizeof(szVal), SysTime.wMilliseconds, 10, 3, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), szVal);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), "Z: Opened log file for ");
-
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), pszOperation);
-    RTUtf16CatAscii(wszBuf, RT_ELEMENTS(wszBuf), " of '");
+    RTStrFormatU32(&szBuf[offBuf], sizeof(szBuf) - offBuf, SysTime.wMilliseconds, 10, 3, 0, RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
+    offBuf += strlen(&szBuf[offBuf]);
+    RTStrCat(&szBuf[offBuf], sizeof(szBuf) - offBuf, "Z: Opened log file for ");
+    RTStrCat(&szBuf[offBuf], sizeof(szBuf) - offBuf, pszOperation);
+    RTStrCat(&szBuf[offBuf], sizeof(szBuf) - offBuf, " of '");
 
     DWORD dwIgn;
-    WriteFile(hLogFile, wszBuf, (DWORD)(RTUtf16Len(wszBuf) * sizeof(wchar_t)), &dwIgn, NULL);
-    WriteFile(hLogFile, pwszInfFile, (DWORD)(RTUtf16Len(pwszInfFile) * sizeof(wchar_t)), &dwIgn, NULL);
-    WriteFile(hLogFile, L"'\r\n", 3 * sizeof(wchar_t), &dwIgn, NULL);
+    WriteFile(hLogFile, szBuf, (DWORD)strlen(szBuf), &dwIgn, NULL);
+
+    char *pszUtf8 = NULL;
+    int vrc = RTUtf16ToUtf8(pwszInfFile, &pszUtf8);
+    if (RT_SUCCESS(vrc))
+    {
+        WriteFile(hLogFile, pszUtf8, (DWORD)strlen(pszUtf8), &dwIgn, NULL);
+        RTStrFree(pszUtf8);
+        WriteFile(hLogFile, RT_STR_TUPLE("'\r\n"), &dwIgn, NULL);
+    }
+    else
+        WriteFile(hLogFile, RT_STR_TUPLE("<RTUtf16ToUtf8 failed>'\r\n"), &dwIgn, NULL);
 }
 
 #ifdef RT_ARCH_X86
