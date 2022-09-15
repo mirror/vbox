@@ -5760,3 +5760,203 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i64, 16
         IEMIMPL_SSE_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i64
+
+
+;;
+; Initialize the SSE MXCSR register using the guest value partially to
+; account for rounding mode.
+;
+; @uses     4 bytes of stack to save the original value, T0.
+; @param    1       Expression giving the address of the MXCSR register of the guest.
+;
+%macro SSE_LD_FXSTATE_MXCSR_ONLY 1
+        sub     xSP, 4
+
+        stmxcsr [xSP]
+        mov     T0_32, [%1]
+        and     T0_32, X86_MXCSR_FZ | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ
+        or      T0_32, X86_MXCSR_XCPT_MASK
+        sub     xSP, 4
+        mov     [xSP], T0_32
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;;
+; Restores the SSE MXCSR register with the original value.
+;
+; @uses     4 bytes of stack to save the content of MXCSR value, T0, T1.
+; @param    1       Expression giving the address where to return the MXCSR value - only the MXCSR is stored, no IEMSSERESULT is used.
+;
+; @note Restores the stack pointer.
+;
+%macro SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE 1
+        sub     xSP, 4
+        stmxcsr [xSP]
+        mov     T0_32, [xSP]
+        add     xSP, 4
+        ; Merge the status bits into the original MXCSR value.
+        mov     T1_32, [%1]
+        and     T0_32, X86_MXCSR_XCPT_FLAGS
+        or      T0_32, T1_32
+        mov     [%1], T0_32
+
+        ldmxcsr [xSP]
+        add     xSP, 4
+%endmacro
+
+
+;
+; UCOMISS (SSE)
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        ucomiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_ucomiss_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vucomiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_vucomiss_u128
+
+
+;
+; UCOMISD (SSE)
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        ucomisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_ucomisd_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vucomisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_vucomisd_u128
+
+;
+; COMISS (SSE)
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        comiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_comiss_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vcomiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_vcomiss_u128
+
+
+;
+; COMISD (SSE)
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        comisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_comisd_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vcomisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_vcomisd_u128
