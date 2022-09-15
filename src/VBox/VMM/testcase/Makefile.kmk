@@ -291,7 +291,15 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseBinary-cvtsi2ss_r32_i32.bin \
 	tstIEMAImplDataSseBinary-cvtsi2ss_r32_i64.bin \
 	tstIEMAImplDataSseBinary-cvtsi2sd_r64_i32.bin \
-	tstIEMAImplDataSseBinary-cvtsi2sd_r64_i64.bin
+	tstIEMAImplDataSseBinary-cvtsi2sd_r64_i64.bin \
+	tstIEMAImplDataSseCompare-ucomiss_u128.bin \
+	tstIEMAImplDataSseCompare-vucomiss_u128.bin \
+	tstIEMAImplDataSseCompare-comiss_u128.bin \
+	tstIEMAImplDataSseCompare-vcomiss_u128.bin \
+	tstIEMAImplDataSseCompare-ucomisd_u128.bin \
+	tstIEMAImplDataSseCompare-vucomisd_u128.bin \
+	tstIEMAImplDataSseCompare-comisd_u128.bin \
+	tstIEMAImplDataSseCompare-vcomisd_u128.bin
 
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT

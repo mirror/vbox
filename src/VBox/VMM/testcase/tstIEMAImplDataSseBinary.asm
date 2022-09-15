@@ -116,3 +116,13 @@ IEM_TEST_DATA cvtsi2ss_r32_i64,     "tstIEMAImplDataSseBinary-cvtsi2ss_r32_i64.b
 
 IEM_TEST_DATA cvtsi2sd_r64_i32,     "tstIEMAImplDataSseBinary-cvtsi2sd_r64_i32.bin"
 IEM_TEST_DATA cvtsi2sd_r64_i64,     "tstIEMAImplDataSseBinary-cvtsi2sd_r64_i64.bin"
+
+IEM_TEST_DATA ucomiss_u128,         "tstIEMAImplDataSseCompare-ucomiss_u128.bin"
+IEM_TEST_DATA vucomiss_u128,        "tstIEMAImplDataSseCompare-vucomiss_u128.bin"
+IEM_TEST_DATA comiss_u128,          "tstIEMAImplDataSseCompare-comiss_u128.bin"
+IEM_TEST_DATA vcomiss_u128,         "tstIEMAImplDataSseCompare-vcomiss_u128.bin"
+
+IEM_TEST_DATA ucomisd_u128,         "tstIEMAImplDataSseCompare-ucomisd_u128.bin"
+IEM_TEST_DATA vucomisd_u128,        "tstIEMAImplDataSseCompare-vucomisd_u128.bin"
+IEM_TEST_DATA comisd_u128,          "tstIEMAImplDataSseCompare-comisd_u128.bin"
+IEM_TEST_DATA vcomisd_u128,         "tstIEMAImplDataSseCompare-vcomisd_u128.bin"
