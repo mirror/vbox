@@ -4374,7 +4374,7 @@ static RTEXITCODE HandleSign(int cArgs, char **papszArgs)
         OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", "",   1020),
         //OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", "-1", 1020),
         //OPT_CERT_KEY_GETOPTDEF_ENTRIES("--timestamp-", "-2", 1040), - disabled as windows cannot make use of it. Try again when
-        // new-style timestamp signatures has been implemented. Otherwise, just add two primary signatures with the two 
+        // new-style timestamp signatures has been implemented. Otherwise, just add two primary signatures with the two
         // different timestamps certificates / hashes / whatever.
         { "--timestamp-type",       OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
         { "--timestamp-type-1",     OPT_TIMESTAMP_TYPE,         RTGETOPT_REQ_STRING },
