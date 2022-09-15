@@ -657,7 +657,6 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_STORE_GREG_U32_CONST(a_iGReg, a_u32C)    do { AssertCompile((uint32_t)(a_u32C) == (a_u32C)); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U64_CONST(a_iGReg, a_u64C)    do { AssertCompile((uint64_t)(a_u64C) == (a_u64C)); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_FPUREG_R80_SRC_REF(a_iSt, a_pr80Src) do { CHK_PTYPE(PCRTFLOAT80U, a_pr80Src); Assert((a_iSt) < 8); (void)fMcBegin; } while (0)
-#define IEM_MC_STORE_EFLAGS(a_EFlags)                   do { CHK_TYPE(uint32_t,  a_EFlags); (void)fMcBegin; } while (0)
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             do { (void)fMcBegin;  } while (0)
 #define IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(a_pu32Dst)    do { CHK_PTYPE(uint32_t *, a_pu32Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_SREG_BASE_U64(a_iSeg, a_u64Value)  do { (void)fMcBegin;  } while (0)
