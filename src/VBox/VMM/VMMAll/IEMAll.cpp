@@ -9686,9 +9686,11 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
      * to try execute the next instruction. Clearing fExecuteInhibit is
      * problematic because of the setjmp/longjmp clobbering above.
      */
-    if (   rcStrict == VINF_SUCCESS
-        && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
-                                    | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
+    if (   !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                     | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW)
+        || rcStrict != VINF_SUCCESS)
+    { /* likely */ }
+    else
         rcStrict = iemHandleNestedInstructionBoundaryFFs(pVCpu, rcStrict);
 #endif
 
@@ -9723,8 +9725,10 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
             {
                 pVCpu->iem.s.cInstructions++;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
-                                             | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
+                if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                              | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
+                { /* likely */ }
+                else
                     rcStrict = iemHandleNestedInstructionBoundaryFFs(pVCpu, rcStrict);
 #endif
             }
@@ -10055,22 +10059,36 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                 {
                     Assert(pVCpu->iem.s.cActiveMappings == 0);
                     pVCpu->iem.s.cInstructions++;
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                     /* Perform any VMX nested-guest instruction boundary actions. */
-                    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
-                                                 | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
-                        rcStrict = iemHandleNestedInstructionBoundaryFFs(pVCpu, rcStrict);
-#endif
-                    if (   RT_LIKELY(rcStrict == VINF_SUCCESS)
-                        && RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+                    uint64_t fCpu = pVCpu->fLocalForcedActions;
+                    if (!(fCpu & (  VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                  | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW)))
+                    { /* likely */ }
+                    else
                     {
-                        uint64_t fCpu = pVCpu->fLocalForcedActions
-                                      & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
-                                                                | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                                                                | VMCPU_FF_TLB_FLUSH
-                                                                | VMCPU_FF_INHIBIT_INTERRUPTS
-                                                                | VMCPU_FF_BLOCK_NMIS
-                                                                | VMCPU_FF_UNHALT ));
+                        rcStrict = iemHandleNestedInstructionBoundaryFFs(pVCpu, rcStrict);
+                        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+                            fCpu = pVCpu->fLocalForcedActions;
+                        else
+                        {
+                            rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
+                            break;
+                        }
+                    }
+#endif
+                    if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+                    {
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
+                        uint64_t fCpu = pVCpu->fLocalForcedActions;
+#endif
+                        fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                      | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                      | VMCPU_FF_TLB_FLUSH
+                                                      | VMCPU_FF_INHIBIT_INTERRUPTS
+                                                      | VMCPU_FF_BLOCK_NMIS
+                                                      | VMCPU_FF_UNHALT );
 
                         if (RT_LIKELY(   (   !fCpu
                                           || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
@@ -10093,7 +10111,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                     Assert(pVCpu->iem.s.cActiveMappings == 0);
                 }
                 else if (pVCpu->iem.s.cActiveMappings > 0)
-                        iemMemRollback(pVCpu);
+                    iemMemRollback(pVCpu);
                 rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
                 break;
             }
@@ -10223,23 +10241,36 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
                     pVCpu->iem.s.cInstructions++;
                     pStats->cInstructions++;
                     cInstructionSinceLastExit++;
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                     /* Perform any VMX nested-guest instruction boundary actions. */
-                    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
-                                                 | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW))
-                        rcStrict = iemHandleNestedInstructionBoundaryFFs(pVCpu, rcStrict);
-#endif
-                    if (   RT_LIKELY(rcStrict == VINF_SUCCESS)
-                        && RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+                    uint64_t fCpu = pVCpu->fLocalForcedActions;
+                    if (!(fCpu & (  VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                  | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW)))
+                    { /* likely */ }
+                    else
                     {
-                        uint64_t fCpu = pVCpu->fLocalForcedActions
-                                      & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
-                                                                | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                                                                | VMCPU_FF_TLB_FLUSH
-                                                                | VMCPU_FF_INHIBIT_INTERRUPTS
-                                                                | VMCPU_FF_BLOCK_NMIS
-                                                                | VMCPU_FF_UNHALT ));
-
+                        rcStrict = iemHandleNestedInstructionBoundaryFFs(pVCpu, rcStrict);
+                        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+                            fCpu = pVCpu->fLocalForcedActions;
+                        else
+                        {
+                            rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
+                            break;
+                        }
+                    }
+#endif
+                    if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+                    {
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
+                        uint64_t fCpu = pVCpu->fLocalForcedActions;
+#endif
+                        fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                      | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                      | VMCPU_FF_TLB_FLUSH
+                                                      | VMCPU_FF_INHIBIT_INTERRUPTS
+                                                      | VMCPU_FF_BLOCK_NMIS
+                                                      | VMCPU_FF_UNHALT );
                         if (RT_LIKELY(   (   (   !fCpu
                                               || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                                                   && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF))
