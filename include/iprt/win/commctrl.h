@@ -45,6 +45,9 @@
 #  ifdef __cplusplus
 #   pragma warning(disable:5039) /* commctrl.h(8323): warning C5039: 'DSA_DestroyCallback': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception. */
 #  endif
+#  ifdef __cplusplus
+#   pragma warning(disable:4668) /* um\prsht.h(130): warning C4668: 'ISOLATION_AWARE_ENABLED' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+#  endif
 # endif
 #endif
 
