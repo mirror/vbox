@@ -34,8 +34,10 @@
 # define UNICODE
 #endif
 #include <iprt/win/windows.h>
+#include <iprt/win/commctrl.h>
 #include "exdll.h"
 
+#include <iprt/alloca.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
@@ -460,6 +462,118 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
     vboxFreeStackEntry(pTypeEntry);
     vboxFreeStackEntry(pTitleEntry);
     vboxFreeStackEntry(pMsgEntry);
+}
+
+/**
+ * Dumps the UI log to a file in UTF-8 format.
+ *
+ * Does not return any values on the stack.
+ *
+ * @param   hWndParent          Window handle of parent.
+ * @param   string_size         Size of variable string.
+ * @param   variables           The actual variable string.
+ * @param   stacktop            Pointer to a pointer to the current stack.
+ * @param   extra               Extra parameters.
+ */
+VBOXINSTALLHELPER_EXPORT DumpLog(HWND hWndParent, int string_size, WCHAR *variables, stack_t **stacktop,
+                                 extra_parameters *extra)
+{
+    RT_NOREF(string_size, variables, extra);
+
+    /*
+     * Get parameters from the stack.
+     */
+    stack_t * const pFilename = vboxPopStack(stacktop);
+    if (pFilename)
+    {
+        /*
+         * Open the output file.
+         */
+        HANDLE hFile = CreateFileW(pFilename->text, GENERIC_WRITE, FILE_SHARE_READ, NULL /*pSecAttr*/, CREATE_ALWAYS,
+                                   FILE_ATTRIBUTE_NORMAL, NULL /*hTemplateFile*/);
+        if (hFile != NULL)
+        {
+            DWORD dwIgn;
+
+            /*
+             * Locate the list view widget.
+             */
+            HWND hWndDialog   = FindWindowExW(hWndParent, NULL /*hWndChildAfter*/, L"#32770" /*pwszClass*/, NULL /*pwszTitle*/);
+            if (hWndDialog)
+            {
+                HWND hWndList = FindWindowExW(hWndDialog, NULL /*hWndChildAfter*/, L"SysListView32", NULL /*pwszTitle*/);
+                if (hWndList != NULL)
+                {
+                    uint32_t const cLines = (uint32_t)SendMessageW(hWndList, LVM_GETITEMCOUNT, 0, 0);
+                    if (cLines > 0)
+                    {
+                        /* Allocate a buffer for retriving the text. */
+                        uint32_t        cwcBuf      = RT_MAX(string_size + 16, _8K);
+                        wchar_t        *pwszBuf     = (wchar_t *)RTMemTmpAlloc(cwcBuf * sizeof(wchar_t));
+                        wchar_t * const pwszBufFree = pwszBuf;
+                        if (!pwszBuf)
+                        {
+                            cwcBuf  = _4K;
+                            pwszBuf = (wchar_t *)alloca(cwcBuf * sizeof(wchar_t));
+                        }
+
+                        /*
+                         * Retreive the lines and write them to the output file.
+                         */
+                        for (uint32_t iLine = 0; iLine < cLines; iLine++)
+                        {
+                            LVITEMW Item =
+                            {
+                                /* .mask = */       0,
+                                /* .iItem = */      (int)iLine,
+                                /* .iSubItem = */   0,
+                                /* .state = */      0,
+                                /* .stateMask = */  0,
+                                /* .pszText = */    pwszBuf,
+                                /* .cchTextMax = */ (int)cwcBuf,
+                            };
+                            uint32_t const cwcRet = (uint32_t)SendMessageW(hWndList, LVM_GETITEMTEXT, iLine, (LPARAM)&Item);
+                            if (cwcRet < cwcBuf)
+                            {
+                                pwszBuf[cwcRet] = '\0';
+                                bool fNeedsNewline = cwcRet + 2 >= cwcBuf;
+                                if (!fNeedsNewline)
+                                {
+                                    pwszBuf[cwcRet + 0] = '\r';
+                                    pwszBuf[cwcRet + 1] = '\n';
+                                    pwszBuf[cwcRet + 2] = '\0';
+                                }
+
+                                char *pszUtf8;
+                                int rc = RTUtf16ToUtf8(pwszBuf, &pszUtf8);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    WriteFile(hFile, pszUtf8, strlen(pszUtf8), &dwIgn, NULL);
+                                    if (fNeedsNewline)
+                                        WriteFile(hFile, RT_STR_TUPLE("\r\n"), &dwIgn, NULL);
+                                    RTStrFree(pszUtf8);
+                                }
+                                else
+                                    WriteFile(hFile, RT_STR_TUPLE("!RTUtf16ToUtf8 failed!\r\n"), &dwIgn, NULL);
+                            }
+                            else
+                                WriteFile(hFile, RT_STR_TUPLE("!LVM_GETITEMTEXT overflow!\r\n"), &dwIgn, NULL);
+                        } /* for loop*/
+
+                        RTMemTmpFree(pwszBufFree);
+                    }
+                    else
+                        WriteFile(hFile, RT_STR_TUPLE("Log is empty.\r\n"), &dwIgn, NULL);
+                }
+                else
+                    WriteFile(hFile, RT_STR_TUPLE("FindWindowEx failed to locate the log control!\r\n"), &dwIgn, NULL);
+            }
+            else
+                WriteFile(hFile, RT_STR_TUPLE("FindWindowEx failed to locate dialog windows!\r\n"), &dwIgn, NULL);
+            CloseHandle(hFile);
+        }
+    }
+    vboxFreeStackEntry(pFilename);
 }
 
 BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID pReserved)

@@ -192,7 +192,9 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 !endif ; !USE_MUI
 
 ; Must come after MUI includes to have certain defines set for DumpLog
-!include "dumplog.nsh"                  ; Dump log to file function
+!if $%VBOX_WITH_GUEST_INSTALL_HELPER% != "1"
+  !include "dumplog.nsh"                  ; Dump log to file function
+!endif
 
 ; Language files
 !include "Languages\English.nsh"
@@ -869,9 +871,13 @@ Section -Post
   ; then the log is no longer visible in the UI.)
   ;
   ${IfNot} ${Silent}
+  !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+    VBoxGuestInstallHelper::DumpLog "$INSTDIR\install_ui.log"
+  !else
     StrCpy $0 "$INSTDIR\install_ui.log"
     Push $0
     Call DumpLog
+  !endif
   ${EndIf}
 
 SectionEnd
@@ -924,9 +930,13 @@ Function .onInstFailed
 
   ; Dump UI log to see what happend. Only works with non-silent installs.
   ${IfNot} ${Silent}
+  !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+    VBoxGuestInstallHelper::DumpLog "$INSTDIR\install_ui.log"
+  !else
     StrCpy $0 "$INSTDIR\install_ui.log"
     Push $0
     Call DumpLog
+  !endif
   ${EndIf}
 
   ; Set overall exit code

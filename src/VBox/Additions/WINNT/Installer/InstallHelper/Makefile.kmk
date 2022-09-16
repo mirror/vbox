@@ -49,5 +49,6 @@ VBoxGuestInstallHelper_BLD_TRG_ARCH    := x86
 VBoxGuestInstallHelper_SOURCES         := \
 	VBoxGuestInstallHelper.cpp \
 	VBoxGuestInstallHelper.rc
+VBoxGuestInstallHelper_VBOX_IMPORT_CHECKER.win.x86 := nt4
 
 include $(FILE_KBUILD_SUB_FOOTER)
