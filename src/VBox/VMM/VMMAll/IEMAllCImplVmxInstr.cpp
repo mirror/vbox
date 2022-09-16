@@ -1200,7 +1200,11 @@ static void iemVmxVmentrySaveNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
      *     interrupts until the completion of the current VMLAUNCH/VMRESUME
      *     instruction. Interrupt inhibition for any nested-guest instruction
      *     is supplied by the guest-interruptibility state VMCS field and will
-     *     be set up as part of loading the guest state.
+     *     be set up as part of loading the guest state. Technically
+     *     blocking-by-STI is possible with VMLAUNCH/VMRESUME but we currently
+     *     disallow it since we can't distinguish it from blocking-by-MovSS
+     *     and no nested-hypervisor we care about uses STI immediately
+     *     followed by VMLAUNCH/VMRESUME.
      *
      *   - VMCPU_FF_BLOCK_NMIS needs to be cached as VM-exits caused before
      *     successful VM-entry (due to invalid guest-state) need to continue
@@ -1246,7 +1250,10 @@ static int iemVmxTransition(PVMCPUCC pVCpu) RT_NOEXCEPT
      */
     int rc = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0 | X86_CR0_PE, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER,
                            true /* fForce */);
-    AssertRCReturn(rc, rc);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return rc;
 
     /* Invalidate IEM TLBs now that we've forced a PGM mode change. */
     IEMTlbInvalidateAll(pVCpu);
@@ -1466,6 +1473,9 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
         /** @todo NSTVMX: We can't distinguish between blocking-by-MovSS and blocking-by-STI
          *        currently. */
         pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
+
+        /* Clear inhibition unconditionally since we've ensured it isn't set prior to executing VMLAUNCH/VMRESUME. */
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
     }
     /* Nothing to do for SMI/enclave. We don't support enclaves or SMM yet. */
 
@@ -2451,9 +2461,9 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
 
-    LogFlow(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", uExitReason,
+    LogFlow(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 eflags=%#RX32\n", uExitReason,
              pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4));
+             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.eflags.u32));
 
     /*
      * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.
@@ -4621,6 +4631,8 @@ static VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPUCC pVCpu, uint16_t offAccess, 
          * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
          */
         iemVmxVirtApicSetPendingWrite(pVCpu, offAccess);
+
+        LogFlowFunc(("Write access at offset %#x not intercepted -> Wrote %#RX32\n", offAccess, u32Data));
     }
     else
     {
@@ -4639,6 +4651,8 @@ static VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPUCC pVCpu, uint16_t offAccess, 
         uint32_t u32Data = iemVmxVirtApicReadRaw32(pVCpu, offAccess);
         u32Data &= s_auAccessSizeMasks[cbAccess];
         *(uint32_t *)pvData = u32Data;
+
+        LogFlowFunc(("Read access at offset %#x not intercepted -> Read %#RX32\n", offAccess, u32Data));
     }
 
     return VINF_VMX_MODIFIES_BEHAVIOR;
@@ -7029,8 +7043,8 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
     if (   !fEntryVectoring
         && (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)))
         EMSetInhibitInterruptsPC(pVCpu, pVmcs->u64GuestRip.u);
-    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    else
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /* NMI blocking. */
     if (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
@@ -7145,14 +7159,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
             int rc = PGMHandlerPhysicalRegister(pVM, GCPhysApicAccess, GCPhysApicAccess | X86_PAGE_4K_OFFSET_MASK,
                                                 pVM->iem.s.hVmxApicAccessPage, 0 /*uUser*/, NULL /*pszDesc*/);
             if (RT_SUCCESS(rc))
-            {
-                /*
-                 * This to make double sure we trigger EPT violations (rather than EPT misconfigs)
-                 * in case we somehow managed to sync the page when CPUMIsGuestVmxApicAccessPageAddr
-                 * returned false while sycing its PTE in (SyncHandlerPte).
-                 */
-                PGMShwMakePageNotPresent(pVCpu, GCPhysApicAccess, 0 /* fOpFlags */);
-            }
+            { /* likely */ }
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
         }
@@ -9885,6 +9892,8 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC pVCpu
 
         uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_DATA_W : IEM_ACCESS_DATA_R;
         uint16_t const offAccess = GCPhysFault & GUEST_PAGE_OFFSET_MASK;
+
+        LogFlowFunc(("Fault at %#RGp (cbBuf=%u fAccess=%#x)\n", GCPhysFault, cbBuf, fAccess));
         VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fAccess);
         if (RT_FAILURE(rcStrict))
             return rcStrict;
@@ -9917,7 +9926,7 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
     /*
      * Handle the VMX APIC-access page only when the guest is in VMX non-root mode.
      * Otherwise we must deregister the page and allow regular RAM access.
-     * Failing to do so lands us with endless EPT misconfiguration VM-exits.
+     * Failing to do so lands us with endless EPT VM-exits.
      */
     RTGCPHYS const GCPhysPage = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
@@ -9939,14 +9948,16 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
         RTGCPHYS const GCPhysNestedFault = (RTGCPHYS)pvFault;
         uint16_t const offAccess         = GCPhysNestedFault & GUEST_PAGE_OFFSET_MASK;
         bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, 1 /* cbAccess */, fAccess);
+        LogFlowFunc(("#PF at %#RGp (GCPhysNestedFault=%#RGp offAccess=%#x)\n", GCPhysFault, GCPhysNestedFault, offAccess));
         if (fIntercept)
         {
             /*
              * Query the source VM-exit (from the execution engine) that caused this access
              * within the APIC-access page. Currently only HM is supported.
              */
-            AssertMsg(VM_IS_HM_ENABLED(pVM), ("VM-exit auxiliary info. fetching not supported for execution engine %d\n",
-                                              pVM->bMainExecutionEngine));
+            AssertMsg(VM_IS_HM_ENABLED(pVM),
+                      ("VM-exit auxiliary info. fetching not supported for execution engine %d\n", pVM->bMainExecutionEngine));
+
             HMEXITAUX HmExitAux;
             RT_ZERO(HmExitAux);
             int const rc = HMR0GetExitAuxInfo(pVCpu, &HmExitAux, HMVMX_READ_EXIT_INSTR_LEN
@@ -9960,9 +9971,9 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
              * Other accesses should go through the other handler (iemVmxApicAccessPageHandler).
              * Refer to @bugref{10092#c33s} for a more detailed explanation.
              */
-            AssertMsg(HmExitAux.Vmx.uReason == VMX_EXIT_EPT_VIOLATION,
-                      ("Unexpected call to APIC-access page #PF handler for %#RGp off=%u uErr=%#RGx uReason=%u\n",
-                       GCPhysPage, offAccess, uErr, HmExitAux.Vmx.uReason));
+            AssertMsgReturn(HmExitAux.Vmx.uReason == VMX_EXIT_EPT_VIOLATION,
+                            ("Unexpected call to APIC-access page #PF handler for %#RGp offAcesss=%u uErr=%#RGx uReason=%u\n",
+                             GCPhysPage, offAccess, uErr, HmExitAux.Vmx.uReason), VERR_IEM_IPE_7);
 
             /*
              * Construct the virtual APIC-access VM-exit.
@@ -9978,6 +9989,10 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
                     enmAccess = VMXAPICACCESS_LINEAR_WRITE;
                 else
                     enmAccess = VMXAPICACCESS_LINEAR_READ;
+
+                /* For linear-address accesss the instruction length must be valid. */
+                AssertMsg(HmExitAux.Vmx.cbInstr > 0,
+                          ("Invalid APIC-access VM-exit instruction length. cbInstr=%u\n", HmExitAux.Vmx.cbInstr));
             }
             else
             {
@@ -9989,6 +10004,9 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
                      *        here? */
                     enmAccess = VMXAPICACCESS_PHYSICAL_INSTR;
                 }
+
+                /* For physical accesses the instruction length is undefined, we zero it for safety and consistency. */
+                HmExitAux.Vmx.cbInstr = 0;
             }
 
             VMXVEXITINFO ExitInfo;
@@ -10006,6 +10024,7 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
             /*
              * Raise the APIC-access VM-exit.
              */
+            LogFlowFunc(("Raising APIC-access VM-exit from #PF handler at offset %#x\n", offAccess));
             VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
@@ -10017,6 +10036,7 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
          * read/written by the instruction not just the offset being accessed within
          * the APIC-access page (which we derive from the faulting address).
          */
+        LogFlowFunc(("Access at offset %#x not intercepted -> VINF_EM_RAW_EMULATE_INSTR\n", offAccess));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
