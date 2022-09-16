@@ -461,7 +461,6 @@ RePackScriptsAddResources_SOURCES = \
 	welcome.bmp \
 	$(VBOX_WINDOWS_ADDITIONS_ICON_FILE)=>VirtualBoxGA-vista.ico \
 	$(VBOX_NSIS_ICON_FILE)=>VirtualBoxGA-nsis.ico \
-	iexplore.ico \
 	$(PATH_ROOT)/doc/License-gpl-3.0.rtf \
 	VBoxGuestAdditions.nsi \
 	dumplog.nsh \

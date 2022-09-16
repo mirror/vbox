@@ -52,10 +52,11 @@ Function ${un}UninstallCommon
   DeleteRegKey /ifempty HKLM "${VENDOR_ROOT_KEY}"
 
   ; Delete desktop & start menu entries
-  Delete "$DESKTOP\${PRODUCT_NAME} Guest Additions.lnk"
-  Delete "$SMPROGRAMS\${PRODUCT_NAME} Guest Additions\Uninstall.lnk"
-  Delete "$SMPROGRAMS\${PRODUCT_NAME} Guest Additions\Website.lnk"
-  RMDIR "$SMPROGRAMS\${PRODUCT_NAME} Guest Additions"
+  Delete "$DESKTOP\${PRODUCT_NAME}.lnk"            ; Obsolete. We don't install a desktop link any more.
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.url"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk" ; Old name. Changed to Website.url in r153663.
+  RMDir  "$SMPROGRAMS\${PRODUCT_NAME}"
 
   ; Delete Guest Additions directory (only if completely empty)
   RMDir /REBOOTOK "$INSTDIR"
