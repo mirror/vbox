@@ -42,12 +42,15 @@
 #include <iprt/ldr.h>
 #include "internal/iprt.h"
 
-#include <iprt/alloc.h>
+#include <iprt/alloca.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/dbg.h>
 #include <iprt/string.h>
 #include <iprt/log.h>
+#include <iprt/mem.h>
 #include <iprt/err.h>
+#include <iprt/crypto/digest.h>
 #include <iprt/formats/elf32.h>
 #include <iprt/formats/elf64.h>
 #include <iprt/formats/elf-i386.h>
@@ -68,10 +71,48 @@
 #define ELF_SH_STR(pHdrs, iStr)     ((pHdrs)->pShStr + (iStr))
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** Magic string for RTLDRLNXMODSIG::achMagic   */
+#define RTLDRLNXMODSIG_MAGIC "~Module signature appended~\n"
+AssertCompile(sizeof(RTLDRLNXMODSIG_MAGIC) == 29);
+
+/**
+ * Linux kernel module signature footer - found at the end of the file.
+ */
+typedef struct RTLDRLNXMODSIG
+{
+    /** Zero. */
+    uint8_t         bAlgo;
+    /** Zero. */
+    uint8_t         bHash;
+    /** Signature type (RTLDRLNXMODSIG_TYPE_PKCS7). */
+    uint8_t         bType;
+    /** Zero. */
+    uint8_t         cbSignerName;
+    /** Zero. */
+    uint8_t         cbKeyId;
+    /** Zero padding. */
+    uint8_t         abReserved[3];
+    /** The length of the signature preceeding this footer structure. */
+    uint32_t        cbSignature;
+    /** Magic value identifying this structure.   */
+    char            achMagic[sizeof(RTLDRLNXMODSIG_MAGIC) - 1];
+} RTLDRLNXMODSIG;
+typedef RTLDRLNXMODSIG *PRTLDRLNXMODSIG;
+typedef RTLDRLNXMODSIG const *PCRTLDRLNXMODSIG;
+/** Signature type.   */
+#define RTLDRLNXMODSIG_TYPE_PKCS7   2
+
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int rtLdrELFLnxKModQueryPropIsSigned(PRTLDRREADER pReader, bool *pfRet);
+static int rtLdrELFLnxKModQueryPropPkcs7SignedData(PRTLDRREADER pReader, void *pvBuf, size_t cbBuf, size_t *pcbRet);
+static DECLCALLBACK(int) rtldrELFLnxKModHashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash);
 #ifdef LOG_ENABLED
 static const char *rtldrElfGetShdrType(uint32_t iType);
 static const char *rtldrElfGetPhdrType(uint32_t iType);
@@ -150,6 +191,148 @@ static const char *rtldrElfGetPhdrType(uint32_t iType)
 }
 
 #endif /* LOG_ENABLED*/
+
+/**
+ * Reads in what migt be a linux kernel module signature footer.
+ */
+static int rtLdrELFLnxKModReadFooter(PRTLDRREADER pReader, PRTLDRLNXMODSIG pSigFooter, uint64_t *pcbFile)
+{
+    /*
+     * Look for the linux module signature at the end of the file.
+     * This should be safe to read w/o any size checking as it is smaller than the elf header.
+     */
+    uint64_t cbFile = pReader->pfnSize(pReader);
+    *pcbFile = cbFile;
+
+    AssertCompile(sizeof(*pSigFooter) <= sizeof(Elf32_Ehdr));
+    return pReader->pfnRead(pReader, pSigFooter, sizeof(*pSigFooter), cbFile - sizeof(*pSigFooter));
+}
+
+
+/**
+ * Check that a linux kernel module signature footer is valid.
+ */
+static bool rtLdrELFLnxKModIsFooterValid(PCRTLDRLNXMODSIG pSigFooter, uint64_t cbFile)
+{
+    if (memcmp(pSigFooter->achMagic, RTLDRLNXMODSIG_MAGIC, sizeof(pSigFooter->achMagic)) == 0)
+    {
+        uint32_t const cbSignature = RT_N2H_U32(pSigFooter->cbSignature);
+        if (cbSignature > 32 && cbSignature + sizeof(*pSigFooter) < cbFile)
+            return pSigFooter->bAlgo        == 0
+                && pSigFooter->bHash        == 0
+                && pSigFooter->cbSignerName == 0
+                && pSigFooter->cbKeyId      == 0;
+    }
+    return false;
+}
+
+
+/**
+ * Handles the linux kernel module signature part of RTLDRPROP_IS_SIGNED
+ * queries.
+ */
+static int rtLdrELFLnxKModQueryPropIsSigned(PRTLDRREADER pReader, bool *pfRet)
+{
+    *pfRet = false;
+    AssertReturn(pReader, VERR_INVALID_STATE);
+
+    uint64_t       cbFile;
+    RTLDRLNXMODSIG SigFooter;
+    int rc = rtLdrELFLnxKModReadFooter(pReader, &SigFooter, &cbFile);
+    if (RT_SUCCESS(rc))
+        *pfRet = rtLdrELFLnxKModIsFooterValid(&SigFooter, cbFile);
+    return rc;
+}
+
+
+/**
+ * Handles the linux kernel module signature part of RTLDRPROP_IS_SIGNED
+ * queries.
+ */
+static int rtLdrELFLnxKModQueryPropPkcs7SignedData(PRTLDRREADER pReader, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    AssertReturn(pReader, VERR_INVALID_STATE);
+
+    uint64_t       cbFile;
+    RTLDRLNXMODSIG SigFooter;
+    int rc = rtLdrELFLnxKModReadFooter(pReader, &SigFooter, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        if (   rtLdrELFLnxKModIsFooterValid(&SigFooter, cbFile)
+            && SigFooter.bType == RTLDRLNXMODSIG_TYPE_PKCS7)
+        {
+            uint32_t const cbSignature = RT_N2H_U32(SigFooter.cbSignature);
+            *pcbRet = cbSignature;
+            if (cbSignature <= cbBuf)
+                rc = pReader->pfnRead(pReader, pvBuf, cbSignature, cbFile - sizeof(SigFooter) - cbSignature);
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{,pfnHashImage,
+ * Handles the linux kernel module signatures.}
+ */
+static DECLCALLBACK(int) rtldrELFLnxKModHashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash)
+{
+    PRTLDRREADER pReader = pMod->pReader;
+    AssertReturn(pReader, VERR_INVALID_STATE);
+
+    /*
+     * Get the file size and subtract any linux kernel module signature from it
+     * since it's not part of the hash.
+     */
+    uint64_t       cbFile;
+    RTLDRLNXMODSIG SigFooter;
+    int rc = rtLdrELFLnxKModReadFooter(pReader, &SigFooter, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        if (rtLdrELFLnxKModIsFooterValid(&SigFooter, cbFile))
+            cbFile -= sizeof(SigFooter) - RT_N2H_U32(SigFooter.cbSignature);
+
+        /*
+         * Now hash the file.
+         */
+        RTCRDIGEST hDigest;
+        rc = RTCrDigestCreateByType(&hDigest, enmDigest);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbBuf = _64K;
+            void    *pvBuf = RTMemTmpAlloc(_64K);
+            void    *pvBufFree = pvBuf;
+            if (!pvBuf)
+            {
+                cbBuf = _4K;
+                pvBuf = alloca(_4K);
+            }
+
+            for (uint64_t offFile = 0; offFile < cbFile; )
+            {
+                uint64_t cbLeft = cbFile - offFile;
+                uint32_t cbToRead = cbLeft >= cbBuf ? cbBuf : (uint32_t)cbLeft;
+                rc = pReader->pfnRead(pReader, pvBuf, cbToRead, offFile);
+                AssertRCBreak(rc);
+
+                rc = RTCrDigestUpdate(hDigest, pvBuf, cbToRead);
+                offFile += cbToRead;
+                AssertRCBreak(rc);
+            }
+
+            RTMemTmpFree(pvBufFree);
+
+            if (RT_SUCCESS(rc))
+                rc = RTCrDigestFinal(hDigest, pabHash, cbHash);
+            RTCrDigestRelease(hDigest);
+        }
+    }
+    return rc;
+}
 
 
 /**

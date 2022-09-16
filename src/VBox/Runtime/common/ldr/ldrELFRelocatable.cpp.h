@@ -1710,15 +1710,11 @@ static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint
 }
 
 
-/** @interface_method_impl{RTLDROPS,pfnQueryProp} */
-static DECLCALLBACK(int) RTLDRELF_NAME(QueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
-                                                  void *pvBuf, size_t cbBuf, size_t *pcbRet)
+/**
+ * Handles RTLDRPROP_BUILDID queries.
+ */
+static int RTLDRELF_NAME(QueryPropBuildId)(PRTLDRMODELF pThis, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
-    PRTLDRMODELF pThis = (PRTLDRMODELF)pMod;
-
-    if (enmProp != RTLDRPROP_BUILDID)
-        return VERR_NOT_FOUND;
-
     /*
      * Map the image bits if not already done and setup pointer into it.
      */
@@ -1760,9 +1756,32 @@ static DECLCALLBACK(int) RTLDRELF_NAME(QueryProp)(PRTLDRMODINTERNAL pMod, RTLDRP
         }
     }
 
-    NOREF(cbBuf);
-    RT_NOREF_PV(pvBits);
     return VERR_NOT_FOUND;
+}
+
+
+/** @interface_method_impl{RTLDROPS,pfnQueryProp} */
+static DECLCALLBACK(int) RTLDRELF_NAME(QueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                                  void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    PRTLDRMODELF pThis = (PRTLDRMODELF)pMod;
+    RT_NOREF(pvBits);
+    switch (enmProp)
+    {
+        case RTLDRPROP_BUILDID:
+            return RTLDRELF_NAME(QueryPropBuildId)(pThis, pvBuf, cbBuf, pcbRet);
+
+        case RTLDRPROP_IS_SIGNED:
+            *pcbRet = sizeof(bool);
+            return rtLdrELFLnxKModQueryPropIsSigned(pThis->Core.pReader, (bool *)pvBuf);
+
+        case RTLDRPROP_PKCS7_SIGNED_DATA:
+            *pcbRet = sizeof(bool);
+            return rtLdrELFLnxKModQueryPropPkcs7SignedData(pThis->Core.pReader, pvBuf, cbBuf, pcbRet);
+
+        default:
+            return VERR_NOT_FOUND;
+    }
 }
 
 
@@ -1876,7 +1895,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     RTLDRELF_NAME(ReadDbgInfo),
     RTLDRELF_NAME(QueryProp),
     NULL /*pfnVerifySignature*/,
-    NULL /*pfnHashImage*/,
+    rtldrELFLnxKModHashImage,
     RTLDRELF_NAME(UnwindFrame),
     42
 };
