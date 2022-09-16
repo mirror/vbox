@@ -3509,9 +3509,9 @@ typedef struct PGMCPU
 
     /** @name EPT Guest Paging.
      * @{ */
-    /** The guest's page directory pointer table, R3 pointer. */
+    /** The guest's EPT PML4 table, R3 pointer. */
     R3PTRTYPE(PEPTPML4)             pGstEptPml4R3;
-    /** The guest's page directory pointer table, R0 pointer. */
+    /** The guest's EPT PML4 table, R0 pointer. */
     R0PTRTYPE(PEPTPML4)             pGstEptPml4R0;
     /** The guest's EPT pointer (copy of virtual VMCS). */
     uint64_t                        uEptPtr;
@@ -3532,6 +3532,15 @@ typedef struct PGMCPU
     uint64_t                        fGstEptMbzPml4eMask;
     /** Mask to determine whether an entry is present. */
     uint64_t                        fGstEptPresentMask;
+
+    /** Mask containing the EPT PTE bits we shadow. */
+    uint64_t                        fGstEptShadowedPteMask;
+    /** Mask containing the EPT PDE bits we shadow. */
+    uint64_t                        fGstEptShadowedPdeMask;
+    /** Mask containing the EPT PDPTE bits we shadow. */
+    uint64_t                        fGstEptShadowedPdpteMask;
+    /** Mask containing the EPT PML4E bits we shadow. */
+    uint64_t                        fGstEptShadowedPml4eMask;
     /** @} */
 
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
