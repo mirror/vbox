@@ -248,53 +248,7 @@
 # define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 
-#elif PGM_GST_TYPE == PGM_TYPE_EPT
-# define GST_ATOMIC_OR(a_pu, a_fFlags)          ASMAtomicOrU64((a_pu), (a_fFlags))
-# define GSTPT                                  EPTPT
-# define PGSTPT                                 PEPTPT
-# define GSTPTE                                 EPTPTE
-# define PGSTPTE                                PEPTPTE
-# define GSTPD                                  EPTPD
-# define PGSTPD                                 PEPTPD
-# define GSTPDE                                 EPTPDE
-# define PGSTPDE                                PEPTPDE
-# define GST_GIGANT_PAGE_SIZE                   X86_PAGE_1G_SIZE
-# define GST_GIGANT_PAGE_OFFSET_MASK            X86_PAGE_1G_OFFSET_MASK
-# define GST_PDPE_BIG_PG_MASK                   X86_PDPE1G_PG_MASK
-# define GST_BIG_PAGE_SIZE                      X86_PAGE_2M_SIZE
-# define GST_BIG_PAGE_OFFSET_MASK               X86_PAGE_2M_OFFSET_MASK
-# define GST_PDE_PG_MASK                        EPT_PDE_PG_MASK
-# define GST_PDE_BIG_PG_MASK                    EPT_PDE2M_PG_MASK
-# define GST_PD_SHIFT                           EPT_PD_SHIFT
-# define GST_PD_MASK                            EPT_PD_MASK
-# define GSTPTWALK                              PGMPTWALKGSTEPT
-# define PGSTPTWALK                             PPGMPTWALKGSTEPT
-# define PCGSTPTWALK                            PCPGMPTWALKGSTEPT
-# define GST_PDPE_ENTRIES                       EPT_PG_ENTRIES
-# define GST_PDPT_SHIFT                         EPT_PDPT_SHIFT
-# define GST_PDPE_PG_MASK                       EPT_PDPTE_PG_MASK
-# define GST_PDPT_MASK                          EPT_PDPT_MASK
-# define GST_PTE_PG_MASK                        EPT_E_PG_MASK
-# define GST_CR3_PAGE_MASK                      X86_CR3_EPT_PAGE_MASK
-# define GST_PT_SHIFT                           EPT_PT_SHIFT
-# define GST_PT_MASK                            EPT_PT_MASK
-# define GST_GET_PTE_GCPHYS(Pte)                PGM_A20_APPLY(pVCpu, ((Pte).u & GST_PTE_PG_MASK))
-# define GST_GET_PDE_GCPHYS(Pde)                PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_PG_MASK))
-# define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_BIG_PG_MASK))
-# define GST_GET_BIG_PDPE_GCPHYS(pVM, Pde)      PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDPE_BIG_PG_MASK))
-# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)            (true && This_should_perhaps_not_be_used_in_this_context)
-# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)            (true && This_should_perhaps_not_be_used_in_this_context)
-# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)        (true && This_should_perhaps_not_be_used_in_this_context)
-# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  (true && This_should_perhaps_not_be_used_in_this_context)
-# define GST_IS_PTE_VALID(pVCpu, Pte)           (!( (Pte).u   & (pVCpu)->pgm.s.fGstEptMbzPteMask ))
-# define GST_IS_PDE_VALID(pVCpu, Pde)           (!( (Pde).u   & (pVCpu)->pgm.s.fGstEptMbzPdeMask ))
-# define GST_IS_BIG_PDE_VALID(pVCpu, Pde)       (!( (Pde).u   & (pVCpu)->pgm.s.fGstEptMbzBigPdeMask ))
-# define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzPdpteMask ))
-# define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzBigPdpteMask ))
-# define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (!( (Pml4e).u & (pVCpu)->pgm.s.fGstEptMbzPml4eMask ))
-# define GST_IS_PGENTRY_PRESENT(pVCpu, Pge)     ((Pge).u & (pVCpu)->pgm.s.fGstEptPresentMask)
-# define GST_IS_PSE_ACTIVE(pVCpu)               (!((pVCpu)->pgm.s.fGstEptMbzBigPdeMask & EPT_E_BIT_LEAF))
-# define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
-# define BTH_IS_NP_ACTIVE(pVM)                  (false)
+#else
+# error "Unknown PGM_GST_TYPE."
 #endif
 
