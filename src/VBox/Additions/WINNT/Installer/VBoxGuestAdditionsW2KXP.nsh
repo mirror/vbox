@@ -160,80 +160,30 @@ exit:
 FunctionEnd
 
 !ifdef VBOX_SIGN_ADDITIONS
-  !ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5 | VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID | VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
-
 ;;
-; Checks
+; Run VBoxCertUtil to install the given certificate if absent on the system.
 ;
-; @param    pop1    The RDN of the certificate.
-; @param    pop2    Filename (cert dir) if we're shipping it (VBOX_WITH_GA_ROOT_CERTS_INCLUDED).
-; @param    pop3    The direct download URL link.
-; @param    pop4    The message to display if missing.
+; @param    pop1    The certificate file.
+; @param    pop2    Short description.
 ;
-Function W2K_RootCertCheck
-  ;
-  ; Prolog: Save $0, $1, $2, $3 and move the parameters into them. Also save $4 for results.
-  ;
+Function   W2K_InstallRootCert
+  ; Prolog: Save $0 & $1 and move the parameters into them.
   Push    $0
-  Exch    4
+  Exch    2
   Push    $1
-  Exch    4
-  Push    $2
-  Exch    4
-  Push    $3
-  Exch    4
-  Pop     $0                                ; RDN
-  Pop     $1                                ; Filename
-  Pop     $2                                ; Direct URL
-  Pop     $3                                ; Missing message
-  Push    $4
+  Exch    2
+  Pop     $0                                ; Filename
+  Pop     $1                                ; Description.
 
-  ;
-  ; Run VBoxCertUtil to check.
-  ;
-  ${LogVerbose} "Checking if $0 is installed ..."
-  ${If} ${Silent}
-    nsExec::ExecToStack "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" root-exists $\"$0$\""
-    Exch 1
-    Pop  $4                                 ; output
-    ${LogVerbose} "$4"
-    Pop  $4                                 ; exit code
-  ${Else}
-    nsExec::ExecToLog   "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" root-exists $\"$0$\""
-    Pop  $4                                 ; exit code
-  ${EndIf}
-  ${LogVerbose} "Exit code: $4"
+  ; Do the work.
+  ${LogVerbose} "Installing $1 ('$0') if missing ..."
+  ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-root --add-if-new $\"$INSTDIR\cert\$0$\"" 'non-zero-exitcode=abort'
 
-  ;
-  ; VBoxCertUtil terminates with exit code 10 if not found, 0 if found and something else on failure.
-  ;
-  ${If} $4 == 0
-    ${LogVerbose} "Root certificate is present."
-  ${ElseIf} $4 == 10
-  !ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
-    ${LogVerbose} "Root certificate is _NOT_ present.  Installing it ..."
-    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-root $\"$INSTDIR\cert\$1$\"" 'non-zero-exitcode=abort'
-  !else
-    ${LogVerbose} "Root certificate is _NOT_ present.  The certificate can be downloaded from $2 and installed using '$INSTDIR\cert\VBoxCertUtil.exe'."
-    MessageBox MB_YESNO $3 /SD IDYES IDYES l_dont_abort
-    Abort "Missing signing root certificate $0"
-l_dont_abort:
-  !endif
-  ${ElseIf} $R4 <> 0
-    ${LogVerbose} "Unable to determine whether the root certificate was present. Assuming the worst."
-    Abort "Error when checking whether signing root certificate '$0' was present: $4"
-  ${EndIf}
-
-  ;
-  ; Epilog: Restore $0-$4 (we return nothing).
-  ;
-  Pop     $4
-  Pop     $3
+  ; Epilog: Restore $0 & $1 (we return nothing).
   Pop     $2
   Pop     $1
   Pop     $0
 FunctionEnd
-  !endif
 !endif
 
 Function W2K_Prepare
@@ -262,73 +212,88 @@ Function W2K_Prepare
 
 !ifdef VBOX_SIGN_ADDITIONS
   ;
-  ; When installing signed GAs, we need to check whether the root certs are
-  ; present, we use VBoxCertUtil for this task.  This utility is also used
-  ; for installing missing root certs we can ship, like the special timestamp
-  ; root further down.
+  ; When installing signed GAs, we need to make sure that the associated root
+  ; certs are present, we use VBoxCertUtil for this task.
   ;
   ${LogVerbose} "Installing VBoxCertUtil.exe ..."
   SetOutPath "$INSTDIR\cert"
   FILE "$%PATH_OUT%\bin\additions\VBoxCertUtil.exe"
-  !ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
-  FILE "$%PATH_OUT%\bin\additions\vbox-legacy-timestamp-ca.cer"
+  !if  "$%VBOX_GA_CERT_ROOT_SHA1%" != "none"
+  FILE "$%PATH_OUT%\bin\additions\$%VBOX_GA_CERT_ROOT_SHA1%"
   !endif
-  !ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
-    !ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
-  FILE "$%PATH_OUT%\bin\additions\root-versign-pca3-g5.cer"
-    !endif
-    !ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
-  FILE "$%PATH_OUT%\bin\additions\root-digicert-assured-id.cer"
-    !endif
-    !ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
-  FILE "$%PATH_OUT%\bin\additions\root-digicert-high-assurance-ev.cer"
-    !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA1_TS%" != "none"
+  FILE "$%PATH_OUT%\bin\additions\$%VBOX_GA_CERT_ROOT_SHA1_TS%"
   !endif
-
-  ; Now that the files are in place, do the checking.
-  !ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
-  Push $(VBOX_CA_CHECK_VERISIGN_G5)
-  Push "http://cacerts.digicert.com/pca3-g5.crt"
-  Push "root-versign-pca3-g5.cer"
-  Push "C=US; O=VeriSign, Inc.; OU=VeriSign Trust Network; OU=(c) 2006 VeriSign, Inc. - For authorized use only; CN=VeriSign Class 3 Public Primary Certification Authority - G5"
-  Call W2K_RootCertCheck
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2%" != "none"
+  FILE "$%PATH_OUT%\bin\additions\$%VBOX_GA_CERT_ROOT_SHA2%"
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2_TS%" != "none"
+  FILE "$%PATH_OUT%\bin\additions\$%VBOX_GA_CERT_ROOT_SHA2_TS%"
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2_R3%" != "none"
+  FILE "$%PATH_OUT%\bin\additions\$%VBOX_GA_CERT_ROOT_SHA2_R3%"
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2_R3_TS%" != "none"
+  FILE "$%PATH_OUT%\bin\additions\$%VBOX_GA_CERT_ROOT_SHA2_R3_TS%"
   !endif
 
-  !ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
-  Push $(VBOX_CA_CHECK_DIGICERT_ASSURED_ID)
-  Push "https://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt"
-  Push "root-digicert-assured-id.cer"
-  Push "C=US; O=DigiCert Inc; OU=www.digicert.com; CN=DigiCert Assured ID Root CA"
-  Call W2K_RootCertCheck
-  !endif
-
-  !ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
-  Push $(VBOX_CA_CHECK_DIGICERT_HIGH_ASSURANCE_EV)
-  Push "https://cacerts.digicert.com/DigiCertHighAssuranceEVRootCA.crt"
-  Push "root-digicert-high-assurance-ev.cer"
-  Push "C=US; O=DigiCert Inc; OU=www.digicert.com; CN=DigiCert High Assurance EV Root CA"
-  Call W2K_RootCertCheck
-  !endif
-
-  !ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
   ;
-  ; Install the legacy timestamp CA if required/requested.
+  ; Install the certificates if missing.
   ;
-
-  ; If not explicitly specified, let the detected Windows version decide what to do.
-  ; On guest OSes < Windows 10 we always go for the PreW10 drivers and install our legacy timestamp CA.
+  !if  "$%VBOX_GA_CERT_ROOT_SHA1%" != "none"
+  Push "SHA-1 root"
+  Push "$%VBOX_GA_CERT_ROOT_SHA1%"
+  Call W2K_InstallRootCert
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA1_TS%" != "none"
+    !ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
+  ; If not explicitly specified, let the detected Windows version decide what
+  ; to do. On guest OSes < Windows 10 we always go for the PreW10 security
+  ; catalog files (.cat) and there we install our legacy timestamp CA by default.
   ${If}    $g_bInstallTimestampCA == "unset"
   ${AndIf} $g_strWinVersion != "10"
       StrCpy $g_bInstallTimestampCA "true"
   ${EndIf}
-
   ${If} $g_bInstallTimestampCA == "true"
-    ${LogVerbose} "Installing legacy timestamp CA certificate ..."
-    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" add-root $\"$INSTDIR\cert\vbox-legacy-timestamp-ca.cer$\"" 'non-zero-exitcode=log'
-    ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" display-all" 'non-zero-exitcode=log'
+    Push "SHA-1 timestamp root"
+    Push "$%VBOX_GA_CERT_ROOT_SHA1_TS%"
+    Call W2K_InstallRootCert
   ${EndIf}
-  !endif ; VBOX_WITH_VBOX_LEGACY_TS_CA
+    !else
+  Push "SHA-1 timestamp root"
+  Push "$%VBOX_GA_CERT_ROOT_SHA1_TS%"
+  Call W2K_InstallRootCert
+    !endif ; VBOX_WITH_VBOX_LEGACY_TS_CA
+  !endif
 
+  ; XP sp3 and later can make use of SHA-2 certs. Windows 2000 cannot.
+  ; Note that VBOX_GA_CERT_ROOT_SHA1 may be a SHA-2 cert, the hash algorithm
+  ; refers to the windows signature structures not the certificate.
+  ${If} $g_strWinVersion != "2000"
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2%" != "none"
+    Push "SHA-2 root"
+    Push "$%VBOX_GA_CERT_ROOT_SHA2%"
+    Call W2K_InstallRootCert
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2_TS%" != "none"
+    Push "SHA-2 timestamp root"
+    Push "$%VBOX_GA_CERT_ROOT_SHA2_TS%"
+    Call W2K_InstallRootCert
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2_R3%" != "none"
+    Push "SHA-2 ring-3 root"
+    Push "$%VBOX_GA_CERT_ROOT_SHA2_R3%"
+    Call W2K_InstallRootCert
+  !endif
+  !if  "$%VBOX_GA_CERT_ROOT_SHA2_R3_TS%" != "none"
+    Push "SHA-2 ring-3 timestamp root"
+    Push "$%VBOX_GA_CERT_ROOT_SHA2_R3_TS%"
+    Call W2K_InstallRootCert
+  !endif
+  ${EndIf}
+
+  ; Log the certificates present on the system.
+  ${CmdExecute} "$\"$INSTDIR\cert\VBoxCertUtil.exe$\" display-all" 'non-zero-exitcode=log'
 !endif ; VBOX_SIGN_ADDITIONS
 
   ; Restore registers

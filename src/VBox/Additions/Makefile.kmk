@@ -290,30 +290,33 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 endif # win.x86
 
 if defined(VBOX_WITH_ADDITIONS_ISO.win.amd64) || defined(VBOX_WITH_ADDITIONS_ISO.win.x86)
+ # Note! This probably only work reliably when packing is also done on a windows host!
  ifndef VBOX_SIGNING_MODE
   GUESTADDITIONS_FILESPEC.win =
  else if !defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !$(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
-  GUESTADDITIONS_FILESPEC.win = cert/vbox.cer=$(VBOX_PATH_ADDITIONS.win)/vbox.cer
+  GUESTADDITIONS_FILESPEC.win = \
+  	cert/vbox.cer=$(VBOX_PATH_ADDITIONS.win)/vbox.cer \
+  	cert/vbox-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-root.cer
+  ifdef VBOX_TSA_URL_ARGS
+   GUESTADDITIONS_FILESPEC.win += cert/vbox-timestamp-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-timestamp-root.cer
+  endif
  else
   GUESTADDITIONS_FILESPEC.win = \
   	cert/vbox-sha1.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha1.cer \
+  	cert/vbox-sha1-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha1-root.cer \
+  	cert/vbox-sha256-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-root.cer \
   	cert/vbox-sha256.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256.cer
+  ifdef VBOX_TSA_URL_ARGS
+   GUESTADDITIONS_FILESPEC.win += cert/vbox-sha1-timestamp-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha1-timestamp-root.cer
+  endif
+  ifdef VBOX_TSA_SHA2_URL_ARGS
+   GUESTADDITIONS_FILESPEC.win += cert/vbox-sha256-timestamp-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-timestamp-root.cer
+  endif
   if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
-   GUESTADDITIONS_FILESPEC.win += cert/vbox-sha256-r3.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-r3.cer
-  endif
- endif
- ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
-  GUESTADDITIONS_FILESPEC.win += cert/vbox-legacy-timestamp-ca.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-legacy-timestamp-ca.cer
- endif
- ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
-  ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
-   GUESTADDITIONS_FILESPEC.win += cert/root-versign-pca3-g5.cer=$(VBOX_PATH_ADDITIONS.win)/root-versign-pca3-g5.cer
-  endif
-  ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
-   GUESTADDITIONS_FILESPEC.win += cert/root-digicert-assured-id.cer=$(VBOX_PATH_ADDITIONS.win)/root-digicert-assured-id.cer
-  endif
-  ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
-   GUESTADDITIONS_FILESPEC.win += cert/root-digicert-high-assurance-ev.cer=$(VBOX_PATH_ADDITIONS.win)/root-digicert-high-assurance-ev.cer
+   GUESTADDITIONS_FILESPEC.win += \
+   	cert/vbox-sha256-r3.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-r3.cer \
+   	cert/vbox-sha256-r3-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-r3-root.cer \
+   	cert/vbox-sha256-r3-timestamp-root.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-r3-timestamp-root.cer
   endif
  endif
  GUESTADDITIONS_FILESPEC.win += windows11-bypass.reg=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/tools/windows11-bypass.reg

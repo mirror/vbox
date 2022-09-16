@@ -43,50 +43,6 @@ $(call VBOX_SET_VER_INFO_EXE,VBoxCertUtil,VirtualBox Certificate Utility,$(VBOX_
 
 
 #
-# Install all the certificates we use here.
-#
-INSTALLS += AdditionsInstCertFiles
-AdditionsInstCertFiles_TEMPLATE = VBoxGuestR3Exe
-AdditionsInstCertFiles_SOURCES  =
-AdditionsInstCertFiles_CLEAN    =
-ifdef VBOX_SIGNING_MODE
- define def_VBoxAdditionsInstCertFiles
-  AdditionsInstCertFiles_SOURCES += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)=>$1
-  AdditionsInstCertFiles_CLEAN   += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)
-  $$$$(AdditionsInstCertFiles_0_OUTDIR)/$(1): $$(2) | $$$$(dir $$$$@) $(VBOX_RTSIGNTOOL)
-	$(QUIET)$(RM) -f -- "$$@"
-	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index $3 --exe "$$<" --output "$$@" --der
- endef
-
- if !defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !$(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
-  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys,0)
- else
-  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha1.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys,0)
-  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys,1)
-  if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
-   $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256-r3.cer,$(VBOX_PATH_ADDITIONS)/VBoxCertUtil.exe,1)
-  endif
- endif
- ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
-AdditionsInstCertFiles_SOURCES += $(VBOX_LEGACY_TS_CA_FILE)=>vbox-legacy-timestamp-ca.cer
- endif
- ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
-  ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
-AdditionsInstCertFiles_SOURCES += \
-	$(VBOX_PATH_SRC_CERTIFICATES)/CaRoot-VeriSignPca3G5-18dad19e267de8bb4a2158cdcc6b3b4a.crt=>root-versign-pca3-g5.cer
-  endif
-  ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
-AdditionsInstCertFiles_SOURCES += \
-	$(VBOX_PATH_SRC_CERTIFICATES)/CaRoot-DigiCertAssuredIDRootCA-0ce7e0e517d846fe8fe560fc1bf03039.crt=>root-digicert-assured-id.cer
-  endif
-  ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
-AdditionsInstCertFiles_SOURCES += \
-	$(VBOX_PATH_SRC_CERTIFICATES)/CaRoot-DigiCertHighAssuranceEVRootCA-02ac5c266a0b409b8f0b79f2ae462577.crt=>root-digicert-high-assurance-ev.cer
-  endif
- endif
-endif
-
-#
 # Install the registry file for bypassing the Windows 11 installer checks.
 #
 INSTALLS += AdditionsInstW11Bypass

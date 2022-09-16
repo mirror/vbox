@@ -87,6 +87,69 @@ RegCleanup_VBOX_IMPORT_CHECKER.win.x86 := nt4
 
 
 #
+# Install all the certificates we use.
+#
+INSTALLS += AdditionsInstCertFiles
+AdditionsInstCertFiles_TEMPLATE := VBoxGuestR3Exe
+AdditionsInstCertFiles_SOURCES   =
+AdditionsInstCertFiles_CLEAN     =
+if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
+ define def_VBoxAdditionsInstCertFiles
+  AdditionsInstCertFiles_SOURCES += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)=>$1
+  AdditionsInstCertFiles_CLEAN   += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)
+  $$$$(AdditionsInstCertFiles_0_OUTDIR)/$(1): $$(2) | $$$$(dir $$$$@) $(VBOX_RTSIGNTOOL)
+	$(QUIET)$(RM) -f -- "$$@"
+	$(VBOX_RTSIGNTOOL) $3 --signature-index $4 --input "$$<" --output "$$@"
+ endef
+
+ if !defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !$(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-exe-signer-cert, 0)
+  VBOX_GA_CERT_ROOT_SHA1 := vbox-root.cer
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA1),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-signer-root --self-signed-roots-from-system, 0)
+  ifdef VBOX_TSA_URL_ARGS
+   VBOX_GA_CERT_ROOT_SHA1_TS := vbox-timestamp-root.cer
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA1_TS),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+   	extract-timestamp-root --self-signed-roots-from-system, 0)
+  endif
+ else
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha1.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-exe-signer-cert, 0)
+  VBOX_GA_CERT_ROOT_SHA1 := vbox-sha1-root.cer
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA1),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-signer-root --self-signed-roots-from-system, 0)
+  ifdef VBOX_TSA_URL_ARGS
+   VBOX_GA_CERT_ROOT_SHA1_TS := vbox-sha1-timestamp-root.cer
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA1_TS),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+   	extract-timestamp-root --self-signed-roots-from-system, 0)
+  endif
+
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-exe-signer-cert, 1)
+  VBOX_GA_CERT_ROOT_SHA2 := vbox-sha256-root.cer
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA2),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-signer-root --self-signed-roots-from-system, 1)
+  ifdef VBOX_TSA_SHA2_URL_ARGS
+   VBOX_GA_CERT_ROOT_SHA2_TS := vbox-sha256-timestamp-root.cer
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA2_TS),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+   	extract-timestamp-root --self-signed-roots-from-system, 1)
+  endif
+
+  if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256-r3.cer,$(VBOX_PATH_ADDITIONS)/VBoxDrvInst.exe, \
+   	extract-exe-signer-cert, 1)
+   VBOX_GA_CERT_ROOT_SHA2_R3 := vbox-sha256-r3-root.cer
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA2_R3),$(VBOX_PATH_ADDITIONS)/VBoxDrvInst.exe, \
+  	extract-signer-root --self-signed-roots-from-system, 1)
+   VBOX_GA_CERT_ROOT_SHA2_R3_TS := vbox-sha256-r3-timestamp-root.cer
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA2_R3_TS),$(VBOX_PATH_ADDITIONS)/VBoxDrvInst.exe, \
+   	extract-timestamp-root --self-signed-roots-from-system, 1)
+  endif
+ endif
+endif
+
+#
 # The installer.
 #
 PACKING     += $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
@@ -178,22 +241,13 @@ VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxAudioTest.exe
 endif
 
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
- ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
-VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(PATH_STAGE_BIN)/additions/vbox-legacy-timestamp-ca.cer
- endif
- ifdef VBOX_WITH_GA_ROOT_CERTS_INCLUDED
-  ifdef VBOX_WITH_GA_ROOT_VERISIGN_G5
-VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(PATH_STAGE_BIN)/additions/root-versign-pca3-g5.cer
-  endif
-  ifdef VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID
-VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(PATH_STAGE_BIN)/additions/root-digicert-assured-id.cer
-  endif
-  ifdef VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV
-VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(PATH_STAGE_BIN)/additions/root-digicert-high-assurance-ev.cer
-  endif
- endif
-endif
+VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(addprefix $(PATH_STAGE_BIN)/additions/, \
+	$(VBOX_GA_CERT_ROOT_SHA1) \
+	$(VBOX_GA_CERT_ROOT_SHA1_TS) \
+	$(VBOX_GA_CERT_ROOT_SHA2) \
+	$(VBOX_GA_CERT_ROOT_SHA2_TS) \
+	$(VBOX_GA_CERT_ROOT_SHA2_R3) \
+	$(VBOX_GA_CERT_ROOT_SHA2_R3_TS))
 
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
@@ -224,7 +278,9 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
 	$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),-E 'VBOX_BRAND_$(lang)_LICENSE_RTF=$(VBOX_BRAND_$(lang)_LICENSE_RTF)') \
 	-E 'KBUILD_TYPE=$(KBUILD_TYPE)' \
-	-E 'KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)'
+	-E 'KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
+       $(foreach base, VBOX_GA_CERT_ROOT_SHA1 VBOX_GA_CERT_ROOT_SHA2 VBOX_GA_CERT_ROOT_SHA2_R3 \
+       ,-E '$(base)=$(firstword $($(base)) none)' -E '$(base)_TS=$(firstword $($(base)_TS) none)')
 
 $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \
@@ -262,11 +318,7 @@ endif
 			$(if $(VBOX_SIGNING_MODE),'/DEXTERNAL_UNINSTALLER=1') \
                        $(if-expr defined(VBOX_SIGN_ADDITIONS) && defined(VBOX_SIGNING_MODE), \
                        	'/DVBOX_SIGN_ADDITIONS=1' \
-                       	$(if-expr defined(VBOX_WITH_GA_ROOT_CERTS_INCLUDED)            ,'/DVBOX_WITH_GA_ROOT_CERTS_INCLUDED=1',) \
-                       	$(if-expr defined(VBOX_WITH_GA_ROOT_VERISIGN_G5)               ,'/DVBOX_WITH_GA_ROOT_VERISIGN_G5=1',) \
-                       	$(if-expr defined(VBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID)       ,'/DVBOX_WITH_GA_ROOT_DIGICERT_ASSURED_ID=1',) \
-                       	$(if-expr defined(VBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV),'/DVBOX_WITH_GA_ROOT_DIGICERT_HIGH_ASSURANCE_EV=1',) \
-				$(if-expr defined(VBOX_WITH_VBOX_LEGACY_TS_CA)                 ,'/DVBOX_WITH_VBOX_LEGACY_TS_CA=1') \
+				$(if-expr defined(VBOX_WITH_VBOX_LEGACY_TS_CA),'/DVBOX_WITH_VBOX_LEGACY_TS_CA=1') \
                        ,) \
 			$(if $(VBOX_INSTALLER_ADD_LANGUAGES),'/DVBOX_INSTALLER_ADD_LANGUAGES=1') \
 			$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),'/DVBOX_BRAND_$(lang)_LICENSE_RTF=1') \
