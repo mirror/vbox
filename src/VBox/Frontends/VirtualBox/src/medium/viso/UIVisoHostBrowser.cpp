@@ -74,14 +74,22 @@ QVariant UIVisoHostBrowserModel::data(const QModelIndex &index, int enmRole /* =
     {
         QFileInfo info = fileInfo(index);
 
-        if(info.isSymLink() && info.isDir())
-            return QIcon(":/file_manager_folder_symlink_16px.png");
-        else if(info.isSymLink() && info.isFile())
-            return QIcon(":/file_manager_file_symlink_16px.png");
-        else if(info.isFile())
-            return QIcon(":/file_manager_file_16px.png");
+        if(info.isFile())
+        {
+            if(info.isSymLink())
+                return QIcon(":/file_manager_file_symlink_16px.png");
+            else
+                return QIcon(":/file_manager_file_16px.png");
+        }
         else if(info.isDir())
-            return QIcon(":/file_manager_folder_16px.png");
+        {
+            if (filePath(index).contains(".."))
+                return QIcon(":/arrow_up_10px_x2.png");
+            else if(info.isSymLink())
+                return QIcon(":/file_manager_folder_symlink_16px.png");
+            else
+                return QIcon(":/file_manager_folder_16px.png");
+        }
     }
     return QFileSystemModel::data(index, enmRole);
 }
