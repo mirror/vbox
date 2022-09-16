@@ -4880,14 +4880,14 @@ static void iemVmxPprVirtualization(PVMCPUCC pVCpu) RT_NOEXCEPT
      *
      * See Intel spec. 29.1.3 "PPR Virtualization".
      */
-    uint32_t const uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
-    uint32_t const uSvi = RT_HI_U8(pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u16GuestIntStatus);
+    uint8_t const uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+    uint8_t const uSvi = RT_HI_U8(pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u16GuestIntStatus) & 0xf0;
 
     uint32_t uPpr;
-    if (((uTpr >> 4) & 0xf) >= ((uSvi >> 4) & 0xf))
-        uPpr = uTpr & 0xff;
+    if ((uTpr & 0xf0) >= uSvi)
+        uPpr = uTpr;
     else
-        uPpr = uSvi & 0xf0;
+        uPpr = uSvi;
 
     Log2(("ppr_virt: uTpr=%#x uSvi=%#x uPpr=%#x\n", uTpr, uSvi, uPpr));
     iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_PPR, uPpr);
