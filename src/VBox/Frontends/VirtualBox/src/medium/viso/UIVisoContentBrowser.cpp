@@ -163,6 +163,23 @@ UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
 {
     prepareObjects();
     prepareConnections();
+
+    /* Assuming the root items only child is the one with the path '/', navigate into it. */
+    /* Hack alert. for some reason without invalidating proxy models mapFromSource return invalid index. */
+    if (m_pTableProxyModel)
+        m_pTableProxyModel->invalidate();
+    if (m_pTreeProxyModel)
+        m_pTreeProxyModel->setSourceModel(m_pModel);
+    if (rootItem() && rootItem()->childCount() > 0)
+    {
+        UICustomFileSystemItem *pStartItem = static_cast<UICustomFileSystemItem*>(rootItem()->children()[0]);
+        if (pStartItem)
+        {
+            QModelIndex iindex = m_pModel->index(pStartItem);
+            if (iindex.isValid())
+                tableViewItemDoubleClick(convertIndexToTableIndex(iindex));
+        }
+    }
 }
 
 UIVisoContentBrowser::~UIVisoContentBrowser()
@@ -471,9 +488,9 @@ void UIVisoContentBrowser::initializeModel()
 
     const QString startPath = QString("/%1").arg(m_strVisoName);
 
-    UICustomFileSystemItem* startItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
-    startItem->setPath("/");
-    startItem->setIsOpened(false);
+    UICustomFileSystemItem *pStartItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
+    pStartItem->setPath("/");
+    pStartItem->setIsOpened(false);
 }
 
 void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)

@@ -92,7 +92,7 @@ protected:
     /** @} */
 
     virtual void treeSelectionChanged(const QModelIndex &selectedTreeIndex) final override;
-
+    
 private slots:
 
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
