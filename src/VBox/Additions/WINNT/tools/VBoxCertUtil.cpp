@@ -487,9 +487,14 @@ static RTEXITCODE removeCertFromStoreByFile(DWORD dwDst, const char *pszStoreNm,
  * @param   pszCertFile     The file containing the certificate to add.
  * @param   dwDisposition   The disposition towards existing certificates when
  *                          adding it.  CERT_STORE_ADD_NEW is a safe one.
+ * @param   pfAlreadyExists Where to indicate whether the certificate was
+ *                          already present and not replaced.
  */
-static bool addCertToStoreByFile(DWORD dwDst, const char *pszStoreNm, const char *pszCertFile, DWORD dwDisposition)
+static bool addCertToStoreByFile(DWORD dwDst, const char *pszStoreNm, const char *pszCertFile, DWORD dwDisposition,
+                                 bool *pfAlreadyExists)
 {
+    *pfAlreadyExists = false;
+
     /*
      * Read the certificate file first.
      */
@@ -513,7 +518,12 @@ static bool addCertToStoreByFile(DWORD dwDst, const char *pszStoreNm, const char
             if (CertAddCertificateContextToStore(hDstStore, pSrcCtx, dwDisposition, NULL))
                 fRc = true;
             else
-                RTMsgError("CertAddCertificateContextToStore returned %s", errorToString(GetLastError()));
+            {
+                DWORD const dwErr = GetLastError();
+                *pfAlreadyExists = fRc = dwErr == CRYPT_E_EXISTS;
+                if (!fRc)
+                    RTMsgError("CertAddCertificateContextToStore returned %s", errorToString(dwErr));
+            }
         }
         else
             RTMsgError("Code path not implemented at line %d\n",  __LINE__);
@@ -532,7 +542,7 @@ static bool addCertToStoreByFile(DWORD dwDst, const char *pszStoreNm, const char
  * Handle adding one or more certificates to a store.
  */
 static RTEXITCODE addCertToStoreByFilePattern(DWORD dwDst, const char *pszStoreNm, const char *pszStoreDesc,
-                                              const char *pszFilePattern, RTEXITCODE rcExit, uint32_t *pcImports)
+                                              const char *pszFilePattern, bool fForce, RTEXITCODE rcExit, uint32_t *pcImports)
 {
     PCRTPATHGLOBENTRY pResultHead;
     int rc = RTPathGlob(pszFilePattern, RTPATHGLOB_F_NO_DIRS, &pResultHead, NULL);
@@ -540,8 +550,17 @@ static RTEXITCODE addCertToStoreByFilePattern(DWORD dwDst, const char *pszStoreN
     {
         for (PCRTPATHGLOBENTRY pCur = pResultHead; pCur; pCur = pCur->pNext)
         {
-            if (addCertToStoreByFile(dwDst, pszStoreNm, pCur->szPath, CERT_STORE_ADD_NEW))
-                RTMsgInfo("Successfully added '%s' as %s", pCur->szPath, pszStoreDesc);
+            bool fAlreadyExists = false;
+            if (addCertToStoreByFile(dwDst, pszStoreNm, pCur->szPath,
+                                     !fForce ? CERT_STORE_ADD_NEW : CERT_STORE_ADD_REPLACE_EXISTING,
+                                     &fAlreadyExists))
+            {
+                if (!fAlreadyExists)
+                    RTMsgInfo("Successfully added '%s' to the %s store", pCur->szPath, pszStoreDesc);
+                else
+                    RTMsgInfo("Certificate '%s' is already present in the %s store and was not re-added or updated.",
+                              pCur->szPath, pszStoreNm);
+            }
             else
                 rcExit = RTEXITCODE_FAILURE;
             *pcImports += 1;
@@ -550,7 +569,7 @@ static RTEXITCODE addCertToStoreByFilePattern(DWORD dwDst, const char *pszStoreN
     }
     else
     {
-        rcExit = RTMsgErrorExit(RTEXITCODE_SUCCESS, "glob failed on '%s': %Rrc", pszFilePattern, rc);
+        rcExit = RTMsgErrorExitFailure("glob failed on '%s': %Rrc", pszFilePattern, rc);
         *pcImports += 1;
     }
     return rcExit;
@@ -677,7 +696,8 @@ static RTEXITCODE cmdDisplayAll(int argc, char **argv)
             VCU_COMMON_OPTION_HANDLING();
 
             case 'h':
-                RTPrintf("Usage: VBoxCertUtil display-all [-v|--verbose] [-q|--quiet]\n");
+                RTStrmWrappedPrintf(g_pStdOut, RTSTRMWRAPPED_F_HANGING_INDENT,
+                                    "Usage: VBoxCertUtil display-all [-v|--verbose] [-q|--quiet]\n");
                 return RTEXITCODE_SUCCESS;
 
             default:
@@ -722,17 +742,19 @@ static RTEXITCODE cmdRootExists(int argc, char **argv)
             VCU_COMMON_OPTION_HANDLING();
 
             case 'h':
-                RTPrintf("Usage: VBoxCertUtil root-exists <full-subject-name> [alternative-subject-name [...]]\n"
-                         "\n"
-                         "Exit code: 10 if not found, 0 if found.\n"
-                         "\n"
-                         "The names are on the form 'C=US; O=Company; OU=some unit; CN=a cert name'\n"
-                         "where semi-colon is the X.500 attribute separator and spaces surrounding it\n"
-                         "the type (CN, OU, ) and '=' are generally ignored.\n"
-                         "\n"
-                         "At verbosity level 2, the full subject name of each certificate in the store\n"
-                         "will be listed as the search progresses.  These can be used as search input.\n"
-                         );
+                RTStrmWrappedPrintf(g_pStdOut, RTSTRMWRAPPED_F_HANGING_INDENT,
+                                    "Usage: VBoxCertUtil root-exists <full-subject-name> [alternative-subject-name [...]]\n");
+                RTStrmWrappedPrintf(g_pStdOut, 0,
+                                    "\n"
+                                    "Exit code: 10 if not found, 0 if found.\n"
+                                    "\n"
+                                    "The names are on the form 'C=US; O=Company; OU=some unit; CN=a cert name' "
+                                    "where semi-colon is the X.500 attribute separator and spaces surrounding it "
+                                    "the type (CN, OU, ) and '=' are generally ignored.\n"
+                                    "\n"
+                                    "At verbosity level 2, the full subject name of each certificate in the store "
+                                    "will be listed as the search progresses.  These can be used as search input.\n"
+                                    );
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -780,7 +802,8 @@ static RTEXITCODE cmdRemoveRoot(int argc, char **argv)
             VCU_COMMON_OPTION_HANDLING();
 
             case 'h':
-                RTPrintf("Usage: VBoxCertUtil remove-root <root-cert-file>\n");
+                RTStrmWrappedPrintf(g_pStdOut, RTSTRMWRAPPED_F_HANGING_INDENT,
+                                    "Usage: VBoxCertUtil remove-root <root-cert-file>\n");
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -826,7 +849,8 @@ static RTEXITCODE cmdRemoveTrustedPublisher(int argc, char **argv)
             VCU_COMMON_OPTION_HANDLING();
 
             case 'h':
-                RTPrintf("Usage: VBoxCertUtil remove-trusted-publisher [--root <root-cert>] <trusted-cert>\n");
+                RTStrmWrappedPrintf(g_pStdOut, RTSTRMWRAPPED_F_HANGING_INDENT,
+                                    "Usage: VBoxCertUtil remove-trusted-publisher [--root <root-cert>] <trusted-cert>\n");
                 return RTEXITCODE_SUCCESS;
 
             case 'r':
@@ -860,11 +884,14 @@ static RTEXITCODE cmdAddRoot(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
+        { "--add-if-new",   'a',    RTGETOPT_REQ_NOTHING },
+        { "--force",        'f',    RTGETOPT_REQ_NOTHING },
         VCU_COMMON_OPTION_DEFINITIONS(),
     };
 
-    RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
-    unsigned            cImports = 0;
+    RTEXITCODE          rcExit    = RTEXITCODE_SUCCESS;
+    unsigned            cImports  = 0;
+    bool                fForce    = false;
     RTGETOPTUNION       ValueUnion;
     RTGETOPTSTATE       GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
@@ -875,13 +902,22 @@ static RTEXITCODE cmdAddRoot(int argc, char **argv)
         {
             VCU_COMMON_OPTION_HANDLING();
 
+            case 'a':
+                fForce = false;
+                break;
+
+            case 'f':
+                fForce = false;
+                break;
+
             case 'h':
-                RTPrintf("Usage: VBoxCertUtil add-root <root-cert>\n");
+                RTStrmWrappedPrintf(g_pStdOut, RTSTRMWRAPPED_F_HANGING_INDENT,
+                                    "Usage: VBoxCertUtil add-root [--force|--add-if-new] <root-cert>\n");
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
                 rcExit = addCertToStoreByFilePattern(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root",
-                                                     ValueUnion.psz, rcExit, &cImports);
+                                                     ValueUnion.psz, fForce, rcExit, &cImports);
                 break;
 
             default:
@@ -904,12 +940,15 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--root",     'r',    RTGETOPT_REQ_STRING },
+        { "--root",         'r',    RTGETOPT_REQ_STRING },
+        { "--add-if-new",   'a',    RTGETOPT_REQ_NOTHING },
+        { "--force",        'f',    RTGETOPT_REQ_NOTHING },
         VCU_COMMON_OPTION_DEFINITIONS(),
     };
 
-    RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
-    unsigned            cImports = 0;
+    RTEXITCODE          rcExit    = RTEXITCODE_SUCCESS;
+    bool                fForce    = false;
+    unsigned            cImports  = 0;
     RTGETOPTUNION       ValueUnion;
     RTGETOPTSTATE       GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
@@ -920,18 +959,28 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
         {
             VCU_COMMON_OPTION_HANDLING();
 
+            case 'a':
+                fForce = false;
+                break;
+
+            case 'f':
+                fForce = false;
+                break;
+
             case 'h':
-                RTPrintf("Usage: VBoxCertUtil add-trusted-publisher [--root <root-cert>] <trusted-cert>\n");
+                RTStrmWrappedPrintf(g_pStdOut, RTSTRMWRAPPED_F_HANGING_INDENT,
+                                    "Usage: VBoxCertUtil add-trusted-publisher [--force|--add-if-new] "
+                                    "[--root <root-cert>] <trusted-cert>\n");
                 return RTEXITCODE_SUCCESS;
 
             case 'r':
                 rcExit = addCertToStoreByFilePattern(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", "root",
-                                                     ValueUnion.psz, rcExit, &cImports);
+                                                     ValueUnion.psz, fForce, rcExit, &cImports);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
                 rcExit = addCertToStoreByFilePattern(CERT_SYSTEM_STORE_LOCAL_MACHINE, "TrustedPublisher", "trusted publisher",
-                                                     ValueUnion.psz, rcExit, &cImports);
+                                                     ValueUnion.psz, fForce, rcExit, &cImports);
                 break;
 
             default:
