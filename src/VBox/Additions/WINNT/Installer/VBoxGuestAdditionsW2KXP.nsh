@@ -159,6 +159,38 @@ exit:
 
 FunctionEnd
 
+!macro W2K_CleanupCerts un
+;;
+; Removes certificates and the certificate utility.
+;
+; Since the certificate collection depends on the build config and have
+; changed over time, we always clean it up before installation.
+;
+Function ${un}W2K_CleanupCerts
+  Delete /REBOOTOK "$INSTDIR\cert\vbox.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-timestamp-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha1.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha1-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha1-timestamp-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha256.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha256-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha256-timestamp-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha256-r3.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha256-r3-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-sha256-r3-timestamp-root.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\vbox-legacy-timestamp-ca.cer"
+  Delete /REBOOTOK "$INSTDIR\cert\root-versign-pca3-g5.cer"             ; only for a while during 7.0 beta phase
+  Delete /REBOOTOK "$INSTDIR\cert\root-digicert-assured-id.cer"         ; ditto
+  Delete /REBOOTOK "$INSTDIR\cert\root-digicert-high-assurance-ev.cer"  ; ditto
+  Delete /REBOOTOK "$INSTDIR\cert\VBoxCertUtil.exe"
+  RMDir  /REBOOTOK "$INSTDIR\cert"
+FunctionEnd
+!macroend
+!insertmacro W2K_CleanupCerts ""
+!insertmacro W2K_CleanupCerts "un."
+
+
 !ifdef VBOX_SIGN_ADDITIONS
 ;;
 ; Run VBoxCertUtil to install the given certificate if absent on the system.
@@ -209,6 +241,9 @@ Function W2K_Prepare
 
   ; Delete old VBoxService.exe from install directory (replaced by VBoxTray.exe)
   Delete /REBOOTOK "$INSTDIR\VBoxService.exe"
+
+  ; Ditch old certificates and stuff to avoid confusion if we now ship fewer / different files.
+  Call W2K_CleanupCerts
 
 !ifdef VBOX_SIGN_ADDITIONS
   ;
@@ -601,9 +636,13 @@ Function ${un}W2K_UninstallInstDir
   !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
-  ; Log file
+  ; Certificates, utility and directory.
+  Call ${un}W2K_CleanupCerts
+
+  ; Log files
   Delete /REBOOTOK "$INSTDIR\install.log"
   Delete /REBOOTOK "$INSTDIR\install_ui.log"
+  Delete /REBOOTOK "$INSTDIR\install_drivers.log"
 
 FunctionEnd
 !macroend
