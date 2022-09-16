@@ -213,10 +213,11 @@
 /** @name Defines used to indicate the second-level
  * address translation (SLAT) modes in the templates.
  * @{ */
-#define PGM_SLAT_TYPE_EPT               (PGM_TYPE_END + 1)
-#define PGM_SLAT_TYPE_32BIT             (PGM_TYPE_END + 2)
-#define PGM_SLAT_TYPE_PAE               (PGM_TYPE_END + 3)
-#define PGM_SLAT_TYPE_AMD64             (PGM_TYPE_END + 4)
+#define PGM_SLAT_TYPE_DIRECT            (PGM_TYPE_END + 1)
+#define PGM_SLAT_TYPE_EPT               (PGM_TYPE_END + 2)
+#define PGM_SLAT_TYPE_32BIT             (PGM_TYPE_END + 3)
+#define PGM_SLAT_TYPE_PAE               (PGM_TYPE_END + 4)
+#define PGM_SLAT_TYPE_AMD64             (PGM_TYPE_END + 5)
 /** @} */
 
 /** Macro for checking if the guest is using paging.
