@@ -691,6 +691,7 @@ nt4: ; Windows NT4
   ${EndIf}
 
   ; Copy some common files ...
+  Call Common_CleanupObsoleteFiles
   Call Common_CopyFiles
 
   Call NT4_Main
@@ -703,6 +704,7 @@ nt4: ; Windows NT4
 w2k_xp_w2k3:
 
   ; Copy some common files ...
+  Call Common_CleanupObsoleteFiles
   Call Common_CopyFiles
 
   Call W2K_Main
@@ -717,6 +719,7 @@ vista_and_later:
   Call Vista_CheckForRequirements
 
   ; Copy some common files ...
+  Call Common_CleanupObsoleteFiles
   Call Common_CopyFiles
 
   Call W2K_Main     ; First install stuff for Windows 2000, XP, W2K3/XP64 ...
@@ -803,7 +806,7 @@ SectionEnd
 Section /o $(VBOX_COMPONENT_STARTMENU) SEC04
 
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url" "" "$INSTDIR\iexplore.ico"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\uninst.exe"
 
 SectionEnd
