@@ -60,14 +60,6 @@ typedef struct RTCRKEYINT
     /** Number of bits in the key. */
     uint32_t                    cBits;
 
-#if defined(IPRT_WITH_OPENSSL)
-    /** Size of raw key copy. */
-    uint32_t                    cbEncoded;
-    /** Raw copy of the key, for openssl and such.
-     * If sensitive, this is a safer allocation, otherwise it follows the structure. */
-    uint8_t                    *pbEncoded;
-#endif
-
     /** Type specific data. */
     union
     {
@@ -92,6 +84,14 @@ typedef struct RTCRKEYINT
             RTBIGNUM                Exponent;
         } RsaPublic;
     } u;
+
+#if defined(IPRT_WITH_OPENSSL)
+    /** Size of raw key copy. */
+    uint32_t                    cbEncoded;
+    /** Raw copy of the key, for openssl and such.
+     * If sensitive, this is a safer allocation, otherwise it follows the structure. */
+    uint8_t                    *pbEncoded;
+#endif
 } RTCRKEYINT;
 /** Pointer to a crypographic key. */
 typedef RTCRKEYINT *PRTCRKEYINT;
@@ -108,6 +108,8 @@ typedef RTCRKEYINT const *PCRTCRKEYINT;
 #define RTCRKEYINT_F_PRIVATE            UINT32_C(0x00000002)
 /** Set if public key bits are present. */
 #define RTCRKEYINT_F_PUBLIC             UINT32_C(0x00000004)
+/** Set if the cbEncoded/pbEncoded members are present. */
+#define RTCRKEYINT_F_INCLUDE_ENCODED    UINT32_C(0x00000008)
 /** @} */
 
 DECLHIDDEN(int) rtCrKeyCreateWorker(PRTCRKEYINT *ppThis, RTCRKEYTYPE enmType, uint32_t fFlags,

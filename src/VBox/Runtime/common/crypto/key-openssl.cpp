@@ -76,6 +76,7 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, void /*EVP_P
     *ppEvpKey = NULL;
     AssertReturn(hKey->u32Magic == RTCRKEYINT_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fNeedPublic == !(hKey->fFlags & RTCRKEYINT_F_PRIVATE), VERR_WRONG_TYPE);
+    AssertReturn(hKey->fFlags & RTCRKEYINT_F_INCLUDE_ENCODED, VERR_WRONG_TYPE); /* build misconfig */
 
     rtCrOpenSslInit();
 
@@ -139,6 +140,7 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKeyEx(RTCRKEY hKey, bool fNeedPublic, const char
         *ppEvpMdType = NULL;
     AssertReturn(hKey->u32Magic == RTCRKEYINT_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fNeedPublic == !(hKey->fFlags & RTCRKEYINT_F_PRIVATE), VERR_WRONG_TYPE);
+    AssertReturn(hKey->fFlags & RTCRKEYINT_F_INCLUDE_ENCODED, VERR_WRONG_TYPE); /* build misconfig */
 
     rtCrOpenSslInit();
 

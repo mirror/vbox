@@ -75,6 +75,7 @@ DECLHIDDEN(int) rtCrKeyCreateWorker(PRTCRKEYINT *ppThis, RTCRKEYTYPE enmType, ui
         pThis->enmType      = enmType;
         pThis->fFlags       = fFlags;
 #if defined(IPRT_WITH_OPENSSL)
+        pThis->fFlags      |= RTCRKEYINT_F_INCLUDE_ENCODED;
         pThis->cbEncoded    = cbEncoded;
         if (!(fFlags & RTCRKEYINT_F_SENSITIVE))
             pThis->pbEncoded = (uint8_t *)(pThis + 1);
