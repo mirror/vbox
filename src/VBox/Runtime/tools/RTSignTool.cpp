@@ -3170,7 +3170,7 @@ static RTEXITCODE HelpExtractExeSignerCert(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLe
 {
     RT_NOREF_PV(enmLevel);
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
-                        "extract-exe-signer-cert [--ber|--cer|--der] [--signature-index|-i <num>] [--exe|-e] <exe> [--output|-o] <outfile.cer>\n");
+                        "extract-exe-signer-cert [--ber|--cer|--der] [--signature-index|-i <num>] [--input|--exe|-e] <exe> [--output|-o] <outfile.cer>\n");
     return RTEXITCODE_SUCCESS;
 }
 
@@ -3218,6 +3218,7 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
         { "--cer",              'c', RTGETOPT_REQ_NOTHING },
         { "--der",              'd', RTGETOPT_REQ_NOTHING },
         { "--exe",              'e', RTGETOPT_REQ_STRING  },
+        { "--input",            'e', RTGETOPT_REQ_STRING  },
         { "--output",           'o', RTGETOPT_REQ_STRING  },
         { "--signature-index",  'i', RTGETOPT_REQ_UINT32  },
         { "--force",            'f', RTGETOPT_REQ_NOTHING },
@@ -3779,7 +3780,7 @@ static RTEXITCODE HandleExtractRootCommon(int cArgs, char **papszArgs, bool fTim
             case 'v':   State.cVerbosity++; break;
             case 'q':   State.cVerbosity = 0; break;
             case 'V':   return HandleVersion(cArgs, papszArgs);
-            case 'h':   return HelpExtractExeSignerCert(g_pStdOut, RTSIGNTOOLHELP_FULL);
+            case 'h':   return HelpExtractRootCommon(g_pStdOut, RTSIGNTOOLHELP_FULL, fTimestamp);
 
             case VINF_GETOPT_NOT_OPTION:
                 if (!State.pszFile)
@@ -3830,7 +3831,7 @@ static RTEXITCODE HelpExtractExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLev
 {
     RT_NOREF_PV(enmLevel);
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
-                        "extract-exe-signerature [--exe|-e] <exe> [--output|-o] <outfile.pkcs7>\n");
+                        "extract-exe-signerature [--input|--exe|-e] <exe> [--output|-o] <outfile.pkcs7>\n");
     return RTEXITCODE_SUCCESS;
 }
 
@@ -3842,6 +3843,7 @@ static RTEXITCODE HandleExtractExeSignature(int cArgs, char **papszArgs)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--exe",              'e', RTGETOPT_REQ_STRING  },
+        { "--input",            'e', RTGETOPT_REQ_STRING  },
         { "--output",           'o', RTGETOPT_REQ_STRING  },
         { "--force",            'f', RTGETOPT_REQ_NOTHING  },
     };
