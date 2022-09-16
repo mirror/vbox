@@ -191,6 +191,23 @@ FunctionEnd
 !insertmacro W2K_CleanupCerts "un."
 
 
+!macro W2K_CleanupObsoleteFiles un
+;;
+; Removes files we're no longer shipping.
+;
+; During installation this step should be taken before copy files over in case
+; the list gets out of sync and we start shipping files on it.  That way it
+; doesn't much matter as the file will be restore afterwards.
+;
+Function ${un}W2K_CleanupObsoleteFiles
+  Delete /REBOOTOK "$INSTDIR\VBoxWHQLFake.exe"  ; Removed in r152293 (runup to 7.0).
+  Delete /REBOOTOK "$INSTDIR\VBoxICD.dll"       ; Removed in r151892 (runup to 7.0).
+FunctionEnd
+!macroend
+!insertmacro W2K_CleanupObsoleteFiles ""
+!insertmacro W2K_CleanupObsoleteFiles "un."
+
+
 !ifdef VBOX_SIGN_ADDITIONS
 ;;
 ; Run VBoxCertUtil to install the given certificate if absent on the system.
@@ -563,6 +580,7 @@ Function W2K_Main
   SetOverwrite on
 
   Call W2K_Prepare
+  Call W2K_CleanupObsoleteFiles
   Call W2K_CopyFiles
   Call W2K_InstallFiles
   Call W2K_SetVideoResolution
@@ -643,6 +661,9 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\install.log"
   Delete /REBOOTOK "$INSTDIR\install_ui.log"
   Delete /REBOOTOK "$INSTDIR\install_drivers.log"
+
+  ; Obsolete stuff.
+  Call ${un}W2K_CleanupObsoleteFiles
 
 FunctionEnd
 !macroend
