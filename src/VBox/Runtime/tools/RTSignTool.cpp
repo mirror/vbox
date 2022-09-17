@@ -5823,9 +5823,107 @@ static RTEXITCODE HandleShowCat(int cArgs, char **papszArgs)
 }
 
 
-/*
- * The 'make-tainfo' command.
- */
+/*********************************************************************************************************************************
+*   The 'hash-exe' command.                                                                                                      *
+*********************************************************************************************************************************/
+static RTEXITCODE HelpHashExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+{
+    RT_NOREF_PV(enmLevel);
+    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT, "show-exe [--verbose|-v] [--quiet|-q] <exe1> [exe2 [..]]\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE HandleHashExe(int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--verbose",      'v', RTGETOPT_REQ_NOTHING },
+        { "--quiet",        'q', RTGETOPT_REQ_NOTHING },
+    };
+
+    unsigned  cVerbosity = 0;
+    RTLDRARCH enmLdrArch = RTLDRARCH_WHATEVER;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTGETOPTUNION ValueUnion;
+    int ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) && ch != VINF_GETOPT_NOT_OPTION)
+    {
+        switch (ch)
+        {
+            case 'v': cVerbosity++; break;
+            case 'q': cVerbosity = 0; break;
+            case 'V': return HandleVersion(cArgs, papszArgs);
+            case 'h': return HelpHashExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
+            default:  return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (ch != VINF_GETOPT_NOT_OPTION)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No executable given.");
+
+    /*
+     * Do it.
+     */
+    unsigned   iFile  = 0;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    do
+    {
+        RTPrintf(iFile == 0 ? "%s:\n" : "\n%s:\n", ValueUnion.psz);
+
+        RTERRINFOSTATIC ErrInfo;
+        RTLDRMOD        hLdrMod;
+        rc = RTLdrOpenEx(ValueUnion.psz, RTLDR_O_FOR_VALIDATION, enmLdrArch, &hLdrMod, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            uint8_t abHash[RTSHA512_HASH_SIZE];
+            char    szDigest[RTSHA512_DIGEST_LEN + 1];
+
+            /* SHA-1: */
+            rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA1, abHash, sizeof(abHash));
+            if (RT_SUCCESS(rc))
+                RTSha1ToString(abHash, szDigest, sizeof(szDigest));
+            else
+                RTStrPrintf(szDigest, sizeof(szDigest), "%Rrc", rc);
+            RTPrintf("  SHA-1:   %s\n", szDigest);
+
+            /* SHA-256: */
+            rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA256, abHash, sizeof(abHash));
+            if (RT_SUCCESS(rc))
+                RTSha256ToString(abHash, szDigest, sizeof(szDigest));
+            else
+                RTStrPrintf(szDigest, sizeof(szDigest), "%Rrc", rc);
+            RTPrintf("  SHA-256: %s\n", szDigest);
+
+            /* SHA-512: */
+            rc = RTLdrHashImage(hLdrMod, RTDIGESTTYPE_SHA512, abHash, sizeof(abHash));
+            if (RT_SUCCESS(rc))
+                RTSha512ToString(abHash, szDigest, sizeof(szDigest));
+            else
+                RTStrPrintf(szDigest, sizeof(szDigest), "%Rrc", rc);
+            RTPrintf("  SHA-512: %s\n", szDigest);
+
+            RTLdrClose(hLdrMod);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("Failed to open '%s': %Rrc%#RTeim", ValueUnion.psz, rc, &ErrInfo.Core);
+
+    } while ((ch = RTGetOpt(&GetState, &ValueUnion)) == VINF_GETOPT_NOT_OPTION);
+    if (ch != 0)
+        return RTGetOptPrintError(ch, &ValueUnion);
+
+    return rcExit;
+}
+
+
+/*********************************************************************************************************************************
+*   The 'make-tainfo' command.                                                                                                   *
+*********************************************************************************************************************************/
 static RTEXITCODE HelpMakeTaInfo(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
@@ -6097,6 +6195,7 @@ const g_aCommands[] =
 #endif
     { "show-exe",                       HandleShowExe,                      HelpShowExe },
     { "show-cat",                       HandleShowCat,                      HelpShowCat },
+    { "hash-exe",                       HandleHashExe,                      HelpHashExe },
     { "make-tainfo",                    HandleMakeTaInfo,                   HelpMakeTaInfo },
     { "help",                           HandleHelp,                         HelpHelp },
     { "--help",                         HandleHelp,                         NULL },
