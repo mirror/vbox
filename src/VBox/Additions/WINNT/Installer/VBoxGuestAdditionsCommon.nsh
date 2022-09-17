@@ -41,6 +41,8 @@ FunctionEnd
 !insertmacro Common_CleanupObsoleteFiles ""
 !ifdef UNINSTALLER_ONLY
   !insertmacro Common_CleanupObsoleteFiles "un."
+!else ifndef VBOX_SIGN_ADDITIONS
+  !insertmacro Common_CleanupObsoleteFiles "un."
 !endif
 
 Function Common_CopyFiles
