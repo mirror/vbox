@@ -1964,7 +1964,8 @@ typedef WIN_CERTIFICATE const *PCWIN_CERTIFICATE;
 /** @} */
 
 /** The alignment of the certificate table.
- * @remarks Found thru signtool experiments.  */
+ * @remarks Found thru signtool experiments.
+ * @note There is a copy of this in RTSignTool.cpp. */
 #define WIN_CERTIFICATE_ALIGNMENT           UINT32_C(8)
 
 

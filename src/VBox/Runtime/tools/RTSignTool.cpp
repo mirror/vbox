@@ -60,6 +60,8 @@
 #include <iprt/formats/mach-o.h>
 #ifndef RT_OS_WINDOWS
 # include <iprt/formats/pecoff.h>
+#else
+# define WIN_CERTIFICATE_ALIGNMENT      UINT32_C(8) /* from pecoff.h */
 #endif
 #include <iprt/crypto/applecodesign.h>
 #include <iprt/crypto/digest.h>
@@ -1686,7 +1688,11 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
                         if (RT_SUCCESS(rc))
                         {
                             /*
-                             * Sector align the signature portion.
+                             * Pad the file with zero up to a WIN_CERTIFICATE_ALIGNMENT boundary.
+                             *
+                             * Since the hash algorithm hashes everything up to the signature data,
+                             * zero padding included, the alignment we do here must match the alignment
+                             * padding that done while calculating the hash.
                              */
                             uint32_t const  cbWinCert = RT_UOFFSETOF(WIN_CERTIFICATE, bCertificate);
                             uint64_t        offCur    = 0;
@@ -1694,9 +1700,9 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
                             if (   RT_SUCCESS(rc)
                                 && offCur < _2G)
                             {
-                                if (offCur & 0x1ff)
+                                if (offCur != RT_ALIGN_64(offCur, WIN_CERTIFICATE_ALIGNMENT))
                                 {
-                                    uint32_t cbNeeded = 0x200 - ((uint32_t)offCur & 0x1ff);
+                                    uint32_t const cbNeeded = (uint32_t)(RT_ALIGN_64(offCur, WIN_CERTIFICATE_ALIGNMENT) - offCur);
                                     rc = RTFileWriteAt(hFile, offCur, g_abRTZero4K, cbNeeded, NULL);
                                     if (RT_SUCCESS(rc))
                                         offCur += cbNeeded;
