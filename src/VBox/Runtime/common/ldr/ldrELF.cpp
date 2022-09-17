@@ -276,7 +276,7 @@ static int rtLdrELFLnxKModQueryPropPkcs7SignedData(PRTLDRREADER pReader, void *p
 
 
 /**
- * @interface_method_impl{,pfnHashImage,
+ * @interface_method_impl{RTLDROPS,pfnHashImage,
  * Handles the linux kernel module signatures.}
  */
 static DECLCALLBACK(int) rtldrELFLnxKModHashImage(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, uint8_t *pabHash, size_t cbHash)
