@@ -1008,6 +1008,70 @@ public:
             m_hStore = NIL_RTCRSTORE;
         }
     }
+
+    /**
+     * Adds one or more certificates from the given file.
+     *
+     * @returns boolean success indicator.
+     */
+    bool addFromFile(const char *pszFilename, PRTERRINFOSTATIC pStaticErrInfo)
+    {
+        int rc = RTCrStoreCertAddFromFile(this->m_hStore, RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
+                                          pszFilename, RTErrInfoInitStatic(pStaticErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            if (RTErrInfoIsSet(&pStaticErrInfo->Core))
+                RTMsgWarning("Warnings loading certificate '%s': %s", pszFilename, pStaticErrInfo->Core.pszMsg);
+            return true;
+        }
+        RTMsgError("Error loading certificate '%s': %Rrc%#RTeim", pszFilename, rc, &pStaticErrInfo->Core);
+        return false;
+    }
+
+    /**
+     * Adds trusted self-signed certificates from the system.
+     *
+     * @returns boolean success indicator.
+     * @note The selection is self-signed rather than CAs here so that test signing
+     *       certificates will be included.
+     */
+    bool addSelfSignedRootsFromSystem(PRTERRINFOSTATIC pStaticErrInfo)
+    {
+        CryptoStore Tmp;
+        int rc = RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(&Tmp.m_hStore, RTErrInfoInitStatic(pStaticErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            RTCRSTORECERTSEARCH Search;
+            rc = RTCrStoreCertFindAll(Tmp.m_hStore, &Search);
+            if (RT_SUCCESS(rc))
+            {
+                PCRTCRCERTCTX pCertCtx;
+                while ((pCertCtx = RTCrStoreCertSearchNext(Tmp.m_hStore, &Search)) != NULL)
+                {
+                    /* Add it if it's a full fledged self-signed certificate, otherwise just skip: */
+                    if (   pCertCtx->pCert
+                        && RTCrX509Certificate_IsSelfSigned(pCertCtx->pCert))
+                    {
+                        int rc2 = RTCrStoreCertAddEncoded(this->m_hStore,
+                                                          pCertCtx->fFlags | RTCRCERTCTX_F_ADD_IF_NOT_FOUND,
+                                                          pCertCtx->pabEncoded, pCertCtx->cbEncoded, NULL);
+                        if (RT_FAILURE(rc2))
+                            RTMsgWarning("RTCrStoreCertAddEncoded failed for a certificate: %Rrc", rc2);
+                    }
+                    RTCrCertCtxRelease(pCertCtx);
+                }
+
+                int rc2 = RTCrStoreCertSearchDestroy(Tmp.m_hStore, &Search);
+                AssertRC(rc2);
+                return true;
+            }
+            RTMsgError("RTCrStoreCertFindAll failed: %Rrc", rc);
+        }
+        else
+            RTMsgError("RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts failed: %Rrc%#RTeim", rc, &pStaticErrInfo->Core);
+        return false;
+    }
+
 };
 
 
@@ -3370,49 +3434,6 @@ public:
         RTMsgError("RTCrStoreCreateInMem failed: %Rrc", rc);
         return false;
     }
-
-    /**
-     * Adds trusted self-signed certificates from the system.
-     *
-     * @note The selection is self-signed rather than CAs here so that test signing
-     *       certificates will be included.
-     */
-    bool addSelfSignedRootsFromSystem(PRTERRINFOSTATIC pStaticErrInfo)
-    {
-        CryptoStore Tmp;
-        int rc = RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(&Tmp.m_hStore, RTErrInfoInitStatic(pStaticErrInfo));
-        if (RT_SUCCESS(rc))
-        {
-            RTCRSTORECERTSEARCH Search;
-            rc = RTCrStoreCertFindAll(Tmp.m_hStore, &Search);
-            if (RT_SUCCESS(rc))
-            {
-                PCRTCRCERTCTX pCertCtx;
-                while ((pCertCtx = RTCrStoreCertSearchNext(Tmp.m_hStore, &Search)) != NULL)
-                {
-                    /* Add it if it's a full fledged self-signed certificate, otherwise just skip: */
-                    if (   pCertCtx->pCert
-                        && RTCrX509Certificate_IsSelfSigned(pCertCtx->pCert))
-                    {
-                        int rc2 = RTCrStoreCertAddEncoded(this->RootStore.m_hStore,
-                                                          pCertCtx->fFlags | RTCRCERTCTX_F_ADD_IF_NOT_FOUND,
-                                                          pCertCtx->pabEncoded, pCertCtx->cbEncoded, NULL);
-                        if (RT_FAILURE(rc2))
-                            RTMsgWarning("RTCrStoreCertAddEncoded failed for a certificate: %Rrc", rc2);
-                    }
-                    RTCrCertCtxRelease(pCertCtx);
-                }
-
-                int rc2 = RTCrStoreCertSearchDestroy(Tmp.m_hStore, &Search);
-                AssertRC(rc2);
-                return true;
-            }
-            RTMsgError("RTCrStoreCertFindAll failed: %Rrc", rc);
-        }
-        else
-            RTMsgError("RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts failed: %Rrc%#RTeim", rc, &pStaticErrInfo->Core);
-        return false;
-    }
 };
 
 
@@ -3763,19 +3784,18 @@ static RTEXITCODE HandleExtractRootCommon(int cArgs, char **papszArgs, bool fTim
     {
         switch (ch)
         {
-            case 'r': case 'a':
-                rc = RTCrStoreCertAddFromFile(ch == 'r' ? State.RootStore.m_hStore : State.AdditionalStore.m_hStore,
-                                              RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
-                                              ValueUnion.psz, RTErrInfoInitStatic(&StaticErrInfo));
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error loading certificate '%s': %Rrc - %s",
-                                          ValueUnion.psz, rc, StaticErrInfo.szMsg);
-                if (RTErrInfoIsSet(&StaticErrInfo.Core))
-                    RTMsgWarning("Warnings loading certificate '%s': %s", ValueUnion.psz, StaticErrInfo.szMsg);
+            case 'a':
+                if (!State.AdditionalStore.addFromFile(ValueUnion.psz, &StaticErrInfo))
+                    return RTEXITCODE_FAILURE;
+                break;
+
+            case 'r':
+                if (!State.RootStore.addFromFile(ValueUnion.psz, &StaticErrInfo))
+                    return RTEXITCODE_FAILURE;
                 break;
 
             case 'R':
-                if (!State.addSelfSignedRootsFromSystem(&StaticErrInfo))
+                if (!State.RootStore.addSelfSignedRootsFromSystem(&StaticErrInfo))
                     return RTEXITCODE_FAILURE;
                 break;
 
@@ -4527,8 +4547,8 @@ static RTEXITCODE HelpVerifyExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
-                        "verify-exe [--verbose|--quiet] [--kernel] [--root <root-cert.der>] [--additional <supp-cert.der>] "
-                        "[--type <win|osx>] <exe1> [exe2 [..]]\n");
+                        "verify-exe [--verbose|--quiet] [--kernel] [--root <root-cert.der>] [--self-signed-roots-from-system] "
+                        "[--additional <supp-cert.der>] [--type <win|osx>] <exe1> [exe2 [..]]\n");
     return RTEXITCODE_SUCCESS;
 }
 
@@ -4585,13 +4605,16 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
      */
     if (pState->cVerbose > 0)
     {
+        RTPrintf(fFlags & RTCRPKCS7VCC_F_TIMESTAMP ? "Timestamp Path%s:\n" : "Signature Path%s:\n",
+                 cPaths == 1 ? "" : "s");
         for (uint32_t iPath = 0; iPath < cPaths; iPath++)
         {
-            RTPrintf("---\n");
+            //if (iPath != 0)
+            //    RTPrintf("---\n");
             RTCrX509CertPathsDumpOne(hCertPaths, iPath, pState->cVerbose, RTStrmDumpPrintfV, g_pStdOut);
             *pErrInfo->pszMsg = '\0';
         }
-        RTPrintf("---\n");
+        //RTPrintf(fFlags & RTCRPKCS7VCC_F_TIMESTAMP ? "--- end timestamp ---\n" : "--- end signature ---\n");
     }
 
     /*
@@ -4735,11 +4758,14 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINF
         {
             PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pInfo->pvSignature;
 
+            if (pState->cVerbose > 0)
+                RTMsgInfo("Verifying '%s' signature #%u ...\n", pState->pszFilename, pInfo->iSignature + 1);
+
             /*
              * Dump the signed data if so requested and it's the first one, assuming that
              * additional signatures in contained wihtin the same ContentInfo structure.
              */
-            if (pState->cVerbose && pInfo->iSignature == 0)
+            if (pState->cVerbose > 1 && pInfo->iSignature == 0)
                 RTAsn1Dump(&pContentInfo->SeqCore.Asn1Core, 0, 0, RTStrmDumpPrintfV, g_pStdOut);
 
             /*
@@ -4876,14 +4902,15 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--kernel",           'k', RTGETOPT_REQ_NOTHING },
-        { "--root",             'r', RTGETOPT_REQ_STRING },
-        { "--additional",       'a', RTGETOPT_REQ_STRING },
-        { "--add",              'a', RTGETOPT_REQ_STRING },
-        { "--type",             't', RTGETOPT_REQ_STRING },
-        { "--validation-time",  'T', RTGETOPT_REQ_STRING },
-        { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
-        { "--quiet",            'q', RTGETOPT_REQ_NOTHING },
+        { "--kernel",                           'k', RTGETOPT_REQ_NOTHING },
+        { "--root",                             'r', RTGETOPT_REQ_STRING },
+        { "--self-signed-roots-from-system",    'R', RTGETOPT_REQ_NOTHING },
+        { "--additional",                       'a', RTGETOPT_REQ_STRING },
+        { "--add",                              'a', RTGETOPT_REQ_STRING },
+        { "--type",                             't', RTGETOPT_REQ_STRING },
+        { "--validation-time",                  'T', RTGETOPT_REQ_STRING },
+        { "--verbose",                          'v', RTGETOPT_REQ_NOTHING },
+        { "--quiet",                            'q', RTGETOPT_REQ_NOTHING },
     };
 
     VERIFYEXESTATE State;
@@ -4904,15 +4931,19 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
     {
         switch (ch)
         {
-            case 'r': case 'a':
-                rc = RTCrStoreCertAddFromFile(ch == 'r' ? State.RootStore.m_hStore : State.AdditionalStore.m_hStore,
-                                              RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR,
-                                              ValueUnion.psz, RTErrInfoInitStatic(&StaticErrInfo));
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error loading certificate '%s': %Rrc - %s",
-                                          ValueUnion.psz, rc, StaticErrInfo.szMsg);
-                if (RTErrInfoIsSet(&StaticErrInfo.Core))
-                    RTMsgWarning("Warnings loading certificate '%s': %s", ValueUnion.psz, StaticErrInfo.szMsg);
+            case 'a':
+                if (!State.AdditionalStore.addFromFile(ValueUnion.psz, &StaticErrInfo))
+                    return RTEXITCODE_FAILURE;
+                break;
+
+            case 'r':
+                if (!State.RootStore.addFromFile(ValueUnion.psz, &StaticErrInfo))
+                    return RTEXITCODE_FAILURE;
+                break;
+
+            case 'R':
+                if (!State.RootStore.addSelfSignedRootsFromSystem(&StaticErrInfo))
+                    return RTEXITCODE_FAILURE;
                 break;
 
             case 't':
