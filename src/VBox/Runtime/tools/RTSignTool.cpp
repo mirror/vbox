@@ -5860,7 +5860,7 @@ static RTEXITCODE HandleShowCat(int cArgs, char **papszArgs)
 static RTEXITCODE HelpHashExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
-    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT, "show-exe [--verbose|-v] [--quiet|-q] <exe1> [exe2 [..]]\n");
+    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT, "hash-exe [--verbose|-v] [--quiet|-q] <exe1> [exe2 [..]]\n");
     return RTEXITCODE_SUCCESS;
 }
 
