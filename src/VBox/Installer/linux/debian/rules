@@ -292,7 +292,9 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	        fi \
 	    fi \
 	    done)
-	dh_installdocs $(addprefix $(archdir)/,UserManual*.pdf LICENSE)
+	dh_installdocs $(addprefix $(archdir)/,UserManual*.pdf UserManual*.qch UserManual*.qhc LICENSE)
+	# Remove User Manual duplicated files, only keep them under location which was used by dh_installdocs.
+	rm -f $(addprefix $(archdir)/,UserManual*.pdf UserManual*.qch UserManual*.qhc LICENSE)
 	mv $(addprefix $(archdir)/,additions/VBoxGuestAdditions.iso) $(prefix)/usr/share/$(package)
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	if [ -f $(prefix)/usr/lib/$(package)/libQt5CoreVBox.so.5 ]; then \
