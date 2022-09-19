@@ -3085,6 +3085,34 @@ typedef X86FPUREG *PX86FPUREG;
 /** Pointer to a const FPU register. */
 typedef X86FPUREG const *PCX86FPUREG;
 
+/** FPU (x87) register - v2 with correct size. */
+#pragma pack(1)
+typedef union X86FPUREG2
+{
+    /** MMX view. */
+    uint64_t    mmx;
+    /** FPU view - todo. */
+    X86FPUMMX   fpu;
+    /** Extended precision floating point view. */
+    RTFLOAT80U  r80;
+    /** 8-bit view. */
+    uint8_t     au8[10];
+    /** 16-bit view. */
+    uint16_t    au16[5];
+    /** 32-bit view. */
+    uint32_t    au32[2];
+    /** 64-bit view. */
+    uint64_t    au64[1];
+} X86FPUREG2;
+#pragma pack()
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86FPUREG2, 10);
+#endif
+/** Pointer to a FPU register - v2. */
+typedef X86FPUREG2 *PX86FPUREG2;
+/** Pointer to a const FPU register - v2. */
+typedef X86FPUREG2 const *PCX86FPUREG2;
+
 /**
  * XMM register union.
  */
@@ -3100,6 +3128,14 @@ typedef union X86XMMREG
     uint32_t    au32[4];
     /** 64-bit view. */
     uint64_t    au64[2];
+    /** Signed 8-bit view. */
+    int8_t      ai8[16];
+    /** Signed 16-bit view. */
+    int16_t     ai16[8];
+    /** Signed 32-bit view. */
+    int32_t     ai32[4];
+    /** Signed 64-bit view. */
+    int64_t     ai64[2];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[1];
     /** Single precision floating point view. */
@@ -3186,7 +3222,6 @@ typedef X86ZMMREG const *PCX86ZMMREG;
 
 /**
  * 32-bit FPU state (aka FSAVE/FRSTOR Memory Region).
- * @todo verify this...
  */
 #pragma pack(1)
 typedef struct X86FPUSTATE
@@ -3210,14 +3245,17 @@ typedef struct X86FPUSTATE
     uint16_t    CS;
     /** 0x12 - Opcode. */
     uint16_t    FOP;
-    /** 0x14 - FOO. */
+    /** 0x14 - Data pointer. */
     uint32_t    FPUOO;
     /** 0x18 - FOS. */
-    uint32_t    FPUOS;
+    uint16_t    FPUOS;
+    /** 0x0a - Alignment word */
+    uint16_t    Dummy4;
     /** 0x1c - FPU register. */
-    X86FPUREG   regs[8];
+    X86FPUREG2  regs[8];
 } X86FPUSTATE;
 #pragma pack()
+AssertCompileSize(X86FPUSTATE, 108);
 /** Pointer to a FPU state. */
 typedef X86FPUSTATE  *PX86FPUSTATE;
 /** Pointer to a const FPU state. */
