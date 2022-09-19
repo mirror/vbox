@@ -16345,3 +16345,169 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vcomisd_u128_fallback,(uint32_t *pfMxcsr, uint3
 {
     iemAImpl_comisd_u128(pfMxcsr, pfEFlags, puSrc1, puSrc2);
 }
+
+
+/**
+ * CMPPS / CMPPD / CMPSS / CMPSD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+/**
+ * A compare truth table entry.
+ */
+typedef struct CMPTRUTHTBLENTRY
+{
+    /** Flag whether the \#IA is signalled when one of the source oeprans is a QNaN */
+    bool                fSignalsOnQNan;
+    /** The boolean result when the input operands are unordered. */
+    bool                fUnordered;
+    /** The boolean result when A = B. */
+    bool                fEqual;
+    /** The boolean result when A < B. */
+    bool                fLowerThan;
+    /** The boolean result when A > B. */
+    bool                fGreaterThan;
+} CMPTRUTHTBLENTRY;
+/** Pointer to a const truth table entry. */
+typedef const CMPTRUTHTBLENTRY *PCCMPTRUTHTBLENTRY;
+
+
+/** The compare truth table (indexed by immediate). */
+static const CMPTRUTHTBLENTRY g_aCmpTbl[] =
+{
+                            /* fSignalsOnQNan   fUnordered      fEqual      fLowerThan      fGreaterThan */
+    /* 00H (EQ_OQ)   */     {  false,           false,          true,       false,          false           },
+    /* 01H (LT_OS)   */     {  true,            false,          false,      true,           false           },
+    /* 02H (LE_OS)   */     {  true,            false,          true,       true,           false           },
+    /* 03H (UNORD_Q) */     {  false,           true,           false,      false,          false           },
+    /* 04H (NEQ_UQ)  */     {  false,           true,           false,      true,           true            },
+    /* 05H (NLT_US)  */     {  true,            true,           true,       false,          true            },
+    /* 06H (NLE_US)  */     {  true,            true,           false,      false,          true            },
+    /* 07H (ORQ_Q)   */     {  false,           false,          true,       true,           true            },
+    /** @todo AVX variants. */
+};
+
+
+static bool iemAImpl_cmp_worker_r32(uint32_t *pfMxcsr, PCRTFLOAT32U pr32Src1, PCRTFLOAT32U pr32Src2, uint8_t bEvil)
+{
+    AssertRelease(bEvil < RT_ELEMENTS(g_aCmpTbl));
+
+    if (RTFLOAT32U_IS_SIGNALLING_NAN(pr32Src1) || RTFLOAT32U_IS_SIGNALLING_NAN(pr32Src2))
+    {
+        *pfMxcsr |= X86_MXCSR_IE;
+        return g_aCmpTbl[bEvil].fUnordered;
+    }
+    else if (RTFLOAT32U_IS_QUIET_NAN(pr32Src1) || RTFLOAT32U_IS_QUIET_NAN(pr32Src2))
+    {
+        if (g_aCmpTbl[bEvil].fSignalsOnQNan)
+            *pfMxcsr |= X86_MXCSR_IE;
+        return g_aCmpTbl[bEvil].fUnordered;
+    }
+    else
+    {
+        softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
+
+        RTFLOAT32U r32Src1, r32Src2;
+        uint32_t fDe  = iemSsePrepareValueR32(&r32Src1, *pfMxcsr, pr32Src1);
+                 fDe |= iemSsePrepareValueR32(&r32Src2, *pfMxcsr, pr32Src2);
+
+        *pfMxcsr |= fDe;
+        float32_t f32Src1 = iemFpSoftF32FromIprt(&r32Src1);
+        float32_t f32Src2 = iemFpSoftF32FromIprt(&r32Src2);
+        if (f32_eq(f32Src1, f32Src2, &SoftState))
+            return g_aCmpTbl[bEvil].fEqual;
+        else if (f32_lt(f32Src1, f32Src2, &SoftState))
+            return g_aCmpTbl[bEvil].fLowerThan;
+        else
+            return g_aCmpTbl[bEvil].fGreaterThan;
+    }
+
+    AssertReleaseFailed();
+    return false;
+}
+
+
+static bool iemAImpl_cmp_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src1, PCRTFLOAT64U pr64Src2, uint8_t bEvil)
+{
+    AssertRelease(bEvil < RT_ELEMENTS(g_aCmpTbl));
+
+    if (RTFLOAT64U_IS_SIGNALLING_NAN(pr64Src1) || RTFLOAT64U_IS_SIGNALLING_NAN(pr64Src2))
+    {
+        *pfMxcsr |= X86_MXCSR_IE;
+        return g_aCmpTbl[bEvil].fUnordered;
+    }
+    else if (RTFLOAT64U_IS_QUIET_NAN(pr64Src1) || RTFLOAT64U_IS_QUIET_NAN(pr64Src2))
+    {
+        if (g_aCmpTbl[bEvil].fSignalsOnQNan)
+            *pfMxcsr |= X86_MXCSR_IE;
+        return g_aCmpTbl[bEvil].fUnordered;
+    }
+    else
+    {
+        softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
+
+        RTFLOAT64U r64Src1, r64Src2;
+        uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, *pfMxcsr, pr64Src1);
+                 fDe |= iemSsePrepareValueR64(&r64Src2, *pfMxcsr, pr64Src2);
+
+        *pfMxcsr |= fDe;
+        float64_t f64Src1 = iemFpSoftF64FromIprt(&r64Src1);
+        float64_t f64Src2 = iemFpSoftF64FromIprt(&r64Src2);
+        if (f64_eq(f64Src1, f64Src2, &SoftState))
+            return g_aCmpTbl[bEvil].fEqual;
+        else if (f64_lt(f64Src1, f64Src2, &SoftState))
+            return g_aCmpTbl[bEvil].fLowerThan;
+        else
+            return g_aCmpTbl[bEvil].fGreaterThan;
+    }
+
+    AssertReleaseFailed();
+    return false;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpps_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
+    {
+        if (iemAImpl_cmp_worker_r32(pfMxcsr, &pSrc->uSrc1.ar32[i], &pSrc->uSrc2.ar32[i], bEvil & 0x7))
+            puDst->au32[i] = UINT32_MAX;
+        else
+            puDst->au32[i] = 0;
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmppd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
+    {
+        if (iemAImpl_cmp_worker_r64(pfMxcsr, &pSrc->uSrc1.ar64[i], &pSrc->uSrc2.ar64[i], bEvil & 0x7))
+            puDst->au64[i] = UINT64_MAX;
+        else
+            puDst->au64[i] = 0;
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpss_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    if (iemAImpl_cmp_worker_r32(pfMxcsr, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bEvil & 0x7))
+        puDst->au32[0] = UINT32_MAX;
+    else
+        puDst->au32[0] = 0;
+
+    puDst->au32[1] = pSrc->uSrc1.au32[1];
+    puDst->au64[1] = pSrc->uSrc1.au64[1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpsd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    if (iemAImpl_cmp_worker_r64(pfMxcsr, &pSrc->uSrc1.ar64[0], &pSrc->uSrc2.ar64[0], bEvil & 0x7))
+        puDst->au64[0] = UINT64_MAX;
+    else
+        puDst->au64[0] = 0;
+
+    puDst->au64[1] = pSrc->uSrc1.au64[1];
+}
+#endif

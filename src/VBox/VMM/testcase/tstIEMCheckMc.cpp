@@ -49,6 +49,7 @@
 bool volatile       g_fRandom;
 uint8_t volatile    g_bRandom;
 RTUINT128U          g_u128Zero;
+X86XMMREG           g_XmmZero;
 
 
 
@@ -735,10 +736,14 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_MODIFIED_MREG_BY_REF(a_pu64Dst)              do { AssertCompile(sizeof(*a_pu64Dst) <= sizeof(uint64_t)); (void)fFpuWrite; (void)fMcBegin; } while (0)
 
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg)        do { (a_u128Value) = g_u128Zero; CHK_TYPE(RTUINT128U, a_u128Value); (void)fSseRead;  (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_XREG_XMM(a_XmmValue, a_iXReg)          do { (a_XmmValue) = g_XmmZero; CHK_TYPE(X86XMMREG, a_XmmValue); (void)fSseRead;  (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg)          do { (a_u64Value) = 0; CHK_TYPE(uint64_t, a_u64Value); (void)fSseRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg)          do { (a_u32Value) = 0; CHK_TYPE(uint32_t, a_u32Value); (void)fSseRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_HI_U64(a_u64Value, a_iXReg)       do { (a_u64Value) = 0; CHK_TYPE(uint64_t, a_u64Value); (void)fSseRead; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value)        do { CHK_TYPE(RTUINT128U, a_u128Value); (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_XREG_XMM(a_iXReg, a_XmmValue)          do { CHK_TYPE(X86XMMREG, a_XmmValue); (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_XREG_XMM_U32(a_iXReg, a_iDword, a_XmmValue)      do { CHK_TYPE(X86XMMREG, a_XmmValue);  AssertCompile((a_iDword) < RT_ELEMENTS((a_XmmValue).au32)); (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_XREG_XMM_U64(a_iXReg, a_iQword, a_XmmValue)      do { CHK_TYPE(X86XMMREG, a_XmmValue);  AssertCompile((a_iQword) < RT_ELEMENTS((a_XmmValue).au64)); (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_U64(a_iXReg, a_u64Value)          do { CHK_TYPE(uint64_t,  a_u64Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value)  do { CHK_TYPE(uint64_t,  a_u64Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_U32(a_iXReg, a_u32Value)          do { CHK_TYPE(uint32_t,  a_u32Value);  (void)fSseWrite; (void)fMcBegin; } while (0)

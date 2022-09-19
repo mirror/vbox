@@ -5960,3 +5960,96 @@ BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 12
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC             iemAImpl_vcomisd_u128
+
+
+;;
+; Need to move this as well somewhere better?
+;
+struc IEMMEDIAF2XMMSRC
+    .uSrc1        resd 4
+    .uSrc2        resd 4
+endstruc
+
+
+;
+; CMPPS (SSE)
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the first media register size operand (output).
+; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
+; @param    A3      The 8-bit immediate (input).
+;
+BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
+        lea     T0, [A3 + A3*4]         ; sizeof(cmpps+ret) == 5
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T1, [T1 + T0]
+        call    T1
+        movdqu  [A1], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       cmpps xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*5 == 0x500
+dw 0xfaff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x104ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_cmpps_u128
+
+;;
+; SSE instructions with 8-bit immediates of the form
+;    xxx xmm1, xmm2, imm8.
+; where the instruction encoding takes up 5 bytes and we need to load and save the MXCSR
+; register.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the first media register size operand (output).
+; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
+; @param    A3      The 8-bit immediate (input).
+;
+%macro IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*2]         ; sizeof(pshufXX+ret) == 6: (A3 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A1], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmppd
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpss
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd

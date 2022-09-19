@@ -451,6 +451,10 @@
     do { (a_u128Value).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0]; \
          (a_u128Value).au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1]; \
     } while (0)
+#define IEM_MC_FETCH_XREG_XMM(a_XmmValue, a_iXReg) \
+    do { (a_XmmValue).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0]; \
+         (a_XmmValue).au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1]; \
+    } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg) \
     do { (a_u64Value) = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0]; } while (0)
 #define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg) \
@@ -461,6 +465,14 @@
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (a_u128Value).au64[0]; \
          pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1] = (a_u128Value).au64[1]; \
     } while (0)
+#define IEM_MC_STORE_XREG_XMM(a_iXReg, a_XmmValue) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (a_XmmValue).au64[0]; \
+         pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1] = (a_XmmValue).au64[1]; \
+    } while (0)
+#define IEM_MC_STORE_XREG_XMM_U32(a_iXReg, a_iDword, a_XmmValue) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iDword)] = (a_XmmValue).au32[(a_iDword)]; } while (0)
+#define IEM_MC_STORE_XREG_XMM_U64(a_iXReg, a_iQword, a_XmmValue) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[(a_iQword)] = (a_XmmValue).au64[(a_iQword)]; } while (0)
 #define IEM_MC_STORE_XREG_U64(a_iXReg, a_u64Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (a_u64Value); } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
