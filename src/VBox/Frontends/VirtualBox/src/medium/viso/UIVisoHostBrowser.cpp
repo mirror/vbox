@@ -85,6 +85,10 @@ QVariant UIVisoHostBrowserModel::data(const QModelIndex &index, int enmRole /* =
         {
             if (filePath(index).contains(".."))
                 return QIcon(":/arrow_up_10px_x2.png");
+#ifdef VBOX_WS_WIN
+            else if (info.absoluteFilePath().length() <= 3)
+                return QIcon(":/hd_32px.png");
+#endif
             else if(info.isSymLink())
                 return QIcon(":/file_manager_folder_symlink_16px.png");
             else
