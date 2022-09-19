@@ -131,3 +131,11 @@ IEM_TEST_DATA cmpps_u128,           "tstIEMAImplDataSseCompare-cmpps_u128.bin"
 IEM_TEST_DATA cmpss_u128,           "tstIEMAImplDataSseCompare-cmpss_u128.bin"
 IEM_TEST_DATA cmppd_u128,           "tstIEMAImplDataSseCompare-cmppd_u128.bin"
 IEM_TEST_DATA cmpsd_u128,           "tstIEMAImplDataSseCompare-cmpsd_u128.bin"
+
+IEM_TEST_DATA cvtdq2ps_u128,        "tstIEMAImplDataSseConvert-cvtdq2ps_u128.bin"
+IEM_TEST_DATA cvtps2dq_u128,        "tstIEMAImplDataSseConvert-cvtps2dq_u128.bin"
+IEM_TEST_DATA cvttps2dq_u128,       "tstIEMAImplDataSseConvert-cvttps2dq_u128.bin"
+
+IEM_TEST_DATA cvtdq2pd_u128,        "tstIEMAImplDataSseConvert-cvtdq2pd_u128.bin"
+IEM_TEST_DATA cvtpd2dq_u128,        "tstIEMAImplDataSseConvert-cvtpd2dq_u128.bin"
+IEM_TEST_DATA cvttpd2dq_u128,       "tstIEMAImplDataSseConvert-cvttpd2dq_u128.bin"
