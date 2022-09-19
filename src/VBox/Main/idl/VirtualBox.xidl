@@ -6003,13 +6003,11 @@
 
     <attribute name="options" type="wstring">
       <desc>
-        <para>This setting contains any additional recording options
-        required in comma-separated key=value format, which are currently not
-        represented via own attribtues.</para>
-        <para>Consider these options as experimental and mostly for codec-specific
-        settings, and are subject to change.</para>
-
-        This setting cannot be changed while recording is enabled.
+        This setting contains any additional recording options required in
+        comma-separated key=value format, which are currently not represented
+        via own attribtues. Consider these options as experimental and mostly
+        for codec-specific settings, and are subject to change. This setting
+        cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
