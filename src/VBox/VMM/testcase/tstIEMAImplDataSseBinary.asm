@@ -126,3 +126,8 @@ IEM_TEST_DATA ucomisd_u128,         "tstIEMAImplDataSseCompare-ucomisd_u128.bin"
 IEM_TEST_DATA vucomisd_u128,        "tstIEMAImplDataSseCompare-vucomisd_u128.bin"
 IEM_TEST_DATA comisd_u128,          "tstIEMAImplDataSseCompare-comisd_u128.bin"
 IEM_TEST_DATA vcomisd_u128,         "tstIEMAImplDataSseCompare-vcomisd_u128.bin"
+
+IEM_TEST_DATA cmpps_u128,           "tstIEMAImplDataSseCompare-cmpps_u128.bin"
+IEM_TEST_DATA cmpss_u128,           "tstIEMAImplDataSseCompare-cmpss_u128.bin"
+IEM_TEST_DATA cmppd_u128,           "tstIEMAImplDataSseCompare-cmppd_u128.bin"
+IEM_TEST_DATA cmpsd_u128,           "tstIEMAImplDataSseCompare-cmpsd_u128.bin"

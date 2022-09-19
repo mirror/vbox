@@ -299,7 +299,11 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseCompare-ucomisd_u128.bin \
 	tstIEMAImplDataSseCompare-vucomisd_u128.bin \
 	tstIEMAImplDataSseCompare-comisd_u128.bin \
-	tstIEMAImplDataSseCompare-vcomisd_u128.bin
+	tstIEMAImplDataSseCompare-vcomisd_u128.bin \
+	tstIEMAImplDataSseCompare-cmpps_u128.bin \
+	tstIEMAImplDataSseCompare-cmpss_u128.bin \
+	tstIEMAImplDataSseCompare-cmppd_u128.bin \
+	tstIEMAImplDataSseCompare-cmpsd_u128.bin
 
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
