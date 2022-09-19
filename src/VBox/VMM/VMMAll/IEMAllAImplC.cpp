@@ -15469,6 +15469,160 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cvtps2pd_u128,(PX86FXSTATE pFpuState, PIEMSSERE
 
 
 /**
+ * CVTDQ2PS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtdq2ps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, int32_t i32Val)
+{
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = i32_to_f32(i32Val, &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtdq2ps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_cvtdq2ps_u128_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, puSrc2->ai32[0]);
+    pResult->MXCSR |= iemAImpl_cvtdq2ps_u128_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, puSrc2->ai32[1]);
+    pResult->MXCSR |= iemAImpl_cvtdq2ps_u128_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, puSrc2->ai32[2]);
+    pResult->MXCSR |= iemAImpl_cvtdq2ps_u128_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, puSrc2->ai32[3]);
+}
+#endif
+
+
+/**
+ * CVTPS2DQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtps2dq_u128_worker(int32_t *pi32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Src)
+{
+    RTFLOAT32U r32Src;
+    iemSsePrepareValueR32(&r32Src, fMxcsr, pr32Src); /* De-normal seems to be ignored. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    *pi32Res = f32_to_i32(iemFpSoftF32FromIprt(&r32Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtps2dq_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_cvtps2dq_u128_worker(&pResult->uResult.ai32[0], pFpuState->MXCSR, &puSrc2->ar32[0]);
+    pResult->MXCSR |= iemAImpl_cvtps2dq_u128_worker(&pResult->uResult.ai32[1], pFpuState->MXCSR, &puSrc2->ar32[1]);
+    pResult->MXCSR |= iemAImpl_cvtps2dq_u128_worker(&pResult->uResult.ai32[2], pFpuState->MXCSR, &puSrc2->ar32[2]);
+    pResult->MXCSR |= iemAImpl_cvtps2dq_u128_worker(&pResult->uResult.ai32[3], pFpuState->MXCSR, &puSrc2->ar32[3]);
+}
+#endif
+
+
+/**
+ * CVTTPS2DQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvttps2dq_u128_worker(int32_t *pi32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Src)
+{
+    RTFLOAT32U r32Src;
+    iemSsePrepareValueR32(&r32Src, fMxcsr, pr32Src); /* De-normal seems to be ignored. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    SoftState.roundingMode = softfloat_round_minMag;
+    *pi32Res = f32_to_i32_r_minMag(iemFpSoftF32FromIprt(&r32Src), true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvttps2dq_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_cvttps2dq_u128_worker(&pResult->uResult.ai32[0], pFpuState->MXCSR, &puSrc2->ar32[0]);
+    pResult->MXCSR |= iemAImpl_cvttps2dq_u128_worker(&pResult->uResult.ai32[1], pFpuState->MXCSR, &puSrc2->ar32[1]);
+    pResult->MXCSR |= iemAImpl_cvttps2dq_u128_worker(&pResult->uResult.ai32[2], pFpuState->MXCSR, &puSrc2->ar32[2]);
+    pResult->MXCSR |= iemAImpl_cvttps2dq_u128_worker(&pResult->uResult.ai32[3], pFpuState->MXCSR, &puSrc2->ar32[3]);
+}
+#endif
+
+
+/**
+ * CVTTPD2DQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvttpd2dq_u128_worker(int32_t *pi32Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Src)
+{
+    RTFLOAT64U r64Src;
+    iemSsePrepareValueR64(&r64Src, fMxcsr, pr64Src); /* De-normal seems to be ignored. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    SoftState.roundingMode = softfloat_round_minMag;
+    *pi32Res = f64_to_i32(iemFpSoftF64FromIprt(&r64Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvttpd2dq_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_cvttpd2dq_u128_worker(&pResult->uResult.ai32[0], pFpuState->MXCSR, &puSrc2->ar64[0]);
+    pResult->MXCSR |= iemAImpl_cvttpd2dq_u128_worker(&pResult->uResult.ai32[1], pFpuState->MXCSR, &puSrc2->ar64[1]);
+    pResult->uResult.au64[1] = 0;
+}
+#endif
+
+
+/**
+ * CVTDQ2PD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtdq2pd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, int32_t i32Val)
+{
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float64_t r64Result = i32_to_f64(i32Val, &SoftState);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtdq2pd_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_cvtdq2pd_u128_worker(&pResult->uResult.ar64[0], pFpuState->MXCSR, puSrc2->ai32[0]);
+    pResult->MXCSR |= iemAImpl_cvtdq2pd_u128_worker(&pResult->uResult.ar64[1], pFpuState->MXCSR, puSrc2->ai32[1]);
+}
+#endif
+
+
+/**
+ * CVTPD2DQ
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtpd2dq_u128_worker(int32_t *pi32Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Src)
+{
+    RTFLOAT64U r64Src;
+    iemSsePrepareValueR64(&r64Src, fMxcsr, pr64Src); /* De-normal seems to be ignored. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    *pi32Res = f64_to_i32(iemFpSoftF64FromIprt(&r64Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpd2dq_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_cvtpd2dq_u128_worker(&pResult->uResult.ai32[0], pFpuState->MXCSR, &puSrc2->ar64[0]);
+    pResult->MXCSR |= iemAImpl_cvtpd2dq_u128_worker(&pResult->uResult.ai32[1], pFpuState->MXCSR, &puSrc2->ar64[1]);
+    pResult->uResult.au64[1] = 0;
+}
+#endif
+
+
+/**
  * [V]SHUFPS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY

@@ -4546,7 +4546,7 @@ endstruc
 ; Floating point instruction working on two full sized registers.
 ;
 ; @param    1       The instruction
-; @param    2       Flag whether the AVX variant of the instruction takes two or three operands
+; @param    2       Flag whether the AVX variant of the instruction takes two or three operands, 0 to disable AVX variants
 ;
 ; @param    A0      FPU context (FXSTATE or XSAVEAREA).
 ; @param    A1      Where to return the result including the MXCSR value.
@@ -4599,7 +4599,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u256
- %else
+ %elif %2 == 2
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -4657,8 +4657,14 @@ IEMIMPL_FP_F2 addsubpd, 3
 ; we treat them as binary for now, so the output result is
 ; always in sync with the register where the result might get written
 ; to.
-IEMIMPL_FP_F2 sqrtps, 2
-IEMIMPL_FP_F2 sqrtpd, 2
+IEMIMPL_FP_F2 sqrtps,    2
+IEMIMPL_FP_F2 sqrtpd,    2
+IEMIMPL_FP_F2 cvtdq2ps,  2
+IEMIMPL_FP_F2 cvtps2dq,  2
+IEMIMPL_FP_F2 cvttps2dq, 2
+IEMIMPL_FP_F2 cvttpd2dq, 0 ; @todo AVX variants due to register size differences missing right now
+IEMIMPL_FP_F2 cvtdq2pd,  0 ; @todo AVX variants due to register size differences missing right now
+IEMIMPL_FP_F2 cvtpd2dq,  0 ; @todo AVX variants due to register size differences missing right now
 
 
 ;;

@@ -5320,11 +5320,29 @@ FNIEMOP_DEF(iemOp_cvtsd2ss_Vss_Wsd)
 
 
 /** Opcode      0x0f 0x5b - cvtdq2ps Vps, Wdq */
-FNIEMOP_STUB(iemOp_cvtdq2ps_Vps_Wdq);
+FNIEMOP_DEF(iemOp_cvtdq2ps_Vps_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, CVTDQ2PS, cvtdq2ps, Vps, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtdq2ps_u128);
+}
+
+
 /** Opcode 0x66 0x0f 0x5b - cvtps2dq Vdq, Wps */
-FNIEMOP_STUB(iemOp_cvtps2dq_Vdq_Wps);
+FNIEMOP_DEF(iemOp_cvtps2dq_Vdq_Wps)
+{
+    IEMOP_MNEMONIC2(RM, CVTPS2DQ, cvtps2dq, Vdq, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtps2dq_u128);
+}
+
+
 /** Opcode 0xf3 0x0f 0x5b - cvttps2dq Vdq, Wps */
-FNIEMOP_STUB(iemOp_cvttps2dq_Vdq_Wps);
+FNIEMOP_DEF(iemOp_cvttps2dq_Vdq_Wps)
+{
+    IEMOP_MNEMONIC2(RM, CVTTPS2DQ, cvttps2dq, Vdq, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvttps2dq_u128);
+}
+
+
 /*  Opcode 0xf2 0x0f 0x5b - invalid */
 
 
@@ -12571,14 +12589,31 @@ FNIEMOP_DEF(iemOp_pmulhw_Vx_Wx)
 
 /*  Opcode 0xf3 0x0f 0xe5 - invalid */
 /*  Opcode 0xf2 0x0f 0xe5 - invalid */
-
 /*  Opcode      0x0f 0xe6 - invalid */
+
+
 /** Opcode 0x66 0x0f 0xe6 - cvttpd2dq Vx, Wpd */
-FNIEMOP_STUB(iemOp_cvttpd2dq_Vx_Wpd);
+FNIEMOP_DEF(iemOp_cvttpd2dq_Vx_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, CVTTPD2DQ, cvttpd2dq, Vx, Wpd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvttpd2dq_u128);
+}
+
+
 /** Opcode 0xf3 0x0f 0xe6 - cvtdq2pd Vx, Wpd */
-FNIEMOP_STUB(iemOp_cvtdq2pd_Vx_Wpd);
+FNIEMOP_DEF(iemOp_cvtdq2pd_Vx_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, CVTDQ2PD, cvtdq2pd, Vx, Wpd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtdq2pd_u128);
+}
+
+
 /** Opcode 0xf2 0x0f 0xe6 - cvtpd2dq Vx, Wpd */
-FNIEMOP_STUB(iemOp_cvtpd2dq_Vx_Wpd);
+FNIEMOP_DEF(iemOp_cvtpd2dq_Vx_Wpd)
+{
+    IEMOP_MNEMONIC2(RM, CVTPD2DQ, cvtpd2dq, Vx, Wpd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtpd2dq_u128);
+}
 
 
 /**
