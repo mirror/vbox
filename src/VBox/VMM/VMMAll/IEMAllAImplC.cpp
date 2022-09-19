@@ -16428,18 +16428,19 @@ static bool iemAImpl_cmp_worker_r32(uint32_t *pfMxcsr, PCRTFLOAT32U pr32Src1, PC
 
 static bool iemAImpl_cmp_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src1, PCRTFLOAT64U pr64Src2, uint8_t bEvil)
 {
+    bool fRes;
     AssertRelease(bEvil < RT_ELEMENTS(g_aCmpTbl));
 
     if (RTFLOAT64U_IS_SIGNALLING_NAN(pr64Src1) || RTFLOAT64U_IS_SIGNALLING_NAN(pr64Src2))
     {
         *pfMxcsr |= X86_MXCSR_IE;
-        return g_aCmpTbl[bEvil].fUnordered;
+        fRes = g_aCmpTbl[bEvil].fUnordered;
     }
     else if (RTFLOAT64U_IS_QUIET_NAN(pr64Src1) || RTFLOAT64U_IS_QUIET_NAN(pr64Src2))
     {
         if (g_aCmpTbl[bEvil].fSignalsOnQNan)
             *pfMxcsr |= X86_MXCSR_IE;
-        return g_aCmpTbl[bEvil].fUnordered;
+        fRes = g_aCmpTbl[bEvil].fUnordered;
     }
     else
     {
@@ -16453,15 +16454,14 @@ static bool iemAImpl_cmp_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src1, PC
         float64_t f64Src1 = iemFpSoftF64FromIprt(&r64Src1);
         float64_t f64Src2 = iemFpSoftF64FromIprt(&r64Src2);
         if (f64_eq(f64Src1, f64Src2, &SoftState))
-            return g_aCmpTbl[bEvil].fEqual;
+            fRes = g_aCmpTbl[bEvil].fEqual;
         else if (f64_lt(f64Src1, f64Src2, &SoftState))
-            return g_aCmpTbl[bEvil].fLowerThan;
+            fRes = g_aCmpTbl[bEvil].fLowerThan;
         else
-            return g_aCmpTbl[bEvil].fGreaterThan;
+            fRes = g_aCmpTbl[bEvil].fGreaterThan;
     }
 
-    AssertReleaseFailed();
-    return false;
+    return fRes;
 }
 
 
