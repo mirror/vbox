@@ -779,9 +779,8 @@ if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_XPCOM_NAMESPACE_CLEANUP = 1
 endif
 # The webservices api.
-# disabled for now due to pending license clarification
-#VBOX_WITH_WEBSERVICES = 1
-#VBOX_WITH_WEBSERVICES_SSL = 1
+VBOX_WITH_WEBSERVICES = 1
+VBOX_WITH_WEBSERVICES_SSL = 1
 # The Qt GUI.
 VBOX_WITH_QTGUI = 1
 # Indicates the Qt is Cocoa based on the Mac.
