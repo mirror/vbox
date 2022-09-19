@@ -38,10 +38,12 @@ UIMotherboardFeaturesEditor::UIMotherboardFeaturesEditor(QWidget *pParent /* = 0
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fEnableIoApic(false)
     , m_fEnableEfi(false)
+    , m_fEnableSecureBoot(false)
     , m_fEnableUtcTime(false)
     , m_pLabel(0)
     , m_pCheckBoxEnableIoApic(0)
     , m_pCheckBoxEnableEfi(0)
+    , m_pCheckBoxEnableSecureBoot(0)
     , m_pCheckBoxEnableUtcTime(0)
 {
     prepare();
@@ -83,6 +85,25 @@ bool UIMotherboardFeaturesEditor::isEnabledEfi() const
     return   m_pCheckBoxEnableEfi
            ? m_pCheckBoxEnableEfi->checkState() == Qt::Checked
            : m_fEnableEfi;
+}
+
+void UIMotherboardFeaturesEditor::setEnableSecureBoot(bool fOn)
+{
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fEnableSecureBoot != fOn)
+    {
+        m_fEnableSecureBoot = fOn;
+        if (m_pCheckBoxEnableSecureBoot)
+            m_pCheckBoxEnableSecureBoot->setCheckState(m_fEnableSecureBoot ? Qt::Checked : Qt::Unchecked);
+    }
+}
+
+bool UIMotherboardFeaturesEditor::isEnabledSecureBoot() const
+{
+    return   m_pCheckBoxEnableSecureBoot
+           ? m_pCheckBoxEnableSecureBoot->checkState() == Qt::Checked
+           : m_fEnableSecureBoot;
 }
 
 void UIMotherboardFeaturesEditor::setEnableUtcTime(bool fOn)
@@ -133,12 +154,30 @@ void UIMotherboardFeaturesEditor::retranslateUi()
                                             "which is required to boot certain guest OSes. Non-EFI aware OSes will not be able "
                                             "to boot if this option is activated."));
     }
+    if (m_pCheckBoxEnableSecureBoot)
+    {
+        m_pCheckBoxEnableSecureBoot->setText(tr("Enable &Secure Boot"));
+        m_pCheckBoxEnableSecureBoot->setToolTip(tr("When checked, the secure boot emulation will be enabled."));
+    }
     if (m_pCheckBoxEnableUtcTime)
     {
         m_pCheckBoxEnableUtcTime->setText(tr("Hardware Clock in &UTC Time"));
         m_pCheckBoxEnableUtcTime->setToolTip(tr("When checked, the RTC device will report the time in UTC, otherwise in local "
                                                 "(host) time. Unix usually expects the hardware clock to be set to UTC."));
     }
+}
+
+void UIMotherboardFeaturesEditor::sltHandleEnableEfiToggling()
+{
+    /* Acquire actual feature state: */
+    const bool fOn = m_pCheckBoxEnableEfi ? m_pCheckBoxEnableEfi->isChecked() : false;
+
+    /* Update corresponding controls: */
+    if (m_pCheckBoxEnableSecureBoot)
+        m_pCheckBoxEnableSecureBoot->setEnabled(fOn);
+
+    /* Notify listeners: */
+    emit sigChangedEfi();
 }
 
 void UIMotherboardFeaturesEditor::prepare()
@@ -170,8 +209,16 @@ void UIMotherboardFeaturesEditor::prepare()
         if (m_pCheckBoxEnableEfi)
         {
             connect(m_pCheckBoxEnableEfi, &QCheckBox::stateChanged,
-                    this, &UIMotherboardFeaturesEditor::sigChangedEfi);
+                    this, &UIMotherboardFeaturesEditor::sltHandleEnableEfiToggling);
             m_pLayout->addWidget(m_pCheckBoxEnableEfi, 1, 1);
+        }
+        /* Prepare 'enable secure boot' check-box: */
+        m_pCheckBoxEnableSecureBoot = new QCheckBox(this);
+        if (m_pCheckBoxEnableSecureBoot)
+        {
+            connect(m_pCheckBoxEnableSecureBoot, &QCheckBox::stateChanged,
+                    this, &UIMotherboardFeaturesEditor::sigChangedSecureBoot);
+            m_pLayout->addWidget(m_pCheckBoxEnableSecureBoot, 2, 1);
         }
         /* Prepare 'enable UTC time' check-box: */
         m_pCheckBoxEnableUtcTime = new QCheckBox(this);
@@ -179,9 +226,12 @@ void UIMotherboardFeaturesEditor::prepare()
         {
             connect(m_pCheckBoxEnableUtcTime, &QCheckBox::stateChanged,
                     this, &UIMotherboardFeaturesEditor::sigChangedUtcTime);
-            m_pLayout->addWidget(m_pCheckBoxEnableUtcTime, 2, 1);
+            m_pLayout->addWidget(m_pCheckBoxEnableUtcTime, 3, 1);
         }
     }
+
+    /* Fetch states: */
+    sltHandleEnableEfiToggling();
 
     /* Apply language settings: */
     retranslateUi();

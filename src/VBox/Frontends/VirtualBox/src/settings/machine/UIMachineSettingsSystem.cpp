@@ -48,7 +48,9 @@
 
 /* COM includes: */
 #include "CBIOSSettings.h"
+#include "CNvramStore.h"
 #include "CTrustedPlatformModule.h"
+#include "CUefiVariableStore.h"
 
 
 /** Machine settings: System page data structure. */
@@ -69,6 +71,8 @@ struct UIDataSettingsMachineSystem
         , m_fEnabledIoApic(false)
         , m_fEnabledEFI(false)
         , m_fEnabledUTC(false)
+        , m_fAvailableSecureBoot(false)
+        , m_fEnabledSecureBoot(false)
         /* CPU data: */
         , m_cCPUCount(-1)
         , m_iCPUExecCap(-1)
@@ -98,6 +102,8 @@ struct UIDataSettingsMachineSystem
                && (m_fEnabledIoApic == other.m_fEnabledIoApic)
                && (m_fEnabledEFI == other.m_fEnabledEFI)
                && (m_fEnabledUTC == other.m_fEnabledUTC)
+               && (m_fAvailableSecureBoot == other.m_fAvailableSecureBoot)
+               && (m_fEnabledSecureBoot == other.m_fEnabledSecureBoot)
                /* CPU data: */
                && (m_cCPUCount == other.m_cCPUCount)
                && (m_iCPUExecCap == other.m_iCPUExecCap)
@@ -140,6 +146,10 @@ struct UIDataSettingsMachineSystem
     bool                m_fEnabledEFI;
     /** Holds whether the UTC is enabled. */
     bool                m_fEnabledUTC;
+    /** Holds whether the secure boot is available. */
+    bool                m_fAvailableSecureBoot;
+    /** Holds whether the secure boot is enabled. */
+    bool                m_fEnabledSecureBoot;
 
     /** Holds the CPU count. */
     int   m_cCPUCount;
@@ -277,6 +287,12 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     oldSystemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
     oldSystemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
     oldSystemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
+    CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
+    CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+    oldSystemData.m_fAvailableSecureBoot = comStoreLvl2.isNotNull();
+    oldSystemData.m_fEnabledSecureBoot = oldSystemData.m_fAvailableSecureBoot
+                                       ? comStoreLvl2.GetSecureBootEnabled()
+                                       : false;
 
     /* Gather old 'Processor' data: */
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
@@ -321,6 +337,7 @@ void UIMachineSettingsSystem::getFromCache()
         m_pEditorMotherboardFeatures->setEnableIoApic(oldSystemData.m_fEnabledIoApic);
         m_pEditorMotherboardFeatures->setEnableEfi(oldSystemData.m_fEnabledEFI);
         m_pEditorMotherboardFeatures->setEnableUtcTime(oldSystemData.m_fEnabledUTC);
+        m_pEditorMotherboardFeatures->setEnableSecureBoot(oldSystemData.m_fEnabledSecureBoot);
     }
 
     /* Load old 'Processor' data from cache: */
@@ -386,6 +403,11 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_fEnabledEFI = m_pEditorMotherboardFeatures->isEnabledEfi();
     if (m_pEditorMotherboardFeatures)
         newSystemData.m_fEnabledUTC = m_pEditorMotherboardFeatures->isEnabledUtcTime();
+    if (m_pEditorMotherboardFeatures)
+    {
+        newSystemData.m_fAvailableSecureBoot = m_pCache->base().m_fAvailableSecureBoot;
+        newSystemData.m_fEnabledSecureBoot = m_pEditorMotherboardFeatures->isEnabledSecureBoot();
+    }
 
     /* Gather 'Processor' data: */
     if (m_pEditorVCPU)
@@ -972,6 +994,24 @@ bool UIMachineSettingsSystem::saveMotherboardData()
         {
             m_machine.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
             fSuccess = m_machine.isOk();
+        }
+        /* Save whether secure boot is enabled: */
+        if (   fSuccess && isMachineOffline() && newSystemData.m_fEnabledEFI
+            && newSystemData.m_fEnabledSecureBoot != oldSystemData.m_fEnabledSecureBoot)
+        {
+            CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
+            CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+            if (   newSystemData.m_fEnabledSecureBoot
+                && !newSystemData.m_fAvailableSecureBoot)
+            {
+                comStoreLvl1.InitUefiVariableStore(0);
+                comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+                comStoreLvl2.EnrollOraclePlatformKey();
+                comStoreLvl2.EnrollDefaultMsSignatures();
+            }
+            comStoreLvl2.SetSecureBootEnabled(newSystemData.m_fEnabledSecureBoot);
+            fSuccess = comStoreLvl2.isOk();
+            /// @todo convey error info ..
         }
 
         /* Show error message if necessary: */

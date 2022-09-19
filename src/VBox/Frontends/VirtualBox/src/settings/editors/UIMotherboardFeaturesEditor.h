@@ -50,6 +50,8 @@ signals:
     void sigChangedIoApic();
     /** Notifies listeners about EFI change. */
     void sigChangedEfi();
+    /** Notifies listeners about secure boot change. */
+    void sigChangedSecureBoot();
     /** Notifies listeners about UTC time change. */
     void sigChangedUtcTime();
 
@@ -68,6 +70,11 @@ public:
     /** Returns 'enable EFI' feature value. */
     bool isEnabledEfi() const;
 
+    /** Defines whether 'enable secure boot' feature in @a fOn. */
+    void setEnableSecureBoot(bool fOn);
+    /** Returns 'enable secure boot' feature value. */
+    bool isEnabledSecureBoot() const;
+
     /** Defines whether 'enable UTC time' feature in @a fOn. */
     void setEnableUtcTime(bool fOn);
     /** Returns 'enable UTC time' feature value. */
@@ -83,6 +90,11 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
+private slots:
+
+    /** Handles 'enable EFI' feature being toggled. */
+    void sltHandleEnableEfiToggling();
+
 private:
 
     /** Prepares all. */
@@ -94,6 +106,8 @@ private:
         bool  m_fEnableIoApic;
         /** Holds the 'enable EFI' feature value. */
         bool  m_fEnableEfi;
+        /** Holds the 'enable secure boot' feature value. */
+        bool  m_fEnableSecureBoot;
         /** Holds the 'enable UTC time' feature value. */
         bool  m_fEnableUtcTime;
     /** @} */
@@ -108,6 +122,8 @@ private:
         QCheckBox   *m_pCheckBoxEnableIoApic;
         /** Holds the 'enable EFI' check-box instance. */
         QCheckBox   *m_pCheckBoxEnableEfi;
+        /** Holds the 'secure boot' check-box instance. */
+        QCheckBox   *m_pCheckBoxEnableSecureBoot;
         /** Holds the 'enable UTC time' check-box instance. */
         QCheckBox   *m_pCheckBoxEnableUtcTime;
     /** @} */
