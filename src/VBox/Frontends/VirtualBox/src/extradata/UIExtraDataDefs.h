@@ -714,8 +714,9 @@ public:
         DetailsElementOptionTypeSystem_CPUExecutionCap = RT_BIT(2),
         DetailsElementOptionTypeSystem_BootOrder       = RT_BIT(3),
         DetailsElementOptionTypeSystem_ChipsetType     = RT_BIT(4),
-        DetailsElementOptionTypeSystem_Firmware        = RT_BIT(5),
-        DetailsElementOptionTypeSystem_Acceleration    = RT_BIT(6),
+        DetailsElementOptionTypeSystem_TpmType         = RT_BIT(5),
+        DetailsElementOptionTypeSystem_Firmware        = RT_BIT(6),
+        DetailsElementOptionTypeSystem_Acceleration    = RT_BIT(7),
         DetailsElementOptionTypeSystem_Default         = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeSystem);
