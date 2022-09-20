@@ -1231,7 +1231,7 @@ static DECLCALLBACK(int) vusbR3RhDevReset(PVUSBIROOTHUBCONNECTOR pInterface, uin
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort, "vusbR3RhDevReset");
-    AssertPtr(pDev);
+    AssertPtrReturn(pDev, VERR_VUSB_DEVICE_NOT_ATTACHED);
 
     int rc = VUSBIDevReset(&pDev->IDevice, fResetOnLinux, pfnDone, pvUser, pVM);
     vusbDevRelease(pDev, "vusbR3RhDevReset");
