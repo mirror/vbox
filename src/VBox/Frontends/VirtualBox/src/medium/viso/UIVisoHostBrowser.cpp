@@ -85,6 +85,8 @@ QVariant UIVisoHostBrowserModel::data(const QModelIndex &index, int enmRole /* =
         {
             if (filePath(index).contains(".."))
                 return QIcon(":/arrow_up_10px_x2.png");
+            /** A bad hack to detect drive roots and use HD icon. On Windows 10 QFileInfo()::isRoot()
+             * and QDir()::isRoot() return true only for C:/ : */
 #ifdef VBOX_WS_WIN
             else if (info.absoluteFilePath().length() <= 3)
                 return QIcon(":/hd_32px.png");
