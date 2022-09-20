@@ -67,6 +67,7 @@ struct UIDataSettingsMachineSystem
         , m_iMemorySize(-1)
         , m_bootItems(UIBootItemDataList())
         , m_chipsetType(KChipsetType_Null)
+        , m_tpmType(KTpmType_None)
         , m_pointingHIDType(KPointingHIDType_None)
         , m_fEnabledIoApic(false)
         , m_fEnabledEFI(false)

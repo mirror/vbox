@@ -2826,6 +2826,7 @@ const QString UIStorageSettingsEditor::s_strAttachmentMimeType = QString("applic
 UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fLoadingInProgress(0)
+    , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pActionPool(0)
     , m_pModelStorage(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
