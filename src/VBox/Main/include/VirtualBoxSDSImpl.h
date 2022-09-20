@@ -120,9 +120,9 @@ private:
      * Returns whether a VBoxSDS feature is enabled or not.
      *
      * @returns \c true if enabled, \c false if not.
-     * @param   a_rStrFeature   Feature to check enabled status for.
+     * @param   a_pwszFeature   Feature to check enabled status for.
      */
-    static bool i_isFeatureEnabled(com::Utf8Str const &a_rStrFeature);
+    static bool i_isFeatureEnabled(wchar_t const *a_pwszFeature);
 
     /**
      * Looks up the given user.

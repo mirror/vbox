@@ -236,29 +236,22 @@ void VirtualBoxSDS::FinalRelease()
 }
 
 /* static */
-bool VirtualBoxSDS::i_isFeatureEnabled(com::Utf8Str const &a_rStrFeature)
+bool VirtualBoxSDS::i_isFeatureEnabled(wchar_t const *a_pwszFeature)
 {
-    HKEY hKey;
+    HKEY    hKey;
     LSTATUS lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\Oracle\\VirtualBox\\VBoxSDS", 0, KEY_READ, &hKey);
     /* Treat any errors as the feature is off. Because the actual error value doesn't matter. */
     if (lrc != ERROR_SUCCESS)
         return false;
 
-    PRTUTF16 pwszFeature;
-    int rc = RTStrToUtf16(a_rStrFeature.c_str(), &pwszFeature);
-    AssertRCReturn(rc, false);
-
-    DWORD dwType = 0;
+    DWORD dwType  = 0;
     DWORD dwValue = 0;
     DWORD cbValue = sizeof(DWORD);
-    lrc = RegQueryValueExW(hKey, pwszFeature, NULL, &dwType, (LPBYTE)&dwValue, &cbValue);
+    lrc = RegQueryValueExW(hKey, a_pwszFeature, NULL, &dwType, (LPBYTE)&dwValue, &cbValue);
 
-    RTUtf16Free(pwszFeature);
-
-    bool const fEnabled =    lrc     == ERROR_SUCCESS
-                          && dwType  == REG_DWORD
-                          /* A lot of people are used to putting 0xFF or similar to DWORDs for enabling stuff. */
-                          && dwValue >= 1;
+    bool const fEnabled = lrc     == ERROR_SUCCESS
+                       && dwType  == REG_DWORD
+                       && dwValue != 0;
 
     RegCloseKey(hKey);
     return fEnabled;
@@ -295,6 +288,7 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
         && (intptr_t)CallAttribs.ClientPID == aPid)
     {
         *aExistingVirtualBox = NULL;
+
         /*
          * Get the client user SID and name.
          */
@@ -343,7 +337,7 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                 {
 #ifdef VBOX_WITH_VBOXSVC_SESSION_0
                     DWORD dwSessionId = 0;
-                    if (VirtualBoxSDS::i_isFeatureEnabled("ServerSession0"))
+                    if (VirtualBoxSDS::i_isFeatureEnabled(L"ServerSession0"))
                     {
                         /* Get user token. */
                         HANDLE hThreadToken = NULL;
@@ -359,7 +353,7 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                             {
                                 HANDLE hNewToken;
                                 if (DuplicateTokenEx(hThreadToken, MAXIMUM_ALLOWED, NULL /*SecurityAttribs*/,
-                                                        SecurityIdentification, TokenPrimary, &hNewToken))
+                                                     SecurityIdentification, TokenPrimary, &hNewToken))
                                 {
                                     CloseHandle(hThreadToken);
                                     hThreadToken = hNewToken;
@@ -389,32 +383,38 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                                     LogRel(("registerVBoxSVC: GetTokenInformation return value has invalid size\n"));
                             }
                             else
-                                LogRel(("registerVBoxSVC: GetTokenInformation failed: %ld\n", GetLastError()));
+                                LogRel(("registerVBoxSVC: GetTokenInformation failed: %Rwc\n", GetLastError()));
                         }
+
                         /* Either the "VBoxSVC in windows session 0" feature is off or the request from VBoxSVC running
                          * in windows session 0. */
                         if (SUCCEEDED(hrc) && dwSessionId != 0)
                         {
                             /* if VBoxSVC in the Windows session 0 is not started or if it did not
-                                * registered during a minute, start new one */
+                             * registered during a minute, start new one */
                             if (   pUserData->m_pidTheChosenOne == NIL_RTPROCESS
                                 || GetTickCount() - pUserData->m_tickTheChosenOne > 60 * 1000)
                             {
                                 uint32_t uSessionId = 0;
                                 if (SetTokenInformation(hThreadToken, TokenSessionId, &uSessionId, sizeof(uint32_t)))
                                 {
-                                    /* start VBoxSVC process */
-                                    /* Get the path to the executable directory w/ trailing slash: */
+                                    /*
+                                     * Start VBoxSVC process
+                                     */
                                     char szPath[RTPATH_MAX];
                                     int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
                                     AssertRCReturn(vrc, vrc);
+
                                     size_t cbBufLeft = RTPathEnsureTrailingSeparator(szPath, sizeof(szPath));
                                     AssertReturn(cbBufLeft > 0, VERR_FILENAME_TOO_LONG);
-                                    char *pszNamePart = &szPath[cbBufLeft]; NOREF(pszNamePart);
+
+                                    char *pszNamePart = &szPath[cbBufLeft];
                                     cbBufLeft = sizeof(szPath) - cbBufLeft;
+
                                     static const char s_szVirtualBox_exe[] = "VBoxSVC.exe";
                                     vrc = RTStrCopy(pszNamePart, cbBufLeft, s_szVirtualBox_exe);
                                     AssertRCReturn(vrc, vrc);
+
                                     const char *apszArgs[] =
                                     {
                                         szPath,
@@ -482,7 +482,7 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                         }
                         else
                         {
-                            LogRel(("registerVBoxSVC: OpenProcess() failed: %ld\n", GetLastError()));
+                            LogRel(("registerVBoxSVC: OpenProcess() failed: %Rwc\n", GetLastError()));
                             hrc = E_ACCESSDENIED;
                         }
 #endif
