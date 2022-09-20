@@ -646,7 +646,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         /* Branding stuff for Qt6 beta: */
                         if (uiCommon().isBeta())
                             m_pToolBar->enableBranding(UIIconPool::iconSet(":/explosion_hazard_32px.png"),
-                                                       "Tech Preview", // do we need to make it NLS?
+                                                       "Dev Preview", // do we need to make it NLS?
                                                        QColor(246, 179, 0),
                                                        74 /* width of BETA label */);
 # endif /* VBOX_IS_QT6_OR_LATER */
