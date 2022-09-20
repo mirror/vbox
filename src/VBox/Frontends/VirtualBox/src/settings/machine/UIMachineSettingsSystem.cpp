@@ -996,22 +996,35 @@ bool UIMachineSettingsSystem::saveMotherboardData()
             fSuccess = m_machine.isOk();
         }
         /* Save whether secure boot is enabled: */
-        if (   fSuccess && isMachineOffline() && newSystemData.m_fEnabledEFI
-            && newSystemData.m_fEnabledSecureBoot != oldSystemData.m_fEnabledSecureBoot)
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledSecureBoot != oldSystemData.m_fEnabledSecureBoot)
         {
             CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
             CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+
+            /* Enabling secure boot? */
             if (   newSystemData.m_fEnabledSecureBoot
-                && !newSystemData.m_fAvailableSecureBoot)
+                && newSystemData.m_fEnabledEFI)
             {
-                comStoreLvl1.InitUefiVariableStore(0);
-                comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
-                comStoreLvl2.EnrollOraclePlatformKey();
-                comStoreLvl2.EnrollDefaultMsSignatures();
+                /* Secure boot was NOT available? */
+                if (!newSystemData.m_fAvailableSecureBoot)
+                {
+                    /* Init and enroll everything: */
+                    comStoreLvl1.InitUefiVariableStore(0);
+                    comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+                    comStoreLvl2.EnrollOraclePlatformKey();
+                    comStoreLvl2.EnrollDefaultMsSignatures();
+                }
+                comStoreLvl2.SetSecureBootEnabled(true);
+                fSuccess = comStoreLvl2.isOk();
+                /// @todo convey error info ..
             }
-            comStoreLvl2.SetSecureBootEnabled(newSystemData.m_fEnabledSecureBoot);
-            fSuccess = comStoreLvl2.isOk();
-            /// @todo convey error info ..
+            /* Disabling secure boot? */
+            else if (!newSystemData.m_fEnabledSecureBoot)
+            {
+                comStoreLvl2.SetSecureBootEnabled(false);
+                fSuccess = comStoreLvl2.isOk();
+                /// @todo convey error info ..
+            }
         }
 
         /* Show error message if necessary: */
