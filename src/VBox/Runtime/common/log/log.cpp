@@ -464,15 +464,27 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGERINTERNAL pLoggerInt)
  */
 DECL_NO_INLINE(static, PRTLOGGER) rtLogDefaultInstanceCreateNew(void)
 {
-    PRTLOGGER pRet = RTLogDefaultInit();
-    if (pRet)
+    PRTLOGGER pRet = NULL;
+
+    /*
+     * It's soo easy to end up in a infinite recursion here when enabling 'all'
+     * the logging groups. So, only allow one thread to instantiate the default
+     * logger, muting other attempts at logging while it's being created.
+     */
+    static volatile bool s_fCreating = false;
+    if (ASMAtomicCmpXchgBool(&s_fCreating, true, false))
     {
-        bool fRc = ASMAtomicCmpXchgPtr(&g_pLogger, pRet, NULL);
-        if (!fRc)
+        pRet = RTLogDefaultInit();
+        if (pRet)
         {
-            RTLogDestroy(pRet);
-            pRet = g_pLogger;
+            bool fRc = ASMAtomicCmpXchgPtr(&g_pLogger, pRet, NULL);
+            if (!fRc)
+            {
+                RTLogDestroy(pRet);
+                pRet = g_pLogger;
+            }
         }
+        ASMAtomicWriteBool(&s_fCreating, true);
     }
     return pRet;
 }
