@@ -51,6 +51,7 @@
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
+#include "CNvramStore.h"
 #include "CProgress.h"
 #include "CRangedIntegerFormValue.h"
 #include "CRecordingScreenSettings.h"
@@ -61,6 +62,7 @@
 #include "CStringFormValue.h"
 #include "CSystemProperties.h"
 #include "CTrustedPlatformModule.h"
+#include "CUefiVariableStore.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
@@ -332,6 +334,24 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
                 // For NLS purpose:
                 QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
                 break;
+            }
+        }
+    }
+
+    /* Secure Boot: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_SecureBoot)
+    {
+        CNvramStore comStoreLvl1 = comMachine.GetNonVolatileStore();
+        if (comStoreLvl1.isNotNull())
+        {
+            CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+            /// @todo this comStoreLvl2.isNotNull() will never work for
+            ///       now since VM reference is immutable in Details pane
+            if (   comStoreLvl2.isNotNull()
+                && comStoreLvl2.GetSecureBootEnabled())
+            {
+                table << UITextTableLine(QApplication::translate("UIDetails", "Secure Boot", "details (system)"),
+                                         QApplication::translate("UIDetails", "Enabled", "details (system/secure boot)"));
             }
         }
     }

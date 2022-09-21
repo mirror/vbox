@@ -1068,6 +1068,7 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeS
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = QApplication::translate("UICommon", "Chipset Type"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_TpmType:         strResult = QApplication::translate("UICommon", "TPM Type"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = QApplication::translate("UICommon", "Firmware"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_SecureBoot:      strResult = QApplication::translate("UICommon", "Secure Boot"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = QApplication::translate("UICommon", "Acceleration"); break;
         default:
         {
@@ -1091,6 +1092,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = "ChipsetType"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_TpmType:         strResult = "TPMType"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = "Firmware"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_SecureBoot:      strResult = "SecureBoot"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = "Acceleration"; break;
         default:
         {
@@ -1119,6 +1121,8 @@ fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(const QS
         return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_TpmType;
     if (strDetailsElementOptionTypeSystem.compare("Firmware", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware;
+    if (strDetailsElementOptionTypeSystem.compare("SecureBoot", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_SecureBoot;
     if (strDetailsElementOptionTypeSystem.compare("Acceleration", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration;
     return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
