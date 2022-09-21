@@ -46,21 +46,8 @@
 
 RTDECL(void) RTLogWriteVmm(const char *pach, size_t cb, bool fRelease)
 {
-#  ifdef RT_ARCH_AMD64
-    RTCCUINTREG uRAX, uRBX, uRCX, uRDX, uRSI;
-    __asm__ __volatile__ ("cpuid\n\t"
-                          : "=a" (uRAX)
-                          , "=b" (uRBX)
-                          , "=c" (uRCX)
-                          , "=d" (uRDX)
-                          , "=S" (uRSI)
-                          : "0" (VBOX_CPUID_REQ_EAX_FIXED)
-                          , "1" ((uint32_t)fRelease)
-                          , "2" (VBOX_CPUID_REQ_ECX_FIXED | VBOX_CPUID_FN_LOG)
-                          , "3" (cb)
-                          , "4" (pach));
-#  else
     RTCCUINTREG uEAX, uEBX, uECX, uEDX, uESI;
+#if (defined(PIC) || defined(__PIC__)) && defined(__i386__)
     __asm__ __volatile__ ("xchgl %%ebx, %1\n\t"
                           "cpuid\n\t"
                           "xchgl %%ebx, %1\n\t"
@@ -74,7 +61,19 @@ RTDECL(void) RTLogWriteVmm(const char *pach, size_t cb, bool fRelease)
                          , "2" (VBOX_CPUID_REQ_ECX_FIXED | VBOX_CPUID_FN_LOG)
                          , "3" (cb)
                          , "4" (pach));
-#  endif
+#else
+    __asm__ __volatile__ ("cpuid\n\t"
+                          : "=a" (uEAX)
+                          , "=b" (uEBX)
+                          , "=c" (uECX)
+                          , "=d" (uEDX)
+                          , "=S" (uESI)
+                          : "0" (VBOX_CPUID_REQ_EAX_FIXED)
+                          , "1" ((uint32_t)fRelease)
+                          , "2" (VBOX_CPUID_REQ_ECX_FIXED | VBOX_CPUID_FN_LOG)
+                          , "3" (cb)
+                          , "4" (pach));
+#endif
 }
 RT_EXPORT_SYMBOL(RTLogWriteVmm);
 

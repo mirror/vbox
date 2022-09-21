@@ -170,6 +170,8 @@
 #include "VBox/log-vbox.c"
 #undef LOG_GROUP
 #include "VBox/logbackdoor.c"
+#undef LOG_GROUP
+#include "VBox/RTLogWriteVmm-amd64-x86.c"
 
 #ifdef RT_ARCH_AMD64
 # undef LOG_GROUP
