@@ -334,8 +334,11 @@ RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *psz
         /* try adopt it */
         rc = rtThreadAdopt(enmType, fFlags, 0, pszName);
         Thread = RTThreadSelf();
-        Log(("RTThreadAdopt: %RTthrd %RTnthrd '%s' enmType=%d fFlags=%#x rc=%Rrc\n",
-             Thread, RTThreadNativeSelf(), pszName, enmType, fFlags, rc));
+
+        /* Don't too early during init, as rtLogLock may end up here and cause endless recursion. */
+        if (rc != VERR_FAILED_TO_SET_SELF_TLS)
+            Log(("RTThreadAdopt: %RTthrd %RTnthrd '%s' enmType=%d fFlags=%#x rc=%Rrc\n",
+                 Thread, RTThreadNativeSelf(), pszName, enmType, fFlags, rc));
     }
     else
         Log(("RTThreadAdopt: %RTthrd %RTnthrd '%s' enmType=%d fFlags=%#x - already adopted!\n",
