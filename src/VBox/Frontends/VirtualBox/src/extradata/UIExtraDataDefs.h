@@ -72,6 +72,8 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_NotificationCenter_Alignment;
         /** Holds notification-center order. */
         SHARED_LIBRARY_STUFF extern const char *GUI_NotificationCenter_Order;
+        /** Holds whether BETA build label should be hidden. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_PreventBetaLabel;
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Holds version for which user wants to prevent BETA build warning. */
         SHARED_LIBRARY_STUFF extern const char *GUI_PreventBetaWarning;

@@ -911,6 +911,12 @@ bool UICommon::isBeta() const
     return vboxVersionString().contains(QRegularExpression("BETA|ALPHA", QRegularExpression::CaseInsensitiveOption));
 }
 
+bool UICommon::showBetaLabel() const
+{
+    return    isBeta()
+           && !gEDataManager->preventBetaBuildLavel();
+}
+
 bool UICommon::brandingIsActive(bool fForce /* = false */)
 {
     if (fForce)

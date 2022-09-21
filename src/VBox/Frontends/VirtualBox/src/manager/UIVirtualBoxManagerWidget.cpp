@@ -644,7 +644,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pToolBar->emulateMacToolbar();
 # ifdef VBOX_IS_QT6_OR_LATER
                         /* Branding stuff for Qt6 beta: */
-                        if (uiCommon().isBeta())
+                        if (uiCommon().showBetaLabel())
                             m_pToolBar->enableBranding(UIIconPool::iconSet(":/explosion_hazard_32px.png"),
                                                        "Dev Preview", // do we need to make it NLS?
                                                        QColor(246, 179, 0),

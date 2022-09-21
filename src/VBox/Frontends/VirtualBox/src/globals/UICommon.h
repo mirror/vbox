@@ -202,6 +202,8 @@ public:
         QString vboxVersionStringNormalized() const;
         /** Returns whether VBox version string contains BETA word. */
         bool isBeta() const;
+        /** Returns whether BETA label should be shown. */
+        bool showBetaLabel() const;
 
         /** Returns whether branding is active. */
         bool brandingIsActive(bool fForce = false);

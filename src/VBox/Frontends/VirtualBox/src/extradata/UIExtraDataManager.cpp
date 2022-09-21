@@ -1921,6 +1921,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_NotificationCenter_KeepSuccessfullProgresses
            << GUI_NotificationCenter_Alignment
            << GUI_NotificationCenter_Order
+           << GUI_PreventBetaLabel
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -2402,6 +2403,11 @@ void UIExtraDataManager::setNotificationCenterOrder(Qt::SortOrder enmOrder)
 {
     const QString strValue = enmOrder == Qt::DescendingOrder ? QString() : gpConverter->toInternalString(enmOrder);
     setExtraDataString(GUI_NotificationCenter_Order, strValue);
+}
+
+bool UIExtraDataManager::preventBetaBuildLavel()
+{
+    return isFeatureAllowed(GUI_PreventBetaLabel);
 }
 
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)

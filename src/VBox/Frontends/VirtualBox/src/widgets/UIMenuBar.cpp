@@ -42,7 +42,7 @@ UIMenuBar::UIMenuBar(QWidget *pParent /* = 0 */)
     , m_fShowBetaLabel(false)
 {
     /* Check for beta versions: */
-    if (uiCommon().isBeta())
+    if (uiCommon().showBetaLabel())
         m_fShowBetaLabel = true;
 }
 
