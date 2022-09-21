@@ -99,6 +99,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/VBox/VBoxTpG.h=>include/VBox/VBoxTpG.h \
     ${PATH_ROOT}/include/VBox/vmm/hm_vmx.h=>include/VBox/vmm/hm_vmx.h \
     ${PATH_ROOT}/include/VBox/vmm/hm_svm.h=>include/VBox/vmm/hm_svm.h \
+    ${PATH_ROOT}/include/VBox/vmm/cpuidcall.h=>include/VBox/vmm/cpuidcall.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/freebsd/SUPDrv-freebsd.c=>freebsd/SUPDrv-freebsd.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrv.cpp=>SUPDrv.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrvGip.cpp=>SUPDrvGip.c \

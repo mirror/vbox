@@ -95,6 +95,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/VBox/VBoxTpG.h=>include/VBox/VBoxTpG.h \
     ${PATH_ROOT}/include/VBox/vmm/hm_vmx.h=>include/VBox/vmm/hm_vmx.h \
     ${PATH_ROOT}/include/VBox/vmm/hm_svm.h=>include/VBox/vmm/hm_svm.h \
+    ${PATH_ROOT}/include/VBox/vmm/cpuidcall.h=>include/VBox/vmm/cpuidcall.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/SUPDrv-linux.c=>linux/SUPDrv-linux.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/combined-agnostic1.c=>combined-agnostic1.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/combined-agnostic2.c=>combined-agnostic2.c \
