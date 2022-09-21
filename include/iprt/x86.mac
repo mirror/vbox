@@ -1061,6 +1061,8 @@
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_OFF_FXSTATE_RSVD            0x1d0
 %define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
 %ifndef VBOX_FOR_DTRACE_LIB
@@ -1160,6 +1162,7 @@
 %define X86_MXCSR_RC_ZERO     0x6000
 %define X86_MXCSR_FZ          RT_BIT_32(15)
 %define X86_MXCSR_MM          RT_BIT_32(17)
+%define X86_MXCSR_ZERO_MASK   0xfffd0000
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
