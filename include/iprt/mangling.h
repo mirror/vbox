@@ -1511,6 +1511,7 @@
 # define RTLogWriteStdErr                               RT_MANGLER(RTLogWriteStdErr)
 # define RTLogWriteStdOut                               RT_MANGLER(RTLogWriteStdOut)
 # define RTLogWriteUser                                 RT_MANGLER(RTLogWriteUser)
+# define RTLogWriteVmm                                  RT_MANGLER(RTLogWriteVmm)
 # define RTManifestCreate                               RT_MANGLER(RTManifestCreate)
 # define RTManifestDup                                  RT_MANGLER(RTManifestDup)
 # define RTManifestEntryAdd                             RT_MANGLER(RTManifestEntryAdd)
