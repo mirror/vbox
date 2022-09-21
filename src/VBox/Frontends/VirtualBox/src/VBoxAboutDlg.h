@@ -95,6 +95,8 @@ private:
     QVBoxLayout *m_pMainLayout;
     /** Holds About-VirtualBox text-label instance. */
     QLabel      *m_pLabel;
+    /** Holds size set flag to make sure dialog size if set only once. */
+    bool m_fFixedSizeSet;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_VBoxAboutDlg_h */

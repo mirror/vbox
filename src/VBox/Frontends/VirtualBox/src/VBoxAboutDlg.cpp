@@ -65,6 +65,7 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
     , m_strVersion(strVersion)
     , m_pMainLayout(0)
     , m_pLabel(0)
+    , m_fFixedSizeSet(false)
 {
     /* Prepare: */
     prepare();
@@ -73,8 +74,11 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
 bool VBoxAboutDlg::event(QEvent *pEvent)
 {
     /* Set fixed-size for dialog: */
-    if (pEvent->type() == QEvent::Polish)
+    if (!m_fFixedSizeSet && pEvent->type() == QEvent::Show)
+    {
+        m_fFixedSizeSet = true;
         setFixedSize(m_size);
+    }
 
     /* Call to base-class: */
     return QIDialog::event(pEvent);
