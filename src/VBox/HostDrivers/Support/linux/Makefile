@@ -130,7 +130,6 @@ VBOXMOD_OBJS += \
 	generic/RTLogWriteStdErr-stub-generic.o \
 	generic/RTLogWriteStdOut-stub-generic.o \
 	generic/RTLogWriteUser-generic.o \
-	generic/RTLogWriteVmm-stub-generic.o \
 	generic/RTMpGetArraySize-generic.o \
 	generic/RTMpGetCoreCount-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \
@@ -141,7 +140,8 @@ VBOXMOD_OBJS += \
 	generic/errvars-generic.o \
 	generic/mppresent-generic.o \
 	generic/uuid-generic.o \
-	VBox/log-vbox.o
+	VBox/log-vbox.o \
+	VBox/RTLogWriteVmm-amd64-x86.o
  ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
 VBOXMOD_OBJS += common/alloc/heapsimple.o
  endif

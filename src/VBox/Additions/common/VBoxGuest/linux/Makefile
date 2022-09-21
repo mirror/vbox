@@ -129,7 +129,6 @@ VBOXMOD_OBJS += \
 	generic/RTAssertShouldPanic-generic.o \
 	generic/RTLogWriteStdErr-stub-generic.o \
 	generic/RTLogWriteStdOut-stub-generic.o \
-	generic/RTLogWriteVmm-stub-generic.o \
 	generic/RTMpGetCoreCount-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \
 	generic/RTSemEventWaitNoResume-2-ex-generic.o \
@@ -139,7 +138,8 @@ VBOXMOD_OBJS += \
 	generic/errvars-generic.o \
 	generic/mppresent-generic.o \
 	VBox/log-vbox.o \
-	VBox/logbackdoor.o
+	VBox/logbackdoor.o \
+	VBox/RTLogWriteVmm-amd64-x86.o
  ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
 VBOXMOD_OBJS += common/alloc/heapsimple.o
  endif

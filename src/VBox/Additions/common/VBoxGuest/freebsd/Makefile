@@ -149,7 +149,6 @@ SRCS += \
 	RTLogWriteDebugger-generic.c \
 	RTLogWriteStdOut-stub-generic.c \
 	RTLogWriteStdErr-stub-generic.c \
-	RTLogWriteVmm-stub-generic.c \
 	RTRandAdvCreateSystemFaster-generic.c \
 	RTRandAdvCreateSystemTruer-generic.c \
 	RTSemEventWait-2-ex-generic.c \
@@ -196,7 +195,8 @@ SRCS += \
 .PATH:	${.CURDIR}/VBox
 SRCS += \
 	log-vbox.c \
-	logbackdoor.c
+	logbackdoor.c \
+	RTLogWriteVmm-amd64-x86.
 
 .include <bsd.kmod.mk>
 

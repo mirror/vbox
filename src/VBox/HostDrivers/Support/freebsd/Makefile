@@ -151,7 +151,6 @@ SRCS += \
 	RTLogWriteStdOut-stub-generic.c \
 	RTLogWriteStdErr-stub-generic.c \
 	RTLogWriteUser-generic.c \
-	RTLogWriteVmm-stub-generic.c \
 	RTMpGetArraySize-generic.c \
 	RTMpOnPair-generic.c \
 	RTRandAdvCreateSystemFaster-generic.c \
@@ -201,7 +200,8 @@ SRCS += \
 
 .PATH:	${.CURDIR}/VBox
 SRCS += \
-	log-vbox.c
+	log-vbox.c \
+	RTLogWriteVmm-amd64-x86.c
 
 .include <bsd.kmod.mk>
 
