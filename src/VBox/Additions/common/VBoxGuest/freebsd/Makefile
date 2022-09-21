@@ -149,6 +149,7 @@ SRCS += \
 	RTLogWriteDebugger-generic.c \
 	RTLogWriteStdOut-stub-generic.c \
 	RTLogWriteStdErr-stub-generic.c \
+	RTLogWriteVmm-stub-generic.c \
 	RTRandAdvCreateSystemFaster-generic.c \
 	RTRandAdvCreateSystemTruer-generic.c \
 	RTSemEventWait-2-ex-generic.c \

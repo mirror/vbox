@@ -130,6 +130,7 @@ VBOXMOD_OBJS += \
 	generic/RTLogWriteStdErr-stub-generic.o \
 	generic/RTLogWriteStdOut-stub-generic.o \
 	generic/RTLogWriteUser-generic.o \
+	generic/RTLogWriteVmm-stub-generic.o \
 	generic/RTMpGetArraySize-generic.o \
 	generic/RTMpGetCoreCount-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \

@@ -129,6 +129,7 @@ VBOXMOD_OBJS += \
 	generic/RTAssertShouldPanic-generic.o \
 	generic/RTLogWriteStdErr-stub-generic.o \
 	generic/RTLogWriteStdOut-stub-generic.o \
+	generic/RTLogWriteVmm-stub-generic.o \
 	generic/RTMpGetCoreCount-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \
 	generic/RTSemEventWaitNoResume-2-ex-generic.o \

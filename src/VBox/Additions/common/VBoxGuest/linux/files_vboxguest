@@ -185,6 +185,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTAssertShouldPanic-generic.cpp=>generic/RTAssertShouldPanic-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdErr-stub-generic.cpp=>generic/RTLogWriteStdErr-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdOut-stub-generic.cpp=>generic/RTLogWriteStdOut-stub-generic.c \
+    ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteVmm-stub-generic.cpp=>generic/RTLogWriteVmm-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTMpGetCoreCount-generic.cpp=>generic/RTMpGetCoreCount-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTSemEventWait-2-ex-generic.cpp=>generic/RTSemEventWait-2-ex-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTSemEventWaitNoResume-2-ex-generic.cpp=>generic/RTSemEventWaitNoResume-2-ex-generic.c \

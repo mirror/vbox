@@ -280,6 +280,8 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
     unsigned                fFlags;
     /** The group. (used for prefixing.) */
     unsigned                iGroup;
+    /** Used by RTLogBulkNestedWrite.   */
+    const char             *pszInfix;
 } RTLOGOUTPUTPREFIXEDARGS, *PRTLOGOUTPUTPREFIXEDARGS;
 
 
@@ -296,6 +298,7 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace);
 static FNRTLOGPHASEMSG rtlogPhaseMsgLocked;
 static FNRTLOGPHASEMSG rtlogPhaseMsgNormal;
 #endif
+static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars, size_t cbChars);
 static void rtlogLoggerExFLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, unsigned iGroup, const char *pszFormat, ...);
 
 
@@ -404,6 +407,8 @@ static struct
     { RT_STR_TUPLE("debugger"),     RTLOGDEST_DEBUGGER },
     { RT_STR_TUPLE("com"),          RTLOGDEST_COM },
     { RT_STR_TUPLE("nodeny"),       RTLOGDEST_F_NO_DENY },
+    { RT_STR_TUPLE("vmmrel"),       RTLOGDEST_VMM_REL },    /* before vmm */
+    { RT_STR_TUPLE("vmm"),          RTLOGDEST_VMM },
     { RT_STR_TUPLE("user"),         RTLOGDEST_USER },
     /* The RTLOGDEST_FIXED_XXX flags are omitted on purpose. */
 };
@@ -543,8 +548,8 @@ DECL_FORCE_INLINE(PRTLOGGERINTERNAL) rtLogCheckGroupFlagsWorker(PRTLOGGERINTERNA
         uint32_t const fFlags = RT_LO_U16(fFlagsAndGroup);
         uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
         if (   iGroup != UINT16_MAX
-             && (   (pLoggerInt->afGroups[iGroup < pLoggerInt->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
-                 != (fFlags | RTLOGGRPFLAGS_ENABLED)))
+            && (   (pLoggerInt->afGroups[iGroup < pLoggerInt->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
+                != (fFlags | RTLOGGRPFLAGS_ENABLED)))
             pLoggerInt = NULL;
     }
     return pLoggerInt;
@@ -1084,6 +1089,28 @@ static void rtLogRingBufFlush(PRTLOGGERINTERNAL pLoggerInt)
         if (cchSecond)
             RTLogWriteUser(pszSecond, cchSecond);
     }
+
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    if (pLoggerInt->fDestFlags & RTLOGDEST_VMM)
+    {
+        if (cchPreamble)
+            RTLogWriteVmm(pszPreamble, cchPreamble, false /*fReleaseLog*/);
+        if (cchFirst)
+            RTLogWriteVmm(pszFirst, cchFirst, false /*fReleaseLog*/);
+        if (cchSecond)
+            RTLogWriteVmm(pszSecond, cchSecond, false /*fReleaseLog*/);
+    }
+
+    if (pLoggerInt->fDestFlags & RTLOGDEST_VMM_REL)
+    {
+        if (cchPreamble)
+            RTLogWriteVmm(pszPreamble, cchPreamble, true /*fReleaseLog*/);
+        if (cchFirst)
+            RTLogWriteVmm(pszFirst, cchFirst, true /*fReleaseLog*/);
+        if (cchSecond)
+            RTLogWriteVmm(pszSecond, cchSecond, true /*fReleaseLog*/);
+    }
+# endif
 
     if (pLoggerInt->fDestFlags & RTLOGDEST_DEBUGGER)
     {
@@ -2435,14 +2462,13 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
         /* instruction. */
         for (i = 0; i < RT_ELEMENTS(g_aLogDst); i++)
         {
-            size_t cchInstr = strlen(g_aLogDst[i].pszInstr);
-            if (!strncmp(pszValue, g_aLogDst[i].pszInstr, cchInstr))
+            if (!strncmp(pszValue, g_aLogDst[i].pszInstr, g_aLogDst[i].cchInstr))
             {
                 if (!fNo)
                     pLoggerInt->fDestFlags |= g_aLogDst[i].fFlag;
                 else
                     pLoggerInt->fDestFlags &= ~g_aLogDst[i].fFlag;
-                pszValue += cchInstr;
+                pszValue += g_aLogDst[i].cchInstr;
 
                 /* check for value. */
                 while (RT_C_IS_SPACE(*pszValue))
@@ -3215,6 +3241,78 @@ RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pszBefore, const char 
 RT_EXPORT_SYMBOL(RTLogBulkWrite);
 
 
+/**
+ * Write/copy bulk log data from a nested VM logger.
+ *
+ * This is used for
+ *
+ * @returns IRPT status code.
+ * @param   pLogger             The logger instance (NULL for default logger).
+ * @param   pch                 Pointer to the block of bulk log text to write.
+ * @param   cch                 Size of the block of bulk log text to write.
+ * @param   pszInfix            String to put after the line prefixes and the
+ *                              line content.
+ */
+RTDECL(int) RTLogBulkNestedWrite(PRTLOGGER pLogger, const char *pch, size_t cch, const char *pszInfix)
+{
+    if (cch > 0)
+    {
+        PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
+        RTLOG_RESOLVE_DEFAULT_RET(pLoggerInt, VINF_LOG_NO_LOGGER);
+
+        /*
+         * Lock and validate it.
+         */
+        int rc = rtlogLock(pLoggerInt);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * If we've got an auxilary descriptor, check if the buffer was flushed.
+             */
+            PRTLOGBUFFERDESC    pBufDesc = pLoggerInt->pBufDesc;
+            PRTLOGBUFFERAUXDESC pAuxDesc = pBufDesc->pAux;
+            if (!pAuxDesc || !pAuxDesc->fFlushedIndicator)
+            { /* likely, except maybe for ring-0 */ }
+            else
+            {
+                pAuxDesc->fFlushedIndicator = false;
+                pBufDesc->offBuf            = 0;
+            }
+
+            /*
+             * Write the stuff.
+             */
+            RTLOGOUTPUTPREFIXEDARGS Args;
+            Args.pLoggerInt = pLoggerInt;
+            Args.fFlags     = 0;
+            Args.iGroup     = ~0U;
+            Args.pszInfix   = pszInfix;
+            rtLogOutputPrefixed(&Args, pch, cch);
+            rtLogOutputPrefixed(&Args, pch, 0); /* termination call */
+
+            /*
+             * Maybe flush the buffer and update the auxiliary descriptor if there is one.
+             */
+            pBufDesc = pLoggerInt->pBufDesc;  /* (the descriptor may have changed) */
+            if (    !(pLoggerInt->fFlags & RTLOGFLAGS_BUFFERED)
+                &&  pBufDesc->offBuf)
+                rtlogFlush(pLoggerInt, false /*fNeedSpace*/);
+            else
+            {
+                pAuxDesc = pBufDesc->pAux;
+                if (pAuxDesc)
+                    pAuxDesc->offBuf = pBufDesc->offBuf;
+            }
+
+            rtlogUnlock(pLoggerInt);
+        }
+        return rc;
+    }
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTLogBulkNestedWrite);
+
+
 /*********************************************************************************************************************************
 *   Flushing                                                                                                                     *
 *********************************************************************************************************************************/
@@ -3325,6 +3423,14 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace)
 
         if (pLoggerInt->fDestFlags & RTLOGDEST_USER)
             RTLogWriteUser(pchToFlush, cchToFlush);
+
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+        if (pLoggerInt->fDestFlags & RTLOGDEST_VMM)
+            RTLogWriteVmm(pchToFlush, cchToFlush, false /*fReleaseLog*/);
+
+        if (pLoggerInt->fDestFlags & RTLOGDEST_VMM_REL)
+            RTLogWriteVmm(pchToFlush, cchToFlush, true /*fReleaseLog*/);
+#endif
 
         if (pLoggerInt->fDestFlags & RTLOGDEST_DEBUGGER)
             RTLogWriteDebugger(pchToFlush, cchToFlush);
@@ -3469,6 +3575,14 @@ static void rtR0LogLoggerExFallbackFlush(PRTR0LOGLOGGERFALLBACK pThis)
     {
         if (pThis->fDestFlags & RTLOGDEST_USER)
             RTLogWriteUser(pThis->achScratch, pThis->offScratch);
+
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+        if (pThis->fDestFlags & RTLOGDEST_VMM)
+            RTLogWriteVmm(pThis->achScratch, pThis->offScratch, false /*fReleaseLog*/);
+
+        if (pThis->fDestFlags & RTLOGDEST_VMM_REL)
+            RTLogWriteVmm(pThis->achScratch, pThis->offScratch, true /*fReleaseLog*/);
+# endif
 
         if (pThis->fDestFlags & RTLOGDEST_DEBUGGER)
             RTLogWriteDebugger(pThis->achScratch, pThis->offScratch);
@@ -3757,7 +3871,8 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
     PRTLOGGERINTERNAL           pLoggerInt = pArgs->pLoggerInt;
     if (cbChars)
     {
-        size_t cbRet = 0;
+        uint64_t const fFlags = pLoggerInt->fFlags;
+        size_t         cbRet  = 0;
         for (;;)
         {
             PRTLOGBUFFERDESC const  pBufDesc = pLoggerInt->pBufDesc;
@@ -3790,9 +3905,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             {
                 /*
                  * Flush the buffer if there isn't enough room for the maximum prefix config.
-                 * Max is 256, add a couple of extra bytes.  See CCH_PREFIX check way below.
+                 * Max is 265, add a couple of extra bytes.  See CCH_PREFIX check way below.
                  */
-                if (cb >= 256 + 16)
+                if (cb >= 265 + 16)
                     pLoggerInt->fPendingPrefix = false;
                 else
                 {
@@ -3805,17 +3920,17 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                  * psz is pointing to the current position.
                  */
                 psz = &pchBuf[offBuf];
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TS)
+                if (fFlags & RTLOGFLAGS_PREFIX_TS)
                 {
-                    uint64_t     u64    = RTTimeNanoTS();
-                    int          iBase  = 16;
-                    unsigned int fFlags = RTSTR_F_ZEROPAD;
-                    if (pLoggerInt->fFlags & RTLOGFLAGS_DECIMAL_TS)
+                    uint64_t     u64       = RTTimeNanoTS();
+                    int          iBase     = 16;
+                    unsigned int fStrFlags = RTSTR_F_ZEROPAD;
+                    if (fFlags & RTLOGFLAGS_DECIMAL_TS)
                     {
-                        iBase = 10;
-                        fFlags = 0;
+                        iBase     = 10;
+                        fStrFlags = 0;
                     }
-                    if (pLoggerInt->fFlags & RTLOGFLAGS_REL_TS)
+                    if (fFlags & RTLOGFLAGS_REL_TS)
                     {
                         static volatile uint64_t s_u64LastTs;
                         uint64_t        u64DiffTs = u64 - s_u64LastTs;
@@ -3826,26 +3941,26 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                         u64         = (int64_t)u64DiffTs < 0 ? 0 : u64DiffTs;
                     }
                     /* 1E15 nanoseconds = 11 days */
-                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);
+                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fStrFlags);
                     *psz++ = ' ';
                 }
 #define CCH_PREFIX_01   0 + 17
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TSC)
+                if (fFlags & RTLOGFLAGS_PREFIX_TSC)
                 {
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-                    uint64_t     u64    = ASMReadTSC();
+                    uint64_t     u64       = ASMReadTSC();
 #else
-                    uint64_t     u64    = RTTimeNanoTS();
+                    uint64_t     u64       = RTTimeNanoTS();
 #endif
-                    int          iBase  = 16;
-                    unsigned int fFlags = RTSTR_F_ZEROPAD;
-                    if (pLoggerInt->fFlags & RTLOGFLAGS_DECIMAL_TS)
+                    int          iBase     = 16;
+                    unsigned int fStrFlags = RTSTR_F_ZEROPAD;
+                    if (fFlags & RTLOGFLAGS_DECIMAL_TS)
                     {
-                        iBase = 10;
-                        fFlags = 0;
+                        iBase    = 10;
+                        fStrFlags = 0;
                     }
-                    if (pLoggerInt->fFlags & RTLOGFLAGS_REL_TS)
+                    if (fFlags & RTLOGFLAGS_REL_TS)
                     {
                         static volatile uint64_t s_u64LastTsc;
                         int64_t        i64DiffTsc = u64 - s_u64LastTsc;
@@ -3856,12 +3971,12 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                         u64          = i64DiffTsc < 0 ? 0 : i64DiffTsc;
                     }
                     /* 1E15 ticks at 4GHz = 69 hours */
-                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);
+                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fStrFlags);
                     *psz++ = ' ';
                 }
 #define CCH_PREFIX_02   CCH_PREFIX_01 + 17
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_MS_PROG)
+                if (fFlags & RTLOGFLAGS_PREFIX_MS_PROG)
                 {
 #ifndef IN_RING0
                     uint64_t u64 = RTTimeProgramMilliTS();
@@ -3874,7 +3989,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_03   CCH_PREFIX_02 + 21
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TIME)
+                if (fFlags & RTLOGFLAGS_PREFIX_TIME)
                 {
 #if defined(IN_RING3) || defined(IN_RING0)
                     RTTIMESPEC TimeSpec;
@@ -3895,7 +4010,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_04   CCH_PREFIX_03 + (3+1+3+1+3+1+7+1)
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TIME_PROG)
+                if (fFlags & RTLOGFLAGS_PREFIX_TIME_PROG)
                 {
 
 #ifndef IN_RING0
@@ -3919,7 +4034,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #define CCH_PREFIX_05   CCH_PREFIX_04 + (9+1+2+1+2+1+6+1)
 
 # if 0
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_DATETIME)
+                if (fFlags & RTLOGFLAGS_PREFIX_DATETIME)
                 {
                     char szDate[32];
                     RTTIMESPEC Time;
@@ -3934,7 +4049,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #  define CCH_PREFIX_06   CCH_PREFIX_05 + 0
 # endif
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_PID)
+                if (fFlags & RTLOGFLAGS_PREFIX_PID)
                 {
                     RTPROCESS Process = RTProcSelf();
                     psz += RTStrFormatNumber(psz, Process, 16, sizeof(RTPROCESS) * 2, 0, RTSTR_F_ZEROPAD);
@@ -3942,7 +4057,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_07   CCH_PREFIX_06 + 9
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TID)
+                if (fFlags & RTLOGFLAGS_PREFIX_TID)
                 {
                     RTNATIVETHREAD Thread = RTThreadNativeSelf();
                     psz += RTStrFormatNumber(psz, Thread, 16, sizeof(RTNATIVETHREAD) * 2, 0, RTSTR_F_ZEROPAD);
@@ -3950,7 +4065,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_08   CCH_PREFIX_07 + 17
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_THREAD)
+                if (fFlags & RTLOGFLAGS_PREFIX_THREAD)
                 {
 #ifdef IN_RING3
                     const char *pszName = RTThreadSelfName();
@@ -3963,7 +4078,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_09   CCH_PREFIX_08 + 17
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_CPUID)
+                if (fFlags & RTLOGFLAGS_PREFIX_CPUID)
                 {
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
                     const uint8_t idCpu = ASMGetApicId();
@@ -3975,7 +4090,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_10   CCH_PREFIX_09 + 17
 
-                if (    (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_CUSTOM)
+                if (    (fFlags & RTLOGFLAGS_PREFIX_CUSTOM)
                     &&  pLoggerInt->pfnPrefix)
                 {
                     psz += pLoggerInt->pfnPrefix(&pLoggerInt->Core, psz, 31, pLoggerInt->pvPrefixUserArg);
@@ -3983,7 +4098,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_11   CCH_PREFIX_10 + 32
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_LOCK_COUNTS)
+                if (fFlags & RTLOGFLAGS_PREFIX_LOCK_COUNTS)
                 {
 #ifdef IN_RING3 /** @todo implement these counters in ring-0 too? */
                     RTTHREAD Thread = RTThreadSelf();
@@ -4008,14 +4123,14 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_12   CCH_PREFIX_11 + 8
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_FLAG_NO)
+                if (fFlags & RTLOGFLAGS_PREFIX_FLAG_NO)
                 {
                     psz += RTStrFormatNumber(psz, pArgs->fFlags, 16, 8, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ' ';
                 }
 #define CCH_PREFIX_13   CCH_PREFIX_12 + 9
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_FLAG)
+                if (fFlags & RTLOGFLAGS_PREFIX_FLAG)
                 {
 #ifdef IN_RING3
                     const char *pszGroup = pArgs->iGroup != ~0U ? pLoggerInt->papszGroups[pArgs->iGroup] : NULL;
@@ -4026,7 +4141,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_14   CCH_PREFIX_13 + 17
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_GROUP_NO)
+                if (fFlags & RTLOGFLAGS_PREFIX_GROUP_NO)
                 {
                     if (pArgs->iGroup != ~0U)
                     {
@@ -4041,7 +4156,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_15   CCH_PREFIX_14 + 9
 
-                if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_GROUP)
+                if (fFlags & RTLOGFLAGS_PREFIX_GROUP)
                 {
                     const unsigned fGrp = pLoggerInt->afGroups[pArgs->iGroup != ~0U ? pArgs->iGroup : 0];
                     const char *pszGroup;
@@ -4070,14 +4185,22 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_16   CCH_PREFIX_15 + 17
 
-#define CCH_PREFIX      ( CCH_PREFIX_16 )
-                { AssertCompile(CCH_PREFIX < 256); }
+                if (pArgs->pszInfix)
+                {
+                    size_t cchInfix = strlen(pArgs->pszInfix);
+                    psz = rtLogStPNCpyPad2(psz, pArgs->pszInfix, RT_MIN(cchInfix, 8), 1);
+                }
+#define CCH_PREFIX_17   CCH_PREFIX_16 + 9
+
+
+#define CCH_PREFIX      ( CCH_PREFIX_17 )
+                { AssertCompile(CCH_PREFIX < 265); }
 
                 /*
                  * Done, figure what we've used and advance the buffer and free size.
                  */
                 AssertMsg(psz - &pchBuf[offBuf] <= 223,
-                          ("%#zx (%zd) - fFlags=%#x\n", psz - &pchBuf[offBuf], psz - &pchBuf[offBuf], pLoggerInt->fFlags));
+                          ("%#zx (%zd) - fFlags=%#x\n", psz - &pchBuf[offBuf], psz - &pchBuf[offBuf], fFlags));
                 pBufDesc->offBuf = offBuf = (uint32_t)(psz - pchBuf);
                 cb = cbBuf - offBuf - 1;
             }
@@ -4100,7 +4223,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             if (pszNewLine)
             {
                 cb = pszNewLine - pachChars;
-                if (!(pLoggerInt->fFlags & RTLOGFLAGS_USECRLF))
+                if (!(fFlags & RTLOGFLAGS_USECRLF))
                 {
                     cb += 1;
                     memcpy(&pchBuf[offBuf], pachChars, cb);
@@ -4190,6 +4313,7 @@ static void rtlogLoggerExVLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, 
         OutputArgs.pLoggerInt = pLoggerInt;
         OutputArgs.iGroup     = iGroup;
         OutputArgs.fFlags     = fFlags;
+        OutputArgs.pszInfix   = NULL;
         RTLogFormatV(rtLogOutputPrefixed, &OutputArgs, pszFormat, args);
     }
     else

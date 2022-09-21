@@ -862,6 +862,10 @@ typedef struct IEM
 {
     /** The VMX APIC-access page handler type. */
     PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
+#ifndef VBOX_WITHOUT_CPUID_HOST_CALL
+    /** Set if the CPUID host call functionality is enabled.   */
+    bool                    fCpuIdHostCall;
+#endif
 } IEM;
 
 

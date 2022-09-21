@@ -2107,6 +2107,7 @@ incs:
 	$(SED) -f include/VBox/various.sed --output include/VBox/bios.mac          include/VBox/bios.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/param.mac         include/VBox/param.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/VMMDevTesting.mac include/VBox/VMMDevTesting.h
+	$(SED) -f include/VBox/various.sed --output include/VBox/vmm/cpuidcall.mac include/VBox/vmm/cpuidcall.h
 
 
 #

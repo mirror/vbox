@@ -172,7 +172,7 @@ struc VM
     alignb 64
     .vm                     resb 32
     .cfgm                   resb 8
-    .iem                    resb 8
+    .iem                    resb 16
     .R0Stats                resb 64
     .gcm                    resb 32
 

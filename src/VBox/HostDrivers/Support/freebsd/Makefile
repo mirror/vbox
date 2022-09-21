@@ -151,6 +151,7 @@ SRCS += \
 	RTLogWriteStdOut-stub-generic.c \
 	RTLogWriteStdErr-stub-generic.c \
 	RTLogWriteUser-generic.c \
+	RTLogWriteVmm-stub-generic.c \
 	RTMpGetArraySize-generic.c \
 	RTMpOnPair-generic.c \
 	RTRandAdvCreateSystemFaster-generic.c \

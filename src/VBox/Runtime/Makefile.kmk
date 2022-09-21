@@ -824,12 +824,14 @@ RuntimeBaseR3_SOURCES.x86 += \
 	generic/RTMpGetDescription-generic.cpp \
 	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
-	common/string/RTStrMemFind32.asm
+	common/string/RTStrMemFind32.asm \
+	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeBaseR3_SOURCES.amd64 += \
 	generic/RTMpGetDescription-generic.cpp \
 	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
-	common/string/RTStrMemFind32.asm
+	common/string/RTStrMemFind32.asm \
+	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeBaseR3_SOURCES.arm32 := \
 	common/asm/ASMBitFirstClear-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
@@ -2471,6 +2473,7 @@ RuntimeBldProg_SOURCES          = \
 	generic/RTLogWriteStdErr-generic.cpp \
 	generic/RTLogWriteStdOut-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
+	generic/RTLogWriteVmm-stub-generic.cpp \
 	generic/RTPathIsSame-generic.cpp \
 	generic/RTPathGetCurrentDrive-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \
@@ -3595,14 +3598,16 @@ RuntimeR0Drv_SOURCES.amd64 = \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm \
 	common/math/RTUInt128MulByU64Ex.asm \
-	common/string/RTStrEnd.asm
+	common/string/RTStrEnd.asm \
+	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeR0Drv_SOURCES.x86   = \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/bignum-amd64-x86.asm \
-	common/string/RTStrEnd.asm
+	common/string/RTStrEnd.asm \
+	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeR0Drv_SOURCES.arm32 += \
 	common/string/RTStrEnd.cpp
 RuntimeR0Drv_SOURCES.arm64 += \

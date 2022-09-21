@@ -186,6 +186,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdErr-stub-generic.cpp=>generic/RTLogWriteStdErr-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdOut-stub-generic.cpp=>generic/RTLogWriteStdOut-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteDebugger-generic.cpp=>generic/RTLogWriteDebugger-generic.c \
+    ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteVmm-stub-generic.cpp=>generic/RTLogWriteVmm-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTRandAdvCreateSystemFaster-generic.cpp=>generic/RTRandAdvCreateSystemFaster-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTRandAdvCreateSystemTruer-generic.cpp=>generic/RTRandAdvCreateSystemTruer-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/uuid-generic.cpp=>generic/uuid-generic.c \

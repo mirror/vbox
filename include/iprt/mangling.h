@@ -1452,6 +1452,7 @@
 # define RTLogBackdoorPrintfV                           RT_MANGLER(RTLogBackdoorPrintfV) /* r0drv-guest */
 # define RTLogBulkUpdate                                RT_MANGLER(RTLogBulkUpdate)
 # define RTLogBulkWrite                                 RT_MANGLER(RTLogBulkWrite)
+# define RTLogBulkNestedWrite                           RT_MANGLER(RTLogBulkNestedWrite)
 # define RTLogChangeDestinations                        RT_MANGLER(RTLogChangeDestinations)
 # define RTLogChangeFlags                               RT_MANGLER(RTLogChangeFlags)
 # define RTLogCheckGroupFlags                           RT_MANGLER(RTLogCheckGroupFlags)

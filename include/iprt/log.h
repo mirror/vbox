@@ -544,6 +544,10 @@ typedef enum RTLOGDEST
     RTLOGDEST_COM           = 0x00000010,
     /** Log a memory ring buffer. */
     RTLOGDEST_RINGBUF       = 0x00000020,
+    /** The parent VMM debug log. */
+    RTLOGDEST_VMM           = 0x00000040,
+    /** The parent VMM release log. */
+    RTLOGDEST_VMM_REL       = 0x00000080,
     /** Open files with no deny (share read, write, delete) on Windows. */
     RTLOGDEST_F_NO_DENY     = 0x00010000,
     /** Delay opening the log file, logging to the buffer untill
@@ -559,9 +563,9 @@ typedef enum RTLOGDEST
     RTLOGDEST_USER          = 0x40000000
 } RTLOGDEST;
 /** Valid log destinations. */
-#define RTLOG_DST_VALID_MASK    UINT32_C(0x6303003f)
+#define RTLOG_DST_VALID_MASK    UINT32_C(0x630300ff)
 /** Log destinations that can be changed via RTLogChangeDestinations. */
-#define RTLOG_DST_CHANGE_MASK   UINT32_C(0x4000001e)
+#define RTLOG_DST_CHANGE_MASK   UINT32_C(0x400000de)
 
 
 #ifdef DOXYGEN_RUNNING
@@ -2525,6 +2529,20 @@ RTDECL(int) RTLogQueryBulk(PRTLOGGER pLogger, uint64_t *pfFlags, uint32_t *puGro
 RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pszBefore, const char *pch, size_t cch, const char *pszAfter);
 
 /**
+ * Write/copy bulk log data from a nested VM logger.
+ *
+ * This is used for
+ *
+ * @returns IRPT status code.
+ * @param   pLogger             The logger instance (NULL for default logger).
+ * @param   pch                 Pointer to the block of bulk log text to write.
+ * @param   cch                 Size of the block of bulk log text to write.
+ * @param   pszInfix            String to put after the line prefixes and the
+ *                              line content.
+ */
+RTDECL(int) RTLogBulkNestedWrite(PRTLOGGER pLogger, const char *pch, size_t cch, const char *pszInfix);
+
+/**
  * Flushes the specified logger.
  *
  * @returns IRPT status code.
@@ -2786,6 +2804,17 @@ RTDECL(void) RTLogWriteDebugger(const char *pach, size_t cb);
  * @remark  When linking statically, this function can be replaced by defining your own.
  */
 RTDECL(void) RTLogWriteUser(const char *pach, size_t cb);
+
+/**
+ * Write log buffer to a parent VMM (hypervisor).
+ *
+ * @param   pach        What to write.
+ * @param   cb          How much to write.
+ * @param   fRelease    Set if targeting the release log, clear if debug log.
+ *
+ * @note    Currently only available on AMD64 and x86.
+ */
+RTDECL(void) RTLogWriteVmm(const char *pach, size_t cb, bool fRelease);
 
 /**
  * Write log buffer to stdout (RTLOGDEST_STDOUT).

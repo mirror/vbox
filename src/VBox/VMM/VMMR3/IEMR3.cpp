@@ -88,6 +88,28 @@ static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
  */
 VMMR3DECL(int)      IEMR3Init(PVM pVM)
 {
+    int rc;
+
+    /*
+     * Read configuration.
+     */
+    PCFGMNODE pIem = CFGMR3GetChild(CFGMR3GetRoot(pVM), "IEM");
+
+#ifndef VBOX_WITHOUT_CPUID_HOST_CALL
+    /** @cfgm{/IEM/CpuIdHostCall, boolean, false}
+     * Controls whether the custom VBox specific CPUID host call interface is
+     * enabled or not. */
+# ifdef DEBUG_bird
+    rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, true);
+# else
+    rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, false);
+# endif
+    AssertLogRelRCReturn(rc, rc);
+#endif
+
+    /*
+     * Initialize per-CPU data and register statistics.
+     */
     uint64_t const uInitialTlbRevision = UINT64_C(0) - (IEMTLB_REVISION_INCR * 200U);
     uint64_t const uInitialTlbPhysRev  = UINT64_C(0) - (IEMTLB_PHYS_REV_INCR * 100U);
 
@@ -223,9 +245,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
      */
     if (pVM->cpum.ro.GuestFeatures.fVmx)
     {
-        int rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, 0 /*fFlags*/,
-                                                  iemVmxApicAccessPageHandler,
-                                                  "VMX APIC-access page", &pVM->iem.s.hVmxApicAccessPage);
+        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, 0 /*fFlags*/,
+                                              iemVmxApicAccessPageHandler,
+                                              "VMX APIC-access page", &pVM->iem.s.hVmxApicAccessPage);
         AssertLogRelRCReturn(rc, rc);
     }
 #endif

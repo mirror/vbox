@@ -6938,6 +6938,7 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 
         if (rcStrict == VINF_IEM_RAISED_XCPT)
         {
+            CPUM_ASSERT_NOT_EXTRN(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
             rcStrict = VINF_SUCCESS;
         }

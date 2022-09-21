@@ -376,6 +376,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACKF(   3,  RTHandleTableDestroy),
     SUPEXP_STK_BACK(    3,  RTHandleTableFreeWithCtx),
     SUPEXP_STK_BACK(    3,  RTHandleTableLookupWithCtx),
+    SUPEXP_STK_BACK(    4,  RTLogBulkNestedWrite),
     SUPEXP_STK_BACK(    5,  RTLogBulkUpdate),
     SUPEXP_STK_BACK(    2,  RTLogCheckGroupFlags),
     SUPEXP_STK_BACKF(   17, RTLogCreateExV),

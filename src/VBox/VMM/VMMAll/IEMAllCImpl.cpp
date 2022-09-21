@@ -48,6 +48,9 @@
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 # include <VBox/vmm/hmvmxinline.h>
 #endif
+#ifndef VBOX_WITHOUT_CPUID_HOST_CALL
+# include <VBox/vmm/cpuidcall.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/dbgftrace.h>
@@ -7754,6 +7757,97 @@ IEM_CIMPL_DEF_0(iemCImpl_swapgs)
 }
 
 
+#ifndef VBOX_WITHOUT_CPUID_HOST_CALL
+/**
+ * Handles a CPUID call.
+ */
+static VBOXSTRICTRC iemCpuIdVBoxCall(PVMCPUCC pVCpu, uint32_t iFunction,
+                                     uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+{
+    switch (iFunction)
+    {
+        case VBOX_CPUID_FN_ID:
+            LogFlow(("iemCpuIdVBoxCall: VBOX_CPUID_FN_ID\n"));
+            *pEax = VBOX_CPUID_RESP_ID_EAX;
+            *pEbx = VBOX_CPUID_RESP_ID_EBX;
+            *pEcx = VBOX_CPUID_RESP_ID_ECX;
+            *pEdx = VBOX_CPUID_RESP_ID_EDX;
+            break;
+
+        case VBOX_CPUID_FN_LOG:
+        {
+            CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX | CPUMCTX_EXTRN_RSI
+                                       | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+
+            /* Validate input. */
+            uint32_t cchToLog = *pEdx;
+            if (cchToLog <= _2M)
+            {
+                uint32_t const uLogPicker = *pEbx;
+                if (uLogPicker <= 1)
+                {
+                    /* Resolve the logger. */
+                    PRTLOGGER const pLogger = !uLogPicker
+                                            ? RTLogDefaultInstanceEx(UINT32_MAX) : RTLogRelGetDefaultInstanceEx(UINT32_MAX);
+                    if (pLogger)
+                    {
+                        /* Copy over the data: */
+                        RTGCPTR GCPtrSrc = pVCpu->cpum.GstCtx.rsi;
+                        while (cchToLog > 0)
+                        {
+                            uint32_t cbToMap = GUEST_PAGE_SIZE - (GCPtrSrc & GUEST_PAGE_OFFSET_MASK);
+                            if (cbToMap > cchToLog)
+                                cbToMap = cchToLog;
+                            /** @todo Extend iemMemMap to allowing page size accessing and avoid 7
+                             *        unnecessary calls & iterations per pages. */
+                            if (cbToMap > 512)
+                                cbToMap = 512;
+                            void        *pvSrc    = NULL;
+                            VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvSrc, cbToMap, UINT8_MAX, GCPtrSrc, IEM_ACCESS_DATA_R, 0);
+                            if (rcStrict == VINF_SUCCESS)
+                            {
+                                RTLogBulkNestedWrite(pLogger, (const char *)pvSrc, cbToMap, "Gst:");
+                                rcStrict = iemMemCommitAndUnmap(pVCpu, pvSrc, IEM_ACCESS_DATA_R);
+                                AssertRCSuccessReturn(VBOXSTRICTRC_VAL(rcStrict), rcStrict);
+                            }
+                            else
+                            {
+                                Log(("iemCpuIdVBoxCall: %Rrc at %RGp LB %#x\n", VBOXSTRICTRC_VAL(rcStrict), GCPtrSrc, cbToMap));
+                                return rcStrict;
+                            }
+
+                            /* Advance. */
+                            pVCpu->cpum.GstCtx.rsi = GCPtrSrc += cbToMap;
+                            *pEdx                  = cchToLog -= cbToMap;
+                        }
+                        *pEax = VINF_SUCCESS;
+                    }
+                    else
+                        *pEax = (uint32_t)VERR_NOT_FOUND;
+                }
+                else
+                    *pEax = (uint32_t)VERR_NOT_FOUND;
+            }
+            else
+                *pEax = (uint32_t)VERR_TOO_MUCH_DATA;
+            *pEdx = VBOX_CPUID_RESP_GEN_EDX;
+            *pEcx = VBOX_CPUID_RESP_GEN_ECX;
+            *pEbx = VBOX_CPUID_RESP_GEN_EBX;
+            break;
+        }
+
+        default:
+            LogFlow(("iemCpuIdVBoxCall: Invalid function %#x (%#x, %#x)\n", iFunction, *pEbx, *pEdx));
+            *pEax = (uint32_t)VERR_INVALID_FUNCTION;
+            *pEbx = (uint32_t)VERR_INVALID_FUNCTION;
+            *pEcx = (uint32_t)VERR_INVALID_FUNCTION;
+            *pEdx = (uint32_t)VERR_INVALID_FUNCTION;
+            break;
+    }
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITHOUT_CPUID_HOST_CALL */
+
 /**
  * Implements 'CPUID'.
  */
@@ -7772,8 +7866,32 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_CPUID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.cs.Attr.n.u1Long,
-                      &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
+
+    uint32_t const uEax = pVCpu->cpum.GstCtx.eax;
+    uint32_t const uEcx = pVCpu->cpum.GstCtx.ecx;
+
+#ifndef VBOX_WITHOUT_CPUID_HOST_CALL
+    /*
+     * CPUID host call backdoor.
+     */
+    if (   uEax == VBOX_CPUID_REQ_EAX_FIXED
+        && (uEcx & VBOX_CPUID_REQ_ECX_FIXED_MASK) == VBOX_CPUID_REQ_ECX_FIXED
+        && pVCpu->CTX_SUFF(pVM)->iem.s.fCpuIdHostCall)
+    {
+        VBOXSTRICTRC rcStrict = iemCpuIdVBoxCall(pVCpu, uEcx & VBOX_CPUID_REQ_ECX_FN_MASK,
+                                                 &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx,
+                                                 &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    /*
+     * Regular CPUID.
+     */
+    else
+#endif
+        CPUMGetGuestCpuId(pVCpu, uEax, uEcx, pVCpu->cpum.GstCtx.cs.Attr.n.u1Long,
+                          &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
+
     pVCpu->cpum.GstCtx.rax &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.rbx &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.rcx &= UINT32_C(0xffffffff);
