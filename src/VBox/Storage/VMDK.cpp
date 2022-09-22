@@ -7564,6 +7564,8 @@ static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                    PVDINTERFACE pVDIfsOperation)
 {
+    RT_NOREF5(uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation);
+    
     // Establish variables and objects needed
     int rc = VINF_SUCCESS;
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
