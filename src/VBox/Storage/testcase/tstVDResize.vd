@@ -39,6 +39,14 @@ void main()
     close("test", "single", true /* fDelete */);
     destroydisk("test");
 
+    print("Testing VMDK Flat");
+    createdisk("test-vmdk-flat", true);
+    create("test-vmdk-flat", "base", "test-vmdk-flat.vmdk", "fixed", "VMDK", 10G, false, false);
+    io("test-vmdk-flat", false, 1, "seq", 64K, 1G, 2G, 10G, 100, "none");
+    resize("test-vmdk-flat", 20000M);
+    close("test-vmdk-flat", "single", true /* fDelete */);
+    destroydisk("test-vmdk-flat");
+
     iorngdestroy();
 }
 

@@ -145,6 +145,14 @@ typedef struct
  * Workstation 5, VMware Server or VMware Player. Not necessarily sparse.
  */
 #define VMDK_SPARSE_MAGICNUMBER 0x564d444b /* 'V' 'M' 'D' 'K' */
+/** VMDK sector size in bytes. */
+#define VMDK_SECTOR_SIZE 512
+/** Max string buffer size for uint64_t with null term */
+#define UINT64_MAX_BUFF_SIZE 21
+/** Grain directory entry size in bytes */
+#define VMDK_GRAIN_DIR_ENTRY_SIZE 4
+/** Grain table size in bytes */
+#define VMDK_GRAIN_TABLE_SIZE 2048
 /**
  * VMDK hosted binary extent header. The "Sparse" is a total misnomer, as
  * this header is also used for monolithic flat images.
@@ -1237,7 +1245,8 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
  * @param   fPreAlloc       Flag whether to pre allocate the grain tables at this point.
  */
 static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
-                                    uint64_t uStartSector, bool fPreAlloc)
+                                    uint64_t uStartSector, bool fPreAlloc,
+                                    bool fExisting = false)
 {
     int rc = VINF_SUCCESS;
     unsigned i;
@@ -1270,7 +1279,9 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         cbOverhead += cbGDRounded + cbGTRounded;
         cbOverhead = RT_ALIGN_64(cbOverhead,
                                  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pExtent->pFile->pStorage, cbOverhead);
+
+        if (!fExisting)
+            rc = vdIfIoIntFileSetSize(pImage->pIfIo, pExtent->pFile->pStorage, cbOverhead);
     }
     if (RT_SUCCESS(rc))
     {
@@ -2805,6 +2816,102 @@ static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
         }
         pImage->pExtents = pExtents;
         pImage->cExtents = cExtents;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+/**
+ * Internal: allocate and describes an additional, file-backed extent 
+ * for the given size. Preserves original extents.
+ */
+static int vmdkAddFileBackedExtent(PVMDKIMAGE pImage, uint64_t cbSize)
+{
+    int rc = VINF_SUCCESS;
+    PVMDKEXTENT pNewExtents = (PVMDKEXTENT)RTMemAllocZ((pImage->cExtents + 1) * sizeof(VMDKEXTENT));
+    if (pNewExtents)
+    {
+        memcpy(pNewExtents, pImage->pExtents, pImage->cExtents * sizeof(VMDKEXTENT));
+        PVMDKEXTENT pExtent = &pNewExtents[pImage->cExtents];
+
+        pExtent->pFile = NULL;
+        pExtent->pszBasename = NULL;
+        pExtent->pszFullname = NULL;
+        pExtent->pGD = NULL;
+        pExtent->pRGD = NULL;
+        pExtent->pDescData = NULL;
+        pExtent->uVersion = 1;
+        pExtent->uCompression = VMDK_COMPRESSION_NONE;
+        pExtent->uExtent = pImage->cExtents;
+        pExtent->pImage = pImage;
+        pExtent->cNominalSectors = VMDK_BYTE2SECTOR(cbSize);
+        pExtent->enmType = VMDKETYPE_FLAT;
+        pExtent->enmAccess = VMDKACCESS_READWRITE;
+        pExtent->uSectorOffset = 0;
+        
+        char *pszBasenameSubstr = RTPathFilename(pImage->pszFilename);
+        AssertPtr(pszBasenameSubstr);
+
+        char *pszBasenameSuff = RTPathSuffix(pszBasenameSubstr);
+        char *pszBasenameBase = RTStrDup(pszBasenameSubstr);
+        RTPathStripSuffix(pszBasenameBase);
+        char *pszTmp;
+        size_t cbTmp;
+
+        if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
+            RTStrAPrintf(&pszTmp, "%s-f%03d%s", pszBasenameBase,
+                         pExtent->uExtent + 1, pszBasenameSuff);
+        else
+            RTStrAPrintf(&pszTmp, "%s-s%03d%s", pszBasenameBase, pExtent->uExtent + 1,
+                         pszBasenameSuff);
+
+        RTStrFree(pszBasenameBase);
+        if (!pszTmp)
+            return VERR_NO_STR_MEMORY;
+        cbTmp = strlen(pszTmp) + 1;
+        char *pszBasename = (char *)RTMemTmpAlloc(cbTmp);
+        if (!pszBasename)
+        {
+            RTStrFree(pszTmp);
+            return VERR_NO_MEMORY;
+        }
+
+        memcpy(pszBasename, pszTmp, cbTmp);
+        RTStrFree(pszTmp);
+
+        pExtent->pszBasename = pszBasename;
+
+        char *pszBasedirectory = RTStrDup(pImage->pszFilename);
+        if (!pszBasedirectory)
+            return VERR_NO_STR_MEMORY;
+        RTPathStripFilename(pszBasedirectory);
+        char *pszFullname = RTPathJoinA(pszBasedirectory, pExtent->pszBasename);
+        RTStrFree(pszBasedirectory);
+        if (!pszFullname)
+            return VERR_NO_STR_MEMORY;
+        pExtent->pszFullname = pszFullname;
+
+        /* Create file for extent. */
+        rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszBasename, pExtent->pszFullname,
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                     true /* fCreate */));
+        if (RT_FAILURE(rc))
+            return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
+
+        rc = vmdkDescExtInsert(pImage, &pImage->Descriptor, pExtent->enmAccess,
+                               pExtent->cNominalSectors, pExtent->enmType,
+                               pExtent->pszBasename, pExtent->uSectorOffset);
+        if (RT_FAILURE(rc))
+            return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not insert the extent list into descriptor in '%s'"), pImage->pszFilename);
+
+        rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, cbSize,
+                                            0 /* fFlags */, NULL, 0, 0);
+
+        if (RT_FAILURE(rc))
+            return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
+
+        pImage->pExtents = pNewExtents;
+        pImage->cExtents++;
     }
     else
         rc = VERR_NO_MEMORY;
@@ -7399,6 +7506,216 @@ static DECLCALLBACK(void) vmdkDump(void *pBackendData)
     vdIfErrorMessage(pImage->pIfError, "Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
     vdIfErrorMessage(pImage->pIfError, "Header: uuidParentModification={%RTuuid}\n", &pImage->ParentModificationUuid);
 }
+
+static int vmdkRepaceExtentSize(PVMDKIMAGE pImage, unsigned line, uint64_t cSectorsOld,
+                                uint64_t cSectorsNew)
+{
+    char * szOldExtentSectors = (char *)RTMemAlloc(UINT64_MAX_BUFF_SIZE);
+    if (!szOldExtentSectors)
+        return VERR_NO_MEMORY;
+
+    int cbWritten = RTStrPrintf2(szOldExtentSectors, UINT64_MAX_BUFF_SIZE, "%llu", cSectorsOld);
+    if (cbWritten <= 0 || cbWritten > UINT64_MAX_BUFF_SIZE)
+    {
+        RTMemFree(szOldExtentSectors);
+        szOldExtentSectors = NULL;
+
+        return VERR_BUFFER_OVERFLOW;
+    }
+    
+    char * szNewExtentSectors = (char *)RTMemAlloc(UINT64_MAX_BUFF_SIZE);
+    if (!szNewExtentSectors)
+        return VERR_NO_MEMORY;
+
+    cbWritten = RTStrPrintf2(szNewExtentSectors, UINT64_MAX_BUFF_SIZE, "%llu", cSectorsNew);
+    if (cbWritten <= 0 || cbWritten > UINT64_MAX_BUFF_SIZE)
+    {
+        RTMemFree(szOldExtentSectors);
+        szOldExtentSectors = NULL;
+
+        RTMemFree(szNewExtentSectors);
+        szNewExtentSectors = NULL;
+
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    char * szNewExtentLine = vmdkStrReplace(pImage->Descriptor.aLines[line],
+                                            szOldExtentSectors,
+                                            szNewExtentSectors);
+
+    RTMemFree(szOldExtentSectors);
+    szOldExtentSectors = NULL;
+
+    RTMemFree(szNewExtentSectors);
+    szNewExtentSectors = NULL;
+
+    if (!szNewExtentLine)
+        return VERR_INVALID_PARAMETER;
+
+    pImage->Descriptor.aLines[line] = szNewExtentLine;
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnResize */
+static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
+                                   PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                                   unsigned uPercentStart, unsigned uPercentSpan,
+                                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                   PVDINTERFACE pVDIfsOperation)
+{
+    // Establish variables and objects needed
+    int rc = VINF_SUCCESS;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
+    unsigned uImageFlags = pImage->uImageFlags;
+    PVMDKEXTENT pExtent = &pImage->pExtents[0];
+
+    uint64_t cSectorsNew = cbSize / VMDK_SECTOR_SIZE;   /** < New number of sectors in the image after the resize */
+    if (cbSize % VMDK_SECTOR_SIZE)
+        cSectorsNew++;
+
+    uint64_t cSectorsOld = pImage->cbSize / VMDK_SECTOR_SIZE; /** < Number of sectors before the resize. Only for FLAT images. */
+    if (pImage->cbSize % VMDK_SECTOR_SIZE)
+        cSectorsOld++;
+    unsigned cExtents = pImage->cExtents;
+
+    /* Check size is within min/max bounds. */
+    if ( !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
+        && (   !cbSize
+            || (!(uImageFlags & VD_IMAGE_FLAGS_FIXED) && cbSize >= _1T * 256 - _64K)) )
+        return VERR_VD_INVALID_SIZE;
+
+    /*
+     * Making the image smaller is not supported at the moment.
+     */
+    /** @todo implement making the image smaller, it is the responsibility of
+     * the user to know what he's doing. */
+    if (cbSize < pImage->cbSize)
+        rc = VERR_VD_SHRINK_NOT_SUPPORTED;
+    else if (cbSize > pImage->cbSize)
+    {
+        /** 
+         * monolithicFlat. FIXED flag and not split up into 2 GB parts.
+         */
+        if ((uImageFlags & VD_IMAGE_FLAGS_FIXED) && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G))
+        {
+            /** Required space in bytes for the extent after the resize. */
+            uint64_t cbSectorSpaceNew = cSectorsNew * VMDK_SECTOR_SIZE;
+            pExtent = &pImage->pExtents[0];
+
+            rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, cbSectorSpaceNew,
+                                                0 /* fFlags */, NULL,
+                                                uPercentStart, uPercentSpan);
+            if (RT_FAILURE(rc))
+                return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
+
+            rc = vmdkRepaceExtentSize(pImage, pImage->Descriptor.uFirstExtent, cSectorsOld, cSectorsNew);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        /** 
+         * twoGbMaxExtentFlat. FIXED flag and SPLIT into 2 GB parts. 
+         */
+        if ((uImageFlags & VD_IMAGE_FLAGS_FIXED) && (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G))
+        {
+            /* Check to see how much space remains in last extent */
+            bool fSpaceAvailible = false;
+            uint64_t cLastExtentRemSectors = cSectorsOld % VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE);
+            if (cLastExtentRemSectors)
+                fSpaceAvailible = true;
+
+            uint64_t cSectorsNeeded = cSectorsNew - cSectorsOld;
+            if (fSpaceAvailible && cSectorsNeeded + cLastExtentRemSectors <= VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE))
+            {
+                pExtent = &pImage->pExtents[cExtents - 1];
+                rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage,
+                                                    VMDK_SECTOR2BYTE(cSectorsNeeded + cLastExtentRemSectors),
+                                                    0 /* fFlags */, NULL, uPercentStart, uPercentSpan);
+                if (RT_FAILURE(rc))
+                    return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
+            
+                rc = vmdkRepaceExtentSize(pImage, pImage->Descriptor.uFirstExtent + cExtents - 1,
+                                          pExtent->cNominalSectors, cSectorsNeeded + cLastExtentRemSectors);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+            else
+            {
+                if (fSpaceAvailible)
+                {
+                    pExtent = &pImage->pExtents[cExtents - 1];
+                    rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, VMDK_2G_SPLIT_SIZE,
+                                                        0 /* fFlags */, NULL,
+                                                        uPercentStart, uPercentSpan);
+                    if (RT_FAILURE(rc))
+                        return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
+
+                    cSectorsNeeded = cSectorsNeeded - VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE) + cLastExtentRemSectors;
+                    
+                    rc = vmdkRepaceExtentSize(pImage, pImage->Descriptor.uFirstExtent + cExtents - 1,
+                                              pExtent->cNominalSectors, VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE));
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+
+                unsigned cNewExtents = VMDK_SECTOR2BYTE(cSectorsNeeded) / VMDK_2G_SPLIT_SIZE;
+                if (cNewExtents % VMDK_2G_SPLIT_SIZE || cNewExtents < VMDK_2G_SPLIT_SIZE)
+                    cNewExtents++;
+
+                for (unsigned i = cExtents;
+                     i < cExtents + cNewExtents && cSectorsNeeded >= VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE);
+                     i++)
+                {
+                    rc = vmdkAddFileBackedExtent(pImage, VMDK_2G_SPLIT_SIZE);
+                    if (RT_FAILURE(rc))
+                        return rc;
+
+                    pExtent = &pImage->pExtents[i];
+
+                    pExtent->cSectors = VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE);
+                    cSectorsNeeded -= VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE);
+                }
+
+                if (cSectorsNeeded)
+                {
+                    rc = vmdkAddFileBackedExtent(pImage, VMDK_SECTOR2BYTE(cSectorsNeeded));
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+            }
+        }
+
+        /* Successful resize. Update metadata */
+        if (RT_SUCCESS(rc))
+        {
+            /* Update size and new block count. */
+            pImage->cbSize = cbSize;
+            /** @todo r=jack: update cExtents if needed */
+            pExtent->cNominalSectors = VMDK_BYTE2SECTOR(cbSize);
+
+            /* Update geometry. */
+            pImage->PCHSGeometry = *pPCHSGeometry;
+            pImage->LCHSGeometry = *pLCHSGeometry;
+        }
+
+        /* Update header information in base image file. */
+        rc = vmdkWriteDescriptor(pImage, NULL);
+
+        if (RT_FAILURE(rc))
+            return rc;
+
+        rc = vmdkFlushImage(pImage, NULL);
+
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    /* Same size doesn't change the image at all. */
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 const VDIMAGEBACKEND g_VmdkBackend =
 {
     /* u32Version */
@@ -7492,7 +7809,7 @@ const VDIMAGEBACKEND g_VmdkBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
-    NULL,
+    vmdkResize,
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
