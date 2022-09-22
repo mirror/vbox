@@ -1102,21 +1102,6 @@ static void cpumR3InitVmxHwVirtState(PVM pVM)
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_PAGES * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_SIZE);
-
-        /*
-         * Zero out all allocated pages (should compress well for saved-state).
-         */
-        /** @todo r=bird: this is and always was unnecessary - they are already zeroed. */
-        RT_ZERO(pCtx->hwvirt.vmx.Vmcs);
-        RT_ZERO(pCtx->hwvirt.vmx.ShadowVmcs);
-        RT_ZERO(pCtx->hwvirt.vmx.abVmreadBitmap);
-        RT_ZERO(pCtx->hwvirt.vmx.abVmwriteBitmap);
-        RT_ZERO(pCtx->hwvirt.vmx.aEntryMsrLoadArea);
-        RT_ZERO(pCtx->hwvirt.vmx.aExitMsrStoreArea);
-        RT_ZERO(pCtx->hwvirt.vmx.aExitMsrLoadArea);
-        RT_ZERO(pCtx->hwvirt.vmx.abMsrBitmap);
-        RT_ZERO(pCtx->hwvirt.vmx.abIoBitmap);
-        RT_ZERO(pCtx->hwvirt.vmx.abVirtApicPage);
     }
 }
 
