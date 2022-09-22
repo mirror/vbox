@@ -231,6 +231,7 @@
 \hyphenation{VirtualBox}
 
 \begin{document}
+\frontmatter
 % bird/2018-05-14: Use sloppypar so we don't push path names and other long words
 %                  thru the right margin.  TODO: Find better solution? microtype?
 \begin{sloppypar}
@@ -339,10 +340,7 @@
     <xsl:param name="role" select="../@role"/>
 
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
-    <xsl:if test="$texcmd='\chapter' and $role='frontmatter'">
-      <xsl:text>\frontmatter&#x0a;</xsl:text>
-    </xsl:if>
-    <xsl:if test="$texcmd='\chapter' and ../preceding-sibling::*[1][@role='frontmatter']">
+    <xsl:if test="$texcmd='\chapter' and name(../preceding-sibling::*[1])='preface'">
       <xsl:text>\mainmatter&#x0a;</xsl:text>
     </xsl:if>
     <xsl:choose>
@@ -383,11 +381,6 @@
       <xsl:when test="name(..)='preface'">
         <xsl:call-template name="title-wrapper">
           <xsl:with-param name="texcmd">\chapter</xsl:with-param>
-        </xsl:call-template>
-      </xsl:when>
-      <xsl:when test="name(..)='sect1' and ../../@role='frontmatter'">
-        <xsl:call-template name="title-wrapper">
-          <xsl:with-param name="texcmd">\section*</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='sect1'">
