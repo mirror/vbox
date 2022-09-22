@@ -6,7 +6,7 @@
 %all.entities;
 ]>
 <simplesect>
-
+  
   <!-- Include this statement in the document Preface -->
 
   <title>Access to Oracle Support</title>
@@ -17,7 +17,11 @@
 
 <?fo-linebreak?>
 
-    <ulink url="https://www.oracle.com/corporate/accessibility/learning-support.html#support-tab"/>.
+    <ulink url="http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=info">http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=info</ulink>
+    or visit
+    <ulink
+      url="http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=trs">http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=trs</ulink>
+    if you are hearing impaired.
   </para>
 
 </simplesect>
