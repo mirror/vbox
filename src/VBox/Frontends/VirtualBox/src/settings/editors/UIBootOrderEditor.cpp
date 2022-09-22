@@ -98,6 +98,11 @@ public slots:
 
 protected:
 
+    /** Return size hint. */
+    virtual QSize sizeHint() const;
+    /** Return minimum size hint. */
+    virtual QSize minimumSizeHint() const;
+
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
@@ -113,9 +118,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-
-    /** Adjusts table size to fit contents. */
-    void adjustSizeToFitContent();
 
     /** Moves item with passed @a index to specified @a iRow. */
     QModelIndex moveItemTo(const QModelIndex &index, int iRow);
@@ -179,8 +181,8 @@ void UIBootListWidget::setBootItems(const UIBootItemDataList &bootItems)
     if (topLevelItemCount())
         setCurrentItem(topLevelItem(0));
 
-    /* Adjust table size after change: */
-    adjustSizeToFitContent();
+    /* That changes the size: */
+    updateGeometry();
 }
 
 UIBootItemDataList UIBootListWidget::bootItems() const
@@ -214,12 +216,24 @@ void UIBootListWidget::sltMoveItemDown()
     moveItemTo(index, index.row() + 2);
 }
 
+QSize UIBootListWidget::sizeHint() const
+{
+    return minimumSizeHint();
+}
+
+QSize UIBootListWidget::minimumSizeHint() const
+{
+    const int iH = 2 * frameWidth();
+    const int iW = iH;
+    return QSize(sizeHintForColumn(0) + iW,
+                 sizeHintForRow(0) * topLevelItemCount() + iH);
+
+}
+
 void UIBootListWidget::retranslateUi()
 {
     for (int i = 0; i < topLevelItemCount(); ++i)
         static_cast<UIBootListWidgetItem*>(topLevelItem(i))->retranslateUi();
-
-    adjustSizeToFitContent();
 }
 
 void UIBootListWidget::dropEvent(QDropEvent *pEvent)
@@ -276,14 +290,6 @@ void UIBootListWidget::prepare()
     setDropIndicatorShown(true);
     connect(this, &UIBootListWidget::currentItemChanged,
             this, &UIBootListWidget::sigRowChanged);
-}
-
-void UIBootListWidget::adjustSizeToFitContent()
-{
-    const int iH = 2 * frameWidth();
-    const int iW = iH;
-    setFixedSize(sizeHintForColumn(0) + iW,
-                 sizeHintForRow(0) * topLevelItemCount() + iH);
 }
 
 QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int iRow)
