@@ -1245,8 +1245,7 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
  * @param   fPreAlloc       Flag whether to pre allocate the grain tables at this point.
  */
 static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
-                                    uint64_t uStartSector, bool fPreAlloc,
-                                    bool fExisting = false)
+                                    uint64_t uStartSector, bool fPreAlloc)
 {
     int rc = VINF_SUCCESS;
     unsigned i;
@@ -1279,9 +1278,7 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         cbOverhead += cbGDRounded + cbGTRounded;
         cbOverhead = RT_ALIGN_64(cbOverhead,
                                  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-
-        if (!fExisting)
-            rc = vdIfIoIntFileSetSize(pImage->pIfIo, pExtent->pFile->pStorage, cbOverhead);
+        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pExtent->pFile->pStorage, cbOverhead);
     }
     if (RT_SUCCESS(rc))
     {
