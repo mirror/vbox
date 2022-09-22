@@ -1102,6 +1102,11 @@ static void cpumR3InitVmxHwVirtState(PVM pVM)
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_PAGES * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_SIZE);
+
+        /* Initialize non-zero values. */
+        pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
+        pCtx->hwvirt.vmx.GCPhysShadowVmcs  = NIL_RTGCPHYS;
+        pCtx->hwvirt.vmx.GCPhysVmcs        = NIL_RTGCPHYS;
     }
 }
 
@@ -1120,7 +1125,7 @@ DECLINLINE(void) cpumR3ResetVmxHwVirtState(PVMCPU pVCpu)
     RT_ZERO(pCtx->hwvirt.vmx.ShadowVmcs);
     pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
     pCtx->hwvirt.vmx.GCPhysShadowVmcs  = NIL_RTGCPHYS;
-    pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
+    pCtx->hwvirt.vmx.GCPhysVmcs        = NIL_RTGCPHYS;
     pCtx->hwvirt.vmx.fInVmxRootMode    = false;
     pCtx->hwvirt.vmx.fInVmxNonRootMode = false;
     /* Don't reset diagnostics here. */
