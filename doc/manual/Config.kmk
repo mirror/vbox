@@ -119,7 +119,7 @@ VBOX_MANUAL_XML_FILES = \
 	user_ThirdParty.xml \
 	user_PrivacyPolicy.xml \
 	user_Glossary.xml \
-	oracle-accessibility-en.xml \
+	oracle-accessibility-ohc-en.xml \
 	oracle-diversity.xml \
 	oracle-support-en.xml
 
@@ -318,9 +318,9 @@ ifdef VBOX_XML_CATALOG
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-accessibility-en.xml"            uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-accessibility-en.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-diversity.xml"					uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-diversity.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-support-en.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-support-en.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-accessibility-ohc-en.xml"            uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-accessibility-ohc-en.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-legal-notices/oracle-diversity.xml"					uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-diversity.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-legal-notices/oracle-support-en.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-support-en.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_ChangeLogImpl.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xsl"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl"/>' \
 		$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_VBoxHeadless.xml man_vboximg-mount.xml)\
@@ -344,6 +344,7 @@ ifdef VBOX_XML_ENTITIES
 		'<!-- Entities for product names -->' \
 		'<!ENTITY product-version "$(VBOX_VERSION_STRING)">' \
 		'<!ENTITY product-name "Oracle VM VirtualBox">' \
+		'<!ENTITY vbox-mgr "VirtualBox Manager">' \
 		'<!ENTITY oci "Oracle Cloud Infrastructure">' \
 		'' \
 		'<!-- VBox placeholder entities -->' \

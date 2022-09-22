@@ -26,7 +26,7 @@
   <!ENTITY % all.entities SYSTEM "all-entities.ent">
   %all.entities;
 ]>
-<preface id="user-preface" role="frontmatter">
+<preface id="user-preface">
 
   <title>Preface</title>
 
@@ -103,12 +103,12 @@
   </simplesect>
 
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-    href="../common/oracle-accessibility-en.xml" />
+    href="../common/oracle-accessibility-ohc-en.xml" />
 
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-    href="../common/oracle-support-en.xml" />
+    href="../common/oracle-legal-notices/oracle-support-en.xml" />
 
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-    href="../common/oracle-diversity.xml" />
+    href="../common/oracle-legal-notices/oracle-diversity.xml" />
 
 </preface>
