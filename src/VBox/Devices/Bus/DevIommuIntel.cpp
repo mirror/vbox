@@ -1423,7 +1423,7 @@ static void dmarFaultEventRaiseInterrupt(PPDMDEVINS pDevIns)
     PCDMARCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PCDMARCC);
     DMAR_ASSERT_LOCK_IS_OWNER(pDevIns, pThisCC);
 
-#ifdef RT_STRICT
+#ifdef VBOX_STRICT
     {
         PCDMAR pThis = PDMDEVINS_2_DATA(pDevIns, PCDMAR);
         uint32_t const uFstsReg = dmarRegReadRaw32(pThis, VTD_MMIO_OFF_FSTS_REG);
