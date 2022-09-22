@@ -761,7 +761,7 @@ void UIMediumManagerWidget::prepare()
         if (!uiCommon().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
-    uiCommon().setHelpKeyword(this,"vdis");
+    uiCommon().setHelpKeyword(this,"virtual-media-manager");
 }
 
 void UIMediumManagerWidget::prepareConnections()

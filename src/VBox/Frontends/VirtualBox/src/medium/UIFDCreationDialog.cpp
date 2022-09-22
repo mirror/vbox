@@ -27,13 +27,13 @@
 
 /* Qt includes */
 #include <QCheckBox>
-#include <QDialogButtonBox>
 #include <QDir>
 #include <QGridLayout>
 #include <QLabel>
 #include <QPushButton>
 
 /* GUI includes */
+#include "QIDialogButtonBox.h"
 #include "UICommon.h"
 #include "UIFDCreationDialog.h"
 #include "UIFilePathSelector.h"
@@ -263,12 +263,14 @@ void UIFDCreationDialog::prepare()
         }
 
         /* Prepare button-box: */
-        m_pButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+        m_pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Help | QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
         if (m_pButtonBox)
         {
+            uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), "create-floppy-disk-image");
             connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UIFDCreationDialog::accept);
             connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIFDCreationDialog::reject);
-
+            connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
+                    &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
             pLayoutMain->addWidget(m_pButtonBox, 3, 0, 1, 3);
         }
     }

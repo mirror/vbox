@@ -581,7 +581,7 @@ void UICloudProfileManagerWidget::prepare()
     loadCloudStuff();
 
     /* Set help keyowrd for context sensitive help: */
-    uiCommon().setHelpKeyword(this, "ovf-cloud-profile-manager");
+    uiCommon().setHelpKeyword(this, "cloud-using-cloud-profile-manager");
 
 }
 

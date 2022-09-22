@@ -41,7 +41,7 @@
 /* Forward declarations: */
 class QCheckBox;
 class QComboBox;
-class QDialogButtonBox;
+class QIDialogButtonBox;
 class QLabel;
 class UIFilePathSelector;
 class CMedium;
@@ -124,7 +124,7 @@ private:
     /** Holds the format check-box instance. */
     QCheckBox          *m_pFormatCheckBox;
     /** holds the button-box instance. */
-    QDialogButtonBox   *m_pButtonBox;
+    QIDialogButtonBox  *m_pButtonBox;
 
     /** Holds the created medium ID. */
     QUuid  m_uMediumID;

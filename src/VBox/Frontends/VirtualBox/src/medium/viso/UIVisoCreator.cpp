@@ -690,7 +690,7 @@ void UIVisoCreatorDialog::prepareWidgets()
                 &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
-        uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "viso");
+        uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
     }
     retranslateUi();
 }

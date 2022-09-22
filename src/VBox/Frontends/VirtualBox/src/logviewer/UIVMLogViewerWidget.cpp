@@ -712,7 +712,7 @@ void UIVMLogViewerWidget::prepare()
 
     /* Setup escape shortcut: */
     manageEscapeShortCut();
-    uiCommon().setHelpKeyword(this, "collect-debug-info");
+    uiCommon().setHelpKeyword(this, "log-viewer");
 }
 
 void UIVMLogViewerWidget::prepareActions()

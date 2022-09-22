@@ -57,10 +57,12 @@
 using namespace UIExtraDataDefs;
 
 
-UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
-                             const QString &strMachineGroup, const QString &strHelpHashtag,
-                             CUnattended &comUnattended, const QString &strISOFilePath /* = QString() */)
-    : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, strHelpHashtag)
+UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
+                             UIActionPool *pActionPool,
+                             const QString &strMachineGroup,
+                             CUnattended &comUnattended,
+                             const QString &strISOFilePath /* = QString() */)
+    : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, "create-vm-wizard" /* help keyword */)
     , m_strMachineGroup(strMachineGroup)
     , m_iIDECount(0)
     , m_iSATACount(0)

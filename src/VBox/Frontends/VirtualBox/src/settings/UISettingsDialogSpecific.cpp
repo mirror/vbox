@@ -215,7 +215,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_24px.png", ":/machine_16px.png",
                             iPageIndex, "#general", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
                 /* Input page: */
@@ -224,7 +224,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsInput;
                     addItem(":/keyboard_32px.png", ":/keyboard_24px.png", ":/keyboard_16px.png",
                             iPageIndex, "#input", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -234,7 +234,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsUpdate;
                     addItem(":/refresh_32px.png", ":/refresh_24px.png", ":/refresh_16px.png",
                             iPageIndex, "#update", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -244,7 +244,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsLanguage;
                     addItem(":/site_32px.png", ":/site_24px.png", ":/site_16px.png",
                             iPageIndex, "#language", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
                 /* Display page: */
@@ -253,7 +253,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsDisplay;
                     addItem(":/vrdp_32px.png", ":/vrdp_24px.png", ":/vrdp_16px.png",
                             iPageIndex, "#display", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -263,7 +263,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsProxy;
                     addItem(":/proxy_32px.png", ":/proxy_24px.png", ":/proxy_16px.png",
                             iPageIndex, "#proxy", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -274,7 +274,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsInterface;
                     addItem(":/interface_32px.png", ":/interface_24px.png", ":/interface_16px.png",
                             iPageIndex, "#userInterface", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
+                    addPageHelpKeyword(iPageIndex, "preferences");
                     break;
                 }
 #endif /* VBOX_WS_WIN */
