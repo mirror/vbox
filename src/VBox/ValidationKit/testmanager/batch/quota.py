@@ -4,7 +4,7 @@
 # pylint: disable=line-too-long
 
 """
-A cronjob that maintains archived testsets.
+A cronjob that applies quotas to large files in testsets.
 """
 
 from __future__ import print_function;
@@ -60,6 +60,23 @@ sys.path.append(g_ksTestManagerDir)
 from common                     import utils;
 from testmanager                import config;
 
+##
+## @todo r=bird: Since this is CLEARLY COPIED from filearchiver.py, why doesn't the log start with a svn copy?
+##
+## This will be rewritten as a single purpose job. I don't want to have any 'command' arguments, there
+## should be as few arguments as possible since this is a cronjob and it gets most of it's info from the
+## config.py file rather than the command line.
+##
+## I don't think processDir() will work at all in the form it is.  That one is assuming the flat structure
+## of the directory containing the most recent tests that should be zipped up and put on the storage server.
+## What this script needs to process is the nested (by year/month/day/(hour / x * x)) layout and handle those
+## files.  It could be a good simplification to get the selection of TestSets to run on from the database.
+##
+## On reflection, we can either have a window of files that get rescanned (e.g. starting two weeks and going
+## back a two more) everytime the batch job runs, OR we could add a flag in the database indicating whether
+## we've processed a TestSet (maybe a quota pass number).  The latter would be much more efficient but
+## require a rather large database change (adding a column to a table with close to 20 million rows).
+##
 
 class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
     """
@@ -74,8 +91,8 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         self.sCmd           = sCmd;
         self.sSrcDir        = oOptions.sSrcDir;
         if not self.sSrcDir :
-            self.sSrcDir    = config.g_ksFileAreaRootDir;
-        self.sDstDir        = config.g_ksZipFileAreaRootDir;
+            self.sSrcDir    = config.g_ksFileAreaRootDir;    ## @todo r=bird: This CANNOT be right.
+        self.sDstDir        = config.g_ksZipFileAreaRootDir; ## @todo r=bird: This isn't used.
         self.sTempDir       = oOptions.sTempDir;
         if not self.sTempDir:
             self.sTempDir   = tempfile.gettempdir();
@@ -175,10 +192,10 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         fRc = True;
 
         try:
-            oSrcZipFile = zipfile.ZipFile(sSrcZipFileAbs, 'r');                            # pylint: disable=consider-using-with
+            oSrcZipFile = zipfile.ZipFile(sSrcZipFileAbs, 'r');                             # pylint: disable=consider-using-with
             try:
                 if not self.fDryRun:
-                    oDstZipFile = zipfile.ZipFile(sDstZipFileAbs, 'w');
+                    oDstZipFile = zipfile.ZipFile(sDstZipFileAbs, 'w');                     # pylint: disable=consider-using-with
                 try:
                     for oCurFile in oSrcZipFile.infolist():
 
@@ -200,8 +217,8 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                         if fDoRepack \
                            and self.cOlderThanDays:
                             tsMaxAge  = datetime.now() - timedelta(days = self.cOlderThanDays);
-                            tsFile    = datetime(year   = oCurFile.date_time[0], \
-                                                 month  = oCurFile.date_time[1], \
+                            tsFile    = datetime(year   = oCurFile.date_time[0],
+                                                 month  = oCurFile.date_time[1],
                                                  day    = oCurFile.date_time[2],
                                                  hour   = oCurFile.date_time[3],
                                                  minute = oCurFile.date_time[4],
@@ -221,8 +238,8 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                         oDstZipFile.close();
                 except Exception as oXcpt4:
                     print(oXcpt4);
-                    return (None, 'Error handling file "%s" of archive "%s": %s' \
-                            % (oCurFile.filename, sSrcZipFileAbs, oXcpt4,), None);
+                    return (None, 'Error handling file "%s" of archive "%s": %s'
+                                % (oCurFile.filename, sSrcZipFileAbs, oXcpt4,), None);
 
                 oSrcZipFile.close();
 
