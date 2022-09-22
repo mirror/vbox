@@ -2830,9 +2830,10 @@ VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPUCC pVCpu, uint32_t uExitReason, VM
     ExitInfo.uReason = uExitReason;
     ExitInfo.cbInstr = cbInstr;
 
+#ifdef VBOX_STRICT
     /*
-     * Update the Exit qualification field with displacement bytes.
-     * See Intel spec. 27.2.1 "Basic VM-Exit Information".
+    * To prevent us from shooting ourselves in the foot.
+    * The follow instructions convey specific info that require using their respective handlers.
      */
     switch (uExitReason)
     {
@@ -2851,23 +2852,26 @@ VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPUCC pVCpu, uint32_t uExitReason, VM
         case VMX_EXIT_XSAVES:
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RDSEED:
-        {
-            /* Construct the VM-exit instruction information. */
-            RTGCPTR GCPtrDisp;
-            uint32_t const uInstrInfo = iemVmxGetExitInstrInfo(pVCpu, uExitReason, uInstrId, &GCPtrDisp);
-
-            /* Update the VM-exit instruction information. */
-            ExitInfo.InstrInfo.u = uInstrInfo;
-
-            /* Update the Exit qualification. */
-            ExitInfo.u64Qual = GCPtrDisp;
             break;
-        }
-
         default:
             AssertMsgFailedReturn(("Use instruction-specific handler\n"), VERR_IEM_IPE_5);
             break;
     }
+#endif
+
+    /*
+     * Update the Exit qualification field with displacement bytes.
+     * See Intel spec. 27.2.1 "Basic VM-Exit Information".
+     */
+    /* Construct the VM-exit instruction information. */
+    RTGCPTR GCPtrDisp;
+    uint32_t const uInstrInfo = iemVmxGetExitInstrInfo(pVCpu, uExitReason, uInstrId, &GCPtrDisp);
+
+    /* Update the VM-exit instruction information. */
+    ExitInfo.InstrInfo.u = uInstrInfo;
+
+    /* Update the Exit qualification. */
+    ExitInfo.u64Qual = GCPtrDisp;
 
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
