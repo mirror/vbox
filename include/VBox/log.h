@@ -302,6 +302,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_HM,
     /** IEM group. */
     LOG_GROUP_IEM,
+    /** IEM AMD-V group. */
+    LOG_GROUP_IEM_SVM,
+    /** IEM VT-x group. */
+    LOG_GROUP_IEM_VMX,
     /** I/O buffer management group. */
     LOG_GROUP_IOBUFMGMT,
     /** IOM group. */
@@ -962,6 +966,8 @@ typedef enum VBOXLOGGROUP
     "HGSMI", \
     "HM", \
     "IEM", \
+    "IEM_SVM", \
+    "IEM_VMX", \
     "IOBUFMGMT", \
     "IOM", \
     "IOM_IOPORT", \

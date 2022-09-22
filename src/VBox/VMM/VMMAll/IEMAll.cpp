@@ -82,6 +82,11 @@
  *      - Level 9  (Log9) : Memory reads.
  *      - Level 10 (Log10): TLBs.
  *      - Level 11 (Log11): Unmasked FPU exceptions.
+ *
+ * The SVM (AMD-V) and VMX (VT-x) code has the following assignments:
+ *      - Level 1  (Log)  : Errors and other major events.
+ *      - Flow (LogFlow)  : Misc flow stuff (cleanup?)
+ *      - Level 2  (Log2) : VM exits.
  */
 
 /* Disabled warning C4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed */

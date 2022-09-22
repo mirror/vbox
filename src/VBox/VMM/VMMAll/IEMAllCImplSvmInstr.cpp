@@ -29,7 +29,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP   LOG_GROUP_IEM
+#define LOG_GROUP   LOG_GROUP_IEM_SVM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
@@ -119,7 +119,7 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
 /**
  * Performs an SVM world-switch (VMRUN, \#VMEXIT) updating PGM and IEM internals.
  *
- * @returns Strict VBox status code.
+ * @returns Strict VBox status code from PGMChangeMode.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
@@ -164,8 +164,8 @@ VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo
     if (   CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu))
         || uExitCode == SVM_EXIT_INVALID)
     {
-        LogFlow(("iemSvmVmexit: CS:RIP=%04x:%08RX64 uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n",
-                 pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uExitCode, uExitInfo1, uExitInfo2));
+        Log2(("iemSvmVmexit: CS:RIP=%04x:%08RX64 uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n",
+              pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uExitCode, uExitInfo1, uExitInfo2));
 
         /*
          * Disable the global-interrupt flag to prevent interrupts during the 'atomic' world switch.

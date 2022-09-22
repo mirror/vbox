@@ -29,7 +29,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP   LOG_GROUP_IEM
+#define LOG_GROUP   LOG_GROUP_IEM_VMX
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
@@ -2461,9 +2461,9 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
 
-    LogFlow(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 eflags=%#RX32\n", uExitReason,
-             pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.eflags.u32));
+    Log2(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 eflags=%#RX32\n", uExitReason,
+          pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+          pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.eflags.u32));
 
     /*
      * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.
@@ -2496,8 +2496,8 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
                                                  | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
                 iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
                 iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
-                LogFlow(("vmexit: idt_info=%#RX32 idt_err_code=%#RX32 cr2=%#RX64\n", uIdtVectoringInfo, uErrCode,
-                         pVCpu->cpum.GstCtx.cr2));
+                Log2(("vmexit: idt_info=%#RX32 idt_err_code=%#RX32 cr2=%#RX64\n", uIdtVectoringInfo, uErrCode,
+                      pVCpu->cpum.GstCtx.cr2));
             }
         }
     }
@@ -2603,7 +2603,7 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
         rcStrict = VINF_VMX_VMEXIT;
     }
     else
-        Log3(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
+        Log(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
 
     if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
     {
