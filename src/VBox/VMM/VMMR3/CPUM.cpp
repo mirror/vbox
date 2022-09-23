@@ -1030,23 +1030,24 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
 
 
 /**
- * Initialize SVM hardware virtualization state (used to allocate it).
+ * Initialize the SVM hardware virtualization state.
  *
  * @param   pVM     The cross context VM structure.
  */
 static void cpumR3InitSvmHwVirtState(PVM pVM)
 {
-    Assert(pVM->cpum.s.GuestFeatures.fSvm);
-
     LogRel(("CPUM: AMD-V nested-guest init\n"));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
-        pVCpu->cpum.s.Guest.hwvirt.enmHwvirt = CPUMHWVIRT_SVM;
+        PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
 
-        AssertCompile(SVM_VMCB_PAGES  * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.Vmcb));
-        AssertCompile(SVM_MSRPM_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abMsrBitmap));
-        AssertCompile(SVM_IOPM_PAGES  * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abIoBitmap));
+        /* Initialize that SVM hardware virtualization is available. */
+        pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_SVM;
+
+        AssertCompile(sizeof(pCtx->hwvirt.svm.Vmcb) == SVM_VMCB_PAGES * X86_PAGE_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.svm.abMsrBitmap) == SVM_MSRPM_PAGES * X86_PAGE_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.svm.abIoBitmap) == SVM_IOPM_PAGES * X86_PAGE_SIZE);
     }
 }
 
@@ -1068,7 +1069,7 @@ DECLINLINE(void) cpumR3ResetSvmHwVirtState(PVMCPU pVCpu)
 
 
 /**
- * Allocates memory for the VMX hardware virtualization state.
+ * Initializes the VMX hardware virtualization state.
  *
  * @param   pVM     The cross context VM structure.
  */
@@ -1080,6 +1081,7 @@ static void cpumR3InitVmxHwVirtState(PVM pVM)
         PVMCPU   pVCpu = pVM->apCpusR3[i];
         PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
 
+        /* Initialize that VMX hardware virtualization is available. */
         pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_VMX;
 
         AssertCompile(sizeof(pCtx->hwvirt.vmx.Vmcs) == VMX_V_VMCS_PAGES * X86_PAGE_SIZE);
