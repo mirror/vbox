@@ -7942,8 +7942,8 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
             TestData.InVal.ar64[0] = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].aVal1[0];
             TestData.InVal.ar64[1] = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].aVal1[1];
 
-            if (   RTFLOAT64U_IS_NORMAL(&TestData.InVal.ar32[0])
-                && RTFLOAT64U_IS_NORMAL(&TestData.InVal.ar32[1]))
+            if (   RTFLOAT64U_IS_NORMAL(&TestData.InVal.ar64[0])
+                && RTFLOAT64U_IS_NORMAL(&TestData.InVal.ar64[1]))
                 cNormalInputPairs++;
             else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
             {
