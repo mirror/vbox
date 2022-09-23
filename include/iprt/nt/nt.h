@@ -2873,12 +2873,55 @@ typedef struct _OBJECT_HANDLE_FLAG_INFORMATION
 } OBJECT_HANDLE_FLAG_INFORMATION;
 typedef OBJECT_HANDLE_FLAG_INFORMATION *POBJECT_HANDLE_FLAG_INFORMATION;
 
+/**
+ * Returned via ObjectTypesInformation, see also OBJECT_TYPES_INFORMATION.
+ * The next structure address is calculate:
+ *   (uintptr_t)Name.Buffer + RT_ALIGN_32(Name.MaximumLength, sizeof(uintptr_t))
+ */
+typedef struct _OBJECT_TYPE_INFORMATION
+{                                           /*   64-bit offset */
+    UNICODE_STRING TypeName;                /**< 0x00 */
+    ULONG TotalNumberOfObjects;             /**< 0x10 */
+    ULONG TotalNumberOfHandles;             /**< 0x14 */
+    ULONG TotalPagedPoolUsage;              /**< 0x18 - not set by W10 19044 */
+    ULONG TotalNonPagedPoolUsage;           /**< 0x1c - not set by W10 19044 */
+    ULONG TotalNamePoolUsage;               /**< 0x20 - not set by W10 19044 */
+    ULONG TotalHandleTableUsage;            /**< 0x24 - not set by W10 19044  */
+    ULONG HighWaterNumberOfObjects;         /**< 0x28  */
+    ULONG HighWaterNumberOfHandles;         /**< 0x2c  */
+    ULONG HighWaterPagedPoolUsage;          /**< 0x30 - not set by W10 19044 */
+    ULONG HighWaterNonPagedPoolUsage;       /**< 0x34 - not set by W10 19044 */
+    ULONG HighWaterNamePoolUsage;           /**< 0x38 - not set by W10 19044 */
+    ULONG HighWaterHandleTableUsage;        /**< 0x3c - not set by W10 19044  */
+    ULONG InvalidAttributes;                /**< 0x40 */
+    GENERIC_MAPPING GenericMapping;         /**< 0x44 */
+    ULONG ValidAccessMask;                  /**< 0x54 */
+    BOOLEAN SecurityRequired;               /**< 0x58 */
+    BOOLEAN MaintainHandleCount;            /**< 0x59 */
+    UCHAR TypeIndex;                        /**< 0x5a */
+    UCHAR ReservedZero;                     /**< 0x5b */
+    ULONG PoolType;                         /**< 0x5c */
+    ULONG DefaultPagedPoolCharge;           /**< 0x60 - not set by W10 19044 */
+    ULONG DefaultNonPagedPoolCharge;        /**< 0x64 - not set by W10 19044 */
+    /* The name string follows after the structure. */
+} OBJECT_TYPE_INFORMATION;
+AssertCompileSize(OBJECT_TYPE_INFORMATION, sizeof(UNICODE_STRING) + 0x58);
+typedef _OBJECT_TYPE_INFORMATION *POBJECT_TYPE_INFORMATION;
+
+/** Returned via ObjectTypesInformation. */
+typedef struct _OBJECT_TYPES_INFORMATION
+{
+    ULONG NumberOfTypes;
+    OBJECT_TYPE_INFORMATION FirstType;
+} OBJECT_TYPES_INFORMATION;
+typedef OBJECT_TYPES_INFORMATION *POBJECT_TYPES_INFORMATION;
+
 typedef enum _OBJECT_INFORMATION_CLASS
 {
     ObjectBasicInformation = 0,
     ObjectNameInformation,
     ObjectTypeInformation,
-    ObjectAllInformation,
+    ObjectTypesInformation,
     ObjectHandleFlagInformation,
     ObjectSessionInformation,
     MaxObjectInfoClass
