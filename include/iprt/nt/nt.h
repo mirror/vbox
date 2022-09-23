@@ -2906,7 +2906,7 @@ typedef struct _OBJECT_TYPE_INFORMATION
     /* The name string follows after the structure. */
 } OBJECT_TYPE_INFORMATION;
 AssertCompileSize(OBJECT_TYPE_INFORMATION, sizeof(UNICODE_STRING) + 0x58);
-typedef _OBJECT_TYPE_INFORMATION *POBJECT_TYPE_INFORMATION;
+typedef OBJECT_TYPE_INFORMATION *POBJECT_TYPE_INFORMATION;
 
 /** Returned via ObjectTypesInformation. */
 typedef struct _OBJECT_TYPES_INFORMATION
