@@ -118,11 +118,12 @@ TPM2_ContextSave(
 #ifndef VBOX
 		  unsigned char        buffer[sizeof(OBJECT) * 2];		// libtpms changed begin
 		  BYTE                *bufptr = &buffer[0];
+		  INT32                size = sizeof(buffer);
 #else
 		  unsigned char        abBuf[sizeof(OBJECT) * 2];		// libtpms changed begin
 		  BYTE                *bufptr = &abBuf[0];
+		  INT32                size = sizeof(abBuf);
 #endif
-		  INT32                size = sizeof(buffer);
 		  UINT16               written = ANY_OBJECT_Marshal(object, &bufptr, &size);
 		  UINT16               objectSize = written;			// libtpms changed end
 		  outObject = (ANY_OBJECT_BUFFER *)(out->context.contextBlob.t.buffer
