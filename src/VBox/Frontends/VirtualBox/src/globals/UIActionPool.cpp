@@ -3401,7 +3401,7 @@ bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fRea
      * depending on clearance state. */
     pAction->setVisible(   fIsActionAllowed
 #ifdef VBOX_WS_MAC
-                        && !fIsMenuConsumable
+                        || fIsMenuConsumable
 #endif
                         );
 
