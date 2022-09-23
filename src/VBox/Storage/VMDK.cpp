@@ -2819,7 +2819,7 @@ static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
     return rc;
 }
 /**
- * Internal: allocate and describes an additional, file-backed extent 
+ * Internal: allocate and describes an additional, file-backed extent
  * for the given size. Preserves original extents.
  */
 static int vmdkAddFileBackedExtent(PVMDKIMAGE pImage, uint64_t cbSize)
@@ -2845,7 +2845,7 @@ static int vmdkAddFileBackedExtent(PVMDKIMAGE pImage, uint64_t cbSize)
         pExtent->enmType = VMDKETYPE_FLAT;
         pExtent->enmAccess = VMDKACCESS_READWRITE;
         pExtent->uSectorOffset = 0;
-        
+
         char *pszBasenameSubstr = RTPathFilename(pImage->pszFilename);
         AssertPtr(pszBasenameSubstr);
 
@@ -7519,7 +7519,7 @@ static int vmdkRepaceExtentSize(PVMDKIMAGE pImage, unsigned line, uint64_t cSect
 
         return VERR_BUFFER_OVERFLOW;
     }
-    
+
     char * szNewExtentSectors = (char *)RTMemAlloc(UINT64_MAX_BUFF_SIZE);
     if (!szNewExtentSectors)
         return VERR_NO_MEMORY;
@@ -7562,7 +7562,7 @@ static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsOperation)
 {
     RT_NOREF5(uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation);
-    
+
     // Establish variables and objects needed
     int rc = VINF_SUCCESS;
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -7593,7 +7593,7 @@ static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
         rc = VERR_VD_SHRINK_NOT_SUPPORTED;
     else if (cbSize > pImage->cbSize)
     {
-        /** 
+        /**
          * monolithicFlat. FIXED flag and not split up into 2 GB parts.
          */
         if ((uImageFlags & VD_IMAGE_FLAGS_FIXED) && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G))
@@ -7613,8 +7613,8 @@ static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
                 return rc;
         }
 
-        /** 
-         * twoGbMaxExtentFlat. FIXED flag and SPLIT into 2 GB parts. 
+        /**
+         * twoGbMaxExtentFlat. FIXED flag and SPLIT into 2 GB parts.
          */
         if ((uImageFlags & VD_IMAGE_FLAGS_FIXED) && (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G))
         {
@@ -7633,7 +7633,7 @@ static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
                                                     0 /* fFlags */, NULL, uPercentStart, uPercentSpan);
                 if (RT_FAILURE(rc))
                     return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
-            
+
                 rc = vmdkRepaceExtentSize(pImage, pImage->Descriptor.uFirstExtent + cExtents - 1,
                                           pExtent->cNominalSectors, cSectorsNeeded + cLastExtentRemSectors);
                 if (RT_FAILURE(rc))
@@ -7651,7 +7651,7 @@ static DECLCALLBACK(int) vmdkResize(void *pBackendData, uint64_t cbSize,
                         return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
 
                     cSectorsNeeded = cSectorsNeeded - VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE) + cLastExtentRemSectors;
-                    
+
                     rc = vmdkRepaceExtentSize(pImage, pImage->Descriptor.uFirstExtent + cExtents - 1,
                                               pExtent->cNominalSectors, VMDK_BYTE2SECTOR(VMDK_2G_SPLIT_SIZE));
                     if (RT_FAILURE(rc))
