@@ -361,7 +361,7 @@ typedef struct NTCONTEXT32_FPU_SAVE_AREA
     uint32_t                    u32ErrorSel;
     uint32_t                    u32DataOff;
     uint32_t                    u32DataSel;
-    uint8_t                     abRegArea[80];
+    X86FPUMMX                   aFpuRegs[8];
     uint32_t                    u32Cr0Npx;
 } NTCONTEXT32_FPU_SAVE_AREA;
 /** Pointer to an 32bit context FPU save area. */
@@ -1244,10 +1244,182 @@ typedef const KDCTX *PCKDCTX;
 typedef PKDCTX *PPKDCTX;
 
 
+/**
+ * Register mapping descriptor.
+ */
+typedef struct KDREGDESC
+{
+    /** The DBGF register enum. */
+    DBGFREG                     enmReg;
+    /** Register width. */
+    DBGFREGVALTYPE              enmValType;
+    /** The offset into the context structure where the value ends up. */
+    uint32_t                    offReg;
+} KDREGDESC;
+/** Pointer to a register mapping structure. */
+typedef KDREGDESC *PKDREGDESC;
+/** Pointer to a const register mapping structure. */
+typedef const KDREGDESC *PCKDREGDESC;
+
+
 /** Creates a possibly sign extended guest context pointer which is required for 32bit targets. */
 #define KD_PTR_CREATE(a_pThis, a_GCPtr) ((a_pThis)->f32Bit && ((a_GCPtr) & RT_BIT_32(31)) ? (a_GCPtr) | UINT64_C(0xffffffff00000000) : (a_GCPtr))
 /** Returns the value of a possibly sign extended guest context pointer received for 32bit targets. */
 #define KD_PTR_GET(a_pThis, a_GCPtr) ((a_pThis)->f32Bit ? (a_GCPtr) & ~UINT64_C(0xffffffff00000000) : (a_GCPtr))
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+/** 64bit control register set. */
+static const KDREGDESC g_aRegsCtrl64[] =
+{
+    { DBGFREG_CS,           DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, u16SegCs)             },
+    { DBGFREG_SS,           DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, u16SegSs)             },
+    { DBGFREG_RIP,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRip)            },
+    { DBGFREG_RSP,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRsp)            },
+    { DBGFREG_RBP,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRbp)            },
+    { DBGFREG_EFLAGS,       DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT64, u32RegEflags)         }
+};
+
+
+/** 64bit integer register set. */
+static const KDREGDESC g_aRegsInt64[] =
+{
+    { DBGFREG_RAX,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRax)            },
+    { DBGFREG_RCX,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRcx)            },
+    { DBGFREG_RDX,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRdx)            },
+    { DBGFREG_RBX,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRbx)            },
+    { DBGFREG_RSI,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRsi)            },
+    { DBGFREG_RDI,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegRdi)            },
+    { DBGFREG_R8,           DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR8)             },
+    { DBGFREG_R9,           DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR9)             },
+    { DBGFREG_R10,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR10)            },
+    { DBGFREG_R11,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR11)            },
+    { DBGFREG_R12,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR12)            },
+    { DBGFREG_R13,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR13)            },
+    { DBGFREG_R14,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR14)            },
+    { DBGFREG_R15,          DBGFREGVALTYPE_U64,     RT_UOFFSETOF(NTCONTEXT64, u64RegR15)            }
+};
+
+
+/** 64bit segments register set. */
+static const KDREGDESC g_aRegsSegs64[] =
+{
+    { DBGFREG_DS,           DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, u16SegDs)             },
+    { DBGFREG_ES,           DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, u16SegEs)             },
+    { DBGFREG_FS,           DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, u16SegFs)             },
+    { DBGFREG_GS,           DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, u16SegGs)             }
+};
+
+
+/** 64bit floating point register set. */
+static const KDREGDESC g_aRegsFx64[] =
+{
+    { DBGFREG_FCW,          DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, FxSave.FCW)           },
+    { DBGFREG_FSW,          DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, FxSave.FSW)           },
+    { DBGFREG_FTW,          DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, FxSave.FTW)           },
+    { DBGFREG_FOP,          DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, FxSave.FOP)           },
+    { DBGFREG_FPUIP,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT64, FxSave.FPUIP)         },
+    { DBGFREG_FPUCS,        DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, FxSave.CS)            },
+    { DBGFREG_FPUDS,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT64, FxSave.FPUDP)         },
+    { DBGFREG_FPUDS,        DBGFREGVALTYPE_U16,     RT_UOFFSETOF(NTCONTEXT64, FxSave.DS)            },
+    { DBGFREG_MXCSR,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT64, FxSave.MXCSR)         },
+    { DBGFREG_MXCSR_MASK,   DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT64, FxSave.MXCSR_MASK)    },
+    { DBGFREG_ST0,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[0])      },
+    { DBGFREG_ST1,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[1])      },
+    { DBGFREG_ST2,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[2])      },
+    { DBGFREG_ST3,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[3])      },
+    { DBGFREG_ST4,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[4])      },
+    { DBGFREG_ST5,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[5])      },
+    { DBGFREG_ST6,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[6])      },
+    { DBGFREG_ST7,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT64, FxSave.aRegs[7])      },
+    { DBGFREG_XMM0,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[0])       },
+    { DBGFREG_XMM1,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[1])       },
+    { DBGFREG_XMM2,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[2])       },
+    { DBGFREG_XMM3,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[3])       },
+    { DBGFREG_XMM4,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[4])       },
+    { DBGFREG_XMM5,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[5])       },
+    { DBGFREG_XMM6,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[6])       },
+    { DBGFREG_XMM7,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[7])       },
+    { DBGFREG_XMM8,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[8])       },
+    { DBGFREG_XMM9,         DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[9])       },
+    { DBGFREG_XMM10,        DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[10])      },
+    { DBGFREG_XMM11,        DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[11])      },
+    { DBGFREG_XMM12,        DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[12])      },
+    { DBGFREG_XMM13,        DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[13])      },
+    { DBGFREG_XMM14,        DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[14])      },
+    { DBGFREG_XMM15,        DBGFREGVALTYPE_U128,    RT_UOFFSETOF(NTCONTEXT64, FxSave.aXMM[15])      }
+};
+
+
+/** 32bit control register set. */
+static const KDREGDESC g_aRegsCtrl32[] =
+{
+    { DBGFREG_CS,           DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32SegCs)             },
+    { DBGFREG_SS,           DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32SegSs)             },
+    { DBGFREG_EIP,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEip)            },
+    { DBGFREG_ESP,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEsp)            },
+    { DBGFREG_EBP,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEbp)            },
+    { DBGFREG_EFLAGS,       DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEflags)         }
+};
+
+
+/** 32bit integer register set. */
+static const KDREGDESC g_aRegsInt32[] =
+{
+    { DBGFREG_EAX,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEax)            },
+    { DBGFREG_ECX,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEcx)            },
+    { DBGFREG_EDX,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEdx)            },
+    { DBGFREG_EBX,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEbx)            },
+    { DBGFREG_ESI,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEsi)            },
+    { DBGFREG_EDI,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegEdi)            }
+};
+
+
+/** 32bit segments register set. */
+static const KDREGDESC g_aRegsSegs32[] =
+{
+    { DBGFREG_DS,           DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32SegDs)             },
+    { DBGFREG_ES,           DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32SegEs)             },
+    { DBGFREG_FS,           DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32SegFs)             },
+    { DBGFREG_GS,           DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32SegGs)             }
+};
+
+
+/** 32bit debug register set. */
+static const KDREGDESC g_aRegsDbg32[] =
+{
+    { DBGFREG_DR0,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegDr0)            },
+    { DBGFREG_DR1,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegDr1)            },
+    { DBGFREG_DR2,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegDr2)            },
+    { DBGFREG_DR3,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegDr3)            },
+    { DBGFREG_DR6,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegDr6)            },
+    { DBGFREG_DR7,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, u32RegDr7)            }
+};
+
+
+/** 32bit floating point register set. */
+static const KDREGDESC g_aRegsFx32[] =
+{
+    { DBGFREG_FCW,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32CtrlWord)  },
+    { DBGFREG_FSW,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32StatusWord)},
+    { DBGFREG_FTW,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32TagWord)   },
+    { DBGFREG_FCW,          DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32CtrlWord)  },
+    { DBGFREG_FPUIP,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32ErrorOff)  },
+    { DBGFREG_FPUCS,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32ErrorSel)  },
+    { DBGFREG_FPUDS,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32DataOff)   },
+    { DBGFREG_FPUDS,        DBGFREGVALTYPE_U32,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.u32DataSel)   },
+    { DBGFREG_ST0,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[0])  },
+    { DBGFREG_ST1,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[1])  },
+    { DBGFREG_ST2,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[2])  },
+    { DBGFREG_ST3,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[3])  },
+    { DBGFREG_ST4,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[4])  },
+    { DBGFREG_ST5,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[5])  },
+    { DBGFREG_ST6,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[6])  },
+    { DBGFREG_ST7,          DBGFREGVALTYPE_R80,     RT_UOFFSETOF(NTCONTEXT32, FloatSave.aFpuRegs[7])  }
+};
 
 
 /*********************************************************************************************************************************
@@ -1749,6 +1921,48 @@ DECLINLINE(int) dbgcKdCtxWrite(PKDCTX pThis, const void *pvPkt, size_t cbPkt)
 
 
 /**
+ * Queries a given register set and stores it into the given context buffer.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   idCpu               The CPU to query the context for.
+ * @param   paRegs              The register set to query.
+ * @param   cRegs               Number of entries in the register set.
+ * @param   pvCtx               The context buffer to store the data into.
+ */
+static int dbgcKdCtxQueryRegs(PKDCTX pThis, VMCPUID idCpu, PCKDREGDESC paRegs, uint32_t cRegs, void *pvCtx)
+{
+    int rc = VINF_SUCCESS;
+
+    for (uint32_t i = 0; i < cRegs && rc == VINF_SUCCESS; i++)
+    {
+        void *pvStart = (uint8_t *)pvCtx + paRegs[i].offReg;
+
+        switch (paRegs[i].enmValType)
+        {
+            case DBGFREGVALTYPE_U16:  rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, paRegs[i].enmReg, (uint16_t *)pvStart);    break;
+            case DBGFREGVALTYPE_U32:  rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, paRegs[i].enmReg, (uint32_t *)pvStart);    break;
+            case DBGFREGVALTYPE_U64:  rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, paRegs[i].enmReg, (uint64_t *)pvStart);    break;
+            //case DBGFREGVALTYPE_R80:  rc = DBGFR3RegCpuQueryR80(pThis->Dbgc.pUVM, idCpu, paRegs[i].enmReg, (RTFLOAT80U *)pvStart); break;
+            //case DBGFREGVALTYPE_U128: rc = DBGFR3RegCpuQueryU128(pThis->Dbgc.pUVM, idCpu, paRegs[i].enmReg, (PRTUINT128U)pvStart);  break;
+            default: AssertMsgFailedBreakStmt(("Register type %u not implemented\n", paRegs[i].enmValType), rc = VERR_NOT_IMPLEMENTED);
+        }
+
+        if (   rc == VINF_DBGF_ZERO_EXTENDED_REGISTER
+            || (   rc == VINF_DBGF_TRUNCATED_REGISTER
+                && paRegs[i].enmReg == DBGFREG_RFLAGS)) /* KD protocol specifies 32bit but is really 64bit. */
+            rc = VINF_SUCCESS;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && rc != VINF_SUCCESS)
+        rc = VERR_DBGF_UNSUPPORTED_CAST;
+
+    return rc;
+}
+
+
+/**
  * Fills in the given 64bit NT context structure with the requested values.
  *
  * @returns VBox status code.
@@ -1767,17 +1981,7 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_CONTROL)
     {
-        rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_CS, &pNtCtx->u16SegCs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_SS, &pNtCtx->u16SegSs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RIP, &pNtCtx->u64RegRip);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RSP, &pNtCtx->u64RegRsp);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RBP, &pNtCtx->u64RegRbp);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EFLAGS, &pNtCtx->u32RegEflags);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsCtrl64[0], RT_ELEMENTS(g_aRegsCtrl64), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_CONTROL;
     }
@@ -1785,33 +1989,7 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_INTEGER)
     {
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RAX, &pNtCtx->u64RegRax);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RCX, &pNtCtx->u64RegRcx);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RDX, &pNtCtx->u64RegRdx);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RBX, &pNtCtx->u64RegRbx);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RSI, &pNtCtx->u64RegRsi);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_RDI, &pNtCtx->u64RegRdi);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R8, &pNtCtx->u64RegR8);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R9, &pNtCtx->u64RegR9);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R10, &pNtCtx->u64RegR10);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R11, &pNtCtx->u64RegR11);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R12, &pNtCtx->u64RegR12);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R13, &pNtCtx->u64RegR13);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R14, &pNtCtx->u64RegR14);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_R15, &pNtCtx->u64RegR15);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsInt64[0], RT_ELEMENTS(g_aRegsInt64), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_INTEGER;
     }
@@ -1819,13 +1997,7 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_SEGMENTS)
     {
-        rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_DS, &pNtCtx->u16SegDs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_ES, &pNtCtx->u16SegEs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_FS, &pNtCtx->u16SegFs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_GS, &pNtCtx->u16SegGs);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsSegs64[0], RT_ELEMENTS(g_aRegsSegs64), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_SEGMENTS;
     }
@@ -1833,7 +2005,9 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo NTCONTEXT_F_FLOATING_POINT. */
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsFx64[0], RT_ELEMENTS(g_aRegsFx64), pNtCtx);
+        if (RT_SUCCESS(rc))
+            pNtCtx->fContext |= NTCONTEXT_F_FLOATING_POINT;
     }
 
     if (   RT_SUCCESS(rc)
@@ -1864,17 +2038,7 @@ static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCt
     int rc = VINF_SUCCESS;
     if (fCtxFlags & NTCONTEXT_F_CONTROL)
     {
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CS, &pNtCtx->u32SegCs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_SS, &pNtCtx->u32SegSs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EIP, &pNtCtx->u32RegEip);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ESP, &pNtCtx->u32RegEsp);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EBP, &pNtCtx->u32RegEbp);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EFLAGS, &pNtCtx->u32RegEflags);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsCtrl32[0], RT_ELEMENTS(g_aRegsCtrl32), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_CONTROL;
     }
@@ -1882,17 +2046,7 @@ static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_INTEGER)
     {
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EAX, &pNtCtx->u32RegEax);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ECX, &pNtCtx->u32RegEcx);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EDX, &pNtCtx->u32RegEdx);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EBX, &pNtCtx->u32RegEbx);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ESI, &pNtCtx->u32RegEsi);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EDI, &pNtCtx->u32RegEdi);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsInt32[0], RT_ELEMENTS(g_aRegsInt32), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_INTEGER;
     }
@@ -1900,13 +2054,7 @@ static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_SEGMENTS)
     {
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DS, &pNtCtx->u32SegDs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ES, &pNtCtx->u32SegEs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_FS, &pNtCtx->u32SegFs);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_GS, &pNtCtx->u32SegGs);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsSegs32[0], RT_ELEMENTS(g_aRegsSegs32), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_SEGMENTS;
     }
@@ -1914,21 +2062,15 @@ static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo NTCONTEXT_F_FLOATING_POINT. */
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsFx32[0], RT_ELEMENTS(g_aRegsFx32), pNtCtx);
+        if (RT_SUCCESS(rc))
+            pNtCtx->fContext |= NTCONTEXT_F_FLOATING_POINT;
     }
 
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_DEBUG)
     {
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR0, &pNtCtx->u32RegDr0);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR1, &pNtCtx->u32RegDr1);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR3, &pNtCtx->u32RegDr3);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR6, &pNtCtx->u32RegDr6);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR7, &pNtCtx->u32RegDr7);
+        rc = dbgcKdCtxQueryRegs(pThis, idCpu, &g_aRegsDbg32[0], RT_ELEMENTS(g_aRegsDbg32), pNtCtx);
         if (RT_SUCCESS(rc))
             pNtCtx->fContext |= NTCONTEXT_F_DEBUG;
     }
@@ -2414,6 +2556,12 @@ static int dbgcKdCtxPktSendSg(PKDCTX pThis, uint32_t u32Signature, uint16_t u16S
     {
         bool fResend = false;
 
+        if (pThis->Dbgc.pIo->pfnPktBegin)
+        {
+            rc = pThis->Dbgc.pIo->pfnPktBegin(pThis->Dbgc.pIo, 0 /*cbPktHint*/);
+            AssertRC(rc);
+        }
+
         rc = dbgcKdCtxWrite(pThis, &Hdr, sizeof(Hdr));
         if (   RT_SUCCESS(rc)
             && paSegs
@@ -2425,6 +2573,10 @@ static int dbgcKdCtxPktSendSg(PKDCTX pThis, uint32_t u32Signature, uint16_t u16S
             if (RT_SUCCESS(rc))
                 rc = dbgcKdCtxWrite(pThis, &bTrailer, sizeof(bTrailer));
         }
+
+        if (   RT_SUCCESS(rc)
+            && pThis->Dbgc.pIo->pfnPktEnd)
+            rc = pThis->Dbgc.pIo->pfnPktEnd(pThis->Dbgc.pIo);
 
         if (RT_SUCCESS(rc))
         {
@@ -3773,7 +3925,8 @@ static int dbgcKdCtxRecvDataProcess(PKDCTX pThis)
                     rc = dbgcKdCtxStateChangeSend(pThis, DBGFEVENT_HALT_DONE);
                 dbgcKdCtxPktRecvReset(pThis);
             }
-            /* else: Ignore and continue. */
+            else
+                dbgcKdCtxPktRecvReset(pThis); /* Reset and continue. */
             break;
         }
         case KDRECVSTATE_PACKET_HDR_SECOND_BYTE:
@@ -4402,4 +4555,3 @@ DECL_HIDDEN_CALLBACK(int) dbgcKdStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned fF
     dbgcKdCtxDestroy(pThis);
     return rc == VERR_DBGC_QUIT ? VINF_SUCCESS : rc;
 }
-
