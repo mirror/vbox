@@ -93,6 +93,11 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
+         <para>Virtual machines can be fully encrypted now, including the VM config logs
+           and saved states (CLI only for now)</para>
+      </listitem>
+
+      <listitem>
          <para>OCI: Cloud virtual machines can be added to Virtual Machine Manager and controlled
            as local VMs </para>
       </listitem>
@@ -145,8 +150,18 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>macOS hosts: Dropped all kernel extensions. VirtualBox relies fully on
+          userland frameworks provided by Apple now.</para>
+      </listitem>
+
+      <listitem>
         <para>Linux Guest Additions: Reworked guest screen re-size functionality,
           added basic integration with some of guest Desktop Environments</para>
+      </listitem>
+
+      <listitem>
+        <para>Devices: Implemented new 3D support based on DirectX 11 (and DXVK
+          on non Windows hosts)</para>
       </listitem>
 
       <listitem>
@@ -154,9 +169,18 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Devices: Added virtual TPM 1.2 and 2.0 devices</para>
+      </listitem>
+
+      <listitem>
         <para>Devices: The EHCI and XHCI USB controller devices are now part of the
           open source base package</para>
       </listitem>
+
+      <listitem>
+        <para>EFI: Added support for Secure Boot</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
