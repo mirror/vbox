@@ -148,7 +148,6 @@ DECL_FORCE_INLINE(bool) RTLocCIsPrint(int ch)
 DECL_FORCE_INLINE(bool) RTLocCIsPunct(int ch)
 {
     return (unsigned)ch - 0x21U < 15U /* 21..2f */
-        || (unsigned)ch - 0x2aU <  6U /* 2a..2f */
         || (unsigned)ch - 0x3aU <  7U /* 3a..40 */
         || (unsigned)ch - 0x5bU <  6U /* 5a..60 */
         || (unsigned)ch - 0x7bU <  4U /* 7b..7e */;
