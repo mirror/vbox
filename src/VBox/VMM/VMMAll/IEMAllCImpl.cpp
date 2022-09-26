@@ -8420,6 +8420,10 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
      * Reset the state.
      */
     PX86XSAVEAREA pXState = &pVCpu->cpum.GstCtx.XState;
+
+    /* Rotate the stack to account for changed TOS. */
+    iemFpuRotateStackSetTop(&pXState->x87, 0);
+
     pXState->x87.FCW        = 0x37f;
     pXState->x87.FSW        = 0;
     pXState->x87.FTW        = 0x00;     /* 0 - empty. */
@@ -9341,6 +9345,9 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     rcStrict = iemMemCommitAndUnmap(pVCpu, uPtr.pv, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+
+    /* Rotate the stack to account for changed TOS. */
+    iemFpuRotateStackSetTop(pFpuCtx, 0);
 
     /*
      * Re-initialize the FPU context.

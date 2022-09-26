@@ -415,12 +415,15 @@
 
 /** Switches the FPU state to MMX mode (FSW.TOS=0, FTW=0) if necessary. */
 #define IEM_MC_FPU_TO_MMX_MODE() do { \
+        iemFpuRotateStackSetTop(&pVCpu->cpum.GstCtx.XState.x87, 0); \
         pVCpu->cpum.GstCtx.XState.x87.FSW &= ~X86_FSW_TOP_MASK; \
         pVCpu->cpum.GstCtx.XState.x87.FTW  = 0xff; \
     } while (0)
 
-/** Switches the FPU state from MMX mode (FTW=0xffff). */
+/** Switches the FPU state from MMX mode (FSW.TOS=0, FTW=0xffff). */
 #define IEM_MC_FPU_FROM_MMX_MODE() do { \
+        iemFpuRotateStackSetTop(&pVCpu->cpum.GstCtx.XState.x87, 0); \
+        pVCpu->cpum.GstCtx.XState.x87.FSW &= ~X86_FSW_TOP_MASK; \
         pVCpu->cpum.GstCtx.XState.x87.FTW  = 0; \
     } while (0)
 

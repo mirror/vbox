@@ -2151,6 +2151,45 @@ DECLINLINE(int) iemFpu2StRegsNotEmptyRefFirst(PVMCPUCC pVCpu, uint8_t iStReg0, P
 
 
 /**
+ * Rotates the stack registers when setting new TOS.
+ *
+ * @param   pFpuCtx             The FPU context.
+ * @param   iNewTop             New TOS value.
+ * @remarks We only do this to speed up fxsave/fxrstor which
+ *          arrange the FP registers in stack order.
+ *          MUST be done before writing the new TOS (FSW).
+ */
+DECLINLINE(void) iemFpuRotateStackSetTop(PX86FXSTATE pFpuCtx, uint16_t iNewTop)
+{
+    uint16_t iOldTop = X86_FSW_TOP_GET(pFpuCtx->FSW);
+    RTFLOAT80U ar80Temp[8];
+
+    if (iOldTop == iNewTop)
+        return;
+
+    /* Unscrew the stack and get it into 'native' order. */
+    ar80Temp[0] = pFpuCtx->aRegs[(8 - iOldTop + 0) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[1] = pFpuCtx->aRegs[(8 - iOldTop + 1) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[2] = pFpuCtx->aRegs[(8 - iOldTop + 2) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[3] = pFpuCtx->aRegs[(8 - iOldTop + 3) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[4] = pFpuCtx->aRegs[(8 - iOldTop + 4) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[5] = pFpuCtx->aRegs[(8 - iOldTop + 5) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[6] = pFpuCtx->aRegs[(8 - iOldTop + 6) & X86_FSW_TOP_SMASK].r80;
+    ar80Temp[7] = pFpuCtx->aRegs[(8 - iOldTop + 7) & X86_FSW_TOP_SMASK].r80;
+
+    /* Now rotate the stack to the new position. */
+    pFpuCtx->aRegs[0].r80 = ar80Temp[(iNewTop + 0) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[1].r80 = ar80Temp[(iNewTop + 1) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[2].r80 = ar80Temp[(iNewTop + 2) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[3].r80 = ar80Temp[(iNewTop + 3) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[4].r80 = ar80Temp[(iNewTop + 4) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[5].r80 = ar80Temp[(iNewTop + 5) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[6].r80 = ar80Temp[(iNewTop + 6) & X86_FSW_TOP_SMASK];
+    pFpuCtx->aRegs[7].r80 = ar80Temp[(iNewTop + 7) & X86_FSW_TOP_SMASK];
+}
+
+
+/**
  * Updates the FPU exception status after FCW is changed.
  *
  * @param   pFpuCtx             The FPU context.
@@ -2200,7 +2239,7 @@ DECLINLINE(uint16_t) iemFpuCalcFullFtw(PCX86FXSTATE pFpuCtx)
             else
                 uTag = 2; /* Must be special. */
 
-            u16Ftw |= uTag << (iReg * 2); /* empty */
+            u16Ftw |= uTag << (iReg * 2);
         }
     }
 
