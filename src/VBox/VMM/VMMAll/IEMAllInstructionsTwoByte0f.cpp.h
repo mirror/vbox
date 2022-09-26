@@ -9768,8 +9768,12 @@ FNIEMOP_DEF(iemOp_cmpxchg_Ev_Gv)
                 else
                     IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg_u32_locked, pu32Dst, pu32Eax, u32Src, pEFlags);
 
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Eax);
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                } IEM_MC_ELSE() {
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Eax);
+                } IEM_MC_ENDIF();
+
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
