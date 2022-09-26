@@ -470,13 +470,13 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    	Storage/UsbMsd.cpp
   endif
 
-  if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  if defined(VBOX_WITH_EHCI_IMPL)
    VBoxDD_DEFS          += VBOX_WITH_EHCI_IMPL
    VBoxDD_SOURCES       += \
  	USB/DevEHCI.cpp
   endif
 
-  if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  if defined(VBOX_WITH_XHCI_IMPL)
    VBoxDD_DEFS          += VBOX_WITH_XHCI_IMPL
    VBoxDD_SOURCES       += \
  	USB/DevXHCI.cpp
@@ -662,7 +662,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   EFI/DevEFI.cpp_INCS.x86   += EFI/Firmware/BaseTools/Source/C/Include/Ia32
   EFI/DevEFI.cpp_INCS.amd64 += EFI/Firmware/BaseTools/Source/C/Include/X64
   EFI/DevEFI.cpp_INCS.arm32 += EFI/Firmware/BaseTools/Source/C/Include/Arm
-  EFI/DevEFI.cpp_INCS.arm64 += EFI/Firmware/BaseTools/Source/C/Include/Aarch64
+  EFI/DevEFI.cpp_INCS.arm64 += EFI/Firmware/BaseTools/Source/C/Include/AArch64
  endif
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
@@ -1117,12 +1117,12 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
 
   ifdef VBOX_WITH_USB
    VBoxDDRC_DEFS        += VBOX_WITH_USB
-   if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   if defined(VBOX_WITH_EHCI_IMPL)
     VBoxDDRC_DEFS       += VBOX_WITH_EHCI_IMPL
     VBoxDDRC_SOURCES    += \
   	USB/DevEHCI.cpp
    endif
-   if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   if defined(VBOX_WITH_XHCI_IMPL)
     VBoxDDRC_DEFS       += VBOX_WITH_XHCI_IMPL
     VBoxDDRC_SOURCES    += \
   	USB/DevXHCI.cpp
@@ -1328,12 +1328,12 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  endif
  ifdef VBOX_WITH_USB
  VBoxDDR0_DEFS          += VBOX_WITH_USB
-  if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  if defined(VBOX_WITH_EHCI_IMPL)
    VBoxDDR0_DEFS        += VBOX_WITH_EHCI_IMPL
    VBoxDDR0_SOURCES     += \
  	USB/DevEHCI.cpp
   endif
-  if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  if defined(VBOX_WITH_XHCI_IMPL)
    VBoxDDR0_DEFS        += VBOX_WITH_XHCI_IMPL
    VBoxDDR0_SOURCES     += \
  	USB/DevXHCI.cpp
@@ -1523,59 +1523,6 @@ endif # !VBOX_ONLY_EXTPACKS && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPOR
 
 
 if defined(VBOX_WITH_EXTPACK) && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
- #
- # The EHCI (USB 2.0) Extension Pack Modules.
- #
- if defined(VBOX_WITH_USB)
-  DLLS += VBoxEhciR3
-  VBoxEhciR3_TEMPLATE = VBoxR3ExtPackPuel
-  VBoxEhciR3_SOURCES  = \
-	USB/DevEHCI.cpp \
-	USB/DevXHCI.cpp
-  $(call VBOX_SET_VER_INFO_DLL,VBoxEhciR3,PUEL Extension Pack - EHCI Device)
-
-  ifdef VBOX_WITH_R0_MODULES
-   ifdef VBOX_WITH_VBOXR0_AS_DLL
-    DLLS    += VBoxEhciR0
-   else
-    SYSMODS += VBoxEhciR0
-   endif
-   VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
-   VBoxEhciR0_SOURCES  = \
-   	USB/DevEHCI.cpp \
-   	USB/DevXHCI.cpp
-   $(call VBOX_SET_VER_INFO_R0,VBoxEhciR0,PUEL Extension Pack - EHCI Device$(COMMA) ring-0)
-   ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS # Wrapper kmod for VBoxEhciR0.r0
-    INSTALLS.linux += vbox_vboxehcir0-src
-    vbox_vboxehcir0-src_INST = bin/src/vbox_vboxehcir0/
-    vbox_vboxehcir0-src_SYMLINKS = \
-    	SUPWrapperMod-linux.c=>../common/SUPWrapperMod-linux.c \
-    	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
-    vbox_vboxehcir0-src_SOURCES = \
-    	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vboxehcir0.gmk=>Makefile \
-    	$(VBoxEhciR0_0_OUTDIR)/VBoxEhciR0.r0=>VBoxEhciR0.r0 \
-    	$(VBoxEhciR0_0_OUTDIR)/VBoxEhciR0.debug=>VBoxEhciR0.debug
-   endif
-  endif
-
-  ifdef VBOX_WITH_RAW_MODE
-   SYSMODS += VBoxEhciRC
-   VBoxEhciRC_TEMPLATE = VBoxRcExtPackPuel
-   VBoxEhciRC_SOURCES  = \
-   	USB/DevEHCI.cpp \
-   	USB/DevXHCI.cpp
-   $(call VBOX_SET_VER_INFO_RC,VBoxEhciRC,PUEL Extension Pack - EHCI Device$(COMMA) raw-mode)
-  endif
-
-  # Hacky but MSI support *must* be enabled
-  ifdef VBOX_WITH_MSI_DEVICES
-   VBoxEhciR3_DEFS += VBOX_WITH_MSI_DEVICES
-   VBoxEhciR0_DEFS += VBOX_WITH_MSI_DEVICES
-   VBoxEhciRC_DEFS += VBOX_WITH_MSI_DEVICES
-  endif
-
- endif
-
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL)
   DLLS += VBoxPciRawR3
   VBoxPciRawR3_TEMPLATE     = VBoxR3ExtPackPuel

@@ -2128,99 +2128,42 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 #ifdef VBOX_WITH_EHCI
                 else if (enmCtrlType == USBControllerType_EHCI)
                 {
+                    InsertConfigNode(pDevices, "usb-ehci", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+                    hrc = pBusMgr->assignPCIDevice("usb-ehci", pInst);                  H();
+
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                    InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+
                     /*
-                     * USB 2.0 is only available if the proper ExtPack is installed.
-                     *
-                     * Note. Configuring EHCI here and providing messages about
-                     * the missing extpack isn't exactly clean, but it is a
-                     * necessary evil to patch over legacy compatability issues
-                     * introduced by the new distribution model.
+                     * Attach the status driver.
                      */
-# ifdef VBOX_WITH_EXTPACK
-                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
-                    if (mptrExtPackManager->i_isExtPackUsable(s_pszUsbExtPackName))
-# endif
-                    {
-                        InsertConfigNode(pDevices, "usb-ehci", &pDev);
-                        InsertConfigNode(pDev,     "0", &pInst);
-                        InsertConfigNode(pInst,    "Config", &pCfg);
-                        InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
-                        hrc = pBusMgr->assignPCIDevice("usb-ehci", pInst);                  H();
-
-                        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                        InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
-                        InsertConfigNode(pLunL0,   "Config", &pCfg);
-
-                        /*
-                         * Attach the status driver.
-                         */
-                        i_attachStatusDriver(pInst, DeviceType_USB, 0, 0, NULL, NULL, NULL, 0);
-                    }
-# ifdef VBOX_WITH_EXTPACK
-                    else
-                    {
-                        /* Always fatal! Up to VBox 4.0.4 we allowed to start the VM anyway
-                         * but this induced problems when the user saved + restored the VM! */
-                        return pVMM->pfnVMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
-                                N_("Implementation of the USB 2.0 controller not found!\n"
-                                   "Because the USB 2.0 controller state is part of the saved "
-                                   "VM state, the VM cannot be started. To fix "
-                                   "this problem, either install the '%s' or disable USB 2.0 "
-                                   "support in the VM settings.\n"
-                                   "Note! This error could also mean that an incompatible version of "
-                                   "the '%s' is installed"),
-                                s_pszUsbExtPackName, s_pszUsbExtPackName);
-                    }
-# endif
+                    i_attachStatusDriver(pInst, DeviceType_USB, 0, 0, NULL, NULL, NULL, 0);
                 }
 #endif
                 else if (enmCtrlType == USBControllerType_XHCI)
                 {
+                    InsertConfigNode(pDevices, "usb-xhci", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+                    hrc = pBusMgr->assignPCIDevice("usb-xhci", pInst);                  H();
+
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                    InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                    InsertConfigNode(pInst,    "LUN#1", &pLunL1);
+                    InsertConfigString(pLunL1, "Driver",               "VUSBRootHub");
+                    InsertConfigNode(pLunL1,   "Config", &pCfg);
+
                     /*
-                     * USB 3.0 is only available if the proper ExtPack is installed.
-                     *
-                     * Note. Configuring EHCI here and providing messages about
-                     * the missing extpack isn't exactly clean, but it is a
-                     * necessary evil to patch over legacy compatability issues
-                     * introduced by the new distribution model.
+                     * Attach the status driver.
                      */
-# ifdef VBOX_WITH_EXTPACK
-                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
-                    if (mptrExtPackManager->i_isExtPackUsable(s_pszUsbExtPackName))
-# endif
-                    {
-                        InsertConfigNode(pDevices, "usb-xhci", &pDev);
-                        InsertConfigNode(pDev,     "0", &pInst);
-                        InsertConfigNode(pInst,    "Config", &pCfg);
-                        InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
-                        hrc = pBusMgr->assignPCIDevice("usb-xhci", pInst);                  H();
-
-                        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                        InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
-                        InsertConfigNode(pLunL0,   "Config", &pCfg);
-
-                        InsertConfigNode(pInst,    "LUN#1", &pLunL1);
-                        InsertConfigString(pLunL1, "Driver",               "VUSBRootHub");
-                        InsertConfigNode(pLunL1,   "Config", &pCfg);
-
-                        /*
-                         * Attach the status driver.
-                         */
-                        i_attachStatusDriver(pInst, DeviceType_USB, 0, 1, NULL, NULL, NULL, 0);
-                    }
-# ifdef VBOX_WITH_EXTPACK
-                    else
-                    {
-                        /* Always fatal. */
-                        return pVMM->pfnVMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
-                                N_("Implementation of the USB 3.0 controller not found!\n"
-                                   "Because the USB 3.0 controller state is part of the saved "
-                                   "VM state, the VM cannot be started. To fix "
-                                   "this problem, either install the '%s' or disable USB 3.0 "
-                                   "support in the VM settings"),
-                                s_pszUsbExtPackName);
-                    }
-# endif
+                    i_attachStatusDriver(pInst, DeviceType_USB, 0, 1, NULL, NULL, NULL, 0);
                 }
             } /* for every USB controller. */
 

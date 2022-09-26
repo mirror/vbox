@@ -308,28 +308,16 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     bool fOhciEnabled = false;
     if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
     {
-        /* USB 3.0 is only available if the proper ExtPack is installed: */
-        CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
-        if (extPackManager.isNull() || extPackManager.IsExtPackUsable(GUI_ExtPackName))
-        {
-            m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
-            /* xHCI includes OHCI */
-            fOhciEnabled = true;
-        }
+        m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
+        /* xHCI includes OHCI */
+        fOhciEnabled = true;
     }
     if (   !fOhciEnabled
         && !usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
     {
         m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
         fOhciEnabled = true;
-        /* USB 2.0 is only available if the proper ExtPack is installed.
-         * Note. Configuring EHCI here and providing messages about
-         * the missing extpack isn't exactly clean, but it is a
-         * necessary evil to patch over legacy compatability issues
-         * introduced by the new distribution model. */
-        CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
-        if (extPackManager.isNull() || extPackManager.IsExtPackUsable(GUI_ExtPackName))
-            m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
+        m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
     }
 
     /* Create a floppy controller if recommended: */

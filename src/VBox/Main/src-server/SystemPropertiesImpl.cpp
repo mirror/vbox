@@ -1811,31 +1811,14 @@ HRESULT SystemProperties::getSupportedUartTypes(std::vector<UartType_T> &aSuppor
 
 HRESULT SystemProperties::getSupportedUSBControllerTypes(std::vector<USBControllerType_T> &aSupportedUSBControllerTypes)
 {
-    static const USBControllerType_T aUSBControllerTypesWithoutExtPack[] =
-    {
-        USBControllerType_OHCI,
-    };
-    static const USBControllerType_T aUSBControllerTypesWithExtPack[] =
+    static const USBControllerType_T aUSBControllerTypes[] =
     {
         USBControllerType_OHCI,
         USBControllerType_EHCI,
         USBControllerType_XHCI,
     };
-    bool fExtPack = false;
-# ifdef VBOX_WITH_EXTPACK
-    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
-    if (mParent->i_getExtPackManager()->i_isExtPackUsable(s_pszUsbExtPackName))
-# endif
-    {
-        fExtPack = true;
-    }
-
-    if (fExtPack)
-        aSupportedUSBControllerTypes.assign(aUSBControllerTypesWithExtPack,
-                                            aUSBControllerTypesWithExtPack + RT_ELEMENTS(aUSBControllerTypesWithExtPack));
-    else
-        aSupportedUSBControllerTypes.assign(aUSBControllerTypesWithoutExtPack,
-                                            aUSBControllerTypesWithoutExtPack + RT_ELEMENTS(aUSBControllerTypesWithoutExtPack));
+    aSupportedUSBControllerTypes.assign(aUSBControllerTypes,
+                                        aUSBControllerTypes + RT_ELEMENTS(aUSBControllerTypes));
     return S_OK;
 }
 
