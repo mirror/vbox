@@ -11770,7 +11770,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8bOr16b, uint8_t, bRm)
 }
 
 /** Opcode 0x0f 0xc7 11/6. */
-FNIEMOP_UD_STUB_1(iemOp_Grp9_rdrand_Rv, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp9_rdrand_Rv, uint8_t, bRm);
 
 /** Opcode 0x0f 0xc7 !11/6. */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -11856,7 +11856,7 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm);
 #endif
 
 /** Opcode 0x0f 0xc7 11/7. */
-FNIEMOP_UD_STUB_1(iemOp_Grp9_rdseed_Rv, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp9_rdseed_Rv, uint8_t, bRm);
 
 
 /**
