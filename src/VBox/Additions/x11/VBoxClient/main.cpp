@@ -598,7 +598,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    VBClLogInfo("VBoxClient %s r%s started. Verbose level = %d\n", RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
+    VBClLogInfo("VBoxClient %s r%s started. Verbose level = %d. Wayland environment detected: %s\n",
+                RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity, VBClHasWayland() ? "yes" : "no");
     VBClLogInfo("Service: %s\n", g_Service.pDesc->pszDesc);
 
     rc = RTCritSectInit(&g_critSect);
