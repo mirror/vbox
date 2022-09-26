@@ -33,9 +33,6 @@
 
 #include "display-ipc.h"
 
-/** Environment variable which contains information about currently running Desktop Environment. */
-#define VBCL_HLP_ENV_XDG_CURRENT_DESKTOP    "XDG_CURRENT_DESKTOP"
-
 /**
  * Display offsets change notification callback.
  *

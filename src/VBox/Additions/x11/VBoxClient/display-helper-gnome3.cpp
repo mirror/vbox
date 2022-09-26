@@ -963,7 +963,7 @@ static DECLCALLBACK(int) vbcl_hlp_gnome3_set_primary_display(uint32_t idPrimaryD
  */
 static DECLCALLBACK(int) vbcl_hlp_gnome3_probe(void)
 {
-    const char *pszCurrentDesktop = RTEnvGet(VBCL_HLP_ENV_XDG_CURRENT_DESKTOP);
+    const char *pszCurrentDesktop = RTEnvGet(VBCL_ENV_XDG_CURRENT_DESKTOP);
 
     /* GNOME3 identifies itself by XDG_CURRENT_DESKTOP environment variable.
      * It can slightly vary for different distributions, but we assume that this
