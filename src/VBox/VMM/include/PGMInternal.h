@@ -1926,8 +1926,17 @@ typedef enum PGMPOOLKIND
     /** Shw: Root Nested paging table. */
     PGMPOOLKIND_ROOT_NESTED,
 
+    /** Shw: EPT page table;                        Gst: EPT page table. */
+    PGMPOOLKIND_EPT_PT_FOR_EPT_PT,
+    /** Shw: EPT page directory table;              Gst: EPT page directory. */
+    PGMPOOLKIND_EPT_PD_FOR_EPT_PD,
+    /** Shw: EPT page directory pointer table;      Gst: EPT page directory pointer table. */
+    PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT,
+    /** Shw: EPT PML4;                              Gst: EPT PML4. */
+    PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4,
+
     /** The last valid entry. */
-    PGMPOOLKIND_LAST = PGMPOOLKIND_ROOT_NESTED
+    PGMPOOLKIND_LAST = PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4
 } PGMPOOLKIND;
 
 /**
@@ -2307,6 +2316,19 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
  */
 #define PGMPOOL_PAGE_2_PTR_V2(a_pVM, a_pVCpu, a_pPage)     PGMPOOL_PAGE_2_PTR((a_pVM), (a_pPage))
 
+
+/** @def PGMPOOL_PAGE_IS_NESTED
+ * Checks whether the given pool page is a nested-guest pool page.
+ *
+ * @returns @c true if a nested-guest pool page, @c false otherwise.
+ * @param   a_pPage     The pool page.
+ * @todo    We can optimize the conditionals later.
+ */
+#define PGMPOOL_PAGE_IS_NESTED(a_pPage)         PGMPOOL_PAGE_IS_KIND_NESTED((a_pPage)->enmKind)
+#define PGMPOOL_PAGE_IS_KIND_NESTED(a_enmKind)  (   (a_enmKind) == PGMPOOLKIND_EPT_PT_FOR_EPT_PT     \
+                                                 || (a_enmKind) == PGMPOOLKIND_EPT_PD_FOR_EPT_PD     \
+                                                 || (a_enmKind) == PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT \
+                                                 || (a_enmKind) == PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4)
 
 /** @name Per guest page tracking data.
  * This is currently as a 16-bit word in the PGMPAGE structure, the idea though

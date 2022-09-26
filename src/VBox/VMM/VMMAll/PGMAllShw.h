@@ -237,8 +237,23 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
     /* Must distinguish between 32 and 64 bits guest paging modes as we'll use
        a different shadow paging root/mode in both cases. */
     RTGCPHYS     GCPhysCR3 = (fIs64BitsPagingMode) ? RT_BIT_64(63) : RT_BIT_64(62);
+    PGMPOOLKIND  enmKind   = PGMPOOLKIND_ROOT_NESTED;
+# elif defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT)
+    RTGCPHYS    GCPhysCR3;
+    PGMPOOLKIND enmKind;
+    if (pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_EPT)
+    {
+        GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
+        enmKind   = PGMPOOLKIND_ROOT_NESTED;
+    }
+    else
+    {
+        GCPhysCR3 = pVCpu->pgm.s.uEptPtr & EPT_EPTP_PG_MASK;
+        enmKind   = PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4;
+    }
 # else
     RTGCPHYS     GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
+    PGMPOOLKIND const enmKind = PGMPOOLKIND_ROOT_NESTED;
 # endif
     PPGMPOOLPAGE pNewShwPageCR3;
     PVMCC        pVM       = pVCpu->CTX_SUFF(pVM);
@@ -249,7 +264,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
 
     PGM_LOCK_VOID(pVM);
 
-    int rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_NESTED, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
                           &pNewShwPageCR3);
     AssertLogRelRCReturnStmt(rc, PGM_UNLOCK(pVM), rc);
@@ -282,6 +297,11 @@ PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu)
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
         PGM_LOCK_VOID(pVM);
+
+# if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) && PGM_SHW_TYPE == PGM_TYPE_EPT
+        if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
+            pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+# endif
 
         /* Do *not* unlock this page as we have two of them floating around in the 32-bit host & 64-bit guest case.
          * We currently assert when you try to free one of them; don't bother to really allow this.
@@ -371,6 +391,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
     X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
+    Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
     PEPTPD          pPDDst;
     int rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
     if (rc == VINF_SUCCESS) /** @todo this function isn't expected to return informational status codes. Check callers / fix. */
@@ -526,6 +547,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
         X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
+        Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
         const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PEPTPD          pPDDst;
         EPTPDE          Pde;
@@ -545,7 +567,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
         if (!SHW_PDE_IS_P(Pde))
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
-        AssertFatal(!SHW_PDE_IS_BIG(Pde));
+        AssertFatalMsg(!SHW_PDE_IS_BIG(Pde), ("Pde=%#RX64\n", (uint64_t)Pde.u));
 
         /*
          * Map the page table.
@@ -568,7 +590,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
                 {
                     /** @todo Some CSAM code path might end up here and upset
                      *  the page pool. */
-                    AssertFailed();
+                    AssertMsgFailed(("NewPte=%#RX64 OrgPte=%#RX64 GCPtr=%#RGv\n", SHW_PTE_LOG64(NewPte), SHW_PTE_LOG64(OrgPte), GCPtr));
                 }
                 else if (   SHW_PTE_IS_RW(NewPte)
                          && !SHW_PTE_IS_RW(OrgPte)

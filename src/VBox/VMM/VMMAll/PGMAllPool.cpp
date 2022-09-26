@@ -190,10 +190,14 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
     LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%RGp cbWrite=%d\n",
              (RTGCPTR)(CTXTYPE(RTGCPTR, uintptr_t, RTGCPTR))(uintptr_t)pvAddress, GCPhysFault, cbWrite));
 
+    if (PGMPOOL_PAGE_IS_NESTED(pPage))
+        Log7Func(("%RGv phys=%RGp cbWrite=%d\n",
+                  (RTGCPTR)(CTXTYPE(RTGCPTR, uintptr_t, RTGCPTR))(uintptr_t)pvAddress, GCPhysFault, cbWrite));
+
     for (;;)
     {
        union
-        {
+       {
             void           *pv;
             PX86PT          pPT;
             PPGMSHWPTPAE    pPTPae;
@@ -201,7 +205,12 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
             PX86PDPAE       pPDPae;
             PX86PDPT        pPDPT;
             PX86PML4        pPML4;
-        } uShw;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            PEPTPDPT        pEptPdpt;
+            PEPTPD          pEptPd;
+            PEPTPT          pEptPt;
+#endif
+       } uShw;
 
         LogFlow(("pgmPoolMonitorChainChanging: page idx=%d phys=%RGp (next=%d) kind=%s write=%#x\n",
                  pPage->idx, pPage->GCPhys, pPage->iMonitoredNext, pgmPoolPoolKindToStr(pPage->enmKind), cbWrite));
@@ -561,6 +570,138 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                 }
                 break;
             }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
+                const unsigned iShw = off / sizeof(EPTPML4E);
+                X86PGPAEUINT const uPml4e = uShw.pPML4->a[iShw].u;
+                if (uPml4e & EPT_PRESENT_MASK)
+                {
+                    Log7Func(("PML4 iShw=%#x: %RX64 (%RGp) -> freeing it!\n", iShw, uPml4e, pPage->GCPhys));
+                    pgmPoolFree(pVM, uPml4e & X86_PML4E_PG_MASK, pPage->idx, iShw);
+                    ASMAtomicWriteU64(&uShw.pPML4->a[iShw].u, 0);
+                }
+
+                /* paranoia / a bit assumptive. */
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(X86PML4E))
+                {
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PML4E);
+                    X86PGPAEUINT const uPml4e2 = uShw.pPML4->a[iShw2].u;
+                    if (uPml4e2 & EPT_PRESENT_MASK)
+                    {
+                        Log7Func(("PML4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uPml4e2));
+                        pgmPoolFree(pVM, uPml4e2 & X86_PML4E_PG_MASK, pPage->idx, iShw2);
+                        ASMAtomicWriteU64(&uShw.pPML4->a[iShw2].u, 0);
+                    }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
+                const unsigned iShw = off / sizeof(EPTPDPTE);
+                X86PGPAEUINT const uPdpte = uShw.pEptPdpt->a[iShw].u;
+                if (uPdpte & EPT_PRESENT_MASK)
+                {
+                    Log7Func(("EPT PDPT iShw=%#x: %RX64 (%RGp) -> freeing it!\n", iShw, uPdpte, pPage->GCPhys));
+                    pgmPoolFree(pVM, uPdpte & EPT_PDPTE_PG_MASK, pPage->idx, iShw);
+                    ASMAtomicWriteU64(&uShw.pEptPdpt->a[iShw].u, 0);
+                }
+
+                /* paranoia / a bit assumptive. */
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(EPTPDPTE))
+                {
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(EPTPDPTE);
+                    X86PGPAEUINT const uPdpte2 = uShw.pEptPdpt->a[iShw2].u;
+                    if (uPdpte2 & EPT_PRESENT_MASK)
+                    {
+                        Log7Func(("EPT PDPT iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uPdpte2));
+                        pgmPoolFree(pVM, uPdpte2 & EPT_PDPTE_PG_MASK, pPage->idx, iShw2);
+                        ASMAtomicWriteU64(&uShw.pEptPdpt->a[iShw2].u, 0);
+                    }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+            {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
+                const unsigned iShw = off / sizeof(EPTPDE);
+                X86PGPAEUINT const uPde = uShw.pEptPd->a[iShw].u;
+                if (uPde & EPT_PRESENT_MASK)
+                {
+                    Log7Func(("EPT PD iShw=%#x: %RX64 (%RGp) -> freeing it!\n", iShw, uPde, pPage->GCPhys));
+                    pgmPoolFree(pVM, uPde & EPT_PDE_PG_MASK, pPage->idx, iShw);
+                    ASMAtomicWriteU64(&uShw.pEptPd->a[iShw].u, 0);
+                }
+
+                /* paranoia / a bit assumptive. */
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(EPTPDE))
+                {
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(EPTPDE);
+                    AssertBreak(iShw2 < RT_ELEMENTS(uShw.pEptPd->a));
+                    X86PGPAEUINT const uPde2 = uShw.pEptPd->a[iShw2].u;
+                    if (uPde2 & EPT_PRESENT_MASK)
+                    {
+                        Log7Func(("EPT PD (2): iShw2=%#x: %RX64 (%RGp) -> freeing it!\n", iShw2, uPde2, pPage->GCPhys));
+                        pgmPoolFree(pVM, uPde2 & EPT_PDE_PG_MASK, pPage->idx, iShw2);
+                        ASMAtomicWriteU64(&uShw.pEptPd->a[iShw2].u, 0);
+                    }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+            {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
+                const unsigned iShw = off / sizeof(EPTPTE);
+                X86PGPAEUINT const uPte = uShw.pEptPt->a[iShw].u;
+                STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPT));
+                if (uPte & EPT_PRESENT_MASK)
+                {
+                    EPTPTE GstPte;
+                    int rc = pgmPoolPhysSimpleReadGCPhys(pVM, &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
+                    AssertRC(rc);
+
+                    Log7Func(("EPT PT: iShw=%#x %RX64 (%RGp)\n", iShw, uPte, pPage->GCPhys));
+                    pgmPoolTracDerefGCPhysHint(pPool, pPage,
+                                               uShw.pEptPt->a[iShw].u & EPT_PTE_PG_MASK,
+                                               GstPte.u & EPT_PTE_PG_MASK,
+                                               iShw);
+                    ASMAtomicWriteU64(&uShw.pEptPt->a[iShw].u, 0);
+                }
+
+                /* paranoia / a bit assumptive. */
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(EPTPTE))
+                {
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(EPTPTE);
+                    AssertBreak(iShw2 < RT_ELEMENTS(uShw.pEptPt->a));
+                    X86PGPAEUINT const uPte2 = uShw.pEptPt->a[iShw2].u;
+                    if (uPte2 & EPT_PRESENT_MASK)
+                    {
+                        EPTPTE GstPte;
+                        int rc = pgmPoolPhysSimpleReadGCPhys(pVM, &GstPte,
+                                                             pvAddress ? (uint8_t const *)pvAddress + sizeof(GstPte) : NULL,
+                                                             GCPhysFault + sizeof(GstPte), sizeof(GstPte));
+                        AssertRC(rc);
+                        Log7Func(("EPT PT (2): iShw=%#x %RX64 (%RGp)\n", iShw2, uPte2, pPage->GCPhys));
+                        pgmPoolTracDerefGCPhysHint(pPool, pPage,
+                                                   uShw.pEptPt->a[iShw2].u & EPT_PTE_PG_MASK,
+                                                   GstPte.u & EPT_PTE_PG_MASK,
+                                                   iShw2);
+                        ASMAtomicWriteU64(&uShw.pEptPt->a[iShw2].u, 0);
+                    }
+                }
+                break;
+            }
+#endif  /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
             default:
                 AssertFatalMsgFailed(("enmKind=%d\n", pPage->enmKind));
@@ -958,6 +1099,10 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
     bool                fForcedFlush = false;
     RT_NOREF_PV(uErrorCode);
 
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    AssertMsg(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT,
+              ("pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
+# endif
     LogFlow(("pgmRZPoolAccessPfHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
     PGM_LOCK_VOID(pVM);
@@ -972,6 +1117,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     if (pPage->fDirty)
     {
+#  ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        Assert(!PGMPOOL_PAGE_IS_NESTED(pPage));
+#  endif
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH));
         PGM_UNLOCK(pVM);
         return VINF_SUCCESS;    /* SMP guest case where we were blocking on the pgm lock while the same page was being marked dirty. */
@@ -987,6 +1135,17 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
         pgmPoolTrackCheckPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst);
         PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
         PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
+    }
+# endif
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    if (PGMPOOL_PAGE_IS_NESTED(pPage))
+    {
+        Assert(!CPUMIsGuestInVmxNonRootMode(CPUMQueryGuestCtxPtr(pVCpu)));
+        Log7Func(("Flushing pvFault=%RGv GCPhysFault=%RGp\n", pvFault, GCPhysFault));
+        pgmPoolMonitorChainFlush(pPool, pPage);
+        PGM_UNLOCK(pVM);
+        return VINF_SUCCESS;
     }
 # endif
 
@@ -1236,6 +1395,7 @@ flushPage:
     if (    rc == VINF_EM_RAW_EMULATE_INSTR
         &&  fReused)
     {
+        Assert(!PGMPOOL_PAGE_IS_NESTED(pPage)); /* temporary, remove later. */
         /* Make sure that the current instruction still has shadow page backing, otherwise we'll end up in a loop. */
         if (PGMShwGetPage(pVCpu, pRegFrame->rip, NULL, NULL) == VINF_SUCCESS)
             rc = VINF_SUCCESS;  /* safe to restart the instruction. */
@@ -1680,8 +1840,11 @@ static void pgmPoolFlushDirtyPage(PVMCC pVM, PPGMPOOL pPool, unsigned idxSlot, b
         cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst,
                                              (PCX86PTPAE)&pPool->aDirtyPages[idxSlot].aPage[0], fAllowRemoval, &fFlush);
     else
+    {
+        Assert(!PGMPOOL_PAGE_IS_NESTED(pPage)); /* temporary, remove later. */
         cChanges = pgmPoolTrackFlushPTPae32Bit(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PT)pvGst,
                                                (PCX86PT)&pPool->aDirtyPages[idxSlot].aPage[0], fAllowRemoval, &fFlush);
+    }
 
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
@@ -1727,6 +1890,7 @@ void pgmPoolAddDirtyPage(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     PGM_LOCK_ASSERT_OWNER(pVM);
     AssertCompile(RT_ELEMENTS(pPool->aDirtyPages) == 8 || RT_ELEMENTS(pPool->aDirtyPages) == 16);
     Assert(!pPage->fDirty);
+    Assert(!PGMPOOL_PAGE_IS_NESTED(pPage));
 
     unsigned idxFree = pPool->idxFreeDirtyPage;
     Assert(idxFree < RT_ELEMENTS(pPool->aDirtyPages));
@@ -2103,6 +2267,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_32BIT_PD:
         case PGMPOOLKIND_PAE_PDPT:
+            Assert(!PGMPOOL_PAGE_IS_KIND_NESTED(enmKind2));
             switch (enmKind2)
             {
                 case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
@@ -2132,6 +2297,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+            Assert(!PGMPOOL_PAGE_IS_KIND_NESTED(enmKind2));
             switch (enmKind2)
             {
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
@@ -2153,6 +2319,16 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 default:
                     return false;
             }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            return PGMPOOL_PAGE_IS_KIND_NESTED(enmKind2);
+
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            return false;
+#endif
 
         /*
          * These cannot be flushed, and it's common to reuse the PDs as PTs.
@@ -2367,6 +2543,11 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_64BIT_PML4:
                 case PGMPOOLKIND_32BIT_PD:
                 case PGMPOOLKIND_PAE_PDPT:
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+                case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+                case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+                case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+#endif
                 {
                     /* find the head */
                     while (pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
@@ -2393,6 +2574,9 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PDPT_PHYS:
                 case PGMPOOLKIND_32BIT_PD_PHYS:
                 case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+                case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+#endif
                     break;
                 default:
                     AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
@@ -2458,6 +2642,18 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            break;
+
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            /* Nothing to monitor here. */
+            return VINF_SUCCESS;
+#endif
+
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
@@ -2483,9 +2679,14 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             pPool->aPages[pPageHead->iMonitoredNext].iMonitoredPrev = pPage->idx;
         pPageHead->iMonitoredNext = pPage->idx;
         rc = VINF_SUCCESS;
+        if (PGMPOOL_PAGE_IS_NESTED(pPage))
+            Log7Func(("Adding to monitoring list GCPhysPage=%RGp\n", pPage->GCPhys));
     }
     else
     {
+        if (PGMPOOL_PAGE_IS_NESTED(pPage))
+            Log7Func(("Started monitoring GCPhysPage=%RGp HCPhys=%RHp enmKind=%s\n", pPage->GCPhys, pPage->Core.Key, pgmPoolPoolKindToStr(pPage->enmKind)));
+
         Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX); Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
         PVMCC pVM = pPool->CTX_SUFF(pVM);
         const RTGCPHYS GCPhysPage = pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
@@ -2550,6 +2751,18 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             Assert(!pPage->fMonitored);
             return VINF_SUCCESS;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            break;
+
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            /* Nothing to monitor here. */
+            Assert(!pPage->fMonitored);
+            return VINF_SUCCESS;
+#endif
+
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
@@ -2598,6 +2811,9 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      * Remove it from the list of modified pages (if in it).
      */
     pgmPoolMonitorModifiedRemove(pPool, pPage);
+
+    if (PGMPOOL_PAGE_IS_NESTED(pPage))
+        Log7Func(("Stopped monitoring %RGp\n", pPage->GCPhys));
 
     return rc;
 }
@@ -3172,7 +3388,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                         STAM_COUNTER_INC(&pPool->StatTrackFlushEntryKeep);
                         break;
                     default:
-                        /* (shouldn't be here, will assert below) */
+                        /* We will end up here when called with an "ALL" access handler. */
                         STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
                         break;
                 }
@@ -3196,6 +3412,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 Pte.u = (pPT->a[iPte].u & u32AndMask) | u32OrMask;
                 if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
                     Pte.u &= ~(X86PGUINT)X86_PTE_RW; /* need to disallow writes when dirty bit tracking is still active. */
+
                 ASMAtomicWriteU32(&pPT->a[iPte].u, Pte.u);
                 PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
                 return fRet;
@@ -3219,6 +3436,9 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PT_FOR_PHYS:   /* physical mask the same as PAE; RW bit as well; be careful! */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+#endif
         {
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PPGMSHWPTPAE    pPT = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -3245,7 +3465,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                         break;
 
                     default:
-                        /* (shouldn't be here, will assert below) */
+                        /* We will end up here when called with an "ALL" access handler. */
                         STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
                         break;
                 }
@@ -3593,6 +3813,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVMCC pVM, PPGMPAGE pPhysPage)
         if (    pPage->GCPhys != NIL_RTGCPHYS
             &&  pPage->cPresent)
         {
+            Assert(!PGMPOOL_PAGE_IS_NESTED(pPage)); /* see if it hits */
             switch (pPage->enmKind)
             {
                 /*
@@ -3789,8 +4010,17 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
 
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            Assert(iUserTable < EPT_PG_ENTRIES);
+            break;
+# endif
+
         default:
-            AssertMsgFailed(("enmKind=%d\n", pUserPage->enmKind));
+            AssertMsgFailed(("enmKind=%d GCPhys=%RGp\n", pUserPage->enmKind, pPage->GCPhys));
             break;
     }
 #endif /* VBOX_STRICT */
@@ -3824,6 +4054,12 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+#endif
             ASMAtomicWriteU64(&u.pau64[iUserTable], 0);
             break;
 
@@ -4203,8 +4439,8 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
             return;
         }
 
-        AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp; found page has HCPhys=%RHp\n",
-                              HCPhys, GCPhys, PGM_PAGE_GET_HCPHYS(pPhysPage)));
+        AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp; found page has HCPhys=%RHp iPte=%u fIsNested=%RTbool\n",
+                              HCPhys, GCPhys, PGM_PAGE_GET_HCPHYS(pPhysPage), iPte, PGMPOOL_PAGE_IS_NESTED(pPage)));
     }
     AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp\n", HCPhys, GCPhys));
 }
@@ -4437,6 +4673,62 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
     }
 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Clears references to shadowed pages in a SLAT EPT page table.
+ *
+ * @param   pPool   The pool.
+ * @param   pPage   The page.
+ * @param   pShwPT  The shadow page table (mapping of the page).
+ * @param   pGstPT  The guest page table.
+ */
+DECLINLINE(void) pgmPoolTrackDerefNestedPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPT pShwPT, PCEPTPT pGstPT)
+{
+    Assert(PGMPOOL_PAGE_IS_NESTED(pPage));
+    for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        X86PGPAEUINT const uShwPte = pShwPT->a[i].u;
+        Assert((uShwPte & UINT64_C(0xfff0000000000f80)) == 0); /* Access, Dirty, UserX (not supported) and ignored bits 7, 11. */
+        if (uShwPte & EPT_PRESENT_MASK)
+        {
+            Log7Func(("Shw=%RX64 GstPte=%RX64\n", uShwPte, pGstPT->a[i].u));
+            pgmPoolTracDerefGCPhys(pPool, pPage, uShwPte & EPT_PTE_PG_MASK, pGstPT->a[i].u & EPT_PTE_PG_MASK, i);
+            if (!pPage->cPresent)
+                break;
+        }
+    }
+}
+
+
+# if 0
+/**
+ * Clears refernces to shadowed pages in a SLAT EPT PM4 table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPml4    The shadow PML4 table.
+ */
+DECLINLINE(void) pgmPoolTrackDerefNestedPML4EPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPML4 pShwPml4)
+{
+    /** @todo later merge this with 64-bit PML and pass the assert and present masks as
+     *        parameters. */
+    Assert(PGMPOOL_PAGE_IS_NESTED(pPage));
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPml4->a); i++)
+    {
+        X86PGPAEUINT const uPml4e = pShwPml4->a[i].u;
+        Assert((uPml4e & (EPT_PML4E_MBZ_MASK | UINT64_C(0xfff0000000000000))) == 0);
+        if (uPml4e & EPT_PRESENT_MASK)
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, uPml4e & EPT_PML4E_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%RX64\n", uPml4e & EPT_PML4E_PG_MASK));
+        }
+    }
+}
+# endif
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 /**
  * Clear references to shadowed pages in a 32 bits page directory.
@@ -4590,7 +4882,11 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
         X86PGPAEUINT const uPde = pShwPD->a[i].u;
-        Assert((uPde & UINT64_C(0xfff0000000000f80)) == 0);
+#ifdef PGM_WITH_LARGE_PAGES
+        AssertMsg((uPde & UINT64_C(0xfff0000000000f00)) == 0, ("uPde=%RX64\n", uPde));
+#else
+        AssertMsg((uPde & UINT64_C(0xfff0000000000f80)) == 0, ("uPde=%RX64\n", uPde));
+#endif
         if (uPde & EPT_E_READ)
         {
 #ifdef PGM_WITH_LARGE_PAGES
@@ -4598,6 +4894,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
             {
                 Log4(("pgmPoolTrackDerefPDEPT: i=%d pde=%RX64 GCPhys=%RX64\n",
                       i, uPde & EPT_PDE2M_PG_MASK, pPage->GCPhys));
+                Assert(!PGMPOOL_PAGE_IS_NESTED(pPage)); /* We don't support large guest EPT yet. */
                 pgmPoolTracDerefGCPhys(pPool, pPage, uPde & EPT_PDE2M_PG_MASK,
                                        pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */,
                                        i);
@@ -4755,8 +5052,33 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             pgmPoolTrackDerefPDPTEPT(pPool, pPage, (PEPTPDPT)pvShw);
             break;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        {
+            STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
+            void *pvGst;
+            int const rc = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+            pgmPoolTrackDerefNestedPTEPT(pPool, pPage, (PEPTPT)pvShw, (PCEPTPT)pvGst);
+            PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
+            STAM_PROFILE_STOP(&pPool->StatTrackDerefGCPhys, g);
+            break;
+        }
+
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+            pgmPoolTrackDerefPDEPT(pPool, pPage, (PEPTPD)pvShw);
+            break;
+
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            pgmPoolTrackDerefPDPTEPT(pPool, pPage, (PEPTPDPT)pvShw);
+            break;
+
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            //pgmPoolTrackDerefNestedPML4EPT(pPool, pPage, (PEPTPML4)pvShw);
+            RT_FALL_THRU();
+#endif
+
         default:
-            AssertFatalMsgFailed(("enmKind=%d\n", pPage->enmKind));
+            AssertFatalMsgFailed(("enmKind=%d GCPhys=%RGp\n", pPage->enmKind, pPage->GCPhys));
     }
 
     /* paranoia, clear the shadow page. Remove this laser (i.e. let Alloc and ClearAll do it). */
@@ -4789,6 +5111,10 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
     LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%s, .GCPhys=%RGp}\n",
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
+
+    if (PGMPOOL_PAGE_IS_NESTED(pPage))
+        Log7Func(("pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%s, .GCPhys=%RGp}\n",
+                  pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
 
     /*
      * Reject any attempts at flushing any of the special root pages (shall
@@ -4988,6 +5314,11 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     /** @todo CSAM/PGMPrefetchPage messes up here during CSAMR3CheckGates
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
      *  Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)); */
+
+#if defined(VBOX_STRICT) && defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT)
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
+    Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT || PGMPOOL_PAGE_IS_KIND_NESTED(enmKind));
+#endif
 
     PGM_LOCK_VOID(pVM);
 
@@ -5199,6 +5530,7 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
         if (pPage->GCPhys - GCPhys < PAGE_SIZE)
         {
+            Assert(!PGMPOOL_PAGE_IS_NESTED(pPage));  /* Temporary to see if it hits. Remove later. */
             switch (pPage->enmKind)
             {
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
@@ -5502,6 +5834,14 @@ static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
             return "PGMPOOLKIND_EPT_PT_FOR_PHYS";
         case PGMPOOLKIND_ROOT_NESTED:
             return "PGMPOOLKIND_ROOT_NESTED";
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+            return "PGMPOOLKIND_EPT_PT_FOR_EPT_PT";
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+            return "PGMPOOLKIND_EPT_PD_FOR_EPT_PD";
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            return "PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT";
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            return "PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4";
     }
     return "Unknown kind!";
 }

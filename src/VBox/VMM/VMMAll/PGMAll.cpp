@@ -65,20 +65,21 @@ DECLINLINE(int) pgmGstMapCr3(PVMCPUCC pVCpu, RTGCPHYS GCPhysCr3, PRTHCPTR pHCPtr
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk,
                           PPGMPTWALKGST pGstWalk);
-static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
+static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk,
+                              PPGMPTWALKGST pGstWalk);
 static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3);
+static int pgmShwGetNestedEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPhysNested, PEPTPDPT *ppPdpt, PEPTPD *ppPD,
+                                   PPGMPTWALKGST pGstWalkAll);
 #endif
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-/* Guest - EPT SLAT is identical for all guest paging mode. */
 # define PGM_SLAT_TYPE               PGM_SLAT_TYPE_EPT
-# define PGM_GST_TYPE                PGM_TYPE_EPT
-# include "PGMGstDefs.h"
+# include "PGMSlatDefs.h"
 # include "PGMAllGstSlatEpt.cpp.h"
-# undef PGM_GST_TYPE
+# undef PGM_SLAT_TYPE
 #endif
 
 
@@ -900,6 +901,58 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
 };
 
 
+/**
+ * Gets the CR3 mask corresponding to the given paging mode.
+ *
+ * @returns The CR3 mask.
+ * @param   enmMode         The paging mode.
+ * @param   enmSlatMode     The second-level address translation mode.
+ */
+DECLINLINE(uint64_t) pgmGetCr3MaskForMode(PGMMODE enmMode, PGMSLAT enmSlatMode)
+{
+    /** @todo This work can be optimized either by storing the masks in
+     *        pVCpu->pgm.s.afGstCr3Masks[] for all PGMMODEs -or- just do this once and
+     *        store the result when entering guest mode since we currently use it only
+     *        for enmGuestMode. */
+    if (enmSlatMode == PGMSLAT_DIRECT)
+    {
+        Assert(enmMode != PGMMODE_EPT);
+        switch (enmMode)
+        {
+            case PGMMODE_PAE:
+            case PGMMODE_PAE_NX:
+                return X86_CR3_PAE_PAGE_MASK;
+            case PGMMODE_AMD64:
+            case PGMMODE_AMD64_NX:
+                return X86_CR3_AMD64_PAGE_MASK;
+            default:
+                return X86_CR3_PAGE_MASK;
+        }
+    }
+    else
+    {
+        Assert(enmSlatMode == PGMSLAT_EPT);
+        return X86_CR3_EPT_PAGE_MASK;
+    }
+}
+
+
+/**
+ * Gets the masked CR3 value according to the current guest paging mode.
+ *
+ * @returns The masked PGM CR3 value.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   uCr3    The raw guest CR3 value.
+ */
+DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
+{
+    uint64_t const fCr3Mask  = pgmGetCr3MaskForMode(pVCpu->pgm.s.enmGuestMode, pVCpu->pgm.s.enmGuestSlatMode);
+    RTGCPHYS       GCPhysCR3 = (RTGCPHYS)(uCr3 & fCr3Mask);
+    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
+    return GCPhysCR3;
+}
+
+
 #ifdef IN_RING0
 /**
  * #PF Handler.
@@ -1669,6 +1722,116 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Syncs the SHADOW nested-guest page directory pointer for the specified address.
+ * Allocates backing pages in case the PDPT or PML4 entry is missing.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   GCPhysNested    The nested-guest physical address.
+ * @param   ppPdpt          Where to store the PDPT. Optional, can be NULL.
+ * @param   ppPD            Where to store the PD. Optional, can be NULL.
+ * @param   pGstWalkAll     The guest walk info.
+ */
+static int pgmShwGetNestedEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPhysNested, PEPTPDPT *ppPdpt, PEPTPD *ppPD,
+                                   PPGMPTWALKGST pGstWalkAll)
+{
+    PVMCC    pVM   = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    int      rc;
+
+    PPGMPOOLPAGE pShwPage;
+    Assert(pVM->pgm.s.fNestedPaging);
+    Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT);
+    PGM_LOCK_ASSERT_OWNER(pVM);
+
+    /*
+     * PML4 level.
+     */
+    {
+        PEPTPML4 pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+        Assert(pPml4);
+
+        /* Allocate page directory pointer table if not present. */
+        {
+            uint64_t const fShwFlags = pGstWalkAll->u.Ept.Pml4e.u & pVCpu->pgm.s.fGstEptShadowedPml4eMask;
+            const unsigned iPml4e    = (GCPhysNested >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+            PEPTPML4E      pPml4e    = &pPml4->a[iPml4e];
+
+            if (!(pPml4e->u & (EPT_E_PG_MASK | EPT_PRESENT_MASK)))
+            {
+                RTGCPHYS const GCPhysPdpt = pGstWalkAll->u.Ept.Pml4e.u & EPT_PML4E_PG_MASK;
+                rc = pgmPoolAlloc(pVM, GCPhysPdpt, PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT, PGMPOOLACCESS_DONTCARE,
+                                  PGM_A20_IS_ENABLED(pVCpu), pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4e, false /*fLockPage*/,
+                                  &pShwPage);
+                AssertRCReturn(rc, rc);
+
+                /* Hook up the new PDPT now. */
+                ASMAtomicWriteU64(&pPml4e->u, pShwPage->Core.Key | fShwFlags);
+            }
+            else
+            {
+                pShwPage = pgmPoolGetPage(pPool, pPml4e->u & EPT_PML4E_PG_MASK);
+                AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
+
+                pgmPoolCacheUsed(pPool, pShwPage);
+
+                /* Hook up the cached PDPT if needed (probably not given 512*512 PTs to sync). */
+                if (pPml4e->u != (pShwPage->Core.Key | fShwFlags))
+                    ASMAtomicWriteU64(&pPml4e->u, pShwPage->Core.Key | fShwFlags);
+            }
+            Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
+            Log7Func(("GstPml4e=%RX64 ShwPml4e=%RX64 iPml4e=%u\n", pGstWalkAll->u.Ept.Pml4e.u, pPml4e->u, iPml4e));
+        }
+    }
+
+    /*
+     * PDPT level.
+     */
+    {
+        AssertReturn(!(pGstWalkAll->u.Ept.Pdpte.u & EPT_E_LEAF), VERR_NOT_SUPPORTED); /* shadowing 1GB pages not supported yet. */
+
+        PEPTPDPT pPdpt = (PEPTPDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+        if (ppPdpt)
+            *ppPdpt = pPdpt;
+
+        uint64_t const fShwFlags = pGstWalkAll->u.Ept.Pdpte.u & pVCpu->pgm.s.fGstEptShadowedPdpteMask;
+        const unsigned iPdPte    = (GCPhysNested >> EPT_PDPT_SHIFT) & EPT_PDPT_MASK;
+        PEPTPDPTE      pPdpte    = &pPdpt->a[iPdPte];
+
+        if (!(pPdpte->u & (EPT_E_PG_MASK | EPT_PRESENT_MASK)))
+        {
+            RTGCPHYS const GCPhysPd = pGstWalkAll->u.Ept.Pdpte.u & EPT_PDPTE_PG_MASK;
+            rc = pgmPoolAlloc(pVM, GCPhysPd, PGMPOOLKIND_EPT_PD_FOR_EPT_PD, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                              pShwPage->idx, iPdPte, false /*fLockPage*/, &pShwPage);
+            AssertRCReturn(rc, rc);
+
+            /* Hook up the new PD now. */
+            ASMAtomicWriteU64(&pPdpte->u, pShwPage->Core.Key | fShwFlags);
+        }
+        else
+        {
+            pShwPage = pgmPoolGetPage(pPool, pPdpte->u & EPT_PDPTE_PG_MASK);
+            AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
+
+            pgmPoolCacheUsed(pPool, pShwPage);
+
+            /* Hook up the cached PD if needed (probably not given there are 512 PTs we may need sync). */
+            if (pPdpte->u != (pShwPage->Core.Key | fShwFlags))
+                ASMAtomicWriteU64(&pPdpte->u, pShwPage->Core.Key | fShwFlags);
+        }
+        Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
+        Log7Func(("GstPdpte=%RX64 ShwPdpte=%RX64 iPdPte=%u \n", pGstWalkAll->u.Ept.Pdpte.u, pPdpte->u, iPdPte));
+
+        *ppPD = (PEPTPD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+    }
+
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+
+
 #ifdef IN_RING0
 /**
  * Synchronizes a range of nested page table entries.
@@ -1786,7 +1949,7 @@ DECLINLINE(int) pgmGstUnmapCr3(PVMCPUCC pVCpu)
 {
     uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
-    AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnUnmapCR3, VERR_PGM_MODE_IPE);
     return g_aPgmBothModeData[idxBth].pfnUnmapCR3(pVCpu);
 }
 
@@ -2134,7 +2297,7 @@ int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
 
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGst32BitPd));
 
-    RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAGE_MASK;
+    RTGCPHYS    GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, pVCpu->pgm.s.GCPhysCR3);
     PPGMPAGE    pPage;
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
@@ -2175,10 +2338,8 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_VOID(pVM);
 
-    RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
+    RTGCPHYS    GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, pVCpu->pgm.s.GCPhysCR3);
     PPGMPAGE    pPage;
-    /** @todo Nested VMX: convert GCPhysCR3 from nested-guest physical to
-     *        guest-physical address here. */
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
@@ -2271,7 +2432,7 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_VOID(pVM);
 
-    RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK;
+    RTGCPHYS    GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, pVCpu->pgm.s.GCPhysCR3);
     PPGMPAGE    pPage;
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
@@ -2368,50 +2529,6 @@ static void pgmGstFlushPaePdpes(PVMCPU pVCpu)
 }
 
 
-/**
- * Gets the CR3 mask corresponding to the given paging mode.
- *
- * @returns The CR3 mask.
- * @param   enmMode     The paging mode.
- */
-DECLINLINE(uint64_t) pgmGetCr3MaskForMode(PGMMODE enmMode)
-{
-    /** @todo This work can be optimized either by storing the masks in
-     *        pVCpu->pgm.s.afGstCr3Masks[] for all PGMMODEs -or- just do this once and
-     *        store the result when entering guest mode since we currently use it only
-     *        for enmGuestMode. */
-    switch (enmMode)
-    {
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            return X86_CR3_PAE_PAGE_MASK;
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            return X86_CR3_AMD64_PAGE_MASK;
-        case PGMMODE_EPT:
-            return X86_CR3_EPT_PAGE_MASK;
-        default:
-            return X86_CR3_PAGE_MASK;
-    }
-}
-
-
-/**
- * Gets the masked CR3 value according to the current guest paging mode.
- *
- * @returns The masked PGM CR3 value.
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   uCr3    The raw guest CR3 value.
- */
-DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
-{
-    uint64_t const fCr3Mask = pgmGetCr3MaskForMode(pVCpu->pgm.s.enmGuestMode);
-    RTGCPHYS      GCPhysCR3 = (RTGCPHYS)(uCr3 & fCr3Mask);
-    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
-    return GCPhysCR3;
-}
-
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /**
  * Performs second-level address translation for the given CR3 and updates the
@@ -2428,7 +2545,9 @@ DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
  */
 static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3)
 {
+# if 0
     if (uCr3 != pVCpu->pgm.s.GCPhysNstGstCR3)
+# endif
     {
         PGMPTWALK    Walk;
         PGMPTWALKGST GstWalk;
@@ -2448,12 +2567,14 @@ static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPh
         return rc;
     }
 
+# if 0
     /*
      * If the nested-guest CR3 has not changed, then the previously
      * translated CR3 result (i.e. GCPhysCR3) is passed back.
      */
     *pGCPhysCr3 = pVCpu->pgm.s.GCPhysCR3;
     return VINF_SUCCESS;
+# endif
 }
 #endif
 
@@ -2494,7 +2615,6 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
     if (   pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT
         && PGMMODE_WITH_PAGING(pVCpu->pgm.s.enmGuestMode))
     {
-        LogFlowFunc(("nested_cr3=%RX64 old=%RX64\n", GCPhysCR3, pVCpu->pgm.s.GCPhysNstGstCR3));
         RTGCPHYS GCPhysOut;
         int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
         if (RT_SUCCESS(rc))
@@ -2600,7 +2720,6 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
     {
-        LogFlowFunc(("nested_cr3=%RX64 old_nested_cr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysNstGstCR3));
         RTGCPHYS GCPhysOut;
         int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
         if (RT_SUCCESS(rc))
@@ -2609,10 +2728,11 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
         {
             /* CR3 SLAT translation failed but we try to pretend it
                succeeded for the reasons mentioned in PGMHCChangeMode(). */
-            AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", cr3, rc));
+            Log(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", cr3, rc));
             int const rc2 = pgmGstUnmapCr3(pVCpu);
             pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
             pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
             return rc2;
         }
     }
@@ -2716,7 +2836,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
                 /* CR3 SLAT translation failed but we try to pretend it
                    succeeded for the reasons mentioned in PGMHCChangeMode(). */
                 AssertMsgFailed(("Failed to translate CR3 %#RX64. rc=%Rrc\n", cr3, rc2));
-                rc2 = pgmGstUnmapCr3(pVCpu);
                 pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
                 pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
                 return rc2;
@@ -2811,6 +2930,9 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
          * PDPE entries. Here we assume the caller has already validated or doesn't require
          * validation of the PDPEs.
          *
+         * In the case of nested EPT (i.e. for nested-guests), the PAE PDPEs have been
+         * validated by the VMX transition.
+         *
          * [1] -- See AMD spec. 15.25.10 "Legacy PAE Mode".
          */
         if ((PaePdpe.u & (pVCpu->pgm.s.fGstPaeMbzPdpeMask | X86_PDPE_P)) == X86_PDPE_P)
@@ -2843,6 +2965,10 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
         pVCpu->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
     }
 
+    /*
+     * Update CPUM with the PAE PDPEs.
+     */
+    CPUMSetGuestPaePdpes(pVCpu, paPaePdpes);
     return VINF_SUCCESS;
 }
 
@@ -2867,7 +2993,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (CPUMIsGuestVmxEptPaePagingEnabled(pVCpu))
+    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
     {
         RTGCPHYS GCPhysOut;
         int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
@@ -2907,14 +3033,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
 #endif
 
             /*
-             * Update CPUM.
-             * We do this prior to mapping the PDPEs to keep the order consistent
-             * with what's used in HM. In practice, it doesn't really matter.
-             */
-            CPUMSetGuestPaePdpes(pVCpu, &aPaePdpes[0]);
-
-            /*
-             * Map the PDPEs.
+             * Map the PDPEs and update CPUM.
              */
             rc = PGMGstMapPaePdpes(pVCpu, &aPaePdpes[0]);
             if (RT_SUCCESS(rc))
@@ -3319,6 +3438,11 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
 #endif
 
     /*
+     * Determine SLAT mode -before- entering the new shadow mode!
+     */
+    pVCpu->pgm.s.enmGuestSlatMode = !CPUMIsGuestVmxEptPagingEnabled(pVCpu) ? PGMSLAT_DIRECT : PGMSLAT_EPT;
+
+    /*
      * Enter new shadow mode (if changed).
      */
     if (fShadowModeChanged)
@@ -3379,7 +3503,7 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
      *   - Update the second-level address translation (SLAT) mode.
      *   - Indicate that the CR3 is nested-guest physical address.
      */
-    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
     {
         if (PGMMODE_WITH_PAGING(enmGuestMode))
         {
@@ -3404,26 +3528,21 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
                  * translated on the next linear-address memory access.
                  * See Intel spec. 27.2.1 "EPT Overview".
                  */
-                AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", GCPhysCR3, rc));
+                Log(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", GCPhysCR3, rc));
 
                 /* Trying to coax PGM to succeed for the time being... */
                 Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
                 pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
-                pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
                 pVCpu->pgm.s.enmGuestMode     = enmGuestMode;
                 HMHCChangedPagingMode(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
                 return VINF_SUCCESS;
             }
             pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
-            GCPhysCR3 = Walk.GCPhys;
+            GCPhysCR3 = Walk.GCPhys & X86_CR3_EPT_PAGE_MASK;
         }
-        pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
     }
     else
-    {
         Assert(pVCpu->pgm.s.GCPhysNstGstCR3 == NIL_RTGCPHYS);
-        pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_DIRECT;
-    }
 #endif
 
     /*
@@ -3952,6 +4071,8 @@ VMM_INT_DECL(void) PGMSetGuestEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_VOID(pVM);
     pVCpu->pgm.s.uEptPtr = uEptPtr;
+    pVCpu->pgm.s.pGstEptPml4R3 = 0;
+    pVCpu->pgm.s.pGstEptPml4R0 = 0;
     PGM_UNLOCK(pVM);
 }
 
