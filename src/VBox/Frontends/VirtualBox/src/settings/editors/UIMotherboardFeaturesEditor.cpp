@@ -37,14 +37,14 @@
 UIMotherboardFeaturesEditor::UIMotherboardFeaturesEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fEnableIoApic(false)
+    , m_fEnableUtcTime(false)
     , m_fEnableEfi(false)
     , m_fEnableSecureBoot(false)
-    , m_fEnableUtcTime(false)
     , m_pLabel(0)
     , m_pCheckBoxEnableIoApic(0)
+    , m_pCheckBoxEnableUtcTime(0)
     , m_pCheckBoxEnableEfi(0)
     , m_pCheckBoxEnableSecureBoot(0)
-    , m_pCheckBoxEnableUtcTime(0)
 {
     prepare();
 }
@@ -66,6 +66,25 @@ bool UIMotherboardFeaturesEditor::isEnabledIoApic() const
     return   m_pCheckBoxEnableIoApic
            ? m_pCheckBoxEnableIoApic->checkState() == Qt::Checked
            : m_fEnableIoApic;
+}
+
+void UIMotherboardFeaturesEditor::setEnableUtcTime(bool fOn)
+{
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fEnableUtcTime != fOn)
+    {
+        m_fEnableUtcTime = fOn;
+        if (m_pCheckBoxEnableUtcTime)
+            m_pCheckBoxEnableUtcTime->setCheckState(m_fEnableUtcTime ? Qt::Checked : Qt::Unchecked);
+    }
+}
+
+bool UIMotherboardFeaturesEditor::isEnabledUtcTime() const
+{
+    return   m_pCheckBoxEnableUtcTime
+           ? m_pCheckBoxEnableUtcTime->checkState() == Qt::Checked
+           : m_fEnableUtcTime;
 }
 
 void UIMotherboardFeaturesEditor::setEnableEfi(bool fOn)
@@ -106,25 +125,6 @@ bool UIMotherboardFeaturesEditor::isEnabledSecureBoot() const
            : m_fEnableSecureBoot;
 }
 
-void UIMotherboardFeaturesEditor::setEnableUtcTime(bool fOn)
-{
-    /* Update cached value and
-     * check-box if value has changed: */
-    if (m_fEnableUtcTime != fOn)
-    {
-        m_fEnableUtcTime = fOn;
-        if (m_pCheckBoxEnableUtcTime)
-            m_pCheckBoxEnableUtcTime->setCheckState(m_fEnableUtcTime ? Qt::Checked : Qt::Unchecked);
-    }
-}
-
-bool UIMotherboardFeaturesEditor::isEnabledUtcTime() const
-{
-    return   m_pCheckBoxEnableUtcTime
-           ? m_pCheckBoxEnableUtcTime->checkState() == Qt::Checked
-           : m_fEnableUtcTime;
-}
-
 int UIMotherboardFeaturesEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
@@ -147,6 +147,12 @@ void UIMotherboardFeaturesEditor::retranslateUi()
                                                "which may slightly decrease performance. Note: don't disable this feature "
                                                "after having installed a Windows guest operating system!"));
     }
+    if (m_pCheckBoxEnableUtcTime)
+    {
+        m_pCheckBoxEnableUtcTime->setText(tr("Enable Hardware Clock in &UTC Time"));
+        m_pCheckBoxEnableUtcTime->setToolTip(tr("When checked, the RTC device will report the time in UTC, otherwise in local "
+                                                "(host) time. Unix usually expects the hardware clock to be set to UTC."));
+    }
     if (m_pCheckBoxEnableEfi)
     {
         m_pCheckBoxEnableEfi->setText(tr("Enable &EFI (special OSes only)"));
@@ -158,12 +164,6 @@ void UIMotherboardFeaturesEditor::retranslateUi()
     {
         m_pCheckBoxEnableSecureBoot->setText(tr("Enable &Secure Boot"));
         m_pCheckBoxEnableSecureBoot->setToolTip(tr("When checked, the secure boot emulation will be enabled."));
-    }
-    if (m_pCheckBoxEnableUtcTime)
-    {
-        m_pCheckBoxEnableUtcTime->setText(tr("Hardware Clock in &UTC Time"));
-        m_pCheckBoxEnableUtcTime->setToolTip(tr("When checked, the RTC device will report the time in UTC, otherwise in local "
-                                                "(host) time. Unix usually expects the hardware clock to be set to UTC."));
     }
 }
 
@@ -204,13 +204,21 @@ void UIMotherboardFeaturesEditor::prepare()
                     this, &UIMotherboardFeaturesEditor::sigChangedIoApic);
             m_pLayout->addWidget(m_pCheckBoxEnableIoApic, 0, 1);
         }
+        /* Prepare 'enable UTC time' check-box: */
+        m_pCheckBoxEnableUtcTime = new QCheckBox(this);
+        if (m_pCheckBoxEnableUtcTime)
+        {
+            connect(m_pCheckBoxEnableUtcTime, &QCheckBox::stateChanged,
+                    this, &UIMotherboardFeaturesEditor::sigChangedUtcTime);
+            m_pLayout->addWidget(m_pCheckBoxEnableUtcTime, 1, 1);
+        }
         /* Prepare 'enable EFI' check-box: */
         m_pCheckBoxEnableEfi = new QCheckBox(this);
         if (m_pCheckBoxEnableEfi)
         {
             connect(m_pCheckBoxEnableEfi, &QCheckBox::stateChanged,
                     this, &UIMotherboardFeaturesEditor::sltHandleEnableEfiToggling);
-            m_pLayout->addWidget(m_pCheckBoxEnableEfi, 1, 1);
+            m_pLayout->addWidget(m_pCheckBoxEnableEfi, 2, 1);
         }
         /* Prepare 'enable secure boot' check-box: */
         m_pCheckBoxEnableSecureBoot = new QCheckBox(this);
@@ -218,15 +226,7 @@ void UIMotherboardFeaturesEditor::prepare()
         {
             connect(m_pCheckBoxEnableSecureBoot, &QCheckBox::stateChanged,
                     this, &UIMotherboardFeaturesEditor::sigChangedSecureBoot);
-            m_pLayout->addWidget(m_pCheckBoxEnableSecureBoot, 2, 1);
-        }
-        /* Prepare 'enable UTC time' check-box: */
-        m_pCheckBoxEnableUtcTime = new QCheckBox(this);
-        if (m_pCheckBoxEnableUtcTime)
-        {
-            connect(m_pCheckBoxEnableUtcTime, &QCheckBox::stateChanged,
-                    this, &UIMotherboardFeaturesEditor::sigChangedUtcTime);
-            m_pLayout->addWidget(m_pCheckBoxEnableUtcTime, 3, 1);
+            m_pLayout->addWidget(m_pCheckBoxEnableSecureBoot, 3, 1);
         }
     }
 

@@ -48,12 +48,12 @@ signals:
 
     /** Notifies listeners about IO APIC change. */
     void sigChangedIoApic();
+    /** Notifies listeners about UTC time change. */
+    void sigChangedUtcTime();
     /** Notifies listeners about EFI change. */
     void sigChangedEfi();
     /** Notifies listeners about secure boot change. */
     void sigChangedSecureBoot();
-    /** Notifies listeners about UTC time change. */
-    void sigChangedUtcTime();
 
 public:
 
@@ -65,6 +65,11 @@ public:
     /** Returns 'enable IO APIC' feature value. */
     bool isEnabledIoApic() const;
 
+    /** Defines whether 'enable UTC time' feature in @a fOn. */
+    void setEnableUtcTime(bool fOn);
+    /** Returns 'enable UTC time' feature value. */
+    bool isEnabledUtcTime() const;
+
     /** Defines whether 'enable EFI' feature in @a fOn. */
     void setEnableEfi(bool fOn);
     /** Returns 'enable EFI' feature value. */
@@ -74,11 +79,6 @@ public:
     void setEnableSecureBoot(bool fOn);
     /** Returns 'enable secure boot' feature value. */
     bool isEnabledSecureBoot() const;
-
-    /** Defines whether 'enable UTC time' feature in @a fOn. */
-    void setEnableUtcTime(bool fOn);
-    /** Returns 'enable UTC time' feature value. */
-    bool isEnabledUtcTime() const;
 
     /** Returns minimum layout hint. */
     int minimumLabelHorizontalHint() const;
@@ -104,12 +104,12 @@ private:
      * @{ */
         /** Holds the 'enable IO APIC' feature value. */
         bool  m_fEnableIoApic;
+        /** Holds the 'enable UTC time' feature value. */
+        bool  m_fEnableUtcTime;
         /** Holds the 'enable EFI' feature value. */
         bool  m_fEnableEfi;
         /** Holds the 'enable secure boot' feature value. */
         bool  m_fEnableSecureBoot;
-        /** Holds the 'enable UTC time' feature value. */
-        bool  m_fEnableUtcTime;
     /** @} */
 
     /** @name Widgets
@@ -120,12 +120,12 @@ private:
         QLabel      *m_pLabel;
         /** Holds the 'enable IO APIC' check-box instance. */
         QCheckBox   *m_pCheckBoxEnableIoApic;
-        /** Holds the 'enable EFI' check-box instance. */
-        QCheckBox   *m_pCheckBoxEnableEfi;
-        /** Holds the 'secure boot' check-box instance. */
-        QCheckBox   *m_pCheckBoxEnableSecureBoot;
         /** Holds the 'enable UTC time' check-box instance. */
         QCheckBox   *m_pCheckBoxEnableUtcTime;
+        /** Holds the 'enable EFI' check-box instance. */
+        QCheckBox   *m_pCheckBoxEnableEfi;
+        /** Holds the 'enable secure boot' check-box instance. */
+        QCheckBox   *m_pCheckBoxEnableSecureBoot;
     /** @} */
 };
 
