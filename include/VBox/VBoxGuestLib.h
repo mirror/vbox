@@ -825,6 +825,8 @@ VBGLR3DECL(int)     VbglR3WriteCoreDump(void);
 
 /** @name DRM client handling
  * @{ */
+/** Guest property names pattern which is used by Guest Additions DRM services. */
+# define VBGLR3DRMPROPPTR           "/VirtualBox/GuestAdd/DRM*"
 /** Guest property that defines if the DRM IPC server access should be restricted to a specific user group. */
 # define VBGLR3DRMIPCPROPRESTRICT   "/VirtualBox/GuestAdd/DRMIpcRestricted"
 

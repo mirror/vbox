@@ -1084,14 +1084,13 @@ static void vbDrmRequestShutdown(int sig)
  * not set or not READ-ONLY, all users will have access to the socket.
  *
  * @param   hIpcServer  IPC server handle.
+ * @param   fRestrict   Whether to restrict access to socket or not.
  */
-static void vbDrmSetIpcServerAccessPermissions(RTLOCALIPCSERVER hIpcServer)
+static void vbDrmSetIpcServerAccessPermissions(RTLOCALIPCSERVER hIpcServer, bool fRestrict)
 {
     int rc;
 
-    ASMAtomicWriteBool(&g_fDrmIpcRestricted, VbglR3DrmRestrictedIpcAccessIsNeeded());
-
-    if (g_fDrmIpcRestricted)
+    if (fRestrict)
     {
         struct group *pGrp;
         pGrp = getgrnam(VBOX_DRMIPC_USER_GROUP);
@@ -1118,6 +1117,9 @@ static void vbDrmSetIpcServerAccessPermissions(RTLOCALIPCSERVER hIpcServer)
         else
             VBClLogError("unable to grant IPC server socket access to all users, rc=%Rrc\n", rc);
     }
+
+    /* Set flag for the thread which serves incomming IPC connections. */
+    ASMAtomicWriteBool(&g_fDrmIpcRestricted, fRestrict);
 }
 
 /**
@@ -1137,15 +1139,37 @@ static void vbDrmPollIpcServerAccessMode(RTLOCALIPCSERVER hIpcServer)
     {
         do
         {
-            /* Buffer should be big enough to fit guest property data layout: Name\0Value\0Flags\0. */
+            /* Buffer should be big enough to fit guest property data layout: Name\0Value\0Flags\0fWasDeleted\0. */
             static char achBuf[GUEST_PROP_MAX_NAME_LEN];
+            char *pszName = NULL;
+            char *pszValue = NULL;
+            char *pszFlags = NULL;
+            bool fWasDeleted = false;
             uint64_t u64Timestamp = 0;
 
-            rc = VbglR3GuestPropWait(idClient, VBGLR3DRMIPCPROPRESTRICT, achBuf, sizeof(achBuf), u64Timestamp,
-                                     VBOX_DRMIPC_RX_TIMEOUT_MS, NULL, NULL, &u64Timestamp, NULL, NULL, NULL);
+            rc = VbglR3GuestPropWait(idClient, VBGLR3DRMPROPPTR, achBuf, sizeof(achBuf), u64Timestamp,
+                                     VBOX_DRMIPC_RX_TIMEOUT_MS, &pszName, &pszValue, &u64Timestamp,
+                                     &pszFlags, NULL, &fWasDeleted);
             if (RT_SUCCESS(rc))
-                vbDrmSetIpcServerAccessPermissions(hIpcServer);
-            else if (   rc != VERR_TIMEOUT
+            {
+                uint32_t fFlags = 0;
+
+                VBClLogVerbose(1, "guest property change: name: %s, val: %s, flags: %s, fWasDeleted: %RTbool\n",
+                               pszName, pszValue, pszFlags, fWasDeleted);
+
+                if (RT_SUCCESS(GuestPropValidateFlags(pszFlags, &fFlags)))
+                {
+                    if (RTStrNCmp(pszName, VBGLR3DRMIPCPROPRESTRICT, GUEST_PROP_MAX_NAME_LEN) == 0)
+                    {
+                        /* Enforce restricted socket access until guest property exist and READ-ONLY for the guest. */
+                        vbDrmSetIpcServerAccessPermissions(hIpcServer, !fWasDeleted && fFlags & GUEST_PROP_F_RDONLYGUEST);
+                    }
+
+                } else
+                    VBClLogError("guest property change: name: %s, val: %s, flags: %s, fWasDeleted: %RTbool: bad flags\n",
+                                 pszName, pszValue, pszFlags, fWasDeleted);
+
+            } else if (   rc != VERR_TIMEOUT
                      && rc != VERR_INTERRUPTED)
             {
                 VBClLogError("error on waiting guest property notification, rc=%Rrc\n", rc);
@@ -1283,7 +1307,7 @@ int main(int argc, char *argv[])
     }
 
     /* Set IPC server socket access permissions according to VM configuration. */
-    vbDrmSetIpcServerAccessPermissions(hIpcServer);
+    vbDrmSetIpcServerAccessPermissions(hIpcServer, VbglR3DrmRestrictedIpcAccessIsNeeded());
 
     /* Attempt to start DRM resize task. */
     rc = RTThreadCreate(&drmResizeThread, vbDrmResizeWorker, NULL, 0,
