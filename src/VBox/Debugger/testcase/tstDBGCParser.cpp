@@ -59,6 +59,8 @@ static DBGCIO g_tstBack =
     tstDBGCBackInput,
     tstDBGCBackRead,
     tstDBGCBackWrite,
+    NULL, /**pfnPktBegin*/
+    NULL, /**pfnPktEnd*/
     tstDBGCBackSetReady
 };
 /** For keeping track of output prefixing. */

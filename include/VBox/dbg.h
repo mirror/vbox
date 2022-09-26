@@ -1168,6 +1168,29 @@ typedef struct DBGCIO
     DECLCALLBACKMEMBER(int, pfnWrite, (PCDBGCIO pIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten));
 
     /**
+     * Marks the beginning of a new packet being sent - optional.
+     *
+     * @returns VBox status code.
+     * @param   pIo         Pointer to the I/O structure supplied by
+     *                      the I/O provider. The backend can use this to find it's instance data.
+     * @param   cbPktHint   Size of the packet in bytes, serves as a hint for the I/O provider to arrange buffers.
+     *                      Give 0 if size is unknown upfront.
+     */
+    DECLCALLBACKMEMBER(int, pfnPktBegin, (PCDBGCIO pIo, size_t cbPktHint));
+
+    /**
+     * Marks the end of the packet - optional.
+     *
+     * @returns VBox status code.
+     * @param   pIo         Pointer to the I/O structure supplied by
+     *                      the I/O provider. The backend can use this to find it's instance data.
+     *
+     * @note Some I/O providers might decide to send data only when this is called not in the
+     *       DBGCIO::pfnWrite callback.
+     */
+    DECLCALLBACKMEMBER(int, pfnPktEnd, (PCDBGCIO pIo));
+
+    /**
      * Ready / busy notification.
      *
      * @returns nothing.

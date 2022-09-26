@@ -108,6 +108,7 @@ typedef const DBGCIOPROVREG *PCDBGCIOPROVREG;
 *   Global Variables                                                           *
 *******************************************************************************/
 extern const DBGCIOPROVREG    g_DbgcIoProvTcp;
+extern const DBGCIOPROVREG    g_DbgcIoProvUdp;
 extern const DBGCIOPROVREG    g_DbgcIoProvIpc;
 
 

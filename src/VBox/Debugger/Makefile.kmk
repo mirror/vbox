@@ -62,6 +62,7 @@ Debugger_SOURCES   = \
 	DBGCRemoteKd.cpp \
 	DBGCIo.cpp \
 	DBGCIoProvTcp.cpp \
+	DBGCIoProvUdp.cpp \
 	DBGCIoProvIpc.cpp \
 	DBGCScreenAscii.cpp
 

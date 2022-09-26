@@ -199,6 +199,8 @@ static DECLCALLBACK(int) dbgcIoProvIpcWaitForConnect(DBGCIOPROV hDbgcIoProv, RTM
             pIpcCon->Io.pfnInput    = dbgcIoProvIpcIoInput;
             pIpcCon->Io.pfnRead     = dbgcIoProvIpcIoRead;
             pIpcCon->Io.pfnWrite    = dbgcIoProvIpcIoWrite;
+            pIpcCon->Io.pfnPktBegin = NULL;
+            pIpcCon->Io.pfnPktEnd   = NULL;
             pIpcCon->Io.pfnSetReady = dbgcIoProvIpcIoSetReady;
             pIpcCon->hSession       = hSession;
             pIpcCon->fAlive         = true;

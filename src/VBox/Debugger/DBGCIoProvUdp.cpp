@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DBGC - Debugger Console, TCP I/O provider.
+ * DBGC - Debugger Console, UDP I/O provider.
  */
 
 /*
- * Copyright (C) 2006-2022 Oracle and/or its affiliates.
+ * Copyright (C) 2022 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -34,7 +34,7 @@
 #include <VBox/log.h>
 
 #include <iprt/mem.h>
-#include <iprt/tcp.h>
+#include <iprt/udp.h>
 #include <iprt/assert.h>
 
 #include "DBGCIoProvInternal.h"
@@ -44,19 +44,23 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * Debug console TCP connection data.
+ * Debug console UDP connection data.
  */
-typedef struct DBGCTCPCON
+typedef struct DBGCUDPSRV
 {
     /** The I/O callback table for the console. */
     DBGCIO      Io;
     /** The socket of the connection. */
     RTSOCKET    hSock;
+    /** The address of the peer. */
+    RTNETADDR   NetAddrPeer;
+    /** Flag whether the peer address was set. */
+    bool        fPeerSet;
     /** Connection status. */
     bool        fAlive;
-} DBGCTCPCON;
-/** Pointer to the instance data of the console TCP backend. */
-typedef DBGCTCPCON *PDBGCTCPCON;
+} DBGCUDPSRV;
+/** Pointer to the instance data of the console UDP backend. */
+typedef DBGCUDPSRV *PDBGCUDPSRV;
 
 
 /*********************************************************************************************************************************
@@ -66,26 +70,23 @@ typedef DBGCTCPCON *PDBGCTCPCON;
 /**
  * @interface_method_impl{DBGCIO,pfnDestroy}
  */
-static DECLCALLBACK(void) dbgcIoProvTcpIoDestroy(PCDBGCIO pIo)
+static DECLCALLBACK(void) dbgcIoProvUdpIoDestroy(PCDBGCIO pIo)
 {
-    PDBGCTCPCON pTcpCon = RT_FROM_MEMBER(pIo, DBGCTCPCON, Io);
-    RTSocketRelease(pTcpCon->hSock);
-    pTcpCon->fAlive =false;
-    RTMemFree(pTcpCon);
+    RT_NOREF(pIo);
 }
 
 
 /**
  * @interface_method_impl{DBGCIO,pfnInput}
  */
-static DECLCALLBACK(bool) dbgcIoProvTcpIoInput(PCDBGCIO pIo, uint32_t cMillies)
+static DECLCALLBACK(bool) dbgcIoProvUdpIoInput(PCDBGCIO pIo, uint32_t cMillies)
 {
-    PDBGCTCPCON pTcpCon = RT_FROM_MEMBER(pIo, DBGCTCPCON, Io);
-    if (!pTcpCon->fAlive)
+    PDBGCUDPSRV pUdpSrv = RT_FROM_MEMBER(pIo, DBGCUDPSRV, Io);
+    if (!pUdpSrv->fAlive)
         return false;
-    int rc = RTTcpSelectOne(pTcpCon->hSock, cMillies);
+    int rc = RTSocketSelectOne(pUdpSrv->hSock, cMillies);
     if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
-        pTcpCon->fAlive = false;
+        pUdpSrv->fAlive = false;
     return rc != VERR_TIMEOUT;
 }
 
@@ -93,16 +94,17 @@ static DECLCALLBACK(bool) dbgcIoProvTcpIoInput(PCDBGCIO pIo, uint32_t cMillies)
 /**
  * @interface_method_impl{DBGCIO,pfnRead}
  */
-static DECLCALLBACK(int) dbgcIoProvTcpIoRead(PCDBGCIO pIo, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+static DECLCALLBACK(int) dbgcIoProvUdpIoRead(PCDBGCIO pIo, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    PDBGCTCPCON pTcpCon = RT_FROM_MEMBER(pIo, DBGCTCPCON, Io);
-    if (!pTcpCon->fAlive)
+    PDBGCUDPSRV pUdpSrv = RT_FROM_MEMBER(pIo, DBGCUDPSRV, Io);
+    if (!pUdpSrv->fAlive)
         return VERR_INVALID_HANDLE;
-    int rc = RTTcpRead(pTcpCon->hSock, pvBuf, cbBuf, pcbRead);
+    int rc = RTSocketReadFrom(pUdpSrv->hSock, pvBuf, cbBuf, pcbRead, &pUdpSrv->NetAddrPeer);
     if (RT_SUCCESS(rc) && pcbRead != NULL && *pcbRead == 0)
         rc = VERR_NET_SHUTDOWN;
     if (RT_FAILURE(rc))
-        pTcpCon->fAlive = false;
+        pUdpSrv->fAlive = false;
+    pUdpSrv->fPeerSet = true;
     return rc;
 }
 
@@ -110,15 +112,16 @@ static DECLCALLBACK(int) dbgcIoProvTcpIoRead(PCDBGCIO pIo, void *pvBuf, size_t c
 /**
  * @interface_method_impl{DBGCIO,pfnWrite}
  */
-static DECLCALLBACK(int) dbgcIoProvTcpIoWrite(PCDBGCIO pIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
+static DECLCALLBACK(int) dbgcIoProvUdpIoWrite(PCDBGCIO pIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
-    PDBGCTCPCON pTcpCon = RT_FROM_MEMBER(pIo, DBGCTCPCON, Io);
-    if (!pTcpCon->fAlive)
+    PDBGCUDPSRV pUdpSrv = RT_FROM_MEMBER(pIo, DBGCUDPSRV, Io);
+    if (   !pUdpSrv->fAlive
+        || !pUdpSrv->fPeerSet)
         return VERR_INVALID_HANDLE;
 
-    int rc = RTTcpWrite(pTcpCon->hSock, pvBuf, cbBuf);
+    int rc = RTSocketWriteTo(pUdpSrv->hSock, pvBuf, cbBuf, &pUdpSrv->NetAddrPeer);
     if (RT_FAILURE(rc))
-        pTcpCon->fAlive = false;
+        pUdpSrv->fAlive = false;
 
     if (pcbWritten)
         *pcbWritten = cbBuf;
@@ -130,7 +133,7 @@ static DECLCALLBACK(int) dbgcIoProvTcpIoWrite(PCDBGCIO pIo, const void *pvBuf, s
 /**
  * @interface_method_impl{DBGCIO,pfnSetReady}
  */
-static DECLCALLBACK(void) dbgcIoProvTcpIoSetReady(PCDBGCIO pIo, bool fReady)
+static DECLCALLBACK(void) dbgcIoProvUdpIoSetReady(PCDBGCIO pIo, bool fReady)
 {
     /* stub */
     NOREF(pIo);
@@ -141,7 +144,7 @@ static DECLCALLBACK(void) dbgcIoProvTcpIoSetReady(PCDBGCIO pIo, bool fReady)
 /**
  * @interface_method_impl{DBGCIOPROVREG,pfnCreate}
  */
-static DECLCALLBACK(int) dbgcIoProvTcpCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE pCfg)
+static DECLCALLBACK(int) dbgcIoProvUdpCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE pCfg)
 {
     /*
      * Get the port configuration.
@@ -165,17 +168,32 @@ static DECLCALLBACK(int) dbgcIoProvTcpCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE
         return rc;
     }
 
-    /*
-     * Create the server.
-     */
-    PRTTCPSERVER pServer;
-    rc = RTTcpServerCreateEx(szAddress, u32Port, &pServer);
-    if (RT_SUCCESS(rc))
+    PDBGCUDPSRV pUdpSrv = (PDBGCUDPSRV)RTMemAllocZ(sizeof(*pUdpSrv));
+    if (RT_LIKELY(pUdpSrv))
     {
-        LogFlow(("dbgcIoProvTcpCreate: Created server on port %d %s\n", u32Port, szAddress));
-        *phDbgcIoProv = (DBGCIOPROV)pServer;
-        return rc;
+        pUdpSrv->Io.pfnDestroy  = dbgcIoProvUdpIoDestroy;
+        pUdpSrv->Io.pfnInput    = dbgcIoProvUdpIoInput;
+        pUdpSrv->Io.pfnRead     = dbgcIoProvUdpIoRead;
+        pUdpSrv->Io.pfnWrite    = dbgcIoProvUdpIoWrite;
+        pUdpSrv->Io.pfnPktBegin = NULL;
+        pUdpSrv->Io.pfnPktEnd   = NULL;
+        pUdpSrv->Io.pfnSetReady = dbgcIoProvUdpIoSetReady;
+        pUdpSrv->fPeerSet       = false;
+        pUdpSrv->fAlive         = true;
+
+        /*
+         * Create the server.
+         */
+        rc = RTUdpCreateServerSocket(szAddress, u32Port, &pUdpSrv->hSock);
+        if (RT_SUCCESS(rc))
+        {
+            LogFlow(("dbgcIoProvUdpCreate: Created server on port %d %s\n", u32Port, szAddress));
+            *phDbgcIoProv = (DBGCIOPROV)pUdpSrv;
+            return rc;
+        }
     }
+    else
+        rc = VERR_NO_MEMORY;
 
     return rc;
 }
@@ -184,43 +202,27 @@ static DECLCALLBACK(int) dbgcIoProvTcpCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE
 /**
  * @interface_method_impl{DBGCIOPROVREG,pfnDestroy}
  */
-static DECLCALLBACK(void) dbgcIoProvTcpDestroy(DBGCIOPROV hDbgcIoProv)
+static DECLCALLBACK(void) dbgcIoProvUdpDestroy(DBGCIOPROV hDbgcIoProv)
 {
-    int rc = RTTcpServerDestroy((PRTTCPSERVER)hDbgcIoProv);
-    AssertRC(rc);
+    PDBGCUDPSRV pUdpSrv = (PDBGCUDPSRV)hDbgcIoProv;
+
+    RTSocketRelease(pUdpSrv->hSock);
+    pUdpSrv->fAlive = false;
+    RTMemFree(pUdpSrv);
 }
 
 
 /**
  * @interface_method_impl{DBGCIOPROVREG,pfnWaitForConnect}
  */
-static DECLCALLBACK(int) dbgcIoProvTcpWaitForConnect(DBGCIOPROV hDbgcIoProv, RTMSINTERVAL cMsTimeout, PCDBGCIO *ppDbgcIo)
+static DECLCALLBACK(int) dbgcIoProvUdpWaitForConnect(DBGCIOPROV hDbgcIoProv, RTMSINTERVAL cMsTimeout, PCDBGCIO *ppDbgcIo)
 {
-    PRTTCPSERVER pTcpSrv = (PRTTCPSERVER)hDbgcIoProv;
-    RT_NOREF(cMsTimeout);
+    PDBGCUDPSRV pUdpSrv = (PDBGCUDPSRV)hDbgcIoProv;
 
-    RTSOCKET hSockCon = NIL_RTSOCKET;
-    int rc = RTTcpServerListen2(pTcpSrv, &hSockCon);
+    /* Wait for the first datagram. */
+    int rc = RTSocketSelectOne(pUdpSrv->hSock, cMsTimeout);
     if (RT_SUCCESS(rc))
-    {
-        PDBGCTCPCON pTcpCon = (PDBGCTCPCON)RTMemAllocZ(sizeof(*pTcpCon));
-        if (RT_LIKELY(pTcpCon))
-        {
-            pTcpCon->Io.pfnDestroy  = dbgcIoProvTcpIoDestroy;
-            pTcpCon->Io.pfnInput    = dbgcIoProvTcpIoInput;
-            pTcpCon->Io.pfnRead     = dbgcIoProvTcpIoRead;
-            pTcpCon->Io.pfnWrite    = dbgcIoProvTcpIoWrite;
-            pTcpCon->Io.pfnPktBegin = NULL;
-            pTcpCon->Io.pfnPktEnd   = NULL;
-            pTcpCon->Io.pfnSetReady = dbgcIoProvTcpIoSetReady;
-            pTcpCon->hSock          = hSockCon;
-            pTcpCon->fAlive         = true;
-            *ppDbgcIo = &pTcpCon->Io;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
+        *ppDbgcIo = &pUdpSrv->Io;
     return rc;
 }
 
@@ -228,32 +230,30 @@ static DECLCALLBACK(int) dbgcIoProvTcpWaitForConnect(DBGCIOPROV hDbgcIoProv, RTM
 /**
  * @interface_method_impl{DBGCIOPROVREG,pfnWaitInterrupt}
  */
-static DECLCALLBACK(int) dbgcIoProvTcpWaitInterrupt(DBGCIOPROV hDbgcIoProv)
+static DECLCALLBACK(int) dbgcIoProvUdpWaitInterrupt(DBGCIOPROV hDbgcIoProv)
 {
-    PRTTCPSERVER pTcpSrv = (PRTTCPSERVER)hDbgcIoProv;
-
-    RT_NOREF(pTcpSrv);
+    RT_NOREF(hDbgcIoProv);
     /** @todo */
     return VINF_SUCCESS;
 }
 
 
 /**
- * TCP I/O provider registration record.
+ * UDP I/O provider registration record.
  */
-const DBGCIOPROVREG g_DbgcIoProvTcp =
+const DBGCIOPROVREG g_DbgcIoProvUdp =
 {
     /** pszName */
-    "tcp",
+    "udp",
     /** pszDesc */
-    "TCP I/O provider.",
+    "UDP I/O provider.",
     /** pfnCreate */
-    dbgcIoProvTcpCreate,
+    dbgcIoProvUdpCreate,
     /** pfnDestroy */
-    dbgcIoProvTcpDestroy,
+    dbgcIoProvUdpDestroy,
     /** pfnWaitForConnect */
-    dbgcIoProvTcpWaitForConnect,
+    dbgcIoProvUdpWaitForConnect,
     /** pfnWaitInterrupt */
-    dbgcIoProvTcpWaitInterrupt
+    dbgcIoProvUdpWaitInterrupt
 };
 

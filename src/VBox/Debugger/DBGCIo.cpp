@@ -132,6 +132,7 @@ typedef struct DBGCIOINT
 static PCDBGCIOPROVREG g_aIoProv[] =
 {
     &g_DbgcIoProvTcp,
+    &g_DbgcIoProvUdp,
     &g_DbgcIoProvIpc
 };
 
