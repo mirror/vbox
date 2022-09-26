@@ -319,7 +319,7 @@ RTDECL(int) RTCrDigestFinal(RTCRDIGEST hDigest, void *pvHash, size_t cbHash)
 
         if (cbNeeded == cbHash)
             memcpy(pvHash, &pThis->abState[pThis->offHash], cbNeeded);
-        else if (cbNeeded > cbHash)
+        else if (cbNeeded < cbHash)
         {
             memcpy(pvHash, &pThis->abState[pThis->offHash], cbNeeded);
             memset((uint8_t *)pvHash + cbNeeded, 0, cbHash - cbNeeded);
