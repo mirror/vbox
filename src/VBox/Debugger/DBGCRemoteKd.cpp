@@ -1254,7 +1254,7 @@ typedef struct KDREGDESC
     /** Register width. */
     DBGFREGVALTYPE              enmValType;
     /** The offset into the context structure where the value ends up. */
-    uint32_t                    offReg;
+    uintptr_t                   offReg;
 } KDREGDESC;
 /** Pointer to a register mapping structure. */
 typedef KDREGDESC *PKDREGDESC;
