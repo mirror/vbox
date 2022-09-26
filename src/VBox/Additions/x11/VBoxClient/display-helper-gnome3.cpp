@@ -576,6 +576,45 @@ static void vbcl_hlp_gnome3_free_physical_monitors_state(
 }
 
 /**
+ * Add dictionary element with boolean value into an array.
+ *
+ * @return  True on success, False otherwise.
+ * @param   parent_iter         Array to add dictionary element into.
+ * @param   key                 Dictionary key.
+ * @param   value               Boolean value for given key.
+ 
+ */
+static dbus_bool_t vbcl_hlp_gnome3_add_dict_bool_entry(
+    DBusMessageIter *parent_iter, const char *key, const dbus_bool_t value)
+{
+    dbus_bool_t ret = true;
+
+    DBusMessageIter sub_iter_key;
+    DBusMessageIter sub_iter_value;
+
+    RT_ZERO(sub_iter_key);
+    RT_ZERO(sub_iter_value);
+
+    /* Should be TRUE in order to satisfy VBCL_HLP_GNOME3_NEXT() requirements. */
+    AssertReturn(ret, false);
+
+    VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_open_container(parent_iter, DBUS_TYPE_DICT_ENTRY, NULL, &sub_iter_key));
+    {
+        VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_append_basic(&sub_iter_key, DBUS_TYPE_STRING, &key));
+
+        VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_open_container(&sub_iter_key, ((int) 'v'), "b", &sub_iter_value));
+        {
+            VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_append_basic(&sub_iter_value, DBUS_TYPE_BOOLEAN, &value));
+        }
+
+        VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_close_container(&sub_iter_key, &sub_iter_value));
+    }
+    VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_close_container(parent_iter, &sub_iter_key));
+
+    return ret;
+}
+
+/**
  * This function is responsible for gathering current display
  * information (via its helper functions), compose a payload
  * for ApplyMonitorsConfig method and finally send configuration
@@ -671,8 +710,8 @@ static int vbcl_hlp_gnome3_convert_and_apply_display_settings(
         /* These iterators are used in order to compose sub-containers of the message. */
         DBusMessageIter  sub_iter0;
         DBusMessageIter  sub_iter1;
-        DBusMessageIter  sub_iter3;
         DBusMessageIter  sub_iter2;
+        DBusMessageIter  sub_iter3;
         /* Important for error handling code path when dbus_message_iter_abandon_container_if_open() is in place. */
         RT_ZERO(sub_iter0);
         RT_ZERO(sub_iter1);
@@ -705,8 +744,10 @@ static int vbcl_hlp_gnome3_convert_and_apply_display_settings(
                         VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_append_basic(&sub_iter2, DBUS_TYPE_STRING, &physical_monitors_state[iLogicalMonitor].connector));
                         VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_append_basic(&sub_iter2, DBUS_TYPE_STRING, &physical_monitors_state[iLogicalMonitor].mode));
 
-                        /* Compose part (uu@a(iiduba(ss > a{sv} < ))@a{sv}) of (uu@a(iiduba(ssa{sv}))@a{sv}) (empty dictionary). */
+                        /* Compose part (uu@a(iiduba(ss > a{sv} < ))@a{sv}) of (uu@a(iiduba(ssa{sv}))@a{sv}). */
                         VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_open_container(&sub_iter2, DBUS_TYPE_ARRAY, "{sv}", &sub_iter3));
+                        VBCL_HLP_GNOME3_NEXT(ret, vbcl_hlp_gnome3_add_dict_bool_entry(&sub_iter3, "is-current", true));
+                        VBCL_HLP_GNOME3_NEXT(ret, vbcl_hlp_gnome3_add_dict_bool_entry(&sub_iter3, "is-preferred", true));
                         VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_close_container(&sub_iter2, &sub_iter3));
                     }
                     VBCL_HLP_GNOME3_NEXT(ret, dbus_message_iter_close_container(&sub_iter1, &sub_iter2));
