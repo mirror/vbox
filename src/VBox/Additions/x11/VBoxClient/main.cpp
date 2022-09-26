@@ -118,9 +118,25 @@ unsigned             g_cVerbosity = 0;
 /** Absolute path to log file, if any. */
 static char          g_szLogFile[RTPATH_MAX + 128] = "";
 
+/**
+ * Tries to determine if the session parenting this process is of Xwayland.
+ * NB: XDG_SESSION_TYPE is a systemd(1) environment variable and is unlikely
+ * set in non-systemd environments or remote logins.
+ * Therefore we check the Wayland specific display environment variable first.
+ */
 bool VBClHasWayland(void)
 {
-    return RTEnvGet(VBCL_ENV_WAYLAND_DISPLAY) != NULL;
+    const char *const pDisplayType = RTEnvGet(VBCL_ENV_WAYLAND_DISPLAY);
+    const char *pSessionType;
+
+    if (pDisplayType != NULL)
+        return true;
+
+    pSessionType = RTEnvGet(VBCL_ENV_XDG_SESSION_TYPE);
+    if ((pSessionType != NULL) && (RTStrIStartsWith(pSessionType, "wayland")))
+        return true;
+
+    return false;
 }
 
 /**
