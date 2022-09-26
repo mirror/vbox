@@ -45,6 +45,10 @@
 #include <iprt/cpp/xml.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#ifndef RT_OS_WINDOWS
+# include <iprt/formats/mz.h>
+# include <iprt/formats/pecoff.h>
+#endif
 #include <iprt/formats/wim.h>
 #include <iprt/fsvfs.h>
 #include <iprt/inifile.h>
@@ -959,95 +963,95 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                 LogRelFlow(("Unattended: sources/idwbinfo.txt: BuildBranch=%s\n", pBuf->sz));
                 if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("vista")) == 0
                     || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_beta")) == 0)
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_WinVista);
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("lh_sp2rtm")) == 0)
                 {
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_WinVista);
                     pszVersion = "sp2";
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("longhorn_rtm")) == 0)
                 {
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_WinVista);
                     pszVersion = "sp1";
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win7")) == 0)
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win7);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win7);
                 else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winblue")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_blue")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win81")) == 0 /* not seen, but just in case its out there */ )
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win81);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win81);
                 else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win8")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_win8")) == 0 )
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win8);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win8);
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("th1")) == 0)
                 {
                     pszVersion = "1507";    // aka. GA, retroactively 1507
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("th2")) == 0)
                 {
                     pszVersion = "1511";    // aka. threshold 2
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs1_release")) == 0)
                 {
                     pszVersion = "1607";    // aka. anniversay update; rs=redstone
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs2_release")) == 0)
                 {
                     pszVersion = "1703";    // aka. creators update
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs3_release")) == 0)
                 {
                     pszVersion = "1709";    // aka. fall creators update
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs4_release")) == 0)
                 {
                     pszVersion = "1803";
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs5_release")) == 0)
                 {
                     pszVersion = "1809";
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("19h1_release")) == 0)
                 {
                     pszVersion = "1903";
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("19h2_release")) == 0)
                 {
                     pszVersion = "1909";    // ??
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h1_release")) == 0)
                 {
                     pszVersion = "2003";    // ??
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("vb_release")) == 0)
                 {
                     pszVersion = "2004";    // ?? vb=Vibranium
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h2_release")) == 0)
                 {
                     pszVersion = "2009";    // ??
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("21h1_release")) == 0)
                 {
                     pszVersion = "2103";    // ??
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("21h2_release")) == 0)
                 {
                     pszVersion = "2109";    // ??
-                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("co_release")) == 0)
                 {
@@ -1094,7 +1098,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     else if (RTStrVersionCompare(psz, "5.2.0") >= 0) /* W2K3, XP64 */
                     {
                         fClarifyProd = true;
-                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
+                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win2k3);
                         if (RTStrVersionCompare(psz, "5.2.3790.3959") >= 0)
                             pszVersion = "sp2";
                         else if (RTStrVersionCompare(psz, "5.2.3790.1830") >= 0)
@@ -1102,7 +1106,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     }
                     else if (RTStrVersionCompare(psz, "5.1.0") >= 0) /* XP */
                     {
-                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
+                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_WinXP);
                         if (RTStrVersionCompare(psz, "5.1.2600.5512") >= 0)
                             pszVersion = "sp3";
                         else if (RTStrVersionCompare(psz, "5.1.2600.2180") >= 0)
@@ -1112,7 +1116,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     }
                     else if (RTStrVersionCompare(psz, "5.0.0") >= 0)
                     {
-                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
+                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win2k);
                         if (RTStrVersionCompare(psz, "5.0.2195.6717") >= 0)
                             pszVersion = "sp4";
                         else if (RTStrVersionCompare(psz, "5.0.2195.5438") >= 0)
@@ -1160,11 +1164,11 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     {
                         vrc = RTIniFileQueryValue(hIniFile, "Product Specification", "Product", pBuf->sz, sizeof(*pBuf), NULL);
                         if (RT_SUCCESS(vrc) && RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Windows XP")) == 0)
-                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_WinXP);
                         else if (RT_SUCCESS(vrc) && RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Windows Server 2003")) == 0)
-                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win2k3);
                         else
-                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Win2k);
 
                         if (RT_SUCCESS(vrc) && (strstr(pBuf->sz, "Server") || strstr(pBuf->sz, "server")))
                             pszProduct = "Server";
@@ -1290,6 +1294,26 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
 }
 
 /**
+ * Architecture strings for Linux and the like.
+ */
+static struct { const char *pszArch; uint32_t cchArch; VBOXOSTYPE fArch; } const g_aLinuxArches[] =
+{
+    { RT_STR_TUPLE("amd64"),  VBOXOSTYPE_x64 },
+    { RT_STR_TUPLE("x86_64"), VBOXOSTYPE_x64 },
+    { RT_STR_TUPLE("x86-64"), VBOXOSTYPE_x64 }, /* just in case */
+    { RT_STR_TUPLE("x64"),    VBOXOSTYPE_x64 }, /* ditto */
+
+    { RT_STR_TUPLE("x86"),    VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i386"),   VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i486"),   VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i586"),   VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i686"),   VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i786"),   VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i886"),   VBOXOSTYPE_x86 },
+    { RT_STR_TUPLE("i986"),   VBOXOSTYPE_x86 },
+};
+
+/**
  * Detects linux architecture.
  *
  * @returns true if detected, false if not.
@@ -1299,28 +1323,12 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
  */
 static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType)
 {
-    if (   RTStrNICmp(pszArch, RT_STR_TUPLE("amd64"))  == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("x86_64")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("x86-64")) == 0 /* just in case */
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("x64"))    == 0 /* ditto */ )
-    {
-        *penmOsType = (VBOXOSTYPE)(enmBaseOsType | VBOXOSTYPE_x64);
-        return true;
-    }
-
-    if (   RTStrNICmp(pszArch, RT_STR_TUPLE("x86")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i386")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i486")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i586")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i686")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i786")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i886")) == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("i986")) == 0)
-    {
-        *penmOsType = enmBaseOsType;
-        return true;
-    }
-
+    for (size_t i = 0; i < RT_ELEMENTS(g_aLinuxArches); i++)
+        if (RTStrNICmp(pszArch, g_aLinuxArches[i].pszArch, g_aLinuxArches[i].cchArch) == 0)
+        {
+            *penmOsType = (VBOXOSTYPE)(enmBaseOsType | g_aLinuxArches[i].fArch);
+            return true;
+        }
     /** @todo check for 'noarch' since source CDs have been seen to use that. */
     return false;
 }
@@ -1332,29 +1340,26 @@ static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOST
  * @param   pszArch             The architecture string.
  * @param   penmOsType          Where to return the arch and type on success.
  * @param   enmBaseOsType       The base (x86) OS type to return.
+ * @param   ppszHit             Where to return the pointer to the architecture
+ *                              specifier. Optional.
+ * @param   ppszNext            Where to return the pointer to the char
+ *                              following the architecuture specifier. Optional.
  */
-static bool detectLinuxArchII(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType)
+static bool detectLinuxArchII(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType,
+                              char **ppszHit = NULL, char **ppszNext = NULL)
 {
-    if (   RTStrIStr(pszArch, "amd64")  != NULL
-        || RTStrIStr(pszArch, "x86_64") != NULL
-        || RTStrIStr(pszArch, "x86-64") != NULL /* just in case */
-        || RTStrIStr(pszArch, "x64")    != NULL /* ditto */ )
+    for (size_t i = 0; i < RT_ELEMENTS(g_aLinuxArches); i++)
     {
-        *penmOsType = (VBOXOSTYPE)(enmBaseOsType | VBOXOSTYPE_x64);
-        return true;
-    }
-
-    if (   RTStrIStr(pszArch, "x86") != NULL
-        || RTStrIStr(pszArch, "i386") != NULL
-        || RTStrIStr(pszArch, "i486") != NULL
-        || RTStrIStr(pszArch, "i586") != NULL
-        || RTStrIStr(pszArch, "i686") != NULL
-        || RTStrIStr(pszArch, "i786") != NULL
-        || RTStrIStr(pszArch, "i886") != NULL
-        || RTStrIStr(pszArch, "i986") != NULL)
-    {
-        *penmOsType = enmBaseOsType;
-        return true;
+        const char *pszHit = RTStrIStr(pszArch, g_aLinuxArches[i].pszArch);
+        if (pszHit != NULL)
+        {
+            if (ppszHit)
+                *ppszHit = (char *)pszHit;
+            if (ppszNext)
+                *ppszNext = (char *)pszHit + g_aLinuxArches[i].cchArch;
+            *penmOsType = (VBOXOSTYPE)(enmBaseOsType | g_aLinuxArches[i].fArch);
+            return true;
+        }
     }
     return false;
 }
@@ -1371,7 +1376,7 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
         if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Hat")) == 0
             && !RT_C_IS_ALNUM(pszOsAndVersion[3]))
         {
-            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_RedHat);
             pszOsAndVersion = RTStrStripL(pszOsAndVersion + 3);
         }
         else
@@ -1380,37 +1385,37 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("OpenSUSE")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[8]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_OpenSUSE);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_OpenSUSE);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 8);
     }
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Oracle")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Oracle);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Oracle);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("CentOS")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_RedHat);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Fedora")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_FedoraCore);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Ubuntu")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Ubuntu);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Linux Mint")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[10]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Ubuntu);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 10);
     }
     else if (    (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Xubuntu")) == 0
@@ -1418,13 +1423,13 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
                   || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Lubuntu")) == 0)
              && !RT_C_IS_ALNUM(pszOsAndVersion[7]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Ubuntu);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 7);
     }
     else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Debian")) == 0
              && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
     {
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Debian);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Debian);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else
@@ -1452,19 +1457,19 @@ static bool detectLinuxDistroNameII(const char *pszOsAndVersion, VBOXOSTYPE *pen
     bool fRet = true;
     if (   RTStrIStr(pszOsAndVersion, "RedHat")  != NULL
         || RTStrIStr(pszOsAndVersion, "Red Hat") != NULL)
-            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_RedHat);
     else if (RTStrIStr(pszOsAndVersion, "Oracle") != NULL)
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Oracle);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Oracle);
     else if (RTStrIStr(pszOsAndVersion, "CentOS") != NULL)
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_RedHat);
     else if (RTStrIStr(pszOsAndVersion, "Fedora") != NULL)
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_FedoraCore);
     else if (RTStrIStr(pszOsAndVersion, "Ubuntu") != NULL)
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Ubuntu);
     else if (RTStrIStr(pszOsAndVersion, "Mint") != NULL)
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Ubuntu);
     else if (RTStrIStr(pszOsAndVersion, "Debian"))
-        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Debian);
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_Debian);
     else
         fRet = false;
 
@@ -1491,17 +1496,21 @@ static bool detectLinuxDistroNameII(const char *pszOsAndVersion, VBOXOSTYPE *pen
  * part of the disk name.
  *
  * @returns true if detected, false if not.
- * @param   pszDiskName          Name of the disk as it is read from .disk/info or README.diskdefines file.
- * @param   cchVersionPosition   String position where first numerical character is found. We use substring upto this position as OS flavor
+ * @param   pszDiskName Name of the disk as it is read from .disk/info or
+ *                      README.diskdefines file.
+ * @param   poffVersion String position where first numerical character is
+ *                      found. We use substring upto this position as OS flavor
  */
-static bool detectLinuxDistroFlavor(const char *pszDiskName, size_t *cchVersionPosition)
+static bool detectLinuxDistroFlavor(const char *pszDiskName, size_t *poffVersion)
 {
-    if (!pszDiskName || !cchVersionPosition)
+    Assert(poffVersion);
+    if (!pszDiskName)
         return false;
-    while (*pszDiskName != '\0' && !RT_C_IS_DIGIT(*pszDiskName))
+    char ch;
+    while ((ch = *pszDiskName) != '\0' && !RT_C_IS_DIGIT(ch))
     {
         ++pszDiskName;
-        ++(*cchVersionPosition);
+        *poffVersion += 1;
     }
     return true;
 }
@@ -1558,7 +1567,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                         if (!detectLinuxDistroName(pBuf->sz, &mEnmOsType, NULL))
                         {
                             LogRel(("Unattended: .treeinfo: Unknown: name/family='%s', assuming Red Hat\n", pBuf->sz));
-                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_RedHat);
                         }
                     }
 
@@ -1843,19 +1852,21 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
     }
 
     /*
-     * All of the debian based distro versions I checked have a single line ./disk/info file.
-     * Only info I could find related to .disk folder is: https://lists.debian.org/debian-cd/2004/01/msg00069.html
+     * All of the debian based distro versions I checked have a single line ./disk/info
+     * file.  Only info I could find related to .disk folder is:
+     *      https://lists.debian.org/debian-cd/2004/01/msg00069.html
+     *
      * Some example content from several install ISOs is as follows:
-     * Ubuntu 4.10 "Warty Warthog" - Preview amd64 Binary-1 (20041020)
-     * Linux Mint 20.3 "Una" - Release amd64 20220104
-     * Debian GNU/Linux 11.2.0 "Bullseye" - Official amd64 NETINST 20211218-11:12
-     * Debian GNU/Linux 9.13.0 "Stretch" - Official amd64 DVD Binary-1 20200718-11:07
-     * Xubuntu 20.04.2.0 LTS "Focal Fossa" - Release amd64 (20210209.1)
-     * Ubuntu 17.10 "Artful Aardvark" - Release amd64 (20180105.1)
-     * Ubuntu 16.04.6 LTS "Xenial Xerus" - Release i386 (20190227.1)
-     * Debian GNU/Linux 8.11.1 "Jessie" - Official amd64 CD Binary-1 20190211-02:10
-     * Kali GNU/Linux 2021.3a "Kali-last-snapshot" - Official amd64 BD Binary-1 with firmware 20211015-16:55
-     * Official Debian GNU/Linux Live 10.10.0 cinnamon 2021-06-19T12:13
+     *   Ubuntu 4.10 "Warty Warthog" - Preview amd64 Binary-1 (20041020)
+     *   Linux Mint 20.3 "Una" - Release amd64 20220104
+     *   Debian GNU/Linux 11.2.0 "Bullseye" - Official amd64 NETINST 20211218-11:12
+     *   Debian GNU/Linux 9.13.0 "Stretch" - Official amd64 DVD Binary-1 20200718-11:07
+     *   Xubuntu 20.04.2.0 LTS "Focal Fossa" - Release amd64 (20210209.1)
+     *   Ubuntu 17.10 "Artful Aardvark" - Release amd64 (20180105.1)
+     *   Ubuntu 16.04.6 LTS "Xenial Xerus" - Release i386 (20190227.1)
+     *   Debian GNU/Linux 8.11.1 "Jessie" - Official amd64 CD Binary-1 20190211-02:10
+     *   Kali GNU/Linux 2021.3a "Kali-last-snapshot" - Official amd64 BD Binary-1 with firmware 20211015-16:55
+     *   Official Debian GNU/Linux Live 10.10.0 cinnamon 2021-06-19T12:13
      */
     vrc = RTVfsFileOpen(hVfsIso, ".disk/info", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
@@ -1887,8 +1898,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
         if (!pszArch)
         {
             char szVolumeId[128];
-            size_t cchVolumeId;
-            vrc = RTVfsQueryLabel(hVfsIso, szVolumeId, 128, &cchVolumeId);
+            vrc = RTVfsQueryLabel(hVfsIso, false /*fAlternative*/, szVolumeId, sizeof(szVolumeId), NULL);
             if (RT_SUCCESS(vrc))
             {
                 if (!detectLinuxArchII(szVolumeId, &mEnmOsType, VBOXOSTYPE_Ubuntu))
@@ -1929,7 +1939,147 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
             return S_FALSE;
     }
 
+    /*
+     * Fedora live iso should be recognizable from the primary volume ID (the
+     * joliet one is usually truncated).  We set fAlternative = true here to
+     * get the primary volume ID.
+     */
+    char szVolumeId[128];
+    vrc = RTVfsQueryLabel(hVfsIso, true /*fAlternative*/, szVolumeId, sizeof(szVolumeId), NULL);
+    if (RT_SUCCESS(vrc) && RTStrStartsWith(szVolumeId, "Fedora-"))
+        return i_innerDetectIsoOSLinuxFedora(hVfsIso, pBuf, &szVolumeId[sizeof("Fedora-") - 1]);
     return S_FALSE;
+}
+
+
+/**
+ * Continues working a Fedora ISO image after the caller found a "Fedora-*"
+ * volume ID.
+ *
+ * Sample Volume IDs:
+ *  - Fedora-WS-Live-34-1-2  (joliet: Fedora-WS-Live-3)
+ *  - Fedora-S-dvd-x86_64-34 (joliet: Fedora-S-dvd-x86)
+ *  - Fedora-WS-dvd-i386-25  (joliet: Fedora-WS-dvd-i3)
+ */
+HRESULT Unattended::i_innerDetectIsoOSLinuxFedora(RTVFS hVfsIso, DETECTBUFFER *pBuf, char *pszVolId)
+{
+    char * const pszFlavor = pszVolId;
+    char *       psz       = pszVolId;
+
+    /* The volume id may or may not include an arch, component.
+       We ASSUME that it includes a numeric part with the version, or at least
+       part of it. */
+    char *pszVersion = NULL;
+    char *pszArch    = NULL;
+    if (detectLinuxArchII(psz, &mEnmOsType, VBOXOSTYPE_FedoraCore, &pszArch, &pszVersion))
+        *pszArch = '\0';
+    else
+    {
+        mEnmOsType = (VBOXOSTYPE)(VBOXOSTYPE_FedoraCore | VBOXOSTYPE_UnknownArch);
+
+        char ch;
+        while ((ch = *psz) != '\0' && (!RT_C_IS_DIGIT(ch) || !RT_C_IS_PUNCT(psz[-1])))
+            psz++;
+        if (ch != '\0')
+            pszVersion = psz;
+    }
+
+    /*
+     * Replace '-' with '.' in the version part and use it as the version.
+     */
+    if (pszVersion)
+    {
+        psz = pszVersion;
+        while ((psz = strchr(psz, '-')) != NULL)
+            *psz++ = '.';
+        try { mStrDetectedOSVersion = RTStrStrip(pszVersion); }
+        catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+
+        *pszVersion = '\0'; /* don't include in flavor */
+    }
+
+    /*
+     * Split up the pre-arch/version bits into words and use them as the flavor.
+     */
+    psz = pszFlavor;
+    while ((psz = strchr(psz, '-')) != NULL)
+        *psz++ = ' ';
+    try { mStrDetectedOSFlavor = RTStrStrip(pszFlavor); }
+    catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+
+    /*
+     * If we don't have an architecture, we look at the vmlinuz file as the x86
+     * and AMD64 versions starts with a MZ+PE header giving the architecture.
+     */
+    if ((mEnmOsType & VBOXOSTYPE_ArchitectureMask) == VBOXOSTYPE_UnknownArch)
+    {
+        static const char * const s_apszVmLinuz[] = { "images/pxeboot/vmlinuz", "isolinux/vmlinuz" };
+        for (size_t i = 0; i < RT_ELEMENTS(s_apszVmLinuz); i++)
+        {
+            RTVFSFILE hVfsFileLinuz = NIL_RTVFSFILE;
+            int vrc = RTVfsFileOpen(hVfsIso, s_apszVmLinuz[i], RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                    &hVfsFileLinuz);
+            if (RT_SUCCESS(vrc))
+            {
+                /* DOS signature: */
+                PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)&pBuf->ab[0];
+                AssertCompile(sizeof(*pBuf) > sizeof(*pDosHdr));
+                vrc = RTVfsFileReadAt(hVfsFileLinuz, 0, pDosHdr, sizeof(*pDosHdr), NULL);
+                if (RT_SUCCESS(vrc) && pDosHdr->e_magic == IMAGE_DOS_SIGNATURE)
+                {
+                    /* NT signature - only need magic + file header, so use the 64 version for better debugging: */
+                    PIMAGE_NT_HEADERS64 pNtHdrs = (PIMAGE_NT_HEADERS64)&pBuf->ab[0];
+                    vrc = RTVfsFileReadAt(hVfsFileLinuz, pDosHdr->e_lfanew, pNtHdrs, sizeof(*pNtHdrs), NULL);
+                    AssertCompile(sizeof(*pBuf) > sizeof(*pNtHdrs));
+                    if (RT_SUCCESS(vrc) && pNtHdrs->Signature == IMAGE_NT_SIGNATURE)
+                    {
+                        if (pNtHdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_I386)
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & ~VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_x86);
+                        else if (pNtHdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64)
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & ~VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_x64);
+                        else
+                            AssertFailed();
+                    }
+                }
+
+                RTVfsFileRelease(hVfsFileLinuz);
+                if ((mEnmOsType & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_UnknownArch)
+                    break;
+            }
+        }
+    }
+
+    /*
+     * If that failed, look for other files that gives away the arch.
+     */
+    if ((mEnmOsType & VBOXOSTYPE_ArchitectureMask) == VBOXOSTYPE_UnknownArch)
+    {
+        static struct { const char *pszFile; VBOXOSTYPE fArch; } const s_aArchSpecificFiles[] =
+        {
+            { "EFI/BOOT/grubaa64.efi", VBOXOSTYPE_arm64 },
+            { "EFI/BOOT/BOOTAA64.EFI", VBOXOSTYPE_arm64 },
+        };
+        PRTFSOBJINFO pObjInfo = (PRTFSOBJINFO)&pBuf->ab[0];
+        AssertCompile(sizeof(*pBuf) > sizeof(*pObjInfo));
+        for (size_t i = 0; i < RT_ELEMENTS(s_aArchSpecificFiles); i++)
+        {
+            int vrc = RTVfsQueryPathInfo(hVfsIso, s_aArchSpecificFiles[i].pszFile, pObjInfo,
+                                         RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+            if (RT_SUCCESS(vrc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
+            {
+                mEnmOsType = (VBOXOSTYPE)((mEnmOsType & ~VBOXOSTYPE_ArchitectureMask) | s_aArchSpecificFiles[i].fArch);
+                break;
+            }
+        }
+    }
+
+    /*
+     * If we like, we could parse grub.conf to look for fullly spelled out
+     * flavor, though the menu items typically only contains the major version
+     * number, so little else to add, really.
+     */
+
+    return (mEnmOsType & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_UnknownArch ? S_OK : S_FALSE;
 }
 
 
@@ -2259,7 +2409,7 @@ HRESULT Unattended::i_innerDetectIsoOSFreeBsd(RTVFS hVfsIso, DETECTBUFFER *pBuf)
             /* Detect the architecture using the volume label. */
             char szVolumeId[128];
             size_t cchVolumeId;
-            vrc = RTVfsQueryLabel(hVfsIso, szVolumeId, 128, &cchVolumeId);
+            vrc = RTVfsQueryLabel(hVfsIso, false /*fAlternative*/, szVolumeId, 128, &cchVolumeId);
             if (RT_SUCCESS(vrc))
             {
                 /* Can re-use the Linux code here. */
@@ -3833,6 +3983,10 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
     /* Earlier than OL 6.4 cannot be installed. OL 6.x fails with unsupported hardware error (CPU family). */
     if (   enmOsTypeMasked == VBOXOSTYPE_Oracle
         && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "6.4") < 0)
+        return S_OK;
+
+    /* Fredora ISOs cannot be installed at present. */
+    if (enmOsTypeMasked == VBOXOSTYPE_FedoraCore)
         return S_OK;
 
     /*

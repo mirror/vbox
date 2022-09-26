@@ -181,6 +181,9 @@ typedef enum RTVFSQIEX
     /** Volume label.
      * Returns a UTF-8 string. */
     RTVFSQIEX_VOL_LABEL,
+    /** Alternative volume label, the primary one for ISOs, otherwise treated same
+     * as RTVFSQIEX_VOL_LABEL. */
+    RTVFSQIEX_VOL_LABEL_ALT,
     /** Volume serial number.
      * Returns a uint32_t, uint64_t or RTUUID. */
     RTVFSQIEX_VOL_SERIAL,

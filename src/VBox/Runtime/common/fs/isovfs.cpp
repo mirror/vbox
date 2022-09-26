@@ -5059,27 +5059,27 @@ static DECLCALLBACK(int) rtFsIsoVol_QueryInfoEx(void *pvThis, RTVFSQIEX enmInfo,
     switch (enmInfo)
     {
         case RTVFSQIEX_VOL_LABEL:
+        case RTVFSQIEX_VOL_LABEL_ALT:
         {
-            if (pThis->enmType == RTFSISOVOLTYPE_UDF)
+            if (pThis->enmType == RTFSISOVOLTYPE_UDF
+                && (   enmInfo == RTVFSQIEX_VOL_LABEL
+                    || pThis->offPrimaryVolDesc == 0))
                 return rtFsIsoVol_ReturnUdfDString(pThis->Udf.VolInfo.achLogicalVolumeID,
                                                    sizeof(pThis->Udf.VolInfo.achLogicalVolumeID), pvInfo, cbInfo, pcbRet);
+
+            bool const fPrimary = enmInfo == RTVFSQIEX_VOL_LABEL_ALT
+                               || pThis->enmType == RTFSISOVOLTYPE_ISO9960;
+
             int rc = RTVfsFileReadAt(pThis->hVfsBacking,
-                                     pThis->enmType == RTFSISOVOLTYPE_ISO9960
-                                     ? pThis->offPrimaryVolDesc : pThis->offSecondaryVolDesc,
+                                     fPrimary ? pThis->offPrimaryVolDesc : pThis->offSecondaryVolDesc,
                                      uBuf.ab, RT_MAX(RT_MIN(pThis->cbSector, sizeof(uBuf)), sizeof(uBuf.PriVolDesc)), NULL);
             AssertRCReturn(rc, rc);
-            switch (enmInfo)
-            {
-                case RTVFSQIEX_VOL_LABEL:
-                    if (pThis->enmType == RTFSISOVOLTYPE_ISO9960)
-                        return rtFsIsoVol_ReturnIso9660DString(uBuf.PriVolDesc.achVolumeId, sizeof(uBuf.PriVolDesc.achVolumeId),
-                                                               pvInfo, cbInfo, pcbRet);
-                    return rtFsIsoVol_ReturnIso9660D1String(uBuf.SupVolDesc.achVolumeId, sizeof(uBuf.SupVolDesc.achVolumeId),
-                                                            pvInfo, cbInfo, pcbRet);
-                default:
-                    AssertFailedReturn(VERR_INTERNAL_ERROR);
-            }
-            break;
+
+            if (fPrimary)
+                return rtFsIsoVol_ReturnIso9660DString(uBuf.PriVolDesc.achVolumeId, sizeof(uBuf.PriVolDesc.achVolumeId),
+                                                       pvInfo, cbInfo, pcbRet);
+            return rtFsIsoVol_ReturnIso9660D1String(uBuf.SupVolDesc.achVolumeId, sizeof(uBuf.SupVolDesc.achVolumeId),
+                                                    pvInfo, cbInfo, pcbRet);
         }
 
         default:

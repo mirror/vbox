@@ -202,14 +202,20 @@ RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUs
  * Queries the volume label.
  *
  * @returns IPRT status code.
- * @param   hVfs        VFS handle.
- * @param   pszLabel    Where to store the lable.
- * @param   cbLabel     Size of the buffer @a pszLable points at.
- * @param   pcbActual   Where to return the label length, including the
- *                      terminator.  In case of VERR_BUFFER_OVERFLOW returns,
- *                      this will be set to the required buffer size.  Optional.
+ * @param   hVfs            VFS handle.
+ * @param   fAlternative    For use with ISO files to retrieve the primary lable
+ *                          rather than the joliet / UDF one that the mount
+ *                          options would indicate.  For other file systems, as
+ *                          well for ISO not mounted in joliet / UDF mode, the
+ *                          flag is ignored.
+ * @param   pszLabel        Where to store the lable.
+ * @param   cbLabel         Size of the buffer @a pszLable points at.
+ * @param   pcbActual       Where to return the label length, including the
+ *                          terminator.  In case of VERR_BUFFER_OVERFLOW
+ *                          returns, this will be set to the required buffer
+ *                          size.  Optional.
  */
-RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, char *pszLabel, size_t cbLabel, size_t *pcbActual);
+RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, bool fAlternative, char *pszLabel, size_t cbLabel, size_t *pcbActual);
 
 
 /** @defgroup grp_rt_vfs_obj        VFS Base Object API

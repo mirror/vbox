@@ -265,6 +265,7 @@ private:
     } DETECTBUFFER;
     HRESULT i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *puBuf);
     HRESULT i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *puBuf);
+    HRESULT i_innerDetectIsoOSLinuxFedora(RTVFS hVfsIso, DETECTBUFFER *puBuf, char *pszVolId);
     HRESULT i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *puBuf);
     HRESULT i_innerDetectIsoOSFreeBsd(RTVFS hVfsIso, DETECTBUFFER *puBuf);
 

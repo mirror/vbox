@@ -2318,7 +2318,7 @@ RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUs
 }
 
 
-RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, char *pszLabel, size_t cbLabel, size_t *pcbActual)
+RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, bool fAlternative, char *pszLabel, size_t cbLabel, size_t *pcbActual)
 {
     RTVFSINTERNAL *pThis = hVfs;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -2335,7 +2335,8 @@ RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, char *pszLabel, size_t cbLabel, size_t *
             pcbActual = &cbActualIgn;
 
         RTVfsLockAcquireRead(pThis->Base.hLock);
-        rc = pThis->pOps->Obj.pfnQueryInfoEx(pThis->Base.pvThis, RTVFSQIEX_VOL_LABEL, pszLabel, cbLabel, pcbActual);
+        rc = pThis->pOps->Obj.pfnQueryInfoEx(pThis->Base.pvThis, !fAlternative ? RTVFSQIEX_VOL_LABEL : RTVFSQIEX_VOL_LABEL_ALT,
+                                             pszLabel, cbLabel, pcbActual);
         RTVfsLockReleaseRead(pThis->Base.hLock);
     }
     else
