@@ -1239,6 +1239,10 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     rc = mBandwidthControl->initCopy(this, pMachine->mBandwidthControl);
     if (FAILED(rc)) return rc;
 
+    unconst(mGuestDebugControl).createObject();
+    rc = mGuestDebugControl->initCopy(this, pMachine->mGuestDebugControl);
+    if (FAILED(rc)) return rc;
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -1352,6 +1356,9 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this);
+
+    unconst(mGuestDebugControl).createObject();
+    mGuestDebugControl->init(this);
 
     /* load hardware and storage settings */
     HRESULT hrc = i_loadHardware(NULL, &mSnapshotId, hardware, pDbg, pAutostart, recording);

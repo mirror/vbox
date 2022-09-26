@@ -262,6 +262,10 @@ enum
     MODIFYVM_TESTING_ENABLED,
     MODIFYVM_TESTING_MMIO,
     MODIFYVM_TESTING_CFG_DWORD,
+    MODIFYVM_GUEST_DEBUG_PROVIDER,
+    MODIFYVM_GUEST_DEBUG_IO_PROVIDER,
+    MODIFYVM_GUEST_DEBUG_ADDRESS,
+    MODIFYVM_GUEST_DEBUG_PORT,
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -470,6 +474,10 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     OPT1("--testing-enabled",                                           MODIFYVM_TESTING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--testing-mmio",                                              MODIFYVM_TESTING_MMIO,              RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--testing-cfg-dword",                                         MODIFYVM_TESTING_CFG_DWORD,         RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX),
+    OPT1("--guest-debug-provider",                                      MODIFYVM_GUEST_DEBUG_PROVIDER,      RTGETOPT_REQ_STRING),
+    OPT1("--guest-debug-io-provider",                                   MODIFYVM_GUEST_DEBUG_IO_PROVIDER,   RTGETOPT_REQ_STRING),
+    OPT1("--guest-debug-address",                                       MODIFYVM_GUEST_DEBUG_ADDRESS,       RTGETOPT_REQ_STRING),
+    OPT1("--guest-debug-port",                                          MODIFYVM_GUEST_DEBUG_PORT,          RTGETOPT_REQ_UINT32),
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
@@ -3556,6 +3564,78 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     hrc = errorArgumentHr(ModifyVM::tr("--testing-cfg-dword index %u is out of range: 0 thru 9"),
                                          GetOptState.uIndex);
                 break;
+
+            case MODIFYVM_GUEST_DEBUG_PROVIDER:
+            {
+                ComPtr<IGuestDebugControl> gstDbgCtrl;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(GuestDebugControl)(gstDbgCtrl.asOutParam()));
+
+                GuestDebugProvider_T enmDebugProvider = GuestDebugProvider_None;
+
+                if (!RTStrICmp(ValueUnion.psz, "none"))
+                    enmDebugProvider = GuestDebugProvider_None;
+                else if (!RTStrICmp(ValueUnion.psz, "native"))
+                    enmDebugProvider = GuestDebugProvider_Native;
+                else if (!RTStrICmp(ValueUnion.psz, "gdb"))
+                    enmDebugProvider = GuestDebugProvider_GDB;
+                else if (!RTStrICmp(ValueUnion.psz, "kd"))
+                    enmDebugProvider = GuestDebugProvider_KD;
+                else
+                {
+                    errorArgument(ModifyVM::tr("Invalid --guest-debug-provider '%s' (valid: none, native, gdb, kd)"),
+                                  ValueUnion.psz);
+                    hrc = E_FAIL;
+                }
+
+                if (SUCCEEDED(hrc))
+                    CHECK_ERROR(gstDbgCtrl, COMSETTER(DebugProvider)(enmDebugProvider));
+                break;
+            }
+
+            case MODIFYVM_GUEST_DEBUG_IO_PROVIDER:
+            {
+                ComPtr<IGuestDebugControl> gstDbgCtrl;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(GuestDebugControl)(gstDbgCtrl.asOutParam()));
+
+                GuestDebugIoProvider_T enmDebugIoProvider = GuestDebugIoProvider_None;
+
+                if (!RTStrICmp(ValueUnion.psz, "none"))
+                    enmDebugIoProvider = GuestDebugIoProvider_None;
+                else if (!RTStrICmp(ValueUnion.psz, "tcp"))
+                    enmDebugIoProvider = GuestDebugIoProvider_TCP;
+                else if (!RTStrICmp(ValueUnion.psz, "udp"))
+                    enmDebugIoProvider = GuestDebugIoProvider_UDP;
+                else if (!RTStrICmp(ValueUnion.psz, "ipc"))
+                    enmDebugIoProvider = GuestDebugIoProvider_IPC;
+                else
+                {
+                    errorArgument(ModifyVM::tr("Invalid --guest-debug-io-provider '%s' (valid: none, tcp, udp, ipc)"),
+                                  ValueUnion.psz);
+                    hrc = E_FAIL;
+                }
+
+                if (SUCCEEDED(hrc))
+                    CHECK_ERROR(gstDbgCtrl, COMSETTER(DebugIoProvider)(enmDebugIoProvider));
+                break;
+            }
+
+            case MODIFYVM_GUEST_DEBUG_ADDRESS:
+            {
+                ComPtr<IGuestDebugControl> gstDbgCtrl;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(GuestDebugControl)(gstDbgCtrl.asOutParam()));
+
+                Bstr bstr(ValueUnion.psz);
+                CHECK_ERROR(gstDbgCtrl, COMSETTER(DebugAddress)(bstr.raw()));
+                break;
+            }
+
+            case MODIFYVM_GUEST_DEBUG_PORT:
+            {
+                ComPtr<IGuestDebugControl> gstDbgCtrl;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(GuestDebugControl)(gstDbgCtrl.asOutParam()));
+                CHECK_ERROR(gstDbgCtrl, COMSETTER(DebugPort)(ValueUnion.u32));
+                break;
+            }
 
             default:
                 errorGetOpt(c, &ValueUnion);

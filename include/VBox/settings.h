@@ -1331,6 +1331,10 @@ struct Debugging
     bool                    fTracingEnabled;
     bool                    fAllowTracingToAccessVM;
     com::Utf8Str            strTracingConfig;
+    GuestDebugProvider_T    enmDbgProvider;
+    GuestDebugIoProvider_T  enmIoProvider;
+    com::Utf8Str            strAddress;
+    uint32_t                ulPort;
 };
 
 /**

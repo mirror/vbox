@@ -486,6 +486,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_GRAPHICSADAPTER,
     /** Main group, IGuest. */
     LOG_GROUP_MAIN_GUEST,
+    /** Main group, IGuestDebugControl. */
+    LOG_GROUP_MAIN_GUESTDEBUGCONTROL,
     /** Main group, IGuestDirectory. */
     LOG_GROUP_MAIN_GUESTDIRECTORY,
     /** Main group, IGuestDnDSource. */
@@ -1058,6 +1060,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_FSOBJINFO", \
     "MAIN_GRAPHICSADAPTER", \
     "MAIN_GUEST", \
+    "MAIN_GUESTDEBUGCONTROL", \
     "MAIN_GUESTDIRECTORY", \
     "MAIN_GUESTDNDSOURCE", \
     "MAIN_GUESTDNDTARGET", \

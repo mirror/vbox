@@ -51,6 +51,7 @@
 #include "BandwidthGroupImpl.h"
 #include "TrustedPlatformModuleImpl.h"
 #include "NvramStoreImpl.h"
+#include "GuestDebugControlImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "Performance.h"
 # include "PerformanceImpl.h"
@@ -525,6 +526,7 @@ public:
         IsModified_GraphicsAdapter       = 0x004000,
         IsModified_TrustedPlatformModule = 0x008000,
         IsModified_NvramStore            = 0x010000,
+        IsModified_GuestDebugControl     = 0x020000,
     };
 
     /**
@@ -575,6 +577,8 @@ public:
     virtual HRESULT i_onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */,
                                             BOOL /* silent */) { return S_OK; }
     virtual HRESULT i_onRecordingChange(BOOL /* aEnable */) { return S_OK; }
+    virtual HRESULT i_onGuestDebugControlChange(IGuestDebugControl * /* guestDebugControl */) { return S_OK; }
+
 
     HRESULT i_saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -839,6 +843,7 @@ protected:
     const ComObjPtr<RecordingSettings> mRecordingSettings;
     const ComObjPtr<GraphicsAdapter>   mGraphicsAdapter;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
+    const ComObjPtr<GuestDebugControl> mGuestDebugControl;
 
     const ComObjPtr<TrustedPlatformModule> mTrustedPlatformModule;
     const ComObjPtr<NvramStore>            mNvramStore;
@@ -1034,6 +1039,7 @@ private:
     HRESULT getStateKeyStore(com::Utf8Str &aKeyStore);
     HRESULT getLogKeyId(com::Utf8Str &aKeyId);
     HRESULT getLogKeyStore(com::Utf8Str &aKeyStore);
+    HRESULT getGuestDebugControl(ComPtr<IGuestDebugControl> &aGuestDebugControl);
 
     // wrapped IMachine methods
     HRESULT lockMachine(const ComPtr<ISession> &aSession,
@@ -1432,6 +1438,7 @@ public:
     HRESULT i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
     HRESULT i_onCPUExecutionCapChange(ULONG aCpuExecutionCap);
+    HRESULT i_onGuestDebugControlChange(IGuestDebugControl *guestDebugControl);
 
     bool i_hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 

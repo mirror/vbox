@@ -4175,7 +4175,11 @@ bool Storage::operator==(const Storage &s) const
 Debugging::Debugging() :
     fTracingEnabled(false),
     fAllowTracingToAccessVM(false),
-    strTracingConfig()
+    strTracingConfig(),
+    enmDbgProvider(GuestDebugProvider_None),
+    enmIoProvider(GuestDebugIoProvider_None),
+    strAddress(),
+    ulPort(0)
 {
 }
 
@@ -4186,7 +4190,11 @@ bool Debugging::areDefaultSettings() const
 {
     return !fTracingEnabled
         && !fAllowTracingToAccessVM
-        && strTracingConfig.isEmpty();
+        && strTracingConfig.isEmpty()
+        && enmDbgProvider == GuestDebugProvider_None
+        && enmIoProvider == GuestDebugIoProvider_None
+        && strAddress.isEmpty()
+        && ulPort == 0;
 }
 
 /**
@@ -4199,7 +4207,11 @@ bool Debugging::operator==(const Debugging &d) const
     return (this == &d)
         || (   fTracingEnabled          == d.fTracingEnabled
             && fAllowTracingToAccessVM  == d.fAllowTracingToAccessVM
-            && strTracingConfig         == d.strTracingConfig);
+            && strTracingConfig         == d.strTracingConfig
+            && enmDbgProvider           == d.enmDbgProvider
+            && enmIoProvider            == d.enmIoProvider
+            && strAddress               == d.strAddress
+            && ulPort                   == d.ulPort);
 }
 
 /**
@@ -6221,6 +6233,36 @@ void MachineConfigFile::readDebugging(const xml::ElementNode &elmDebugging, Debu
         pelmTracing->getAttributeValue("enabled", dbg.fTracingEnabled);
         pelmTracing->getAttributeValue("allowTracingToAccessVM", dbg.fAllowTracingToAccessVM);
         pelmTracing->getAttributeValue("config", dbg.strTracingConfig);
+    }
+
+    const xml::ElementNode *pelmGuestDebug = elmDebugging.findChildElement("GuestDebug");
+    if (pelmGuestDebug)
+    {
+        Utf8Str strTmp;
+        pelmGuestDebug->getAttributeValue("provider", strTmp);
+        if (strTmp == "None")
+            dbg.enmDbgProvider = GuestDebugProvider_None;
+        else if (strTmp == "GDB")
+            dbg.enmDbgProvider = GuestDebugProvider_GDB;
+        else if (strTmp == "KD")
+            dbg.enmDbgProvider = GuestDebugProvider_KD;
+        else
+            throw ConfigFileError(this, pelmGuestDebug, N_("Invalid value '%s' for GuestDebug/@provider attribute"), strTmp.c_str());
+
+        pelmGuestDebug->getAttributeValue("io", strTmp);
+        if (strTmp == "None")
+            dbg.enmIoProvider = GuestDebugIoProvider_None;
+        else if (strTmp == "TCP")
+            dbg.enmIoProvider = GuestDebugIoProvider_TCP;
+        else if (strTmp == "UDP")
+            dbg.enmIoProvider = GuestDebugIoProvider_UDP;
+        else if (strTmp == "IPC")
+            dbg.enmIoProvider = GuestDebugIoProvider_IPC;
+        else
+            throw ConfigFileError(this, pelmGuestDebug, N_("Invalid value '%s' for GuestDebug/@io attribute"), strTmp.c_str());
+
+        pelmGuestDebug->getAttributeValue("address", dbg.strAddress);
+        pelmGuestDebug->getAttributeValue("port", dbg.ulPort);
     }
 }
 
@@ -8282,6 +8324,32 @@ void MachineConfigFile::buildDebuggingXML(xml::ElementNode &elmParent, const Deb
     pElmTracing->setAttribute("enabled", dbg.fTracingEnabled);
     pElmTracing->setAttribute("allowTracingToAccessVM", dbg.fAllowTracingToAccessVM);
     pElmTracing->setAttribute("config", dbg.strTracingConfig);
+
+    xml::ElementNode *pElmGuestDebug = pElmDebugging->createChild("GuestDebug");
+    const char *pcszDebugProvider = NULL;
+    const char *pcszIoProvider = NULL;
+
+    switch (dbg.enmDbgProvider)
+    {
+        case GuestDebugProvider_None:    pcszDebugProvider = "None"; break;
+        case GuestDebugProvider_GDB:     pcszDebugProvider = "GDB";  break;
+        case GuestDebugProvider_KD:      pcszDebugProvider = "KD";   break;
+        default:         AssertFailed(); pcszDebugProvider = "None"; break;
+    }
+
+    switch (dbg.enmIoProvider)
+    {
+        case GuestDebugIoProvider_None:  pcszIoProvider = "None"; break;
+        case GuestDebugIoProvider_TCP:   pcszIoProvider = "TCP";  break;
+        case GuestDebugIoProvider_UDP:   pcszIoProvider = "UDP";  break;
+        case GuestDebugIoProvider_IPC:   pcszIoProvider = "IPC";  break;
+        default:         AssertFailed(); pcszIoProvider = "None"; break;
+    }
+
+    pElmGuestDebug->setAttribute("provider", pcszDebugProvider);
+    pElmGuestDebug->setAttribute("io",       pcszIoProvider);
+    pElmGuestDebug->setAttribute("address",  dbg.strAddress);
+    pElmGuestDebug->setAttribute("port",     dbg.ulPort);
 }
 
 /**
@@ -8960,6 +9028,16 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 break;
             }
 #endif /* VBOX_WITH_VMNET */
+        }
+
+        // VirtualBox 7.0 adds guest debug settings.
+        if (   debugging.enmDbgProvider != GuestDebugProvider_None
+            || debugging.enmIoProvider != GuestDebugIoProvider_None
+            || debugging.strAddress.isNotEmpty()
+            || debugging.ulPort != 0)
+        {
+            m->sv = SettingsVersion_v1_19;
+            return;
         }
     }
 

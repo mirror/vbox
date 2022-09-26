@@ -6671,7 +6671,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="9fbd57c7-e1b2-4baa-bbfb-ae831c06f32b"
+    uuid="300763af-5d6b-46e6-aa96-273eac15538a"
     wsmap="managed"
     rest="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
@@ -7445,6 +7445,12 @@
       <desc>
         Key store used for encrypting the log files.
         Internal use only for now.
+      </desc>
+    </attribute>
+
+    <attribute name="guestDebugControl" type="IGuestDebugControl" readonly="yes">
+      <desc>
+        Guest debugging configuration.
       </desc>
     </attribute>
 
@@ -23918,7 +23924,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="a797fb40-7e04-4aa5-88c5-299aa0454577"
+    uuid="5045c372-2e8f-4d9e-ad9d-121ab1661146"
     internal="yes"
     wsmap="suppress"
     >
@@ -24318,6 +24324,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
       <param name="global" type="boolean" dir="in"/>
+    </method>
+
+    <method name="onGuestDebugControlChange">
+      <desc>
+        Triggered when settings of the guest debug settings of the
+        associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
+      <param name="guestDebugControl" type="IGuestDebugControl" dir="in"/>
     </method>
 
     <method name="onUSBDeviceAttach">
@@ -26070,6 +26092,91 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
+  // IGuestDebugControl
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  <enum
+    name="GuestDebugProvider"
+    uuid="acdaddc5-aa0f-4f2e-be1f-a9be2828d24a"
+    >
+    <desc>
+      The enabled guest debug provider. This enumeration represents possible
+      values for the <link to="IGuestDebugControl::debugProvider"/> attribute.
+    </desc>
+    <const name="None"      value="0">
+      <desc>Guest debugging is disabled.</desc>
+    </const>
+    <const name="Native"    value="1">
+      <desc>The native debugger console is enabled.</desc>
+    </const>
+    <const name="GDB"       value="2">
+      <desc>The GDB remote stub is enabled.</desc>
+    </const>
+    <const name="KD"        value="3">
+      <desc>The WinDbg/KD remote stub is enabled.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="GuestDebugIoProvider"
+    uuid="0cf00b1b-2ff7-414c-81c6-6cf410eaec4a"
+    >
+    <desc>
+      The enabled guest debug I/O provider. This enumeration represents possible
+      values for the <link to="IGuestDebugControl::debugIoProvider"/> attribute.
+    </desc>
+    <const name="None"      value="0">
+      <desc>No connection available (only useful with
+        <link to="GuestDebugProvider::None"/>).
+      </desc>
+    </const>
+    <const name="TCP"       value="1">
+      <desc>The remote stub is available through a TCP connection.</desc>
+    </const>
+    <const name="UDP"       value="2">
+      <desc>The remote stub is available through a UDP connection.</desc>
+    </const>
+    <const name="IPC"       value="3">
+      <desc>The remote stub is available through a IPC connection,
+        namely a named pipe on Windows or a unix socket on other hosts.</desc>
+    </const>
+  </enum>
+
+  <interface
+    name="IGuestDebugControl" extends="$unknown"
+    uuid="1474bb3a-f096-4cd7-a857-8d8e3cea7331"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="2" reservedAttributes="2"
+    >
+    <desc>
+      Controls the guest debug settings of one virtual machine.
+    </desc>
+
+    <attribute name="debugProvider" type="GuestDebugProvider">
+      <desc>The currently active debug provider.</desc>
+    </attribute>
+
+    <attribute name="debugIoProvider" type="GuestDebugIoProvider">
+      <desc>The I/O backend for the selected debug provider.</desc>
+    </attribute>
+
+    <attribute name="debugAddress" type="wstring">
+      <desc>
+        The address to connect to or listen on,
+        depending on the type.
+      </desc>
+    </attribute>
+
+    <attribute name="debugPort" type="unsigned long">
+      <desc>
+        The port to listen on or connect to, depending on the selected I/O
+        provider. Might be ignored by some providers.
+      </desc>
+    </attribute>
+  </interface>
+
+  <!--
   // IVirtualBoxClient
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -26133,7 +26240,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="05dfb131-4deb-4125-9bcd-96518026b423"
+    uuid="e4c5252d-7d1a-4051-8cfb-5b2d7a73d992"
     >
 
     <desc>
@@ -26622,8 +26729,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IHostAudioDeviceChangedEvent">IHostAudioDeviceChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestDebugControlChanged" value="117">
+      <desc>
+        See <link to="IGuestDebugControlChangedEvent">IGuestDebugControlChangedEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
-    <const name="End" value="117">
+    <const name="End" value="118">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28957,6 +29069,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+  </interface>
+
+  <interface
+    name="IGuestDebugControlChangedEvent" extends="IEvent"
+    uuid="a3d2799e-d3ad-4f73-91ef-7d839689f6d6"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestDebugControlChanged"
+    >
+    <desc>
+      Notification when a property of the <link to="IMachine::guestDebugControl">guest debug</link>
+      settings changes. Interested callees should use IGuestDebugControl methods and attributes
+      to find out what has changed.
+    </desc>
+    <attribute name="guestDebugControl" type="IGuestDebugControl" readonly="yes">
+      <desc>
+        Guest debug control object that is subject to change.
+      </desc>
+    </attribute>
   </interface>
 
   <!--

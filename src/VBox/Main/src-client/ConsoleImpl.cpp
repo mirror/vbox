@@ -6050,6 +6050,33 @@ HRESULT Console::i_onSharedFolderChange(BOOL aGlobal)
 }
 
 /**
+ * Called by IInternalSessionControl::OnGuestDebugControlChange().
+ */
+HRESULT Console::i_onGuestDebugControlChange(IGuestDebugControl *aGuestDebugControl)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    HRESULT hrc = S_OK;
+
+    /* don't trigger changes if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        /// @todo
+    }
+
+    if (SUCCEEDED(hrc))
+        ::FireGuestDebugControlChangedEvent(mEventSource, aGuestDebugControl);
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    return hrc;
+}
+
+
+/**
  * Called by IInternalSessionControl::OnUSBDeviceAttach() or locally by
  * processRemoteUSBDevices() after IInternalMachineControl::RunUSBDeviceFilters()
  * returns TRUE for a given remote USB device.

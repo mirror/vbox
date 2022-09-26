@@ -3768,6 +3768,63 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             strFile = strVBoxHome;
             strFile.append("dbgc-init");
             InsertConfigString(pDbgc, "GlobalInitScript", strFile);
+
+            /*
+             * Configure guest debug settings.
+             */
+            ComObjPtr<IGuestDebugControl> ptrGstDbgCtrl;
+            GuestDebugProvider_T enmGstDbgProvider = GuestDebugProvider_None;
+
+            hrc = pMachine->COMGETTER(GuestDebugControl)(ptrGstDbgCtrl.asOutParam());           H();
+            hrc = ptrGstDbgCtrl->COMGETTER(DebugProvider)(&enmGstDbgProvider);                  H();
+            if (enmGstDbgProvider != GuestDebugProvider_None)
+            {
+                GuestDebugIoProvider_T enmGstDbgIoProvider = GuestDebugIoProvider_None;
+                hrc = ptrGstDbgCtrl->COMGETTER(DebugIoProvider)(&enmGstDbgIoProvider);          H();
+                hrc = ptrGstDbgCtrl->COMGETTER(DebugAddress)(bstr.asOutParam());                H();
+                Utf8Str strAddress = bstr;
+                bstr.setNull();
+
+                ULONG ulPort = 0;
+                hrc = ptrGstDbgCtrl->COMGETTER(DebugPort)(&ulPort);                             H();
+
+                PCFGMNODE pDbgSettings;
+                InsertConfigNode(pDbgc, "Dbg", &pDbgSettings);
+                InsertConfigString(pDbgSettings, "Address", strAddress);
+                InsertConfigInteger(pDbgSettings, "Port", ulPort);
+
+                switch (enmGstDbgProvider)
+                {
+                    case GuestDebugProvider_Native:
+                        InsertConfigString(pDbgSettings, "StubType", "Native");
+                        break;
+                    case GuestDebugProvider_GDB:
+                        InsertConfigString(pDbgSettings, "StubType", "Gdb");
+                        break;
+                    case GuestDebugProvider_KD:
+                        InsertConfigString(pDbgSettings, "StubType", "Kd");
+                        break;
+                    default:
+                        AssertFailed();
+                        break;
+                }
+
+                switch (enmGstDbgIoProvider)
+                {
+                    case GuestDebugIoProvider_TCP:
+                        InsertConfigString(pDbgSettings, "Provider", "tcp");
+                        break;
+                    case GuestDebugIoProvider_UDP:
+                        InsertConfigString(pDbgSettings, "Provider", "udp");
+                        break;
+                    case GuestDebugIoProvider_IPC:
+                        InsertConfigString(pDbgSettings, "Provider", "ipc");
+                        break;
+                    default:
+                        AssertFailed();
+                        break;
+                }
+            }
         }
     }
     catch (ConfigError &x)

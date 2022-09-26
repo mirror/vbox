@@ -122,6 +122,7 @@ private:
     HRESULT onRecordingChange(BOOL aEnable);
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);
+    HRESULT onGuestDebugControlChange(const ComPtr<IGuestDebugControl> &aGuestDebugControl);
     HRESULT onUSBDeviceAttach(const ComPtr<IUSBDevice> &aDevice,
                               const ComPtr<IVirtualBoxErrorInfo> &aError,
                               ULONG aMaskedInterfaces,

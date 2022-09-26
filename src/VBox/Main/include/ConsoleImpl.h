@@ -227,6 +227,7 @@ public:
     HRESULT i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
     HRESULT i_onExtraDataChange(const Bstr &aMachineId, const Bstr &aKey, const Bstr &aVal);
+    HRESULT i_onGuestDebugControlChange(IGuestDebugControl *aGuestDebugControl);
 
     HRESULT i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG64 *aTimestamp, Utf8Str *aFlags);
     HRESULT i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags);

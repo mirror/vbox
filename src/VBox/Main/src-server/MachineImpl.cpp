@@ -3270,6 +3270,13 @@ HRESULT Machine::getLogKeyStore(com::Utf8Str &aKeyStore)
     return S_OK;
 }
 
+HRESULT Machine::getGuestDebugControl(ComPtr<IGuestDebugControl> &aGuestDebugControl)
+{
+    mGuestDebugControl.queryInterfaceTo(aGuestDebugControl.asOutParam());
+
+    return S_OK;
+}
+
 
 /**
  *  @note Locks objects!
@@ -8695,6 +8702,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this);
 
+    /* create the guest debug control object */
+    unconst(mGuestDebugControl).createObject();
+    mGuestDebugControl->init(this);
+
     return S_OK;
 }
 
@@ -8717,6 +8728,12 @@ void Machine::uninitDataAndChildObjects()
                      || getObjectState().getState() == ObjectState::Limited);
 
     /* tell all our other child objects we've been uninitialized */
+    if (mGuestDebugControl)
+    {
+        mGuestDebugControl->uninit();
+        unconst(mGuestDebugControl).setNull();
+    }
+
     if (mBandwidthControl)
     {
         mBandwidthControl->uninit();
@@ -9572,6 +9589,10 @@ HRESULT Machine::i_loadDebugging(const settings::Debugging *pDbg)
 {
     mHWData->mDebugging = *pDbg;
     /* no more processing currently required, this will probably change. */
+
+    HRESULT rc = mGuestDebugControl->i_loadSettings(*pDbg);
+    if (FAILED(rc)) return rc;
+
     return S_OK;
 }
 
@@ -10955,7 +10976,10 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         mData->mGuestPropertiesModified = FALSE;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
-        *pDbg = mHWData->mDebugging;
+        rc = mGuestDebugControl->i_saveSettings(mHWData->mDebugging);
+        if (FAILED(rc)) throw rc;
+
+        *pDbg = mHWData->mDebugging; /// @todo r=aeichner: Move this to guest debug control. */
         *pAutostart = mHWData->mAutostart;
 
         data.strDefaultFrontend = mHWData->mDefaultFrontend;
@@ -12363,6 +12387,9 @@ void Machine::i_rollback(bool aNotify)
     if (mBandwidthControl && (mData->flModifications & IsModified_BandwidthControl))
         mBandwidthControl->i_rollback();
 
+    if (mGuestDebugControl && (mData->flModifications & IsModified_GuestDebugControl))
+        mGuestDebugControl->i_rollback();
+
     if (!mHWData.isNull())
         mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
     NetworkAdapterVector networkAdapters(mNetworkAdapters.size());
@@ -12433,6 +12460,8 @@ void Machine::i_rollback(bool aNotify)
             }
         }
 
+        if (flModifications & IsModified_GuestDebugControl)
+            that->i_onGuestDebugControlChange(mGuestDebugControl);
 
 #if 0
         if (flModifications & IsModified_BandwidthControl)
@@ -12478,6 +12507,7 @@ void Machine::i_commit()
     mAudioSettings->i_commit();
     mUSBDeviceFilters->i_commit();
     mBandwidthControl->i_commit();
+    mGuestDebugControl->i_commit();
 
     /* Since mNetworkAdapters is a list which might have been changed (resized)
      * without using the Backupable<> template we need to handle the copying
@@ -12734,6 +12764,7 @@ void Machine::i_copyFrom(Machine *aThat)
     mAudioSettings->i_copyFrom(aThat->mAudioSettings);
     mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
     mBandwidthControl->i_copyFrom(aThat->mBandwidthControl);
+    mGuestDebugControl->i_copyFrom(aThat->mGuestDebugControl);
 
     /* create private copies of all controllers */
     mStorageControllers.backup();
@@ -13150,6 +13181,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
     /* create another bandwidth control object that will be mutable */
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this, aMachine->mBandwidthControl);
+
+    unconst(mGuestDebugControl).createObject();
+    mGuestDebugControl->init(this, aMachine->mGuestDebugControl);
 
     /* default is to delete saved state on Saved -> PoweredOff transition */
     mRemoveSavedState = true;
@@ -14997,6 +15031,30 @@ HRESULT SessionMachine::i_onStorageDeviceChange(IMediumAttachment *aAttachment, 
         return S_OK;
 
     return directControl->OnStorageDeviceChange(aAttachment, aRemove, aSilent);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::i_onGuestDebugControlChange(IGuestDebugControl *guestDebugControl)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnGuestDebugControlChange(guestDebugControl);
 }
 
 /**

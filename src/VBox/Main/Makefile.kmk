@@ -647,6 +647,7 @@ VBoxSVC_SOURCES = \
 	$(if $(VBOX_WITH_CLOUD_NET), \
 	src-server/CloudNetworkImpl.cpp \
 	,) \
+	src-server/GuestDebugControlImpl.cpp \
 	src-server/GuestOSTypeImpl.cpp \
 	src-server/HostDnsService.cpp \
 	src-server/HostImpl.cpp \

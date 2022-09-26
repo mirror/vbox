@@ -624,6 +624,31 @@ host OS, defeating the purpose. Not worth spending time on documenting
 it unless this changes. -->
     </cmdsynopsis>
 
+    <cmdsynopsis id="synopsis-vboxmanage-modifyvm-guest-debug">
+      <command>VBoxManage modifyvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg>--guest-debug-provider=<group choice="plain">
+          <arg choice="plain">none</arg>
+          <arg choice="plain">native</arg>
+          <arg choice="plain">gdb</arg>
+          <arg choice="plain">kd</arg>
+        </group></arg>
+      <arg>--guest-debug-io-provider=<group choice="plain">
+          <arg choice="plain">none</arg>
+          <arg choice="plain">tcp</arg>
+          <arg choice="plain">udp</arg>
+          <arg choice="plain">ipc</arg>
+        </group></arg>
+      <arg>--guest-debug-address=<group choice="plain">
+          <arg choice="plain"><replaceable>IP-Address</replaceable></arg>
+          <arg choice="plain"><replaceable>path</replaceable></arg>
+        </group></arg>
+      <arg>--guest-debug-port=<replaceable>port</replaceable></arg>
+    </cmdsynopsis>
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-pcipassthrough">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -2659,6 +2684,31 @@ it unless this changes. -->
               Specifies the number of seconds after host system boot-up
               to autostart the VM.
             </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2 id="vboxmanage-modifyvm-guest-debug">
+      <title>Guest Debugging</title>
+      <para>
+        These options are for configuring the VMM for guest debugging.
+      </para>
+      <remark role="help-copy-synopsis"/>
+      <variablelist>
+        <varlistentry>
+          <term><option>--guest-debug-provider=none | native | gdb | kd</option></term>
+          <listitem><para>Selects the given debug stub provider. </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--guest-debug-io-provider=none | tcp | udp | ipc</option></term>
+          <listitem><para>Selects the given I/O transport backend for the selected provider.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--guest-debug-address=<replaceable>IP-Address</replaceable> | <replaceable>path</replaceable></option></term>
+          <listitem><para>Sets the path the debugger is accessible under, depends on the selected I/O transport.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--guest-debug-port=<replaceable>port</replaceable></option></term>
+          <listitem><para>Sets the port the debugger is accessible under, depends on the selected I/O transport.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
