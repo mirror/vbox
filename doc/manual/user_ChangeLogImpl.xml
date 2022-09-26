@@ -181,6 +181,11 @@ Rules for adding a changelog entry to make them look more uniform:
         <para>EFI: Added support for Secure Boot</para>
       </listitem>
 
+      <listitem>
+        <para>Debugging: Added experimental support for guest debugging through
+          GDB and highly experimental support for guest debugging through KD/WinDbg</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
