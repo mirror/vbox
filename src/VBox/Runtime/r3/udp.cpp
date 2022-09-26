@@ -735,3 +735,48 @@ RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PR
     return rc;
 }
 
+
+RTR3DECL(int) RTUdpCreateServerSocket(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSock, VERR_INVALID_POINTER);
+
+    /*
+     * Resolve the address.
+     */
+    RTNETADDR LocalAddr;
+    int rc = RTSocketParseInetAddress(pszAddress, uPort, &LocalAddr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Setting up socket.
+     */
+    RTSOCKET Sock;
+    rc = rtSocketCreate(&Sock, AF_INET, SOCK_DGRAM, IPPROTO_UDP, false /*fInheritable*/);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Set socket options.
+         */
+        int fFlag = 1;
+        if (!rtSocketSetOpt(Sock, SOL_SOCKET, SO_REUSEADDR, &fFlag, sizeof(fFlag)))
+        {
+            /*
+             * Bind a name to the socket.
+             */
+            rc = rtSocketBind(Sock, &LocalAddr);
+            if (RT_SUCCESS(rc))
+            {
+                *pSock = Sock;
+                return VINF_SUCCESS;
+            }
+        }
+        RTSocketClose(Sock);
+    }
+    return rc;
+}

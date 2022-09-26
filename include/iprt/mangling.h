@@ -2757,6 +2757,7 @@
 # define RTTraceLogWrEvtAddSg                           RT_MANGLER(RTTraceLogWrEvtAddSg)
 # define RTTraceSetDefaultBuf                           RT_MANGLER(RTTraceSetDefaultBuf)
 # define RTUdpCreateClientSocket                        RT_MANGLER(RTUdpCreateClientSocket)
+# define RTUdpCreateServerSocket                        RT_MANGLER(RTUdpCreateServerSocket)
 # define RTUdpRead                                      RT_MANGLER(RTUdpRead)
 # define RTUdpServerCreate                              RT_MANGLER(RTUdpServerCreate)
 # define RTUdpServerCreateEx                            RT_MANGLER(RTUdpServerCreateEx)

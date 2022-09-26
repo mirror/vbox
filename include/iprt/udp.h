@@ -174,6 +174,16 @@ RTR3DECL(int)  RTUdpWrite(PRTUDPSERVER pServer, const void *pvBuffer,
  */
 RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PRTNETADDR pLocalAddr, PRTSOCKET pSock);
 
+/**
+ * Create a data socket acting as a server.
+ *
+ * @returns iprt status code.
+ * @param   pszAddress          The address to connect to.
+ * @param   uPort               The port to connect to.
+ * @param   pSock               Where to store the handle to the established connection.
+ */
+RTR3DECL(int) RTUdpCreateServerSocket(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock);
+
 /** @} */
 RT_C_DECLS_END
 
