@@ -86,7 +86,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
   <sect1>
 
-    <title>Version 7.0.0_BETA2 (2022-09-12)</title>
+    <title>Version 7.0.0_BETA3 (2022-09-xx)</title>
 
     <para>This is a major update. The following major new features were added:</para>
 
@@ -151,6 +151,11 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Devices: Added virtual IOMMU devices (Intel and AMD variant)</para>
+      </listitem>
+
+      <listitem>
+        <para>Devices: The EHCI and XHCI USB controller devices are now part of the
+          open source base package</para>
       </listitem>
     </itemizedlist>
 
