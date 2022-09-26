@@ -107,6 +107,7 @@ struct NvramStore::Data
         : pParent(NULL)
 #ifdef VBOX_COM_INPROC
           , cRefs(0)
+          , fSsmSaved(false)
 #endif
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
           , mpKeyStore(NULL)
