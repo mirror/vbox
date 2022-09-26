@@ -1972,7 +1972,11 @@ HRESULT Unattended::i_innerDetectIsoOSLinuxFedora(RTVFS hVfsIso, DETECTBUFFER *p
     char *pszVersion = NULL;
     char *pszArch    = NULL;
     if (detectLinuxArchII(psz, &mEnmOsType, VBOXOSTYPE_FedoraCore, &pszArch, &pszVersion))
+    {
+        while (*pszVersion == '-')
+            pszVersion++;
         *pszArch = '\0';
+    }
     else
     {
         mEnmOsType = (VBOXOSTYPE)(VBOXOSTYPE_FedoraCore | VBOXOSTYPE_UnknownArch);
