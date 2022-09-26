@@ -81,7 +81,7 @@ static bool vbglR3DrmClientCheckProp(const char *pszPropName, uint32_t fPropFlag
                 uint32_t fFlags = 0;
 
                 rc = GuestPropValidateFlags(pcszFlags, &fFlags);
-                fExist = RT_SUCCESS(rc) && (fFlags & fPropFlags);
+                fExist = RT_SUCCESS(rc) && (fFlags == fPropFlags);
             }
             else
                 fExist = true;
