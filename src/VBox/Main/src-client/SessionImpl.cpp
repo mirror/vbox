@@ -885,7 +885,7 @@ HRESULT Session::onGuestDebugControlChange(const ComPtr<IGuestDebugControl> &aGu
 
     return mConsole->i_onGuestDebugControlChange(aGuestDebugControl);
 #else
-    RT_NOREF(aSerialPort);
+    RT_NOREF(aGuestDebugControl);
     return S_OK;
 #endif
 }
