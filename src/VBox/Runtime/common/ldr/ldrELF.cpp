@@ -294,7 +294,7 @@ static DECLCALLBACK(int) rtldrELFLnxKModHashImage(PRTLDRMODINTERNAL pMod, RTDIGE
     if (RT_SUCCESS(rc))
     {
         if (rtLdrELFLnxKModIsFooterValid(&SigFooter, cbFile))
-            cbFile -= sizeof(SigFooter) - RT_N2H_U32(SigFooter.cbSignature);
+            cbFile -= sizeof(SigFooter) + RT_N2H_U32(SigFooter.cbSignature);
 
         /*
          * Now hash the file.
