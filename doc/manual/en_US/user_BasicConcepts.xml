@@ -2347,13 +2347,6 @@
 
           </itemizedlist>
 
-          <note>
-            <para>
-              The xHCI and EHCI controllers are shipped as an
-              &product-name; extension package, which must be installed
-              separately. See <xref linkend="intro-installing" />.
-            </para>
-          </note>
         </listitem>
 
         <listitem>

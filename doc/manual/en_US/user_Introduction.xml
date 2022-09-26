@@ -790,20 +790,6 @@
 
           <listitem>
             <para>
-              The virtual USB 2.0 (EHCI) device. See
-              <xref linkend="settings-usb" />.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              The virtual USB 3.0 (xHCI) device. See
-              <xref linkend="settings-usb" />.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
               VirtualBox Remote Desktop Protocol (VRDP) support. See
               <xref linkend="vrde" />.
             </para>
