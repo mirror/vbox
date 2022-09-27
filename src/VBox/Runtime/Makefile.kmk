@@ -2610,7 +2610,7 @@ RuntimeBldProg_SOURCES.amd64 = $(filter-out \
 
 RuntimeBldProg_SOURCES.x86 = $(filter-out \
 	VBox/RTLogWriteVmm-amd64-x86.asm \
-       , $(RuntimeBaseR3_SOURCES.x896))
+       , $(RuntimeBaseR3_SOURCES.x86))
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
