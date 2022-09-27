@@ -842,7 +842,7 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
 }
 
 
-/** 
+/**
  * @callback_method_impl{FNDBGFHANDLERINT, pgmpoolroots}
  */
 static DECLCALLBACK(void) pgmR3PoolInfoRoots(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
