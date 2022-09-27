@@ -825,7 +825,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (adapter)
             {
                 bool fEnabled;
-                if (RT_FAILURE(parseBool(a->argv[3], &fEnabled)))
+                if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
                     errorSyntax(ControlVM::tr("Invalid link state '%s'."), a->argv[2]);
                     hrc = E_FAIL;
@@ -912,7 +912,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (fEnabled)
                 {
                     bool fTraceEnabled;
-                    if (RT_FAILURE(parseBool(a->argv[3], &fTraceEnabled)))
+                    if (RT_FAILURE(parseBool(a->argv[2], &fTraceEnabled)))
                     {
                         errorSyntax(ControlVM::tr("Invalid nictrace%lu argument '%s'."), n, a->argv[2]);
                         hrc = E_FAIL;
