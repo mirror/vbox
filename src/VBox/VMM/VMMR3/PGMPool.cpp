@@ -124,11 +124,11 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_DEBUGGER
-static FNDBGCCMD pgmR3PoolCmdCheck;
-#endif
+static FNDBGFHANDLERINT pgmR3PoolInfoRoots;
 
 #ifdef VBOX_WITH_DEBUGGER
+static FNDBGCCMD pgmR3PoolCmdCheck;
+
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
@@ -450,6 +450,8 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StatCacheUncacheable,         STAMTYPE_COUNTER,   "/PGM/Pool/Cache/Uncacheable",          STAMUNIT_OCCURENCES, "The number of uncacheable allocations.");
 #endif /* VBOX_WITH_STATISTICS */
 
+    DBGFR3InfoRegisterInternalEx(pVM, "pgmpoolroots", "Lists page pool roots.", pgmR3PoolInfoRoots, 0);
+
 #ifdef VBOX_WITH_DEBUGGER
     /*
      * Debugger commands.
@@ -601,16 +603,13 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                     {
                         void *pvShw = PGMPOOL_PAGE_2_PTR_V2(pPool->CTX_SUFF(pVM), pVCpu, pPage);
                         STAM_PROFILE_START(&pPool->StatZeroPage, z);
-
 #ifdef VBOX_STRICT
                         if (PGMPOOL_PAGE_IS_NESTED(pPage))
                         {
                             PEPTPT pPT = (PEPTPT)pvShw;
-                            for (unsigned ptIndex = 0; ptIndex < RT_ELEMENTS(pPT->a); ptIndex++)
-                            {
-                                if (pPT->a[ptIndex].u & EPT_PRESENT_MASK)
-                                    Assert(!(pPT->a[ptIndex].u & EPT_E_LEAF));  /* We don't support large pages as of yet. */
-                            }
+                            for (unsigned idxPt = 0; idxPt < RT_ELEMENTS(pPT->a); idxPt++)
+                                if (pPT->a[idxPt].u & EPT_PRESENT_MASK)
+                                    Assert(!(pPT->a[idxPt].u & EPT_E_LEAF));  /* We don't support large pages as of yet. */
                         }
 #endif
 #if 0
@@ -841,6 +840,59 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
         }
     }
 }
+
+
+/** 
+ * @callback_method_impl{FNDBGFHANDLERINT, pgmpoolroots}
+ */
+static DECLCALLBACK(void) pgmR3PoolInfoRoots(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    unsigned cLeft = pPool->cUsedPages;
+    unsigned iPage = pPool->cCurPages;
+    while (--iPage >= PGMPOOL_IDX_FIRST)
+    {
+        PGMPOOLPAGE volatile const *pPage = (PGMPOOLPAGE volatile const *)&pPool->aPages[iPage];
+        RTGCPHYS const GCPhys = pPage->GCPhys;
+        if (GCPhys != NIL_RTGCPHYS)
+        {
+            uint8_t const enmKind = pPage->enmKind;
+            switch (enmKind)
+            {
+                default:
+                    break;
+
+                case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+                case PGMPOOLKIND_PAE_PDPT:
+                case PGMPOOLKIND_PAE_PDPT_PHYS:
+                case PGMPOOLKIND_64BIT_PML4:
+                case PGMPOOLKIND_ROOT_NESTED:
+                case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+                {
+                    const char *pszKind = "wtf!";
+                    switch (enmKind)
+                    {
+                        case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:    pszKind = "PAE_PDPT_FOR_32BIT"; break;
+                        case PGMPOOLKIND_PAE_PDPT:              pszKind = "PAE_PDPT"; break;
+                        case PGMPOOLKIND_PAE_PDPT_PHYS:         pszKind = "PAE_PDPT_PHYS"; break;
+                        case PGMPOOLKIND_64BIT_PML4:            pszKind = "64BIT_PML4"; break;
+                        case PGMPOOLKIND_ROOT_NESTED:           pszKind = "ROOT_NESTED"; break;
+                        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4: pszKind = "EPT_PML4_FOR_EPT_PML4"; break;
+                    }
+                    pHlp->pfnPrintf(pHlp, "#%04x: GCPhys=%RGp %s %s\n",
+                                    iPage, GCPhys, pszKind, pPage->fMonitored ? " monitored" : "");
+                    break;
+                }
+            }
+            if (!--cLeft)
+                break;
+        }
+    }
+
+}
+
 
 #ifdef VBOX_WITH_DEBUGGER
 /**
