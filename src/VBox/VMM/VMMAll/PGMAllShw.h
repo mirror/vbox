@@ -214,7 +214,6 @@
 RT_C_DECLS_BEGIN
 PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags);
-PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode);
 PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu);
 #ifdef IN_RING3
 PGM_SHW_DECL(int, Relocate)(PVMCPUCC pVCpu, RTGCPTR offDelta);
@@ -227,23 +226,17 @@ RT_C_DECLS_END
  *
  * @returns VBox status code.
  * @param   pVCpu                   The cross context virtual CPU structure.
- * @param   fIs64BitsPagingMode     New shadow paging mode is for 64 bits? (only relevant for 64 bits guests on a 32 bits AMD-V nested paging host)
  */
-PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
+PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu)
 {
 #if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 
-# if PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) && HC_ARCH_BITS == 32
-    /* Must distinguish between 32 and 64 bits guest paging modes as we'll use
-       a different shadow paging root/mode in both cases. */
-    RTGCPHYS     GCPhysCR3 = (fIs64BitsPagingMode) ? RT_BIT_64(63) : RT_BIT_64(62);
-    PGMPOOLKIND  enmKind   = PGMPOOLKIND_ROOT_NESTED;
-# elif defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT)
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     RTGCPHYS    GCPhysCR3;
     PGMPOOLKIND enmKind;
     if (pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_EPT)
     {
-        GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
+        GCPhysCR3 = RT_BIT_64(63);
         enmKind   = PGMPOOLKIND_ROOT_NESTED;
     }
     else
@@ -252,11 +245,10 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
         enmKind   = PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4;
     }
 # else
-    RTGCPHYS     GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
-    PGMPOOLKIND const enmKind = PGMPOOLKIND_ROOT_NESTED;
+    RTGCPHYS    const GCPhysCR3 = RT_BIT_64(63);
+    PGMPOOLKIND const enmKind   = PGMPOOLKIND_ROOT_NESTED;
 # endif
-    PPGMPOOLPAGE pNewShwPageCR3;
-    PVMCC        pVM       = pVCpu->CTX_SUFF(pVM);
+    PVMCC       const pVM       = pVCpu->CTX_SUFF(pVM);
 
     Assert(HMIsNestedPagingActive(pVM));
     Assert(pVM->pgm.s.fNestedPaging);
@@ -264,6 +256,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
 
     PGM_LOCK_VOID(pVM);
 
+    PPGMPOOLPAGE pNewShwPageCR3;
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
                           &pNewShwPageCR3);
@@ -276,7 +269,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
 
     Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVCpu->pgm.s.pShwPageCR3R3, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key));
 #else
-    NOREF(pVCpu); NOREF(fIs64BitsPagingMode);
+    NOREF(pVCpu);
 #endif
     return VINF_SUCCESS;
 }

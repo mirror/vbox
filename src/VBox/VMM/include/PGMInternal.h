@@ -2745,7 +2745,7 @@ typedef struct PGMMODEDATASHW
     DECLCALLBACKMEMBER(int, pfnGetPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLCALLBACKMEMBER(int, pfnModifyPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags,
                                                    uint64_t fMask, uint32_t fOpFlags));
-    DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, bool fIs64BitsPagingMode));
+    DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu));
     DECLCALLBACKMEMBER(int, pfnExit,(PVMCPUCC pVCpu));
 #ifdef IN_RING3
     DECLCALLBACKMEMBER(int, pfnRelocate,(PVMCPUCC pVCpu, RTGCPTR offDelta)); /**< Only in ring-3. */
