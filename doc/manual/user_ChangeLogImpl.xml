@@ -93,13 +93,18 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-         <para>Virtual machines can be fully encrypted now, including the VM config logs
-           and saved states (CLI only for now)</para>
+        <para>Virtual machines can be fully encrypted now, including the VM config logs
+          and saved states (CLI only for now)</para>
       </listitem>
 
       <listitem>
-         <para>OCI: Cloud virtual machines can be added to Virtual Machine Manager and controlled
-           as local VMs </para>
+        <para>OCI: Cloud virtual machines can be added to Virtual Machine Manager and controlled
+          as local VMs</para>
+      </listitem>
+
+      <listitem>
+        <para>OCI: Cloud networks can now be configured via Network Manager tool same way as
+          it is done for Host-only and NAT networks</para>
       </listitem>
 
       <listitem>
@@ -115,6 +120,20 @@ Rules for adding a changelog entry to make them look more uniform:
       <listitem>
         <para>GUI: Added a new help viewer widget which enables the user manual to be navigated
         and searched</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Adding new notification center unifying most of running progresses and error
+          reporting around the GUI</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Improved theme support on all platforms. Linux and macOS
+          got native engine while Windows host got it separately implemented.</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Large icon update.</para>
       </listitem>
 
       <listitem>
@@ -193,8 +212,13 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>GUI: Improved behavior of the virtual machine list in case multiple items
-        are selected</para>
+        <para>OCI: Cloud networking functionality is enhanced for local VMs, now local VMs could
+          be connected to cloud networking</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Improved behavior of the virtual machine list and various VM related tools in case
+          multiple items are selected</para>
       </listitem>
 
       <listitem>
@@ -202,16 +226,32 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Reworked the wizards to improve stability and usability</para>
+        <para>GUI: Reworked global preferences, machine settings and the wizards to improve stability
+          and usability</para>
       </listitem>
 
       <listitem>
-        <para>GUI: Improved accessibility</para>
+        <para>GUI: Improving mouse handling in multi-monitor case on X11 platform</para>
       </listitem>
 
       <listitem>
-         <para>OCI: Cloud networking functionality is enhanced for local VMs, now local VMs could
-         be connected to cloud networking easily</para>
+        <para>GUI: Medium enumeration engine was reworked to improve permormance</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: NAT Network stuff was moved from global preferences to global Network Manager tool</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Extension Pack Manager was moved from global preferences to global tools</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Improved overall accessibility</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Migrating to recent Qt versions.</para>
       </listitem>
 
     </itemizedlist>
