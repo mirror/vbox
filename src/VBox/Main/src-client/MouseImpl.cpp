@@ -660,13 +660,15 @@ HRESULT Mouse::i_reportAbsEventToInputDevices(int32_t x, int32_t y, int32_t dz, 
                                               bool fUsesVMMDevEvent)
 {
     HRESULT hrc;
-    /** If we are using the VMMDev to report absolute position but without
-     * VMMDev IRQ support then we need to send a small "jiggle" to the emulated
-     * relative mouse device to alert the guest to changes. */
-    LONG cJiggle = 0;
-
     if (i_vmmdevCanAbs())
     {
+        /*
+         * If we are using the VMMDev to report absolute position but without
+         * VMMDev IRQ support then we need to send a small "jiggle" to the
+         * emulated relative mouse device to alert the guest to changes.
+         */
+        LONG cJiggle = 0;
+
         /*
          * Send the absolute mouse position to the VMM device.
          */
@@ -676,7 +678,8 @@ HRESULT Mouse::i_reportAbsEventToInputDevices(int32_t x, int32_t y, int32_t dz, 
             cJiggle = !fUsesVMMDevEvent;
         }
 
-        /* Since VMMDev does not deal with mouse buttons state, also
+        /*
+         * Since VMMDev does not deal with mouse buttons state, also
          * send relative or absolute pointing event to emulated mouse
          * device once it supports it.
          *
@@ -686,9 +689,14 @@ HRESULT Mouse::i_reportAbsEventToInputDevices(int32_t x, int32_t y, int32_t dz, 
          * Absolute ones to: USB Tablet, USB Multi-Touch Tablet,
          * USB MT TouchScreen and TouchPad.
          *
-         * IMPORTANT: Avoid sending relative event to devices which can
-         * do both relative and absolute pointing since it will result
-         * in misbehavior. */
+         * IMPORTANT: Do not send relative event to devices which can
+         * do both relative and absolute pointing since it may result
+         * in unexpected behaviour.
+         *
+         * r=bird: Not entirely convinced this is a correct fix.
+         *
+         * See @bugref{10285} for background and more theories.
+         */
         if (!i_deviceCanAbs())
             hrc = i_reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
         else
