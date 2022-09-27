@@ -352,14 +352,13 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     bool const   fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu);
 
     pHlp->pfnPrintf(pHlp, "APIC%u:\n", pVCpu->idCpu);
-    pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64)\n", uBaseMsr,
-                    MSR_IA32_APICBASE_GET_ADDR(uBaseMsr));
+    pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64%s%s%s)\n", uBaseMsr,
+                    MSR_IA32_APICBASE_GET_ADDR(uBaseMsr), uBaseMsr & MSR_IA32_APICBASE_EN ? " en" : "",
+                    uBaseMsr & MSR_IA32_APICBASE_BSP ? " bsp" : "", uBaseMsr & MSR_IA32_APICBASE_EXTD ? " extd" : "");
     pHlp->pfnPrintf(pHlp, "  Mode                          = %u (%s)\n", enmMode, apicGetModeName(enmMode));
     if (fX2ApicMode)
-    {
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pX2ApicPage->id.u32ApicId,
                                                                               pX2ApicPage->id.u32ApicId);
-    }
     else
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pXApicPage->id.u8ApicId, pXApicPage->id.u8ApicId);
     pHlp->pfnPrintf(pHlp, "  Version                       = %#x\n",      pXApicPage->version.all.u32Version);
