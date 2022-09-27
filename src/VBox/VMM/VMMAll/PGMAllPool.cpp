@@ -191,8 +191,7 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
              (RTGCPTR)(CTXTYPE(RTGCPTR, uintptr_t, RTGCPTR))(uintptr_t)pvAddress, GCPhysFault, cbWrite));
 
     if (PGMPOOL_PAGE_IS_NESTED(pPage))
-        Log7Func(("%RGv phys=%RGp cbWrite=%d\n",
-                  (RTGCPTR)(CTXTYPE(RTGCPTR, uintptr_t, RTGCPTR))(uintptr_t)pvAddress, GCPhysFault, cbWrite));
+        Log7Func(("%RGv phys=%RGp cbWrite=%d\n", (RTGCPTR)(CTXTYPE(RTGCPTR, uintptr_t, RTGCPTR))(uintptr_t)pvAddress, GCPhysFault, cbWrite));
 
     for (;;)
     {
@@ -4674,6 +4673,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+
 /**
  * Clears references to shadowed pages in a SLAT EPT page table.
  *
@@ -4698,7 +4698,6 @@ DECLINLINE(void) pgmPoolTrackDerefNestedPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage
         }
     }
 }
-
 
 # if 0
 /**
@@ -4728,6 +4727,7 @@ DECLINLINE(void) pgmPoolTrackDerefNestedPML4EPT(PPGMPOOL pPool, PPGMPOOLPAGE pPa
     }
 }
 # endif
+
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 /**
