@@ -470,7 +470,7 @@ void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fV
 
 void UICloudProfileManagerWidget::sltShowCloudProfileTryPage()
 {
-    uiCommon().openURL("https://myservices.us.oraclecloud.com/mycloud/signup");
+    uiCommon().openURL("https://signup.cloud.oracle.com/");
 }
 
 void UICloudProfileManagerWidget::sltShowCloudProfileHelp()
