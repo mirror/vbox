@@ -126,11 +126,12 @@ private:
                                  bool *pfValid);
     HRESULT i_putEventMultiTouch(LONG aCount, const LONG64 *paContacts, BOOL isTouchScreen, ULONG aScanTime);
 
-    void i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfTS, bool *pfTP);
+    uint32_t i_getDeviceCaps(void);
     void i_sendMouseCapsNotifications(void);
     bool i_guestNeedsHostCursor(void);
     bool i_vmmdevCanAbs(void);
     bool i_deviceCanAbs(void);
+    bool i_supportsAbs(uint32_t fCaps) const;
     bool i_supportsAbs(void);
     bool i_supportsRel(void);
     bool i_supportsTS(void);

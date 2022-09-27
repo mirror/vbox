@@ -1005,9 +1005,7 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
                                     ULONG aScanTime)
 {
     if (aCount >= 256)
-    {
-         return E_INVALIDARG;
-    }
+        return E_INVALIDARG;
 
     HRESULT hrc = S_OK;
 
@@ -1094,7 +1092,9 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
                         cContacts++;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 LONG i;
                 for (i = 0; i < aCount; i++)
                 {
@@ -1145,104 +1145,74 @@ bool Mouse::i_guestNeedsHostCursor(void)
 }
 
 
-/** Check what sort of reporting can be done using the devices currently
- * enabled.  Does not consider the VMM device.
+/**
+ * Gets the combined capabilities of all currently enabled devices.
  *
- * @param   pfAbs   supports absolute mouse coordinates.
- * @param   pfRel   supports relative mouse coordinates.
- * @param   pfTS    supports touchscreen.
- * @param   pfTP    supports touchpad.
+ * @returns Combination of MOUSE_DEVCAP_XXX
  */
-void Mouse::i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfTS, bool *pfTP)
+uint32_t Mouse::i_getDeviceCaps(void)
 {
-    bool fAbsDev = false;
-    bool fRelDev = false;
-    bool fTSDev  = false;
-    bool fTPDev  = false;
-
+    uint32_t fCaps = 0;
     AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
-
     for (unsigned i = 0; i < MOUSE_MAX_DEVICES; ++i)
         if (mpDrv[i])
-        {
-           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_ABSOLUTE)
-               fAbsDev = true;
-           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
-               fRelDev = true;
-           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_ABSOLUTE)
-               fTSDev  = true;
-           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MT_RELATIVE)
-               fTPDev  = true;
-        }
-    if (pfAbs)
-        *pfAbs = fAbsDev;
-    if (pfRel)
-        *pfRel = fRelDev;
-    if (pfTS)
-        *pfTS = fTSDev;
-    if (pfTP)
-        *pfTP = fTPDev;
+            fCaps |= mpDrv[i]->u32DevCaps;
+    return fCaps;
 }
 
 
 /** Does the VMM device currently support absolute reporting? */
 bool Mouse::i_vmmdevCanAbs(void)
 {
-    bool fRelDev;
-
-    i_getDeviceCaps(NULL, &fRelDev, NULL, NULL);
-    return    (mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-           && fRelDev;
+    /* This requires the VMMDev cap and a relative device, which supposedly
+       consumes these. As seen in @bugref{10285} this isn't quite as clear cut. */
+    return (mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+        && (i_getDeviceCaps() & MOUSE_DEVCAP_RELATIVE);
 }
 
 
-/** Does the VMM device currently support absolute reporting? */
+/** Does any device currently support absolute reporting w/o help from VMMDev? */
 bool Mouse::i_deviceCanAbs(void)
 {
-    bool fAbsDev;
-
-    i_getDeviceCaps(&fAbsDev, NULL, NULL, NULL);
-    return fAbsDev;
+    return RT_BOOL(i_getDeviceCaps() & MOUSE_DEVCAP_ABSOLUTE);
 }
 
 
 /** Can we currently send relative events to the guest? */
 bool Mouse::i_supportsRel(void)
 {
-    bool fRelDev;
+    return RT_BOOL(i_getDeviceCaps() & MOUSE_DEVCAP_RELATIVE);
+}
 
-    i_getDeviceCaps(NULL, &fRelDev, NULL, NULL);
-    return fRelDev;
+
+/** Can we currently send absolute events to the guest (including via VMMDev)? */
+bool Mouse::i_supportsAbs(uint32_t fCaps) const
+{
+    return (fCaps & MOUSE_DEVCAP_ABSOLUTE)
+        || /* inlined i_vmmdevCanAbs() to avoid unnecessary i_getDeviceCaps call: */
+           (   (mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+            && (fCaps & MOUSE_DEVCAP_RELATIVE));
 }
 
 
 /** Can we currently send absolute events to the guest? */
 bool Mouse::i_supportsAbs(void)
 {
-    bool fAbsDev;
-
-    i_getDeviceCaps(&fAbsDev, NULL, NULL, NULL);
-    return fAbsDev || i_vmmdevCanAbs();
+    return Mouse::i_supportsAbs(i_getDeviceCaps());
 }
 
 
 /** Can we currently send multi-touch events (touchscreen variant) to the guest? */
 bool Mouse::i_supportsTS(void)
 {
-    bool fTSDev;
-
-    i_getDeviceCaps(NULL, NULL, &fTSDev, NULL);
-    return fTSDev;
+    return RT_BOOL(i_getDeviceCaps() & MOUSE_DEVCAP_MT_ABSOLUTE);
 }
 
 
 /** Can we currently send multi-touch events (touchpad variant) to the guest? */
 bool Mouse::i_supportsTP(void)
 {
-    bool fTPDev;
-
-    i_getDeviceCaps(NULL, NULL, NULL, &fTPDev);
-    return fTPDev;
+    return RT_BOOL(i_getDeviceCaps() & MOUSE_DEVCAP_MT_RELATIVE);
 }
 
 
@@ -1252,12 +1222,14 @@ bool Mouse::i_supportsTP(void)
 void Mouse::i_sendMouseCapsNotifications(void)
 {
     bool fRelDev, fTSDev, fTPDev, fCanAbs, fNeedsHostCursor;
-
     {
         AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        i_getDeviceCaps(NULL, &fRelDev, &fTSDev, &fTPDev);
-        fCanAbs = i_supportsAbs();
+        uint32_t const fCaps = i_getDeviceCaps();
+        fRelDev = RT_BOOL(fCaps & MOUSE_DEVCAP_RELATIVE);
+        fTSDev  = RT_BOOL(fCaps & MOUSE_DEVCAP_MT_ABSOLUTE);
+        fTPDev  = RT_BOOL(fCaps & MOUSE_DEVCAP_MT_RELATIVE);
+        fCanAbs = i_supportsAbs(fCaps);
         fNeedsHostCursor = i_guestNeedsHostCursor();
     }
     mParent->i_onMouseCapabilityChange(fCanAbs, fRelDev, fTSDev, fTPDev, fNeedsHostCursor);
@@ -1266,7 +1238,6 @@ void Mouse::i_sendMouseCapsNotifications(void)
 
 /**
  * @interface_method_impl{PDMIMOUSECONNECTOR,pfnReportModes}
- * A virtual device is notifying us about its current state and capabilities
  */
 DECLCALLBACK(void) Mouse::i_mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRelative,
                                              bool fAbsolute, bool fMTAbsolute, bool fMTRelative)
