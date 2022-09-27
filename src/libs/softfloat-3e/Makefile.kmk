@@ -271,6 +271,7 @@ VBox-SoftFloat_SOURCES += \
 	source/extF80_rem.c \
 	source/extF80_partialRem.c \
 	source/extF80_sincos.c \
+	source/extF80_log2.c \
 	source/extF80_sqrt.c \
 	source/extF80_scale_extF80.c \
 	source/extF80_eq.c \
