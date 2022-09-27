@@ -1048,6 +1048,9 @@ static void cpumR3InitSvmHwVirtState(PVM pVM)
         AssertCompile(sizeof(pCtx->hwvirt.svm.Vmcb) == SVM_VMCB_PAGES * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.svm.abMsrBitmap) == SVM_MSRPM_PAGES * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.svm.abIoBitmap) == SVM_IOPM_PAGES * X86_PAGE_SIZE);
+
+        /* Initialize non-zero values. */
+        pCtx->hwvirt.svm.GCPhysVmcb = NIL_RTGCPHYS;
     }
 }
 
@@ -1063,8 +1066,16 @@ DECLINLINE(void) cpumR3ResetSvmHwVirtState(PVMCPU pVCpu)
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
 
     RT_ZERO(pCtx->hwvirt.svm.Vmcb);
-    pCtx->hwvirt.svm.uMsrHSavePa    = 0;
-    pCtx->hwvirt.svm.uPrevPauseTick = 0;
+    RT_ZERO(pCtx->hwvirt.svm.HostState);
+    RT_ZERO(pCtx->hwvirt.svm.abMsrBitmap);
+    RT_ZERO(pCtx->hwvirt.svm.abIoBitmap);
+
+    pCtx->hwvirt.svm.uMsrHSavePa           = 0;
+    pCtx->hwvirt.svm.uPrevPauseTick        = 0;
+    pCtx->hwvirt.svm.GCPhysVmcb            = NIL_RTGCPHYS;
+    pCtx->hwvirt.svm.cPauseFilter          = 0;
+    pCtx->hwvirt.svm.cPauseFilterThreshold = 0;
+    pCtx->hwvirt.svm.fInterceptEvents      = false;
 }
 
 
