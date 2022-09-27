@@ -8461,8 +8461,6 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     /*
      * Raise exceptions.
      */
-    if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM)
-        return iemRaiseUndefinedOpcode(pVCpu);
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_TS | X86_CR0_EM))
         return iemRaiseDeviceNotAvailable(pVCpu);
 
@@ -8555,8 +8553,6 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     /*
      * Raise exceptions.
      */
-    if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM)
-        return iemRaiseUndefinedOpcode(pVCpu);
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_TS | X86_CR0_EM))
         return iemRaiseDeviceNotAvailable(pVCpu);
 
