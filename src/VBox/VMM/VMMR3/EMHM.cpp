@@ -362,7 +362,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     LogFlow(("emR3HmExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip));
     *pfFFDone = false;
 
-    STAM_COUNTER_INC(&pVCpu->em.s.StatHMExecuteCalled);
+    STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHMExecuteCalled);
 
     /*
      * Spin till we get a forced action which returns anything but VINF_SUCCESS.
@@ -424,9 +424,9 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
         if (RT_LIKELY(emR3IsExecutionAllowed(pVM, pVCpu)))
         {
-            STAM_PROFILE_START(&pVCpu->em.s.StatHMExec, x);
+            STAM_REL_PROFILE_START(&pVCpu->em.s.StatHMExec, x);
             rc = VMMR3HmRunGC(pVM, pVCpu);
-            STAM_PROFILE_STOP(&pVCpu->em.s.StatHMExec, x);
+            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHMExec, x);
         }
         else
         {

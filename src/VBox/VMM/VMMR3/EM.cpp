@@ -251,12 +251,14 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,              "/PROF/CPU%u/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
         EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,            "/PROF/CPU%u/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
         EM_REG_PROFILE(&pVCpu->em.s.StatHMEntry,            "/PROF/CPU%u/EM/HMEnter",           "Profiling Hardware Accelerated Mode entry overhead.");
+#endif
         EM_REG_PROFILE(&pVCpu->em.s.StatHMExec,             "/PROF/CPU%u/EM/HMExec",            "Profiling Hardware Accelerated Mode execution.");
         EM_REG_COUNTER(&pVCpu->em.s.StatHMExecuteCalled,    "/PROF/CPU%u/EM/HMExecuteCalled",   "Number of times enmR3HMExecute is called.");
+#ifdef VBOX_WITH_STATISTICS
         EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,             "/PROF/CPU%u/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
         EM_REG_PROFILE(&pVCpu->em.s.StatIEMThenREM,         "/PROF/CPU%u/EM/IEMThenRem",        "Profiling IEM-then-REM instruction execution (by IEM).");
         EM_REG_PROFILE(&pVCpu->em.s.StatNEMEntry,           "/PROF/CPU%u/EM/NEMEnter",          "Profiling NEM entry overhead.");
-#endif /* VBOX_WITH_STATISTICS */
+#endif
         EM_REG_PROFILE(&pVCpu->em.s.StatNEMExec,            "/PROF/CPU%u/EM/NEMExec",           "Profiling NEM execution.");
         EM_REG_COUNTER(&pVCpu->em.s.StatNEMExecuteCalled,   "/PROF/CPU%u/EM/NEMExecuteCalled",  "Number of times enmR3NEMExecute is called.");
 #ifdef VBOX_WITH_STATISTICS
