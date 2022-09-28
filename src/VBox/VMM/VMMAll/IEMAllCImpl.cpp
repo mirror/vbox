@@ -9307,8 +9307,17 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
 
     /* Mask all math exceptions. Any possibly pending exceptions will be cleared. */
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    pFpuCtx->FCW |=   X86_FCW_PM | X86_FCW_UM | X86_FCW_OM | X86_FCW_ZM | X86_FCW_DM | X86_FCW_IM;
-    pFpuCtx->FSW &= ~(X86_FSW_PE | X86_FSW_UE | X86_FSW_OE | X86_FSW_ZE | X86_FSW_DE | X86_FSW_IE | X86_FSW_ES);
+    pFpuCtx->FCW |= X86_FCW_XCPT_MASK;
+#ifdef LOG_ENABLED
+    uint16_t fOldFsw = pFpuCtx->FSW;
+#endif
+    iemFpuRecalcExceptionStatus(pFpuCtx);
+#ifdef LOG_ENABLED
+    if ((pFpuCtx->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
+        Log11(("fnstenv: %04x:%08RX64: %s FPU exception (FCW=%#x, FSW %#x -> %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+               fOldFsw & X86_FSW_ES ? "Supressed" : "Raised", pFpuCtx->FCW, fOldFsw, pFpuCtx->FSW));
+#endif
+
     iemHlpUsedFpu(pVCpu);
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
