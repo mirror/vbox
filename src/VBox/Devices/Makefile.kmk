@@ -579,6 +579,14 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_DEFS           += VBOX_WITH_CLOUD_NET
   VBoxDD_SOURCES        += \
  	Network/DrvCloudTunnel.cpp
+
+  VBoxDD_SOURCES       += \
+  	$(VBoxDD_0_OUTDIR)/VBoxLibSshLazyLoad.asm
+  VBoxDD_CLEAN         += $(VBoxDD_0_OUTDIR)/VBoxLibSshLazyLoad.asm
+  $$(VBoxDD_0_OUTDIR)/VBoxLibSshLazyLoad.asm: $(PATH_SUB_CURRENT)/Network/VBoxLibSsh.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxDD,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxLibSsh --output "$@" $(filter %.def, $^)
  endif
 
  # --- Storage bits. ---

@@ -1164,9 +1164,18 @@ endif
 if defined(VBOX_WITH_CLOUD_NET)
  if defined(VBOX_WITH_LIBSSH)
   VBoxC_SDKS += VBOX_SSH VBOX_OPENSSL
-  VBoxC_DEFS += LIBSSH_STATIC VBOX_WITH_LIBSSH
+  VBoxC_DEFS += VBOX_WITH_LIBSSH
  endif
  VBoxC_SOURCES += src-client/CloudGateway.cpp
+
+ VBoxC_SOURCES       += \
+ 	$(VBoxC_0_OUTDIR)/VBoxLibSshLazyLoad.asm
+ VBoxC_CLEAN         += $(VBoxC_0_OUTDIR)/VBoxLibSshLazyLoad.asm
+ $$(VBoxC_0_OUTDIR)/VBoxLibSshLazyLoad.asm: $(PATH_SUB_CURRENT)/src-all/VBoxLibSsh.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxC,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxLibSsh --output "$@" $(filter %.def, $^)
+
 endif
 
 # Audio bits.

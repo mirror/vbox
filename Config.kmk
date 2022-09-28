@@ -4910,11 +4910,10 @@ SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.$(KBUILD_TARGET_ARCH) = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBox-SoftFloatGuestR3Shared$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_LIBSSH
- SDK_VBOX_SSH                  := libssh for dll linking.
- SDK_VBOX_SSH_DEFS             ?= LIBSSH_STATIC=1
+ SDK_VBOX_SSH                  := libssh for dynamic dll loading with assembly stubs.
  SDK_VBOX_SSH_INCS             ?= $(PATH_ROOT)/src/libs/libssh-0.9.6/include
- SDK_VBOX_SSH_LIBS             ?= \
- 	$(PATH_STAGE_LIB)/VBox-libssh$(VBOX_SUFF_LIB)
+# SDK_VBOX_SSH_LIBS is not defined, as VBoxLibSsh dll is not linked, but loaded explicitly
+# by auto-generated stub code (lazy loading)
 endif
 
 ifdef VBOX_WITH_LIBTPMS
