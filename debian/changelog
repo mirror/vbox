@@ -1,8 +1,8 @@
-virtualbox-ose (7.0.0~beta2) unstable; urgency=low
+virtualbox-ose (7.0.0~beta3) unstable; urgency=low
 
   * rebuild Debian package.
 
- -- Oracle Corporation <info@virtualbox.org>  Mon, 12 Sep 2022 12:00:00 +0200
+ -- Oracle Corporation <info@virtualbox.org>  Wed, 28 Sep 2022 12:00:00 +0200
 
 virtualbox-ose (6.1.4) unstable; urgency=low
 
