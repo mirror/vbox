@@ -3404,7 +3404,8 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMFxRstor.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
-	common/string/RTStrEnd.asm
+	common/string/RTStrEnd.asm \
+	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
@@ -3424,7 +3425,8 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/RTUInt128MulByU64Ex.asm \
-	common/string/RTStrEnd.asm
+	common/string/RTStrEnd.asm \
+	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeR0_SOURCES.arm32 += \
 	common/string/RTStrEnd.cpp
 RuntimeR0_SOURCES.arm64 += \

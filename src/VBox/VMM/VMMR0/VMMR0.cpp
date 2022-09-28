@@ -99,7 +99,7 @@ extern uint64_t __udivdi3(uint64_t, uint64_t);
 extern uint64_t __umoddi3(uint64_t, uint64_t);
 #endif
 RT_C_DECLS_END
-static int  vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, size_t idxLogger);
+static int  vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, uint64_t fFlags);
 static int  vmmR0LogFlusher(PGVM pGVM);
 static int  vmmR0LogWaitFlushed(PGVM pGVM, VMCPUID idCpu, size_t idxLogger);
 static int  vmmR0InitLoggers(PGVM pGVM);
@@ -1836,8 +1836,8 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
         case VMMR0_DO_VMMR0_UPDATE_LOGGERS:
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
-            if (u64Arg < VMMLOGGER_IDX_MAX  && pReqHdr != NULL)
-                rc = vmmR0UpdateLoggers(pGVM, idCpu /*idCpu*/, (PVMMR0UPDATELOGGERSREQ)pReqHdr, (size_t)u64Arg);
+            if (!(u64Arg & ~VMMR0UPDATELOGGER_F_VALID_MASK) && pReqHdr != NULL)
+                rc = vmmR0UpdateLoggers(pGVM, idCpu /*idCpu*/, (PVMMR0UPDATELOGGERSREQ)pReqHdr, u64Arg);
             else
                 return VERR_INVALID_PARAMETER;
             break;
@@ -2737,10 +2737,10 @@ VMMR0_INT_DECL(int) VMMR0EmtSignalSupEventByGVM(PGVM pGVM, SUPSEMEVENT hEvent)
  * @param   pGVM            The global (ring-0) VM structure.
  * @param   idCpu           The ID of the calling EMT.
  * @param   pReq            The request data.
- * @param   idxLogger       Which logger set to update.
+ * @param   fFlags          Flags, see VMMR0UPDATELOGGER_F_XXX.
  * @thread  EMT(idCpu)
  */
-static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, size_t idxLogger)
+static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, uint64_t fFlags)
 {
     /*
      * Check sanity.  First we require EMT to be calling us.
@@ -2752,13 +2752,15 @@ static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ p
     AssertReturn(pReq->cGroups < _8K, VERR_INVALID_PARAMETER);
     AssertReturn(pReq->Hdr.cbReq == RT_UOFFSETOF_DYN(VMMR0UPDATELOGGERSREQ, afGroups[pReq->cGroups]), VERR_INVALID_PARAMETER);
 
+    size_t const idxLogger = (size_t)(fFlags & VMMR0UPDATELOGGER_F_LOGGER_MASK);
     AssertReturn(idxLogger < VMMLOGGER_IDX_MAX, VERR_OUT_OF_RANGE);
 
     /*
      * Adjust flags.
      */
-    /* Always buffered: */
-    pReq->fFlags |= RTLOGFLAGS_BUFFERED;
+    /* Always buffered, unless logging directly to parent VMM: */
+    if (!(fFlags & (VMMR0UPDATELOGGER_F_TO_PARENT_VMM_DBG | VMMR0UPDATELOGGER_F_TO_PARENT_VMM_REL)))
+        pReq->fFlags |= RTLOGFLAGS_BUFFERED;
     /* These doesn't make sense at present: */
     pReq->fFlags &= ~(RTLOGFLAGS_FLUSH | RTLOGFLAGS_WRITE_THROUGH);
     /* We've traditionally skipped the group restrictions. */
@@ -2774,6 +2776,9 @@ static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ p
         PRTLOGGER pLogger = pGVCpu->vmmr0.s.u.aLoggers[idxLogger].pLogger;
         if (pLogger)
         {
+            pGVCpu->vmmr0.s.u.aLoggers[idxLogger].fFlushToParentVmmDbg = RT_BOOL(fFlags & VMMR0UPDATELOGGER_F_TO_PARENT_VMM_DBG);
+            pGVCpu->vmmr0.s.u.aLoggers[idxLogger].fFlushToParentVmmRel = RT_BOOL(fFlags & VMMR0UPDATELOGGER_F_TO_PARENT_VMM_REL);
+
             RTLogSetR0ProgramStart(pLogger, pGVM->vmm.s.nsProgramStart);
             rc = RTLogBulkUpdate(pLogger, pReq->fFlags, pReq->uGroupCrc32, pReq->cGroups, pReq->afGroups);
         }
@@ -2997,9 +3002,9 @@ static int vmmR0LogWaitFlushed(PGVM pGVM, VMCPUID idCpu, size_t idxLogger)
 
 
 /**
- * Inner worker for vmmR0LoggerFlushCommon.
+ * Inner worker for vmmR0LoggerFlushCommon for flushing to ring-3.
  */
-static bool   vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
+static bool   vmmR0LoggerFlushInnerToRing3(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
 {
     PVMMR0PERVCPULOGGER const pR0Log    = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
     PVMMR3CPULOGGER const     pShared   = &pGVCpu->vmm.s.u.aLoggers[idxLogger];
@@ -3047,7 +3052,7 @@ static bool   vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogge
     VMMR0EMTBLOCKCTX Ctx;
     if (enmAction != kJustSignal)
     {
-        int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "vmmR0LoggerFlushInner", pR0Log->hEventFlushWait, &Ctx);
+        int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "vmmR0LoggerFlushInnerToRing3", pR0Log->hEventFlushWait, &Ctx);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -3156,6 +3161,22 @@ static bool   vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogge
 
 
 /**
+ * Inner worker for vmmR0LoggerFlushCommon when only flushing to the parent
+ * VMM's logs.
+ */
+static bool vmmR0LoggerFlushInnerToParent(PGVM pGVM, PGVMCPU pGVCpu, PVMMR0PERVCPULOGGER pR0Log, PRTLOGBUFFERDESC pBufDesc)
+{
+    uint32_t const cbToFlush = pBufDesc->offBuf;
+    if (pR0Log->fFlushToParentVmmDbg)
+        RTLogWriteVmm(pBufDesc->pchBuf, cbToFlush, false /*fRelease*/);
+    if (pR0Log->fFlushToParentVmmRel)
+        RTLogWriteVmm(pBufDesc->pchBuf, cbToFlush, true /*fRelease*/);
+    return true;
+}
+
+
+
+/**
  * Common worker for vmmR0LogFlush and vmmR0LogRelFlush.
  */
 static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc, uint32_t idxLogger)
@@ -3191,7 +3212,12 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
                         if (!pR0Log->fFlushing)
                         {
                             pR0Log->fFlushing = true;
-                            bool fFlushed = vmmR0LoggerFlushInner(pGVM, pGVCpu, idxLogger, idxBuffer, pBufDesc->offBuf);
+                            bool fFlushed;
+                            if (   !pR0Log->fFlushToParentVmmDbg
+                                && !pR0Log->fFlushToParentVmmRel)
+                                fFlushed = vmmR0LoggerFlushInnerToRing3(pGVM, pGVCpu, idxLogger, idxBuffer, pBufDesc->offBuf);
+                            else
+                                fFlushed = vmmR0LoggerFlushInnerToParent(pGVM, pGVCpu, pR0Log, pBufDesc);
                             pR0Log->fFlushing = false;
                             return fFlushed;
                         }

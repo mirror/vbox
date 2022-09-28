@@ -730,7 +730,22 @@ static int vmmR3UpdateLoggersWorker(PVM pVM, PVMCPU pVCpu, PRTLOGGER pSrcLogger,
         rc = RTLogQueryBulk(pSrcLogger, &pReq->fFlags, &pReq->uGroupCrc32, &pReq->cGroups, pReq->afGroups);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
-            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_VMMR0_UPDATE_LOGGERS, fReleaseLogger, &pReq->Hdr);
+        {
+            /*
+             * The 64-bit value argument.
+             */
+            uint64_t fExtraArg = fReleaseLogger;
+
+            /* Only outputting to the parent VMM's logs? Enable ring-0 to flush directly. */
+            uint32_t fDst = RTLogGetDestinations(pSrcLogger);
+            fDst &= ~(RTLOGDEST_DUMMY | RTLOGDEST_F_NO_DENY | RTLOGDEST_F_DELAY_FILE | RTLOGDEST_FIXED_FILE | RTLOGDEST_FIXED_DIR);
+            if (   (fDst & (RTLOGDEST_VMM | RTLOGDEST_VMM_REL))
+                && !(fDst & ~(RTLOGDEST_VMM | RTLOGDEST_VMM_REL)))
+                fExtraArg |= (fDst & RTLOGDEST_VMM     ? VMMR0UPDATELOGGER_F_TO_PARENT_VMM_DBG : 0)
+                          |  (fDst & RTLOGDEST_VMM_REL ? VMMR0UPDATELOGGER_F_TO_PARENT_VMM_REL : 0);
+
+            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_VMMR0_UPDATE_LOGGERS, fExtraArg, &pReq->Hdr);
+        }
 
         RTMemFree(pReq);
     }

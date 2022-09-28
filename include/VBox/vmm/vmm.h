@@ -453,8 +453,8 @@ typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 /**
  * Request package for VMMR0_DO_VMMR0_UPDATE_LOGGERS.
  *
- * In addition the u64Arg selects the logger sets: @c false for debug, @c true
- * for release.
+ * In addition the u64Arg is selects the logger and indicates whether we're only
+ * outputting to the parent VMM. See VMMR0UPDATELOGGER_F_XXX.
  */
 typedef struct VMMR0UPDATELOGGERSREQ
 {
@@ -472,6 +472,18 @@ typedef struct VMMR0UPDATELOGGERSREQ
 } VMMR0UPDATELOGGERSREQ;
 /** Pointer to a VMMR0_DO_VMMR0_UPDATE_LOGGERS request. */
 typedef VMMR0UPDATELOGGERSREQ *PVMMR0UPDATELOGGERSREQ;
+
+/** @name VMMR0UPDATELOGGER_F_XXX - u64Arg definitions for VMMR0_DO_VMMR0_UPDATE_LOGGERS.
+ * @{ */
+/** Logger index mask. */
+#define VMMR0UPDATELOGGER_F_LOGGER_MASK         UINT64_C(0x0001)
+/** Only flush to the parent VMM's debug log, don't return to ring-3. */
+#define VMMR0UPDATELOGGER_F_TO_PARENT_VMM_DBG   UINT64_C(0x0002)
+/** Only flush to the parent VMM's debug log, don't return to ring-3. */
+#define VMMR0UPDATELOGGER_F_TO_PARENT_VMM_REL   UINT64_C(0x0004)
+/** Valid flag mask. */
+#define VMMR0UPDATELOGGER_F_VALID_MASK          UINT64_C(0x0007)
+/** @} */
 
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 

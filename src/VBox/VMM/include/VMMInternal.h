@@ -98,7 +98,10 @@ typedef struct VMMR0PERVCPULOGGER
     bool                    fEmtWaiting;
     /** Set while we're inside vmmR0LoggerFlushCommon to prevent recursion. */
     bool                    fFlushing;
-    bool                    afPadding[1];
+    /** Flush to parent VMM's debug log instead of ring-3. */
+    bool                    fFlushToParentVmmDbg : 1;
+    /** Flush to parent VMM's debug log instead of ring-3. */
+    bool                    fFlushToParentVmmRel : 1;
     /** Number of buffers currently queued for flushing. */
     uint32_t volatile       cFlushing;
     /** The event semaphore the EMT waits on while the buffer is being flushed. */
