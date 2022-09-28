@@ -3148,7 +3148,8 @@ bool apicPostInterrupt(PVMCPUCC pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTrig
             else
                 pApicCpu->auSrcTags[uVector] |= RT_BIT_32(31);
 
-            Log2(("APIC: apicPostInterrupt: SrcCpu=%u TargetCpu=%u uVector=%#x\n", VMMGetCpuId(pVM), pVCpu->idCpu, uVector));
+            Log2(("APIC: apicPostInterrupt: SrcCpu=%u TargetCpu=%u uVector=%#x %s\n",
+                  VMMGetCpuId(pVM), pVCpu->idCpu, uVector, enmTriggerMode == XAPICTRIGGERMODE_EDGE ? "edge" : "lvl"));
             if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
             {
                 if (pApic->fPostedIntrsEnabled)
