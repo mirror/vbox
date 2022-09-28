@@ -5719,7 +5719,7 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu, RTGCPHYS GCPhysApicBase)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GCPhysApicBase);
 
-    LogFunc(("Mappping HC APIC-access page at %#RGp\n", GCPhysApicBase));
+    LogFunc(("Mapping HC APIC-access page at %#RGp\n", GCPhysApicBase));
 
     /* Unalias the existing mapping. */
     int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
