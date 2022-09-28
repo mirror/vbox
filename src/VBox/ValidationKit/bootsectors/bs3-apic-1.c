@@ -43,11 +43,18 @@
 #include <iprt/x86.h>
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+BS3_DECL_CALLBACK(void)     ProtModeApicTests(void);
+
+
 BS3_DECL(void) Main_rm()
 {
     Bs3InitAll_rm();
     Bs3TestInit("bs3-apic-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
+    Bs3TestSub("real-mode");
 
     /*
      * Check that there is an APIC
@@ -65,7 +72,7 @@ BS3_DECL(void) Main_rm()
         Bs3TestPrintf("MSR_IA32_APICBASE=%#RX64 %s, %s cpu%s\n",
                       uApicBase,
                       uApicBase & MSR_IA32_APICBASE_EN ? "enabled" : "disabled",
-                      uApicBase & MSR_IA32_APICBASE_EXTD ? "bootstrap" : "slave",
+                      uApicBase & MSR_IA32_APICBASE_BSP ? "bootstrap" : "slave",
                       uApicBase & MSR_IA32_APICBASE_EXTD ? ", x2apic" : "",
                       (uApicBase & X86_PAGE_4K_BASE_MASK) == MSR_IA32_APICBASE_ADDR ? ", !non-default address!" : "");
 
@@ -82,7 +89,15 @@ BS3_DECL(void) Main_rm()
         ASMWrMsr(MSR_IA32_APICBASE, uApicBase | MSR_IA32_APICBASE_EN);
         uApicBase2 = ASMRdMsr(MSR_IA32_APICBASE);
         if (uApicBase2 == (uApicBase | MSR_IA32_APICBASE_EN))
+        {
             Bs3TestPrintf("Enabling worked.\n");
+
+            /*
+             * Do the rest of the testing in protected mode since we cannot
+             * (easily) access the APIC address from real mode.
+             */
+            Bs3SwitchTo32BitAndCallC_rm(ProtModeApicTests, 0);
+        }
         else
             Bs3TestFailedF("Enabling the APIC did not work (%#RX64)", uApicBase2);
     }
