@@ -6094,8 +6094,8 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
         else
             memcpy(pBootSector->Bpb.Fat32Ebpb.u.achType, "FAT32   ", sizeof(pBootSector->Bpb.Fat32Ebpb.u.achType));
     }
-    pbBuf[pBootSector->abJmp[1] + 2 + 0] = 0xcd; /* int 19h */
-    pbBuf[pBootSector->abJmp[1] + 2 + 1] = 0x19;
+    pbBuf[pBootSector->abJmp[1] + 2 + 0] = 0xcd; /* int 18h */ /** @todo find/implement booting of next boot device. */
+    pbBuf[pBootSector->abJmp[1] + 2 + 1] = 0x18;
     pbBuf[pBootSector->abJmp[1] + 2 + 2] = 0xcc; /* int3 */
     pbBuf[pBootSector->abJmp[1] + 2 + 3] = 0xcc;
 
