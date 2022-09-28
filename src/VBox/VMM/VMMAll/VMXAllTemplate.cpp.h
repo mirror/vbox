@@ -6377,7 +6377,7 @@ static VBOXSTRICTRC vmxHCExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     int rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
 
-    Log4Func(("#PF: cs:rip=%#04x:%#RX64 err_code=%#RX32 exit_qual=%#RX64 cr3=%#RX64\n", pCtx->cs.Sel, pCtx->rip,
+    Log4Func(("#PF: cs:rip=%#04x:%08RX64 err_code=%#RX32 exit_qual=%#RX64 cr3=%#RX64\n", pCtx->cs.Sel, pCtx->rip,
               pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual, pCtx->cr3));
 
     TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQual, (RTGCUINT)pVmxTransient->uExitIntErrorCode);
@@ -6557,7 +6557,7 @@ static VBOXSTRICTRC vmxHCExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
          */
         if (pVM->cCpus == 1)
         {
-            Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC\n", pVCpu->cpum.GstCtx.cs.Sel,
+            Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC\n", pVCpu->cpum.GstCtx.cs.Sel,
                       pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
 
             /** @todo For SMP configs we should do a rendezvous here. */
@@ -6580,13 +6580,13 @@ static VBOXSTRICTRC vmxHCExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             }
             return rcStrict;
         }
-        Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC -> VINF_EM_EMULATE_SPLIT_LOCK\n",
+        Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC -> VINF_EM_EMULATE_SPLIT_LOCK\n",
                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
         return VINF_EM_EMULATE_SPLIT_LOCK;
     }
 
     STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestAC);
-    Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 cpl=%d -> #AC\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+    Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 cpl=%d -> #AC\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0, CPUMGetGuestCPL(pVCpu) ));
 
     /* Re-inject it. We'll detect any nesting before getting here. */
@@ -6707,7 +6707,7 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 static int vmxHCHandleMesaDrvGp(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, PCPUMCTX pCtx)
 {
-    LogFunc(("cs:rip=%#04x:%#RX64 rcx=%#RX64 rbx=%#RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->rcx, pCtx->rbx));
+    LogFunc(("cs:rip=%#04x:%08RX64 rcx=%#RX64 rbx=%#RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->rcx, pCtx->rbx));
     RT_NOREF(pCtx);
 
     /* For now we'll just skip the instruction. */
@@ -6799,7 +6799,7 @@ static VBOXSTRICTRC vmxHCExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
          */
         int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
         AssertRCReturn(rc, rc);
-        Log4Func(("Gst: cs:rip=%#04x:%#RX64 ErrorCode=%#x cr0=%#RX64 cpl=%u tr=%#04x\n", pCtx->cs.Sel, pCtx->rip,
+        Log4Func(("Gst: cs:rip=%#04x:%08RX64 ErrorCode=%#x cr0=%#RX64 cpl=%u tr=%#04x\n", pCtx->cs.Sel, pCtx->rip,
                   pVmxTransient->uExitIntErrorCode, pCtx->cr0, CPUMGetGuestCPL(pVCpu), pCtx->tr.Sel));
 
         if (    pVmxTransient->fIsNestedGuest
@@ -6927,7 +6927,7 @@ static VBOXSTRICTRC vmxHCExitXcptOthers(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
     int rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
     AssertRCReturn(rc, rc);
-    Log4Func(("Reinjecting Xcpt. uVector=%#x cs:rip=%#04x:%#RX64\n", uVector, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+    Log4Func(("Reinjecting Xcpt. uVector=%#x cs:rip=%#04x:%08RX64\n", uVector, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
@@ -8266,7 +8266,7 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              * Use instruction-information if available, otherwise fall back on
              * interpreting the instruction.
              */
-            Log4Func(("cs:rip=%#04x:%#RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
+            Log4Func(("cs:rip=%#04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
             AssertReturn(pCtx->dx == uIOPort, VERR_VMX_IPE_2);
             bool const fInsOutsInfo = RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS);
             if (fInsOutsInfo)
@@ -8672,7 +8672,7 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
     int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_DR7);
     AssertRCReturn(rc, rc);
-    Log4Func(("cs:rip=%#04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+    Log4Func(("cs:rip=%#04x:%08RX64\n", pCtx->cs.Sel, pCtx->rip));
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
@@ -8871,7 +8871,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         uErrorCode |= X86_TRAP_PF_P;
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    Log4Func(("at %#RX64 (%#RX64 errcode=%#x) cs:rip=%#04x:%#RX64\n", GCPhys, uExitQual, uErrorCode, pCtx->cs.Sel, pCtx->rip));
+    Log4Func(("at %#RX64 (%#RX64 errcode=%#x) cs:rip=%#04x:%08RX64\n", GCPhys, uExitQual, uErrorCode, pCtx->cs.Sel, pCtx->rip));
 
     PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
 
