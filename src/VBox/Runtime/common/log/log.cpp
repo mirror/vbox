@@ -2706,7 +2706,7 @@ RTDECL(uint32_t) RTLogGetDestinations(PRTLOGGER pLogger)
         if (!pLoggerInt)
             return UINT32_MAX;
     }
-    return pLoggerInt->fFlags;
+    return pLoggerInt->fDestFlags;
 }
 RT_EXPORT_SYMBOL(RTLogGetDestinations);
 
