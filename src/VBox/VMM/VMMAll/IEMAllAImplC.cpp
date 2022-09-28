@@ -16746,3 +16746,57 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpsd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst
     puDst->au64[1] = pSrc->uSrc1.au64[1];
 }
 #endif
+
+
+/**
+ * CVTPD2PI
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtpd2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst, PCRTFLOAT64U pr64Src)
+{
+    RTFLOAT64U r64Src;
+    iemSsePrepareValueR64(&r64Src, fMxcsr, pr64Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    *pi32Dst = f64_to_i32(iemFpSoftF64FromIprt(&r64Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpd2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, PCX86XMMREG pSrc))
+{
+    RTUINT64U u64Res;
+    uint32_t fMxcsrOut  = iemAImpl_cvtpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[0], &pSrc->ar64[0]);
+             fMxcsrOut |= iemAImpl_cvtpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[1], &pSrc->ar64[1]);
+
+    *pu64Dst = u64Res.u;
+    *pfMxcsr = fMxcsrOut;
+}
+#endif
+
+
+/**
+ * CVTTPD2PI
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvttpd2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst, PCRTFLOAT64U pr64Src)
+{
+    RTFLOAT64U r64Src;
+    iemSsePrepareValueR64(&r64Src, fMxcsr, pr64Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    *pi32Dst = f64_to_i32_r_minMag(iemFpSoftF64FromIprt(&r64Src), true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvttpd2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, PCX86XMMREG pSrc))
+{
+    RTUINT64U u64Res;
+    uint32_t fMxcsrOut  = iemAImpl_cvttpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[0], &pSrc->ar64[0]);
+             fMxcsrOut |= iemAImpl_cvttpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[1], &pSrc->ar64[1]);
+
+    *pu64Dst = u64Res.u;
+    *pfMxcsr = fMxcsrOut;
+}
+#endif
