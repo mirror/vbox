@@ -309,7 +309,9 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseConvert-cvttps2dq_u128.bin \
 	tstIEMAImplDataSseConvert-cvtdq2pd_u128.bin \
 	tstIEMAImplDataSseConvert-cvtpd2dq_u128.bin \
-	tstIEMAImplDataSseConvert-cvttpd2dq_u128.bin
+	tstIEMAImplDataSseConvert-cvttpd2dq_u128.bin \
+	tstIEMAImplDataSseConvert-cvtpd2pi_u128.bin \
+	tstIEMAImplDataSseConvert-cvttpd2pi_u128.bin
 
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT

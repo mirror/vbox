@@ -8077,6 +8077,186 @@ static void SseConvertXmmR64I32Test(void)
 }
 
 
+/*
+ * Convert SSE operations converting double-precision floating point values to signed double-word values.
+ */
+TYPEDEF_SUBTEST_TYPE(SSE_CONVERT_MM_XMM_T, SSE_CONVERT_MM_XMM_TEST_T, PFNIEMAIMPLMXCSRU64U128);
+
+static const SSE_CONVERT_MM_XMM_T g_aSseConvertMmXmm[] =
+{
+    ENTRY_BIN(cvtpd2pi_u128),
+    ENTRY_BIN(cvttpd2pi_u128)
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static struct { RTFLOAT64U aVal1[2]; } const s_aSpecials[] =
+    {
+        { { RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+        { { RTFLOAT64U_INIT_ZERO(1), RTFLOAT64U_INIT_ZERO(1) } },
+        { { RTFLOAT64U_INIT_INF(0),  RTFLOAT64U_INIT_INF(0)  } },
+        { { RTFLOAT64U_INIT_INF(1),  RTFLOAT64U_INIT_INF(1)  } }
+          /** @todo More specials. */
+    };
+
+    X86FXSTATE State;
+    RT_ZERO(State);
+    uint32_t cMinNormalPairs       = (cTests - 144) / 4;
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertMmXmm); iFn++)
+    {
+        PFNIEMAIMPLMXCSRU64U128 const pfn = g_aSseConvertMmXmm[iFn].pfnNative ? g_aSseConvertMmXmm[iFn].pfnNative : g_aSseConvertMmXmm[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertMmXmm[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertMmXmm[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        uint32_t cNormalInputPairs  = 0;
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_CONVERT_MM_XMM_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.InVal.ar64[0] = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].aVal1[0];
+            TestData.InVal.ar64[1] = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].aVal1[1];
+
+            if (   RTFLOAT64U_IS_NORMAL(&TestData.InVal.ar64[0])
+                && RTFLOAT64U_IS_NORMAL(&TestData.InVal.ar64[1]))
+                cNormalInputPairs++;
+            else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
+            {
+                iTest -= 1;
+                continue;
+            }
+
+            uint32_t const fMxcsr = RandMxcsr() & X86_MXCSR_XCPT_FLAGS;
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+                for (uint8_t iDaz = 0; iDaz < 2; iDaz++)
+                    for (uint8_t iFz = 0; iFz < 2; iFz++)
+                    {
+                        uint32_t fMxcsrIn = (fMxcsr & ~X86_MXCSR_RC_MASK)
+                                          | (iRounding  << X86_MXCSR_RC_SHIFT)
+                                          | (iDaz ? X86_MXCSR_DAZ : 0)
+                                          | (iFz  ? X86_MXCSR_FZ  : 0)
+                                          | X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrM  = fMxcsrIn;
+                        uint64_t u64ResM;
+                        pfn(&fMxcsrM, &u64ResM, &TestData.InVal);
+                        TestData.fMxcsrIn   = fMxcsrIn;
+                        TestData.fMxcsrOut  = fMxcsrM;
+                        TestData.OutVal.u   = u64ResM;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
+                        uint32_t fMxcsrU  = fMxcsrIn;
+                        uint64_t u64ResU;
+                        pfn(&fMxcsrU, &u64ResU, &TestData.InVal);
+                        TestData.fMxcsrIn   = fMxcsrIn;
+                        TestData.fMxcsrOut  = fMxcsrU;
+                        TestData.OutVal.u   = u64ResU;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                        uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
+                        if (fXcpt)
+                        {
+                            fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
+                            uint32_t fMxcsr1  = fMxcsrIn;
+                            uint64_t u64Res1;
+                            pfn(&fMxcsr1, &u64Res1, &TestData.InVal);
+                            TestData.fMxcsrIn   = fMxcsrIn;
+                            TestData.fMxcsrOut  = fMxcsr1;
+                            TestData.OutVal.u   = u64Res1;
+                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+
+                            if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
+                            {
+                                fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
+                                fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
+                                uint32_t fMxcsr2  = fMxcsrIn;
+                                uint64_t u64Res2;
+                                pfn(&fMxcsr2, &u64Res2, &TestData.InVal);
+                                TestData.fMxcsrIn   = fMxcsrIn;
+                                TestData.fMxcsrOut  = fMxcsr2;
+                                TestData.OutVal.u   = u64Res2;
+                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            }
+                            if (!RT_IS_POWER_OF_TWO(fXcpt))
+                                for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
+                                    if (fUnmasked & fXcpt)
+                                    {
+                                        fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
+                                        uint32_t fMxcsr3  = fMxcsrIn;
+                                        uint64_t u64Res3;
+                                        pfn(&fMxcsr3, &u64Res3, &TestData.InVal);
+                                        TestData.fMxcsrIn   = fMxcsrIn;
+                                        TestData.fMxcsrOut  = fMxcsr3;
+                                        TestData.OutVal.u   = u64Res3;
+                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    }
+                        }
+                    }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertMmXmm[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+static void SseConvertMmXmmTest(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertMmXmm); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSseConvertMmXmm[iFn].pszName))
+            continue;
+
+        uint32_t const                          cTests  = *g_aSseConvertMmXmm[iFn].pcTests;
+        SSE_CONVERT_MM_XMM_TEST_T const * const paTests = g_aSseConvertMmXmm[iFn].paTests;
+        PFNIEMAIMPLMXCSRU64U128                 pfn     = g_aSseConvertMmXmm[iFn].pfn;
+        uint32_t const                          cVars   = COUNT_VARIATIONS(g_aSseConvertMmXmm[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(*paTests); iTest++)
+            {
+                RTUINT64U ValOut;
+                uint32_t fMxcsr = paTests[iTest].fMxcsrIn;
+                pfn(&fMxcsr, &ValOut.u, &paTests[iTest].InVal);
+                if (   fMxcsr != paTests[iTest].fMxcsrOut
+                    || ValOut.ai32[0] != paTests[iTest].OutVal.ai32[0]
+                    || ValOut.ai32[1] != paTests[iTest].OutVal.ai32[1])
+                    RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x in1=%s'%s\n"
+                                          "%s               -> mxcsr=%#08x    %RI32'%RI32\n"
+                                          "%s               expected %#08x    %RI32'%RI32%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fMxcsrIn,
+                                 FormatR64(&paTests[iTest].InVal.ar64[0]), FormatR64(&paTests[iTest].InVal.ar64[1]),
+                                 iVar ? "  " : "", fMxcsr, ValOut.ai32[0], ValOut.ai32[1],
+                                 iVar ? "  " : "", paTests[iTest].fMxcsrOut,
+                                 paTests[iTest].OutVal.ai32[0], paTests[iTest].OutVal.ai32[1],
+                                 MxcsrDiff(fMxcsr, paTests[iTest].fMxcsrOut),
+                                   (   ValOut.ai32[0] != paTests[iTest].OutVal.ai32[0]
+                                    || ValOut.ai32[1] != paTests[iTest].OutVal.ai32[1])
+                                 ? " - val" : "",
+                                 FormatMxcsr(paTests[iTest].fMxcsrIn));
+            }
+        }
+    }
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -8470,6 +8650,8 @@ int main(int argc, char **argv)
                 rcExit = SseConvertXmmI32R64Generate(pszDataFileFmtConv, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
                 rcExit = SseConvertXmmR64I32Generate(pszDataFileFmtConv, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseConvertMmXmmGenerate(pszDataFileFmtConv, cTests);
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
         }
@@ -8592,6 +8774,7 @@ int main(int argc, char **argv)
                 SseConvertXmmR32I32Test();
                 SseConvertXmmI32R64Test();
                 SseConvertXmmR64I32Test();
+                SseConvertMmXmmTest();
             }
         }
         return RTTestSummaryAndDestroy(g_hTest);
