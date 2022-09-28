@@ -144,3 +144,6 @@ IEM_TEST_DATA cvttpd2dq_u128,       "tstIEMAImplDataSseConvert-cvttpd2dq_u128.bi
 
 IEM_TEST_DATA cvtpd2pi_u128,        "tstIEMAImplDataSseConvert-cvtpd2pi_u128.bin"
 IEM_TEST_DATA cvttpd2pi_u128,       "tstIEMAImplDataSseConvert-cvttpd2pi_u128.bin"
+
+IEM_TEST_DATA cvtpi2ps_u128,        "tstIEMAImplDataSseConvert-cvtpi2ps_u128.bin"
+IEM_TEST_DATA cvtpi2pd_u128,        "tstIEMAImplDataSseConvert-cvtpi2pd_u128.bin"
