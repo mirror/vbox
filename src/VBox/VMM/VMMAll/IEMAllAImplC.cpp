@@ -16800,3 +16800,47 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cvttpd2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu
     *pfMxcsr = fMxcsrOut;
 }
 #endif
+
+
+/**
+ * CVTPI2PS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtpi2ps_u128_worker(uint32_t fMxcsr, PRTFLOAT32U pr32Dst, int32_t i32Src)
+{
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Res = i32_to_f32(i32Src, &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Res, pr32Dst, fMxcsr);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpi2ps_u128,(uint32_t *pfMxcsr, PX86XMMREG pDst, uint64_t u64Src))
+{
+    RTUINT64U uSrc = { u64Src };
+    uint32_t fMxcsrOut  = iemAImpl_cvtpi2ps_u128_worker(*pfMxcsr, &pDst->ar32[0], uSrc.ai32[0]);
+             fMxcsrOut |= iemAImpl_cvtpi2ps_u128_worker(*pfMxcsr, &pDst->ar32[1], uSrc.ai32[1]);
+    *pfMxcsr = fMxcsrOut;
+}
+#endif
+
+
+/**
+ * CVTPI2PD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtpi2pd_u128_worker(uint32_t fMxcsr, PRTFLOAT64U pr64Dst, int32_t i32Src)
+{
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float64_t r64Res = i32_to_f64(i32Src, &SoftState);
+    return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Res, pr64Dst, fMxcsr);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpi2pd_u128,(uint32_t *pfMxcsr, PX86XMMREG pDst, uint64_t u64Src))
+{
+    RTUINT64U uSrc = { u64Src };
+    uint32_t fMxcsrOut  = iemAImpl_cvtpi2pd_u128_worker(*pfMxcsr, &pDst->ar64[0], uSrc.ai32[0]);
+             fMxcsrOut |= iemAImpl_cvtpi2pd_u128_worker(*pfMxcsr, &pDst->ar64[1], uSrc.ai32[1]);
+    *pfMxcsr = fMxcsrOut;
+}
+#endif

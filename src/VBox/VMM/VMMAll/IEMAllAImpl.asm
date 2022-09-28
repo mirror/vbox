@@ -6089,3 +6089,34 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 
 IEMIMPL_MEDIA_SSE_MXCSR_I64_U128 cvtpd2pi
 IEMIMPL_MEDIA_SSE_MXCSR_I64_U128 cvttpd2pi
+
+;;
+; SSE instructions of the form
+;    xxx mm, xmm/m64.
+; and we need to load and save the MXCSR register.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the first media register sized operand (input/output).
+; @param    A2      The 64bit source value from a MMX media register (input)
+;
+%macro IEMIMPL_MEDIA_SSE_MXCSR_U128_U64 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A1]
+        movq    mm0, A2
+        %1      xmm0, mm0
+        movdqu  [A1], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_SSE_MXCSR_U128_U64 cvtpi2ps
+IEMIMPL_MEDIA_SSE_MXCSR_U128_U64 cvtpi2pd
