@@ -9305,6 +9305,12 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    /* Mask all math exceptions. Any possibly pending exceptions will be cleared. */
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
+    pFpuCtx->FCW |=   X86_FCW_PM | X86_FCW_UM | X86_FCW_OM | X86_FCW_ZM | X86_FCW_DM | X86_FCW_IM;
+    pFpuCtx->FSW &= ~(X86_FSW_PE | X86_FSW_UE | X86_FSW_OE | X86_FSW_ZE | X86_FSW_DE | X86_FSW_IE | X86_FSW_ES);
+    iemHlpUsedFpu(pVCpu);
+
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
