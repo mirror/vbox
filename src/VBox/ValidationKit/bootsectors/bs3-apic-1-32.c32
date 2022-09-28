@@ -117,4 +117,3 @@ BS3_DECL(void) ProtModeApicTests(void)
         Bs3TestFailedF("Enabling the APIC did not work (%#RX64)", uApicBase2);
 }
 
-
