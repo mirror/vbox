@@ -5821,8 +5821,8 @@ ENDPROC iemAImpl_cvtsi2sd_r64_i64
 ; @param    A2      Pointer to the first source operand (aka readonly destination).
 ; @param    A3      Pointer to the second source operand.
 ;
-BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5833,11 +5833,11 @@ BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_ucomiss_u128
 
-BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5848,7 +5848,7 @@ BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vucomiss_u128
 
 
@@ -5860,8 +5860,8 @@ ENDPROC             iemAImpl_vucomiss_u128
 ; @param    A2      Pointer to the first source operand (aka readonly destination).
 ; @param    A3      Pointer to the second source operand.
 ;
-BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5872,11 +5872,11 @@ BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_ucomisd_u128
 
-BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5887,7 +5887,7 @@ BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vucomisd_u128
 
 ;
@@ -5898,8 +5898,8 @@ ENDPROC             iemAImpl_vucomisd_u128
 ; @param    A2      Pointer to the first source operand (aka readonly destination).
 ; @param    A3      Pointer to the second source operand.
 ;
-BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5910,11 +5910,11 @@ BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_comiss_u128
 
-BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5925,7 +5925,7 @@ BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vcomiss_u128
 
 
@@ -5938,7 +5938,7 @@ ENDPROC             iemAImpl_vcomiss_u128
 ; @param    A3      Pointer to the second source operand.
 ;
 BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 12
-        PROLOGUE_3_ARGS
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5949,11 +5949,11 @@ BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_comisd_u128
 
-BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 16
+        PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
@@ -5964,7 +5964,7 @@ BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 12
 
         SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
+        EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vcomisd_u128
 
 
