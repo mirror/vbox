@@ -16844,3 +16844,57 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpi2pd_u128,(uint32_t *pfMxcsr, PX86XMMREG pD
     *pfMxcsr = fMxcsrOut;
 }
 #endif
+
+
+/**
+ * CVTPS2PI
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvtps2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst, PCRTFLOAT32U pr32Src)
+{
+    RTFLOAT32U r32Src;
+    iemSsePrepareValueR32(&r32Src, fMxcsr, pr32Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    *pi32Dst = f32_to_i32(iemFpSoftF32FromIprt(&r32Src), SoftState.roundingMode, true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvtps2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, uint64_t u64Src))
+{
+    RTUINT64U uDst;
+    RTUINT64U uSrc = { u64Src };
+    uint32_t fMxcsrOut  = iemAImpl_cvtps2pi_u128_worker(*pfMxcsr, &uDst.ai32[0], (PCRTFLOAT32U)&uSrc.au32[0]);
+             fMxcsrOut |= iemAImpl_cvtps2pi_u128_worker(*pfMxcsr, &uDst.ai32[1], (PCRTFLOAT32U)&uSrc.au32[1]);
+    *pu64Dst = uDst.u;
+    *pfMxcsr = fMxcsrOut;
+}
+#endif
+
+
+/**
+ * CVTTPS2PI
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_cvttps2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst, PCRTFLOAT32U pr32Src)
+{
+    RTFLOAT32U r32Src;
+    iemSsePrepareValueR32(&r32Src, fMxcsr, pr32Src); /* The de-normal flag is not set. */
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    *pi32Dst = f32_to_i32_r_minMag(iemFpSoftF32FromIprt(&r32Src), true /*exact*/, &SoftState);
+    return fMxcsr | (SoftState.exceptionFlags & X86_MXCSR_XCPT_FLAGS);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cvttps2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, uint64_t u64Src))
+{
+    RTUINT64U uDst;
+    RTUINT64U uSrc = { u64Src };
+    uint32_t fMxcsrOut  = iemAImpl_cvttps2pi_u128_worker(*pfMxcsr, &uDst.ai32[0], (PCRTFLOAT32U)&uSrc.au32[0]);
+             fMxcsrOut |= iemAImpl_cvttps2pi_u128_worker(*pfMxcsr, &uDst.ai32[1], (PCRTFLOAT32U)&uSrc.au32[1]);
+    *pu64Dst = uDst.u;
+    *pfMxcsr = fMxcsrOut;
+}
+#endif
