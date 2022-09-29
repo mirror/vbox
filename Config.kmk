@@ -4401,7 +4401,13 @@ ifdef VBOX_SIGNING_MODE
   # @param 2  Identifier, optional.
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
+   VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
+    $(call VBOX_CCS_SIGN_CMD,mac_dmg,$(1))$(NLTAB) \
+	$(REDIRECT) -E 'LC_ALL=C' -we "$(1).tmp" -- ditto -x -k -V "$(1).zip" "$(call VBOX_DIRX,$(1))"$(NLTAB) \
+    dirname="$(call VBOX_DIRX,$(1))/$(DOLLAR)($(SED) -n -e 's+^copying file \([0-9]\{1,\}\)/.\{1,\}$(DOLLAR)+\1+p')" ; \
+    $(MV) -f -- "$(DOLLAR)dirname/$(basename $(1))" "$(call VBOX_DIRX,$(1))" ; \
+    $(RM) -Rf -- "$(DOLLAR)dirname/"$(NLTAB) \
+	$(RM) -f -- "$(1).zip" "$(1).tmp"
   else
    VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
@@ -4418,7 +4424,11 @@ ifdef VBOX_SIGNING_MODE
   # @param 1  The file to sign.
   # @param 2  Identifier, optional.
   # @note Will segfault if --file-list is used on 10.15.2 (kSecCodeInfoChangedFiles -> NULL, outputter doesn't check for NULL).
-  VBOX_SIGN_DMG_FN = $(filter-out --file-list=-,$(VBOX_SIGN_FILE_FN))
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+   VBOX_SIGN_DMG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
+  else
+   VBOX_SIGN_DMG_FN = $(filter-out --file-list=-,$(VBOX_SIGN_FILE_FN))
+  endif
 
   ## Sign a PKG file. Used with corp code signing only.
   # @param 1  The file to sign.
