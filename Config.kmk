@@ -4404,7 +4404,7 @@ ifdef VBOX_SIGNING_MODE
    VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
     $(call VBOX_CCS_SIGN_CMD,mac_dmg,$(1))$(NLTAB) \
 	$(REDIRECT) -E 'LC_ALL=C' -we "$(1).tmp" -- ditto -x -k -V "$(1).zip" "$(call VBOX_DIRX,$(1))"$(NLTAB) \
-    dirname="$(call VBOX_DIRX,$(1))/$(DOLLAR)($(SED) -n -e 's+^copying file \([0-9]\{1,\}\)/.\{1,\}$(DOLLAR)+\1+p')" ; \
+    dirname="$(call VBOX_DIRX,$(1))$(DOLLAR)($(SED) -n -e 's+^copying file \([0-9]\{1,\}\)/.\{1,\}$(DOLLAR)+\1+p' "$(1).tmp")" ; \
     $(MV) -f -- "$(DOLLAR)dirname/$(basename $(1))" "$(call VBOX_DIRX,$(1))" ; \
     $(RM) -Rf -- "$(DOLLAR)dirname/"$(NLTAB) \
 	$(RM) -f -- "$(1).zip" "$(1).tmp"
