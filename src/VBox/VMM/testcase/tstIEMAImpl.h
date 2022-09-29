@@ -509,6 +509,14 @@ typedef struct SSE_CONVERT_XMM_MM_TEST_T
     X86XMMREG               OutVal;
 } SSE_CONVERT_XMM_MM_TEST_T;
 
+typedef struct SSE_CONVERT_MM_R32_TEST_T
+{
+    uint32_t                fMxcsrIn;
+    uint32_t                fMxcsrOut;
+    RTFLOAT32U              ar32InVal[2];
+    RTUINT64U               OutVal;
+} SSE_CONVERT_MM_R32_TEST_T;
+
 /** @} */
 
 
@@ -973,6 +981,9 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_MM_XMM_TEST_T,      cvtt
 
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_XMM_MM_TEST_T,      cvtpi2ps_u128        );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_XMM_MM_TEST_T,      cvtpi2pd_u128        );
+
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_MM_R32_TEST_T,      cvtps2pi_u128        );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_MM_R32_TEST_T,      cvttps2pi_u128       );
 
 RT_C_DECLS_END
 
