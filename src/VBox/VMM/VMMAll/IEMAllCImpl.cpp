@@ -4134,7 +4134,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
            the MSRs to have validated the values as canonical like they should. */
         if (!IEM_IS_CANONICAL(uNewRip))
         {
-            Log(("syscall: Only available in long mode on intel -> #UD\n"));
+            Log(("syscall: New RIP not canonical -> #UD\n"));
             return iemRaiseUndefinedOpcode(pVCpu);
         }
 
