@@ -122,8 +122,25 @@
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef struct PGMPOOLCHECKERSTATE
+{
+    PDBGCCMDHLP     pCmdHlp;
+    PVM             pVM;
+    PPGMPOOL        pPool;
+    PPGMPOOLPAGE    pPage;
+    bool            fFirstMsg;
+    uint32_t        cErrors;
+} PGMPOOLCHECKERSTATE;
+typedef PGMPOOLCHECKERSTATE *PPGMPOOLCHECKERSTATE;
+
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static FNDBGFHANDLERINT pgmR3PoolInfoPages;
 static FNDBGFHANDLERINT pgmR3PoolInfoRoots;
 
 #ifdef VBOX_WITH_DEBUGGER
@@ -450,6 +467,7 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StatCacheUncacheable,         STAMTYPE_COUNTER,   "/PGM/Pool/Cache/Uncacheable",          STAMUNIT_OCCURENCES, "The number of uncacheable allocations.");
 #endif /* VBOX_WITH_STATISTICS */
 
+    DBGFR3InfoRegisterInternalEx(pVM, "pgmpoolpages", "Lists page pool pages.", pgmR3PoolInfoPages, 0);
     DBGFR3InfoRegisterInternalEx(pVM, "pgmpoolroots", "Lists page pool roots.", pgmR3PoolInfoRoots, 0);
 
 #ifdef VBOX_WITH_DEBUGGER
@@ -774,6 +792,85 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
     AssertRC(rc);
 }
 
+/**
+ * Stringifies a PGMPOOLKIND value.
+ */
+static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
+{
+    switch ((PGMPOOLKIND)enmKind)
+    {
+        case PGMPOOLKIND_INVALID:
+            return "INVALID";
+        case PGMPOOLKIND_FREE:
+            return "FREE";
+        case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+            return "32BIT_PT_FOR_PHYS";
+        case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+            return "32BIT_PT_FOR_32BIT_PT";
+        case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+            return "32BIT_PT_FOR_32BIT_4MB";
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+            return "PAE_PT_FOR_PHYS";
+        case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+            return "PAE_PT_FOR_32BIT_PT";
+        case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
+            return "PAE_PT_FOR_32BIT_4MB";
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+            return "PAE_PT_FOR_PAE_PT";
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+            return "PAE_PT_FOR_PAE_2MB";
+        case PGMPOOLKIND_32BIT_PD:
+            return "32BIT_PD";
+        case PGMPOOLKIND_32BIT_PD_PHYS:
+            return "32BIT_PD_PHYS";
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+            return "PAE_PD0_FOR_32BIT_PD";
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+            return "PAE_PD1_FOR_32BIT_PD";
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+            return "PAE_PD2_FOR_32BIT_PD";
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
+            return "PAE_PD3_FOR_32BIT_PD";
+        case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+            return "PAE_PD_FOR_PAE_PD";
+        case PGMPOOLKIND_PAE_PD_PHYS:
+            return "PAE_PD_PHYS";
+        case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+            return "PAE_PDPT_FOR_32BIT";
+        case PGMPOOLKIND_PAE_PDPT:
+            return "PAE_PDPT";
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
+            return "PAE_PDPT_PHYS";
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+            return "64BIT_PDPT_FOR_64BIT_PDPT";
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+            return "64BIT_PDPT_FOR_PHYS";
+        case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
+            return "64BIT_PD_FOR_64BIT_PD";
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+            return "64BIT_PD_FOR_PHYS";
+        case PGMPOOLKIND_64BIT_PML4:
+            return "64BIT_PML4";
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+            return "EPT_PDPT_FOR_PHYS";
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+            return "EPT_PD_FOR_PHYS";
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+            return "EPT_PT_FOR_PHYS";
+        case PGMPOOLKIND_ROOT_NESTED:
+            return "ROOT_NESTED";
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+            return "EPT_PT_FOR_EPT_PT";
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+            return "EPT_PD_FOR_EPT_PD";
+        case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            return "EPT_PDPT_FOR_EPT_PDPT";
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            return "EPT_PML4_FOR_EPT_PML4";
+    }
+    return "Unknown kind!";
+}
+
 
 /**
  * Protect all pgm pool page table entries to monitor writes
@@ -843,16 +940,46 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
 
 
 /**
+ * @callback_method_impl{FNDBGFHANDLERINT, pgmpoolpages}
+ */
+static DECLCALLBACK(void) pgmR3PoolInfoPages(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+
+    PPGMPOOL const pPool  = pVM->pgm.s.CTX_SUFF(pPool);
+    unsigned const cPages = pPool->cCurPages;
+    unsigned       cLeft  = pPool->cUsedPages;
+    for (unsigned iPage = 0; iPage < cPages; iPage++)
+    {
+        PGMPOOLPAGE volatile const *pPage = (PGMPOOLPAGE volatile const *)&pPool->aPages[iPage];
+        RTGCPHYS const GCPhys = pPage->GCPhys;
+        uint8_t const enmKind = pPage->enmKind;
+        if (   enmKind != PGMPOOLKIND_INVALID
+            && enmKind != PGMPOOLKIND_FREE)
+        {
+            pHlp->pfnPrintf(pHlp, "#%04x: HCPhys=%RHp GCPhys=%RGp %s %s%s%s\n",
+                            iPage, pPage->Core.Key, GCPhys, pPage->fA20Enabled ? "A20 " : "!A20",
+                            pgmPoolPoolKindToStr(enmKind),
+                            pPage->fCached ? " cached" : "",
+                            pPage->fMonitored ? " monitored" : "");
+            if (!--cLeft)
+                break;
+        }
+    }
+}
+
+
+/**
  * @callback_method_impl{FNDBGFHANDLERINT, pgmpoolroots}
  */
 static DECLCALLBACK(void) pgmR3PoolInfoRoots(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
 
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    unsigned cLeft = pPool->cUsedPages;
-    unsigned iPage = pPool->cCurPages;
-    while (--iPage >= PGMPOOL_IDX_FIRST)
+    PPGMPOOL const pPool  = pVM->pgm.s.CTX_SUFF(pPool);
+    unsigned const cPages = pPool->cCurPages;
+    unsigned       cLeft  = pPool->cUsedPages;
+    for (unsigned iPage = 0; iPage < cPages; iPage++)
     {
         PGMPOOLPAGE volatile const *pPage = (PGMPOOLPAGE volatile const *)&pPool->aPages[iPage];
         RTGCPHYS const GCPhys = pPage->GCPhys;
@@ -870,22 +997,10 @@ static DECLCALLBACK(void) pgmR3PoolInfoRoots(PVM pVM, PCDBGFINFOHLP pHlp, const 
                 case PGMPOOLKIND_64BIT_PML4:
                 case PGMPOOLKIND_ROOT_NESTED:
                 case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
-                {
-                    const char *pszKind = "wtf!";
-                    switch (enmKind)
-                    {
-                        case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:    pszKind = "PAE_PDPT_FOR_32BIT"; break;
-                        case PGMPOOLKIND_PAE_PDPT:              pszKind = "PAE_PDPT"; break;
-                        case PGMPOOLKIND_PAE_PDPT_PHYS:         pszKind = "PAE_PDPT_PHYS"; break;
-                        case PGMPOOLKIND_64BIT_PML4:            pszKind = "64BIT_PML4"; break;
-                        case PGMPOOLKIND_ROOT_NESTED:           pszKind = "ROOT_NESTED"; break;
-                        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4: pszKind = "EPT_PML4_FOR_EPT_PML4"; break;
-                    }
                     pHlp->pfnPrintf(pHlp, "#%04x: HCPhys=%RHp GCPhys=%RGp %s %s %s\n",
                                     iPage, pPage->Core.Key, GCPhys, pPage->fA20Enabled ? "A20 " : "!A20",
-                                    pszKind, pPage->fMonitored ? " monitored" : "");
+                                    pgmPoolPoolKindToStr(enmKind), pPage->fMonitored ? " monitored" : "");
                     break;
-                }
             }
             if (!--cLeft)
                 break;
@@ -893,8 +1008,27 @@ static DECLCALLBACK(void) pgmR3PoolInfoRoots(PVM pVM, PCDBGFINFOHLP pHlp, const 
     }
 }
 
-
 #ifdef VBOX_WITH_DEBUGGER
+
+/**
+ * Helper for pgmR3PoolCmdCheck that reports an error.
+ */
+static void pgmR3PoolCheckError(PPGMPOOLCHECKERSTATE pState, const char *pszFormat, ...)
+{
+    if (pState->fFirstMsg)
+    {
+        DBGCCmdHlpPrintf(pState->pCmdHlp, "Checking pool page #%i for %RGp %s\n",
+                         pState->pPage->idx, pState->pPage->GCPhys, pgmPoolPoolKindToStr(pState->pPage->enmKind));
+        pState->fFirstMsg = false;
+    }
+
+    va_list va;
+    va_start(va, pszFormat);
+    pState->pCmdHlp->pfnPrintfV(pState->pCmdHlp, NULL, pszFormat, va);
+    va_end(va);
+}
+
+
 /**
  * @callback_method_impl{FNDBGCCMD, The '.pgmpoolcheck' command.}
  */
@@ -904,96 +1038,99 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 0);
-    uint32_t cErrors = 0;
     NOREF(paArgs);
 
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PGM_LOCK_VOID(pVM);
+    PPGMPOOL            pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PGMPOOLCHECKERSTATE State = { pCmdHlp, pVM, pPool, NULL, true, 0 };
     for (unsigned i = 0; i < pPool->cCurPages; i++)
     {
-        PPGMPOOLPAGE    pPage     = &pPool->aPages[i];
-        bool            fFirstMsg = true;
+        PPGMPOOLPAGE pPage = &pPool->aPages[i];
+        State.pPage     = pPage;
+        State.fFirstMsg = true;
 
-        /** @todo cover other paging modes too. */
-        if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+        if (pPage->enmKind == PGMPOOLKIND_FREE)
+            continue;
+        if (pPage->enmKind > PGMPOOLKIND_LAST || pPage->enmKind <= PGMPOOLKIND_INVALID)
         {
-            PPGMSHWPTPAE pShwPT = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
-            {
-                PX86PTPAE       pGstPT;
-                PGMPAGEMAPLOCK  LockPage;
-                int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pPage->GCPhys, (const void **)&pGstPT, &LockPage);     AssertReleaseRC(rc);
+            pgmR3PoolCheckError(&State, "Invalid enmKind value: %#x\n", pPage->enmKind);
+            continue;
+        }
 
-                /* Check if any PTEs are out of sync. */
+        void const     *pvGuestPage = NULL;
+        PGMPAGEMAPLOCK  LockPage;
+        if (   pPage->enmKind != PGMPOOLKIND_EPT_PDPT_FOR_PHYS
+            && pPage->enmKind != PGMPOOLKIND_EPT_PD_FOR_PHYS
+            && pPage->enmKind != PGMPOOLKIND_EPT_PT_FOR_PHYS
+            && pPage->enmKind != PGMPOOLKIND_ROOT_NESTED)
+        {
+            int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pPage->GCPhys, &pvGuestPage, &LockPage);
+            if (RT_FAILURE(rc))
+            {
+                pgmR3PoolCheckError(&State, "PGMPhysGCPhys2CCPtrReadOnly failed for %RGp: %Rrc\n", pPage->GCPhys, rc);
+                continue;
+            }
+        }
+
+        /*
+         * Check if something obvious is out of sync.
+         */
+        switch (pPage->enmKind)
+        {
+            case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+            {
+                PCPGMSHWPTPAE const pShwPT = (PCPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                PCX86PDPAE const    pGstPT = (PCX86PDPAE)pvGuestPage;
                 for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
-                {
                     if (PGMSHWPTEPAE_IS_P(pShwPT->a[j]))
                     {
                         RTHCPHYS HCPhys = NIL_RTHCPHYS;
-                        rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                        int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
                         if (   rc != VINF_SUCCESS
                             || PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[j]) != HCPhys)
-                        {
-                            if (fFirstMsg)
-                            {
-                                DBGCCmdHlpPrintf(pCmdHlp, "Check pool page %RGp\n", pPage->GCPhys);
-                                fFirstMsg = false;
-                            }
-                            DBGCCmdHlpPrintf(pCmdHlp, "Mismatch HCPhys: rc=%Rrc idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
-                            cErrors++;
-                        }
+                            pgmR3PoolCheckError(&State, "Mismatch HCPhys: rc=%Rrc idx=%#x guest %RX64 shw=%RX64 vs %RHp\n",
+                                                rc, j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
                         else if (   PGMSHWPTEPAE_IS_RW(pShwPT->a[j])
                                  && !(pGstPT->a[j].u & X86_PTE_RW))
-                        {
-                            if (fFirstMsg)
-                            {
-                                DBGCCmdHlpPrintf(pCmdHlp, "Check pool page %RGp\n", pPage->GCPhys);
-                                fFirstMsg = false;
-                            }
-                            DBGCCmdHlpPrintf(pCmdHlp, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
-                            cErrors++;
-                        }
+                            pgmR3PoolCheckError(&State, "Mismatch r/w gst/shw: idx=%#x guest %RX64 shw=%RX64 vs %RHp\n",
+                                                j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
                     }
-                }
-                PGMPhysReleasePageMappingLock(pVM, &LockPage);
+                break;
             }
 
-            /* Make sure this page table can't be written to from any shadow mapping. */
-            RTHCPHYS HCPhysPT = NIL_RTHCPHYS;
-            int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
-            AssertMsgRC(rc, ("PGMPhysGCPhys2HCPhys failed with rc=%d for %RGp\n", rc, pPage->GCPhys));
-            if (rc == VINF_SUCCESS)
+            case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
             {
-                for (unsigned j = 0; j < pPool->cCurPages; j++)
-                {
-                    PPGMPOOLPAGE pTempPage = &pPool->aPages[j];
-
-                    if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+                PCEPTPT const pShwPT = (PCEPTPT)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                PCEPTPT const pGstPT = (PCEPTPT)pvGuestPage;
+                for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
+                    if (pShwPT->a[j].u & EPT_PRESENT_MASK)
                     {
-                        PPGMSHWPTPAE pShwPT2 = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
-
-                        for (unsigned k = 0; k < RT_ELEMENTS(pShwPT->a); k++)
-                        {
-                            if (    PGMSHWPTEPAE_IS_P_RW(pShwPT2->a[k])
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-                                &&  !pPage->fDirty
-# endif
-                                &&  PGMSHWPTEPAE_GET_HCPHYS(pShwPT2->a[k]) == HCPhysPT)
-                            {
-                                if (fFirstMsg)
-                                {
-                                    DBGCCmdHlpPrintf(pCmdHlp, "Check pool page %RGp\n", pPage->GCPhys);
-                                    fFirstMsg = false;
-                                }
-                                DBGCCmdHlpPrintf(pCmdHlp, "Mismatch: r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, PGMSHWPTEPAE_GET_LOG(pShwPT->a[k]), PGMSHWPTEPAE_GET_LOG(pShwPT2->a[k]));
-                                cErrors++;
-                            }
-                        }
+                        RTHCPHYS HCPhys = NIL_RTHCPHYS;
+                        int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                        if (   rc != VINF_SUCCESS
+                            || (pShwPT->a[j].u & EPT_E_PG_MASK) != HCPhys)
+                            pgmR3PoolCheckError(&State, "Mismatch HCPhys: rc=%Rrc idx=%#x guest %RX64 shw=%RX64 vs %RHp\n",
+                                                rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                        else if (      (pShwPT->a[j].u & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+                                    != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
+                                 && (   ((pShwPT->a[j].u & EPT_E_READ)    && !(pGstPT->a[j].u & EPT_E_READ))
+                                     || ((pShwPT->a[j].u & EPT_E_WRITE)   && !(pGstPT->a[j].u & EPT_E_WRITE))
+                                     || ((pShwPT->a[j].u & EPT_E_EXECUTE) && !(pGstPT->a[j].u & EPT_E_EXECUTE)) ) )
+                            pgmR3PoolCheckError(&State, "Mismatch r/w/x: idx=%#x guest %RX64 shw=%RX64\n",
+                                                j, pGstPT->a[j].u, pShwPT->a[j].u);
                     }
-                }
+                break;
             }
         }
+
+        if (pvGuestPage)
+            PGMPhysReleasePageMappingLock(pVM, &LockPage);
     }
-    if (cErrors > 0)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Found %#x errors", cErrors);
+    PGM_UNLOCK(pVM);
+
+    if (State.cErrors > 0)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Found %#x errors", State.cErrors);
     return VINF_SUCCESS;
 }
+
 #endif /* VBOX_WITH_DEBUGGER */
