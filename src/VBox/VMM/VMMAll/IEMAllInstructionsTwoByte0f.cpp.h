@@ -3864,7 +3864,7 @@ FNIEMOP_DEF(iemOp_cvtsi2ss_Vss_Ey)
 }
 
 
-/** Opcode 0xf2 0x0f 0x2a - vcvtsi2sd Vsd, Hsd, Ey */
+/** Opcode 0xf2 0x0f 0x2a - cvtsi2sd Vsd, Ey */
 FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
 {
     IEMOP_MNEMONIC2(RM, CVTSI2SD, cvtsi2sd, Vsd, Ey, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
