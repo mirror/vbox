@@ -4121,6 +4121,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     uint16_t uNewSs = uNewCs + 8;
     if (uNewCs == 0 || uNewSs == 0)
     {
+        /** @todo Neither Intel nor AMD document this check. */
         Log(("syscall: msrSTAR.CS = 0 or SS = 0 -> #GP(0)\n"));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
@@ -4134,6 +4135,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
            the MSRs to have validated the values as canonical like they should. */
         if (!IEM_IS_CANONICAL(uNewRip))
         {
+            /** @todo Intel claims this can't happen because IA32_LSTAR MSR can't be written with non-canonical address. */
             Log(("syscall: New RIP not canonical -> #UD\n"));
             return iemRaiseUndefinedOpcode(pVCpu);
         }
@@ -4141,7 +4143,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         /*
          * Commit it.
          */
-        Log(("syscall: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, uNewCs, uNewRip));
+        Log(("syscall: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, uNewCs, uNewRip));
         pVCpu->cpum.GstCtx.rcx           = pVCpu->cpum.GstCtx.rip + cbInstr;
         pVCpu->cpum.GstCtx.rip           = uNewRip;
 
@@ -4151,15 +4153,14 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         pVCpu->cpum.GstCtx.rflags.u     |= X86_EFL_1;
 
         pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
-        pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
+        pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
     }
     else
     {
         /*
          * Commit it.
          */
-        Log(("syscall: %04x:%08RX32 [efl=%#x] -> %04x:%08RX32\n",
-             pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u, uNewCs, (uint32_t)(pVCpu->cpum.GstCtx.msrSTAR & MSR_K6_STAR_SYSCALL_EIP_MASK)));
+        Log(("syscall: %04x:%08RX32 [efl=%#x] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u, uNewCs, (uint32_t)(pVCpu->cpum.GstCtx.msrSTAR & MSR_K6_STAR_SYSCALL_EIP_MASK)));
         pVCpu->cpum.GstCtx.rcx           = pVCpu->cpum.GstCtx.eip + cbInstr;
         pVCpu->cpum.GstCtx.rip           = pVCpu->cpum.GstCtx.msrSTAR & MSR_K6_STAR_SYSCALL_EIP_MASK;
         pVCpu->cpum.GstCtx.rflags.u     &= ~(X86_EFL_VM | X86_EFL_IF | X86_EFL_RF);
@@ -4178,6 +4179,9 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     pVCpu->cpum.GstCtx.ss.u64Base    = 0;
     pVCpu->cpum.GstCtx.ss.u32Limit   = UINT32_MAX;
     pVCpu->cpum.GstCtx.ss.fFlags     = CPUMSELREG_FLAGS_VALID;
+
+    pVCpu->iem.s.uCpl       = 0;
+    pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 
     /* Flush the prefetch buffer. */
 #ifdef IEM_WITH_CODE_TLB
@@ -4246,9 +4250,8 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
     {
         if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
         {
-            Log(("sysret: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64 [r11=%#llx]\n",
-                 pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, uNewCs, pVCpu->cpum.GstCtx.rcx, pVCpu->cpum.GstCtx.r11));
-            /* Note! We disregard intel manual regarding the RCX cananonical
+            Log(("sysret: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64 [r11=%#llx]\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, uNewCs, pVCpu->cpum.GstCtx.rcx, pVCpu->cpum.GstCtx.r11));
+            /* Note! We disregard intel manual regarding the RCX canonical
                      check, ask intel+xen why AMD doesn't do it. */
             pVCpu->cpum.GstCtx.rip       = pVCpu->cpum.GstCtx.rcx;
             pVCpu->cpum.GstCtx.cs.Attr.u = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC
@@ -4256,20 +4259,20 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
         }
         else
         {
-            Log(("sysret: %04x:%016RX64 [efl=%#llx] -> %04x:%08RX32 [r11=%#llx]\n",
-                 pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, uNewCs, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.r11));
+            Log(("sysret: %04x:%016RX64 [efl=%#llx] -> %04x:%08RX32 [r11=%#llx]\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, uNewCs, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.r11));
             pVCpu->cpum.GstCtx.rip       = pVCpu->cpum.GstCtx.ecx;
             pVCpu->cpum.GstCtx.cs.Attr.u = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC
                             | (3 << X86DESCATTR_DPL_SHIFT);
         }
         /** @todo testcase: See what kind of flags we can make SYSRET restore and
-         *        what it really ignores. RF and VM are hinted at being zero, by AMD. */
+         *        what it really ignores. RF and VM are hinted at being zero, by AMD.
+         *        Intel says:  RFLAGS := (R11 & 3C7FD7H) | 2; */
         pVCpu->cpum.GstCtx.rflags.u      = pVCpu->cpum.GstCtx.r11 & (X86_EFL_POPF_BITS | X86_EFL_VIF | X86_EFL_VIP);
         pVCpu->cpum.GstCtx.rflags.u     |= X86_EFL_1;
     }
     else
     {
-        Log(("sysret: %04x:%08RX32 [efl=%#x] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u, uNewCs, pVCpu->cpum.GstCtx.ecx));
+        Log(("sysret: %04x:%08RX32 [efl=%#x] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u, uNewCs, pVCpu->cpum.GstCtx.ecx));
         pVCpu->cpum.GstCtx.rip           = pVCpu->cpum.GstCtx.rcx;
         pVCpu->cpum.GstCtx.rflags.u     |= X86_EFL_IF;
         pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC
@@ -4288,6 +4291,9 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
     pVCpu->cpum.GstCtx.ss.Attr.u    |= (3 << X86DESCATTR_DPL_SHIFT);
     /** @todo Testcase: verify that SS.u1Long and SS.u1DefBig are left unchanged
      *        on sysret. */
+
+    pVCpu->iem.s.uCpl       = 3;
+    pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 
     /* Flush the prefetch buffer. */
 #ifdef IEM_WITH_CODE_TLB
