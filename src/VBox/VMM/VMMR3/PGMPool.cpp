@@ -1049,11 +1049,15 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         State.pPage     = pPage;
         State.fFirstMsg = true;
 
+        if (pPage->idx != i)
+            pgmR3PoolCheckError(&State, "Invalid idx value: %#x, expected %#x", pPage->idx, i);
+
         if (pPage->enmKind == PGMPOOLKIND_FREE)
             continue;
         if (pPage->enmKind > PGMPOOLKIND_LAST || pPage->enmKind <= PGMPOOLKIND_INVALID)
         {
-            pgmR3PoolCheckError(&State, "Invalid enmKind value: %#x\n", pPage->enmKind);
+            if (pPage->enmKind != PGMPOOLKIND_INVALID || pPage->idx != 0)
+                pgmR3PoolCheckError(&State, "Invalid enmKind value: %#x\n", pPage->enmKind);
             continue;
         }
 
@@ -1071,6 +1075,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 continue;
             }
         }
+# define HCPHYS_TO_POOL_PAGE(a_HCPhys) (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, (a_HCPhys))
 
         /*
          * Check if something obvious is out of sync.
@@ -1103,26 +1108,172 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 PCEPTPT const pShwPT = (PCEPTPT)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 PCEPTPT const pGstPT = (PCEPTPT)pvGuestPage;
                 for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
-                    if (pShwPT->a[j].u & EPT_PRESENT_MASK)
+                {
+                    uint64_t const uShw = pShwPT->a[j].u;
+                    if (uShw & EPT_PRESENT_MASK)
                     {
-                        RTHCPHYS HCPhys = NIL_RTHCPHYS;
-                        int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                        uint64_t const uGst   = pGstPT->a[j].u;
+                        RTHCPHYS       HCPhys = NIL_RTHCPHYS;
+                        int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), uGst & EPT_E_PG_MASK, &HCPhys);
                         if (   rc != VINF_SUCCESS
-                            || (pShwPT->a[j].u & EPT_E_PG_MASK) != HCPhys)
+                            || (uShw & EPT_E_PG_MASK) != HCPhys)
                             pgmR3PoolCheckError(&State, "Mismatch HCPhys: rc=%Rrc idx=%#x guest %RX64 shw=%RX64 vs %RHp\n",
-                                                rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
-                        else if (      (pShwPT->a[j].u & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
-                                    != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
-                                 && (   ((pShwPT->a[j].u & EPT_E_READ)    && !(pGstPT->a[j].u & EPT_E_READ))
-                                     || ((pShwPT->a[j].u & EPT_E_WRITE)   && !(pGstPT->a[j].u & EPT_E_WRITE))
-                                     || ((pShwPT->a[j].u & EPT_E_EXECUTE) && !(pGstPT->a[j].u & EPT_E_EXECUTE)) ) )
-                            pgmR3PoolCheckError(&State, "Mismatch r/w/x: idx=%#x guest %RX64 shw=%RX64\n",
-                                                j, pGstPT->a[j].u, pShwPT->a[j].u);
+                                                rc, j, uGst, uShw, HCPhys);
+                        if (      (uShw & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+                               != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
+                            && (   ((uShw & EPT_E_READ)    && !(uGst & EPT_E_READ))
+                                || ((uShw & EPT_E_WRITE)   && !(uGst & EPT_E_WRITE))
+                                || ((uShw & EPT_E_EXECUTE) && !(uGst & EPT_E_EXECUTE)) ) )
+                            pgmR3PoolCheckError(&State, "Mismatch r/w/x: idx=%#x guest %RX64 shw=%RX64\n", j, uGst, uShw);
                     }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+            {
+                PCEPTPD const pShwPD = (PCEPTPD)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                PCEPTPD const pGstPD = (PCEPTPD)pvGuestPage;
+                for (unsigned j = 0; j < RT_ELEMENTS(pShwPD->a); j++)
+                {
+                    uint64_t const uShw = pShwPD->a[j].u;
+                    if (uShw & EPT_PRESENT_MASK)
+                    {
+                        uint64_t const uGst = pGstPD->a[j].u;
+                        if (uShw & EPT_E_LEAF)
+                        {
+                            if (!(uGst & EPT_E_LEAF))
+                                pgmR3PoolCheckError(&State, "Leafness-mismatch: idx=%#x guest %RX64 shw=%RX64\n", j, uGst, uShw);
+                            else
+                            {
+                                RTHCPHYS HCPhys = NIL_RTHCPHYS;
+                                int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), uGst & EPT_PDE2M_PG_MASK, &HCPhys);
+                                if (   rc != VINF_SUCCESS
+                                    || (uShw & EPT_E_PG_MASK) != HCPhys)
+                                    pgmR3PoolCheckError(&State, "Mismatch HCPhys: rc=%Rrc idx=%#x guest %RX64 shw=%RX64 vs %RHp (2MB)\n",
+                                                        rc, j, uGst, uShw, HCPhys);
+                            }
+                        }
+                        else
+                        {
+                            PPGMPOOLPAGE pSubPage = HCPHYS_TO_POOL_PAGE(uShw & EPT_E_PG_MASK);
+                            if (pSubPage)
+                            {
+                                /** @todo adjust for 2M page to shadow PT mapping.   */
+                                if (pSubPage->enmKind != PGMPOOLKIND_EPT_PT_FOR_EPT_PT)
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table type: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x %s\n",
+                                                        j, uGst, uShw, pSubPage->idx, pgmPoolPoolKindToStr(pSubPage->enmKind));
+                                if (pSubPage->fA20Enabled != pPage->fA20Enabled)
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table A20: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x A20=%d, expected %d\n",
+                                                        j, uGst, uShw, pSubPage->idx, pSubPage->fA20Enabled, pPage->fA20Enabled);
+                                if (pSubPage->GCPhys != (uGst & EPT_E_PG_MASK))
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table GCPhys: idx=%#x guest %RX64 shw=%RX64: GCPhys=%#RGp idxSub=%#x\n",
+                                                        j, uGst, uShw, pSubPage->GCPhys, pSubPage->idx);
+                            }
+                            else
+                                pgmR3PoolCheckError(&State, "sub table not found: idx=%#x shw=%RX64\n", j, uShw);
+
+                        }
+                        if (      (uShw & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+                               != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
+                            && (   ((uShw & EPT_E_READ)    && !(uGst & EPT_E_READ))
+                                || ((uShw & EPT_E_WRITE)   && !(uGst & EPT_E_WRITE))
+                                || ((uShw & EPT_E_EXECUTE) && !(uGst & EPT_E_EXECUTE)) ) )
+                            pgmR3PoolCheckError(&State, "Mismatch r/w/x: idx=%#x guest %RX64 shw=%RX64\n",
+                                                j, uGst, uShw);
+                    }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
+            {
+                PCEPTPDPT const pShwPDPT = (PCEPTPDPT)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                PCEPTPDPT const pGstPDPT = (PCEPTPDPT)pvGuestPage;
+                for (unsigned j = 0; j < RT_ELEMENTS(pShwPDPT->a); j++)
+                {
+                    uint64_t const uShw = pShwPDPT->a[j].u;
+                    if (uShw & EPT_PRESENT_MASK)
+                    {
+                        uint64_t const uGst = pGstPDPT->a[j].u;
+                        if (uShw & EPT_E_LEAF)
+                            pgmR3PoolCheckError(&State, "No 1GiB shadow pages: idx=%#x guest %RX64 shw=%RX64\n", j, uGst, uShw);
+                        else
+                        {
+                            PPGMPOOLPAGE pSubPage = HCPHYS_TO_POOL_PAGE(uShw & EPT_E_PG_MASK);
+                            if (pSubPage)
+                            {
+                                if (pSubPage->enmKind != PGMPOOLKIND_EPT_PD_FOR_EPT_PD)
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table type: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x %s\n",
+                                                        j, uGst, uShw, pSubPage->idx, pgmPoolPoolKindToStr(pSubPage->enmKind));
+                                if (pSubPage->fA20Enabled != pPage->fA20Enabled)
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table A20: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x A20=%d, expected %d\n",
+                                                        j, uGst, uShw, pSubPage->idx, pSubPage->fA20Enabled, pPage->fA20Enabled);
+                                if (pSubPage->GCPhys != (uGst & EPT_E_PG_MASK))
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table GCPhys: idx=%#x guest %RX64 shw=%RX64: GCPhys=%#RGp idxSub=%#x\n",
+                                                        j, uGst, uShw, pSubPage->GCPhys, pSubPage->idx);
+                            }
+                            else
+                                pgmR3PoolCheckError(&State, "sub table not found: idx=%#x shw=%RX64\n", j, uShw);
+
+                        }
+                        if (      (uShw & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+                               != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
+                            && (   ((uShw & EPT_E_READ)    && !(uGst & EPT_E_READ))
+                                || ((uShw & EPT_E_WRITE)   && !(uGst & EPT_E_WRITE))
+                                || ((uShw & EPT_E_EXECUTE) && !(uGst & EPT_E_EXECUTE)) ) )
+                            pgmR3PoolCheckError(&State, "Mismatch r/w/x: idx=%#x guest %RX64 shw=%RX64\n",
+                                                j, uGst, uShw);
+                    }
+                }
+                break;
+            }
+
+            case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            {
+                PCEPTPML4 const pShwPML4 = (PCEPTPML4)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                PCEPTPML4 const pGstPML4 = (PCEPTPML4)pvGuestPage;
+                for (unsigned j = 0; j < RT_ELEMENTS(pShwPML4->a); j++)
+                {
+                    uint64_t const uShw = pShwPML4->a[j].u;
+                    if (uShw & EPT_PRESENT_MASK)
+                    {
+                        uint64_t const uGst = pGstPML4->a[j].u;
+                        if (uShw & EPT_E_LEAF)
+                            pgmR3PoolCheckError(&State, "No 0.5TiB shadow pages: idx=%#x guest %RX64 shw=%RX64\n", j, uGst, uShw);
+                        else
+                        {
+                            PPGMPOOLPAGE pSubPage = HCPHYS_TO_POOL_PAGE(uShw & EPT_E_PG_MASK);
+                            if (pSubPage)
+                            {
+                                if (pSubPage->enmKind != PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT)
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table type: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x %s\n",
+                                                        j, uGst, uShw, pSubPage->idx, pgmPoolPoolKindToStr(pSubPage->enmKind));
+                                if (pSubPage->fA20Enabled != pPage->fA20Enabled)
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table A20: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x A20=%d, expected %d\n",
+                                                        j, uGst, uShw, pSubPage->idx, pSubPage->fA20Enabled, pPage->fA20Enabled);
+                                if (pSubPage->GCPhys != (uGst & EPT_E_PG_MASK))
+                                    pgmR3PoolCheckError(&State, "Wrong sub-table GCPhys: idx=%#x guest %RX64 shw=%RX64: GCPhys=%#RGp idxSub=%#x\n",
+                                                        j, uGst, uShw, pSubPage->GCPhys, pSubPage->idx);
+                            }
+                            else
+                                pgmR3PoolCheckError(&State, "sub table not found: idx=%#x shw=%RX64\n", j, uShw);
+
+                        }
+                        if (      (uShw & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+                               != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)
+                            && (   ((uShw & EPT_E_READ)    && !(uGst & EPT_E_READ))
+                                || ((uShw & EPT_E_WRITE)   && !(uGst & EPT_E_WRITE))
+                                || ((uShw & EPT_E_EXECUTE) && !(uGst & EPT_E_EXECUTE)) ) )
+                            pgmR3PoolCheckError(&State, "Mismatch r/w/x: idx=%#x guest %RX64 shw=%RX64\n",
+                                                j, uGst, uShw);
+                    }
+                }
                 break;
             }
         }
 
+#undef HCPHYS_TO_POOL_PAGE
         if (pvGuestPage)
             PGMPhysReleasePageMappingLock(pVM, &LockPage);
     }
@@ -1130,6 +1281,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
     if (State.cErrors > 0)
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "Found %#x errors", State.cErrors);
+    DBGCCmdHlpPrintf(pCmdHlp, "no errors found\n");
     return VINF_SUCCESS;
 }
 
