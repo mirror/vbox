@@ -85,6 +85,12 @@
 #define PGM_WITH_LARGE_PAGES
 
 /**
+ * Enables the nested APIC access page support tweaks in PGM.
+ * If disabled, the nested VM's APIC accesses will by MMIO based in VT-x mode.
+ */
+//#define PGM_WITH_NESTED_APIC_ACCESS_PAGE
+
+/**
  * Enables optimizations for MMIO handlers that exploits X86_TRAP_PF_RSVD and
  * VMX_EXIT_EPT_MISCONFIG.
  */

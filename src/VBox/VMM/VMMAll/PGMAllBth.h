@@ -1785,7 +1785,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVMCC pVM, PVMCPUCC pVCpu, PCPGMPA
 #   endif
             )
     {
-#   if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && PGM_SHW_TYPE == PGM_TYPE_EPT
+#   if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && PGM_SHW_TYPE == PGM_TYPE_EPT && defined(PGM_WITH_NESTED_APIC_ACCESS_PAGE)
         /*
          * If an "ALL" access handler has been registered for the VMX APIC-access page,
          * we want to ensure EPT violations are triggered rather than EPT misconfigs
@@ -2576,16 +2576,28 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
      */
     SHWPTE Pte;
     uint64_t const fGstShwPteFlags = pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptShadowedPteMask;
-    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+    if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
     {
+        Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
+Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+    }
+    else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+    {
+        /** @todo access bit. */
+        Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | (fGstShwPteFlags & ~EPT_E_WRITE);
+        Log7Func(("monitored page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+    }
+    else
+    {
+# if defined(PGM_WITH_NESTED_APIC_ACCESS_PAGE)
         if (CPUMIsGuestVmxApicAccessPageAddr(pVCpu, GCPhysPage))
         {
             Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
             Log7Func(("APIC-access page at %RGp -> shadowing nested-hypervisor %RX64 (%RGp)\n", GCPhysPage, fGstShwPteFlags, pShwPage->GCPhys));
         }
+#  if 0 /** @todo r=bird: What on earth is the rational for this? */
         else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
         {
-            Assert(!CPUMIsGuestVmxApicAccessPageAddr(pVCpu, GCPhysPage));
             if (fGstShwPteFlags & EPT_E_WRITE)
             {
                 PGMHandlerPhysicalPageTempOff(pVCpu->CTX_SUFF(pVM), GCPhysPage, GCPhysPage);
@@ -2594,17 +2606,24 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
             Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
             Log7Func(("monitored page (%R[pgmpage]) at %RGp -> shadowing nested-hypervisor %RX64\n", pPage, GCPhysPage, fGstShwPteFlags));
         }
+#  endif
         else
+# endif
         {
+# if defined(PGM_WITH_NESTED_APIC_ACCESS_PAGE)
             /** @todo Track using fVirtVmxApicAccess bit in PGMPHYSHANDLER and maybe in PGMPAGE
              *        too? */
+            /** @todo r=bird: this is wrong for device passthru among other scenarios.   */
             PGMHandlerPhysicalDeregister(pVCpu->CTX_SUFF(pVM), GCPhysPage);
             Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
             Log7Func(("MMIO at %RGp potentially former VMX APIC-access page -> unregistered\n", GCPhysPage));
+# else
+            /** @todo Do MMIO optimizations here too? */
+            Log7Func(("mmio page (%R[pgmpage]) at %RGp -> 0\n", pPage, GCPhysPage));
+            Pte.u = 0;
+# endif
         }
     }
-    else
-        Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
 
     /* Make sure only allocated pages are mapped writable. */
     Assert(!SHW_PTE_IS_P_RW(Pte) || PGM_PAGE_IS_ALLOCATED(pPage));
