@@ -5332,6 +5332,7 @@ BEGINPROC_FASTCALL iemAImpl_vpinsrw_u128, 16
         lea     T1, [.imm0 xWrtRIP]
         lea     T0, [A3 + A3*2]         ; sizeof(vpinsrw+ret) == 6: (A3 * 3) *2
         lea     T1, [T1 + T0*2]
+        mov     A1, A2                  ; A2 requires longer encoding on Windows
         call    T1
         movdqu  [A0], xmm0
 
@@ -5340,7 +5341,7 @@ BEGINPROC_FASTCALL iemAImpl_vpinsrw_u128, 16
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
-       vpinsrw   xmm0, xmm0, A2_32, bImm
+       vpinsrw   xmm0, xmm0, A1_32, bImm
        ret
   %assign bImm bImm + 1
  %endrep
