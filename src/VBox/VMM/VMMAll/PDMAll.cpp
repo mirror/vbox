@@ -73,9 +73,9 @@ VMMDECL(int) PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt)
         rc = APICGetInterrupt(pVCpu, pu8Interrupt, &uTagSrc);
         if (RT_SUCCESS(rc))
         {
-            if (rc == VINF_SUCCESS)
-                VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), *pu8Interrupt);
-            return rc;
+            VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), *pu8Interrupt);
+            Log8(("PDMGetInterrupt: irq=%#x tag=%#x (apic)\n", *pu8Interrupt, uTagSrc));
+            return VINF_SUCCESS;
         }
         /* else if it's masked by TPR/PPR/whatever, go ahead checking the PIC. Such masked
            interrupts shouldn't prevent ExtINT from being delivered. */
@@ -100,6 +100,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt)
             pdmUnlock(pVM);
             *pu8Interrupt = (uint8_t)i;
             VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), i);
+            Log8(("PDMGetInterrupt: irq=%#x tag=%#x (pic)\n", i, uTagSrc));
             return VINF_SUCCESS;
         }
     }
@@ -138,6 +139,7 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
         else
             VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), 0, 0);
     }
+    Log9(("PDMIsaSetIrq: irq=%#x lvl=%u tag=%#x\n", u8Irq, u8Level, uTagSrc));
 
     int rc = VERR_PDM_NO_PIC_INSTANCE;
 /** @todo r=bird: This code is incorrect, as it ASSUMES the PIC and I/O APIC
@@ -189,6 +191,7 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
  */
 VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, PCIBDF uBusDevFn, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
+    Log9(("PDMIoApicSetIrq: irq=%#x lvl=%u tag=%#x src=%#x\n", u8Irq, u8Level, uTagSrc, uBusDevFn));
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
@@ -252,6 +255,7 @@ VMM_INT_DECL(void) PDMIoApicBroadcastEoi(PVMCC pVM, uint8_t uVector)
  */
 VMM_INT_DECL(void) PDMIoApicSendMsi(PVMCC pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
+    Log9(("PDMIoApicSendMsi: addr=%#RX64 data=%#RX32 tag=%#x src=%#x\n", pMsi->Addr.u64, pMsi->Data.u32, uTagSrc, uBusDevFn));
     PCPDMIOAPIC pIoApic = &pVM->pdm.s.IoApic;
 #ifdef IN_RING0
     if (pIoApic->pDevInsR0)
