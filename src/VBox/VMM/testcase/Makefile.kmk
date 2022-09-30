@@ -350,11 +350,13 @@ tstIEMAImplDataSseBinary.S_DEPS   = \
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
-tstIEMAImplAsm_TEMPLATE  = VBOXR3TSTEXE
-tstIEMAImplAsm_SDKS      = VBOX_SOFTFLOAT
-tstIEMAImplAsm_DEFS      = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
-tstIEMAImplAsm_INCS      = ../include .
-tstIEMAImplAsm_SOURCES   = \
+tstIEMAImplAsm_TEMPLATE      := VBOXR3TSTEXE
+tstIEMAImplAsm_SDKS          := VBOX_SOFTFLOAT
+tstIEMAImplAsm_DEFS           = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
+tstIEMAImplAsm_ASFLAGS.amd64 := -Werror
+tstIEMAImplAsm_ASFLAGS.x86   := -Werror
+tstIEMAImplAsm_INCS          := ../include .
+tstIEMAImplAsm_SOURCES        = \
 	tstIEMAImpl.cpp \
 	../VMMAll/IEMAllAImpl.asm \
 	../VMMAll/IEMAllAImplC.cpp \
