@@ -134,6 +134,16 @@ DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide1Step(uint8_t const *, uint32_
 #endif
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static char const g_aaszEptMemType[2][8][3] =
+{
+    { "--", "!1", "!2", "!3", "!4", "!5", "!6", "!7" }, /* non-leaf */
+    { "UC", "WC", "2!", "3!", "WT", "WP", "WB", "7!" }  /* leaf */
+};
+
+
 /**
  * Converts a R3 pointer to a GC physical address.
  *
@@ -1159,7 +1169,7 @@ static void pgmR3DumpHierarchyInitState(PPGMR3DUMPHIERARCHYSTATE pState, PVM pVM
     pState->fNp                 = !!(fFlags & DBGFPGDMP_FLAGS_NP);
     pState->fEpt                = !!(fFlags & DBGFPGDMP_FLAGS_EPT);
     pState->fNxe                = !!(fFlags & DBGFPGDMP_FLAGS_NXE);
-    pState->cchAddress          = pState->fLme ? 16 : 8;
+    pState->cchAddress          = pState->fLme || pState->fEpt ? 16 : 8;
     pState->uLastRsvdBit        = pState->fNxe ? 62 : 63;
     pState->fDumpPageInfo       = !!(fFlags & DBGFPGDMP_FLAGS_PAGE_INFO);
     pState->fPrintHeader        = !!(fFlags & DBGFPGDMP_FLAGS_HEADER);
@@ -1239,12 +1249,12 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     PPGMPOOLPAGE pPoolPage = pgmPoolQueryPageForDbg(pState->pVM->pgm.s.pPoolR3, HCPhys);
     if (pPoolPage)
     {
-        pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! %s at HCPhys=%RHp was not found in the page pool!\n",
-                                pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
-        return VERR_PGM_POOL_GET_PAGE_FAILED;
+        *ppv = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & GUEST_PAGE_OFFSET_MASK);
+        return VINF_SUCCESS;
     }
-    *ppv = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & GUEST_PAGE_OFFSET_MASK);
-    return VINF_SUCCESS;
+    pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! %s at HCPhys=%RHp was not found in the page pool!\n",
+                            pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
+    return VERR_PGM_POOL_GET_PAGE_FAILED;
 }
 
 
@@ -1298,6 +1308,295 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
 
 
 /**
+ * Dumps an EPT shadow page table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState              The dumper state.
+ * @param   HCPhys              The page table address.
+ */
+static int pgmR3DumpHierarchyShwEptPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
+{
+    PCEPTPT pPT = NULL;
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "EPT level 1", (void const **)&pPT);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    PVM const pVM = pState->pVM;
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, EPT_PT_SHIFT, EPT_PG_ENTRIES, &iFirst, &iLast);
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPT->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << EPT_PT_SHIFT);
+            if (      (u & (EPT_E_WRITE | EPT_E_MEMTYPE_MASK | EPT_E_READ | EPT_E_EXECUTE))
+                   !=      (EPT_E_WRITE | EPT_E_MEMTYPE_INVALID_3)
+                || (u & EPT_E_PG_MASK) != pVM->pgm.s.HCPhysInvMmioPg)
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L A  D  U  w  k  s  v */
+                                        "%016llx 1    | %c%c%c %s %c L %c %c %c %c %c %c %c 4K %016llx",
+                                        pState->u64Address,
+                                        u & EPT_E_READ         ? 'R'  : '-',
+                                        u & EPT_E_WRITE        ? 'W'  : '-',
+                                        u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                        g_aaszEptMemType[1][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                        u & EPT_E_IGNORE_PAT   ? 'I'  : '-',
+                                        u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                        u & EPT_E_DIRTY        ? 'D'  : '-',
+                                        u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                        u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                        u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                        u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                        u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                        u & EPT_E_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyShwGuestPageInfo(pState, u & EPT_E_PG_MASK, _4K);
+                //if ((u >> 52) & 0x7ff)
+                //    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx%s", (u >> 52) & 0x7ff, pState->fLme ? "" : "!");
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+            }
+            else
+            {
+                const char *pszDesc = "???";
+                PGM_LOCK_VOID(pVM);
+                PPGMPHYSHANDLER pHandler;
+                int rc3 = pgmHandlerPhysicalLookup(pVM, u64BaseAddress, &pHandler);
+                if (RT_SUCCESS(rc3))
+                    pszDesc = pHandler->pszDesc;
+                PGM_UNLOCK(pVM);
+
+                pState->pHlp->pfnPrintf(pState->pHlp, "%016llx 1    | invalid / MMIO optimization (%s)\n",
+                                        pState->u64Address, pszDesc);
+            }
+            pState->cLeaves++;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps an EPT shadow page directory table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the page directory table.
+ * @param   cMaxDepth   The maximum depth.
+ */
+static int  pgmR3DumpHierarchyShwEptPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PCEPTPD pPD = NULL;
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "EPT level 2", (void const **)&pPD);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, EPT_PD_SHIFT, EPT_PG_ENTRIES, &iFirst, &iLast);
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPD->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << EPT_PD_SHIFT);
+            if (u & EPT_E_LEAF)
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L A  D  U  w  k  s  v */
+                                        "%016llx 2   |  %c%c%c %s %c L %c %c %c %c %c %c %c 2M %016llx",
+                                        pState->u64Address,
+                                        u & EPT_E_READ         ? 'R'  : '-',
+                                        u & EPT_E_WRITE        ? 'W'  : '-',
+                                        u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                        g_aaszEptMemType[1][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                        u & EPT_E_IGNORE_PAT   ? 'I'  : '-',
+                                        u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                        u & EPT_E_DIRTY        ? 'D'  : '-',
+                                        u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                        u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                        u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                        u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                        u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                        u & EPT_E_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyShwGuestPageInfo(pState, u & EPT_PDE2M_PG_MASK, _2M);
+                //if ((u >> 52) & 0x7ff)
+                //    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx%s", (u >> 52) & 0x7ff, pState->fLme ? "" : "!");
+                if (u & EPT_PDE2M_MBZ_MASK)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 20:12=%02llx!", (u >> 12) & 0x1ff);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+                pState->cLeaves++;
+            }
+            else
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L A  D  U  w  k  s  v */
+                                        "%016llx 2   |  %c%c%c %s %c - %c %c %c %c %c %c %c    %016llx",
+                                        pState->u64Address,
+                                        u & EPT_E_READ         ? 'R'  : '-',
+                                        u & EPT_E_WRITE        ? 'W'  : '-',
+                                        u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                        g_aaszEptMemType[0][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                        u & EPT_E_IGNORE_PAT   ? '!'  : '-',
+                                        u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                        u & EPT_E_DIRTY        ? 'D'  : '-',
+                                        u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                        u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                        u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                        u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                        u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                        u & EPT_E_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyShwTablePageInfo(pState, u & EPT_E_PG_MASK);
+                //if ((u >> 52) & 0x7ff)
+                //    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (u >> 52) & 0x7ff);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+                if (cMaxDepth)
+                {
+                    int rc2 = pgmR3DumpHierarchyShwEptPT(pState, u & EPT_E_PG_MASK);
+                    if (rc2 < rc && RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+                else
+                    pState->cLeaves++;
+            }
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Dumps an EPT shadow page directory pointer table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the page directory pointer table.
+ * @param   cMaxDepth   The maximum depth.
+ */
+static int  pgmR3DumpHierarchyShwEptPDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PCEPTPDPT pPDPT = NULL;
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "EPT level 3", (void const **)&pPDPT);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, EPT_PDPT_SHIFT, EPT_PG_ENTRIES, &iFirst, &iLast);
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPDPT->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << EPT_PDPT_SHIFT);
+            pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L  A  D  U  w  k  s  v */
+                                    "%016llx 3  |   %c%c%c %s %c %c %c %c %c %c %c %c %c    %016llx",
+                                    pState->u64Address,
+                                    u & EPT_E_READ         ? 'R'  : '-',
+                                    u & EPT_E_WRITE        ? 'W'  : '-',
+                                    u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                    g_aaszEptMemType[!!(u & EPT_E_LEAF)][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                    u & EPT_E_IGNORE_PAT   ? '!'  : '-',
+                                    u & EPT_E_LEAF         ? '!'  : '-',
+                                    u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                    u & EPT_E_DIRTY        ? 'D'  : '-',
+                                    u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                    u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                    u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                    u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                    u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                    u & EPT_E_PG_MASK);
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyShwTablePageInfo(pState, u & EPT_E_PG_MASK);
+            //if ((u >> 52) & 0x7ff)
+            //    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx", (u >> 52) & 0x7ff);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+            if (cMaxDepth)
+            {
+                int rc2 = pgmR3DumpHierarchyShwEptPD(pState, u & EPT_E_PG_MASK, cMaxDepth);
+                if (rc2 < rc && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+            else
+                pState->cLeaves++;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Dumps an EPT shadow PML4 table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the table.
+ * @param   cMaxDepth   The maximum depth.
+ */
+static int pgmR3DumpHierarchyShwEptPML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PCEPTPML4 pPML4 = NULL;
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "EPT level 4", (void const **)&pPML4);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(cMaxDepth);
+    cMaxDepth--;
+
+    uint32_t iFirst = (pState->u64FirstAddress >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+    uint32_t iLast  = (pState->u64LastAddress  >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPML4->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = (uint64_t)i << X86_PML4_SHIFT;
+            pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L  A  D  U  w  k  s  v */
+                                    "%016llx 4 |    %c%c%c %s %c %c %c %c %c %c %c %c %c    %016llx",
+                                    pState->u64Address,
+                                    u & EPT_E_READ         ? 'R'  : '-',
+                                    u & EPT_E_WRITE        ? 'W'  : '-',
+                                    u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                    g_aaszEptMemType[!!(u & EPT_E_LEAF)][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                    u & EPT_E_IGNORE_PAT   ? '!'  : '-',
+                                    u & EPT_E_LEAF         ? '!'  : '-',
+                                    u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                    u & EPT_E_DIRTY        ? 'D'  : '-',
+                                    u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                    u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                    u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                    u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                    u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                    u & EPT_E_PG_MASK);
+
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyShwTablePageInfo(pState, u & EPT_E_PG_MASK);
+            //if ((u >> 52) & 0x7ff)
+            //    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (u >> 52) & 0x7ff);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+            if (cMaxDepth)
+            {
+                int rc2 = pgmR3DumpHierarchyShwEptPDPT(pState, u & EPT_E_PG_MASK, cMaxDepth);
+                if (rc2 < rc && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+            else
+                pState->cLeaves++;
+        }
+    }
+    return rc;
+}
+
+
+/**
  * Dumps a PAE shadow page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
@@ -1323,8 +1622,8 @@ static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                 Pte.u = PGMSHWPTEPAE_GET_U(pPT->a[i]);
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme  /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
-                                        ? "%016llx 3    | P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx"
-                                        :  "%08llx 2   |  P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx",
+                                        ? "%016llx 1    | P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx"
+                                        :  "%08llx 1   |  P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pte.n.u1Write       ? 'W'  : 'R',
                                         Pte.n.u1User        ? 'U'  : 'S',
@@ -1349,14 +1648,14 @@ static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                      ==                                  (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme
-                                        ? "%016llx 3    | invalid / MMIO optimization\n"
-                                        :  "%08llx 2   |  invalid / MMIO optimization\n",
+                                        ? "%016llx 1    | invalid / MMIO optimization\n"
+                                        :  "%08llx 1   |  invalid / MMIO optimization\n",
                                         pState->u64Address);
             else
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme
-                                        ? "%016llx 3    | invalid: %RX64\n"
-                                        :  "%08llx 2   |  invalid: %RX64\n",
+                                        ? "%016llx 1    | invalid: %RX64\n"
+                                        :  "%08llx 1   |  invalid: %RX64\n",
                                         pState->u64Address, PGMSHWPTEPAE_GET_U(pPT->a[i]));
             pState->cLeaves++;
         }
@@ -1395,7 +1694,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme    /*P R  S  A  D  G  WT CD AT NX 2M a  p ?  phys*/
                                         ? "%016llx 2   |  P %c %c %c %c %c %s %s %s %s 2M %c%c%c  %016llx"
-                                        :  "%08llx 1  |   P %c %c %c %c %c %s %s %s %s 2M %c%c%c  %016llx",
+                                        :  "%08llx 2  |   P %c %c %c %c %c %s %s %s %s 2M %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pde.b.u1Write       ? 'W'  : 'R',
                                         Pde.b.u1User        ? 'U'  : 'S',
@@ -1425,7 +1724,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme    /*P R  S  A  D  G  WT CD AT NX 4M a  p ?  phys */
                                         ? "%016llx 2   |  P %c %c %c %c %c %s %s .. %s .. %c%c%c  %016llx"
-                                        :  "%08llx 1  |   P %c %c %c %c %c %s %s .. %s .. %c%c%c  %016llx",
+                                        :  "%08llx 2  |   P %c %c %c %c %c %s %s .. %s .. %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pde.n.u1Write       ? 'W'  : 'R',
                                         Pde.n.u1User        ? 'U'  : 'S',
@@ -1495,7 +1794,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
             if (pState->fLme)
             {
                 pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX .. a p ?  */
-                                        "%016llx 1  |   P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
+                                        "%016llx 3  |   P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pdpe.lm.u1Write       ? 'W'  : 'R',
                                         Pdpe.lm.u1User        ? 'U'  : 'S',
@@ -1518,7 +1817,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
             else
             {
                 pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX .. a p ?  */
-                                        "%08llx 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
+                                        "%08llx 3 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pdpe.n.u2Reserved & 1? '!'  : '.', /* mbz */
                                         Pdpe.n.u2Reserved & 2? '!'  : '.', /* mbz */
@@ -1555,7 +1854,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
 
 
 /**
- * Dumps a 32-bit shadow page table.
+ * Dumps a 64-bit shadow PML4 table.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
@@ -1596,7 +1895,7 @@ static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
             pState->u64Address = ((uint64_t)i << X86_PML4_SHIFT)
                                | (i >= RT_ELEMENTS(pPML4->a) / 2 ? UINT64_C(0xffff000000000000) : 0);
             pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
-                                    "%016llx 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
+                                    "%016llx 4 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
                                     pState->u64Address,
                                     Pml4e.n.u1Write       ? 'W'  : 'R',
                                     Pml4e.n.u1User        ? 'U'  : 'S',
@@ -1711,7 +2010,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                 uint64_t u64Phys = ((uint64_t)(Pde.u & X86_PDE4M_PG_HIGH_MASK) << X86_PDE4M_PG_HIGH_SHIFT)
                                  | (Pde.u & X86_PDE4M_PG_MASK);
                 pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d   phys */
-                                        "%08llx 0 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08llx",
+                                        "%08llx 2 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08llx",
                                         pState->u64Address,
                                         Pde.b.u1Write       ? 'W'  : 'R',
                                         Pde.b.u1User        ? 'U'  : 'S',
@@ -1733,7 +2032,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
             else
             {
                 pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d   phys */
-                                        "%08llx 0 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x",
+                                        "%08llx 2 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x",
                                         pState->u64Address,
                                         Pde.n.u1Write       ? 'W'  : 'R',
                                         Pde.n.u1User        ? 'U'  : 'S',
@@ -1804,21 +2103,25 @@ static int pgmR3DumpHierarchyShwDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
         if (pState->fPrintHeader)
             pState->pHlp->pfnPrintf(pState->pHlp,
                                     "%-*s        R - Readable\n"
-                                    "%-*s        | W - Writeable\n"
-                                    "%-*s        | | X - Executable\n"
-                                    "%-*s        | | | EMT - EPT memory type\n"
-                                    "%-*s        | | | |   PAT - Ignored PAT?\n"
-                                    "%-*s        | | | |   |    AVL1 - 4 available bits\n"
-                                    "%-*s        | | | |   |    |   AVL2 - 12 available bits\n"
-                                    "%-*s Level  | | | |   |    |    |     page  \n"
-                                  /* xxxx n **** R W X EMT PAT AVL1 AVL2   xxxxxxxxxxxxx
-                                                 R W X  7   0   f   fff    0123456701234567 */
+                                    "%-*s        |W - Writeable\n"
+                                    "%-*s        ||X - Executable\n"
+                                    "%-*s        ||| EMT - EPT memory type\n"
+                                    "%-*s        ||| |  I - Ignored PAT?\n"
+                                    "%-*s        ||| |  | L - leaf\n"
+                                    "%-*s        ||| |  | | A - accessed\n"
+                                    "%-*s        ||| |  | | | D - dirty\n"
+                                    "%-*s        ||| |  | | | | U - user execute\n"
+                                    "%-*s        ||| |  | | | | | w - Paging writable\n"
+                                    "%-*s        ||| |  | | | | | | k - Supervisor shadow stack writable\n"
+                                    "%-*s        ||| |  | | | | | | | v - Suppress #VE\n"
+                                    "%-*s Level  ||| |  | | | | | | | |    page\n"
+                                  /* xxxx n **** RWX MT I L A D U w k v 4K xxxxxxxxxxxxx
+                                                 RWX  7 - - - - - - - -    0123456701234567 */
                                     ,
-                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
-
-        pState->pHlp->pfnPrintf(pState->pHlp, "EPT dumping is not yet implemented, sorry.\n");
-        /** @todo implemented EPT dumping. */
-        rc = VERR_NOT_IMPLEMENTED;
+                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
+                                    cch, "", cch, "", cch, "", cch, "", cch, "Address");
+        /** @todo assumes 4-level EPT tables for now. */
+        rc = pgmR3DumpHierarchyShwEptPML4(pState, cr3 & cr3Mask, cMaxDepth);
     }
     else
     {
@@ -1881,7 +2184,10 @@ VMMR3_INT_DECL(int) PGMR3DumpHierarchyShw(PVM pVM, uint64_t cr3, uint32_t fFlags
 
     PGMR3DUMPHIERARCHYSTATE State;
     pgmR3DumpHierarchyInitState(&State, pVM, fFlags, u64FirstAddr, u64LastAddr, pHlp);
-    return pgmR3DumpHierarchyShwDoIt(&State, cr3, cMaxDepth);
+    PGM_LOCK_VOID(pVM);
+    int rc = pgmR3DumpHierarchyShwDoIt(&State, cr3, cMaxDepth);
+    PGM_UNLOCK(pVM);
+    return rc;
 }
 
 
@@ -1980,7 +2286,283 @@ static void pgmR3DumpHierarchyGstCheckReservedHighBits(PPGMR3DUMPHIERARCHYSTATE 
 
 
 /**
- * Dumps a PAE shadow page table.
+ * Dumps an EPT guest page table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState              The dumper state.
+ * @param   HCPhys              The page table address.
+ */
+static int pgmR3DumpHierarchyGstEptPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
+{
+    PCEPTPT        pPT = NULL;
+    PGMPAGEMAPLOCK Lock;
+    int rc = pgmR3DumpHierarchyGstMapPage(pState, HCPhys, "Guest EPT level 1", (void const **)&pPT, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, EPT_PT_SHIFT, EPT_PG_ENTRIES, &iFirst, &iLast);
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPT->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << EPT_PT_SHIFT);
+            pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L A  D  U  w  k  s  v */
+                                    "%016llx 1    | %c%c%c %s %c L %c %c %c %c %c %c %c 4K %016llx",
+                                    pState->u64Address,
+                                    u & EPT_E_READ         ? 'R'  : '-',
+                                    u & EPT_E_WRITE        ? 'W'  : '-',
+                                    u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                    g_aaszEptMemType[1][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                    u & EPT_E_IGNORE_PAT   ? 'I'  : '-',
+                                    u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                    u & EPT_E_DIRTY        ? 'D'  : '-',
+                                    u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                    u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                    u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                    u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                    u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                    u & EPT_E_PG_MASK);
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyGstPageInfo(pState, u & EPT_E_PG_MASK, _4K);
+            pgmR3DumpHierarchyGstCheckReservedHighBits(pState, u);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+            pState->cLeaves++;
+        }
+    }
+
+    PGMPhysReleasePageMappingLock(pState->pVM, &Lock);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps an EPT guest page directory table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the page directory table.
+ * @param   cMaxDepth   The maximum depth.
+ */
+static int  pgmR3DumpHierarchyGstEptPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PCEPTPD        pPD = NULL;
+    PGMPAGEMAPLOCK Lock;
+    int rc = pgmR3DumpHierarchyGstMapPage(pState, HCPhys, "Guest EPT level 2", (void const **)&pPD, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, EPT_PD_SHIFT, EPT_PG_ENTRIES, &iFirst, &iLast);
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPD->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << EPT_PD_SHIFT);
+            if (u & EPT_E_LEAF)
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L A  D  U  w  k  s  v */
+                                        "%016llx 2   |  %c%c%c %s %c L %c %c %c %c %c %c %c 2M %016llx",
+                                        pState->u64Address,
+                                        u & EPT_E_READ         ? 'R'  : '-',
+                                        u & EPT_E_WRITE        ? 'W'  : '-',
+                                        u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                        g_aaszEptMemType[1][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                        u & EPT_E_IGNORE_PAT   ? 'I'  : '-',
+                                        u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                        u & EPT_E_DIRTY        ? 'D'  : '-',
+                                        u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                        u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                        u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                        u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                        u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                        u & EPT_E_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyGstPageInfo(pState, u & EPT_PDE2M_PG_MASK, _2M);
+                if (u & EPT_PDE2M_MBZ_MASK)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 20:12=%02llx!", (u >> 12) & 0x1ff);
+                pgmR3DumpHierarchyGstCheckReservedHighBits(pState, u);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+                pState->cLeaves++;
+            }
+            else
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L A  D  U  w  k  s  v */
+                                        "%016llx 2   |  %c%c%c %s %c - %c %c %c %c %c %c %c    %016llx",
+                                        pState->u64Address,
+                                        u & EPT_E_READ         ? 'R'  : '-',
+                                        u & EPT_E_WRITE        ? 'W'  : '-',
+                                        u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                        g_aaszEptMemType[0][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                        u & EPT_E_IGNORE_PAT   ? '!'  : '-',
+                                        u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                        u & EPT_E_DIRTY        ? 'D'  : '-',
+                                        u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                        u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                        u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                        u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                        u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                        u & EPT_E_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyGstPageInfo(pState, u & EPT_E_PG_MASK, _4K);
+                pgmR3DumpHierarchyGstCheckReservedHighBits(pState, u);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+                if (cMaxDepth)
+                {
+                    int rc2 = pgmR3DumpHierarchyGstEptPT(pState, u & EPT_E_PG_MASK);
+                    if (rc2 < rc && RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+                else
+                    pState->cLeaves++;
+            }
+        }
+    }
+
+    PGMPhysReleasePageMappingLock(pState->pVM, &Lock);
+    return rc;
+}
+
+
+/**
+ * Dumps an EPT guest page directory pointer table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the page directory pointer table.
+ * @param   cMaxDepth   The maximum depth.
+ */
+static int  pgmR3DumpHierarchyGstEptPDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PCEPTPDPT      pPDPT = NULL;
+    PGMPAGEMAPLOCK Lock;
+    int rc = pgmR3DumpHierarchyGstMapPage(pState, HCPhys, "Guest EPT level 3", (void const **)&pPDPT, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, EPT_PDPT_SHIFT, EPT_PG_ENTRIES, &iFirst, &iLast);
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPDPT->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << EPT_PDPT_SHIFT);
+            pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L  A  D  U  w  k  s  v */
+                                    "%016llx 3  |   %c%c%c %s %c %c %c %c %c %c %c %c %c    %016llx",
+                                    pState->u64Address,
+                                    u & EPT_E_READ         ? 'R'  : '-',
+                                    u & EPT_E_WRITE        ? 'W'  : '-',
+                                    u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                    g_aaszEptMemType[!!(u & EPT_E_LEAF)][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                    u & EPT_E_IGNORE_PAT   ? '!'  : '-',
+                                    u & EPT_E_LEAF         ? '!'  : '-',
+                                    u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                    u & EPT_E_DIRTY        ? 'D'  : '-',
+                                    u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                    u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                    u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                    u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                    u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                    u & EPT_E_PG_MASK);
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyGstPageInfo(pState, u & EPT_E_PG_MASK, _4K);
+            pgmR3DumpHierarchyGstCheckReservedHighBits(pState, u);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+            if (cMaxDepth)
+            {
+                int rc2 = pgmR3DumpHierarchyGstEptPD(pState, u & EPT_E_PG_MASK, cMaxDepth);
+                if (rc2 < rc && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+            else
+                pState->cLeaves++;
+        }
+    }
+
+    PGMPhysReleasePageMappingLock(pState->pVM, &Lock);
+    return rc;
+}
+
+
+/**
+ * Dumps an EPT guest PML4 table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pState      The dumper state.
+ * @param   HCPhys      The physical address of the table.
+ * @param   cMaxDepth   The maximum depth.
+ */
+static int pgmR3DumpHierarchyGstEptPML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PCEPTPML4      pPML4 = NULL;
+    PGMPAGEMAPLOCK Lock;
+    int rc = pgmR3DumpHierarchyGstMapPage(pState, HCPhys, "Guest EPT level 4", (void const **)&pPML4, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(cMaxDepth);
+    cMaxDepth--;
+
+    uint32_t iFirst = (pState->u64FirstAddress >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+    uint32_t iLast  = (pState->u64LastAddress  >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+    for (uint32_t i = iFirst; i <= iLast; i++)
+    {
+        uint64_t const u = pPML4->a[i].u;
+        if (u & EPT_PRESENT_MASK)
+        {
+            pState->u64Address = (uint64_t)i << X86_PML4_SHIFT;
+            pState->pHlp->pfnPrintf(pState->pHlp, /* R W X MT I  L  A  D  U  w  k  s  v */
+                                    "%016llx 4 |    %c%c%c %s %c %c %c %c %c %c %c %c %c    %016llx",
+                                    pState->u64Address,
+                                    u & EPT_E_READ         ? 'R'  : '-',
+                                    u & EPT_E_WRITE        ? 'W'  : '-',
+                                    u & EPT_E_EXECUTE      ? 'X'  : '-',
+                                    g_aaszEptMemType[!!(u & EPT_E_LEAF)][(u >> EPT_E_MEMTYPE_SHIFT) & EPT_E_MEMTYPE_SMASK],
+                                    u & EPT_E_IGNORE_PAT   ? '!'  : '-',
+                                    u & EPT_E_LEAF         ? '!'  : '-',
+                                    u & EPT_E_ACCESSED     ? 'A'  : '-',
+                                    u & EPT_E_DIRTY        ? 'D'  : '-',
+                                    u & EPT_E_USER_EXECUTE ? 'U'  : '-',
+                                    u & EPT_E_PAGING_WRITE ? 'w'  : '-',
+                                    u & EPT_E_SUPER_SHW_STACK ? 'k'  : '-',
+                                    u & EPT_E_SUBPAGE_WRITE_PERM ? 's'  : '-',
+                                    u & EPT_E_SUPPRESS_VE  ? 'v'  : '-',
+                                    u & EPT_E_PG_MASK);
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyGstPageInfo(pState, u & EPT_E_PG_MASK, _4K);
+            pgmR3DumpHierarchyGstCheckReservedHighBits(pState, u);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+            if (cMaxDepth)
+            {
+                int rc2 = pgmR3DumpHierarchyGstEptPDPT(pState, u & EPT_E_PG_MASK, cMaxDepth);
+                if (rc2 < rc && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+            else
+                pState->cLeaves++;
+        }
+    }
+
+    PGMPhysReleasePageMappingLock(pState->pVM, &Lock);
+    return rc;
+}
+
+
+/**
+ * Dumps a PAE guest page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState              The dumper state.
@@ -2034,7 +2616,7 @@ static int pgmR3DumpHierarchyGstPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS 
 
 
 /**
- * Dumps a PAE shadow page directory table.
+ * Dumps a PAE guest page directory table.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
@@ -2131,7 +2713,7 @@ static int  pgmR3DumpHierarchyGstPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS
 
 
 /**
- * Dumps a PAE shadow page directory pointer table.
+ * Dumps a PAE guest page directory pointer table.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
@@ -2227,7 +2809,7 @@ static int  pgmR3DumpHierarchyGstPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPH
 
 
 /**
- * Dumps a 32-bit shadow page table.
+ * Dumps a 32-bit guest page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
@@ -2306,7 +2888,7 @@ static int pgmR3DumpHierarchyGstPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
 
 
 /**
- * Dumps a 32-bit shadow page table.
+ * Dumps a 32-bit guest page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
@@ -2355,7 +2937,7 @@ static int pgmR3DumpHierarchyGst32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
 
 
 /**
- * Dumps a 32-bit shadow page directory and page tables.
+ * Dumps a 32-bit guest page directory and page tables.
  *
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
@@ -2457,7 +3039,7 @@ static int pgmR3DumpHierarchyGstDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
 {
     int             rc;
     unsigned const  cch     = pState->cchAddress;
-    uint64_t const  cr3Mask = pState->fEpt ? X86_CR3_AMD64_PAGE_MASK    /** @todo this should be X86_CR3_EPT_PAGE_MASK */
+    uint64_t const  cr3Mask = pState->fEpt ? X86_CR3_AMD64_PAGE_MASK    /** @todo this should be X86_CR3_EPT_PAGE_MASK, but it is wrong */
                             : pState->fLme ? X86_CR3_AMD64_PAGE_MASK
                             : pState->fPae ? X86_CR3_PAE_PAGE_MASK
                             :                X86_CR3_PAGE_MASK;
@@ -2483,21 +3065,25 @@ static int pgmR3DumpHierarchyGstDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
         if (pState->fPrintHeader)
             pState->pHlp->pfnPrintf(pState->pHlp,
                                     "%-*s        R - Readable\n"
-                                    "%-*s        | W - Writeable\n"
-                                    "%-*s        | | X - Executable\n"
-                                    "%-*s        | | | EMT - EPT memory type\n"
-                                    "%-*s        | | | |   PAT - Ignored PAT?\n"
-                                    "%-*s        | | | |   |    AVL1 - 4 available bits\n"
-                                    "%-*s        | | | |   |    |   AVL2 - 12 available bits\n"
-                                    "%-*s Level  | | | |   |    |    |     page  \n"
-                                  /* xxxx n **** R W X EMT PAT AVL1 AVL2   xxxxxxxxxxxxx
-                                                 R W X  7   0   f   fff    0123456701234567 */
+                                    "%-*s        |W - Writeable\n"
+                                    "%-*s        ||X - Executable\n"
+                                    "%-*s        ||| EMT - EPT memory type\n"
+                                    "%-*s        ||| |  I - Ignored PAT?\n"
+                                    "%-*s        ||| |  | L - leaf\n"
+                                    "%-*s        ||| |  | | A - accessed\n"
+                                    "%-*s        ||| |  | | | D - dirty\n"
+                                    "%-*s        ||| |  | | | | U - user execute\n"
+                                    "%-*s        ||| |  | | | | | w - Paging writable\n"
+                                    "%-*s        ||| |  | | | | | | k - Supervisor shadow stack writable\n"
+                                    "%-*s        ||| |  | | | | | | | v - Suppress #VE\n"
+                                    "%-*s Level  ||| |  | | | | | | | |    page\n"
+                                  /* xxxx n **** RWX MT I L A D U w k v 4K xxxxxxxxxxxxx
+                                                 RWX  7 - - - - - - - -    0123456701234567 */
                                     ,
-                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
-
-        pState->pHlp->pfnPrintf(pState->pHlp, "EPT dumping is not yet implemented, sorry.\n");
-        /** @todo implemented EPT dumping. */
-        rc = VERR_NOT_IMPLEMENTED;
+                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
+                                    cch, "", cch, "", cch, "", cch, "", cch, "Address");
+        /** @todo assumes 4-level EPT tables for now. */
+        rc = pgmR3DumpHierarchyGstEptPML4(pState, cr3 & cr3Mask, cMaxDepth);
     }
     else
     {
