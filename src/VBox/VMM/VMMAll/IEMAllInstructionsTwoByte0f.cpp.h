@@ -4910,6 +4910,7 @@ FNIEMOP_DEF(iemOp_ucomiss_Vss_Wss)
         IEM_MC_FETCH_MEM_XMM_U32(uSrc2, 0 /*a_DWord*/, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_FETCH_EFLAGS(fEFlags);
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_ucomiss_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
@@ -5053,6 +5054,7 @@ FNIEMOP_DEF(iemOp_comiss_Vss_Wss)
         IEM_MC_FETCH_MEM_XMM_U32(uSrc2, 0 /*a_DWord*/, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_FETCH_EFLAGS(fEFlags);
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_comiss_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
@@ -5122,6 +5124,7 @@ FNIEMOP_DEF(iemOp_comisd_Vsd_Wsd)
         IEM_MC_FETCH_MEM_XMM_U64(uSrc2, 0 /*a_QWord*/, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_FETCH_EFLAGS(fEFlags);
         IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_REF_XREG_XMM_CONST(puSrc1,       IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_comisd_u128, pfMxcsr, pEFlags, puSrc1, puSrc2);
