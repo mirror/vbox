@@ -2046,7 +2046,7 @@ typedef PGMPOOLPAGE **PPPGMPOOLPAGE;
 
 
 /** The hash table size. */
-# define PGMPOOL_HASH_SIZE      0x40
+# define PGMPOOL_HASH_SIZE      0x8000
 /** The hash function. */
 # define PGMPOOL_HASH(GCPhys)   ( ((GCPhys) >> GUEST_PAGE_SHIFT) & (PGMPOOL_HASH_SIZE - 1) )
 
