@@ -5527,7 +5527,7 @@ BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i32_r64, 16
         mov       dword [A2], T0_32
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvttsd2si_i32_r64
 
@@ -5548,7 +5548,7 @@ BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i64_r64, 16
         mov       qword [A2], T0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvttsd2si_i64_r64
 
@@ -5570,7 +5570,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i32_r64, 16
         mov       dword [A2], T0_32
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsd2si_i32_r64
 
@@ -5591,7 +5591,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i64_r64, 16
         mov       qword [A2], T0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsd2si_i64_r64
 
@@ -5613,7 +5613,7 @@ BEGINPROC_FASTCALL iemAImpl_cvttss2si_i32_r32, 16
         mov       dword [A2], T0_32
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvttss2si_i32_r32
 
@@ -5634,7 +5634,7 @@ BEGINPROC_FASTCALL iemAImpl_cvttss2si_i64_r32, 16
         mov       qword [A2], T0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvttss2si_i64_r32
 
@@ -5656,7 +5656,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtss2si_i32_r32, 16
         mov       dword [A2], T0_32
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtss2si_i32_r32
 
@@ -5677,7 +5677,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtss2si_i64_r32, 16
         mov       qword [A2], T0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtss2si_i64_r32
 
@@ -5699,7 +5699,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i32, 16
         movd      dword [A2], xmm0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsi2ss_r32_i32
 
@@ -5720,7 +5720,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i64, 16
         movd      dword [A2], xmm0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsi2ss_r32_i64
 
@@ -5742,12 +5742,12 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i32, 16
         movq      [A2], xmm0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i32
 
 ;;
-; cvtsi2ss instruction - 64-bit variant.
+; cvtsi2sd instruction - 64-bit variant.
 ;
 ; @param    A0      FPU context (FXSTATE or XSAVEAREA).
 ; @param    A1      Where to return the MXCSR value.
@@ -5763,7 +5763,7 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i64, 16
         movq      [A2], xmm0
 
         SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i64
 
@@ -5937,7 +5937,7 @@ ENDPROC             iemAImpl_vcomiss_u128
 ; @param    A2      Pointer to the first source operand (aka readonly destination).
 ; @param    A3      Pointer to the second source operand.
 ;
-BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 12
+BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
