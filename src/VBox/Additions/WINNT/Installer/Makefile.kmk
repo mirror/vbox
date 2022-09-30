@@ -310,7 +310,7 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$$(VBoxDrvInst_1_STAGE_TARGET)
 	$(call MSG_L1,Creating $@, from $<)
 ifdef VBOX_GA_ATTESTATION_SIGNING # Unpack the attestation signed drivers - this is an ugly has 'ing heck hack!
-	$(TOOL_ZIP_UNPACK) -voj $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME) -d $(PATH_STAGE_BIN)/additions/
+	$(TOOL_ZIP_UNPACK) -oj $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME) -d $(PATH_STAGE_BIN)/additions/
 endif
 	$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
 		$(VB_WIN_ADD_NSIS_ENV) \
