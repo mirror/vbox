@@ -7120,6 +7120,7 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
             IEM_MC_FETCH_GREG_U32(u32Enc, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_2(iemCImpl_vmread_reg32, pu32Dst, u32Enc);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
             IEM_MC_END();
         }
     }
