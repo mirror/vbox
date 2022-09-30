@@ -345,6 +345,62 @@ FNIEMOP_DEF_2(iemOpCommonMmx_FullFull_To_Full_Ex, PFNIEMAIMPLMEDIAF2U64, pfnU64,
 
 
 /**
+ * Common worker for SSE instructions of the form:
+ *      pxxx    xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * SSE cpuid checks. No SIMD FP exceptions.
+ *
+ * @sa iemOpCommonSse2_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,          pDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_SSE_AIMPL_2(pfnU128, pDst, pSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Common worker for SSE2 instructions on the forms:
  *      pxxx    xmm1, xmm2/mem128
  *
@@ -3883,7 +3939,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
             IEM_MC_ARG(const int64_t *,         pi64Src,          2);
 
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
             IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
 
             IEM_MC_REF_GREG_I64_CONST(pi64Src, IEM_GET_MODRM_REG(pVCpu, bRm));
@@ -3912,7 +3968,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
             IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
 
             IEM_MC_FETCH_MEM_I64(i64Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
@@ -3941,7 +3997,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
             IEM_MC_ARG(const int32_t *,       pi32Src,             2);
 
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
             IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
 
             IEM_MC_REF_GREG_I32_CONST(pi32Src, IEM_GET_MODRM_REG(pVCpu, bRm));
@@ -3970,7 +4026,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
             IEM_MC_PREPARE_SSE_USAGE(); /** @todo: This is superfluous because IEM_MC_CALL_SSE_AIMPL_3() is calling this but the tstIEMCheckMc testcase depends on it. */
 
             IEM_MC_FETCH_MEM_I32(i32Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
@@ -4799,7 +4855,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
     {
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
-            /* greg, XMM */
+            /* greg32, XMM */
             IEM_MC_BEGIN(3, 4);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int32_t,   i32Dst);
@@ -4825,7 +4881,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
         }
         else
         {
-            /* greg, [mem] */
+            /* greg32, [mem64] */
             IEM_MC_BEGIN(3, 4);
             IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
@@ -5574,7 +5630,7 @@ FNIEMOP_STUB(iemOp_rcpss_Vss_Wss);
 FNIEMOP_DEF(iemOp_andps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, ANDPS, andps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, iemAImpl_pand_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse_FullFull_To_Full, iemAImpl_pand_u128);
 }
 
 
@@ -5594,7 +5650,7 @@ FNIEMOP_DEF(iemOp_andpd_Vpd_Wpd)
 FNIEMOP_DEF(iemOp_andnps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, ANDNPS, andnps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, iemAImpl_pandn_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse_FullFull_To_Full, iemAImpl_pandn_u128);
 }
 
 
@@ -5614,7 +5670,7 @@ FNIEMOP_DEF(iemOp_andnpd_Vpd_Wpd)
 FNIEMOP_DEF(iemOp_orps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, ORPS, orps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, iemAImpl_por_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse_FullFull_To_Full, iemAImpl_por_u128);
 }
 
 
@@ -5634,7 +5690,7 @@ FNIEMOP_DEF(iemOp_orpd_Vpd_Wpd)
 FNIEMOP_DEF(iemOp_xorps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, XORPS, xorps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, iemAImpl_pxor_u128);
+    return FNIEMOP_CALL_1(iemOpCommonSse_FullFull_To_Full, iemAImpl_pxor_u128);
 }
 
 
