@@ -2461,7 +2461,7 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
 
-    Log2(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 eflags=%#RX32\n", uExitReason,
+    Log2(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 eflags=%#RX32\n", uExitReason,
           pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
           pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.eflags.u32));
 
@@ -4111,13 +4111,13 @@ VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess,
 
     if (pWalk->fFailed & PGM_WALKFAIL_EPT_VIOLATION)
     {
-        Log(("EptViolation: cs:rip=%x:%#RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
+        LogFlow(("EptViolation: cs:rip=%04x:%08RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
         uint64_t const fEptAccess = (pWalk->fEffective & PGM_PTATTRS_EPT_MASK) >> PGM_PTATTRS_EPT_SHIFT;
         return iemVmxVmexitEptViolation(pVCpu, fAccess, fSlatFail, fEptAccess, pWalk->GCPhysNested, pWalk->fIsLinearAddrValid,
                                         pWalk->GCPtr, cbInstr);
     }
 
-    Log(("EptMisconfig: cs:rip=%x:%#RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
+    LogFlow(("EptMisconfig: cs:rip=%04x:%08RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
     Assert(pWalk->fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
     return iemVmxVmexitEptMisconfig(pVCpu, pWalk->GCPhysNested);
 }
