@@ -1162,7 +1162,12 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
     /*
      * Walk the guest EPT tables and check if it's an EPT violation or misconfiguration.
      */
-    Log7Func(("cs:rip=%04x:%#RX64 GCPhysNestedFault=%RGp\n", pRegFrame->cs.Sel, pRegFrame->rip, GCPhysNestedFault));
+    if (fIsLinearAddrValid)
+        Log7Func(("cs:rip=%04x:%#08RX64 GCPhysNestedFault=%RGp uErr=%#x GCPtrNestedFault=%RGv\n",
+                  pRegFrame->cs.Sel, pRegFrame->rip, GCPhysNestedFault, uErr, GCPtrNestedFault));
+    else
+        Log7Func(("cs:rip=%04x:%#08RX64 GCPhysNestedFault=%RGp uErr=%#x\n",
+                  pRegFrame->cs.Sel, pRegFrame->rip, GCPhysNestedFault, uErr));
     PGMPTWALKGST GstWalkAll;
     int rc = pgmGstSlatWalk(pVCpu, GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault, pWalk, &GstWalkAll);
     if (RT_FAILURE(rc))
@@ -2945,7 +2950,7 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
         rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
         AssertRC(rc);
         const unsigned iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        AssertMsg(PGM_PAGE_GET_HCPHYS(pPage) == SHW_PTE_GET_HCPHYS(pPt->a[iPte]),
+        AssertMsg(PGM_PAGE_GET_HCPHYS(pPage) == SHW_PTE_GET_HCPHYS(pPt->a[iPte]) || !SHW_PTE_IS_P(pPt->a[iPte]),
                   ("PGM page and shadow PTE address conflict. GCPhysNestedPage=%RGp GCPhysPage=%RGp Page=%RHp Shw=%RHp\n",
                    GCPhysNestedPage, GCPhysPage, PGM_PAGE_GET_HCPHYS(pPage), SHW_PTE_GET_HCPHYS(pPt->a[iPte])));
         Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u [cache]\n", pGstWalkAll->u.Ept.Pte.u, pPt->a[iPte].u,  iPte));
