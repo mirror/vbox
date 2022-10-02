@@ -3045,7 +3045,7 @@ static uint32_t vmxHCGetIemXcptFlags(uint8_t uVector, uint32_t uVmxEventType)
  *                              page-fault.
  */
 DECLINLINE(void) vmxHCSetPendingEvent(PVMCPUCC pVCpu, uint32_t u32IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
-                                        RTGCUINTPTR GCPtrFaultAddress)
+                                      RTGCUINTPTR GCPtrFaultAddress)
 {
     Assert(!VCPU_2_VMXSTATE(pVCpu).Event.fPending);
     VCPU_2_VMXSTATE(pVCpu).Event.fPending          = true;
@@ -3905,7 +3905,8 @@ static VBOXSTRICTRC vmxHCCheckForceFlags(PVMCPUCC pVCpu, bool fIsNestedGuest, bo
     {
         STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchHmToR3FF);
         int rc = RT_LIKELY(!VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_RAW_TO_R3 : VINF_EM_NO_MEMORY;
-        Log4Func(("HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc));
+        Log4Func(("HM_TO_R3 forcing us back to ring-3. rc=%d (fVM=%#RX64 fCpu=%#RX64)\n",
+                  rc, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
         return rc;
     }
 
@@ -10216,7 +10217,7 @@ HMVMX_EXIT_DECL vmxHCExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     switch (pVmxTransient->uExitReason)
     {
@@ -10249,7 +10250,7 @@ HMVMX_EXIT_DECL vmxHCExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
             Assert(CPUMIsGuestVmxProcCtls3Set(pCtx, VMX_PROC_CTLS3_LOADIWKEY_EXIT));
             break;
     }
-#endif
+# endif
 
     vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
     vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -10264,8 +10265,8 @@ HMVMX_EXIT_DECL vmxHCExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
     return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
-
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+
 /**
  * Nested-guest VM-exit handler for EPT violation (VMX_EXIT_EPT_VIOLATION).
  * Conditional VM-exit.
@@ -10308,8 +10309,34 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         VBOXSTRICTRC rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, uErr, CPUMCTX2CORE(pCtx),
                                                                      GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault,
                                                                      &Walk);
+        Log7Func(("PGM (uExitQual=%#RX64, %RGp, %RGv) -> %Rrc (fFailed=%d)\n",
+                  uExitQual, GCPhysNestedFault, GCPtrNestedFault, VBOXSTRICTRC_VAL(rcStrict), Walk.fFailed));
         if (RT_SUCCESS(rcStrict))
+        {
+#if 1
+            /*
+             * If it's our VMEXIT, we're responsible for re-injecting any event which delivery
+             * might have triggered this VMEXIT.  If we forward the problem to the inner VMM,
+             * it's its problem to deal with that issue.  This means that it's troublesome to
+             * call vmxHCCheckExitDueToEventDelivery before PGMR0NestedTrap0eHandlerNestedPaging
+             * have decided who's VMEXIT it is. Unfortunately, we're a bit of a pickle then if
+             * we end up with an informational status here, as we _must_ _not_ drop events either.
+             */
+            /** @todo need better solution for this.  Better solution should probably be
+             *        applied to other exits too...   */
+            if (rcStrict == VINF_SUCCESS)
+            {
+                vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+                vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+                vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+                vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
+                vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+
+                vmxHCCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
+            }
+#endif
             return rcStrict;
+        }
 
         vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
@@ -10383,6 +10410,7 @@ HMVMX_EXIT_DECL vmxHCExitEptMisconfigNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
 
     return vmxHCExitEptMisconfig(pVCpu, pVmxTransient);
 }
+
 # endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 /** @} */
