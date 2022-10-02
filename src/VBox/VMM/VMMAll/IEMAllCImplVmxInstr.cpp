@@ -7535,7 +7535,7 @@ static void iemVmxVmentrySetupPreemptTimer(PVMCPUCC pVCpu, const char *pszInstr)
 
 
 /**
- * Injects an event using TRPM given a VM-entry interruption info. and related
+ * Injects an event using TRPM given a VM-entry interruption info and related
  * fields.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
@@ -7573,15 +7573,12 @@ static void iemVmxVmentryInjectTrpmEvent(PVMCPUCC pVCpu, const char *pszInstr, u
         TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
         Log(("%s: Injecting: fault_addr=%RGp\n", pszInstr, GCPtrFaultAddress));
     }
-    else
+    else if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
+             || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
+             || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
     {
-        if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
-            || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
-            || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
-        {
-            TRPMSetInstrLength(pVCpu, cbInstr);
-            Log(("%s: Injecting: instr_len=%u\n", pszInstr, cbInstr));
-        }
+        TRPMSetInstrLength(pVCpu, cbInstr);
+        Log(("%s: Injecting: instr_len=%u\n", pszInstr, cbInstr));
     }
 
     if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
@@ -7633,7 +7630,7 @@ static void iemVmxVmentryInjectEvent(PVMCPUCC pVCpu, const char *pszInstr) RT_NO
          *
          * However, we do it here on VM-entry as well because while it isn't visible to guest
          * software until VM-exit, when and if HM looks at the VMCS to continue nested-guest
-         * execution using hardware-assisted VMX, it will not be try to inject the event again.
+         * execution using hardware-assisted VMX, it will not try to inject the event again.
          *
          * See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
          */
@@ -7725,7 +7722,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
 # else
     Assert(   uInstrId == VMXINSTRID_VMLAUNCH
            || uInstrId == VMXINSTRID_VMRESUME);
-    const char *pszInstr = uInstrId == VMXINSTRID_VMRESUME ? "vmresume" : "vmlaunch";
+    const char * const pszInstr = uInstrId == VMXINSTRID_VMRESUME ? "vmresume" : "vmlaunch";
 
     /* Nested-guest intercept. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
