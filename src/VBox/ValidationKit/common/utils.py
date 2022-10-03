@@ -265,25 +265,36 @@ def getHostOsVersion():
             except:
                 pass;
 
-    elif sOs == 'darwin':
-        sOsxVersion = platform.mac_ver()[0];
-        codenames = {"4": "Tiger",
-                     "5": "Leopard",
-                     "6": "Snow Leopard",
-                     "7": "Lion",
-                     "8": "Mountain Lion",
-                     "9": "Mavericks",
-                     "10": "Yosemite",
-                     "11": "El Capitan",
-                     "12": "Sierra",
-                     "13": "High Sierra",
-                     "14": "Mojave",
-                     "15": "Catalina",
-                     "16": "Unknown 16",
-                     "17": "Unknown 17",
-                     "18": "Unknown 18",
-                     "19": "Unknown 19", }
-        sVersion += ' / OS X ' + sOsxVersion + ' (' + codenames[sOsxVersion.split('.')[1]] + ')'
+    elif sOs == 'darwin':`
+        def getMacVersionName(sVersion):
+            aOsVersion = sVersion.split('.')    # example: ('10','15','7')
+            codenames = {"4": "Tiger",
+                         "5": "Leopard",
+                         "6": "Snow Leopard",
+                         "7": "Lion",
+                         "8": "Mountain Lion",
+                         "9": "Mavericks",
+                         "10": "Yosemite",
+                         "11": "El Capitan",
+                         "12": "Sierra",
+                         "13": "High Sierra",
+                         "14": "Mojave",
+                         "15": "Catalina",
+                         "16": "Wrong version",
+                         }
+            codenames_afterCatalina = {"11": "Big Sur",
+                                       "12": "Monterey",
+                                       "13": "Ventura",
+                                       "14": "Unknown 15",
+                                       "15": "Unknown 16"}
+            print(sVersion)
+            if aOsVersion[0] == '10':
+                return codenames[aOsVersion[1]]
+            else:
+                return codenames_afterCatalina[aOsVersion[0]]
+
+        sOsxVersion = platform.mac_ver()[0]
+        sVersion += ' / OS X ' + sOsxVersion + ' (' + getMacVersionName(sOsxVersion) + ')'
 
     elif sOs == 'win':
         class OSVersionInfoEx(ctypes.Structure):
