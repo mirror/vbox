@@ -74,6 +74,7 @@ struct UIDataSettingsMachineSystem
         , m_fEnabledUTC(false)
         , m_fAvailableSecureBoot(false)
         , m_fEnabledSecureBoot(false)
+        , m_fResetSecureBoot(false)
         /* CPU data: */
         , m_cCPUCount(-1)
         , m_iCPUExecCap(-1)
@@ -105,6 +106,7 @@ struct UIDataSettingsMachineSystem
                && (m_fEnabledUTC == other.m_fEnabledUTC)
                && (m_fAvailableSecureBoot == other.m_fAvailableSecureBoot)
                && (m_fEnabledSecureBoot == other.m_fEnabledSecureBoot)
+               && (m_fResetSecureBoot == other.m_fResetSecureBoot)
                /* CPU data: */
                && (m_cCPUCount == other.m_cCPUCount)
                && (m_iCPUExecCap == other.m_iCPUExecCap)
@@ -151,6 +153,8 @@ struct UIDataSettingsMachineSystem
     bool                m_fAvailableSecureBoot;
     /** Holds whether the secure boot is enabled. */
     bool                m_fEnabledSecureBoot;
+    /** Holds whether the secure boot is reseted. */
+    bool                m_fResetSecureBoot;
 
     /** Holds the CPU count. */
     int   m_cCPUCount;
@@ -294,6 +298,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     oldSystemData.m_fEnabledSecureBoot = oldSystemData.m_fAvailableSecureBoot
                                        ? comStoreLvl2.GetSecureBootEnabled()
                                        : false;
+    oldSystemData.m_fResetSecureBoot = false;
 
     /* Gather old 'Processor' data: */
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
@@ -408,6 +413,7 @@ void UIMachineSettingsSystem::putToCache()
     {
         newSystemData.m_fAvailableSecureBoot = m_pCache->base().m_fAvailableSecureBoot;
         newSystemData.m_fEnabledSecureBoot = m_pEditorMotherboardFeatures->isEnabledSecureBoot();
+        newSystemData.m_fResetSecureBoot = m_pEditorMotherboardFeatures->isResetSecureBoot();
     }
 
     /* Gather 'Processor' data: */
@@ -997,7 +1003,9 @@ bool UIMachineSettingsSystem::saveMotherboardData()
             fSuccess = m_machine.isOk();
         }
         /* Save whether secure boot is enabled: */
-        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledSecureBoot != oldSystemData.m_fEnabledSecureBoot)
+        if (   fSuccess && isMachineOffline()
+            && (   newSystemData.m_fEnabledSecureBoot != oldSystemData.m_fEnabledSecureBoot
+                || newSystemData.m_fResetSecureBoot != oldSystemData.m_fResetSecureBoot))
         {
             CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
             CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
@@ -1006,11 +1014,15 @@ bool UIMachineSettingsSystem::saveMotherboardData()
             if (   newSystemData.m_fEnabledSecureBoot
                 && newSystemData.m_fEnabledEFI)
             {
-                /* Secure boot was NOT available? */
-                if (!newSystemData.m_fAvailableSecureBoot)
+                /* Secure boot was NOT available
+                 * or requested to be reseted: */
+                if (   !newSystemData.m_fAvailableSecureBoot
+                    || newSystemData.m_fResetSecureBoot)
                 {
-                    /* Init and enroll everything: */
-                    comStoreLvl1.InitUefiVariableStore(0);
+                    /* Init if required: */
+                    if (!newSystemData.m_fAvailableSecureBoot)
+                        comStoreLvl1.InitUefiVariableStore(0);
+                    /* Enroll everything: */
                     comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
                     comStoreLvl2.EnrollOraclePlatformKey();
                     comStoreLvl2.EnrollDefaultMsSignatures();

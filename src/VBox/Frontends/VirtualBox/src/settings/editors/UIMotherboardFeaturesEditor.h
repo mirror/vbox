@@ -38,6 +38,7 @@
 class QCheckBox;
 class QGridLayout;
 class QLabel;
+class QPushButton;
 
 /** QWidget subclass used as motherboard features editor. */
 class SHARED_LIBRARY_STUFF UIMotherboardFeaturesEditor : public QIWithRetranslateUI<QWidget>
@@ -80,6 +81,9 @@ public:
     /** Returns 'enable secure boot' feature value. */
     bool isEnabledSecureBoot() const;
 
+    /** Returns 'reset to default secure boot keys' feature value. */
+    bool isResetSecureBoot() const;
+
     /** Returns minimum layout hint. */
     int minimumLabelHorizontalHint() const;
     /** Defines minimum layout @a iIndent. */
@@ -94,6 +98,11 @@ private slots:
 
     /** Handles 'enable EFI' feature being toggled. */
     void sltHandleEnableEfiToggling();
+    /** Handles 'enable secure boot' feature being toggled. */
+    void sltHandleEnableSecureBootToggling();
+
+    /** Marks corresponding push button activated. */
+    void sltResetSecureBoot();
 
 private:
 
@@ -115,17 +124,19 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the main layout instance. */
-        QGridLayout *m_pLayout;
+        QGridLayout  *m_pLayout;
         /** Holds the label instance. */
-        QLabel      *m_pLabel;
+        QLabel       *m_pLabel;
         /** Holds the 'enable IO APIC' check-box instance. */
-        QCheckBox   *m_pCheckBoxEnableIoApic;
+        QCheckBox    *m_pCheckBoxEnableIoApic;
         /** Holds the 'enable UTC time' check-box instance. */
-        QCheckBox   *m_pCheckBoxEnableUtcTime;
+        QCheckBox    *m_pCheckBoxEnableUtcTime;
         /** Holds the 'enable EFI' check-box instance. */
-        QCheckBox   *m_pCheckBoxEnableEfi;
-        /** Holds the 'enable secure boot' check-box instance. */
-        QCheckBox   *m_pCheckBoxEnableSecureBoot;
+        QCheckBox    *m_pCheckBoxEnableEfi;
+        /** Holds the 'secure boot' check-box instance. */
+        QCheckBox    *m_pCheckBoxEnableSecureBoot;
+        /** Holds the 'secure boot' tool-button instance. */
+        QPushButton  *m_pPushButtonResetSecureBoot;
     /** @} */
 };
 

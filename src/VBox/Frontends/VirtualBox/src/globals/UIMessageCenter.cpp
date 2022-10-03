@@ -857,11 +857,23 @@ bool UIMessageCenter::warnAboutRulesConflict(QWidget *pParent /* = 0 */) const
     return false;
 }
 
-bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
                              "<p>If you proceed your changes will be discarded.</p>"),
+                          0 /* auto-confirm id */,
+                          QString() /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmRestoringDefaultKeys(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Are you going to restore default secure boot keys.</p>"
+                             "<p>If you proceed your current keys will be rewritten. "
+                             "You may not be able to boot affected VM anymore.</p>"),
                           0 /* auto-confirm id */,
                           QString() /* ok button text */,
                           QString() /* cancel button text */,

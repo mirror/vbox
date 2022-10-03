@@ -316,6 +316,7 @@ public:
         bool warnAboutNameShouldBeUnique(QWidget *pParent = 0) const;
         bool warnAboutRulesConflict(QWidget *pParent = 0) const;
         bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
+        bool confirmRestoringDefaultKeys(QWidget *pParent = 0) const;
     /** @} */
 
     /** @name VirtualBox Manager warnings.

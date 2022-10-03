@@ -29,8 +29,11 @@
 #include <QCheckBox>
 #include <QGridLayout>
 #include <QLabel>
+#include <QPushButton>
 
 /* GUI includes: */
+#include "UIIconPool.h"
+#include "UIMessageCenter.h"
 #include "UIMotherboardFeaturesEditor.h"
 
 
@@ -45,6 +48,7 @@ UIMotherboardFeaturesEditor::UIMotherboardFeaturesEditor(QWidget *pParent /* = 0
     , m_pCheckBoxEnableUtcTime(0)
     , m_pCheckBoxEnableEfi(0)
     , m_pCheckBoxEnableSecureBoot(0)
+    , m_pPushButtonResetSecureBoot(0)
 {
     prepare();
 }
@@ -125,6 +129,13 @@ bool UIMotherboardFeaturesEditor::isEnabledSecureBoot() const
            : m_fEnableSecureBoot;
 }
 
+bool UIMotherboardFeaturesEditor::isResetSecureBoot() const
+{
+    return   m_pPushButtonResetSecureBoot
+           ? m_pPushButtonResetSecureBoot->property("clicked_once").toBool()
+           : false;
+}
+
 int UIMotherboardFeaturesEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
@@ -165,12 +176,19 @@ void UIMotherboardFeaturesEditor::retranslateUi()
         m_pCheckBoxEnableSecureBoot->setText(tr("Enable &Secure Boot"));
         m_pCheckBoxEnableSecureBoot->setToolTip(tr("When checked, the secure boot emulation will be enabled."));
     }
+    if (m_pPushButtonResetSecureBoot)
+    {
+        m_pPushButtonResetSecureBoot->setText(tr("&Reset Keys to Default"));
+        m_pPushButtonResetSecureBoot->setToolTip(tr("Resets secure boot keys to default."));
+    }
 }
 
 void UIMotherboardFeaturesEditor::sltHandleEnableEfiToggling()
 {
     /* Acquire actual feature state: */
-    const bool fOn = m_pCheckBoxEnableEfi ? m_pCheckBoxEnableEfi->isChecked() : false;
+    const bool fOn = m_pCheckBoxEnableEfi
+                   ? m_pCheckBoxEnableEfi->isChecked()
+                   : false;
 
     /* Update corresponding controls: */
     if (m_pCheckBoxEnableSecureBoot)
@@ -178,6 +196,38 @@ void UIMotherboardFeaturesEditor::sltHandleEnableEfiToggling()
 
     /* Notify listeners: */
     emit sigChangedEfi();
+    sltHandleEnableSecureBootToggling();
+}
+
+void UIMotherboardFeaturesEditor::sltHandleEnableSecureBootToggling()
+{
+    /* Acquire actual feature state: */
+    const bool fOn =    m_pCheckBoxEnableEfi
+                     && m_pCheckBoxEnableSecureBoot
+                     && m_pPushButtonResetSecureBoot
+                   ?    m_pCheckBoxEnableEfi->isChecked()
+                     && m_pCheckBoxEnableSecureBoot->isChecked()
+                     && !m_pPushButtonResetSecureBoot->property("clicked_once").toBool()
+                   : false;
+
+    /* Update corresponding controls: */
+    if (m_pPushButtonResetSecureBoot)
+        m_pPushButtonResetSecureBoot->setEnabled(fOn);
+
+    /* Notify listeners: */
+    emit sigChangedSecureBoot();
+}
+
+void UIMotherboardFeaturesEditor::sltResetSecureBoot()
+{
+    if (!m_pPushButtonResetSecureBoot->property("clicked_once").toBool())
+    {
+        if (msgCenter().confirmRestoringDefaultKeys())
+        {
+            m_pPushButtonResetSecureBoot->setProperty("clicked_once", true);
+            sltHandleEnableSecureBootToggling();
+        }
+    }
 }
 
 void UIMotherboardFeaturesEditor::prepare()
@@ -225,13 +275,23 @@ void UIMotherboardFeaturesEditor::prepare()
         if (m_pCheckBoxEnableSecureBoot)
         {
             connect(m_pCheckBoxEnableSecureBoot, &QCheckBox::stateChanged,
-                    this, &UIMotherboardFeaturesEditor::sigChangedSecureBoot);
+                    this, &UIMotherboardFeaturesEditor::sltHandleEnableSecureBootToggling);
             m_pLayout->addWidget(m_pCheckBoxEnableSecureBoot, 3, 1);
+        }
+        /* Prepare 'reset secure boot' tool-button: */
+        m_pPushButtonResetSecureBoot = new QPushButton(this);
+        if (m_pPushButtonResetSecureBoot)
+        {
+            m_pPushButtonResetSecureBoot->setIcon(UIIconPool::iconSet(":/refresh_16px"));
+            connect(m_pPushButtonResetSecureBoot, &QPushButton::clicked,
+                    this, &UIMotherboardFeaturesEditor::sltResetSecureBoot);
+            m_pLayout->addWidget(m_pPushButtonResetSecureBoot, 4, 1);
         }
     }
 
     /* Fetch states: */
     sltHandleEnableEfiToggling();
+    sltHandleEnableSecureBootToggling();
 
     /* Apply language settings: */
     retranslateUi();
