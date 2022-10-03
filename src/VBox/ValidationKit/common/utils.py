@@ -287,7 +287,7 @@ def getHostOsVersion():
                                        "13": "Ventura",
                                        "14": "Unknown 15",
                                        "15": "Unknown 16"}
-            print(sVersion)
+
             if aOsVersion[0] == '10':
                 return codenames[aOsVersion[1]]
             else:
