@@ -289,9 +289,10 @@ def getHostOsVersion():
                                        "15": "Unknown 15"}
 
             if aOsVersion[0] == '10':
-                return codenames[aOsVersion[1]]
+                sResult = codenames[aOsVersion[1]]
             else:
-                return codenames_afterCatalina[aOsVersion[0]]
+                sResult = codenames_afterCatalina[aOsVersion[0]]
+            return sResult
 
         sOsxVersion = platform.mac_ver()[0]
         sVersion += ' / OS X ' + sOsxVersion + ' (' + getMacVersionName(sOsxVersion) + ')'
