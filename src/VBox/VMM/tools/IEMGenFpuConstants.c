@@ -252,6 +252,15 @@ int main(void)
 
     printf("};\n");
 
+    mpfr_init2(One, 112 + 1);
+    mpfr_set_ui(One, 1, MPFR_RNDD);
+
+    mpfr_init2(Val, 112 + 1);
+    mpfr_exp(Val, One, MPFR_RNDD);
+    mpfr_log2(Val, Val, MPFR_RNDD);
+
+    PrintF128(Val, "g_r128Log2e", "The log2e constant as 128-bit floating point value.");
+
     mpfr_clear(ValXX);
     mpfr_clear(ValX);
     mpfr_clear(Val);

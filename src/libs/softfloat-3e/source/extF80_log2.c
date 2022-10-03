@@ -63,13 +63,15 @@ extFloat80_t extF80_ylog2x(extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_C
     return v;
 }
 
+/** The log2e constant as 128-bit floating point value.
+ * base-10: 1.44269504088896340735992468100189185
+ * base-16: 1.71547652b82fe1777d0ffda0d239
+ * base-2 : 1.0111000101010100011101100101001010111000001011111110000101110111011111010000111111111101101000001101001000111001 */
+const RTFLOAT128U g_r128Log2e = RTFLOAT128U_INIT_C(0, 0x71547652b82f, 0xe1777d0ffda0d239, 0x3fff);
+
 extFloat80_t extF80_ylog2xp1(extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_COMMA)
 {
-    union { extFloat80_t f; long double r; } uLog2e;
-    extFloat80_t v;
-
-    uLog2e.r = 1.442695L;
-    v = uLog2e.f;
+    extFloat80_t v = f128_to_extF80(*(float128_t *)&g_r128Log2e, pState);
 
     v = extF80_mul(v, y, pState);
     v = extF80_mul(v, x, pState);
