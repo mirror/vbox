@@ -120,8 +120,9 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                     {
                         /* Calculate positions: */
                         UIChooserItem *pFirstItem = model()->firstSelectedItem();
-                        int iFirstPosition = model()->navigationItems().indexOf(pFirstItem);
-                        int iClickedPosition = model()->navigationItems().indexOf(pClickedItem);
+                        AssertPtrReturn(pFirstItem, false); // is failure possible?
+                        const int iFirstPosition = model()->navigationItems().indexOf(pFirstItem);
+                        const int iClickedPosition = model()->navigationItems().indexOf(pClickedItem);
                         /* Populate list of items from 'first' to 'clicked': */
                         QList<UIChooserItem*> items;
                         if (iFirstPosition <= iClickedPosition)
@@ -130,10 +131,24 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                         else
                             for (int i = iFirstPosition; i >= iClickedPosition; --i)
                                 items << model()->navigationItems().at(i);
+                        /* Wipe out items of inconsistent types: */
+                        QList<UIChooserItem*> filteredItems;
+                        foreach (UIChooserItem *pIteratedItem, items)
+                        {
+                            /* So, the logic is to add intermediate item if
+                             * - first and intermediate selected items are global or
+                             * - first and intermediate selected items are NOT global. */
+                            if (   (   pFirstItem->type() == UIChooserNodeType_Global
+                                    && pIteratedItem->type() == UIChooserNodeType_Global)
+                                || (   pFirstItem->type() != UIChooserNodeType_Global
+                                    && pIteratedItem->type() != UIChooserNodeType_Global))
+                                filteredItems << pIteratedItem;
+                        }
                         /* Make that list selected: */
-                        model()->setSelectedItems(items);
-                        /* Make clicked item current one: */
-                        model()->setCurrentItem(pClickedItem);
+                        model()->setSelectedItems(filteredItems);
+                        /* Make item closest to clicked the current one: */
+                        if (!filteredItems.isEmpty())
+                            model()->setCurrentItem(filteredItems.last());
                     }
                     /* Was 'control' modifier pressed? */
                     else if (pEvent->modifiers() == Qt::ControlModifier)
@@ -142,7 +157,18 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                         if (model()->selectedItems().contains(pClickedItem))
                             model()->removeFromSelectedItems(pClickedItem);
                         else
-                            model()->addToSelectedItems(pClickedItem);
+                        {
+                            /* So, the logic is to add newly clicked item if
+                             * - previously and newly selected items are global or
+                             * - previously and newly selected items are NOT global. */
+                            UIChooserItem *pFirstItem = model()->firstSelectedItem();
+                            AssertPtrReturn(pFirstItem, false); // is failure possible?
+                            if (   (   pFirstItem->type() == UIChooserNodeType_Global
+                                    && pClickedItem->type() == UIChooserNodeType_Global)
+                                || (   pFirstItem->type() != UIChooserNodeType_Global
+                                    && pClickedItem->type() != UIChooserNodeType_Global))
+                                model()->addToSelectedItems(pClickedItem);
+                        }
                         /* Make clicked item current one: */
                         model()->setCurrentItem(pClickedItem);
                     }
