@@ -1193,6 +1193,7 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
 
     VRDEUSBREQREAPURBBODY *pBody = (VRDEUSBREQREAPURBBODY *)pvBody;
 
+    /* 'pvBody' memory buffer can contain multiple URBs. */
     while (cbBody >= sizeof(VRDEUSBREQREAPURBBODY))
     {
         Log(("RemoteUSBBackend::reapURB: id = %d,  flags = %02X, error = %d, handle %d, len = %d.\n",
@@ -1211,7 +1212,6 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
 
         /* Verify client's data. */
         if (   (pBody->flags & ~fu8ReapValidFlags) != 0
-            || sizeof(VRDEUSBREQREAPURBBODY) > cbBody
             || pBody->handle == 0)
         {
             LogFlow(("RemoteUSBBackend::reapURB: WARNING: invalid reply data. Skipping the reply.\n"));
@@ -1228,7 +1228,7 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
             break;
         }
 
-        uint32_t cbBodyData = 0; /* Data contained in the URB body structure for input URBs. */
+        uint32_t cbBodyData = 0; /* Data contained in the URB body structure for input URBs. i.e. beyond VRDEUSBREQREAPURBBODY. */
 
         requestDevice(pDevice);
 
@@ -1247,86 +1247,93 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
         }
         else
         {
-            LogFlow(("RemoteUSBBackend::reapURB: qurb = %p\n", qurb));
+            LogFlow(("RemoteUSBBackend::reapURB: qurb = %p, u32Err = %d\n", qurb, qurb->u32Err));
 
-            /* Update the URB error field. */
-            if (mClientVersion == VRDE_USB_VERSION_1)
+            /* Update the URB error field, if it does not yet indicate an error. */
+            if (qurb->u32Err == VUSBSTATUS_OK)
             {
-                switch(pBody->error)
+                if (mClientVersion == VRDE_USB_VERSION_1)
                 {
-                    case VRDE_USB_XFER_OK:    qurb->u32Err = VUSBSTATUS_OK;    break;
-                    case VRDE_USB_XFER_STALL: qurb->u32Err = VUSBSTATUS_STALL; break;
-                    case VRDE_USB_XFER_DNR:   qurb->u32Err = VUSBSTATUS_DNR;   break;
-                    case VRDE_USB_XFER_CRC:   qurb->u32Err = VUSBSTATUS_CRC;   break;
-                    default: Log(("RemoteUSBBackend::reapURB: Invalid error %d\n", pBody->error));
-                                              qurb->u32Err = VUSBSTATUS_DNR;   break;
+                    switch(pBody->error)
+                    {
+                        case VRDE_USB_XFER_OK:    qurb->u32Err = VUSBSTATUS_OK;    break;
+                        case VRDE_USB_XFER_STALL: qurb->u32Err = VUSBSTATUS_STALL; break;
+                        case VRDE_USB_XFER_DNR:   qurb->u32Err = VUSBSTATUS_DNR;   break;
+                        case VRDE_USB_XFER_CRC:   qurb->u32Err = VUSBSTATUS_CRC;   break;
+                        default: Log(("RemoteUSBBackend::reapURB: Invalid error %d\n", pBody->error));
+                                                  qurb->u32Err = VUSBSTATUS_DNR;   break;
+                    }
+                }
+                else if (   mClientVersion == VRDE_USB_VERSION_2
+                         || mClientVersion == VRDE_USB_VERSION_3)
+                {
+                    switch(pBody->error)
+                    {
+                        case VRDE_USB_XFER_OK:    qurb->u32Err = VUSBSTATUS_OK;            break;
+                        case VRDE_USB_XFER_STALL: qurb->u32Err = VUSBSTATUS_STALL;         break;
+                        case VRDE_USB_XFER_DNR:   qurb->u32Err = VUSBSTATUS_DNR;           break;
+                        case VRDE_USB_XFER_CRC:   qurb->u32Err = VUSBSTATUS_CRC;           break;
+                        case VRDE_USB_XFER_DO:    qurb->u32Err = VUSBSTATUS_DATA_OVERRUN;  break;
+                        case VRDE_USB_XFER_DU:    qurb->u32Err = VUSBSTATUS_DATA_UNDERRUN; break;
+
+                        /* Unmapped errors. */
+                        case VRDE_USB_XFER_BS:
+                        case VRDE_USB_XFER_DTM:
+                        case VRDE_USB_XFER_PCF:
+                        case VRDE_USB_XFER_UPID:
+                        case VRDE_USB_XFER_BO:
+                        case VRDE_USB_XFER_BU:
+                        case VRDE_USB_XFER_ERR:
+                        default: Log(("RemoteUSBBackend::reapURB: Invalid error %d\n", pBody->error));
+                                                  qurb->u32Err = VUSBSTATUS_DNR;   break;
+                    }
+                }
+                else
+                {
+                    qurb->u32Err = VUSBSTATUS_DNR;
                 }
             }
-            else if (   mClientVersion == VRDE_USB_VERSION_2
-                     || mClientVersion == VRDE_USB_VERSION_3)
-            {
-                switch(pBody->error)
-                {
-                    case VRDE_USB_XFER_OK:    qurb->u32Err = VUSBSTATUS_OK;            break;
-                    case VRDE_USB_XFER_STALL: qurb->u32Err = VUSBSTATUS_STALL;         break;
-                    case VRDE_USB_XFER_DNR:   qurb->u32Err = VUSBSTATUS_DNR;           break;
-                    case VRDE_USB_XFER_CRC:   qurb->u32Err = VUSBSTATUS_CRC;           break;
-                    case VRDE_USB_XFER_DO:    qurb->u32Err = VUSBSTATUS_DATA_OVERRUN;  break;
-                    case VRDE_USB_XFER_DU:    qurb->u32Err = VUSBSTATUS_DATA_UNDERRUN; break;
 
-                    /* Unmapped errors. */
-                    case VRDE_USB_XFER_BS:
-                    case VRDE_USB_XFER_DTM:
-                    case VRDE_USB_XFER_PCF:
-                    case VRDE_USB_XFER_UPID:
-                    case VRDE_USB_XFER_BO:
-                    case VRDE_USB_XFER_BU:
-                    case VRDE_USB_XFER_ERR:
-                    default: Log(("RemoteUSBBackend::reapURB: Invalid error %d\n", pBody->error));
-                                              qurb->u32Err = VUSBSTATUS_DNR;   break;
-                }
-            }
-            else
-            {
-                qurb->u32Err = VUSBSTATUS_DNR;
-            }
-
-            /* Get the URB data. */
+            /* Get the URB data. The URB is completed unless the client tells that this is a fragment of an IN URB. */
             bool fURBCompleted = true;
 
             if (qurb->fInput)
             {
-                cbBodyData = pBody->len; /* VRDE_USB_DIRECTION_IN URBs include some data. */
-            }
-
-            if (   qurb->u32Err == VUSBSTATUS_OK
-                && qurb->fInput)
-            {
-                LogFlow(("RemoteUSBBackend::reapURB: copying data %d bytes\n", pBody->len));
-
-                uint32_t u32DataLen = qurb->u32TransferredLen + pBody->len;
-
-                if (u32DataLen > qurb->u32Len)
-                {
-                    /* Received more data than expected for this URB. If there more fragments follow,
-                     * they will be discarded because the URB handle will not be valid anymore.
-                     */
-                    qurb->u32Err = VUSBSTATUS_DNR;
-                }
+                if (pBody->len <= cbBody - sizeof(VRDEUSBREQREAPURBBODY))
+                    cbBodyData = pBody->len; /* VRDE_USB_DIRECTION_IN URBs include some data. */
                 else
                 {
-                    memcpy ((uint8_t *)qurb->pvData + qurb->u32TransferredLen, &pBody[1], pBody->len);
+                    cbBodyData = cbBody - sizeof(VRDEUSBREQREAPURBBODY);
+                    qurb->u32Err = VUSBSTATUS_DNR;
                 }
 
-                if (   qurb->u32Err == VUSBSTATUS_OK
-                    && (pBody->flags & VRDE_USB_REAP_FLAG_FRAGMENT) != 0)
+                if (qurb->u32Err == VUSBSTATUS_OK)
                 {
-                    /* If the client sends fragmented packets, accumulate the URB data. */
-                    fURBCompleted = false;
+                    LogFlow(("RemoteUSBBackend::reapURB: copying data %d bytes\n", pBody->len));
+                    if (pBody->len > qurb->u32Len - qurb->u32TransferredLen)
+                    {
+                        /* Received more data than expected for this URB. If there more fragments follow,
+                         * they will be discarded because the URB handle will not be valid anymore.
+                         */
+                        qurb->u32Err = VUSBSTATUS_DNR;
+                        qurb->u32TransferredLen = qurb->u32Len;
+                    }
+                    else
+                    {
+                        memcpy ((uint8_t *)qurb->pvData + qurb->u32TransferredLen, &pBody[1], pBody->len);
+                        qurb->u32TransferredLen += pBody->len;
+                    }
+
+                    if (   qurb->u32Err == VUSBSTATUS_OK
+                        && (pBody->flags & VRDE_USB_REAP_FLAG_FRAGMENT) != 0)
+                    {
+                        /* If the client sends fragmented packets, accumulate the URB data. */
+                        fURBCompleted = false;
+                    }
                 }
             }
-
-            qurb->u32TransferredLen += pBody->len; /* Update the value for all URBs. */
+            else
+                qurb->u32TransferredLen += pBody->len; /* Update the value for OUT URBs. */
 
             if (fURBCompleted)
             {
@@ -1390,16 +1397,14 @@ int RemoteUSBBackend::reapURB(const void *pvBody, uint32_t cbBody)
         }
 
         /* There is probably a further URB body. */
-        uint32_t cbBodySize = sizeof (VRDEUSBREQREAPURBBODY) + cbBodyData;
-
-        if (cbBodySize > cbBody)
+        if (cbBodyData > cbBody - sizeof(VRDEUSBREQREAPURBBODY))
         {
             vrc = VERR_INVALID_PARAMETER;
             break;
         }
 
-        pBody = (VRDEUSBREQREAPURBBODY *)((uint8_t *)pBody + cbBodySize);
-        cbBody -= cbBodySize;
+        cbBody -= sizeof(VRDEUSBREQREAPURBBODY) + cbBodyData;
+        pBody = (VRDEUSBREQREAPURBBODY *)((uint8_t *)pBody + sizeof(VRDEUSBREQREAPURBBODY) + cbBodyData);
     }
 
     LogFlow(("RemoteUSBBackend::reapURB: returns %Rrc\n", vrc));
