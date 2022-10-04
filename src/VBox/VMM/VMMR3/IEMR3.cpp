@@ -245,7 +245,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
      */
     if (pVM->cpum.ro.GuestFeatures.fVmx)
     {
-        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, 0 /*fFlags*/,
+        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, PGMPHYSHANDLER_F_NOT_IN_HM,
                                               iemVmxApicAccessPageHandler,
                                               "VMX APIC-access page", &pVM->iem.s.hVmxApicAccessPage);
         AssertLogRelRCReturn(rc, rc);

@@ -710,7 +710,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
     /*
      * Any handlers for this page?
      */
-    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, pfLockTaken,
                                                                              &Walk, &GstWalk));
@@ -1252,7 +1252,7 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
     PPGMPAGE pPage;
     rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
     AssertRCReturn(rc, rc);
-    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
         Log7Func(("MMIO: Calling NestedTrap0eHandlerDoAccessHandlers for GCPhys %RGp\n", GCPhysPage));
         return VBOXSTRICTRC_TODO(PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, GCPhysNestedFault,
@@ -1790,25 +1790,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVMCC pVM, PVMCPUCC pVCpu, PCPGMPA
 #   endif
             )
     {
-#   if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && PGM_SHW_TYPE == PGM_TYPE_EPT && defined(PGM_WITH_NESTED_APIC_ACCESS_PAGE)
-        /*
-         * If an "ALL" access handler has been registered for the VMX APIC-access page,
-         * we want to ensure EPT violations are triggered rather than EPT misconfigs
-         * as the former allows us to translate it to an APIC-access VM-exit. This is a
-         * weird case because this is not an MMIO page (it's regular guest RAM) but we
-         * want to treat it as an MMIO page wrt to trapping all accesses but we only
-         * want EPT violations for the reasons state above.
-         *
-         * NOTE! This is required even when the nested-hypervisor is not using EPT!
-         */
-        if (CPUMIsGuestVmxApicAccessPageAddr(pVCpu, GCPhysPage))
-        {
-            Log7Func(("SyncHandlerPte: VMX APIC-access page at %#RGp -> marking not present\n", GCPhysPage));
-            pPteDst->u = PGM_PAGE_GET_HCPHYS(pPage);
-            return;
-        }
-#   endif
-
         LogFlow(("SyncHandlerPte: MMIO page -> invalid \n"));
 #   if PGM_SHW_TYPE == PGM_TYPE_EPT
         /* 25.2.3.1: Reserved physical address bit -> EPT Misconfiguration (exit 49) */
@@ -1939,9 +1920,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
 # else
             uint64_t fGstShwPteFlags = X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_A | X86_PTE_D;
 # endif
-            if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                PGM_BTH_NAME(SyncHandlerPte)(pVM, pVCpu, pPage, GCPhysPage, fGstShwPteFlags, &PteDst);
-            else
+            if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
             {
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
                 /*
@@ -1992,6 +1971,8 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
                     Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", GCPhysPage, pPage, iPTDst));
                 }
             }
+            else
+                PGM_BTH_NAME(SyncHandlerPte)(pVM, pVCpu, pPage, GCPhysPage, fGstShwPteFlags, &PteDst);
 
             /*
              * Keep user track up to date.
@@ -2310,10 +2291,10 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                      * Make shadow PTE entry.
                      */
                     SHWPTE PteDst;
-                    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                        PGM_BTH_NAME(SyncHandlerPte)(pVM, pVCpu, pPage, GCPhys, GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, PdeSrc), &PteDst);
-                    else
+                    if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
                         SHW_PTE_SET(PteDst, GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, PdeSrc) | PGM_PAGE_GET_HCPHYS(pPage));
+                    else
+                        PGM_BTH_NAME(SyncHandlerPte)(pVM, pVCpu, pPage, GCPhys, GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, PdeSrc), &PteDst);
 
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                     if (    SHW_PTE_IS_P(PteDst)
@@ -2524,8 +2505,8 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
 
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NONE */
 
-
 #if !defined(IN_RING3) && defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) && PGM_SHW_TYPE == PGM_TYPE_EPT
+
 /**
  * Sync a shadow page for a nested-guest page.
  *
@@ -2561,6 +2542,9 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
 
 # ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
     /* Make the page writable if necessary. */
+    /** @todo This needs to be applied to the regular case below, not here. And,
+     *        no we should *NOT* make the page writble, instead we need to write
+     *        protect them if necessary. */
     if (   PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
         && PGM_PAGE_IS_ZERO(pPage)
         && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -2581,10 +2565,11 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
      */
     SHWPTE Pte;
     uint64_t const fGstShwPteFlags = pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptShadowedPteMask;
-    if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+    if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
+        /** @todo access bit. */
         Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
-Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+        Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
     }
     else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
     {
@@ -2594,40 +2579,9 @@ Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pt
     }
     else
     {
-# if defined(PGM_WITH_NESTED_APIC_ACCESS_PAGE)
-        if (CPUMIsGuestVmxApicAccessPageAddr(pVCpu, GCPhysPage))
-        {
-            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
-            Log7Func(("APIC-access page at %RGp -> shadowing nested-hypervisor %RX64 (%RGp)\n", GCPhysPage, fGstShwPteFlags, pShwPage->GCPhys));
-        }
-#  if 0 /** @todo r=bird: What on earth is the rational for this? */
-        else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
-        {
-            if (fGstShwPteFlags & EPT_E_WRITE)
-            {
-                PGMHandlerPhysicalPageTempOff(pVCpu->CTX_SUFF(pVM), GCPhysPage, GCPhysPage);
-                Log7Func(("monitored page (%R[pgmpage]) at %RGp -> read-write, monitoring disabled\n", pPage, GCPhysPage));
-            }
-            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
-            Log7Func(("monitored page (%R[pgmpage]) at %RGp -> shadowing nested-hypervisor %RX64\n", pPage, GCPhysPage, fGstShwPteFlags));
-        }
-#  endif
-        else
-# endif
-        {
-# if defined(PGM_WITH_NESTED_APIC_ACCESS_PAGE)
-            /** @todo Track using fVirtVmxApicAccess bit in PGMPHYSHANDLER and maybe in PGMPAGE
-             *        too? */
-            /** @todo r=bird: this is wrong for device passthru among other scenarios.   */
-            PGMHandlerPhysicalDeregister(pVCpu->CTX_SUFF(pVM), GCPhysPage);
-            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
-            Log7Func(("MMIO at %RGp potentially former VMX APIC-access page -> unregistered\n", GCPhysPage));
-# else
-            /** @todo Do MMIO optimizations here too? */
-            Log7Func(("mmio page (%R[pgmpage]) at %RGp -> 0\n", pPage, GCPhysPage));
-            Pte.u = 0;
-# endif
-        }
+        /** @todo Do MMIO optimizations here too? */
+        Log7Func(("mmio/all page (%R[pgmpage]) at %RGp -> 0\n", pPage, GCPhysPage));
+        Pte.u = 0;
     }
 
     /* Make sure only allocated pages are mapped writable. */
@@ -2968,9 +2922,8 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
     STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
     return rc;
 }
+
 #endif  /* !IN_RING3 && VBOX_WITH_NESTED_HWVIRT_VMX_EPT && PGM_SHW_TYPE == PGM_TYPE_EPT*/
-
-
 #if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_NONE
 
 /**
@@ -3073,7 +3026,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
                      */
                     if (RT_LIKELY(pPage))
                     {
-                        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
                         {
                             //AssertMsgFailed(("%R[pgmpage] - we don't set PGM_PTFLAGS_TRACK_DIRTY for these pages\n", pPage));
                             Assert(!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage));
@@ -3495,7 +3448,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                         }
 # endif
 
-                        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
                             PGM_BTH_NAME(SyncHandlerPte)(pVM, pVCpu, pPage, GCPhys, SHW_PTE_GET_U(PteDstBase), &PteDst);
                         else if (PGM_PAGE_IS_BALLOONED(pPage))
                             SHW_PTE_SET(PteDst, 0); /* Handle ballooned pages at #PF time. */
@@ -4597,7 +4550,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                             }
 
                             /* flags */
-                            if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
+                            if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPhysPage))
                             {
                                 if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
                                 {
@@ -4837,7 +4790,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                                 {
                                     if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
                                     {
-                                        if (SHW_PTE_IS_RW(PteDst))
+                                        if (   SHW_PTE_IS_RW(PteDst)
+                                            && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPhysPage))
                                         {
                                             AssertMsgFailed(("WRITE access flagged at %RGv but the page is writable! pPhysPage=%R[pgmpage] PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                              GCPtr + off, pPhysPage, (uint64_t)PdeSrc.u, SHW_PTE_LOG64(PteDst)));
@@ -4850,6 +4804,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                                 else
                                 {
                                     if (   SHW_PTE_IS_P(PteDst)
+                                        && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPhysPage)
 #  if PGM_SHW_TYPE == PGM_TYPE_EPT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64
                                         && !PGM_PAGE_IS_MMIO(pPhysPage)
 #  endif

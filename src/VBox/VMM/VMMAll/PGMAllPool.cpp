@@ -3370,6 +3370,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
             if (!fFlushPTEs)
             {
+                /* Note! Disregarding the PGMPHYSHANDLER_F_NOT_IN_HM bit here. Should be harmless. */
                 switch (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage))
                 {
                     case PGM_PAGE_HNDL_PHYS_STATE_NONE:         /* No handler installed. */
@@ -3446,6 +3447,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
             if (!fFlushPTEs)
             {
+                /* Note! Disregarding the PGMPHYSHANDLER_F_NOT_IN_HM bit here. Should be harmless. */
                 switch (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage))
                 {
                     case PGM_PAGE_HNDL_PHYS_STATE_NONE:         /* No handler installed. */

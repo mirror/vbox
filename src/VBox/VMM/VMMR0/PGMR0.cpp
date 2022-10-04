@@ -894,10 +894,13 @@ VMMR0_INT_DECL(int) PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDL
                     ("%#x: %d, expected %d\n", hType, pTypeR3->enmKind, enmKind),
                     VERR_INVALID_HANDLE);
     AssertMsgReturn(pTypeR3->fKeepPgmLock == RT_BOOL(fFlags & PGMPHYSHANDLER_F_KEEP_PGM_LOCK),
-                    ("%#x: %d, fFlags=%d\n", hType, pTypeR3->fKeepPgmLock, fFlags),
+                    ("%#x: %d, fFlags=%#x\n", hType, pTypeR3->fKeepPgmLock, fFlags),
                     VERR_INVALID_HANDLE);
     AssertMsgReturn(pTypeR3->fRing0DevInsIdx == RT_BOOL(fFlags & PGMPHYSHANDLER_F_R0_DEVINS_IDX),
-                    ("%#x: %d, fFlags=%d\n", hType, pTypeR3->fRing0DevInsIdx, fFlags),
+                    ("%#x: %d, fFlags=%#x\n", hType, pTypeR3->fRing0DevInsIdx, fFlags),
+                    VERR_INVALID_HANDLE);
+    AssertMsgReturn(pTypeR3->fNotInHm == RT_BOOL(fFlags & PGMPHYSHANDLER_F_NOT_IN_HM),
+                    ("%#x: %d, fFlags=%#x\n", hType, pTypeR3->fNotInHm, fFlags),
                     VERR_INVALID_HANDLE);
 
     /*
@@ -908,6 +911,7 @@ VMMR0_INT_DECL(int) PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDL
                               ? PGM_PAGE_HNDL_PHYS_STATE_WRITE : PGM_PAGE_HNDL_PHYS_STATE_ALL;
     pTypeR0->fKeepPgmLock     = RT_BOOL(fFlags & PGMPHYSHANDLER_F_KEEP_PGM_LOCK);
     pTypeR0->fRing0DevInsIdx  = RT_BOOL(fFlags & PGMPHYSHANDLER_F_R0_DEVINS_IDX);
+    pTypeR0->fNotInHm         = RT_BOOL(fFlags & PGMPHYSHANDLER_F_NOT_IN_HM);
     pTypeR0->pfnHandler       = pfnHandler;
     pTypeR0->pfnPfHandler     = pfnPfHandler;
     pTypeR0->pszDesc          = pszDesc;
@@ -1295,7 +1299,8 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
     if (RT_SUCCESS(rc))
     {
         PCPGMPHYSHANDLERTYPEINT pHandlerType = PGMPHYSHANDLER_GET_TYPE_NO_NULL(pGVM, pHandler);
-        if (RT_LIKELY(pHandlerType->enmKind != PGMPHYSHANDLERKIND_WRITE))
+        if (RT_LIKELY(   pHandlerType->enmKind != PGMPHYSHANDLERKIND_WRITE
+                      && !pHandlerType->fNotInHm /*paranoia*/ ))
         {
             /*
              * If the handle has aliases page or pages that have been temporarily

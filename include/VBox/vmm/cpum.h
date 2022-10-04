@@ -1667,7 +1667,6 @@ VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_
 VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPaePagingEnabled(PCVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu);
-VMM_INT_DECL(bool)      CPUMIsGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu, RTGCPHYS GCPhysPage);
 /** @} */
 
 /** @name Externalized State Helpers.

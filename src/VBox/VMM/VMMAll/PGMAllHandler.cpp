@@ -69,11 +69,12 @@ CTX_SUFF(PGMPHYSHANDLERTYPEINT) const g_pgmHandlerPhysicalDummyType =
     /* .fKeepPgmLock = */       true,
     /* .fRing0DevInsIdx = */    false,
 #ifdef IN_RING0
-    /* .afPadding = */          {false},
+    /* .fNotInHm = */           false,
     /* .pfnHandler = */         pgmR0HandlerPhysicalHandlerToRing3,
     /* .pfnPfHandler = */       pgmR0HandlerPhysicalPfHandlerToRing3,
 #elif defined(IN_RING3)
     /* .fRing0Enabled = */      false,
+    /* .fNotInHm = */           false,
     /* .pfnHandler = */         pgmR3HandlerPhysicalHandlerInvalid,
 #else
 # error "unsupported context"
@@ -235,7 +236,9 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
     switch (pType->enmKind)
     {
         case PGMPHYSHANDLERKIND_WRITE:
-            break;
+            if (!pType->fNotInHm)
+                break;
+            RT_FALL_THRU(); /* Simplification: fNotInHm can only be used with full pages */
         case PGMPHYSHANDLERKIND_MMIO:
         case PGMPHYSHANDLERKIND_ALL:
             /* Simplification for PGMPhysRead, PGMR0Trap0eHandlerNPMisconfig and others: Full pages. */
@@ -383,7 +386,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVMCC pVM, PPGMPHYSHAN
         /* Only do upgrades. */
         if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < uState)
         {
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState, pCurType->fNotInHm);
 
             const RTGCPHYS GCPhysPage = pRam->GCPhys + (i << GUEST_PAGE_SHIFT);
             int rc2 = pgmPoolTrackUpdateGCPhys(pVM, GCPhysPage, pPage,
@@ -684,17 +687,18 @@ DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PVMCC pVM, RTGCPHYS GCPhys, b
 
     /*
      * Update if we found something that is a higher priority state than the current.
+     * Note! The PGMPHYSHANDLER_F_NOT_IN_HM can be ignored here as it requires whole pages.
      */
     if (uState != PGM_PAGE_HNDL_PHYS_STATE_NONE)
     {
         PPGMPAGE pPage;
         int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, ppRamHint);
-        if (    RT_SUCCESS(rc)
-            &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < uState)
+        if (   RT_SUCCESS(rc)
+            && PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < uState)
         {
             /* This should normally not be necessary. */
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
-            bool fFlushTLBs ;
+            PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(pPage, uState);
+            bool fFlushTLBs;
             rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhys, pPage, false /*fFlushPTEs*/, &fFlushTLBs);
             if (RT_SUCCESS(rc) && fFlushTLBs)
                 PGM_INVL_ALL_VCPU_TLBS(pVM);
@@ -756,7 +760,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
     PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO);
     PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
     PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
-    PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_ALL);
+    PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(pPage, PGM_PAGE_HNDL_PHYS_STATE_ALL);
 
     /* Flush its TLB entry. */
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
@@ -838,7 +842,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVMCC pVM, PPGMPHYSHANDLER pCur)
             AssertMsg(pCurType && (pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO || PGM_PAGE_IS_MMIO(pPage)),
                       ("%RGp %R[pgmpage]\n", GCPhys, pPage));
 #endif
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE, false);
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the protection change. */
@@ -1398,7 +1402,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
             AssertReturnStmt(RT_SUCCESS_NP(rc), PGM_UNLOCK(pVM), rc);
             if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
             {
-                PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+                PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
                 pCur->cTmpOffPages++;
 
 #ifdef VBOX_WITH_NATIVE_NEM
@@ -1602,7 +1606,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
             PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
             PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
             PGM_PAGE_SET_PAGEID(pVM, pPage, PGM_PAGE_GET_PAGEID(pPageRemap));
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+            PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             pCur->cAliasedPages++;
             Assert(pCur->cAliasedPages <= pCur->cPages);
 
@@ -1726,7 +1730,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
             PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
             PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
             PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+            PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             pCur->cAliasedPages++;
             Assert(pCur->cAliasedPages <= pCur->cPages);
 
@@ -1907,7 +1911,8 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVMCC pVM)
                     if (pPhys)
                     {
                         PCPGMPHYSHANDLERTYPEINT pPhysType = pgmHandlerPhysicalTypeHandleToPtr(pVM, pPhys->hType);
-                        unsigned uState = pPhysType->uState;
+                        unsigned   uState   = pPhysType->uState;
+                        bool const fNotInHm = pPhysType->fNotInHm; /* whole pages, so no need to accumulate sub-page configs. */
 
                         /* more? */
                         while (pPhys->KeyLast < (State.GCPhys | GUEST_PAGE_OFFSET_MASK))
@@ -1933,6 +1938,10 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVMCC pVM)
                                              State.GCPhys, PGM_PAGE_GET_HNDL_PHYS_STATE(pPage), uState, pPhysType->pszDesc));
                             State.cErrors++;
                         }
+                        AssertMsgStmt(PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage) == fNotInHm,
+                                      ("ram range vs phys handler flags mismatch. GCPhys=%RGp fNotInHm=%d, %d %s\n",
+                                       State.GCPhys, PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage), fNotInHm, pPhysType->pszDesc),
+                                      State.cErrors++);
                     }
                     else
                     {

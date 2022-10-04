@@ -85,12 +85,6 @@
 #define PGM_WITH_LARGE_PAGES
 
 /**
- * Enables the nested APIC access page support tweaks in PGM.
- * If disabled, the nested VM's APIC accesses will by MMIO based in VT-x mode.
- */
-//#define PGM_WITH_NESTED_APIC_ACCESS_PAGE
-
-/**
  * Enables optimizations for MMIO handlers that exploits X86_TRAP_PF_RSVD and
  * VMX_EXIT_EPT_MISCONFIG.
  */
@@ -525,7 +519,8 @@ typedef struct PGMPHYSHANDLERTYPEINTR0
      * translated from a device instance ID to a pointer.
      * @sa PGMPHYSHANDLER_F_R0_DEVINS_IDX  */
     bool                                fRing0DevInsIdx;
-    bool                                afPadding[1];
+    /** See PGMPHYSHANDLER_F_NOT_IN_HM. */
+    bool                                fNotInHm : 1;
     /** Pointer to the ring-0 callback function. */
     R0PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandler;
     /** Pointer to the ring-0 callback function for \#PFs, can be NULL. */
@@ -556,6 +551,8 @@ typedef struct PGMPHYSHANDLERTYPEINTR3
     bool                                fRing0DevInsIdx;
     /** Set by ring-0 if the handler is ring-0 enabled (for debug). */
     bool                                fRing0Enabled : 1;
+    /** See PGMPHYSHANDLER_F_NOT_IN_HM. */
+    bool                                fNotInHm : 1;
     /** Pointer to the ring-3 callback function. */
     R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandler;
     /** Description / Name. For easing debugging. */
@@ -661,8 +658,8 @@ typedef union PGMPAGE
         /** 3:2   - Paging structure needed to map the page
          * (PGM_PAGE_PDE_TYPE_*). */
         uint64_t    u2PDETypeY          : 2;
-        /** 4     - Unused (was used by FTE for dirty tracking). */
-        uint64_t    fUnused1            : 1;
+        /** 4     - Don't apply the physical handler in HM mode (nested APIC hack). */
+        uint64_t    fHandlerPhysNotInHm : 1;
         /** 5     - Flag indicating that a write monitored page was written to
          *  when set. */
         uint64_t    fWrittenToY         : 1;
@@ -1059,8 +1056,17 @@ typedef PPGMPAGE *PPPGMPAGE;
  * Sets the physical access handler state of a page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uState    The new state value.
+ * @param   a_fNotIHm   The PGMPHYSHANDLER_F_NOT_HM bit.
  */
-#define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState) \
+#define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState, a_fNotInHm) \
+    do { (a_pPage)->s.u2HandlerPhysStateY = (a_uState);  (a_pPage)->s.fHandlerPhysNotInHm = (a_fNotInHm); } while (0)
+
+/**
+ * Sets the physical access handler state of a page.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ * @param   a_uState    The new state value.
+ */
+#define PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(a_pPage, a_uState) \
     do { (a_pPage)->s.u2HandlerPhysStateY = (a_uState); } while (0)
 
 /**
@@ -1103,6 +1109,13 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
     ( PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL )
 
+/** @def PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM
+ * Checks if the physical handlers of the page should be ignored in shadow page
+ * tables and such.
+ * @returns true/false
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(a_pPage) ((a_pPage)->s.fHandlerPhysNotInHm)
 
 /** @def PGM_PAGE_GET_TRACKING
  * Gets the packed shadow page pool tracking data associated with a guest page.

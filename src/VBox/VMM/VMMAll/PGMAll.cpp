@@ -3909,8 +3909,9 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
 # define IS_PART_INCLUDED(lvl) ( !(fFlags & RTSTR_F_PRECISION) || cchPrecision == (lvl) || cchPrecision >= (lvl)+10 )
         if (IS_PART_INCLUDED(5))
         {
-            static const char s_achHandlerStates[4] = { '-', 't', 'w', 'a' };
-            szTmp[cch++] = s_achHandlerStates[PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)];
+            static const char s_achHandlerStates[4*2] = { '-', 't', 'w', 'a' , '_', 'T', 'W', 'A' };
+            szTmp[cch++] = s_achHandlerStates[  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)
+                                              | ((uint8_t)PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage) << 2)];
         }
 
         /* The type. */

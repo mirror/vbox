@@ -127,6 +127,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
                             ? PGM_PAGE_HNDL_PHYS_STATE_WRITE : PGM_PAGE_HNDL_PHYS_STATE_ALL;
     pType->fKeepPgmLock     = RT_BOOL(fFlags & PGMPHYSHANDLER_F_KEEP_PGM_LOCK);
     pType->fRing0DevInsIdx  = RT_BOOL(fFlags & PGMPHYSHANDLER_F_R0_DEVINS_IDX);
+    pType->fNotInHm         = RT_BOOL(fFlags & PGMPHYSHANDLER_F_NOT_IN_HM);
     pType->pfnHandler       = pfnHandler;
     pType->pszDesc          = pszDesc;
 
@@ -181,7 +182,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PPGMPHYSHANDLER pHandler, 
         int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
         if (RT_SUCCESS(rc))
         {
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE, false);
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the protection change. */
@@ -227,7 +228,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PPGMPHYSHANDLER pHandler, vo
         int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
         if (RT_SUCCESS(rc))
         {
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState, pType->fNotInHm);
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the protection change. */

@@ -690,8 +690,11 @@ VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys);
  * into a PDMDEVINS pointer before calling the handler.  This is a hack to make
  * it possible to use access handlers in devices. */
 #define PGMPHYSHANDLER_F_R0_DEVINS_IDX  RT_BIT_32(1)
+/** Don't apply the access handler to VT-x and AMD-V. Only works with full pages.
+ * This is a trick for the VT-x APIC access page in nested VT-x setups. */
+#define PGMPHYSHANDLER_F_NOT_IN_HM      RT_BIT_32(2)
 /** Mask of valid bits.   */
-#define PGMPHYSHANDLER_F_VALID_MASK     UINT32_C(3)
+#define PGMPHYSHANDLER_F_VALID_MASK     UINT32_C(7)
 /** @} */
 
 
