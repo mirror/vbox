@@ -482,7 +482,10 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
   VMMR0_CXXFLAGS += -Wunused -Wunused-variable -Wno-unused-parameter
  endif
 
- VMMR0_ASFLAGS.amd64 := -Werror
+ # yasm versions not knowing about -Wno-segreg-in-64bit (including vanilla 1.3.0) would cause build failure.
+ if "$(VBOX_ASTOOL)" != "YASM" || defined(VBOX_YASM_Wno-segreg-in-64bit)
+  VMMR0_ASFLAGS.amd64 := -Werror
+ endif
  VMMR0_ASFLAGS.x86   := -Werror
 
  VMMR0_SDKS      = VBOX_SOFTFLOATR0
