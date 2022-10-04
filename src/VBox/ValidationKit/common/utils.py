@@ -267,6 +267,9 @@ def getHostOsVersion():
 
     elif sOs == 'darwin':
         def getMacVersionName(sVersion):
+            """
+            Figures out the Mac OS X/macOS code name from the numeric version.
+            """
             aOsVersion = sVersion.split('.')    # example: ('10','15','7')
             codenames = {"4": "Tiger",
                          "5": "Leopard",
