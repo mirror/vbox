@@ -655,18 +655,16 @@ typedef union PGMPAGE
     {
         /** 1:0   - The physical handler state (PGM_PAGE_HNDL_PHYS_STATE_*). */
         uint64_t    u2HandlerPhysStateY : 2;
-        /** 3:2   - Paging structure needed to map the page
-         * (PGM_PAGE_PDE_TYPE_*). */
-        uint64_t    u2PDETypeY          : 2;
-        /** 4     - Don't apply the physical handler in HM mode (nested APIC hack). */
+        /** 2     - Don't apply the physical handler in HM mode (nested APIC hack). */
         uint64_t    fHandlerPhysNotInHm : 1;
-        /** 5     - Flag indicating that a write monitored page was written to
+        /** 3     - Flag indicating that a write monitored page was written to
          *  when set. */
         uint64_t    fWrittenToY         : 1;
-        /** 7:6   - Unused. */
-        uint64_t    u2Unused0           : 2;
-        /** 9:8   - Unused (was used by PGM_PAGE_HNDL_VIRT_STATE_*). */
-        uint64_t    u2Unused1           : 2;
+        /** 7:4   - Unused. */
+        uint64_t    u2Unused0           : 4;
+        /** 9:8   - Paging structure needed to map the page
+         * (PGM_PAGE_PDE_TYPE_*). */
+        uint64_t    u2PDETypeY          : 2;
         /** 11:10 - NEM state bits. */
         uint64_t    u2NemStateY         : 2;
         /** 12:48 - The host physical frame number (shift left to get the
