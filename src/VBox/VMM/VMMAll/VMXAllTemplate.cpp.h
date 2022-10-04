@@ -4421,7 +4421,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS information structure.
- * @param   fIsNestedGuest  Flag whether the evaluation happens for a nestd guest.
+ * @param   fIsNestedGuest  Flag whether the evaluation happens for a nested guest.
  * @param   pfIntrState     Where to store the VT-x guest-interruptibility state.
  */
 static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNestedGuest, uint32_t *pfIntrState)
@@ -5827,8 +5827,8 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF, see vmxHCExitXcptPF(). */
                 STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectReflect);
-                vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(uIdtVectorInfo), 0 /* cbInstr */,
-                                       u32ErrCode, pVCpu->cpum.GstCtx.cr2);
+                vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(uIdtVectorInfo), 0 /* cbInstr */, u32ErrCode,
+                                     pVCpu->cpum.GstCtx.cr2);
 
                 Log4Func(("IDT: Pending vectoring event %#RX64 Err=%#RX32\n", VCPU_2_VMXSTATE(pVCpu).Event.u64IntInfo,
                           VCPU_2_VMXSTATE(pVCpu).Event.u32ErrCode));
@@ -5843,7 +5843,7 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
             case IEMXCPTRAISE_DOUBLE_FAULT:
             {
                 /*
-                 * Determing a vectoring double #PF condition. Used later, when PGM evaluates the
+                 * Determine a vectoring double #PF condition. Used later, when PGM evaluates the
                  * second #PF as a guest #PF (and not a shadow #PF) and needs to be converted into a #DF.
                  */
                 if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
@@ -10185,7 +10185,7 @@ HMVMX_EXIT_DECL vmxHCExitErrInvalidGuestStateNested(PVMCPUCC pVCpu, PVMXTRANSIEN
 
 
 /**
- * Nested-guest VM-exit handler for instructions that cause VM-exits uncondtionally
+ * Nested-guest VM-exit handler for instructions that cause VM-exits unconditionally
  * and only provide the instruction length.
  *
  * Unconditional VM-exit.
