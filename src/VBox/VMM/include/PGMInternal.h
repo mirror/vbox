@@ -1056,7 +1056,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * Sets the physical access handler state of a page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uState    The new state value.
- * @param   a_fNotIHm   The PGMPHYSHANDLER_F_NOT_HM bit.
+ * @param   a_fNotInHm  The PGMPHYSHANDLER_F_NOT_HM bit.
  */
 #define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState, a_fNotInHm) \
     do { (a_pPage)->s.u2HandlerPhysStateY = (a_uState);  (a_pPage)->s.fHandlerPhysNotInHm = (a_fNotInHm); } while (0)
