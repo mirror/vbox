@@ -3663,7 +3663,7 @@ FNIEMOP_DEF(iemOp_cvtpi2ps_Vps_Qpi)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM, MMX
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
@@ -3693,9 +3693,9 @@ FNIEMOP_DEF(iemOp_cvtpi2ps_Vps_Qpi)
     else
     {
         /*
-         * Register, memory.
+         * XMM, [mem64]
          */
-        IEM_MC_BEGIN(3, 3);
+        IEM_MC_BEGIN(3, 2);
         IEM_MC_ARG(uint32_t *,              pfMxcsr,            0);
         IEM_MC_LOCAL(X86XMMREG,             Dst);
         IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    pDst, Dst,          1);
@@ -3733,7 +3733,7 @@ FNIEMOP_DEF(iemOp_cvtpi2pd_Vpd_Qpi)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM, MMX
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
@@ -3762,7 +3762,7 @@ FNIEMOP_DEF(iemOp_cvtpi2pd_Vpd_Qpi)
     else
     {
         /*
-         * Register, memory.
+         * XMM, [mem64]
          */
         IEM_MC_BEGIN(3, 3);
         IEM_MC_ARG(uint32_t *,              pfMxcsr,            0);
@@ -3805,7 +3805,7 @@ FNIEMOP_DEF(iemOp_cvtsi2ss_Vss_Ey)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* XMM, greg64 */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,    fMxcsr);
             IEM_MC_LOCAL(RTFLOAT32U,  r32Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *,    pfMxcsr, fMxcsr,  0);
@@ -3863,7 +3863,7 @@ FNIEMOP_DEF(iemOp_cvtsi2ss_Vss_Ey)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,   fMxcsr);
             IEM_MC_LOCAL(RTFLOAT32U, r32Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *,  pfMxcsr, fMxcsr,     0);
@@ -3931,7 +3931,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* XMM, greg64 */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,    fMxcsr);
             IEM_MC_LOCAL(RTFLOAT64U,  r64Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *,    pfMxcsr, fMxcsr,  0);
@@ -3988,8 +3988,8 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
     {
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
-            /* greg, XMM */
-            IEM_MC_BEGIN(3, 4);
+            /* XMM, greg32 */
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,   fMxcsr);
             IEM_MC_LOCAL(RTFLOAT64U, r64Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *,  pfMxcsr, fMxcsr,     0);
@@ -4014,7 +4014,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
         }
         else
         {
-            /* greg, [mem32] */
+            /* XMM, [mem32] */
             IEM_MC_BEGIN(3, 4);
             IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
             IEM_MC_LOCAL(uint32_t,   fMxcsr);
@@ -4280,7 +4280,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int64_t,   i64Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4297,7 +4297,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4326,7 +4326,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4338,7 +4338,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int32_t,   i32Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4355,7 +4355,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4384,7 +4384,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4406,7 +4406,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int64_t,   i64Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4423,7 +4423,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4452,7 +4452,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4464,7 +4464,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int32_t,   i32Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4481,7 +4481,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4489,7 +4489,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
         }
         else
         {
-            /* greg, [mem] */
+            /* greg32, [mem32] */
             IEM_MC_BEGIN(3, 4);
             IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
@@ -4510,7 +4510,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4672,7 +4672,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int64_t,   i64Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4689,7 +4689,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4718,7 +4718,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4730,7 +4730,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int32_t,   i32Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4747,7 +4747,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4776,7 +4776,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4798,7 +4798,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int64_t,   i64Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4815,7 +4815,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4844,7 +4844,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I64(i64Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I64(IEM_GET_MODRM_REG(pVCpu, bRm), i64Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4856,7 +4856,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg32, XMM */
-            IEM_MC_BEGIN(3, 4);
+            IEM_MC_BEGIN(3, 2);
             IEM_MC_LOCAL(uint32_t,  fMxcsr);
             IEM_MC_LOCAL(int32_t,   i32Dst);
             IEM_MC_ARG_LOCAL_REF(uint32_t *, pfMxcsr, fMxcsr,     0);
@@ -4873,7 +4873,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4902,7 +4902,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(i32Dst, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
