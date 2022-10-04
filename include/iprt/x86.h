@@ -934,10 +934,14 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR3_PAGE_MASK                   (0xfffff000)
 /** Bits  5-31 - - PAE Page directory page number. */
 #define X86_CR3_PAE_PAGE_MASK               (0xffffffe0)
-/** Bits 12-51 - - AMD64 Page directory page number. */
+/** Bits 12-51 - - AMD64 PML4 page number.
+ * @note This is a maxed out mask, the actual acceptable CR3 value can
+ *       be lower depending on the PhysAddrSize from CPUID Fn8000_0008. */
 #define X86_CR3_AMD64_PAGE_MASK             UINT64_C(0x000ffffffffff000)
-/** Bits 12-47 - - Intel EPT Page directory page number. */
-#define X86_CR3_EPT_PAGE_MASK               UINT64_C(0x0000fffffffff000)
+/** Bits 12-51 - - Intel EPT PML4 page number (EPTP).
+ * @note This is a maxed out mask, the actual acceptable CR3/EPTP value can
+ *       be lower depending on the PhysAddrSize from CPUID Fn8000_0008. */
+#define X86_CR3_EPT_PAGE_MASK               UINT64_C(0x000ffffffffff000)
 /** @} */
 
 
