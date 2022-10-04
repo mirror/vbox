@@ -63,8 +63,8 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
 DECLINLINE(int) pgmGstMapCr3(PVMCPUCC pVCpu, RTGCPHYS GCPhysCr3, PRTHCPTR pHCPtrGuestCr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk,
-                          PPGMPTWALKGST pGstWalk);
+static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
+                          PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
 static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk,
                               PPGMPTWALKGST pGstWalk);
 static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3);
@@ -75,6 +75,9 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 
 
+/*
+ * Second level transation - EPT.
+ */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 # define PGM_SLAT_TYPE               PGM_SLAT_TYPE_EPT
 # include "PGMSlatDefs.h"
@@ -901,8 +904,34 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
 };
 
 
+/** Mask array used by pgmGetCr3MaskForMode.
+ * X86_CR3_AMD64_PAGE_MASK is used for modes that doesn't have a CR3 or EPTP. */
+static uint64_t const g_auCr3MaskForMode[PGMMODE_MAX] =
+{
+    /* [PGMMODE_INVALID] = */           X86_CR3_AMD64_PAGE_MASK,
+    /* [PGMMODE_REAL] = */              X86_CR3_AMD64_PAGE_MASK,
+    /* [PGMMODE_PROTECTED] = */         X86_CR3_AMD64_PAGE_MASK,
+    /* [PGMMODE_32_BIT] = */            X86_CR3_PAGE_MASK,
+    /* [PGMMODE_PAE] = */               X86_CR3_PAE_PAGE_MASK,
+    /* [PGMMODE_PAE_NX] = */            X86_CR3_PAE_PAGE_MASK,
+    /* [PGMMODE_AMD64] = */             X86_CR3_AMD64_PAGE_MASK,
+    /* [PGMMODE_AMD64_NX] = */          X86_CR3_AMD64_PAGE_MASK,
+    /* [PGMMODE_NESTED_32BIT = */       X86_CR3_PAGE_MASK,
+    /* [PGMMODE_NESTED_PAE] = */        X86_CR3_PAE_PAGE_MASK,
+    /* [PGMMODE_NESTED_AMD64] = */      X86_CR3_AMD64_PAGE_MASK,
+    /* [PGMMODE_EPT] = */               X86_CR3_EPT_PAGE_MASK,
+    /* [PGMMODE_NONE] = */              X86_CR3_AMD64_PAGE_MASK,
+};
+
+
 /**
- * Gets the CR3 mask corresponding to the given paging mode.
+ * Gets the physical address mask for CR3 in the given paging mode.
+ *
+ * The mask is for eliminating flags and other stuff in CR3/EPTP when
+ * extracting the physical address.  It is not for validating whether there are
+ * reserved bits set.  PGM ASSUMES that whoever loaded the CR3 value and passed
+ * it to PGM checked for reserved bits, including reserved physical address
+ * bits.
  *
  * @returns The CR3 mask.
  * @param   enmMode         The paging mode.
@@ -910,35 +939,20 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
  */
 DECLINLINE(uint64_t) pgmGetCr3MaskForMode(PGMMODE enmMode, PGMSLAT enmSlatMode)
 {
-    /** @todo This work can be optimized either by storing the masks in
-     *        pVCpu->pgm.s.afGstCr3Masks[] for all PGMMODEs -or- just do this once and
-     *        store the result when entering guest mode since we currently use it only
-     *        for enmGuestMode. */
     if (enmSlatMode == PGMSLAT_DIRECT)
     {
         Assert(enmMode != PGMMODE_EPT);
-        switch (enmMode)
-        {
-            case PGMMODE_PAE:
-            case PGMMODE_PAE_NX:
-                return X86_CR3_PAE_PAGE_MASK;
-            case PGMMODE_AMD64:
-            case PGMMODE_AMD64_NX:
-                return X86_CR3_AMD64_PAGE_MASK;
-            default:
-                return X86_CR3_PAGE_MASK;
-        }
+        return g_auCr3MaskForMode[(unsigned)enmMode < (unsigned)PGMMODE_MAX ? enmMode : 0];
     }
-    else
-    {
-        Assert(enmSlatMode == PGMSLAT_EPT);
-        return X86_CR3_EPT_PAGE_MASK;
-    }
+    Assert(enmSlatMode == PGMSLAT_EPT);
+    return X86_CR3_EPT_PAGE_MASK;
 }
 
 
 /**
  * Gets the masked CR3 value according to the current guest paging mode.
+ *
+ * See disclaimer in pgmGetCr3MaskForMode.
  *
  * @returns The masked PGM CR3 value.
  * @param   pVCpu   The cross context virtual CPU structure.
@@ -2007,8 +2021,8 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST 
     }
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+
 /**
  * Performs a guest second-level address translation (SLAT).
  *
@@ -2087,8 +2101,8 @@ static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPh
             return VERR_PGM_NOT_USED_IN_MODE;
     }
 }
-#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 /**
  * Tries to continue the previous walk.
