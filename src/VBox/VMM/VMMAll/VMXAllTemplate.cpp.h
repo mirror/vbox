@@ -10282,6 +10282,9 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
 
+//#  define DSL_IRQ_FIX_1
+#  define DSL_IRQ_FIX_2
+
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     if (CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_EPT))
     {
@@ -10290,6 +10293,30 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
 
         vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
         vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
+#  ifdef DSL_IRQ_FIX_2
+        vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+        vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+        vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+        vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
+        vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+
+        /*
+         * If it's our VMEXIT, we're responsible for re-injecting any event which delivery
+         * might have triggered this VMEXIT.  If we forward the problem to the inner VMM,
+         * it's its problem to deal with that issue and we'll clear the recovered event.
+         */
+        VBOXSTRICTRC rcStrict = vmxHCCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /*likely*/ }
+        else
+        {
+            Assert(rcStrict != VINF_HM_DOUBLE_FAULT);
+            return rcStrict;
+        }
+        bool const fClearEventOnForward = VCPU_2_VMXSTATE(pVCpu).Event.fPending; /* paranoia. should not inject events below.  */
+#  else
+        VBOXSTRICTRC rcStrict;
+#  endif
 
         RTGCPHYS const GCPhysNestedFault = pVmxTransient->uGuestPhysicalAddr;
         uint64_t const uExitQual         = pVmxTransient->uExitQual;
@@ -10312,14 +10339,14 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
 
         PGMPTWALK Walk;
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-        VBOXSTRICTRC rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, uErr, CPUMCTX2CORE(pCtx),
-                                                                     GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault,
-                                                                     &Walk);
+        rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, uErr, CPUMCTX2CORE(pCtx),
+                                                        GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault,
+                                                        &Walk);
         Log7Func(("PGM (uExitQual=%#RX64, %RGp, %RGv) -> %Rrc (fFailed=%d)\n",
                   uExitQual, GCPhysNestedFault, GCPtrNestedFault, VBOXSTRICTRC_VAL(rcStrict), Walk.fFailed));
         if (RT_SUCCESS(rcStrict))
         {
-#if 1
+#  ifdef DSL_IRQ_FIX_1
             /*
              * If it's our VMEXIT, we're responsible for re-injecting any event which delivery
              * might have triggered this VMEXIT.  If we forward the problem to the inner VMM,
@@ -10340,13 +10367,17 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
 
                 vmxHCCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
             }
-#endif
+#  endif
             return rcStrict;
         }
 
         vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
         vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+#  ifdef DSL_IRQ_FIX_2
+        if (fClearEventOnForward)
+            VCPU_2_VMXSTATE(pVCpu).Event.fPending = false;
+#  endif
 
         VMXVEXITEVENTINFO ExitEventInfo;
         RT_ZERO(ExitEventInfo);
