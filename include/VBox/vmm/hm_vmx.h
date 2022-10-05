@@ -3844,6 +3844,18 @@ typedef VMXVEXITINFO *PVMXVEXITINFO;
 typedef const VMXVEXITINFO *PCVMXVEXITINFO;
 AssertCompileMemberAlignment(VMXVEXITINFO, u64Qual, 8);
 
+/** Initialize a VMXVEXITINFO structure from only an exit reason. */
+#define VMXVEXITINFO_INIT_ONLY_REASON(a_uReason) \
+    { (a_uReason), 0, { 0 }, VMXINSTRID_NONE, 0, 0, 0, 0, 0 }
+
+/** Initialize a VMXVEXITINFO structure from exit reason and instruction length (no info). */
+#define VMXVEXITINFO_INIT_WITH_INSTR_LEN(a_uReason, a_cbInstr) \
+    { (a_uReason), (a_cbInstr), { 0 }, VMXINSTRID_NONE, 0, 0, 0, 0, 0 }
+
+/** Initialize a VMXVEXITINFO structure from exit reason and exit qualifier. */
+#define VMXVEXITINFO_INIT_WITH_QUALIFIER(a_uReason, a_uQualifier) \
+    { (a_uReason), 0, { 0 }, VMXINSTRID_NONE, (a_uQualifier), 0, 0, 0, 0 }
+
 /** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
  *  instruction info and length. */
 #define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO(a_uReason, a_uQualifier, a_uInstrInfo, a_cbInstr) \
