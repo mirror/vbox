@@ -153,6 +153,8 @@ $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg: \
 	$(INSTALL) $(VBOX_PATH_DI_SRC)/DiskImage/VirtualBox_Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
 ifdef VBOX_SIGNING_MODE
 	$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox_Uninstall.tool,org.virtualbox.dmg.uninstaller)
+	@# Code signing (the non-local one) seems to be losing the execute permission.
+	chmod 0755 $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox_Uninstall.tool
 endif
 ifeq (1,1)
 	@# Pedantic mode...
