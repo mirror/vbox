@@ -2343,8 +2343,9 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
             uint32_t const uVmcsField = paShadowVmcsFields[i];
             Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
             Assert(uVmcsField >> 3 < cbBitmap);
-            ASMBitClear(pbVmreadBitmap  + (uVmcsField >> 3), uVmcsField & 7);
-            ASMBitClear(pbVmwriteBitmap + (uVmcsField >> 3), uVmcsField & 7);
+
+            ASMBitClear(pbVmreadBitmap,  uVmcsField & 0x7fff);
+            ASMBitClear(pbVmwriteBitmap, uVmcsField & 0x7fff);
         }
     }
 
@@ -2361,7 +2362,7 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
             uint32_t const uVmcsField = paShadowVmcsRoFields[i];
             Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
             Assert(uVmcsField >> 3 < cbBitmap);
-            ASMBitClear(pbVmreadBitmap + (uVmcsField >> 3), uVmcsField & 7);
+            ASMBitClear(pbVmreadBitmap, uVmcsField & 0x7fff);
         }
     }
 }
