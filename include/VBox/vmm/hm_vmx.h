@@ -3942,6 +3942,20 @@ typedef VMXVEXITEVENTINFO *PVMXVEXITEVENTINFO;
 /** Pointer to a const VMXVEXITEVENTINFO struct. */
 typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
 
+/** Initialize a VMXVEXITEVENTINFO. */
+#define VMXVEXITEVENTINFO_INIT(a_uExitIntInfo, a_uExitIntErrCode, a_uIdtVectoringInfo, a_uIdtVectoringErrCode) \
+    { (a_uExitIntInfo), (a_uExitIntErrCode), (a_uIdtVectoringInfo), (a_uIdtVectoringErrCode) }
+
+/** Initialize a VMXVEXITEVENTINFO with VM-exit interruption info and VM-exit
+ *  interruption error code. */
+#define VMXVEXITEVENTINFO_INIT_ONLY_INT(a_uExitIntInfo, a_uExitIntErrCode) \
+    VMXVEXITEVENTINFO_INIT(a_uExitIntInfo, a_uExitIntErrCode, 0, 0)
+
+/** Initialize a VMXVEXITEVENTINFO with IDT vectoring info and IDT
+ *  vectoring error code. */
+#define VMXVEXITEVENTINFO_INIT_ONLY_IDT(a_uIdtVectoringInfo, a_uIdtVectoringErrCode) \
+    VMXVEXITEVENTINFO_INIT(0, 0, a_uIdtVectoringInfo, a_uIdtVectoringErrCode)
+
 /**
  * Virtual VMCS.
  *

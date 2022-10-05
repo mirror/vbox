@@ -3714,14 +3714,13 @@ static VBOXSTRICTRC iemVmxVmexitEventWithInfo(PVMCPUCC pVCpu, PCVMXVEXITINFO pEx
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcptNmi(PVMCPUCC pVCpu)
 {
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_ONLY_REASON(VMX_EXIT_XCPT_OR_NMI);
-
-    VMXVEXITEVENTINFO ExitEventInfo;
-    RT_ZERO(ExitEventInfo);
-    ExitEventInfo.uExitIntInfo = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,  1)
-                               | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,   VMX_EXIT_INT_INFO_TYPE_NMI)
-                               | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR, X86_XCPT_NMI);
-
+    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_ONLY_REASON(VMX_EXIT_XCPT_OR_NMI);
+    VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_INT(  RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID, 1)
+                                                                            | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,
+                                                                                         VMX_EXIT_INT_INFO_TYPE_NMI)
+                                                                            | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,
+                                                                                         X86_XCPT_NMI),
+                                                                            0);
     VBOXSTRICTRC rcStrict = iemVmxVmexitEventWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
@@ -9944,19 +9943,15 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
              */
             if (HmExitAux.Vmx.uReason == VMX_EXIT_EPT_MISCONFIG)
             {
+                LogFlowFunc(("Raising APIC-access VM-exit as phys access from #PF handler at offset %#x\n", offAccess));
                 VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER(VMX_EXIT_APIC_ACCESS,
                                                                                  RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET,
                                                                                             offAccess)
                                                                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,
                                                                                             VMXAPICACCESS_PHYSICAL_INSTR));
-
-                VMXVEXITEVENTINFO ExitEventInfo;
-                RT_ZERO(ExitEventInfo);
-                ExitEventInfo.uIdtVectoringInfo    = HmExitAux.Vmx.uIdtVectoringInfo;
-                ExitEventInfo.uIdtVectoringErrCode = HmExitAux.Vmx.uIdtVectoringErrCode;
-
-                LogFlowFunc(("Raising APIC-access VM-exit as phys access from #PF handler at offset %#x\n", offAccess));
-                VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
+                VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(HmExitAux.Vmx.uIdtVectoringInfo,
+                                                                                        HmExitAux.Vmx.uIdtVectoringErrCode);
+                VBOXSTRICTRC const      rcStrict      = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
                 return iemExecStatusCodeFiddling(pVCpu, rcStrict);
             }
 
@@ -10003,22 +9998,18 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
                 HmExitAux.Vmx.cbInstr = 0;
             }
 
+            /*
+             * Raise the APIC-access VM-exit.
+             */
+            LogFlowFunc(("Raising APIC-access VM-exit from #PF handler at offset %#x\n", offAccess));
             VMXVEXITINFO const ExitInfo
                 = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_APIC_ACCESS,
                                                                    RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
                                                                  | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess),
                                                                  HmExitAux.Vmx.cbInstr);
-
-            VMXVEXITEVENTINFO ExitEventInfo;
-            RT_ZERO(ExitEventInfo);
-            ExitEventInfo.uIdtVectoringInfo    = HmExitAux.Vmx.uIdtVectoringInfo;
-            ExitEventInfo.uIdtVectoringErrCode = HmExitAux.Vmx.uIdtVectoringErrCode;
-
-            /*
-             * Raise the APIC-access VM-exit.
-             */
-            LogFlowFunc(("Raising APIC-access VM-exit from #PF handler at offset %#x\n", offAccess));
-            VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
+            VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(HmExitAux.Vmx.uIdtVectoringInfo,
+                                                                                    HmExitAux.Vmx.uIdtVectoringErrCode);
+            VBOXSTRICTRC const      rcStrict      = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
 

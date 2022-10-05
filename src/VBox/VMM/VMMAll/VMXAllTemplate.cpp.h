@@ -9411,24 +9411,18 @@ HMVMX_EXIT_DECL vmxHCExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
                  * length. However, if delivery of a software interrupt, software exception or privileged
                  * software exception causes a VM-exit, that too provides the VM-exit instruction length.
                  */
-                VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
-
-                VMXVEXITEVENTINFO ExitEventInfo;
-                RT_ZERO(ExitEventInfo);
-                ExitEventInfo.uExitIntInfo         = pVmxTransient->uExitIntInfo;
-                ExitEventInfo.uExitIntErrCode      = pVmxTransient->uExitIntErrorCode;
-                ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
-                ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
-
+                VMXVEXITINFO const      ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+                VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT(pVmxTransient->uExitIntInfo,
+                                                                               pVmxTransient->uExitIntErrorCode,
+                                                                               pVmxTransient->uIdtVectoringInfo,
+                                                                               pVmxTransient->uIdtVectoringErrorCode);
 #ifdef DEBUG_ramshankar
                 vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
-                Log4Func(("exit_int_info=%#RX32 err_code=%#RX32 exit_qual=%#RX64\n", pVmxTransient->uExitIntInfo,
-                          pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
+                Log4Func(("exit_int_info=%#RX32 err_code=%#RX32 exit_qual=%#RX64\n",
+                          pVmxTransient->uExitIntInfo, pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
                 if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
-                {
-                    Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32 cr2=%#RX64\n", pVmxTransient->uIdtVectoringInfo,
-                              pVmxTransient->uIdtVectoringErrorCode, pCtx->cr2));
-                }
+                    Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32 cr2=%#RX64\n",
+                              pVmxTransient->uIdtVectoringInfo, pVmxTransient->uIdtVectoringErrorCode, pCtx->cr2));
 #endif
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
@@ -9509,12 +9503,9 @@ HMVMX_EXIT_DECL vmxHCExitTaskSwitchNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
     vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
 
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
-
-    VMXVEXITEVENTINFO ExitEventInfo;
-    RT_ZERO(ExitEventInfo);
-    ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
-    ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
+                                                                            pVmxTransient->uIdtVectoringErrorCode);
     return IEMExecVmxVmexitTaskSwitch(pVCpu, &ExitInfo, &ExitEventInfo);
 }
 
@@ -9991,12 +9982,9 @@ HMVMX_EXIT_DECL vmxHCExitApicAccessNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     Log4Func(("at offset %#x type=%u\n", VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual),
               VMX_EXIT_QUAL_APIC_ACCESS_TYPE(pVmxTransient->uExitQual)));
 
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
-
-    VMXVEXITEVENTINFO ExitEventInfo;
-    RT_ZERO(ExitEventInfo);
-    ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
-    ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
+                                                                            pVmxTransient->uIdtVectoringErrorCode);
     return IEMExecVmxVmexitApicAccess(pVCpu, &ExitInfo, &ExitEventInfo);
 }
 
@@ -10293,11 +10281,8 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
             VCPU_2_VMXSTATE(pVCpu).Event.fPending = false;
 #  endif
 
-        VMXVEXITEVENTINFO ExitEventInfo;
-        RT_ZERO(ExitEventInfo);
-        ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
-        ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
-
+        VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
+                                                                                pVmxTransient->uIdtVectoringErrorCode);
         if (Walk.fFailed & PGM_WALKFAIL_EPT_VIOLATION)
         {
             VMXVEXITINFO const ExitInfo
@@ -10350,11 +10335,8 @@ HMVMX_EXIT_DECL vmxHCExitEptMisconfigNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
         vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
 
-        VMXVEXITEVENTINFO ExitEventInfo;
-        RT_ZERO(ExitEventInfo);
-        ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
-        ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
-
+        VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
+                                                                                pVmxTransient->uIdtVectoringErrorCode);
         return IEMExecVmxVmexitEptMisconfig(pVCpu, pVmxTransient->uGuestPhysicalAddr, &ExitEventInfo);
     }
 
