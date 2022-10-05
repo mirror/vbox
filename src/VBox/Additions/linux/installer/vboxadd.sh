@@ -304,14 +304,6 @@ case "`mokutil --test-key "$DEB_PUB_KEY" 2>/dev/null`" in
     *) unset DEB_KEY_ENROLLED;;
 esac
 
-# Try to find a tool for modules signing.
-SIGN_TOOL=$(which kmodsign 2>/dev/null)
-# Attempt to use in-kernel signing tool if kmodsign not found.
-if test -z "$SIGN_TOOL"; then
-    if test -x "/lib/modules/$KERN_VER/build/scripts/sign-file"; then
-        SIGN_TOOL="/lib/modules/$KERN_VER/build/scripts/sign-file"
-    fi
-fi
 
 if type update-secureboot-policy >/dev/null 2>&1; then
     HAVE_UPDATE_SECUREBOOT_POLICY_TOOL=true
@@ -382,9 +374,6 @@ Restart \"rcvboxadd setup\" after system is rebooted.
 "
         fi
 
-        # Check if signing tool is available.
-        [ -n "$SIGN_TOOL" ] || fail "Unable to find signing tool"
-
         # Get kernel signature hash algorithm from kernel config and validate it.
         sig_hashalgo=$(kernel_module_sig_hash)
         [ "$(module_sig_hash_supported $sig_hashalgo)" = "1" ] \
@@ -392,6 +381,19 @@ Restart \"rcvboxadd setup\" after system is rebooted.
 
         # Sign modules.
         for i in $MODULE_LIST; do
+
+            # Try to find a tool for modules signing.
+            SIGN_TOOL=$(which kmodsign 2>/dev/null)
+            # Attempt to use in-kernel signing tool if kmodsign not found.
+            if test -z "$SIGN_TOOL"; then
+                if test -x "/lib/modules/$KERN_VER/build/scripts/sign-file"; then
+                    SIGN_TOOL="/lib/modules/$KERN_VER/build/scripts/sign-file"
+                fi
+            fi
+
+            # Check if signing tool is available.
+            [ -n "$SIGN_TOOL" ] || fail "Unable to find signing tool"
+
             "$SIGN_TOOL" "$sig_hashalgo" "$DEB_PRIV_KEY" "$DEB_PUB_KEY" \
                 /lib/modules/"$KERN_VER"/misc/"$i".ko || fail "Unable to sign $i.ko"
         done
