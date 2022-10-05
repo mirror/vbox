@@ -323,12 +323,27 @@ module_revision()
     modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
 }
 
+# Reads kernel configuration option.
+kernel_get_config_opt()
+{
+    opt_name="$1"
+    [ -n "$opt_name" ] || return
+
+    # Check if there is a kernel tool which can extract config option.
+    if test -x /lib/modules/"$KERN_VER"/build/scripts/config; then
+        /lib/modules/"$KERN_VER"/build/scripts/config \
+            --file /lib/modules/"$KERN_VER"/build/.config \
+            --state "$opt_name" 2>/dev/null
+    elif test -f /lib/modules/"$KERN_VER"/build/.config; then
+        # Extract config option manually.
+        grep "$opt_name" /lib/modules/"$KERN_VER"/build/.config | sed -e "s/^$opt_name=//" -e "s/\"//g"
+    fi
+}
+
 # Reads CONFIG_MODULE_SIG_HASH from kernel config.
 kernel_module_sig_hash()
 {
-    /lib/modules/"$KERN_VER"/build/scripts/config \
-        --file /lib/modules/"$KERN_VER"/build/.config \
-        --state CONFIG_MODULE_SIG_HASH 2>/dev/null
+    kernel_get_config_opt "CONFIG_MODULE_SIG_HASH"
 }
 
 # Returns "1" if kernel module signature hash algorithm
@@ -634,9 +649,7 @@ setup()
 
     # Detect if kernel was built with clang.
     unset LLVM
-    vbox_cc_is_clang=$(/lib/modules/"$KERN_VER"/build/scripts/config \
-        --file /lib/modules/"$KERN_VER"/build/.config \
-        --state CONFIG_CC_IS_CLANG 2>/dev/null)
+    vbox_cc_is_clang=$(kernel_get_config_opt "CONFIG_MODULE_SIG_HASH")
     if test "${vbox_cc_is_clang}" = "y"; then
         log "Using clang compiler."
         export LLVM=1
