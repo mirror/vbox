@@ -97,15 +97,27 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
 #endif /* !VBOX_WS_MAC */
             {
                 /* Determine current-item position: */
-                int iPosition = model()->navigationItems().indexOf(model()->currentItem());
+                UIChooserItem *pCurrentItem = model()->currentItem();
+                int iPosition = model()->navigationItems().indexOf(pCurrentItem);
                 /* Determine 'previous' item: */
                 UIChooserItem *pPreviousItem = 0;
                 if (iPosition > 0)
                 {
-                    if (pEvent->key() == Qt::Key_Up)
-                        pPreviousItem = model()->navigationItems().at(iPosition - 1);
-                    else if (pEvent->key() == Qt::Key_Home)
-                        pPreviousItem = model()->navigationItems().first();
+                    if (   pEvent->key() == Qt::Key_Up
+                        || pEvent->key() == Qt::Key_Home)
+                    {
+                        UIChooserItem *pPossiblePreviousItem = 0;
+                        const int iLimit = pEvent->key() == Qt::Key_Up ? iPosition - 1 : 0;
+                        for (int i = iPosition - 1; i >= iLimit; --i)
+                        {
+                            pPossiblePreviousItem = model()->navigationItems().at(i);
+                            if ((      pCurrentItem->type() == UIChooserNodeType_Global
+                                    && pPossiblePreviousItem->type() == UIChooserNodeType_Global)
+                                || (   pCurrentItem->type() != UIChooserNodeType_Global
+                                    && pPossiblePreviousItem->type() != UIChooserNodeType_Global))
+                                pPreviousItem = pPossiblePreviousItem;
+                        }
+                    }
                 }
                 if (pPreviousItem)
                 {
@@ -190,15 +202,27 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
 #endif /* !VBOX_WS_MAC */
             {
                 /* Determine current-item position: */
-                int iPosition = model()->navigationItems().indexOf(model()->currentItem());
+                UIChooserItem *pCurrentItem = model()->currentItem();
+                int iPosition = model()->navigationItems().indexOf(pCurrentItem);
                 /* Determine 'next' item: */
                 UIChooserItem *pNextItem = 0;
                 if (iPosition < model()->navigationItems().size() - 1)
                 {
-                    if (pEvent->key() == Qt::Key_Down)
-                        pNextItem = model()->navigationItems().at(iPosition + 1);
-                    else if (pEvent->key() == Qt::Key_End)
-                        pNextItem = model()->navigationItems().last();
+                    if (   pEvent->key() == Qt::Key_Down
+                        || pEvent->key() == Qt::Key_End)
+                    {
+                        UIChooserItem *pPossibleNextItem = 0;
+                        const int iLimit = pEvent->key() == Qt::Key_Down ? iPosition + 1 : 0;
+                        for (int i = iPosition + 1; i <= iLimit; ++i)
+                        {
+                            pPossibleNextItem = model()->navigationItems().at(i);
+                            if ((      pCurrentItem->type() == UIChooserNodeType_Global
+                                    && pPossibleNextItem->type() == UIChooserNodeType_Global)
+                                || (   pCurrentItem->type() != UIChooserNodeType_Global
+                                    && pPossibleNextItem->type() != UIChooserNodeType_Global))
+                                pNextItem = pPossibleNextItem;
+                        }
+                    }
                 }
                 if (pNextItem)
                 {
@@ -360,7 +384,7 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
                 switch (enmShiftType)
                 {
                     case UIItemShiftSize_Item: iNewCurrentNodePosition = iCurrentNodePosition + 2; break;
-                    case UIItemShiftSize_Full: iNewCurrentNodePosition = pParentNode->nodes(pCurrentNode->type()).size();  break;
+                    case UIItemShiftSize_Full: iNewCurrentNodePosition = pParentNode->nodes(pCurrentNode->type()).size(); break;
                     default: break;
                 }
             break;
