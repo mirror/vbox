@@ -2433,6 +2433,9 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
 # else
     PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
+    /* Just count this as an exit and be done with that. */
+    pVCpu->iem.s.cPotentialExits++;
+
     /*
      * Import all the guest-CPU state.
      *
@@ -8069,6 +8072,7 @@ static void iemVmxVmreadNoCheck(PCVMXVVMCS pVmcs, uint64_t *pu64Dst, uint64_t u6
     }
 }
 
+
 /**
  * Interface for HM and EM to read a VMCS field from the nested-guest VMCS.
  *
@@ -8124,6 +8128,8 @@ static VBOXSTRICTRC iemVmxVmreadCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
+    pVCpu->iem.s.cPotentialExits++;
+
     /* VMCS pointer in root mode. */
     if (   !IEM_VMX_IS_ROOT_MODE(pVCpu)
         ||  IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
@@ -8170,6 +8176,7 @@ static VBOXSTRICTRC iemVmxVmreadCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t
                      ? &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs
                      : &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs;
     iemVmxVmreadNoCheck(pVmcs, pu64Dst, u64VmcsField);
+    Log4(("vmread %#RX64 => %#RX64\n", u64VmcsField, *pu64Dst));
     return VINF_SUCCESS;
 }
 
@@ -8424,6 +8431,8 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
+    pVCpu->iem.s.cPotentialExits++;
+
     /* VMCS pointer in root mode. */
     if (   !IEM_VMX_IS_ROOT_MODE(pVCpu)
         ||  IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
@@ -8508,6 +8517,7 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
                     ? &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs
                     : &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs;
     iemVmxVmwriteNoCheck(pVmcs, u64Val, u64VmcsField);
+    Log4(("vmwrite %#RX64 <= %#RX64\n", u64VmcsField, u64Val));
 
     if (   !fInVmxNonRootMode
         && VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
@@ -9861,6 +9871,8 @@ IEM_CIMPL_DEF_0(iemCImpl_vmx_pause)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmcall)
 {
+    pVCpu->iem.s.cPotentialExits++;
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Nested-guest intercept. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
