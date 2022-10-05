@@ -304,9 +304,20 @@ case "`mokutil --test-key "$DEB_PUB_KEY" 2>/dev/null`" in
     *) unset DEB_KEY_ENROLLED;;
 esac
 
+# Check if update-secureboot-policy tool supports required commandline options.
+update_secureboot_policy_supports()
+{
+    opt_name="$1"
+    [ -n "$opt_name" ] || return
 
+    [ -z "$(update-secureboot-policy --help 2>&1 | grep "$opt_name")" ] && return
+    echo "1"
+}
+
+HAVE_UPDATE_SECUREBOOT_POLICY_TOOL=
 if type update-secureboot-policy >/dev/null 2>&1; then
-    HAVE_UPDATE_SECUREBOOT_POLICY_TOOL=true
+    [ "$(update_secureboot_policy_supports new-key)" = "1" -a "$(update_secureboot_policy_supports enroll-key)" = "1" ] && \
+        HAVE_UPDATE_SECUREBOOT_POLICY_TOOL=true
 fi
 
 # Reads kernel configuration option.
