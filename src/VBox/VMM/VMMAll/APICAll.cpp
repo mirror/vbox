@@ -85,7 +85,7 @@ static const uint32_t g_au32LvtExtValidMask[] =
 DECLINLINE(bool) apicTestVectorInReg(const volatile XAPIC256BITREG *pApicReg, uint8_t uVector)
 {
     const volatile uint8_t *pbBitmap = (const volatile uint8_t *)&pApicReg->u[0];
-    return ASMBitTest(pbBitmap + XAPIC_REG256_VECTOR_OFF(uVector), XAPIC_REG256_VECTOR_BIT(uVector));
+    return ASMBitTest(pbBitmap, (XAPIC_REG256_VECTOR_OFF(uVector) << 3) + XAPIC_REG256_VECTOR_BIT(uVector));
 }
 
 
@@ -98,7 +98,7 @@ DECLINLINE(bool) apicTestVectorInReg(const volatile XAPIC256BITREG *pApicReg, ui
 DECLINLINE(void) apicSetVectorInReg(volatile XAPIC256BITREG *pApicReg, uint8_t uVector)
 {
     volatile uint8_t *pbBitmap = (volatile uint8_t *)&pApicReg->u[0];
-    ASMAtomicBitSet(pbBitmap + XAPIC_REG256_VECTOR_OFF(uVector), XAPIC_REG256_VECTOR_BIT(uVector));
+    ASMAtomicBitSet(pbBitmap, (XAPIC_REG256_VECTOR_OFF(uVector) << 3) + XAPIC_REG256_VECTOR_BIT(uVector));
 }
 
 
@@ -111,7 +111,7 @@ DECLINLINE(void) apicSetVectorInReg(volatile XAPIC256BITREG *pApicReg, uint8_t u
 DECLINLINE(void) apicClearVectorInReg(volatile XAPIC256BITREG *pApicReg, uint8_t uVector)
 {
     volatile uint8_t *pbBitmap = (volatile uint8_t *)&pApicReg->u[0];
-    ASMAtomicBitClear(pbBitmap + XAPIC_REG256_VECTOR_OFF(uVector), XAPIC_REG256_VECTOR_BIT(uVector));
+    ASMAtomicBitClear(pbBitmap, (XAPIC_REG256_VECTOR_OFF(uVector) << 3) + XAPIC_REG256_VECTOR_BIT(uVector));
 }
 
 
