@@ -282,7 +282,7 @@ void UIMotherboardFeaturesEditor::prepare()
         m_pPushButtonResetSecureBoot = new QPushButton(this);
         if (m_pPushButtonResetSecureBoot)
         {
-            m_pPushButtonResetSecureBoot->setIcon(UIIconPool::iconSet(":/refresh_16px"));
+            m_pPushButtonResetSecureBoot->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
             connect(m_pPushButtonResetSecureBoot, &QPushButton::clicked,
                     this, &UIMotherboardFeaturesEditor::sltResetSecureBoot);
             m_pLayout->addWidget(m_pPushButtonResetSecureBoot, 4, 1);
