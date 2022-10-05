@@ -105,6 +105,8 @@ VMM_INT_DECL(const char *) EMR3GetExitTypeName(EMEXITTYPE enmExitType)
         case EMEXITTYPE_RDTSC:              return "RDTSC";
         case EMEXITTYPE_MOV_CRX:            return "MOV CRx";
         case EMEXITTYPE_MOV_DRX:            return "MOV DRx";
+        case EMEXITTYPE_VMREAD:             return "VMREAD";
+        case EMEXITTYPE_VMWRITE:            return "VMWRITE";
 
         /* Raw-mode only: */
         case EMEXITTYPE_INVLPG:             return "INVLPG";

@@ -175,6 +175,8 @@ typedef enum EMEXITTYPE
     EMEXITTYPE_RDTSC,
     EMEXITTYPE_MOV_CRX,
     EMEXITTYPE_MOV_DRX,
+    EMEXITTYPE_VMREAD,
+    EMEXITTYPE_VMWRITE,
 
     /** @name Raw-mode only (for now), keep at end.
      * @{  */

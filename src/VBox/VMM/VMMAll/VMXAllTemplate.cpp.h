@@ -9150,7 +9150,28 @@ HMVMX_EXIT_DECL vmxHCExitVmread(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmread(pVCpu, &ExitInfo);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    {
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+
+# if 0 //ndef IN_NEM_DARWIN /** @todo this needs serious tuning still, slows down things enormously. */
+        /* Try for exit optimization.  This is on the following instruction
+           because it would be a waste of time to have to reinterpret the
+           already decoded vmwrite instruction. */
+        PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_VMREAD));
+        if (pExitRec)
+        {
+            /* Frequent access or probing. */
+            rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+            AssertRCReturn(rc, rc);
+
+            rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+            Log4(("vmread/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
+                  pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+                  VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
+        }
+# endif
+    }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
