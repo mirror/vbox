@@ -362,7 +362,10 @@ sign_modules()
         # Check if signing keys are in place.
         if test ! -f "$DEB_PUB_KEY" || ! test -f "$DEB_PRIV_KEY"; then
             # update-secureboot-policy tool present in the system, but keys were not generated.
-            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && fail "Unable to find signing keys, aborting"
+            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && info "
+
+update-secureboot-policy tool does not generate signing keys
+in your distribution, see below on how to generate them manually."
             # update-secureboot-policy not present in the system, recommend generate keys manually.
             fail "
 
