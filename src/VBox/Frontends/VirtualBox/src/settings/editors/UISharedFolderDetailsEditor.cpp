@@ -305,7 +305,7 @@ void UISharedFolderDetailsEditor::prepareWidgets()
         if (m_pCheckBoxAutoMount)
             pLayout->addWidget(m_pCheckBoxAutoMount, 4, 1);
         /* Prepare permanent check-box: */
-        m_pCheckBoxPermanent = new QCheckBox;
+        m_pCheckBoxPermanent = new QCheckBox(this);
         if (m_pCheckBoxPermanent)
         {
             m_pCheckBoxPermanent->setHidden(!m_fUsePermanent);
