@@ -2492,7 +2492,7 @@ VMM_INT_DECL(uint32_t) CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t
     uint32_t fRet;
     uint32_t const offMsrRead = offBitmapRead + offMsr;
     Assert(offMsrRead + (iBit >> 3) < offBitmapWrite);
-    if (ASMBitTest(pbMsrBitmap + offMsrRead, iBit))
+    if (ASMBitTest(pbMsrBitmap, (offMsrRead << 3) + iBit))
         fRet = VMXMSRPM_EXIT_RD;
     else
         fRet = VMXMSRPM_ALLOW_RD;
@@ -2502,7 +2502,7 @@ VMM_INT_DECL(uint32_t) CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t
      */
     uint32_t const offMsrWrite = offBitmapWrite + offMsr;
     Assert(offMsrWrite + (iBit >> 3) < X86_PAGE_4K_SIZE);
-    if (ASMBitTest(pbMsrBitmap + offMsrWrite, iBit))
+    if (ASMBitTest(pbMsrBitmap, (offMsrWrite << 3) + iBit))
         fRet |= VMXMSRPM_EXIT_WR;
     else
         fRet |= VMXMSRPM_ALLOW_WR;
@@ -2922,7 +2922,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32
                                        : &pVCpu->cpum.s.Guest.hwvirt.vmx.abVmwriteBitmap[0];
     Assert(pbBitmap);
     Assert(u32VmcsField >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
-    return ASMBitTest(&pbBitmap[u32VmcsField >> 3], u32VmcsField & 7);
+    return ASMBitTest(pbBitmap, (u32VmcsField << 3) + (u32VmcsField & 7));
 }
 
 
