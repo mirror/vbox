@@ -951,8 +951,8 @@ static int vmxHCRemoveXcptIntercept(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient
     return vmxHCRemoveXcptInterceptMask(pVCpu, pVmxTransient, RT_BIT(uXcpt));
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
 /**
  * Loads the shadow VMCS specified by the VMCS info. object.
  *
@@ -1116,10 +1116,10 @@ static int vmxHCSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVmcs
         ASMSetFlags(fEFlags);
     return rc;
 }
+
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
-
-
 #ifdef VBOX_STRICT
+
 /**
  * Reads the VM-entry interruption-information field from the VMCS into the VMX
  * transient structure.
@@ -1160,8 +1160,8 @@ DECLINLINE(void) vmxHCReadEntryInstrLenVmcs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
     int rc = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, &pVmxTransient->cbEntryInstr);
     AssertRC(rc);
 }
-#endif /* VBOX_STRICT */
 
+#endif /* VBOX_STRICT */
 
 /**
  * Reads the VM-exit interruption-information field from the VMCS into the VMX
@@ -4275,14 +4275,12 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
                    No error codes for exceptions in real-mode. */
                 if (uVector == X86_XCPT_GP)
                 {
-                    uint32_t const uXcptDfInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR,         X86_XCPT_DF)
-                                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,           VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
-                                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
-                                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
-                    HMEVENT EventXcptDf;
-                    RT_ZERO(EventXcptDf);
-                    EventXcptDf.u64IntInfo = uXcptDfInfo;
-                    return vmxHCInjectEventVmcs(pVCpu, pVmcsInfo, fIsNestedGuest, &EventXcptDf, fStepping, pfIntrState);
+                    static HMEVENT const s_EventXcptDf
+                        = HMEVENT_INIT_ONLY_INT_INFO(  RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DF)
+                                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
+                                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
+                                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1));
+                    return vmxHCInjectEventVmcs(pVCpu, pVmcsInfo, fIsNestedGuest, &s_EventXcptDf, fStepping, pfIntrState);
                 }
 
                 /*
@@ -4291,14 +4289,12 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
                  *
                  * See Intel spec. 20.1.4 "Interrupt and Exception Handling"
                  */
-                uint32_t const uXcptGpInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR,         X86_XCPT_GP)
-                                           | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,           VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
-                                           | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
-                                           | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
-                HMEVENT EventXcptGp;
-                RT_ZERO(EventXcptGp);
-                EventXcptGp.u64IntInfo = uXcptGpInfo;
-                return vmxHCInjectEventVmcs(pVCpu, pVmcsInfo, fIsNestedGuest, &EventXcptGp, fStepping, pfIntrState);
+                static HMEVENT const s_EventXcptGp
+                    = HMEVENT_INIT_ONLY_INT_INFO(  RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_GP)
+                                                 | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
+                                                 | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
+                                                 | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1));
+                return vmxHCInjectEventVmcs(pVCpu, pVmcsInfo, fIsNestedGuest, &s_EventXcptGp, fStepping, pfIntrState);
             }
 
             /* Software exceptions (#BP and #OF exceptions thrown as a result of INT3 or INTO) */

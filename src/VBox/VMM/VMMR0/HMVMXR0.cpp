@@ -2243,8 +2243,8 @@ static int hmR0VmxSetupLbrMsrRange(PVMCC pVM)
     return VINF_SUCCESS;
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
 /**
  * Sets up the shadow VMCS fields arrays.
  *
@@ -2365,8 +2365,8 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
         }
     }
 }
-#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 /**
  * Sets up the virtual-APIC page address for the VMCS.

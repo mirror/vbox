@@ -231,6 +231,8 @@ typedef HMEVENT *PHMEVENT;
 typedef const HMEVENT *PCHMEVENT;
 AssertCompileSizeAlignment(HMEVENT, 8);
 
+/** Initializer for a HMEVENT structure with    */
+#define HMEVENT_INIT_ONLY_INT_INFO(a_uIntInfo) { 0, 0, 0, 0, (a_uIntInfo), 0 }
 
 /**
  * VMX VMCS information, shared.
