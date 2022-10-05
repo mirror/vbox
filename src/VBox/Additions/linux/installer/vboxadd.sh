@@ -362,7 +362,7 @@ sign_modules()
         # Check if signing keys are in place.
         if test ! -f "$DEB_PUB_KEY" || ! test -f "$DEB_PRIV_KEY"; then
             # update-secureboot-policy tool present in the system, but keys were not generated.
-            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && failure "Unable to find signing keys, aborting"
+            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && fail "Unable to find signing keys, aborting"
             # update-secureboot-policy not present in the system, recommend generate keys manually.
             fail "
 
@@ -385,7 +385,7 @@ Restart \"rcvboxadd setup\" after system is rebooted.
         # Get kernel signature hash algorithm from kernel config and validate it.
         sig_hashalgo=$(kernel_module_sig_hash)
         [ "$(module_sig_hash_supported $sig_hashalgo)" = "1" ] \
-            || failure "Unsupported kernel signature hash algorithm $sig_hashalgo"
+            || fail "Unsupported kernel signature hash algorithm $sig_hashalgo"
 
         # Sign modules.
         for i in $MODULE_LIST; do
