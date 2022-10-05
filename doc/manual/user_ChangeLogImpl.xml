@@ -130,7 +130,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>GUI: Improved theme support on all platforms. Linux and macOS
-          got native engine while Windows host got it separately implemented.</para>
+          use native engine while for Windows host it is separately implemented.</para>
       </listitem>
 
       <listitem>
@@ -170,8 +170,16 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>macOS hosts: Dropped all kernel extensions. VirtualBox relies fully on
-          userland frameworks provided by Apple now.</para>
+        <para>macOS host: Dropped all kernel extensions. VirtualBox relies fully on
+          the hypervisor and vmnet frameworks provided by Apple now. At the moment
+          the implementation lacks "Internal Networking" functionality. This will be
+          provided at a later date.</para>
+      </listitem>
+
+      <listitem>
+        <para>macOS host: Providing a Developer Preview package for systems with
+          an Apple silicon CPU. This is unsupported work in progress, and is known
+          to have very modest performance.</para>
       </listitem>
 
       <listitem>
