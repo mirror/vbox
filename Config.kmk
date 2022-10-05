@@ -359,7 +359,7 @@ endif
 ifeq ($(KBUILD_HOST),darwin)
  if "$(KBUILD_TARGET_ARCH)" == "arm64"
 VBOX_WITH_EVEN_NEWER_XCODE := 1
-# else if !defined(VBOX_WITH_EVEN_NEWER_XCODE) && !defined(VBOX_WITHOUT_EVEN_NEWER_XCODE) && !defined(VBOX_WITH_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 16 # (OS X 10.12 Sierra)
+ else if !defined(VBOX_WITH_EVEN_NEWER_XCODE) && !defined(VBOX_WITHOUT_EVEN_NEWER_XCODE) && !defined(VBOX_WITH_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 16 # (OS X 10.12 Sierra)
 #VBOX_WITH_EVEN_NEWER_XCODE := 1
  else if !defined(VBOX_WITH_NEW_XCODE) && !defined(VBOX_WITHOUT_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
 VBOX_WITH_NEW_XCODE := 1
@@ -527,7 +527,7 @@ if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DRIVERLESS_NEM_FALLBACK = 1
 endif
 # Enable forced driverless mode by default.
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)
+if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DRIVERLESS_FORCED = 1
 endif
 # Enables the new breakpoint handling code, see @bugref{8650}
@@ -741,8 +741,8 @@ VBOX_WITH_INSTALLER = 1
 VBOX_WITH_GUEST_INSTALLER_UNICODE = 1
 # The kernel driver/module and related runtime libraries.
 # On Linux we build this as a test case instead.
-# On darwin.arm64 we don't use a support driver.
-if "$(KBUILD_TARGET)" != "linux" && ("$(KBUILD_TARGET)" != "darwin" || "$(KBUILD_TARGET_ARCH)" == "amd64")
+# On darwin we don't use a support driver.
+if "$(KBUILD_TARGET)" != "linux" && "$(KBUILD_TARGET)" != "darwin"
  VBOX_WITH_VBOXDRV = 1
 endif
 # The main api.
@@ -1272,8 +1272,10 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_WITH_WEBSERVICES :=
   # Ditto for the java<->XPCOM bridge.
   VBOX_WITH_JXPCOM :=
+ endif
 
-  # No need for hardening on arm64.
+ ifdef VBOX_WITH_DRIVERLESS_FORCED
+  # No need for hardening when not using the driver.
   VBOX_WITH_HARDENING :=
  endif
 endif
