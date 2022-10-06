@@ -3245,9 +3245,14 @@ static int lsilogicR3ProcessConfigurationRequest(PPDMDEVINS pDevIns, PLSILOGICSC
         }
         case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED:
         {
-            rc = lsilogicR3ConfigurationPageGetExtended(pThisCC,
-                                                        pConfigurationReq,
-                                                        &pExtPageHeader, &pbPageData, &cbPage);
+            if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+            {
+                rc = lsilogicR3ConfigurationPageGetExtended(pThisCC,
+                                                            pConfigurationReq,
+                                                            &pExtPageHeader, &pbPageData, &cbPage);
+            }
+            else
+                rc = VERR_NOT_FOUND;
             break;
         }
         default:
