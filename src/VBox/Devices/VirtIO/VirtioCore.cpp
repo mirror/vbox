@@ -1559,7 +1559,18 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
         VIRTIO_DEV_CONFIG_ACCESS(         uConfigGeneration,          VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess, pVirtio);
     else
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uVirtqSelect,               VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess))
-        VIRTIO_DEV_CONFIG_ACCESS(         uVirtqSelect,               VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess, pVirtio);
+    {
+        if (fWrite) {
+            uint16_t uVirtqNew = *(uint16_t *)pv;
+
+            if (uVirtqNew < RT_ELEMENTS(pVirtio->aVirtqueues))
+                VIRTIO_DEV_CONFIG_ACCESS( uVirtqSelect,               VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess, pVirtio);
+            else
+                LogFunc(("... WARNING: Guest attempted to write invalid virtq selector (ignoring)\n"));
+        }
+        else
+            VIRTIO_DEV_CONFIG_ACCESS(     uVirtqSelect,               VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess, pVirtio);
+    }
     else
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   GCPhysVirtqDesc,            VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess))
         VIRTIO_DEV_CONFIG_ACCESS_INDEXED( GCPhysVirtqDesc,   uVirtq,  VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess, pVirtio->aVirtqueues);
@@ -1717,7 +1728,12 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortOut(PPDMDEVINS pDevIns, void
     Log(("%-23s: Port written at offset=%RTiop, cb=%#x, u32=%#x\n",  __FUNCTION__, offPort, cb, u32));
 
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uVirtqSelect,        VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
-        VIRTIO_DEV_CONFIG_ACCESS(         uVirtqSelect,        VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort, pVirtio);
+    {
+        if (u32 < RT_ELEMENTS(pVirtio->aVirtqueues))
+            VIRTIO_DEV_CONFIG_ACCESS(     uVirtqSelect,        VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort, pVirtio);
+        else
+            LogFunc(("... WARNING: Guest attempted to write invalid virtq selector (ignoring)\n"));
+    }
     else
 #ifdef LEGACY_MSIX_SUPPORTED
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uMsixConfig,         VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
