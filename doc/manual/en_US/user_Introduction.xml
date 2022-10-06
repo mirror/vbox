@@ -36,15 +36,15 @@
   <para>
     &product-name; is a cross-platform virtualization application. What
     does that mean? For one thing, it installs on your existing Intel or
-    AMD-based computers, whether they are running Windows, macOS,
-    Linux, or Oracle Solaris operating systems (OSes). Secondly, it
-    extends the capabilities of your existing computer so that it can
-    run multiple OSes, inside multiple virtual machines, at the same
-    time. As an example, you can run Windows and Linux on your Mac, run
-    Windows Server 2016 on your Linux server, run Linux on your Windows
-    PC, and so on, all alongside your existing applications. You can
-    install and run as many virtual machines as you like. The only
-    practical limits are disk space and memory.
+    AMD-based computers, whether they are running Windows, macOS, Linux,
+    or Oracle Solaris operating systems (OSes). Secondly, it extends the
+    capabilities of your existing computer so that it can run multiple
+    OSes, inside multiple virtual machines, at the same time. As an
+    example, you can run Windows and Linux on your Mac, run Windows
+    Server on your Linux server, run Linux on your Windows PC, and so
+    on, all alongside your existing applications. You can install and
+    run as many virtual machines as you like. The only practical limits
+    are disk space and memory.
   </para>
 
   <para>
@@ -135,8 +135,15 @@
         </para>
 
         <para>
-          On top of that, with the use of another &product-name; feature
-          called <emphasis>snapshots</emphasis>, one can save a
+          Using virtual machines enables you to build and test a
+          multi-node networked service, for example. Issues with
+          networking, operating system, and software configuration can
+          be investigated easily.
+        </para>
+
+        <para>
+          In addition to that, with the use of another &product-name;
+          feature called <emphasis>snapshots</emphasis>, one can save a
           particular state of a virtual machine and revert back to that
           state, if necessary. This way, one can freely experiment with
           a computing environment. If something goes wrong, such as
@@ -188,8 +195,8 @@
           <emphasis role="bold">Host operating system (host
           OS).</emphasis> This is the OS of the physical computer on
           which &product-name; was installed. There are versions of
-          &product-name; for Windows, macOS, Linux, and Oracle
-          Solaris hosts. See <xref linkend="hostossupport" />.
+          &product-name; for Windows, macOS, Linux, and Oracle Solaris
+          hosts. See <xref linkend="hostossupport" />.
         </para>
 
         <para>
@@ -238,9 +245,9 @@
         </para>
 
         <para>
-          You can view these VM settings in the VirtualBox Manager
-          window, the <emphasis role="bold">Settings</emphasis> dialog,
-          and by running the <command>VBoxManage</command> command. See
+          You can view these VM settings in &vbox-mgr;, in the
+          <emphasis role="bold">Settings</emphasis> window, and by
+          running the <command>VBoxManage</command> command. See
           <xref linkend="vboxmanage" />.
         </para>
       </listitem>
@@ -283,7 +290,7 @@
           hypervisor, sometimes referred to as a <emphasis>type
           2</emphasis> hypervisor. Whereas a
           <emphasis>bare-metal</emphasis> or <emphasis>type 1</emphasis>
-          hypervisor would run directly on the hardware, &product-name;
+          hypervisor runs directly on the hardware, &product-name;
           requires an existing OS to be installed. It can thus run
           alongside existing applications on that host.
         </para>
@@ -294,7 +301,7 @@
           image formats are used. This enables you to run virtual
           machines created on one host on another host with a different
           host OS. For example, you can create a virtual machine on
-          Windows and then run it under Linux.
+          Windows and then run it on Linux.
         </para>
 
         <para>
@@ -338,8 +345,9 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Great hardware support.</emphasis> Among
-          other features, &product-name; supports the following:
+          <emphasis role="bold">Comprehensive hardware
+          support.</emphasis> Among other features, &product-name;
+          supports the following:
         </para>
 
         <itemizedlist>
@@ -635,6 +643,28 @@
           Intel hardware is required. See also
           <xref linkend="KnownIssues" />.
         </para>
+
+        <para>
+          An installer package is available for macOS/Arm64, for systems
+          using an Apple silicon CPU. With this package, you can run
+          some guest operating systems for Intel x86/x64 CPUs in an
+          emulation.
+        </para>
+
+        <para>
+          The macOS/Arm64 installer package for Apple silicon platform
+          is available as a Developer Preview release. This package
+          represents a work in progress project and the performance is
+          very modest.
+        </para>
+
+        <note>
+          <para>
+            Developer Preview is a public release for developers, which
+            provides early access to unsupported software release and
+            features.
+          </para>
+        </note>
       </listitem>
 
       <listitem>
@@ -659,13 +689,13 @@
 
           <listitem>
             <para>
-              Oracle Linux 7 and 8
+              Oracle Linux 7, 8 and 9
             </para>
           </listitem>
 
           <listitem>
             <para>
-              CentOS/Red Hat Enterprise Linux 7 and 8
+              CentOS/Red Hat Enterprise Linux 7, 8 and 9
             </para>
           </listitem>
 
@@ -824,36 +854,16 @@
 
           <listitem>
             <para>
-              Cloud integration features. See <xref linkend="ovf"/>.
+              Cloud integration features. See
+              <xref linkend="cloud-integration"/>.
             </para>
           </listitem>
 
         </itemizedlist>
 
         <para>
-          &product-name; extension packages have a
-          <filename>.vbox-extpack</filename> file name extension. To
-          install an extension, simply double-click on the package file
-          and a <emphasis role="bold">Network Operations
-          Manager</emphasis> window is shown to guide you through the
-          required steps.
-        </para>
-
-        <para>
-          To view the extension packs that are currently installed,
-          start the VirtualBox Manager, as shown in
-          <xref linkend="intro-starting"/>. From the
-          <emphasis role="bold">File</emphasis> menu, select
-          <emphasis role="bold">Preferences</emphasis>. In the window
-          that displays, go to the
-          <emphasis role="bold">Extensions</emphasis> category. This
-          shows you the extensions which are currently installed, and
-          enables you to remove a package or add a new package.
-        </para>
-
-        <para>
-          Alternatively, you can use the <command>VBoxManage</command>
-          command line. See <xref linkend="vboxmanage-extpack" />.
+          For details of how to install an extension pack, see
+          <xref linkend="install-ext-pack"/>.
         </para>
       </listitem>
 
@@ -873,7 +883,7 @@
 
       <listitem>
         <para>
-          On a Windows host, in the
+          <emphasis role="bold">Windows hosts.</emphasis> In the
           <emphasis role="bold">Programs</emphasis> menu, click on the
           item in the <emphasis role="bold">VirtualBox</emphasis> group.
           On some Windows platforms, you can also enter
@@ -884,7 +894,8 @@
 
       <listitem>
         <para>
-          On a macOS host, in the Finder, double-click on the
+          <emphasis role="bold">macOS hosts.</emphasis> In the Finder,
+          double-click on the
           <emphasis role="bold">VirtualBox</emphasis> item in the
           Applications folder. You may want to drag this item onto your
           Dock.
@@ -893,9 +904,10 @@
 
       <listitem>
         <para>
-          On a Linux or Oracle Solaris host, depending on your desktop
-          environment, an &product-name; item may have been placed in
-          either the System or System Tools group of your
+          <emphasis role="bold">Linux or Oracle Solaris
+          hosts</emphasis>. Depending on your desktop environment, an
+          &product-name; item may have been placed in either the System
+          or System Tools group of your
           <emphasis role="bold">Applications</emphasis> menu.
           Alternatively, you can enter <command>VirtualBox</command> in
           a terminal window.
@@ -905,13 +917,41 @@
     </itemizedlist>
 
     <para>
-      When you start &product-name; for the first time, a window like
-      the following is displayed:
+      When you start &product-name;, the &vbox-mgr; interface is shown.
+      See <xref linkend="gui-virtualboxmanager"/>.
+    </para>
+
+  </sect1>
+
+  <sect1 id="gui-virtualboxmanager">
+
+    <title>&vbox-mgr;</title>
+
+    <para>
+      &vbox-mgr; is the user interface for &product-name;. You can use
+      &vbox-mgr; to create, configure, and manage your virtual machines.
+    </para>
+
+    <para>
+      This section describes the main features of the &vbox-mgr; user
+      interface. Subsequent sections and chapters describe how to use
+      &vbox-mgr; to perform tasks in &product-name;.
+    </para>
+
+    <para>
+      When you start &product-name;, the
+      <emphasis role="bold">&vbox-mgr;</emphasis> window is displayed.
+    </para>
+
+    <para>
+      <xref linkend="fig-vbox-manager-initial"/> shows &vbox-mgr; the
+      first time you start &product-name;, before you have created any
+      virtual machines.
     </para>
 
     <figure id="fig-vbox-manager-initial">
-      <title>VirtualBox Manager Window, After Initial Startup</title>
-    <mediaobject>
+      <title>&vbox-mgr;, Showing Welcome Screen After Initial Startup</title>
+      <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtualbox-main-empty.png"
                      width="10cm" />
@@ -920,33 +960,13 @@
     </figure>
 
     <para>
-      This window is called the <emphasis role="bold">VirtualBox
-      Manager</emphasis>. The left pane will later list all your virtual
-      machines. Since you have not yet created any virtual machines,
-      this list is empty. The <emphasis role="bold">Tools</emphasis>
-      button provides access to user tools, such as the Virtual Media
-      Manager.
-    </para>
-
-    <para>
-      The pane on the right displays the properties of the currently
-      selected virtual machine. Since you do not have any machines yet,
-      the pane displays a welcome message.
-    </para>
-
-    <para>
-      The buttons on the right pane are used to create and work with
-      VMs.
-    </para>
-
-    <para>
-      The following figure gives an idea of what &product-name; might
-      look like after you have created some VMs.
+      <xref linkend="fig-vbox-manager-populated"/> shows how &vbox-mgr;
+      might look after you have created some virtual machines.
     </para>
 
     <figure id="fig-vbox-manager-populated">
-      <title>VirtualBox Manager Window, After Creating Virtual Machines</title>
-    <mediaobject>
+      <title>&vbox-mgr; Window, After Creating Virtual Machines</title>
+      <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtualbox-main.png"
                      width="12cm" />
@@ -954,304 +974,1278 @@
       </mediaobject>
     </figure>
 
+    <para>
+      The main components of the &vbox-mgr; window are as follows:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">The machine list.</emphasis> The left
+          pane of the <emphasis role="bold">VirtualBox
+          Manager</emphasis> window lists all your virtual machines. If
+          you have not yet created any virtual machines, this list is
+          empty. See <xref linkend="gui-machine-list"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">The Details pane.</emphasis> The pane on
+          the right displays the properties of the currently selected
+          virtual machine. If you do not have any machines yet, the pane
+          displays a welcome message.
+        </para>
+
+        <para>
+          The toolbar buttons on the Details pane can be used to create
+          and work with virtual machines. See
+          <xref linkend="gui-details"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Help Viewer.</emphasis> A window that
+          displays context-sensitive help topics for &vbox-mgr; tasks.
+          See <xref linkend="help-viewer"/>.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <sect2 id="gui-machine-list">
+
+      <title>The Machine List</title>
+
+      <para>
+        The list of virtual machines in the left pane is called the
+        <emphasis>machine list</emphasis>.
+      </para>
+
+      <para>
+        The following methods can be used to control and configure
+        virtual machines in the machine list:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            Right-click on the virtual machine name, to display menu
+            options.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click on the Machine Tools menu, to the right of the virtual
+            machine name. See <xref linkend="gui-tools-machine"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click a button in the toolbar in the Details pane. See
+            <xref linkend="gui-details"/>.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="gui-details">
+
+      <title>The Details Pane</title>
+
+      <para>
+        The Details pane shows configuration information for a virtual
+        machine that is selected in the machine list. The pane also
+        includes a toolbar for performing tasks.
+      </para>
+
+      <figure id="fig-vbox-details-pane">
+        <title>&vbox-mgr; Details Pane, Including Toolbar</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/details-pane.png"
+                     width="12cm" />
+        </imageobject>
+      </mediaobject>
+      </figure>
+
+      <para>
+        The Details pane includes the following:
+      </para>
+
+      <simplesect id="gui-details-toolbar">
+
+        <title>&vbox-mgr; Toolbar</title>
+
+        <para>
+          A toolbar at the top of the Details pane contains buttons that
+          enable you to configure the selected virtual machine, or to
+          create a new virtual machine.
+        </para>
+
+        <para>
+          The toolbar includes the following buttons:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">New.</emphasis> Creates a new
+              virtual machine, and adds it to the machine list.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Add.</emphasis> Adds an existing
+              virtual machine to the machine list.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Settings.</emphasis> Displays the
+              <emphasis role="bold">Settings</emphasis> window for the
+              virtual machine, enabling you to make configuration
+              changes.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Discard.</emphasis> For a running
+              virtual machine, discards the saved state for the virtual
+              machine and closes it down.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Show/Start.</emphasis> For a running
+              virtual machine, <emphasis role="bold">Show</emphasis>
+              displays the virtual machine window. For a stopped virtual
+              machine, <emphasis role="bold">Start</emphasis> displays
+              options for powering up the virtual machine.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+      </simplesect>
+
+      <simplesect id="gui-details-settings">
+
+        <title>Settings</title>
+
+        <para>
+          A summary of settings is shown for the virtual machine.
+        </para>
+
+        <para>
+          You can change some virtual machine settings, by clicking on
+          the setting in the Details pane.
+        </para>
+
+        <note>
+          <para>
+            If a virtual machine is running, some settings cannot be
+            altered. You must stop the virtual machine first in order to
+            change the setting.
+          </para>
+        </note>
+
+        <para>
+          Virtual machine settings can also be changed using the
+          <emphasis role="bold">Settings</emphasis> button on the
+          &vbox-mgr; toolbar.
+        </para>
+
+        <para>
+          The virtual machine settings on the Details pane are organized
+          in sections that correspond to those used in the
+          <emphasis role="bold">Settings</emphasis> window. See
+          <xref linkend="BasicConcepts"/>.
+        </para>
+
+        <para>
+          Click the arrow icon to hide or show each section.
+        </para>
+
+      </simplesect>
+
+      <simplesect id="gui-details-preview">
+
+        <title>Preview Window</title>
+
+        <para>
+          The virtual machine display is shown in a small window.
+        </para>
+
+        <para>
+          You can use the Preview window to check if your virtual
+          machine has finished booting up.
+        </para>
+
+        <para>
+          Click the arrow icon to hide or show the Preview window.
+        </para>
+
+      </simplesect>
+
+      <simplesect id="gui-notification-center">
+
+        <title>Notification Center</title>
+
+        <para>
+          Notification messages may be shown in a sliding panel on the
+          right of the Details pane, called the
+          <emphasis role="bold">Notification Center</emphasis>. Click
+          the warning triangle to show the notification messages.
+        </para>
+
+        <para>
+          Most system messages that do not require user interaction are
+          displayed in the Notification Center, including task failure
+          alerts.
+        </para>
+
+        <para>
+          The progress of some tasks can be observed and stopped using
+          the Notification Center.
+        </para>
+
+      </simplesect>
+
+    </sect2>
+
+    <sect2 id="gui-tools">
+
+      <title>&vbox-mgr; Tools</title>
+
+      <para>
+        &vbox-mgr; provides two types of user tools, to enable you to
+        perform common tasks easily.
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Global Tools.</emphasis> These tools
+            apply to <emphasis>all</emphasis> virtual machines. See
+            <xref linkend="gui-tools-global"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Machine Tools.</emphasis> These tools
+            apply to a <emphasis>specific</emphasis> virtual machine.
+            See <xref linkend="gui-tools-machine"/>.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <simplesect id="gui-tools-global">
+
+        <title>Global Tools</title>
+
+        <para>
+          In the left pane of the &vbox-mgr; window, click the
+          <emphasis role="bold">Menu</emphasis> icon in the
+          <emphasis role="bold">Tools</emphasis> banner located above
+          the machine list. The <emphasis role="bold">Global
+          Tools</emphasis> menu is displayed.
+        </para>
+
+        <figure id="fig-global-tools-menu">
+          <title>Global Tools Menu</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/global-tools-menu.png"
+                     width="10cm" />
+        </imageobject>
+      </mediaobject>
+        </figure>
+
+        <para>
+          A drop-down list enables you to select from the following
+          global tools:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Welcome.</emphasis> Displays the
+              &vbox-mgr; welcome message. The &vbox-mgr; toolbar is also
+              included, to enable you to get started with using
+              &product-name;. See
+              <xref linkend="fig-vbox-manager-initial"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Extensions.</emphasis> Displays the
+              <emphasis role="bold">Extension Pack Manager</emphasis>
+              tool. This tool is used to install and uninstall
+              &product-name; Extension Packs. See
+              <xref linkend="install-ext-pack-manager"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Media.</emphasis> Displays the
+              <emphasis role="bold">Virtual Media Manager</emphasis>
+              tool. This tool is used to manage the disk images used by
+              &product-name;. See
+              <xref linkend="virtual-media-manager"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Network.</emphasis> Displays the
+              <emphasis role="bold">Network Manager</emphasis> tool.
+              This tool is used to create and configure some types of
+              networks used by &product-name;. See
+              <xref linkend="network-manager"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Cloud.</emphasis> Displays the
+              <emphasis role="bold">Cloud Profile Editor</emphasis>
+              tool. This tool is used to configure connections to a
+              cloud service, such as &oci;. See
+              <xref linkend="cloud-using-cloud-profile-manager"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Activities.</emphasis> Displays the
+              <emphasis role="bold">VM Activity Overview</emphasis>
+              tool. This tool is used to monitor performance and
+              resource usage of virtual machines. See
+              <xref linkend="vm-info"/>.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+        <para>
+          The <emphasis role="bold">Pin</emphasis> icon is used to keep
+          the <emphasis role="bold">Tools</emphasis> banner visible as
+          you scroll down the entries in the machine list.
+        </para>
+
+      </simplesect>
+
+      <simplesect id="gui-tools-machine">
+
+        <title>Machine Tools</title>
+
+        <para>
+          In the machine list in the left pane of the &vbox-mgr; window,
+          select a virtual machine.
+        </para>
+
+        <para>
+          Click the <emphasis role="bold">Menu</emphasis> icon to the
+          right of the virtual machine name. The
+          <emphasis role="bold">Machine Tools</emphasis> menu is
+          displayed.
+        </para>
+
+        <figure id="fig-machine-tools-menu">
+          <title>Machine Tools Menu</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/machine-tools-menu.png"
+                     width="10cm" />
+        </imageobject>
+      </mediaobject>
+        </figure>
+
+        <para>
+          A drop-down list enables you to select from the following
+          machine tools:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Details.</emphasis> Displays the
+              Details pane for the selected virtual machine. See
+              <xref linkend="gui-details"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Snapshots.</emphasis> Displays the
+              <emphasis role="bold">Snapshots</emphasis> tool. This tool
+              enables you to view and manage snapshots for the virtual
+              machine. See <xref linkend="snapshots"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Logs.</emphasis> Displays the
+              <emphasis role="bold">Log Viewer</emphasis> tool. This
+              tool enables you to view and search system logs for the
+              virtual machine. See <xref linkend="log-viewer"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Activity.</emphasis> Displays the
+              <emphasis role="bold">VM Activity</emphasis> page of the
+              <emphasis role="bold">Session Information</emphasis>
+              dialog. This dialog enables you to view and analyze
+              performance metrics for the virtual machine. See
+              <xref linkend="vm-info"/>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">File Manager.</emphasis> Displays
+              the <emphasis role="bold">Guest Control File
+              Manager</emphasis> tool. This tool enables you to manage
+              files on the guest system. See
+              <xref linkend="guestadd-gc-file-manager"/>.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+      </simplesect>
+
+    </sect2>
+
+    <sect2 id="help-viewer">
+
+      <title>Help Viewer</title>
+
+      <para>
+        The Help Viewer is a window that displays context-sensitive help
+        to assist you in completing common &vbox-mgr; tasks. You can
+        display the Help Viewer in the following ways:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            In a &vbox-mgr; wizard or dialog, click
+            <emphasis role="bold">Help</emphasis> to display the
+            relevant help topic.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            In &vbox-mgr; or from a guest VM, do either of the
+            following:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                Select the <emphasis role="bold">Help</emphasis>,
+                <emphasis role="bold">Contents</emphasis> menu option.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Press the <emphasis role="bold">F1</emphasis> button.
+              </para>
+
+              <para>
+                The keyboard shortcut used to access the Help Viewer can
+                be configured in the
+                <emphasis role="bold">Preferences</emphasis> window.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        The Help Viewer has the following features:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Navigation tools.</emphasis> The left
+            hand pane contains the following navigation tools:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Contents.</emphasis> Displays the
+                help topic location in the &product-name; documentation.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Search.</emphasis> Enables you to
+                search the documentation for help topics.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Bookmarks.</emphasis> Enables you
+                to bookmark useful help topics.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Tabbed browsing.</emphasis> Help
+            topics that you have visited are displayed in tabs in the
+            main window pane.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Zoomable topics.</emphasis> Zoom
+            controls enable you to enlarge help topic details.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Printing.</emphasis> Help topics can
+            be printed to PDF file or to a local printer.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="vboxmanager-wizards">
+
+      <title>About &vbox-mgr; Wizards</title>
+
+      <para>
+        &vbox-mgr; includes wizards that enable you to complete tasks
+        easily. Examples of such tasks are when you create a new virtual
+        machine or use the cloud integration features of &product-name;.
+      </para>
+
+      <para>
+        To display a help topic for the wizard, click the
+        <emphasis role="bold">Help</emphasis> button.
+      </para>
+
+      <para>
+        Some wizards can be displayed in either of the following modes:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Guided mode.</emphasis> This is the
+            default display mode. Wizards are shown in the conventional
+            manner, using a series of pages with descriptions to guide
+            the user through the steps for a task.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold"><emphasis role="bold">Expert
+            mode.</emphasis></emphasis> This display mode is designed
+            for more advanced users of &product-name;. All settings are
+            displayed on a single page, enabling quicker completion of
+            tasks.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Click the button at the bottom of the wizard window to switch
+        between Guided mode and Expert mode.
+      </para>
+
+    </sect2>
+
   </sect1>
 
-  <sect1 id="gui-createvm">
+  <sect1 id="create-vm-wizard">
 
     <title>Creating Your First Virtual Machine</title>
 
     <para>
-      Selecting <emphasis role="bold">New</emphasis> menu item from
-      <emphasis role="bold">Machine</emphasis> menu of the Manager Window
-      shows a wizard which guides you through setting up a new virtual
-      machine (VM).
+      Click <emphasis role="bold">New</emphasis> in the VirtualBox
+      Manager window. The <emphasis role="bold">Create Virtual
+      Machine</emphasis> wizard is shown, to guide you through the
+      required steps for setting up a new virtual machine (VM).
     </para>
 
-    <figure id="fig-new-vm-name">
-      <title>Creating a New Virtual Machine: Name and Operating System</title>
-    <mediaobject>
+    <para>
+      The <emphasis role="bold">Create Virtual Machine</emphasis> wizard
+      pages are described in the following sections.
+    </para>
+
+    <sect2 id="create-vm-wizard-name-os">
+
+      <title>Create Virtual Machine Wizard: Name and Operating System</title>
+
+      <figure id="fig-create-vm-name">
+        <title>Creating a Virtual Machine: Name and Operating System</title>
+      <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/create-vm-1.png"
                      width="10cm" />
         </imageobject>
       </mediaobject>
-    </figure>
+      </figure>
 
-    <para>
-      On the following pages, the wizard will ask you for the bare
-      minimum of information that is needed to create a VM, in
-      particular:
-    </para>
+      <para>
+        Use this page to specify a name and operating system (OS) for
+        the virtual machine and to change the storage location used for
+        VMs.
+      </para>
 
-    <orderedlist>
-      <listitem>
-        <para>
-          The first page lets you specify name, location, and guest
-          operating system type. Additionally you can enable the unattended
-          guest operating system install feature (<xref linkend="gui-wizard-unattended"/>.).
-        </para>
-        <itemizedlist>
-          <listitem>
-            <para>
-              The <emphasis role="bold">Name</emphasis> of the VM you choose
-              is shown in the machine list of the VirtualBox Manager window
-              and is also used for the VM's files on disk.
-            </para>
-            <para>
-              Be sure to assign each VM an informative name that describes
-              the OS and software running on the VM. For example,
-              <literal>Windows 10 with Visio</literal>.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              The <emphasis role="bold">Folder</emphasis> is the location
-              where VMs are stored on your computer. The default folder
-              location is shown.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              The <emphasis role="bold">ISO Image</emphasis> is ISO file which
-              may be used to install the guest operating system or to be attached
-              to DVD drive of the new virtual machine. Note that selecting
-              an ISO image is optional. Please see the section <xref linkend="gui-wizard-unattended"/>.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              For <emphasis role="bold">Type</emphasis>,
-              select the OS that you want to install. The supported OSes are
-              grouped. If you want to install something very unusual that is
-              not listed, select <emphasis role="bold">Other</emphasis>.
-              Depending on your selection, &product-name; will enable or
-              disable certain VM settings that your guest OS may require.
-              This is particularly important for 64-bit guests. See
-              <xref linkend="intro-64bitguests" />. It is therefore
-              recommended to always set it to the correct value. Also note
-              that if an ISO image is selected and &product-name; is able to detect
-              an operating system from that ISO, <emphasis role="bold">Type</emphasis>
-              and <emphasis role="bold">Version</emphasis> controls are populated
-              accordingly and disabled.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              The checkox <emphasis role="bold">Skip Unattended Installation</emphasis>
-              can be used to disable unattended guest OS installation even if an ISO
-              image is selected that supports unattended install. In that case the
-              selected ISO image is inserted DVD drive of the new virtual machine.
-            </para>
-          </listitem>
-        </itemizedlist>
-      </listitem>
-      <listitem>
-        <para>
-          If unattended install is enabled then the second page of the wizard
-          will show some controls which can be used to input values needed during
-          unattended installation. These include username, password, host name,
-          product key (only applies to some guest operating system type), etc.
-          If for some reason unattended install is not enabled, this page is
-          skipped.
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          On the next page, select the <emphasis role="bold">Base Memory
-          </emphasis> that &product-name; should allocate every
-          time the virtual machine is started. The amount of memory
-          given here will be taken away from your host machine and
-          presented to the guest OS, which will report this size as the
-          virtual computer's installed RAM. <emphasis role="bold">Processor(s)
-          </emphasis> control determines how many virtual processors are to be
-          assigned to new virtual machine.
-        </para>
-        <caution>
+      <para>
+        You can also choose to disable the unattended guest operating
+        system install feature. See also
+        <xref linkend="create-vm-wizard-unattended-install"/>.
+      </para>
+
+      <para>
+        The following fields are available on this wizard page:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
           <para>
-            Choose this setting carefully. The memory you give to the VM
-            will not be available to your host OS while the VM is
-            running, so do not specify more than you can spare.
-            Also note that it is not advised to assign more than
-            half of the processor threads the host machine has.
+            <emphasis role="bold">Name.</emphasis> A name for the new
+            VM. The name you enter is shown in the machine list of
+            &vbox-mgr; and is also used for the virtual machine's files
+            on disk.
           </para>
+
           <para>
-            For example, if your host machine has 4 GB of RAM and you
-            enter 2048 MB as the amount of RAM for a particular virtual
-            machine, you will only have 2 GB left for all the other
-            software on your host while the VM is running. If you run
-            two VMs at the same time, even more memory will be allocated
-            for the second VM, which may not even be able to start if
-            that memory is not available.
+            Be sure to assign each VM an informative name that describes
+            the OS and software running on the VM. For example, a name
+            such as <literal>Windows 10 with Visio</literal>.
           </para>
+        </listitem>
+
+        <listitem>
           <para>
-            On the other hand, you should specify as much as your guest
-            OS and your applications will require to run properly. A
-            guest OS may require at least 1 or 2 GB of memory to install
-            and boot up. For best performance, more memory than that may
-            be required.
+            <emphasis role="bold">Folder.</emphasis> The location where
+            VMs are stored on your computer, called the
+            <emphasis>machine folder</emphasis>. The default folder
+            location is shown.
           </para>
-        </caution>
+
+          <para>
+            Ensure that the folder location has enough free space,
+            especially if you intend to use the snapshots feature. See
+            also <xref linkend="vboxconfigdata-machine-folder"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">ISO Image.</emphasis> Select an ISO
+            image file. The image file can be used to install an OS on
+            the new virtual machine or it can be attached to a DVD drive
+            on the new virtual machine.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Type and Version.</emphasis> These
+            fields are used to select the OS that you want to install on
+            the new virtual machine.
+          </para>
+
+          <para>
+            The supported OSes are grouped into types. If you want to
+            install something very unusual that is not listed, select
+            the <emphasis role="bold">Other</emphasis> type. Depending
+            on your selection, &product-name; will enable or disable
+            certain VM settings that your guest OS may require. This is
+            particularly important for 64-bit guests. See
+            <xref linkend="intro-64bitguests" />. It is therefore
+            recommended to always set this field to the correct value.
+          </para>
+
+          <para>
+            If an ISO image is selected and &product-name; detects the
+            operating system for the ISO, the
+            <emphasis role="bold">Type</emphasis> and
+            <emphasis role="bold">Version</emphasis> fields are
+            populated automatically and are disabled.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Skip Unattended
+            Installation.</emphasis> Disables unattended guest OS
+            installation, even if an ISO image is selected that supports
+            unattended installation. In that case, the selected ISO
+            image is mounted automatically on the DVD drive of the new
+            virtual machine and user interaction is required to complete
+            the OS installation.
+          </para>
+
+          <para>
+            The unattended installation step in the wizard is skipped.
+          </para>
+
+          <note>
+            <para>
+              This option is disabled if you do not select an
+              installation medium in the <emphasis role="bold">ISO
+              Image</emphasis> field.
+            </para>
+          </note>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Click <emphasis role="bold">Next</emphasis> to go to the next
+        wizard page.
+      </para>
+
+    </sect2>
+
+    <sect2 id="create-vm-wizard-unattended-install">
+
+      <title>(Optional) Create Virtual Machine Wizard: Unattended Guest OS Install</title>
+
+      <para>
+        Unattended guest OS installation enables you to install the OS
+        on a virtual machine automatically.
+      </para>
+
+      <note>
         <para>
-          Always ensure that the host OS has enough RAM remaining. If
-          insufficient RAM remains, the system might excessively swap
-          memory to the hard disk, which effectively brings the host
-          system to a standstill.
+          This page is optional. It is not displayed if you have
+          selected the <emphasis role="bold">Skip Unattended
+          Installation</emphasis> option on the initial wizard page.
         </para>
-        <para>
-          As with the other settings, you can change this setting later,
-          after you have created the VM.
-        </para>
-      </listitem>
-       <listitem>
-        <para>
-          Next, you must specify a <emphasis role="bold">Virtual Hard
-          Disk</emphasis> for your VM.
-        </para>
-        <para>
-          There are many and potentially complicated ways in which
-          &product-name; can provide hard disk space to a VM, see
-          <xref linkend="storage" />, but the most common way is to use
-          a large image file on your physical hard disk, whose contents
-          &product-name; presents to your VM as if it were a complete
-          hard disk. This file then represents an entire hard disk, so
-          you can even copy it to another host and use it with another
-          &product-name; installation.
-        </para>
-        <para>
-          The wizard displays the following page:
-        </para>
-        <figure id="fig-new-vm-hard-disk">
-          <title>Creating a New Virtual Machine: Hard Disk</title>
+      </note>
+
+      <para>
+        Use this page to set up the required parameters for unattended
+        guest OS installation and to configure automatic installation of
+        the &product-name; Guest Additions. See also
+        <xref linkend="create-vm-wizard-unattended-examples"/> for some
+        typical scenarios when using automated installation.
+      </para>
+
+      <figure id="fig-create-vm-unattended-install">
+        <title>Creating a Virtual Machine: Unattended Guest OS Installation</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/create-vm-2.png"
+                     width="10cm" />
+        </imageobject>
+      </mediaobject>
+      </figure>
+
+      <para>
+        The following fields are available on this wizard page:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Username and Password.</emphasis>
+            Enter the credentials for a default user on the guest OS.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Guest Additions.</emphasis> Enables
+            automatic installation of the Guest Additions, following
+            installation of the guest OS. Use the drop-down list to
+            select the location of the ISO image file for the Guest
+            Additions.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Additional Options.</emphasis> The
+            following options enable you to perform extra configuration
+            of the guest OS:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Product Key.</emphasis> For
+                Windows guests only. Enter the product key required for
+                Windows installation.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Hostname.</emphasis> Host name for
+                the guest. By default, this is the same as the VM name.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Domain Name.</emphasis> Domain
+                name for the guest.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Install in Background.</emphasis>
+                Enable headless mode for the VM, where a graphical user
+                interface is not shown.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Click <emphasis role="bold">Next</emphasis> to go to the next
+        wizard page.
+      </para>
+
+    </sect2>
+
+    <sect2 id="create-vm-wizard-hardware">
+
+      <title>Create Virtual Machine Wizard: Hardware</title>
+
+      <para>
+        Use this page to configure hardware settings for the virtual
+        machine.
+      </para>
+
+      <figure id="fig-create-vm-hardware">
+        <title>Creating a Virtual Machine: Hardware</title>
+       <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/create-vm-3.png"
+                     width="10cm" />
+        </imageobject>
+      </mediaobject>
+      </figure>
+
+      <para>
+        The following fields are available on this wizard page:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Base Memory.</emphasis> Select the
+            amount of RAM that &product-name; should allocate every time
+            the virtual machine is started. The amount of memory
+            selected here will be taken away from your host machine and
+            presented to the guest OS, which will report this size as
+            the virtual machines installed RAM.
+          </para>
+
+          <caution>
+            <para>
+              Choose this setting carefully. The memory you give to the
+              VM will not be available to your host OS while the VM is
+              running, so do not specify more than you can spare.
+            </para>
+
+            <para>
+              For example, if your host machine has 4 GB of RAM and you
+              enter 2048 MB as the amount of RAM for a particular
+              virtual machine, you will only have 2 GB left for all the
+              other software on your host while the VM is running. If
+              you run two VMs at the same time, even more memory will be
+              allocated for the second VM, which may not even be able to
+              start if that memory is not available.
+            </para>
+
+            <para>
+              On the other hand, you should specify as much as your
+              guest OS and your applications will require to run
+              properly. A guest OS may require at least 1 or 2 GB of
+              memory to install and boot up. For best performance, more
+              memory than that may be required.
+            </para>
+          </caution>
+
+          <para>
+            Always ensure that the host OS has enough RAM remaining. If
+            insufficient RAM remains, the system might excessively swap
+            memory to the hard disk, which effectively brings the host
+            system to a standstill.
+          </para>
+
+          <para>
+            As with other <emphasis role="bold">Create Virtual
+            Machine</emphasis> wizard settings, you can change this
+            setting later, after you have created the VM.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Processor(s).</emphasis> Select the
+            number of virtual processors to assign to the VM.
+          </para>
+
+          <para>
+            It is not advised to assign more than half of the total
+            processor threads from the host machine.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Enable EFI.</emphasis> Enables
+            Extensible Firware Interface (EFI) booting for the guest OS.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Click <emphasis role="bold">Next</emphasis> to go to the next
+        wizard page.
+      </para>
+
+    </sect2>
+
+    <sect2 id="create-vm-wizard-virtual-hard-disk">
+
+      <title>Create Virtual Machine Wizard: Virtual Hard Disk</title>
+
+      <para>
+        Use this page to specify a virtual hard disk for the virtual
+        machine.
+      </para>
+
+      <para>
+        There are many ways in which &product-name; can provide hard
+        disk space to a VM, see <xref linkend="storage" />. The most
+        common way is to use a large image file on your physical hard
+        disk, whose contents &product-name; presents to your VM as if it
+        were a complete hard disk. This file then represents an entire
+        hard disk, so you can even copy it to another host and use it
+        with another &product-name; installation.
+      </para>
+
+      <figure id="fig-create-vm-hard-disk">
+        <title>Creating a New Virtual Machine: Virtual Hard Disk</title>
         <mediaobject>
             <imageobject>
-              <imagedata align="center" fileref="images/create-vm-2.png"
+              <imagedata align="center" fileref="images/create-vm-4.png"
                            width="10cm" />
             </imageobject>
           </mediaobject>
-        </figure>
-        <para>
-          At this screen, you have the following options:
-        </para>
-        <itemizedlist>
+      </figure>
+
+      <para>
+        The following fields are available on this wizard page:
+      </para>
+
+      <itemizedlist>
+
         <listitem>
           <para>
-            To create a new, empty virtual hard disk, please select
-            <emphasis role="bold">Create a Virtual Hard Disk Now</emphasis>.
-            This will create a new disk image file in the new virtual
-            machine's folder.
+            <emphasis role="bold">Create a Virtual Hard Disk
+            Now</emphasis>. Creates a new empty virtual hard disk image,
+            located in the VM's machine folder.
           </para>
+
           <para>
-            The checkbox <emphasis role="bold">Pre-allocate Full Size</emphasis>
-            is initially not checked. This results in having a so called
-            <emphasis role="bold">dynamically allocated file</emphasis>
-            which only grows in size when the guest actually
-            stores data on its virtual hard disk. Therefore, this file
-            is small initially. As the drive is filled with data, the
-            file grows to the specified size. When the mentioned checkbox
-            is checked then &product-name; creates a
-            <emphasis role="bold">fixed-size file</emphasis> which
-            immediately occupies the file specified, even if only a
-            fraction of that virtual hard disk space is actually in
-            use. While occupying much more space, a fixed-size file
-            incurs less overhead and is therefore slightly faster than
-            a dynamically allocated file.
+            Enter the following settings:
           </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Disk Size</emphasis>. Use the
+                slider to select a maximum size for the hard disk in the
+                new VM.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Pre-Allocate Full Size.</emphasis>
+                This setting determines the type of image file used for
+                the disk image. Select this setting to use a
+                <emphasis>fixed-size file</emphasis> for the disk image.
+                Deselect this setting to use a <emphasis>dynamically
+                allocated file</emphasis> for the disk image.
+              </para>
+
+              <para>
+                The different types of image file behave as follows:
+              </para>
+
+              <itemizedlist>
+
+                <listitem>
+                  <para>
+                    <emphasis role="bold">Dynamically allocated
+                    file.</emphasis> This type of image file only grows
+                    in size when the guest actually stores data on its
+                    virtual hard disk. Therefore, this file is small
+                    initially. As the drive is filled with data, the
+                    file grows to the specified size.
+                  </para>
+                </listitem>
+
+                <listitem>
+                  <para>
+                    <emphasis role="bold">Fixed-size file.</emphasis>
+                    This type of image file immediately occupies the
+                    file specified, even if only a fraction of that
+                    virtual hard disk space is actually in use. While
+                    occupying much more space, a fixed-size file incurs
+                    less overhead and is therefore slightly faster than
+                    a dynamically allocated file.
+                  </para>
+                </listitem>
+
+              </itemizedlist>
+
+              <para>
+                For more details about the differences, see
+                <xref linkend="vdidetails" />.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
           <para>
-            For more details on the differences between
-            <emphasis role="bold">dynamically allocated file</emphasis> and
-            <emphasis role="bold">fixed-size file</emphasis> please  see
-            <xref linkend="vdidetails" />.
+            <emphasis role="bold">Use an Existing Hard Disk
+            File.</emphasis> Enables you to select an
+            <emphasis>existing</emphasis> disk image file to use with
+            the new VM.
           </para>
+
           <para>
-            To prevent your physical hard disk (host OS) from filling up,
-            &product-name; limits the size of the image file. But the
-            image file must be large enough to hold the contents of the
-            guest OS and the applications you want to install. For a
-            Windows or Linux guest, you will probably need several
-            gigabytes for any serious use. The limit of the image file
-            size can be changed later, see
-            <xref linkend="vboxmanage-modifymedium"/>.
+            The drop-down list presented in the window lists all disk
+            images which are known by &product-name;. These disk images
+            are currently attached to a virtual machine, or have been
+            attached to a virtual machine.
+          </para>
+
+          <para>
+            Alternatively, click on the small folder icon next to the
+            drop-down list. In the <emphasis role="bold">Hard Disk
+            Selector</emphasis> window that is displayed, click
+            <emphasis role="bold">Add</emphasis> to select a disk image
+            file on your host disk.
           </para>
         </listitem>
+
         <listitem>
-            <para>
-              You can pick an existing disk image
-              file by selecting <emphasis role="bold">Use
-              a Existing Virtual Hard Disk File </emphasis>.
-            </para>
+          <para>
+            <emphasis role="bold">Do Not Add a Virtual Hard
+            Disk.</emphasis> The new VM is created without a hard disk.
+          </para>
+        </listitem>
 
-            <para>
-              The drop-down list presented in the window lists all disk
-              images which are currently remembered by &product-name;.
-              These disk images are currently attached to a virtual
-              machine, or have been attached to a virtual machine.
-            </para>
-
-            <para>
-              Alternatively, click on the small
-              <emphasis role="bold">folder icon</emphasis> next to the
-              drop-down list. In the displayed file dialog, you can
-              click <emphasis role="bold">Add</emphasis> to select any
-              disk image file on your host disk.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              You can skip attaching a virtual hard disk file to the
-              new virtual machine you are creating. Note that you will
-              need to attach an hard disk later on in order to install a
-              guest operating system.
-            </para>
-          </listitem>
       </itemizedlist>
-        <para>
-          If you are using &product-name; for the first time, you will
-          want to create a new disk image. Select
-          <emphasis role="bold">Create a Virtual Hard Disk Now</emphasis> button.
-        </para>
-        <para>
-          After having selected or created your image file, click
-          <emphasis role="bold">Next</emphasis> to go to the next page.
-        </para>
-      </listitem>
-      <listitem>
-        <para>The next page summarizes several attributes of the virtual
-        machine to be created. If you are not appy if any of them you
-        can use <emphasis role="bold">Back</emphasis> button to go
-        back to corresponding page to modify it.</para>
-        <para>
-          Alternatively you can click <emphasis role="bold">Finish</emphasis>,
-          to create your new virtual machine. The virtual machine is displayed
-          in the list on the left side of the VirtualBox Manager window, with
-          the name that you entered initially.
-        </para>
-      </listitem>
-    </orderedlist>
-    <note>
+
       <para>
-        After becoming familiar with the use of wizards, consider using
-        the Expert Mode available in some wizards. Where available, this
-        is selectable using a button, and speeds up the process of using
-        wizards.
+        To prevent your physical hard disk on the host OS from filling
+        up, &product-name; limits the size of the image file. But the
+        image file must be large enough to hold the contents of the
+        guest OS and the applications you want to install. For a Windows
+        or Linux guest, you will probably need several gigabytes for any
+        serious use. The limit of the image file size can be changed
+        later, see <xref linkend="vboxmanage-modifymedium"/>.
       </para>
-    </note>
-    <sect2 id="gui-wizard-unattended">
-      <title>Unattended Install</title>
+
+      <note>
+        <para>
+          You can skip attaching a virtual hard disk file to the new
+          virtual machine you are creating. But you will then need to
+          attach an hard disk later on, in order to install a guest
+          operating system.
+        </para>
+      </note>
+
       <para>
-        When supported by the selected ISO &product-name; attempts to install
-        the guest OS without any user input. When an ISO image is selected
-        &product-name; tries to determine type of the OS. If this succeeds and
-        if the selected OS is supported for the unattended install then the
-        newly created virtual machine is started after this wizard is closed
-        and OS install kicks off. Note that it is also possible to skip the
-        unattended install by ticking the checkbox "Skip unattended installation".
-        In this case the selected ISO is inserted to DVD drive of the new vm. The
-        guest OS will need to be installed manually. If OS cannot be determined
-        from the selected ISO or determined OS is not supported for the unattended
-        installation then again ISO is inserted to the DVD drive of the new virtual
-        machine and a manual guest OS install will be necessary.
+        After having selected or created your image file, click
+        <emphasis role="bold">Next</emphasis> to go to the next wizard
+        page.
       </para>
+
     </sect2>
+
+    <sect2 id="create-vm-wizard-summary">
+
+      <title>Create Virtual Machine Wizard: Summary</title>
+
+      <para>
+        This page displays a summary of the configuration for the
+        virtual machine.
+      </para>
+
+      <para>
+        If you are not happy with any of the settings, use the
+        <emphasis role="bold">Back</emphasis> button to return to the
+        corresponding page and modify the setting.
+      </para>
+
+      <para>
+        Click <emphasis role="bold">Finish</emphasis> to create your new
+        virtual machine. The virtual machine is displayed in the machine
+        list on the left side of the &vbox-mgr; window, with the name
+        that you entered on the first page of the wizard.
+      </para>
+
+    </sect2>
+
+    <sect2 id="create-vm-wizard-unattended-examples">
+
+      <title>Some Examples of Unattended Installation</title>
+
+      <para>
+        To configure unattended installation, you typically just need to
+        specify an ISO image in the <emphasis role="bold">Create Virtual
+        Machine</emphasis> wizard. &product-name; then detects the OS
+        type and the unattended installation process is done
+        automatically when the wizard is completed. However, in some
+        situations the installation may need be completed manually.
+      </para>
+
+      <para>
+        The following list describes some common scenarios for
+        unattended installation:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">OS type is detected
+            automatically.</emphasis> The following outcomes are
+            possible:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                If unattended installation is supported for the selected
+                ISO, the guest OS is installed automatically. No user
+                input is required.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                If unattended installation is not supported for the
+                selected ISO, the ISO image is inserted automatically
+                into the DVD drive of the new VM. The guest OS
+                installation must then be completed manually.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">OS type is not detected
+            automatically.</emphasis> You must configure
+            <emphasis role="bold">Type</emphasis> and
+            <emphasis role="bold">Version</emphasis> settings in the
+            wizard.
+          </para>
+
+          <para>
+            The ISO image is inserted automatically into the DVD drive
+            of the new VM. The guest OS installation must then be
+            completed manually.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Unattended Installation is
+            disabled.</emphasis> Users can disable unattended
+            installation, by selecting the <emphasis role="bold">Skip
+            Unattended Installation</emphasis> check box on the initial
+            wizard page.
+          </para>
+
+          <para>
+            The ISO image is inserted automatically into the DVD drive
+            of the new VM. The guest OS installation must then be
+            completed manually.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        See also <xref linkend="basic-unattended"/> for details of how
+        to perform unattended installation from the command line.
+      </para>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="intro-running">
@@ -1259,22 +2253,22 @@
     <title>Running Your Virtual Machine</title>
 
     <para>
-      To start a virtual machine, you have several options:
+      To start a virtual machine, you have the following options:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          Double-click on the VM's entry in the list in the VirtualBox
-          Manager window.
+          Double-click on the VM's entry in the machine list in
+          &vbox-mgr;.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          Select the VM's entry in the list in the VirtualBox Manager
-          window, and click <emphasis role="bold">Start</emphasis> at
+          Select the VM's entry in the machine list in &vbox-mgr;, and
+          click <emphasis role="bold">Start</emphasis> in the toolbar
           the top of the window.
         </para>
       </listitem>
@@ -1295,14 +2289,13 @@
       Starting a virtual machine displays a new window, and the virtual
       machine which you selected will boot up. Everything which would
       normally be seen on the virtual system's monitor is shown in the
-      window. See the screenshot image in
-      <xref linkend="Introduction"/>.
+      window. See <xref linkend="fig-win2016-intro"/>.
     </para>
 
     <para>
       In general, you can use the virtual machine as you would use a
-      real computer. There are couple of points worth mentioning
-      however.
+      real computer. The following topics describe a few points to note
+      when running a VM.
     </para>
 
     <sect2 id="intro-starting-vm-first-time">
@@ -1310,71 +2303,31 @@
       <title>Starting a New VM for the First Time</title>
 
       <para>
-        When a VM is started for the first time, the
-        <emphasis role="bold">First Start Wizard</emphasis>, is
-        displayed. This wizard helps you to select an installation
-        medium. Since the VM is created empty, it would otherwise behave
-        just like a real computer with no OS installed. It will do
-        nothing and display an error message that no bootable OS was
-        found.
+        When you start a VM for the first time the OS installation
+        process is started automatically, using the ISO image file
+        specified in the <emphasis role="bold">Create Virtual
+        Machine</emphasis> wizard.
       </para>
 
       <para>
-        For this reason, the wizard helps you to select a medium to
-        install an OS from.
+        Follow the onscreen instructions to install your OS.
       </para>
 
-      <itemizedlist>
-
-        <listitem>
-          <para>
-            If you have physical CD or DVD media from which you want to
-            install your guest OS, such as a Windows installation CD or
-            DVD, put the media into your host's CD or DVD drive.
-          </para>
-
-          <para>
-            In the wizard's drop-down list of installation media, select
-            <emphasis role="bold">Host Drive</emphasis> with the correct
-            drive letter. In the case of a Linux host, choose a device
-            file. This will allow your VM to access the media in your
-            host drive, and you can proceed to install from there.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            If you have downloaded installation media from the Internet
-            in the form of an ISO image file such as with a Linux
-            distribution, you would normally burn this file to an empty
-            CD or DVD and proceed as described above. With
-            &product-name; however, you can skip this step and mount the
-            ISO file directly. &product-name; will then present this
-            file as a CD or DVD-ROM drive to the virtual machine, much
-            like it does with virtual hard disk images.
-          </para>
-
-          <para>
-            In this case, the wizard's drop-down list contains a list of
-            installation media that were previously used with
-            &product-name;.
-          </para>
-
-          <para>
-            If your medium is not in the list, especially if you are
-            using &product-name; for the first time, click the small
-            folder icon next to the drop-down list to display a standard
-            file dialog. Here you can pick an image file on your host
-            disks.
-          </para>
-        </listitem>
-
-      </itemizedlist>
+<!--  <para>
+        If you have physical CD or DVD media from which you want to
+        install your guest OS, such as a Windows installation CD or DVD,
+        put the media into your host's CD or DVD drive.
+      </para>
 
       <para>
-        After completing the choices in the wizard, you will be able to
-        install your OS.
-      </para>
+        If you have downloaded installation media from the Internet in
+        the form of an ISO image file such as with a Linux distribution,
+        you could burn this file to an empty CD or DVD and proceed as
+        described above. With &product-name; however, you can skip this
+        step and mount the ISO file directly. &product-name; will then
+        present this file as a CD or DVD-ROM drive to the virtual
+        machine, much like it does with virtual hard disk images.
+      </para>-->
 
     </sect2>
 
@@ -1403,9 +2356,10 @@
 
       <para>
         After installing a guest OS and before you install the Guest
-        Additions, described later, either your VM or the rest of your
-        computer can "own" the keyboard and the mouse. Both cannot own
-        the keyboard and mouse at the same time. You will see a
+        Additions, described in <xref linkend="guestadditions"/>, either
+        your VM or the rest of your computer can
+        <emphasis>own</emphasis> the keyboard and the mouse. Both cannot
+        own the keyboard and mouse at the same time. You will see a
         <emphasis>second</emphasis> mouse pointer which is always
         confined to the limits of the VM window. You activate the VM by
         clicking inside it.
@@ -1417,21 +2371,19 @@
         <emphasis>Host key</emphasis>. By default, this is the
         <emphasis>right Ctrl key</emphasis> on your keyboard. On a Mac
         host, the default Host key is the left Command key. You can
-        change this default in the &product-name; Global Settings. See
-        <xref linkend="globalsettings" />. The current setting for the
-        Host key is always displayed at the bottom right of your VM
-        window.
+        change this default using the Preferences window. See
+        <xref linkend="preferences" />. The current setting for the Host
+        key is always displayed at the bottom right of your VM window.
       </para>
 
       <figure id="fig-host-key">
-        <title>Host Key Setting on the Virtual Machine Task Bar</title>
+        <title>Host Key Setting on the Virtual Machine Taskbar</title>
         <mediaobject>
           <imageobject>
             <imagedata align="center" fileref="images/vm-hostkey.png"
                        width="7cm" />
           </imageobject>
         </mediaobject>
-
       </figure>
 
       <para>
@@ -1524,10 +2476,10 @@
             Host OSes reserve certain key combinations for themselves.
             For example, you cannot use the
             <emphasis role="bold">Ctrl+Alt+Delete</emphasis> combination
-            to reboot the guest OS in your VM because this key
-            combination is usually hard-wired into the host OS. So, even
-            though both the Windows and Linux OSes intercept this key
-            combination, only the host OS would be rebooted.
+            to reboot the guest OS in your VM, because this key
+            combination is reserved by the host OS. Even though both
+            Windows and Linux OSes can intercept this key combination,
+            the host OS is rebooted automatically.
           </para>
 
           <para>
@@ -1661,10 +2613,9 @@
 
       <para>
         The settings are the same as those available for the VM in the
-        <emphasis role="bold">Settings</emphasis> dialog of the
-        &product-name; main window. But as the
-        <emphasis role="bold">Settings</emphasis> dialog is disabled
-        while the VM is in the Running or Saved state, the
+        <emphasis role="bold">Settings</emphasis> window of &vbox-mgr;.
+        But as the <emphasis role="bold">Settings</emphasis> window is
+        disabled while the VM is in the Running or Saved state, the
         <emphasis role="bold">Devices</emphasis> menu saves you from
         having to shut down and restart the VM every time you want to
         change media.
@@ -1693,7 +2644,7 @@
         you do, the window is scaled as follows:
       </para>
 
-      <orderedlist>
+      <itemizedlist>
 
         <listitem>
           <para>
@@ -1753,7 +2704,7 @@
           </para>
         </listitem>
 
-      </orderedlist>
+      </itemizedlist>
 
     </sect2>
 
@@ -1836,11 +2787,11 @@
           <para>
             As an exception, if your virtual machine has any snapshots,
             see <xref linkend="snapshots"/>, you can use this option to
-            quickly <emphasis
-          role="bold">restore the current
+            quickly <emphasis role="bold">restore the current
             snapshot</emphasis> of the virtual machine. In that case,
-            powering off the machine will not disrupt its state, but any
-            changes made since that snapshot was taken will be lost.
+            powering off the machine will discard the current state and
+            any changes made since the previous snapshot was taken will
+            be lost.
           </para>
         </listitem>
 
@@ -1848,9 +2799,9 @@
 
       <para>
         The <emphasis role="bold">Discard</emphasis> button in the
-        VirtualBox Manager window discards a virtual machine's saved
-        state. This has the same effect as powering it off, and the same
-        warnings apply.
+        &vbox-mgr; window discards a virtual machine's saved state. This
+        has the same effect as powering it off, and the same warnings
+        apply.
       </para>
 
     </sect2>
@@ -1862,9 +2813,9 @@
     <title>Using VM Groups</title>
 
     <para>
-      VM groups enable the user to create ad hoc groups of VMs, and to
-      manage and perform functions on them collectively, as well as
-      individually.
+      VM groups are groups of VMs that you can create as and when
+      required. You can manage and perform functions on them
+      collectively, as well as individually.
     </para>
 
     <para>
@@ -1880,7 +2831,6 @@
             width="10cm" />
         </imageobject>
       </mediaobject>
-
     </figure>
 
     <para>
@@ -1891,15 +2841,14 @@
 
       <listitem>
         <para>
-          Create a group using the VirtualBox Manager. Do one of the
-          following:
+          Create a group using &vbox-mgr;. Do one of the following:
         </para>
 
         <itemizedlist>
 
           <listitem>
             <para>
-              Drag one VM on top of another VM.
+              Drag a VM on top of another VM.
             </para>
           </listitem>
 
@@ -1930,8 +2879,8 @@
 <screen>VBoxManage modifyvm "vm01" --groups "/TestGroup"</screen>
 
             <para>
-              This command creates a group "TestGroup" and attaches the
-              VM "vm01" to that group.
+              This command creates a group <literal>TestGroup</literal>
+              and attaches the VM <literal>vm01</literal> to that group.
             </para>
           </listitem>
 
@@ -1944,8 +2893,8 @@
 <screen>VBoxManage modifyvm "vm01" --groups ""</screen>
 
             <para>
-              This command detaches all groups from the VM "vm01" and
-              deletes the empty group.
+              This command detaches all groups from the VM
+              <literal>vm01</literal> and deletes the empty group.
             </para>
           </listitem>
 
@@ -1960,9 +2909,9 @@
 <screen>VBoxManage modifyvm "vm01" --groups "/TestGroup,/TestGroup2"</screen>
 
         <para>
-          This command creates the groups "TestGroup" and "TestGroup2",
-          if they do not exist, and attaches the VM "vm01" to both of
-          them.
+          This command creates the groups <literal>TestGroup</literal>
+          and <literal>TestGroup2</literal>, if they do not exist, and
+          attaches the VM <literal>vm01</literal> to both of them.
         </para>
       </listitem>
 
@@ -1974,16 +2923,23 @@
 <screen>VBoxManage modifyvm "vm01" --groups "/TestGroup/TestGroup2"</screen>
 
         <para>
-          This command attaches the VM "vm01" to the subgroup
-          "TestGroup2" of the "TestGroup" group.
+          This command attaches the VM <literal>vm01</literal> to the
+          subgroup <literal>TestGroup2</literal> of the
+          <literal>TestGroup</literal> group.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          The following is a summary of group commands: Start, Pause,
-          Reset, Close (save state, send shutdown signal, poweroff),
-          Discard Saved State, Show in File System, Sort.
+          Use &vbox-mgr; menu options to control and manage all the VMs
+          in a group. For example:
+          <emphasis role="bold">Start</emphasis>,
+          <emphasis role="bold">Pause</emphasis>,
+          <emphasis role="bold">Reset</emphasis>,
+          <emphasis role="bold">Close</emphasis> (save state, send
+          shutdown signal, poweroff), <emphasis role="bold">Discard
+          Saved State</emphasis>, <emphasis role="bold">Show in
+          Explorer</emphasis>, <emphasis role="bold">Sort</emphasis>.
         </para>
       </listitem>
 
@@ -2006,14 +2962,110 @@
 
     <para>
       To see the snapshots of a virtual machine, click on the machine
-      name in VirtualBox Manager. Then click the
-      <emphasis role="bold">List</emphasis> icon next to the machine
-      name, and select <emphasis role="bold">Snapshots</emphasis>. Until
-      you take a snapshot of the machine, the list of snapshots will be
-      empty except for the <emphasis role="bold">Current
-      State</emphasis> item, which represents the "now" point in the
-      lifetime of the virtual machine.
+      name in &vbox-mgr;. In the machine tools menu for the VM, click
+      <emphasis role="bold">Snapshots</emphasis>. The Snapshots tool is
+      displayed.
     </para>
+
+    <figure id="fig-snapshots-tool">
+      <title>Snapshots Tool, Showing Snapshot Properties</title>
+       <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/snapshots-1.png"
+                   width="10cm" />
+        </imageobject>
+      </mediaobject>
+    </figure>
+
+    <para>
+      If you select multiple VMs in the machine list, all snapshots are
+      listed for each VM.
+    </para>
+
+    <para>
+      Until you take a snapshot of the virtual machine, the list of
+      snapshots will be empty, except for the
+      <emphasis role="bold">Current State</emphasis> item. This item
+      represents the current point in the lifetime of the virtual
+      machine.
+    </para>
+
+    <para>
+      The Snapshots window includes a toolbar, enabling you to perform
+      the following snapshot operations:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Take.</emphasis> Takes a snapshot of the
+          selected VM. See
+          <xref linkend="snapshots-take-restore-delete"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Delete.</emphasis> Removes a snapshot
+          from the list of snapshots. See
+          <xref linkend="snapshots-take-restore-delete"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Restore.</emphasis> Restores the VM
+          state to be the same as the selected snapshot. See
+          <xref linkend="snapshots-take-restore-delete"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Properties.</emphasis> Displays the
+          properties for the selected snapshot. The
+          <emphasis role="bold">Attributes</emphasis> tab is used to
+          specify a Name and Description for the snapshot. The
+          <emphasis role="bold">Information</emphasis> tab shows VM
+          settings for the snapshot.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Clone.</emphasis> Displays the
+          <emphasis role="bold">Clone Virtual Machine</emphasis> wizard.
+          This enables you to create a clone of the VM, based on the
+          selected snapshot.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Settings.</emphasis> Available for the
+          Current State snapshot only. Displays the
+          <emphasis role="bold">Settings</emphasis> window for the VM,
+          enabling you to make configuration changes.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Discard.</emphasis> For a running VM,
+          discards the saved state for the VM and closes it down.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Start.</emphasis> Start the VM. This
+          operation is available for the <emphasis role="bold">Current
+          State</emphasis> item.
+        </para>
+      </listitem>
+
+    </itemizedlist>
 
     <sect2 id="snapshots-take-restore-delete">
 
@@ -2027,7 +3079,7 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Take a snapshot</emphasis>. This makes
+            <emphasis role="bold">Take a snapshot.</emphasis> This makes
             a copy of the machine's current state, to which you can go
             back at any given time later.
           </para>
@@ -2036,30 +3088,40 @@
 
             <listitem>
               <para>
-                If your VM is running, select <emphasis role="bold">Take
-                Snapshot</emphasis> from the
-                <emphasis role="bold">Machine</emphasis> pull-down menu
-                of the VM window.
+                If your VM is running:
+              </para>
+
+              <para>
+                Select <emphasis role="bold">Take Snapshot</emphasis>
+                from the <emphasis role="bold">Machine</emphasis> menu
+                in the VM window.
+              </para>
+
+              <para>
+                The VM is paused while the snapshot is being created.
+                After snapshot creation, the VM continues to run as
+                normal.
               </para>
             </listitem>
 
             <listitem>
               <para>
                 If your VM is in either the Saved or the Powered Off
-                state, as displayed next to the VM name in the
-                &product-name; main window, click the
-                <emphasis role="bold">List</emphasis> icon next to the
-                machine name and select
-                <emphasis role="bold">Snapshots</emphasis>. The
-                snapshots window is shown. Do one of the following:
+                state, as displayed next to the VM name in the machine
+                list:
+              </para>
+
+              <para>
+                Display the Snapshots window and do one of the
+                following:
               </para>
 
               <itemizedlist>
 
                 <listitem>
                   <para>
-                    Click the <emphasis role="bold">Take</emphasis>
-                    icon.
+                    Click <emphasis role="bold">Take</emphasis> in the
+                    Snapshots window toolbar.
                   </para>
                 </listitem>
 
@@ -2077,13 +3139,13 @@
           </itemizedlist>
 
           <para>
-            In either case, a window is displayed prompting you for a
-            snapshot name. This name is purely for reference purposes to
-            help you remember the state of the snapshot. For example, a
-            useful name would be "Fresh installation from scratch, no
-            Guest Additions", or "Service Pack 3 just installed". You
-            can also add a longer text in the
-            <emphasis role="bold">Description</emphasis> field.
+            A dialog is displayed, prompting you for a snapshot name.
+            This name is purely for reference purposes, to help you
+            remember the state of the snapshot. For example, a useful
+            name would be "Fresh installation from scratch, no Guest
+            Additions", or "Service Pack 3 just installed". You can also
+            add a longer text description in the
+            <emphasis role="bold">Snapshot Description</emphasis> field.
           </para>
 
           <para>
@@ -2099,9 +3161,9 @@
 
           <figure id="fig-snapshots-list">
             <title>Snapshots List For a Virtual Machine</title>
-           <mediaobject>
+            <mediaobject>
               <imageobject>
-                <imagedata align="center" fileref="images/snapshots-1.png"
+                <imagedata align="center" fileref="images/snapshots-2.png"
                              width="10cm" />
               </imageobject>
             </mediaobject>
@@ -2119,13 +3181,13 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Restore a snapshot</emphasis>. In the
-            list of snapshots, right-click on any snapshot you have
-            taken and select <emphasis role="bold">Restore</emphasis>.
-            By restoring a snapshot, you go back or forward in time. The
-            current state of the machine is lost, and the machine is
-            restored to the exact state it was in when the snapshot was
-            taken.
+            <emphasis role="bold">Restore a snapshot.</emphasis> In the
+            Snapshots window, select the snapshot you have taken and
+            click <emphasis role="bold">Restore</emphasis> in the
+            toolbar. By restoring a snapshot, you go back or forward in
+            time. The current state of the machine is lost, and the
+            machine is restored to the exact state it was in when the
+            snapshot was taken.
           </para>
 
           <note>
@@ -2157,20 +3219,20 @@
             from there, it is even possible to create a kind of
             alternate reality and to switch between these different
             histories of the virtual machine. This can result in a whole
-            tree of virtual machine snapshots, as shown in the
-            screenshot above.
+            tree of virtual machine snapshots.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <emphasis role="bold">Delete a snapshot</emphasis>. This
+            <emphasis role="bold">Delete a snapshot.</emphasis> This
             does not affect the state of the virtual machine, but only
             releases the files on disk that &product-name; used to store
             the snapshot data, thus freeing disk space. To delete a
-            snapshot, right-click on the snapshot name in the snapshots
-            tree and select <emphasis role="bold">Delete</emphasis>.
-            Snapshots can be deleted even while a machine is running.
+            snapshot, select the snapshot name in the Snapshots window
+            and click <emphasis role="bold">Delete</emphasis> in the
+            toolbar. Snapshots can be deleted even while a machine is
+            running.
           </para>
 
           <note>
@@ -2305,7 +3367,7 @@
       <para>
         The <emphasis role="bold">Settings</emphasis> button is disabled
         while a VM is either in the Running or Saved state. This is
-        because the <emphasis role="bold">Settings</emphasis> dialog
+        because the <emphasis role="bold">Settings</emphasis> window
         enables you to change fundamental characteristics of the virtual
         machine that is created for your guest OS. For example, the
         guest OS may not perform well if half of its memory is taken
@@ -2342,8 +3404,8 @@
       <listitem>
         <para>
           <emphasis role="bold">Removing a VM.</emphasis> To remove a
-          VM, right-click on the VM in the VirtualBox Manager's machine
-          list and select <emphasis role="bold">Remove</emphasis>.
+          VM, right-click on the VM in the &vbox-mgr; machine list and
+          select <emphasis role="bold">Remove</emphasis>.
         </para>
 
         <para>
@@ -2362,9 +3424,8 @@
         <para>
           <emphasis role="bold">Moving a VM.</emphasis> To move a VM to
           a new location on the host, right-click on the VM in the
-          VirtualBox Manager's machine list and select
-          <emphasis
-          role="bold">Move</emphasis>.
+          &vbox-mgr;'s machine list and select
+          <emphasis role="bold">Move</emphasis>.
         </para>
 
         <para>
@@ -2392,7 +3453,7 @@
 
     <para>
       For information about removing or moving a disk image file from
-      &product-name;, see <xref linkend="vdis"/>.
+      &product-name;, see <xref linkend="virtual-media-manager"/>.
     </para>
 
   </sect1>
@@ -2413,82 +3474,52 @@
       guides you through the cloning process.
     </para>
 
-    <figure id="fig-clone-wizard">
-      <title>The Clone Virtual Machine Wizard</title>
+    <para>
+      You can start the Clone Virtual Machine wizard in one of the
+      following ways:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          Click the VM name in the machine list and then select
+          <emphasis role="bold">Clone</emphasis> from the
+          <emphasis role="bold">Machine</emphasis> menu.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Click <emphasis role="bold">Clone</emphasis> in the
+          <emphasis role="bold">Snapshots</emphasis> window for the
+          selected VM.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <note>
+      <para>
+        The <emphasis role="bold">Clone</emphasis> menu item is disabled
+        while a virtual machine is running.
+      </para>
+    </note>
+
+    <para>
+      The <emphasis role="bold">New Machine Name and Path</emphasis>
+      page is displayed.
+    </para>
+
+    <figure id="fig-clone-wizard-name-path">
+      <title>Clone Virtual Machine Wizard: New Machine Name and Path</title>
       <mediaobject>
         <imageobject>
-          <imagedata align="center" fileref="images/clone-vm.png"
+          <imagedata align="center" fileref="images/clone-vm-1.png"
                    width="10cm" />
         </imageobject>
       </mediaobject>
     </figure>
-
-    <para>
-      Start the wizard by clicking
-      <emphasis role="bold">Clone</emphasis> in the right-click menu of
-      the VirtualBox Manager's machine list or in the
-      <emphasis role="bold">Snapshots</emphasis> view of the selected
-      VM.
-    </para>
-
-    <para>
-      Specify a new <emphasis role="bold">Name</emphasis> for the clone.
-      You can choose a <emphasis role="bold">Path</emphasis> for the
-      cloned virtual machine, otherwise &product-name; uses the default
-      machines folder.
-    </para>
-
-    <para>
-      The <emphasis role="bold">Clone Type</emphasis> option specifies
-      whether to create a clone linked to the source VM or to create a
-      fully independent clone:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Full Clone:</emphasis> Copies all
-          dependent disk images to the new VM folder. A full clone can
-          operate fully without the source VM.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Linked Clone:</emphasis> Creates new
-          differencing disk images based on the source VM disk images.
-          If you select the current state of the source VM as the clone
-          point, &product-name; creates a new snapshot.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      The <emphasis role="bold">Snapshots</emphasis> option specifies
-      whether to create a clone of the current machine state only or of
-      everything.
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Everything:</emphasis> Clones the
-          current machine state and all its snapshots.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Current Machine State and All
-          Children:</emphasis>. Clones a VM snapshot and all its child
-          snapshots.
-        </para>
-      </listitem>
-
-    </itemizedlist>
 
     <para>
       The following clone options are available:
@@ -2498,8 +3529,24 @@
 
       <listitem>
         <para>
+          <emphasis role="bold">Name:</emphasis> A name for the cloned
+          machine.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Path:</emphasis> Choose a location for
+          the cloned virtual machine, otherwise &product-name; uses the
+          default machines folder.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           <emphasis role="bold">MAC Address Policy:</emphasis> Specifies
-          how to retain network card MAC addresses when cloning the VM.
+          whether to retain network card MAC addresses when cloning the
+          VM.
         </para>
 
         <para>
@@ -2531,14 +3578,102 @@
     </itemizedlist>
 
     <para>
-      The duration of the clone operation depends on the size and number
-      of attached disk images. In addition, the clone operation saves
-      all the differencing disk images of a snapshot.
+      Click <emphasis role="bold">Next</emphasis>. The
+      <emphasis role="bold">Clone Type</emphasis> page is displayed.
+    </para>
+
+    <figure id="fig-clone-wizard-clone-type">
+      <title>Clone Virtual Machine Wizard: Clone Type</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/clone-vm-2.png"
+                   width="10cm" />
+        </imageobject>
+      </mediaobject>
+    </figure>
+
+    <para>
+      The <emphasis role="bold">Clone Type</emphasis> option specifies
+      whether to create a clone that is linked to the source VM or to
+      create a fully independent clone:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Full Clone:</emphasis> Copies all
+          dependent disk images to the new VM folder. A full clone can
+          operate fully without the source VM.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Linked Clone:</emphasis> Creates new
+          differencing disk images based on the source VM disk images.
+          If you select the current state of the source VM as the clone
+          point, &product-name; creates a new snapshot.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>
+      (Optional) Click <emphasis role="bold">Next</emphasis>. The
+      <emphasis role="bold">Snapshots</emphasis> page is displayed.
+    </para>
+
+    <note>
+      <para>
+        The Snapshots page is only displayed for machines that have
+        snapshots and the selected clone type is
+        <emphasis role="bold">Full Clone</emphasis>.
+      </para>
+    </note>
+
+    <figure id="fig-clone-wizard-snapshots">
+      <title>Clone Virtual Machine Wizard: Snapshots</title>
+        <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/clone-vm-3.png"
+                   width="10cm" />
+        </imageobject>
+      </mediaobject>
+    </figure>
+
+    <para>
+      You use this page to select which parts of the snapshot tree to
+      include in the clone. The available options are as follows:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Current Machine State:</emphasis> Clones
+          the current state of the VM. Snapshots are not included.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Everything:</emphasis> Clones the
+          current machine state and all its snapshots.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>
+      Click <emphasis role="bold">Finish</emphasis> to start the clone
+      operation.
     </para>
 
     <para>
-      Note that the <emphasis role="bold">Clone</emphasis> menu item is
-      disabled while a machine is running.
+      The duration of the clone operation depends on the size and number
+      of attached disk images. In addition, the clone operation saves
+      all the differencing disk images of a snapshot.
     </para>
 
     <para>
@@ -2586,8 +3721,8 @@
         virtualization products which enables the creation of ready-made
         virtual machines that can then be imported into a hypervisor
         such as &product-name;. &product-name; makes OVF import and
-        export easy to do, using the VirtualBox Manager window or the
-        command-line interface.
+        export easy to do, using &vbox-mgr; or the command-line
+        interface.
       </para>
 
       <para>
@@ -2673,49 +3808,37 @@
             &product-name; creates file type associations automatically
             for any OVF and OVA files on your host OS.
           </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Select <emphasis role="bold">File</emphasis>,
-            <emphasis role="bold">Import Appliance</emphasis> from the
-            VirtualBox Manager window.
-          </para>
 
           <para>
-            From the file dialog, go to the file with either the
-            <filename>.ovf</filename> or the <filename>.ova</filename>
-            file extension.
-          </para>
-
-          <para>
-            Click <emphasis role="bold">Import</emphasis> to open the
-            <emphasis role="bold">Appliance Settings</emphasis> screen.
+            The <emphasis role="bold">Appliance Settings</emphasis> page
+            of the <emphasis role="bold">Import Virtual
+            Appliance</emphasis> wizard is shown.
           </para>
 
           <figure id="fig-import-appliance">
-            <title>Appliance Settings Screen for Import Appliance</title>
+            <title>Import Virtual Appliance Wizard: Appliance Settings</title>
             <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/ovf-import.png"
                      width="12cm" />
               </imageobject>
             </mediaobject>
-
           </figure>
+        </listitem>
 
+        <listitem>
           <para>
-            This screen shows the VMs described in the OVF or OVA file
-            and enables you to change the VM settings.
+            The <emphasis role="bold">Appliance Settings</emphasis> page
+            shows the VMs described in the OVF or OVA file and enables
+            you to change the VM settings.
           </para>
 
           <para>
             By default, membership of VM groups is preserved on import
             for VMs that were initially exported from &product-name;.
             You can change this behavior by using the
-            <emphasis
-            role="bold">Primary Group</emphasis>
-            setting for the VM.
+            <emphasis role="bold">Primary Group</emphasis> setting for
+            the VM.
           </para>
 
           <para>
@@ -2763,14 +3886,14 @@
 
         <listitem>
           <para>
-            Click <emphasis role="bold">Import</emphasis> to import the
+            Click <emphasis role="bold">Finish</emphasis> to import the
             appliance.
           </para>
 
           <para>
             &product-name; copies the disk images and creates local VMs
             with the settings described on the
-            <emphasis role="bold">Appliance Settings</emphasis> screen.
+            <emphasis role="bold">Appliance Settings</emphasis> page.
             The imported VMs are shown in the list of VMs in VirtualBox
             Manager.
           </para>
@@ -2807,14 +3930,15 @@
         <listitem>
           <para>
             Select <emphasis role="bold">File</emphasis>,
-            <emphasis role="bold"> Export Appliance</emphasis> to open
-            the <emphasis role="bold">Export Virtual
+            <emphasis role="bold"> Export Appliance</emphasis> to
+            display the <emphasis role="bold">Export Virtual
             Appliance</emphasis> wizard.
           </para>
 
           <para>
-            From the initial window, you can combine several VMs into an
-            OVF appliance.
+            On the initial <emphasis role="bold">Virtual
+            Machines</emphasis> page, you can combine several VMs into
+            an OVF appliance.
           </para>
 
           <para>
@@ -2825,8 +3949,8 @@
 
         <listitem>
           <para>
-            The <emphasis role="bold">Appliance Settings</emphasis>
-            screen enables you to select the following settings:
+            The <emphasis role="bold">Format Settings</emphasis> page
+            enables you to configure the following settings:
           </para>
 
           <itemizedlist>
@@ -2882,8 +4006,7 @@
         <listitem>
           <para>
             Click <emphasis role="bold">Next</emphasis> to show the
-            <emphasis role="bold">Virtual System Settings</emphasis>
-            screen.
+            <emphasis role="bold">Appliance Settings</emphasis> page.
           </para>
 
           <para>
@@ -2900,7 +4023,7 @@
 
         <listitem>
           <para>
-            Click <emphasis role="bold">Export</emphasis> to begin the
+            Click <emphasis role="bold">Finish</emphasis> to begin the
             export process. Note that this operation might take several
             minutes.
           </para>
@@ -3143,13 +4266,12 @@
 
           <figure id="fig-upload-key-oci">
             <title>Upload Public Key Dialog in &oci; Console</title>
-            <mediaobject>
+           <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/upload-key.png"
                   width="12cm" />
               </imageobject>
             </mediaobject>
-
           </figure>
 
           <para>
@@ -3221,7 +4343,7 @@
         <listitem>
           <para>
             <emphasis role="bold">(Optional) Passphrase for the private
-            key.</emphasis>. This is only required if the key is
+            key.</emphasis> This is only required if the key is
             encrypted.
           </para>
         </listitem>
@@ -3290,9 +4412,9 @@
           </para>
 
           <para>
-            The Cloud Profile Manager is a component of &product-name;
-            that enables you to create, edit, and manage cloud profiles
-            for your cloud service accounts.
+            The Cloud Profile Manager is a &vbox-mgr; tool that enables
+            you to create, edit, and manage cloud profiles for your
+            cloud service accounts.
           </para>
         </listitem>
 
@@ -3351,8 +4473,8 @@
       <para>
         To open the Cloud Profile Manager click
         <emphasis role="bold">File</emphasis>,
-        <emphasis role="bold">Cloud Profile Manager</emphasis> in the
-        VirtualBox Manager window.
+        <emphasis role="bold">Cloud Profile Manager</emphasis> in
+        &vbox-mgr;.
       </para>
 
       <figure id="fig-cloud-profile-manager">
@@ -3462,12 +4584,26 @@
 
         <listitem>
           <para>
+            (Optional) If you are using the cloud profile to connect to
+            cloud virtual machines, select the
+            <emphasis role="bold">Show VMs</emphasis> check box.
+          </para>
+
+          <para>
+            This creates a new subgroup of the
+            <emphasis role="bold">OCI</emphasis> group in &vbox-mgr;.
+            See <xref linkend="cloud-vm-oci-group"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
             Click <emphasis role="bold">Apply</emphasis> to save your
             changes.
           </para>
 
           <para>
-            The cloud profile settings are saved in the
+            The cloud profile settings are saved to the
             <filename>oci_config</filename> file in your &product-name;
             global settings directory.
           </para>
@@ -3552,6 +4688,13 @@
 
         <listitem>
           <para>
+            Create, add, and manage &oci; cloud instances using
+            &vbox-mgr;. See <xref linkend="cloud-vm"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
             Export an &product-name; VM to &oci;. See
             <xref linkend="cloud-export-oci"/>.
           </para>
@@ -3566,8 +4709,8 @@
 
         <listitem>
           <para>
-            Create a new cloud instance from a custom image stored on
-            &oci;. See <xref linkend="cloud-new-vm"/>.
+            Connect from a local VM to an &oci; cloud subnet. See
+            <xref linkend="cloud-using-cloud-networks"/>.
           </para>
         </listitem>
 
@@ -3580,6 +4723,555 @@
         </listitem>
 
       </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-vm">
+
+      <title>Using Cloud Virtual Machines</title>
+
+      <para>
+        A cloud virtual machine (<emphasis>cloud VM</emphasis>) is a
+        type of VM that represents an instance on a cloud service. Cloud
+        VMs are shown in the machine list in &vbox-mgr;, in the same way
+        as local VMs are.
+      </para>
+
+      <para>
+        By using cloud VMs you can create, manage, and control your
+        &oci; instances from &vbox-mgr;.
+      </para>
+
+      <note>
+        <para>
+          Cloud VMs do not install, export, or import instances to the
+          &product-name; host. All operations are done remotely on the
+          cloud service.
+        </para>
+      </note>
+
+      <figure id="fig-cloud-vm-overview">
+        <title>Cloud VMs, Shown in &vbox-mgr;</title>
+       <mediaobject>
+          <imageobject>
+            <imagedata align="center" fileref="images/cloudvm-overview.png"
+              width="12cm" />
+          </imageobject>
+        </mediaobject>
+      </figure>
+
+      <para>
+        Cloud VMs can be used to do the following tasks in &oci;:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Create a new &oci;
+            instance.</emphasis> See <xref linkend="cloud-vm-new"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold"> Use an existing &oci;
+            instance.</emphasis> See <xref linkend="cloud-vm-add"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Configure an &oci;
+            instance.</emphasis> You can change settings for the
+            instance, such as display name and shape. See
+            <xref linkend="cloud-vm-settings"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Control an &oci; instance.</emphasis>
+            Stop, start, and terminate the instance. See
+            <xref linkend="cloud-vm-control"/>
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Create a console connection to an
+            &oci; instance</emphasis>. See
+            <xref linkend="cloud-vm-instance-console"/>.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <sect3 id="cloud-vm-oci-group">
+
+        <title>About the OCI VM Group</title>
+
+        <para>
+          All cloud VMs are shown in the machine list in &vbox-mgr;, in
+          a special VM group called
+          <emphasis role="bold">OCI</emphasis>.
+        </para>
+
+        <para>
+          Cloud VMs are further grouped according to the cloud profile
+          used to connect to them. The cloud profile identifies the user
+          and compartment for the cloud VM and includes details of the
+          key pair used to connect to cloud instances. See
+          <xref linkend="cloud-create-cloud-profile"/>.
+        </para>
+
+        <figure id="fig-cloud-vm-oci-group">
+          <title>OCI Group, Containing Cloud VMs</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" fileref="images/cloudvm-oci-group.png"
+              width="10cm" />
+          </imageobject>
+        </mediaobject>
+       </figure>
+
+        <para>
+          All cloud profiles registered with &product-name; are listed
+          automatically in the OCI group.
+        </para>
+
+        <para>
+          To enable or disable listing of cloud VMs in &vbox-mgr; for a
+          specific cloud profile, do the following:
+        </para>
+
+        <para>
+          Display the <emphasis role="bold">Cloud Profile
+          Manager</emphasis> and select or deselect the
+          <emphasis role="bold">List VMs</emphasis> check box for each
+          cloud profile.
+        </para>
+
+      </sect3>
+
+      <sect3 id="cloud-vm-new">
+
+        <title>Creating a New Cloud VM</title>
+
+        <para>
+          When you create a new cloud VM, a <emphasis>new</emphasis>
+          &oci; instance is created and associated with the cloud VM.
+        </para>
+
+        <para>
+          Perform the following steps to create a new cloud VM:
+        </para>
+
+        <orderedlist>
+
+          <listitem>
+            <para>
+              Click on a cloud profile in the
+              <emphasis role="bold">OCI</emphasis> group.
+            </para>
+
+            <para>
+              The cloud VMs for the selected cloud profile are
+              displayed.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Select <emphasis role="bold">Group</emphasis>,
+              <emphasis role="bold">New Machine</emphasis>.
+            </para>
+
+            <para>
+              The <emphasis role="bold">Create Cloud Virtual
+              Machine</emphasis> wizard is displayed.
+            </para>
+
+            <figure id="fig-cloudvm-new">
+              <title>Create Cloud Virtual Machine Wizard</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" fileref="images/cloudvm-new.png"
+              width="12cm" />
+          </imageobject>
+        </mediaobject>
+            </figure>
+          </listitem>
+
+          <listitem>
+            <para>
+              On the initial page, configure the following settings for
+              the new cloud VM:
+            </para>
+
+            <itemizedlist>
+
+              <listitem>
+                <para>
+                  <emphasis role="bold">Location:</emphasis> The cloud
+                  service provider that will host the new instance.
+                  Select <emphasis role="bold">&oci;</emphasis>.
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>
+                  <emphasis role="bold">Profile:</emphasis> The cloud
+                  profile used to connect to the new instance. Select
+                  from the available cloud profiles.
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>
+                  <emphasis role="bold">Source:</emphasis> The image
+                  that the new instance is based on. Choose from the
+                  available images and boot volumes.
+                </para>
+              </listitem>
+
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>
+              Click <emphasis role="bold">Next</emphasis> to display the
+              <emphasis role="bold">Cloud Virtual Machine
+              Settings</emphasis> page.
+            </para>
+
+            <para>
+              You can use this page to change the default settings for
+              the new &oci; instance, such as the display name, shape,
+              and networking configuration.
+            </para>
+
+            <para>
+              To add an SSH key to the instance, click the
+              <emphasis role="bold">SSH Authorised Keys</emphasis> field
+              and paste the public key into the displayed dialog.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Click <emphasis role="bold">Finish</emphasis> to create a
+              new &oci; instance using the selected image or boot
+              volume. The new instance is started automatically.
+            </para>
+
+            <para>
+              The new cloud VM is shown in the
+              <emphasis role="bold">OCI</emphasis> group in &vbox-mgr;.
+            </para>
+          </listitem>
+
+        </orderedlist>
+
+      </sect3>
+
+      <sect3 id="cloud-vm-add">
+
+        <title>Adding a Cloud VM</title>
+
+        <para>
+          When you add a cloud VM, an <emphasis>existing</emphasis>
+          &oci; instance is associated with the cloud VM. You can only
+          add one cloud VM for each instance.
+        </para>
+
+        <para>
+          Perform the following steps to add a cloud VM:
+        </para>
+
+        <orderedlist>
+
+          <listitem>
+            <para>
+              Click on a cloud profile in the
+              <emphasis role="bold">OCI</emphasis> group.
+            </para>
+
+            <para>
+              The cloud VMs for the selected cloud profile are
+              displayed.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Select <emphasis role="bold">Group</emphasis>,
+              <emphasis role="bold">Add Machine</emphasis>.
+            </para>
+
+            <para>
+              The <emphasis role="bold">Add Cloud Virtual
+              Machine</emphasis> wizard is displayed.
+            </para>
+
+            <figure id="fig-cloudvm-add">
+              <title>Add Cloud Virtual Machine Wizard</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" fileref="images/cloudvm-add.png"
+              width="12cm" />
+          </imageobject>
+        </mediaobject>
+            </figure>
+          </listitem>
+
+          <listitem>
+            <para>
+              Configure the following settings:
+            </para>
+
+            <itemizedlist>
+
+              <listitem>
+                <para>
+                  <emphasis role="bold">Source:</emphasis> The cloud
+                  service provider that hosts the instance used for the
+                  cloud VM. Select
+                  <emphasis role="bold">&oci;</emphasis>.
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>
+                  <emphasis role="bold">Profile:</emphasis> The cloud
+                  profile used to connect to the running instance.
+                  Select from the available cloud profiles.
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>
+                  <emphasis role="bold">Instances:</emphasis> The
+                  instance to use for the cloud VM. Choose from the
+                  available instances on your cloud service.
+                </para>
+              </listitem>
+
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>
+              Click <emphasis role="bold">Finish</emphasis> to add a
+              cloud VM based on the selected instance.
+            </para>
+
+            <para>
+              A cloud VM with the same name as the instance is added to
+              the <emphasis role="bold">OCI</emphasis> group in
+              &vbox-mgr;.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              (Optional) To change the display name for the instance,
+              click <emphasis role="bold">Settings</emphasis> and edit
+              the <emphasis role="bold">Display Name</emphasis> field.
+            </para>
+
+            <para>
+              The cloud VM name in &vbox-mgr; is updated automatically.
+            </para>
+          </listitem>
+
+        </orderedlist>
+
+      </sect3>
+
+      <sect3 id="cloud-vm-settings">
+
+        <title>Changing Settings for a Cloud VM</title>
+
+        <para>
+          Select the cloud VM in &vbox-mgr; and click
+          <emphasis role="bold">Settings</emphasis>.
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              For a <emphasis>new</emphasis> cloud VM, you can change
+              many settings for the &oci; instance, such as the display
+              name, shape, and disk size.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              When you <emphasis>add</emphasis> a cloud VM based on an
+              existing &oci; instance you can only change the display
+              name.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+      </sect3>
+
+      <sect3 id="cloud-vm-control">
+
+        <title>Controlling a Cloud VM</title>
+
+        <para>
+          You can use &vbox-mgr; to control a cloud VM as follows:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Start.</emphasis> Use the
+              <emphasis role="bold">Start</emphasis> button in the
+              &vbox-mgr; toolbar.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Stop.</emphasis> Right-click on the
+              cloud VM name, to display the
+              <emphasis role="bold">Close</emphasis> menu. Options to
+              shut down and power off the cloud VM are available.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Terminate.</emphasis> Use the
+              <emphasis role="bold">Terminate</emphasis> button in the
+              &vbox-mgr; toolbar.
+            </para>
+
+            <caution>
+              <para>
+                This action deletes the instance from &oci;.
+              </para>
+            </caution>
+          </listitem>
+
+        </itemizedlist>
+
+        <para>
+          When you control a cloud VM in &vbox-mgr; the machine list is
+          updated automatically with the current instance state, such as
+          <emphasis role="bold">Stopped</emphasis> or
+          <emphasis role="bold">Running</emphasis>.
+        </para>
+
+        <para>
+          When you control an instance using the &oci; console,
+          &vbox-mgr; updates the status for the corresponding cloud VM
+          automatically.
+        </para>
+
+      </sect3>
+
+      <sect3 id="cloud-vm-remove">
+
+        <title>Removing a Cloud VM</title>
+
+        <para>
+          You can use &vbox-mgr; to remove a cloud VM as follows:
+        </para>
+
+        <para>
+          Right-click on the cloud VM name and select
+          <emphasis role="bold">Remove</emphasis>.
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              Click <emphasis role="bold">Remove Only</emphasis> to
+              remove the cloud VM from the machine list in VirtualBox
+              Manager.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Click <emphasis role="bold">Delete Everything</emphasis>
+              to remove the cloud VM from &vbox-mgr; and also to delete
+              the &oci; instance and any associated boot volumes.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+      </sect3>
+
+      <sect3 id="cloud-vm-instance-console">
+
+        <title>Creating an Instance Console Connection for a Cloud VM</title>
+
+        <para>
+          To create a instance console connection, the cloud VM must be
+          in <emphasis role="bold">Running</emphasis> state.
+        </para>
+
+        <orderedlist>
+
+          <listitem>
+            <para>
+              Right-click on the cloud VM name and select
+              <emphasis role="bold">Console</emphasis>,
+              <emphasis role="bold">Create Connection</emphasis>.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              The <emphasis role="bold">Public Key</emphasis> dialog is
+              displayed. Paste the public key used for the instance
+              connection into the dialog and click
+              <emphasis role="bold">OK</emphasis>.
+            </para>
+
+            <para>
+              By default, either the first entry in your SSH keys folder
+              or the public key used for your previous instance console
+              connection is used.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Click <emphasis role="bold">Connect</emphasis> to connect
+              to the instance. An instance console is displayed
+              automatically on the host.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              (Optional) Click <emphasis role="bold">Show Log</emphasis>
+              to display log messages for the instance console
+              connection.
+            </para>
+          </listitem>
+
+        </orderedlist>
+
+        <para>
+          See the &oci; documentation for details about how you can use
+          an instance console connection to troubleshoot instance
+          problems.
+        </para>
+
+      </sect3>
 
     </sect2>
 
@@ -3617,8 +5309,8 @@
 
           <para>
             Select a VM to export and click
-            <emphasis role="bold">Next</emphasis> to open the
-            <emphasis role="bold">Appliance Settings</emphasis> screen.
+            <emphasis role="bold">Next</emphasis> to display the
+            <emphasis role="bold">Format Settings</emphasis> page.
           </para>
         </listitem>
 
@@ -3629,19 +5321,13 @@
           </para>
 
           <para>
-            In the <emphasis role="bold">Account</emphasis> drop-down
-            list, select the cloud profile for your &oci; account.
-          </para>
-
-          <para>
-            The list after the <emphasis role="bold">Account</emphasis>
-            field shows the profile settings for your cloud account.
+            In the <emphasis role="bold">Profile</emphasis> drop-down
+            list, select the cloud profile used for your &oci; account.
           </para>
 
           <figure id="fig-export-appliance-oci">
-            <title>Appliance Settings Screen, Showing Cloud Profile and Machine Creation
-              Settings</title>
-           <mediaobject>
+            <title>Export Virtual Appliance Wizard: Format Settings</title>
+          <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/export-appliance-oci.png"
                   width="12cm" />
@@ -3651,7 +5337,7 @@
 
           <para>
             In the <emphasis role="bold">Machine Creation</emphasis>
-            field, select an option to configure settings for a cloud
+            field, select an option to configure settings for the cloud
             instance created when you export to &oci;. The options
             enable you to do one of the following:
           </para>
@@ -3684,8 +5370,7 @@
           <para>
             Click <emphasis role="bold">Next</emphasis> to make an API
             request to the &oci; service and open the
-            <emphasis role="bold">Virtual System Settings</emphasis>
-            screen.
+            <emphasis role="bold">Appliance Settings</emphasis> page.
           </para>
         </listitem>
 
@@ -3712,7 +5397,7 @@
 
             <listitem>
               <para>
-                The name for the custom image in &oci;.
+                The display name for the custom image in &oci;.
               </para>
             </listitem>
 
@@ -3736,22 +5421,22 @@
           </itemizedlist>
 
           <para>
-            Click <emphasis role="bold">Export</emphasis> to continue.
+            Click <emphasis role="bold">Finish</emphasis> to continue.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Depending on the selection in the
+            (Optional) Depending on the selection in the
             <emphasis role="bold">Machine Creation</emphasis> field, the
-            <emphasis role="bold">Cloud Virtual Machine
-            Settings</emphasis> screen may be displayed before or after
-            export. This screen enables you to configure settings for
-            the cloud instance, such as Shape and Disk Size.
+            <emphasis role="bold">Appliance Settings</emphasis> page may
+            be displayed before or after export. This screen enables you
+            to configure settings for the cloud instance, such as Shape
+            and Disk Size.
           </para>
 
           <para>
-            Click <emphasis role="bold">Create</emphasis>. The VM is
+            Click <emphasis role="bold">Finish</emphasis>. The VM is
             exported to &oci;.
           </para>
 
@@ -3972,7 +5657,7 @@
                   <literal>qemu</literal> module, as follows:
                 </para>
 
-<screen># dracut --logfile /var/log/Dracut.log --force --add qemu</screen>
+<screen># dracut –-logfile /var/log/Dracut.log --force --add qemu</screen>
               </listitem>
 
               <listitem>
@@ -4027,13 +5712,8 @@
           </para>
 
           <para>
-            In the <emphasis role="bold">Account</emphasis> drop-down
+            In the <emphasis role="bold">Profile</emphasis> drop-down
             list, select the cloud profile for your &oci; account.
-          </para>
-
-          <para>
-            The list after the <emphasis role="bold">Account</emphasis>
-            field shows the profile settings for your cloud account.
           </para>
 
           <para>
@@ -4044,7 +5724,7 @@
           <para>
             Click <emphasis role="bold">Next</emphasis> to make an API
             request to the &oci; service and display the
-            <emphasis role="bold">Appliance Settings</emphasis> screen.
+            <emphasis role="bold">Appliance Settings</emphasis> page.
           </para>
         </listitem>
 
@@ -4058,7 +5738,7 @@
           </para>
 
           <figure id="fig-import-instance-oci">
-            <title>Import Cloud Instance Screen, Showing Profile Settings and VM Settings</title>
+            <title>Import Cloud Instance Wizard: Appliance Settings</title>
            <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/import-instance.png"
@@ -4068,7 +5748,7 @@
           </figure>
 
           <para>
-            Click <emphasis role="bold">Import</emphasis> to import the
+            Click <emphasis role="bold">Finish</emphasis> to import the
             instance from &oci;.
           </para>
         </listitem>
@@ -4156,109 +5836,94 @@
 
     </sect2>
 
-    <sect2 id="cloud-new-vm">
+    <sect2 id="cloud-using-cloud-networks">
 
-      <title>Creating New Cloud Instances from a Custom Image</title>
+      <title>Using a Cloud Network</title>
 
       <para>
-        You can use &product-name; to create new instances from a custom
-        image on your cloud service.
+        A cloud network is a type of network that can be used for
+        connections from a local VM to a remote &oci; cloud instance.
       </para>
 
       <para>
-        <xref linkend="cloud-export-oci"/> describes how to create a
-        custom image when you are exporting a VM to &oci;. Using a
-        custom image means that you can quickly create cloud instances
-        without having to upload your image to the cloud service every
-        time.
-      </para>
-
-      <para>
-        Perform the following steps to create a new cloud instance on
-        &oci;:
+        To create and use a cloud network, do the following:
       </para>
 
       <orderedlist>
 
         <listitem>
           <para>
-            Select <emphasis role="bold">File</emphasis>,
-            <emphasis role="bold">New Cloud VM</emphasis> to open the
-            <emphasis role="bold">Create Cloud Virtual
-            Machine</emphasis> wizard.
+            Set up a virtual cloud network on &oci;.
+          </para>
+
+          <para>
+            The following steps create and configure a virtual cloud
+            network (VCN) on &oci;. The VCN is used to tunnel network
+            traffic across the cloud.
+          </para>
+
+          <orderedlist>
+
+            <listitem>
+              <para>
+                Ensure that you have a cloud profile for connecting to
+                &oci;. See <xref linkend="cloud-create-cloud-profile"/>.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Run the following <command>VBoxManage cloud</command>
+                command:
+              </para>
+
+<screen>VBoxManage cloud --provider="OCI" --profile="vbox-oci" network setup</screen>
+
+              <para>
+                where <literal>vbox-oci</literal> is the name of your
+                cloud profile.
+              </para>
+
+              <para>
+                Other options are available for the <command>VBoxManage
+                cloud network setup</command> command, to enable you to
+                configure details for the VCN. For example, you can
+                configure the operating system used for the cloud
+                gateway instance and the IP address range used by the
+                tunneling network. See
+                <xref linkend="vboxmanage-cloud"/>.
+              </para>
+
+              <para>
+                For best results, use an Oracle Linux 7 instance for the
+                cloud gateway. This is the default option.
+              </para>
+            </listitem>
+
+          </orderedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            Register the new cloud network with &product-name;.
+          </para>
+
+          <para>
+            Use the <emphasis role="bold">Cloud Networks</emphasis> tab
+            in the <emphasis role="bold">Network Manager</emphasis>
+            tool. See
+            <xref linkend="network-manager-cloud-network-tab"/>.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            From the <emphasis role="bold">Destination</emphasis>
-            drop-down list, select
-            <emphasis role="bold">&oci;</emphasis>.
-          </para>
-
-          <para>
-            In the <emphasis role="bold">Account</emphasis> drop-down
-            list, select the cloud profile for your &oci; account.
-          </para>
-
-          <para>
-            The list after the <emphasis role="bold">Account</emphasis>
-            field shows the profile settings for your cloud account.
-          </para>
-
-          <para>
-            In the <emphasis role="bold">Images</emphasis> list, select
-            from the custom images available on &oci;.
-          </para>
-
-          <figure id="fig-newcloudvm">
-            <title>New Cloud VM Wizard, Showing List of Custom Images</title>
-            <mediaobject>
-              <imageobject>
-                <imagedata align="center" fileref="images/newcloudvm.png"
-                  width="12cm" />
-              </imageobject>
-            </mediaobject>
-          </figure>
-
-          <para>
-            Click <emphasis role="bold">Next</emphasis> to make an API
-            request to the &oci; service and open the
-            <emphasis role="bold">Cloud Virtual Machine
-            Settings</emphasis> screen.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            (Optional) Edit settings used for the new instance on &oci;.
-          </para>
-
-          <para>
-            For example, you can edit the Disk Size and Shape used for
-            the VM instance and the networking configuration.
-          </para>
-
-          <para>
-            Click <emphasis role="bold">Create</emphasis> to create the
-            new cloud instance.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Monitor the instance creation process by using the &oci;
-            Console.
+            Add cloud network adaptors to the local VMs that will use
+            the cloud network. See <xref linkend="network_cloud"/>.
           </para>
         </listitem>
 
       </orderedlist>
-
-      <para>
-        You can also use the <command>VBoxManage cloud
-        instance</command> command to create and manage instances on a
-        cloud service. See <xref linkend="vboxmanage-cloud"/>.
-      </para>
 
     </sect2>
 
@@ -4369,19 +6034,36 @@
 
   </sect1>
 
-  <sect1 id="globalsettings">
+  <sect1 id="preferences">
 
-    <title>Global Settings</title>
+    <title>Preferences</title>
 
     <para>
-      The <emphasis role="bold">Global Settings</emphasis> dialog can be
-      displayed using the <emphasis role="bold">File</emphasis> menu, by
-      clicking the <emphasis role="bold">Preferences</emphasis> item.
-      This dialog offers a selection of settings, most of which apply to
-      all virtual machines of the current user. The
-      <emphasis role="bold">Extensions</emphasis> option applies to the
-      entire system.
+      The Preferences window offers a selection of settings, which apply
+      to all virtual machines of the current user.
     </para>
+
+    <para>
+      To display the Preferences window, do either of the following:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          Select <emphasis role="bold">File</emphasis>,
+          <emphasis role="bold">Preferences</emphasis>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Click <emphasis role="bold">Preferences</emphasis> on the
+          Welcome screen in &vbox-mgr;.
+        </para>
+      </listitem>
+
+    </itemizedlist>
 
     <para>
       The following settings are available:
@@ -4391,7 +6073,7 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">General.</emphasis> Enables the user to
+          <emphasis role="bold">General.</emphasis> Enables you to
           specify the default folder or directory for VM files, and the
           VRDP Authentication Library.
         </para>
@@ -4399,8 +6081,9 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Input.</emphasis> Enables the user to
-          specify the Host key. This is the key that toggles whether the
+          <emphasis role="bold">Input.</emphasis> Enables you to specify
+          keyboard shortcuts, such as the <emphasis role="bold">Host
+          key</emphasis>. This is the key that toggles whether the
           cursor is in the focus of the VM or the Host OS windows, see
           <xref linkend="keyb_mouse_normal"/>. The Host key is also used
           to trigger certain VM actions, see
@@ -4410,21 +6093,22 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Update.</emphasis> Enables the user to
+          <emphasis role="bold">Update.</emphasis> Enables you to
           specify various settings for Automatic Updates.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Language.</emphasis> Enables the user to
-          specify the GUI language.
+          <emphasis role="bold">Language.</emphasis> Enables you to
+          specify the language used for menus, labels, and text in
+          &vbox-mgr;.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Display.</emphasis> Enables the user to
+          <emphasis role="bold">Display.</emphasis> Enables you to
           specify the screen resolution, and its width and height. A
           default scale factor can be specified for all guest screens.
         </para>
@@ -4432,24 +6116,22 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Network.</emphasis> Enables the user to
-          configure the details of NAT networks. See
-          <xref linkend="network_nat_service"/>.
+          <emphasis role="bold">Proxy.</emphasis> Enables you to
+          configure an HTTP Proxy Server.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Extensions.</emphasis> Enables the user
-          to list and manage the installed extension packages.
+          <emphasis role="bold">Interface.</emphasis> Enables you to
+          select a color theme for the &vbox-mgr; user interface.
         </para>
-      </listitem>
 
-      <listitem>
-        <para>
-          <emphasis role="bold">Proxy.</emphasis> Enables the user to
-          configure a HTTP Proxy Server.
-        </para>
+        <note>
+          <para>
+            This setting is only available on Windows host platforms.
+          </para>
+        </note>
       </listitem>
 
     </itemizedlist>
@@ -4465,11 +6147,10 @@
       &product-name; has a very flexible internal design that enables
       you to use multiple interfaces to control the same virtual
       machines. For example, you can start a virtual machine with the
-      VirtualBox Manager window and then stop it from the command line.
-      With &product-name;'s support for the Remote Desktop Protocol
-      (RDP), you can even run virtual machines remotely on a headless
-      server and have all the graphical output redirected over the
-      network.
+      &vbox-mgr; window and then stop it from the command line. With
+      &product-name;'s support for the Remote Desktop Protocol (RDP),
+      you can even run virtual machines remotely on a headless server
+      and have all the graphical output redirected over the network.
     </para>
 
     <para>
@@ -4482,11 +6163,10 @@
       <listitem>
         <para>
           <emphasis role="bold">VirtualBox.</emphasis> This is the
-          VirtualBox Manager, a graphical user interface that uses the
-          Qt toolkit. This interface is described throughout this
-          manual. While this is the simplest and easiest front-end to
-          use, some of the more advanced &product-name; features are not
-          included.
+          &vbox-mgr;, a graphical user interface that uses the Qt
+          toolkit. This interface is described throughout this manual.
+          While this is the simplest and easiest front-end to use, some
+          of the more advanced &product-name; features are not included.
         </para>
       </listitem>
 
@@ -4549,7 +6229,7 @@
 
     <figure id="fig-soft-keyb">
       <title>Soft Keyboard in a Guest Virtual Machine</title>
-    <mediaobject>
+     <mediaobject>
       <imageobject>
         <imagedata align="center" fileref="images/softkeybd.png"
                    width="14cm" />
@@ -4630,13 +6310,13 @@
 
           <para>
             The name of the current keyboard layout is displayed in the
-            task bar of the soft keyboard window. This is the previous
+            toolbar of the soft keyboard window. This is the previous
             keyboard layout that was used.
           </para>
 
           <para>
             Click the <emphasis role="bold">Layout List</emphasis> icon
-            in the task bar of the soft keyboard window. The
+            in the toolbar of the soft keyboard window. The
             <emphasis role="bold">Layout List</emphasis> window is
             displayed.
           </para>
@@ -4678,7 +6358,7 @@
               <para>
                 To change the look of the soft keyboard, click the
                 <emphasis role="bold">Settings</emphasis> icon in the
-                task bar. You can change colors used in the keyboard
+                toolbar. You can change colors used in the keyboard
                 graphic, and can hide or show sections of the keyboard,
                 such as the NumPad or multimedia keys.
               </para>
@@ -4703,8 +6383,8 @@
       <note>
         <para>
           To permananently save a custom keyboard layout, you must save
-          it to file. Otherwise, any changes you make are discarded when
-          you close down the <emphasis role="bold">Soft
+          it to a file. Otherwise, any changes you make are discarded
+          when you close down the <emphasis role="bold">Soft
           Keyboard</emphasis> window.
         </para>
 
@@ -4727,7 +6407,7 @@
 
           <para>
             Click the <emphasis role="bold">Layout List</emphasis> icon
-            in the task bar of the soft keyboard window.
+            in the toolbar of the soft keyboard window.
           </para>
         </listitem>
 
@@ -4776,7 +6456,7 @@
 
         <listitem>
           <para>
-            (Optional) Save the layout to file. This means that your
+            (Optional) Save the layout to a file. This means that your
             custom keyboard layout will be available for future use.
           </para>
 
@@ -4802,96 +6482,315 @@
 
   <sect1 id="vm-info">
 
-    <title>Configuration Details and Runtime Information of Virtual Machines</title>
+    <title>Monitoring of Virtual Machines</title>
+
     <para>
-      &product-name; GUI offers several possibilities for obtaining
-      configuration and runtime information of virtual machines.
+      &vbox-mgr; includes the following tools for viewing runtime
+      information and changing the configuration of virtual machines.
     </para>
 
-    <sect2 id="vm-details-tool">
-      <title>Virtual Machine Details Widget</title>
-      <para>
-        The VM details widget is an interactive tool through which
-        settings of the guest system can be viewed and modified.
-      </para>
-    </sect2>
-    <sect2 id="vm-activity-overview-widget">
+    <itemizedlist>
 
-      <title>Resource Monitor</title>
+      <listitem>
+        <para>
+          <emphasis role="bold"> VM Activity Overview.</emphasis>
+          Displays an overview of performance metrics for all running
+          VMs.
+        </para>
+
+        <para>
+          See <xref linkend="vm-activity-overview"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Session Information Dialog.</emphasis>
+          Displays configuration and runtime information for the
+          selected guest system.
+        </para>
+
+        <para>
+          See <xref linkend="vm-activity-session-information"/>
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <sect2 id="vm-activity-overview">
+
+      <title>VM Activity Overview</title>
 
       <para>
-        The Resource Monitor widget shows several performance metrics
-        of running virtual machines. This enables users to have a quick
-        overview of system resources of individual virtual machines and
-        those of host system. The widget displays several performance
-        metrics of each running virtual machine. It is possible to
-        configure the set of metrics to be shown and select a metric
-        with respect to which the list of virtual machines is sorted.
-        It is also possible to open the virtual machine's performance
-        monitor (See <xref linkend="vm-session-information"/>) by activating
-        To Performance action which is located in the tool bar and
-        in the context menu.
+        The VM Activity Overview tool displays several performance
+        metrics for all running virtual machines and for the host
+        system. This provides an overview of system resources used by
+        individual virtual machines and the host system.
       </para>
+
+      <para>
+        To display the VM Activity Overview tool, do the following:
+      </para>
+
+      <para>
+        Go to the global <emphasis role="bold">Tools</emphasis> menu and
+        click <emphasis role="bold">Activities</emphasis>. The
+        <emphasis role="bold">VM Activity Overview</emphasis> window is
+        shown.
+      </para>
+
       <figure id="fig-vm-activity-overview-widget">
-        <title>Resource Monitor</title>
+        <title>VM Activity Overview Tool</title>
         <mediaobject>
-          <imageobject>
-            <imagedata align="center" fileref="images/resourcemonitor.png"
+       <imageobject>
+            <imagedata align="center" fileref="images/vm-activity-overview.png"
                        width="14cm" />
           </imageobject>
         </mediaobject>
       </figure>
 
+      <para>
+        To show metrics for <emphasis>all</emphasis> virtual machines,
+        including those that are not running, right-click on the list of
+        virtual machines and select <emphasis role="bold">List All
+        Virtual Machines</emphasis>.
+      </para>
+
+      <para>
+        To configure the set of metrics to be shown, click
+        <emphasis role="bold">Columns</emphasis> in the toolbar. You can
+        then sort the list of virtual machines by a particular metric.
+      </para>
+
+      <para>
+        To see more performance information for a virtual machine,
+        select the VM name and click <emphasis role="bold">VM
+        Activity</emphasis> in the toolbar. The <emphasis role="bold">VM
+        Activity</emphasis> tab of the <emphasis role="bold">Session
+        Information</emphasis> dialog is shown, see
+        <xref linkend="vm-activity-session-information"/>.
+      </para>
+
     </sect2>
 
-    <sect2 id="vm-session-information">
+    <sect2 id="vm-activity-session-information">
+
       <title>Session Information Dialog</title>
+
       <para>
-        The guest VM window includes a multi tabbed dialog which conveys
-        important configuration and runtime information of the guest
-        system. The tabs of the dialog are:
+        The Session Information dialog includes multiple tabs which show
+        important configuration and runtime information for the guest
+        system. The tabs of the dialog are as follows:
       </para>
 
       <itemizedlist>
-      <listitem>
-        <para>
-          <emphasis role="bold">Configuration Details</emphasis> tab
-          displays system configuration of the virtual machine in a
-          tabular format. The displayed information includes storage
-          configuration, audio settings, etc.
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          <emphasis role="bold">Runtime Information</emphasis> tab
-          shows the information that can change between the guest
-          sessions in tabular format similar to the Configuration
-          Details tab.
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          <emphasis role="bold">Performance Monitor</emphasis> tab
-          has several time series charts which monitors guests resource
-          usage including CPU, RAM, Disk I/O, and Network. Note that
-          RAM chart requires the guest additions to be running on the guest
-          system to work. The Performance Monitor is also available from
-          the machine menu in the manager UI.
-        </para>
-      </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Configuration Details.</emphasis>
+            Displays the system configuration of the virtual machine in
+            a tabular format. The displayed information includes details
+            such as storage configuration and audio settings.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Runtime Information.</emphasis>
+            Displays runtime information for the guest session in a
+            tabular format similar to the Configuration Details tab.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">VM Activity.</emphasis> Includes
+            several time series charts which monitor guest resource
+            usage including CPU, RAM, Disk I/O, and Network. Note that
+            the RAM chart requires the Guest Additions to be running on
+            the guest system. The VM Activity tab can also be accessed
+            directly from the VM Activity Overview tool. See
+            <xref linkend="vm-activity-overview"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Guest Control</emphasis>. Details of
+            processes used by the Guest Control File Manager. See
+            <xref linkend="guestadd-gc-file-manager"/>.
+          </para>
+        </listitem>
+
       </itemizedlist>
-      <figure id="fig-vm-performance-monitor">
-        <title>VM Performance Monitor</title>
+
+      <para>
+        To display the Session Information dialog, select
+        <emphasis role="bold">Machine</emphasis>,
+        <emphasis role="bold">Session Information</emphasis> in the
+        guest VM.
+      </para>
+
+      <figure id="fig-vm-session-information">
+        <title>Session Information Dialog, Showing VM Activity Tab</title>
         <mediaobject>
-          <imageobject>
-            <imagedata align="center" fileref="images/vmperformancemonitor.png"
-                       width="14cm" />
-          </imageobject>
+       <imageobject>
+            <imagedata align="center" fileref="images/session-information.png"
+                       width="12cm" />
+         </imageobject>
         </mediaobject>
       </figure>
-
 
     </sect2>
 
   </sect1>
+
+  <sect1 id="log-viewer">
+
+    <title>The Log Viewer</title>
+
+    <para>
+      Every time you start up a VM, &product-name; creates a log file
+      that records system configuration and events. The
+      <emphasis role="bold">Log Viewer</emphasis> is a &vbox-mgr; tool
+      that enables you to view and analyze system logs.
+    </para>
+
+    <figure id="fig-log-viewer-tool">
+      <title>Log Viewer Tool, Showing System Events</title>
+     <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/log-viewer.png"
+                   width="10cm" />
+        </imageobject>
+      </mediaobject>
+
+    </figure>
+
+    <para>
+      To display the Log Viewer, do either of the following:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          Click the VM name in the machine list and select
+          <emphasis role="bold">Logs</emphasis> from the machine tools
+          menu.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          In the guest VM, select
+          <emphasis role="bold">Machine</emphasis>,
+          <emphasis role="bold">Show Log</emphasis>.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>
+      Log messages for the VM are displayed in tabs in the Log Viewer
+      window. See <xref linkend="collect-debug-info"/> for details of
+      the various log files generated by &product-name;.
+    </para>
+
+    <para>
+      If you select multiple VMs in the machine list, logs are listed
+      for each VM.
+    </para>
+
+    <para>
+      The toolbar of the Log Viewer includes the following options:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Save:</emphasis> Exports the contents of
+          the selected log file to a text file. Specify the destination
+          filename and location in the displayed dialog.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Find:</emphasis> Searches for a text
+          string in the log file.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Filter:</emphasis> Uses filter terms to
+          display specific types of log messages. Common log message
+          terms used by &product-name;, such as Audio and NAT, are
+          included by default. Select one or more terms from the
+          drop-down list. To add your own filter term, enter the text
+          string in the text box field.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Bookmark:</emphasis> Saves the location
+          of a log message, enabling you to find it quickly. To create a
+          bookmark, either click on the line number, or select some text
+          and then click <emphasis role="bold">Bookmark</emphasis>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Options:</emphasis> Configures the text
+          display used in the log message window.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Refresh:</emphasis> Refreshes the log
+          file you are currently viewing. Only log messages in the
+          current tab are updated.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Reload:</emphasis> Refreshes all log
+          files. Log messages in every tab are updated.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Settings:</emphasis> Displays the
+          <emphasis role="bold">Settings</emphasis> window for the VM,
+          enabling you to make configuration changes.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Discard:</emphasis> For a running VM,
+          discards the saved state for the VM and closes it down.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Show/Start:</emphasis> For a running VM,
+          <emphasis role="bold">Show</emphasis> displays the VM window.
+          For a stopped VM, <emphasis role="bold">Start</emphasis>
+          displays options for powering up the VM.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
 </chapter>

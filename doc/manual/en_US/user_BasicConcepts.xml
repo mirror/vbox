@@ -121,6 +121,14 @@
         <tbody>
           <row>
             <entry><para>
+                Windows 11 (64-bit)
+              </para></entry>
+            <entry><para>
+                Insider preview builds are not supported
+              </para></entry>
+          </row>
+          <row>
+            <entry><para>
                 Windows 10 (32-bit and 64-bit)
               </para></entry>
             <entry><para>
@@ -391,8 +399,8 @@
           Be sure to enable <emphasis role="bold">I/O APIC</emphasis>
           for virtual machines that you intend to use in 64-bit mode.
           This is especially true for 64-bit Windows VMs. See
-          <xref linkend="settings-general-advanced" />. For 64-bit
-          Windows guests, ensure that the VM uses the
+          <xref linkend="settings-motherboard" />. For 64-bit Windows
+          guests, ensure that the VM uses the
           <emphasis role="bold">Intel networking device</emphasis>
           because there is no 64-bit driver support for the AMD PCNet
           card. See <xref linkend="nichardware" />.
@@ -401,9 +409,9 @@
 
       <para>
         If you use the <emphasis role="bold">Create VM</emphasis> wizard
-        of the VirtualBox Manager, &product-name; automatically uses the
-        correct settings for each selected 64-bit OS type. See
-        <xref linkend="gui-createvm" />.
+        of &vbox-mgr;, &product-name; automatically uses the correct
+        settings for each selected 64-bit OS type. See
+        <xref linkend="create-vm-wizard" />.
       </para>
 
     </sect2>
@@ -421,49 +429,20 @@
     </para>
 
     <para>
-      Performing an unattended guest installation involves the following
-      steps:
+      You can perform an unattended guest installation in the following
+      ways:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          <emphasis role="bold">Create a new VM.</emphasis> Use one of
-          the following methods:
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              The VirtualBox Manager, see
-              <xref linkend="gui-createvm" />.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              The <command>VBoxManage createvm</command> command, see
-              <xref linkend="vboxmanage-createvm" />.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-
-        <para>
-          For the new VM, choose the guest OS type and accept the
-          default settings for that OS. The following sections in this
-          chapter describe how to change the settings for a VM.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Prepare the VM for unattended guest
-          installation.</emphasis> Use the <command>VBoxManage
-          unattended</command> command, see
-          <xref linkend="vboxmanage-unattended" />.
+          <emphasis role="bold">Use the Create Virtual Machine
+          wizard.</emphasis> An optional step in the wizard enables you
+          to configure unattended installation. You can specify the
+          default user credentials for the guest OS and also whether to
+          install the Guest Additions automatically. See
+          <xref linkend="create-vm-wizard"/>.
         </para>
 
         <para>
@@ -475,43 +454,39 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Start the VM.</emphasis> Use the
-          VirtualBox Manager or the <command>VBoxManage
-          startvm</command> command.
-        </para>
-
-        <para>
-          When you start the VM, the unattended installation is
-          performed automatically.
-        </para>
-
-        <para>
-          The installation operation changes the boot device order to
-          boot the virtual hard disk first and then the virtual DVD
-          drive. If the virtual hard disk is empty prior to the
-          automatic installation, the VM boots from the virtual DVD
-          drive and begins the installation.
-        </para>
-
-        <para>
-          If the virtual hard disk contains a bootable OS, the
-          installation operation exits. In this case, change the boot
-          device order manually by pressing F12 during the BIOS splash
-          screen.
+          <emphasis role="bold">Use the <command>VBoxManage</command>
+          commands.</emphasis>
+          <xref linkend="unattended-guest-install-example"/> describes
+          how to perform an unattended guest installation for an Oracle
+          Linux guest.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      <xref linkend="unattended-guest-install-example"/> describes how
-      to perform an unattended guest installation for an Oracle Linux
-      guest.
+      When you first start a VM that has been configured for unattended
+      installation, the guest OS installation is performed
+      automatically.
+    </para>
+
+    <para>
+      The installation operation changes the boot device order to boot
+      the virtual hard disk first and then the virtual DVD drive. If the
+      virtual hard disk is empty prior to the automatic installation,
+      the VM boots from the virtual DVD drive and begins the
+      installation.
+    </para>
+
+    <para>
+      If the virtual hard disk contains a bootable OS, the installation
+      operation exits. In this case, change the boot device order
+      manually by pressing F12 during the BIOS splash screen.
     </para>
 
     <sect2 id="unattended-guest-install-example">
 
-      <title>An Example of Unattended Guest Installation</title>
+      <title>Using VBoxManage Commands for Unattended Guest Installation</title>
 
       <para>
         The following example shows how to perform an unattended guest
@@ -717,7 +692,7 @@
 
           <para>
             The VM starts in headless mode, which means that the
-            VirtualBox Manager window does not open.
+            &vbox-mgr; window does not open.
           </para>
         </listitem>
 
@@ -884,7 +859,7 @@
             <emphasis role="bold">Type:</emphasis> The type of the guest
             OS for the VM. This is the same setting that is specified in
             the <emphasis role="bold">New Virtual Machine</emphasis>
-            wizard. See <xref linkend="gui-createvm" />.
+            wizard. See <xref linkend="create-vm-wizard" />.
           </para>
 
           <para>
@@ -901,7 +876,7 @@
             guest OS for the VM. This is the same setting that is
             specified in the <emphasis role="bold">New Virtual
             Machine</emphasis> wizard. See
-            <xref linkend="gui-createvm" />.
+            <xref linkend="create-vm-wizard" />.
           </para>
         </listitem>
 
@@ -1036,7 +1011,9 @@
       <note>
         <para>
           All files related to the virtual machine except disk images
-          are stored unencrypted.
+          are stored unencrypted. To encrypt these files, use the
+          <command>VBoxManage encryptvm</command> command as described
+          in <xref linkend="vmencryption"/>.
         </para>
       </note>
 
@@ -1089,7 +1066,7 @@
             and will not be available to the host while the VM is
             running. This is the same setting that was specified in the
             <emphasis role="bold">New Virtual Machine</emphasis> wizard,
-            as described in <xref linkend="gui-createvm" />.
+            as described in <xref linkend="create-vm-wizard" />.
           </para>
 
           <para>
@@ -1133,6 +1110,14 @@
             compared to a maximum of eight network adapters with PIIX3.
             Note that ICH9 support is experimental and not recommended
             for guest OSes which do not require it.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">TPM:</emphasis> Enables support for a
+            Trusted Platform Module (TPM) security processor. Choose
+            from the supported TPM versions.
           </para>
         </listitem>
 
@@ -1200,6 +1185,17 @@
 
         <listitem>
           <para>
+            <emphasis role="bold">Hardware Clock in UTC Time:</emphasis>
+            If selected, &product-name; will report the system time in
+            UTC format to the guest instead of the local (host) time.
+            This affects how the virtual real-time clock (RTC) operates
+            and may be useful for UNIX-like guest OSes, which typically
+            expect the hardware clock to be set to UTC.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
             <emphasis role="bold">Enable EFI:</emphasis> Enables
             Extensible Firmware Interface (EFI), which replaces the
             legacy BIOS and may be useful for certain advanced use
@@ -1209,12 +1205,9 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Hardware Clock in UTC Time:</emphasis>
-            If selected, &product-name; will report the system time in
-            UTC format to the guest instead of the local (host) time.
-            This affects how the virtual real-time clock (RTC) operates
-            and may be useful for UNIX-like guest OSes, which typically
-            expect the hardware clock to be set to UTC.
+            <emphasis role="bold">Enable Secure Boot:</emphasis> Enables
+            Secure Boot, to provide a secure environment for starting
+            the guest OS.
           </para>
         </listitem>
 
@@ -1424,11 +1417,11 @@
           </para>
 
           <para>
-            The GUI will show a warning if the amount of video memory is
-            too small to be able to switch the VM into full screen mode.
-            The minimum value depends on the number of virtual monitors,
-            the screen resolution and the color depth of the host
-            display as well as on the use of <emphasis>3D
+            &vbox-mgr; will show a warning if the amount of video memory
+            is too small to be able to switch the VM into full screen
+            mode. The minimum value depends on the number of virtual
+            monitors, the screen resolution and the color depth of the
+            host display as well as on the use of <emphasis>3D
             acceleration</emphasis> and <emphasis>2D video
             acceleration</emphasis>. A rough estimate is
             (<emphasis>color depth</emphasis> / 8) x <emphasis>vertical
@@ -1483,8 +1476,8 @@
 
           <para>
             You can set a default scale factor for all VMs. Use the
-            <emphasis role="bold">Display</emphasis> tab in the Global
-            Settings dialogs.
+            <emphasis role="bold">Display</emphasis> tab in the
+            Preferences window.
           </para>
         </listitem>
 
@@ -1551,16 +1544,6 @@
             a virtual machine has Guest Additions installed, you can
             select here whether the guest should support accelerated 3D
             graphics. See <xref linkend="guestadd-3d" />.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            <emphasis role="bold">Enable 2D Video
-            Acceleration:</emphasis> If a virtual machine with Microsoft
-            Windows has Guest Additions installed, you can select here
-            whether the guest should support accelerated 2D video
-            graphics. See <xref linkend="guestadd-2d" />.
           </para>
         </listitem>
 
@@ -1723,9 +1706,9 @@
     </note>
 
     <para>
-      If you have used the <emphasis role="bold">Create VM</emphasis>
-      wizard to create a machine, you will normally see something like
-      the following:
+      If you have used the <emphasis role="bold">Create Virtual
+      Machine</emphasis> wizard to create a machine, you will normally
+      see something like the following:
     </para>
 
     <figure id="fig-storage-settings">
@@ -1735,7 +1718,7 @@
           <imagedata align="center" fileref="images/vm-settings-harddisk.png"
                      width="10cm" />
         </imageobject>
-      </mediaobject>
+      </mediaobject>     
     </figure>
 
     <para>
@@ -1894,7 +1877,7 @@
     <para>
       Removable media, such as CD/DVDs and floppies, can be changed
       while the guest is running. Since the
-      <emphasis role="bold">Settings</emphasis> dialog is not available
+      <emphasis role="bold">Settings</emphasis> window is not available
       at that time, you can also access these settings from the
       <emphasis role="bold">Devices</emphasis> menu of your virtual
       machine window.
@@ -1924,10 +1907,22 @@
       <listitem>
         <para>
           <emphasis role="bold">Host Audio Driver:</emphasis> The audio
-          driver that &product-name; uses on the host. On a Linux host,
-          depending on your host configuration, you can select between
-          the OSS, ALSA, or the PulseAudio subsystem. On newer Linux
-          distributions, the PulseAudio subsystem is preferred.
+          driver that &product-name; uses on the host.
+        </para>
+
+        <para>
+          The <emphasis role="bold">Default</emphasis> option is enabled
+          by default for all new VMs. This option selects the best audio
+          driver for the host platform automatically. This enables you
+          to move VMs between different platforms without having to
+          change the audio driver.
+        </para>
+
+        <para>
+          On a Linux host, depending on your host configuration, you can
+          select between the OSS, ALSA, or the PulseAudio subsystem. On
+          newer Linux distributions, the PulseAudio subsystem is
+          preferred.
         </para>
 
         <para>
@@ -1988,9 +1983,8 @@
       users. However, &product-name; is extremely flexible in how it can
       virtualize networking. It supports many virtual network cards per
       virtual machine. The first four virtual network cards can be
-      configured in detail in the VirtualBox Manager window. Additional
-      network cards can be configured using the
-      <command>VBoxManage</command> command.
+      configured in detail in &vbox-mgr;. Additional network cards can
+      be configured using the <command>VBoxManage</command> command.
     </para>
 
     <para>
@@ -2196,7 +2190,7 @@
 
           <listitem>
             <para>
-              <emphasis role="bold">TCP Socket:</emphasis> Useful for
+              <emphasis role="bold">TCP:</emphasis> Useful for
               forwarding serial traffic over TCP/IP, acting as a server,
               or it can act as a TCP client connecting to other servers.
               This option enables a remote machine to directly connect
@@ -2346,7 +2340,6 @@
             </listitem>
 
           </itemizedlist>
-
         </listitem>
 
         <listitem>
@@ -2514,8 +2507,8 @@
 
     <para>
       The <emphasis role="bold">User Interface</emphasis> section
-      enables you to change certain aspects of the user interface of
-      this VM.
+      enables you to change certain aspects of the user interface of the
+      selected VM.
     </para>
 
     <itemizedlist>
@@ -2523,10 +2516,11 @@
       <listitem>
         <para>
           <emphasis role="bold">Menu Bar:</emphasis> This widget enables
-          you to disable menus by clicking on the menu to release it,
-          menu entries by deselecting the check box of the entry to
-          disable it and the complete menu bar by deselecting the
-          rightmost check box.
+          you to disable a complete menu, by clicking on the menu name
+          to deselect it. Menu entries can be disabled, by deselecting
+          the check box next to the entry. On Windows and Linux hosts,
+          the complete menu bar can be disabled by deselecting the check
+          box on the right.
         </para>
       </listitem>
 
@@ -2538,23 +2532,30 @@
           from the virtual machine's menu bar. This toolbar reduces
           itself to a small gray line unless you move the mouse over it.
           With the toolbar, you can return from full screen or seamless
-          mode, control machine execution or enable certain devices. If
-          you do not want to see the toolbar, disable this setting.
+          mode, control machine execution, or enable certain devices. If
+          you do not want to see the toolbar, disable the
+          <emphasis role="bold">Show in Full Screen/Seamless</emphasis>
+          setting.
         </para>
 
         <para>
-          The second setting enables you to show the toolbar at the top
-          of the screen, instead of showing it at the bottom.
+          The <emphasis role="bold">Show at Top of Screen</emphasis>
+          setting enables you to show the toolbar at the top of the
+          screen, instead of showing it at the bottom.
+        </para>
+
+        <para>
+          The Mini Toolbar is not available on macOS hosts.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Status Bar:</emphasis> This widget
-          enables you to disable icons on the status bar by deselecting
-          the check box of an icon to disable it, to rearrange icons by
-          dragging and dropping the icon, and to disable the complete
-          status bar by deselecting the leftmost check box.
+          enables you to disable and reorder icons on the status bar.
+          Deselect the check box of an icon to disable it, or rearrange
+          icons by dragging and dropping the icon. To disable the
+          complete status bar deselect the check box on the left.
         </para>
       </listitem>
 
@@ -2577,7 +2578,7 @@
       By default, &product-name; uses the BIOS firmware for virtual
       machines. To use EFI for a given virtual machine, you can enable
       EFI in the machine's <emphasis role="bold">Settings</emphasis>
-      dialog. See <xref linkend="settings-motherboard"/>. Alternatively,
+      window. See <xref linkend="settings-motherboard"/>. Alternatively,
       use the <command>VBoxManage</command> command line interface as
       follows:
     </para>

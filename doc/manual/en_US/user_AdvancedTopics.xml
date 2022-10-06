@@ -41,8 +41,8 @@
     <para>
       When a guest operating system is running in a virtual machine, it
       might be desirable to perform coordinated and automated logins
-      using credentials passed from the host. Credentials are user
-      name, password, and domain name, where each value might be empty.
+      using credentials passed from the host. Credentials are user name,
+      password, and domain name, where each value might be empty.
     </para>
 
     <sect2 id="autologon_win">
@@ -851,8 +851,9 @@ EndSection</screen>
     <para>
       When the VM is off, you can then add and remove virtual CPUs with
       the <command>VBoxManage modifyvm --plug-cpu</command> and
-      <command>VBoxManage modifyvm --unplug-cpu</command> commands, which
-      take the number of the virtual CPU as a parameter, as follows:
+      <command>VBoxManage modifyvm --unplug-cpu</command> commands,
+      which take the number of the virtual CPU as a parameter, as
+      follows:
     </para>
 
 <screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --plug-cpu 3
@@ -1228,11 +1229,7 @@ host path or identifier</screen>
 
     <sect2 id="webcam-mac-hosts">
 
-      <title>Mac OS X Hosts</title>
-
-      <para>
-        Mac OS X version 10.9 or later is required.
-      </para>
+      <title>macOS Hosts</title>
 
       <para>
         When the webcam device is detached from the host, the emulated
@@ -1412,8 +1409,8 @@ vga = 864</screen>
         support. As a result, you will need to create a special VMDK
         image file which defines where the data will be stored. After
         creating such a special VMDK image, you can use it like a
-        regular virtual disk image. For example, you can use the
-        VirtualBox Manager, see <xref linkend="vdis" />, or
+        regular virtual disk image. For example, you can use the Virtual
+        Media Manager, see <xref linkend="virtual-media-manager" />, or
         <command>VBoxManage</command> to assign the image to a virtual
         machine.
       </para>
@@ -1454,9 +1451,9 @@ vga = 864</screen>
         <para>
           On a Windows host, instead of the above device specification,
           for example use <filename>\\.\PhysicalDrive0</filename>. On a
-          Mac OS X host, instead of the above device specification use
-          for example <filename>/dev/rdisk1</filename>. Note that on Mac
-          OS X you can only get access to an entire disk if no volume is
+          macOS host, instead of the above device specification use for
+          example <filename>/dev/rdisk1</filename>. Note that on Mac OS
+          X you can only get access to an entire disk if no volume is
           mounted from it.
         </para>
 
@@ -1513,9 +1510,9 @@ vga = 864</screen>
 
         <para>
           The command is identical to the one for full hard disk access,
-          except for the additional
-          <option>--property Partitions=1,5</option>
-          parameter. This example would create the image
+          except for the additional <option>--property
+          Partitions=1,5</option> parameter. This example would create
+          the image
           <filename><replaceable>path-to-file</replaceable>.vmdk</filename>,
           which must be absolute, and partitions 1 and 5 of
           <filename>/dev/sda</filename> would be made accessible to the
@@ -1532,12 +1529,12 @@ vga = 864</screen>
         <para>
           On a Windows host, instead of the above device specification,
           use for example <filename>\\.\PhysicalDrive0</filename>. On a
-          Mac OS X host, instead of the above device specification use
+          macOS host, instead of the above device specification use
           <filename>/dev/rdisk1</filename>, for example. Note that on OS
           X you can only use partitions which are not mounted. Unmount
-          the respective disk first using
-          <emphasis>diskutil unmountDisk <filename>/dev/diskX</filename></emphasis>.
-          Partition numbers are the same on Linux, Windows, and Mac OS X hosts.
+          the respective disk first using <emphasis>diskutil unmountDisk
+          <filename>/dev/diskX</filename></emphasis>. Partition numbers
+          are the same on Linux, Windows, and macOS hosts.
         </para>
 
         <para>
@@ -1549,8 +1546,9 @@ vga = 864</screen>
 
         <para>
           The output lists available drives and their partitions with
-          the partition types and sizes to give the user enough information
-          to identify the partitions necessary for the guest.
+          the partition types and sizes to give the user enough
+          information to identify the partitions necessary for the
+          guest.
         </para>
 
         <para>
@@ -2726,16 +2724,16 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
 
   <sect1 id="guitweaks">
 
-    <title>Locking Down the &product-name; GUI</title>
+    <title>Locking Down &vbox-mgr;</title>
 
     <sect2 id="customize-vm-manager">
 
-      <title>Customizing the VirtualBox Manager</title>
+      <title>Customizing &vbox-mgr;</title>
 
       <para>
         There are several advanced customization settings for locking
-        down the VirtualBox Manager. Locking down means removing some
-        features that the user should not see.
+        down &vbox-mgr;. Locking down means removing some features that
+        the user should not see.
       </para>
 
 <screen>VBoxManage setextradata global GUI/Customizations <replaceable>property</replaceable>[,<replaceable>property</replaceable> ...]</screen>
@@ -2754,9 +2752,8 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
 
           <listitem>
             <para>
-              Do not allow users to start the VirtualBox Manager. Trying
-              to do so will show a window containing a proper error
-              message.
+              Do not allow users to start &vbox-mgr;. Trying to do so
+              will show a window containing a proper error message.
             </para>
           </listitem>
         </varlistentry>
@@ -2788,8 +2785,8 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
       </variablelist>
 
       <para>
-        To disable any of these VirtualBox Manager customizations use
-        the following command:
+        To disable any of these &vbox-mgr; customizations use the
+        following command:
       </para>
 
 <screen>$ VBoxManage setextradata global GUI/Customizations</screen>
@@ -3160,7 +3157,7 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
         You can also disable certain menu actions of certain menus. Use
         the following command to disable certain actions of the
         <emphasis role="bold">Application</emphasis> menu. This is only
-        available on Mac OS X hosts.
+        available on macOS hosts.
       </para>
 
 <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
@@ -4166,7 +4163,7 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
             <para>
               Do not show the <emphasis role="bold">About
               VirtualBox...</emphasis> menu item in this menu. Only for
-              non-Mac OS X hosts.
+              non-macOS hosts.
             </para>
           </listitem>
         </varlistentry>
@@ -5434,10 +5431,10 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
 
     <sect2 id="vboxwebsrv-osx">
 
-      <title>Mac OS X: Starting the Web Service With launchd</title>
+      <title>macOS: Starting the Web Service With launchd</title>
 
       <para>
-        On Mac OS X, launchd is used to start the &product-name;
+        On macOS, launchd is used to start the &product-name;
         webservice. An example configuration file can be found in
         <filename>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</filename>.
         It can be enabled by changing the <literal>Disabled</literal>
@@ -5979,7 +5976,7 @@ config/balloon_safetymargin=134217728</screen>
 
     <para>
       You can start VMs automatically during system boot on Linux,
-      Oracle Solaris, and Mac OS X platforms for all users.
+      Oracle Solaris, and macOS platforms for all users.
     </para>
 
     <sect2 id="autostart-linux">
@@ -6068,11 +6065,11 @@ alice = {
 
     <sect2 id="autostart-osx">
 
-      <title>Mac OS X: Starting the Autostart Service With launchd</title>
+      <title>macOS: Starting the Autostart Service With launchd</title>
 
       <para>
-        On Mac OS X, launchd is used to start the &product-name;
-        autostart service. An example configuration file can be found in
+        On macOS, launchd is used to start the &product-name; autostart
+        service. An example configuration file can be found in
         <filename>/Applications/VirtualBox.app/Contents/MacOS/org.virtualbox.vboxautostart.plist</filename>.
         To enable the service copy the file to
         <filename>/Library/LaunchDaemons</filename> and change the
@@ -6112,14 +6109,13 @@ alice = {
         configuration file should be located in a folder accessible by
         all required users but it should have permissions allowing only
         reading by everyone but administrators. The configuration file
-        contains several options. The
-        <literal>default_policy</literal> controls whether the autostart
-        service allows or denies starting of a VM for users that are not
-        in the exception list. The exception list starts with
-        <literal>exception_list</literal> and contains a comma separated
-        list with usernames. Furthermore, a separate startup delay can
-        be configured for every user to avoid overloading the host. A
-        sample configuration is given below:
+        contains several options. The <literal>default_policy</literal>
+        controls whether the autostart service allows or denies starting
+        of a VM for users that are not in the exception list. The
+        exception list starts with <literal>exception_list</literal> and
+        contains a comma separated list with usernames. Furthermore, a
+        separate startup delay can be configured for every user to avoid
+        overloading the host. A sample configuration is given below:
       </para>
 
 <screen>
@@ -6201,9 +6197,10 @@ alice = {
 
       <note>
         <para>
-          On Windows hosts, starting VMs via the autostart service might cause some
-          issues, as the virtual machines are starting within the same session as
-          VBoxSVC. For more information see <xref linkend="vboxsvc-session-0" />.
+          On Windows hosts, starting VMs via the autostart service might
+          cause some issues, as the virtual machines are starting within
+          the same session as VBoxSVC. For more information see
+          <xref linkend="vboxsvc-session-0" />.
         </para>
       </note>
 
@@ -6217,33 +6214,33 @@ alice = {
 
     <para>
       &product-name; enables you to transparently encrypt the VM data
-      stored in the configuration file, saved state and EFI boot data
+      stored in the configuration file, saved state, and EFI boot data
       for the guest.
     </para>
 
     <para>
-      &product-name; uses the AES algorithm in various modes. The selected
-      mode depends on encrypting component of the VM. &product-name;
-      supports 128-bit or 256-bit data encryption keys (DEK). The DEK
-      is stored encrypted in the VM configuration file and is decrypted
-      during VM opening.
+      &product-name; uses the AES algorithm in various modes. The
+      selected mode depends on the encrypting component of the VM.
+      &product-name; supports 128-bit or 256-bit data encryption keys
+      (DEK). The DEK is stored encrypted in the VM configuration file
+      and is decrypted during VM startup.
     </para>
 
     <para>
       Since the DEK is stored as part of the VM configuration file, it
-      is important that it is kept safe. Losing the DEK means that the
-      data stored in the VM is lost irrecoverably. Having complete and
-      up to date backups of all data related to the VM is the
+      is important that the file is kept safe. Losing the DEK means that
+      the data stored in the VM is lost irrecoverably. Having complete
+      and up to date backups of all data related to the VM is the
       responsibility of the user.
     </para>
 
     <para>
-      The VM, even if it is encrypted, may contain mediums encrypted with
-      different passwords. To deal with this, the password for the VM itself
-      also has password identifier such as passwords for mediums. The password
-      ID is an arbitrary string which uniquely identifies the password in the
-      VM and its mediums. It is allowed to use the same password for VM and
-      its mediums with the same ID.
+      The VM, even if it is encrypted, may contain media encrypted with
+      different passwords. To deal with this, the password for the VM
+      has a password identifier, in the same way as passwords for media.
+      The password ID is an arbitrary string which uniquely identifies
+      the password in the VM and its media. You can use the same
+      password and ID for both the VM and its media.
     </para>
 
     <sect2 id="vmencryption-limitations">
@@ -6259,8 +6256,8 @@ alice = {
 
         <listitem>
           <para>
-            Exporting appliances containing encrypted VM is not
-            possible because the OVF specification does not support
+            Exporting appliances containing an encrypted VM is not
+            possible, because the OVF specification does not support
             this. The VM is therefore decrypted during export.
           </para>
         </listitem>
@@ -6280,9 +6277,9 @@ alice = {
             When encrypting or decrypting the VM, the password is passed
             in clear text using the &product-name; API. This needs to be
             kept in mind, especially when using third party API clients
-            which make use of the webservice where the password might be
-            transmitted over the network. The use of HTTPS is mandatory
-            in such a case.
+            which make use of the web service where the password might
+            be transmitted over the network. The use of HTTPS is
+            mandatory in such a case.
           </para>
         </listitem>
 
@@ -6292,47 +6289,48 @@ alice = {
 
     <sect2 id="vmencryption-encryption">
 
-      <title>Encrypting VMs</title>
+      <title>Encrypting a VM</title>
 
       <para>
-        Encrypting VMs can be done either using the GUI or
-        <command>VBoxManage</command>. To encrypt an unencrypted
-        VM with <command>VBoxManage</command>, use:
+        Encrypting a VM can be done either using &vbox-mgr; or the
+        <command>VBoxManage</command>. To encrypt an unencrypted VM with
+        <command>VBoxManage</command>, use:
       </para>
 
 <screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> setencryption --new-password <replaceable>filename</replaceable>|- \
---cipher <replaceable>cipher-ID</replaceable> --new-password-id "<replaceable>ID</replaceable></screen>
+--cipher <replaceable>cipher-ID</replaceable> --new-password-id <replaceable>ID</replaceable></screen>
 
       <para>
-        To supply the encryption password point
+        To supply the encryption password, point
         <command>VBoxManage</command> to the file where the password is
-        stored or specify <option>-</option> to let VBoxManage ask you
-        for the password on the command line.
+        stored or specify <option>-</option> to let
+        <command>VBoxManage</command> prompt for the password on the
+        command line.
       </para>
 
       <para>
         The cipher parameter specifies the cipher to use for encryption
         and can be either <literal>AES-128</literal> or
-        <literal>AES-256</literal>. Appropriate mode GCM, CTR or XTS will
-        be selected by VM depending on encrypting component.
-        The specified password identifier can be freely chosen by the user
-        and is used for correct identification when supplying multiple
-        passwords for the VM.
+        <literal>AES-256</literal>. The appropriate mode of operation,
+        such as GCM, CTR, or XTS will be selected by the VM depending on
+        the encrypting component. The specified password identifier can
+        be freely chosen by the user and is used for correct
+        identification when supplying multiple passwords for the VM.
       </para>
 
     </sect2>
 
     <sect2 id="vmencryption-addpassword">
 
-      <title>Opening the encrypted VM</title>
+      <title>Opening the Encrypted VM</title>
 
       <para>
-        At the time the &product-name; has just started up the encrypted
-        VM can not be opened and it stays inaccessible. Also the encrypted
-        VM stays inaccessible if it just registered without password or
-        password is incorrect. The user needs to provide the password
-        through either GUI or <command>VBoxManage</command> using the
-        following command:
+        When &product-name; has just started up the encrypted VM cannot
+        be opened and it stays inaccessible. Also, the encrypted VM
+        stays inaccessible if it was just registered without a password
+        or the password is incorrect. The user needs to provide the
+        password using &vbox-mgr; or with the following
+        <command>VBoxManage</command> command:
       </para>
 
 <screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> addpassword --password <replaceable>filename</replaceable>|- --password-id <replaceable>ID</replaceable></screen>
@@ -6340,8 +6338,9 @@ alice = {
       <para>
         To supply the encryption password point
         <command>VBoxManage</command> to the file where the password is
-        stored or specify <option>-</option> to let VBoxManage ask you
-        for the password on the command line.
+        stored or specify <option>-</option> to let
+        <command>VBoxManage</command> prompt for the password on the
+        command line.
       </para>
 
       <para>
@@ -6351,9 +6350,8 @@ alice = {
       </para>
 
       <para>
-        If user needs to remove the entered password from the VM memory
-        it can call <command>VBoxManage</command> using the following
-        command:
+        To remove the entered password from the VM memory, use
+        <command>VBoxManage</command> as follows:
       </para>
 
 <screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> removepassword <replaceable>ID</replaceable></screen>
@@ -6366,11 +6364,11 @@ alice = {
 
       <note>
         <para>
-          If machine becomes inaccessible all passwords are purged.
-          One has to add required passwords again using
+          If a machine becomes inaccessible all passwords are purged.
+          You have to add required passwords again, using the
           <command>VBoxManage encryptvm
           <replaceable>vmname</replaceable> addpassword</command>
-          command, see <xref linkend="vmencryption-addpassword" />.
+          command. See <xref linkend="vmencryption-addpassword" />.
         </para>
       </note>
 
@@ -6382,16 +6380,15 @@ alice = {
 
       <para>
         In some circumstances it might be required to decrypt previously
-        encrypted VMs. This can be done in the GUI or using
+        encrypted VMs. This can be done in &vbox-mgr; or using
         <command>VBoxManage</command> with the following command:
       </para>
 
 <screen>VBoxManage encryptvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> setencryption --old-password <replaceable>file</replaceable>|-</screen>
 
       <para>
-        The only required parameter is the password the VM was
-        encrypted with. The options are the same as for encrypting
-        VMs.
+        The only required parameter is the password the VM was encrypted
+        with. The options are the same as for encrypting VMs.
       </para>
 
     </sect2>
@@ -6534,7 +6531,7 @@ VBoxInternal/CPUM/IsaExts/SSE4.2 0</screen>
     <para>
       This feature makes the host keyboard indicators (LEDs) match those
       of the VM's emulated keyboard when the machine window is active.
-      It is currently implemented for Mac OS X and Windows hosts. This
+      It is currently implemented for macOS and Windows hosts. This
       feature is enabled by default on supported host OSes. You can
       disable this feature by running the following command:
     </para>
@@ -6741,12 +6738,12 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
       <title>Encrypting Disk Images</title>
 
       <para>
-        Encrypting disk images can be done either using the GUI or
-        <command>VBoxManage</command>. While the GUI is easier to use,
-        it works on a per VM basis and encrypts all disk images attached
-        to the specific VM. With <command>VBoxManage</command> one can
-        encrypt individual images, including all differencing images. To
-        encrypt an unencrypted medium with
+        Encrypting disk images can be done either using &vbox-mgr; or
+        the <command>VBoxManage</command>. While &vbox-mgr; is easier to
+        use, it works on a per VM basis and encrypts all disk images
+        attached to the specific VM. With <command>VBoxManage</command>
+        one can encrypt individual images, including all differencing
+        images. To encrypt an unencrypted medium with
         <command>VBoxManage</command>, use:
       </para>
 
@@ -6782,8 +6779,8 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
       <title>Starting a VM with Encrypted Images</title>
 
       <para>
-        When a VM is started using the GUI, a dialog will open where the
-        user needs to enter all passwords for all encrypted images
+        When a VM is started using &vbox-mgr;, a dialog will open where
+        the user needs to enter all passwords for all encrypted images
         attached to the VM. If another frontend like VBoxHeadless is
         used, the VM will be paused as soon as the guest tries to access
         an encrypted disk. The user needs to provide the passwords
@@ -6814,8 +6811,8 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
 
       <para>
         In some circumstances it might be required to decrypt previously
-        encrypted images. This can be done in the GUI for a complete VM
-        or using <command>VBoxManage</command> with the following
+        encrypted images. This can be done in &vbox-mgr; for a complete
+        VM or using <command>VBoxManage</command> with the following
         command:
       </para>
 
@@ -7449,7 +7446,7 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
 
     <para>
       USB devices exported on the device server are then accessible
-      through the GUI or <command>VBoxManage</command>, like any USB
+      through &vbox-mgr; or <command>VBoxManage</command>, like any USB
       devices attached locally. This can be used multiple times to
       access different device servers.
     </para>
@@ -7599,10 +7596,10 @@ $ usbip list -l
 
       <listitem>
         <para>
-          From the VirtualBox Manager, select the
-          <emphasis role="bold">Enable Nested VT-x/AMD-V</emphasis>
-          check box on the <emphasis role="bold">Processor</emphasis>
-          tab. To disable the feature, deselect the check box.
+          From &vbox-mgr;, select the <emphasis role="bold">Enable
+          Nested VT-x/AMD-V</emphasis> check box on the
+          <emphasis role="bold">Processor</emphasis> tab. To disable the
+          feature, deselect the check box.
         </para>
       </listitem>
 
@@ -7621,45 +7618,55 @@ $ usbip list -l
 
   <sect1 id="vboxsvc-session-0">
 
-    <title>VBoxSVC running in Windows session 0</title>
+    <title>VBoxSVC running in Windows Session 0</title>
 
     <para>
-      &product-name; supports executing the VBoxSVC in Windows session 0.
-      This allows VBoxSVC to run like a regular Windows service, which in turn
-      enables headless VMs to continue running even if the user logs out.
+      &product-name; supports executing the VBoxSVC in Windows session
+      0. This allows VBoxSVC to run like a regular Windows service,
+      which in turn enables headless VMs to continue running even if the
+      user logs out.
+
       <note>
-        <para>This feature currently is marked as being <emphasis role="bold">experimental</emphasis>!</para>
+        <para>
+          This is currently an experimental feature.
+        </para>
       </note>
     </para>
 
     <para>
-      The feature is disabled by default and can be enabled by creating a REG_DWORD
-      value <literal>ServerSession0</literal> in the key
-      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal> of the
-      Windows registry. Specifying <literal>1</literal> as the value's data to
-      enable the feature, or <literal>0</literal> to disable the feature again.
-      A host reboot is needed in order to make the change effective.
+      The feature is disabled by default and can be enabled by creating
+      a REG_DWORD value <literal>ServerSession0</literal> in the key
+      <literal>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</literal>
+      of the Windows registry. Specify <literal>1</literal> as the
+      value's data to enable the feature, or <literal>0</literal> to
+      disable the feature. A host reboot is needed in order to make the
+      change effective.
     </para>
 
     <sect2 id="vboxsvc-session-0-known-issues">
 
-      <title>Known issues</title>
+      <title>Known Issues</title>
 
       <itemizedlist>
+
         <listitem>
           <para>
-            Due to different Windows sessions having their own set of resources,
-            there might be some issues with accessing network shares created in
-           the interactive user session when at least one of &product-name;
-            processes are running in session 0.
+            Due to different Windows sessions having their own set of
+            resources, there might be some issues with accessing network
+            shares created in the interactive user session when at least
+            one of the &product-name; processes are running in session
+            0.
           </para>
+
           <para>
-            For accessing network shares within session 0, a possible workaround
-            is to establish permanent access to the share and restart the host after that.
-            This might change in the future, however.
+            For accessing network shares within session 0, a possible
+            workaround is to establish permanent access to the share and
+            then restart the host.
           </para>
         </listitem>
+
       </itemizedlist>
+
     </sect2>
 
   </sect1>

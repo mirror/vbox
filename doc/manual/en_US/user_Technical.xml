@@ -91,7 +91,7 @@
 
         <listitem>
           <para>
-            On Linux, Mac OS X, and Oracle Solaris, this is generally
+            On Linux, macOS, and Oracle Solaris, this is generally
             taken from the environment variable
             <filename>$HOME</filename>, except for the user
             <literal>root</literal> where it is taken from the account
@@ -104,7 +104,7 @@
           <para>
             A typical location on Linux and Oracle Solaris is
             <filename>/home/<replaceable>username</replaceable></filename>
-            and on Mac OS X is
+            and on macOS is
             <filename>/Users/<replaceable>username</replaceable></filename>.
           </para>
         </listitem>
@@ -151,7 +151,7 @@
       <para>
         This is the default layout if you use the
         <emphasis role="bold">Create New Virtual Machine</emphasis>
-        wizard described in <xref linkend="gui-createvm" />. Once you
+        wizard described in <xref linkend="create-vm-wizard" />. Once you
         start working with the VM, additional files are added. Log files
         are in a subfolder called <filename>Logs</filename>, and if you
         have taken snapshots, they are in a
@@ -199,7 +199,7 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Mac OS X:</emphasis>
+            <emphasis role="bold">macOS:</emphasis>
             <filename>$HOME/Library/VirtualBox</filename>.
           </para>
         </listitem>
@@ -361,7 +361,7 @@
           which always runs in the background. This process is started
           automatically by the first &product-name; client process and
           exits a short time after the last client exits. The first
-          &product-name; service can be the GUI,
+          &product-name; service can be &vbox-mgr;,
           <command>VBoxManage</command>,
           <command>VBoxHeadless</command>, the web service amongst
           others. The service is responsible for bookkeeping,
@@ -388,11 +388,11 @@
           The GUI process, <command>VirtualBoxVM</command>, a client
           application based on the cross-platform Qt library. When
           started without the <option>--startvm</option> option, this
-          application acts as the VirtualBox Manager, displaying the VMs
-          and their settings. It then communicates settings and state
-          changes to <command>VBoxSVC</command> and also reflects
-          changes effected through other means, such as the
-          <command>VBoxManage</command> command.
+          application acts as &vbox-mgr;, displaying the VMs and their
+          settings. It then communicates settings and state changes to
+          <command>VBoxSVC</command> and also reflects changes effected
+          through other means, such as the <command>VBoxManage</command>
+          command.
         </para>
       </listitem>
 
@@ -417,9 +417,9 @@
     </para>
 
     <para>
-      The &product-name; GUI application is only one of several
-      available front ends, or clients. The complete list shipped with
-      &product-name; is as follows:
+      The &product-name; GUI application, called &vbox-mgr;, is only one
+      of several available front ends, or clients. The complete list
+      shipped with &product-name; is as follows:
     </para>
 
     <itemizedlist>
@@ -427,7 +427,7 @@
       <listitem>
         <para>
           <command>VirtualBoxVM</command>: The Qt front end implementing
-          the VirtualBox Manager and running VMs.
+          &vbox-mgr; and running VMs.
         </para>
       </listitem>
 

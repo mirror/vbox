@@ -125,12 +125,11 @@
 
         <para>
           After you have created a new virtual machine with the
-          <emphasis role="bold">New Virtual Machine</emphasis> wizard of
-          the VirtualBox Manager, you will typically see one IDE
-          controller in the machine's
-          <emphasis role="bold">Storage</emphasis> settings. The virtual
-          CD/DVD drive will be attached to one of the four ports of this
-          controller.
+          <emphasis role="bold">New Virtual Machine</emphasis> wizard in
+          &vbox-mgr;, you will typically see one IDE controller in the
+          machine's <emphasis role="bold">Storage</emphasis> settings.
+          The virtual CD/DVD drive will be attached to one of the four
+          ports of this controller.
         </para>
       </listitem>
 
@@ -173,7 +172,7 @@
             additional drivers. It is possible to switch from IDE to
             SATA after installation by installing the SATA drivers and
             changing the controller type in the VM
-            <emphasis role="bold">Settings</emphasis> dialog.
+            <emphasis role="bold">Settings</emphasis> window.
           </para>
 
           <para>
@@ -190,7 +189,7 @@
           supported by default by the selected guest OS, do the
           following. Go to the <emphasis role="bold">Storage</emphasis>
           page of the machine's
-          <emphasis role="bold">Settings</emphasis> dialog, click
+          <emphasis role="bold">Settings</emphasis> window, click
           <emphasis role="bold">Add Controller</emphasis> under the
           Storage Tree box and then select <emphasis role="bold">Add
           SATA Controller</emphasis>. The new controller appears as a
@@ -226,7 +225,7 @@
         <para>
           To enable a SCSI controller, on the
           <emphasis role="bold">Storage</emphasis> page of a virtual
-          machine's <emphasis role="bold">Settings</emphasis> dialog,
+          machine's <emphasis role="bold">Settings</emphasis> window,
           click <emphasis role="bold">Add Controller</emphasis> under
           the Storage Tree box and then select <emphasis role="bold">Add
           SCSI Controller</emphasis>. The new controller appears as a
@@ -487,7 +486,7 @@
 
     <para>
       Irrespective of the disk capacity and format, as mentioned in
-      <xref linkend="gui-createvm" />, there are two options for
+      <xref linkend="create-vm-wizard" />, there are two options for
       creating a disk image: fixed-size or dynamically allocated.
     </para>
 
@@ -527,7 +526,7 @@
 
   </sect1>
 
-  <sect1 id="vdis">
+  <sect1 id="virtual-media-manager">
 
     <title>The Virtual Media Manager</title>
 
@@ -557,14 +556,15 @@
 
     <para>
       The known media can be viewed and changed using the
-      <emphasis role="bold">Virtual Media Manager</emphasis>, which you
-      can access from the <emphasis role="bold">File</emphasis> menu in
-      the VirtualBox Manager window.
+      <emphasis role="bold">Virtual Media Manager</emphasis> tool, which
+      you access by clicking <emphasis role="bold">Media</emphasis> on
+      the global <emphasis role="bold">Tools</emphasis> menu in
+      &vbox-mgr;.
     </para>
 
     <figure id="fig-virtual-media-manager">
-      <title>The Virtual Media Manager</title>
-    <mediaobject>
+      <title>The Virtual Media Manager, Showing Hard Disk Images</title>
+      <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtual-disk-manager.png"
                      width="12cm" />
@@ -629,23 +629,25 @@
 
           <listitem>
             <para>
-              For virtual hard disks, the <emphasis role="bold">Create
-              Virtual Hard Disk</emphasis> wizard is shown.
+              For hard disks, the <emphasis role="bold">Create Virtual
+              Hard Disk</emphasis> wizard is shown. See
+              <xref linkend="create-virtual-hard-disk-image"/>.
             </para>
           </listitem>
 
           <listitem>
             <para>
               For optical disks, the <emphasis role="bold">VISO
-              Creator</emphasis> screen is shown. This enables you to
-              create a virtual ISO from selected files on the host.
+              Creator</emphasis> tool is shown. See
+              <xref linkend="create-optical-disk-image"/>.
             </para>
           </listitem>
 
           <listitem>
             <para>
               For floppy disks, the <emphasis role="bold">Floppy Disk
-              Creator</emphasis> screen is shown.
+              Creator</emphasis> tool is shown. See
+              <xref linkend="create-floppy-disk-image"/>.
             </para>
           </listitem>
 
@@ -712,6 +714,20 @@
           from a VM. This action only applies if the image is currently
           attached to a VM as a virtual hard disk.
         </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Clear</emphasis> all inaccessible disk
+          images from the list. The disk images are released from the
+          VMs they are attached to and removed from the known media.
+        </para>
+
+        <note>
+          <para>
+            This option is for optical disks and floppy disks only.
+          </para>
+        </note>
       </listitem>
 
       <listitem>
@@ -793,7 +809,7 @@
 
       <listitem>
         <para>
-          Click an icon in the Virtual Media Manager task bar.
+          Click an icon in the Virtual Media Manager toolbar.
         </para>
       </listitem>
 
@@ -807,7 +823,7 @@
 
     <para>
       Use the <emphasis role="bold">Storage</emphasis> page in a VM's
-      <emphasis role="bold">Settings</emphasis> dialog to create a new
+      <emphasis role="bold">Settings</emphasis> window to create a new
       disk image. By default, disk images are stored in the VM's folder.
     </para>
 
@@ -829,6 +845,281 @@
         export features. See <xref linkend="ovf" />.
       </para>
     </note>
+
+    <sect2 id="create-virtual-hard-disk-image">
+
+      <title>Creating a Virtual Hard Disk Image</title>
+
+      <para>
+        Use the <emphasis role="bold">Create Virtual Hard
+        Disk</emphasis> wizard to create a hard disk image.
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Display the <emphasis role="bold">Hard Disks</emphasis> tab
+            in Virtual Media Manager and click
+            <emphasis role="bold">Create</emphasis>.
+          </para>
+
+          <para>
+            The <emphasis role="bold">Create Virtual Hard
+            Disk</emphasis> wizard is shown.
+          </para>
+
+          <figure id="fig-virtual-hard-disk-wizard">
+            <title>Create Virtual Hard Disk Wizard</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/virtual-hard-disk-wizard.png"
+                     width="12cm" />
+        </imageobject>
+      </mediaobject>
+          </figure>
+        </listitem>
+
+        <listitem>
+          <para>
+            On the <emphasis role="bold">Virtual Hard Disk File
+            Type</emphasis> page, select a file type for the new virtual
+            hard disk image.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Next</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            On the <emphasis role="bold">Storage on Physical Hard
+            Disk</emphasis> page, select whether the size of the virtual
+            hard disk file is dynamically allocated or is of fixed size.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Next</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            On the <emphasis role="bold">File Location and
+            Size</emphasis> page, configure the location of the virtual
+            hard disk file and use the slider to set the size limit for
+            the virtual hard disk.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Finish</emphasis> to create the
+            virtual hard disk file.
+          </para>
+
+          <para>
+            The virtual hard disk image is created in the specified
+            location and added to the <emphasis role="bold">Hard
+            Disks</emphasis> tab in Virtual Media Manager.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="create-optical-disk-image">
+
+      <title>Creating a Virtual Optical Disk Image</title>
+
+      <para>
+        Use the <emphasis role="bold">VISO Creator</emphasis> tool to
+        create a virtual optical disk image. This enables you to create
+        a virtual ISO from selected files on the host.
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Display the <emphasis role="bold">Optical Disks</emphasis>
+            tab in Virtual Media Manager and click
+            <emphasis role="bold">Create</emphasis>.
+          </para>
+
+          <para>
+            The <emphasis role="bold">VISO Creator</emphasis> tool is
+            shown.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Create the virtual ISO file.
+          </para>
+
+          <orderedlist>
+
+            <listitem>
+              <para>
+                Configure the name of the ISO file.
+              </para>
+
+              <para>
+                Click <emphasis role="bold">Configuration</emphasis> and
+                enter a name in the <emphasis role="bold">Viso
+                Name</emphasis> field.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Add files to your virtual ISO.
+              </para>
+
+              <para>
+                In the <emphasis role="bold">Host File System</emphasis>
+                pane, select files to copy from the host system to the
+                virtual ISO.
+              </para>
+
+              <para>
+                Click <emphasis role="bold">Add Items To
+                VISO</emphasis>. The files are displayed in the
+                <emphasis role="bold">VISO Content</emphasis> pane.
+              </para>
+
+              <para>
+                The following file operations are also available:
+              </para>
+
+              <itemizedlist>
+
+                <listitem>
+                  <para>
+                    To create folders on the virtual ISO, click
+                    <emphasis role="bold">Create New
+                    Directory</emphasis>.
+                  </para>
+                </listitem>
+
+                <listitem>
+                  <para>
+                    To remove files from the virtual ISO, select files
+                    in the <emphasis role="bold">VISO Content</emphasis>
+                    pane and click <emphasis role="bold">Remove Items
+                    From VISO</emphasis>.
+                  </para>
+                </listitem>
+
+                <listitem>
+                  <para>
+                    To remove <emphasis>all</emphasis> files from the
+                    virtual ISO, click <emphasis role="bold">Reset the
+                    VISO Content</emphasis>.
+                  </para>
+                </listitem>
+
+              </itemizedlist>
+            </listitem>
+
+          </orderedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            Create the virtual ISO image.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Create</emphasis>.
+          </para>
+
+          <para>
+            A virtual ISO file with the specified name and content is
+            created.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="create-floppy-disk-image">
+
+      <title>Creating a Virtual Floppy Disk Image</title>
+
+      <para>
+        Use the <emphasis role="bold">Floppy Disk Creator</emphasis>
+        tool to create a floppy disk image.
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Display the <emphasis role="bold">Floppy Disks</emphasis>
+            tab in Virtual Media Manager and click
+            <emphasis role="bold">Create</emphasis>.
+          </para>
+
+          <para>
+            The <emphasis role="bold">Floppy Disk Creator</emphasis>
+            tool is shown.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Configure the following settings:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">File Path:</emphasis> The name and
+                location of the floppy disk image.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Size:</emphasis> Select from the
+                list of supported floppy disk sizes.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Format Disk as FAT 12:</emphasis>
+                This is the default format used for most floppy disks.
+                For an unformatted disk, do not select this option.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            Create the floppy disk image file.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Create</emphasis>.
+          </para>
+
+          <para>
+            The floppy disk image is created in the specified location
+            and added to the <emphasis role="bold">Floppy
+            Disks</emphasis> tab in Virtual Media Manager.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
 
   </sect1>
 
@@ -1120,7 +1411,7 @@
       <title>Differencing Images, Shown in Virtual Media Manager</title>
       <mediaobject>
         <imageobject>
-          <imagedata align="center" fileref="images/virtual-disk-manager2.png"
+          <imagedata align="center" fileref="images/virtual-disk-manager-2.png"
                      width="12cm" />
         </imageobject>
       </mediaobject>

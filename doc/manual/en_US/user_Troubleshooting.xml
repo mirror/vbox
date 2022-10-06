@@ -167,11 +167,10 @@
       </para>
 
       <para>
-        For convenience, for each virtual machine, the VirtualBox
-        Manager window can show these logs in a window. To access it,
-        select a virtual machine from the list on the left and select
-        <emphasis role="bold">Show Log</emphasis> from the
-        <emphasis role="bold">Machine</emphasis> menu.
+        For convenience, for each virtual machine, &vbox-mgr; can show
+        these logs in a window. Select a virtual machine from the
+        machine list on the left and click
+        <emphasis role="bold">Logs</emphasis> in the machine tools menu.
       </para>
 
       <para>
@@ -191,8 +190,8 @@
         In case of crashes, it is very important to collect
         <emphasis>crash dumps</emphasis>. This is true for both host and
         guest crashes. For information about enabling core dumps on
-        Linux, Oracle Solaris, and Mac OS X systems, refer to the
-        following core dump article on the &product-name; website:
+        Linux, Oracle Solaris, and macOS systems, refer to the following
+        core dump article on the &product-name; website:
       </para>
 
       <para>
@@ -1671,10 +1670,9 @@ VirtualBox</screen>
 
       <para>
         If a host-only adapter cannot be created, either with the
-        VirtualBox Manager or the <command>VBoxManage</command> command,
-        then the INF cache is probably corrupt. In this case, the
-        install log at
-        <filename>%windir%\inf\setupapi.dev.log</filename> would
+        &vbox-mgr; or the <command>VBoxManage</command> command, then
+        the INF cache is probably corrupt. In this case, the install log
+        at <filename>%windir%\inf\setupapi.dev.log</filename> would
         typically mention the failure to find a suitable driver package
         for the <filename>sun_VBoxNetAdp</filename> component. Again, as
         with the bridged networking problem described above, the

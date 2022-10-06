@@ -366,7 +366,7 @@
               the virtual machine's menu bar and then
               <emphasis role="bold">Choose/Create a Disk
               Image</emphasis>. This displays the Virtual Media Manager,
-              described in <xref linkend="vdis" />.
+              described in <xref linkend="virtual-media-manager" />.
             </para>
           </listitem>
 
@@ -391,12 +391,11 @@
 
               <listitem>
                 <para>
-                  On Mac OS X hosts, this file is in the application
-                  bundle of &product-name;. Right-click on the
-                  &product-name; icon in Finder and choose
-                  <emphasis role="bold">Show Package
-                  Contents</emphasis>. The file is located in the
-                  <filename>Contents/MacOS</filename> folder.
+                  On macOS hosts, this file is in the application bundle
+                  of &product-name;. Right-click on the &product-name;
+                  icon in Finder and choose <emphasis role="bold">Show
+                  Package Contents</emphasis>. The file is located in
+                  the <filename>Contents/MacOS</filename> folder.
                 </para>
               </listitem>
 
@@ -502,115 +501,138 @@
 
       <sect3 id="additions-windows-install-unattended">
 
-        <title>Unattended Installation</title>
+        <title>Unattended Installation of the Windows Guest Additions</title>
 
         <para>
-          To avoid popups when performing an unattended installation of
-          the &product-name; Guest Additions, the code signing
-          certificates used to sign the drivers needs to be installed in
-          the correct certificate stores on the guest operating system.
-          Failure to do this will cause a typical Windows installation
-          to display multiple dialogs asking whether you want to install
-          a particular driver.
+          You can configure unattended installation of the
+          &product-name; Guest Additions when you create a new VM using
+          the <emphasis role="bold">Create Virtual Machine</emphasis>
+          wizard. Select the <emphasis role="bold">Guest
+          Additions</emphasis> check box on the
+          <emphasis role="bold">Unattended Guest OS Install</emphasis>
+          page of the wizard.
         </para>
 
-        <note>
+        <para>
+          Guest Additions are installed automatically, following
+          completion of the guest OS installation.
+        </para>
+
+        <simplesect id="additions-windows-install-unattended-certs">
+
+          <title>Installing Code Signing Certificates</title>
+
           <para>
-            On some Windows versions, such as Windows 2000 and Windows
-            XP, the user intervention popups mentioned above are always
-            displayed, even after importing the Oracle certificates.
+            To avoid popups when performing an unattended installation
+            of the &product-name; Guest Additions, the code signing
+            certificates used to sign the drivers needs to be installed
+            in the correct certificate stores on the guest operating
+            system. Failure to do this will cause a typical Windows
+            installation to display multiple dialogs asking whether you
+            want to install a particular driver.
           </para>
-        </note>
 
-        <para>
-          Installing the code signing certificates on a Windows guest
-          can be done automatically. Use the
-          <filename>VBoxCertUtil.exe</filename> utility from the
-          <filename>cert</filename> folder on the Guest Additions
-          installation CD.
-        </para>
-
-        <para>
-          Use the following steps:
-        </para>
-
-        <orderedlist>
-
-          <listitem>
+          <note>
             <para>
-              Log in as Administrator on the guest.
+              On some legacy Windows versions, such as Windows 2000 and
+              Windows XP, the user intervention popups mentioned above
+              are always displayed, even after importing the Oracle
+              certificates.
             </para>
-          </listitem>
+          </note>
 
-          <listitem>
-            <para>
-              Mount the &product-name; Guest Additions .ISO.
-            </para>
-          </listitem>
+          <para>
+            Installing the code signing certificates on a Windows guest
+            can be done automatically. Use the
+            <filename>VBoxCertUtil.exe</filename> utility from the
+            <filename>cert</filename> folder on the Guest Additions
+            installation CD.
+          </para>
 
-          <listitem>
-            <para>
-              Open a command line window on the guest and change to the
-              <filename>cert</filename> folder on the &product-name;
-              Guest Additions CD.
-            </para>
-          </listitem>
+          <para>
+            Use the following steps:
+          </para>
 
-          <listitem>
-            <para>
-              Run the following command:
-            </para>
+          <orderedlist>
+
+            <listitem>
+              <para>
+                Log in as Administrator on the guest.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Mount the &product-name; Guest Additions .ISO.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Open a command line window on the guest and change to
+                the <filename>cert</filename> folder on the
+                &product-name; Guest Additions CD.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Run the following command:
+              </para>
 
 <screen>VBoxCertUtil.exe add-trusted-publisher vbox*.cer --root vbox*.cer</screen>
 
-            <para>
-              This command installs the certificates to the certificate
-              store. When installing the same certificate more than
-              once, an appropriate error will be displayed.
-            </para>
-          </listitem>
+              <para>
+                This command installs the certificates to the
+                certificate store. When installing the same certificate
+                more than once, an appropriate error will be displayed.
+              </para>
+            </listitem>
 
-        </orderedlist>
+          </orderedlist>
 
-        <para>
-          To allow for completely unattended guest installations, you
-          can specify a command line parameter to the install launcher:
-        </para>
+          <para>
+            To allow for completely unattended guest installations, you
+            can specify a command line parameter to the install
+            launcher:
+          </para>
 
 <screen>VBoxWindowsAdditions.exe /S</screen>
 
-        <para>
-          This automatically installs the right files and drivers for
-          the corresponding platform, either 32-bit or 64-bit.
-        </para>
-
-        <note>
           <para>
-            By default on an unattended installation on a Vista or
-            Windows 7 guest, there will be the XPDM graphics driver
-            installed. This graphics driver does not support Windows
-            Aero / Direct3D on the guest. Instead, the WDDM graphics
-            driver needs to be installed. To select this driver by
-            default, add the command line parameter
-            <literal>/with_wddm</literal> when invoking the Windows
-            Guest Additions installer. This is only required for Vista
-            and Windows 7.
+            This automatically installs the right files and drivers for
+            the corresponding platform, either 32-bit or 64-bit.
           </para>
-        </note>
 
-        <note>
+          <note>
+            <para>
+              By default on an unattended installation on a Vista or
+              Windows 7 guest, there will be the XPDM graphics driver
+              installed. This graphics driver does not support Windows
+              Aero / Direct3D on the guest. Instead, the WDDM graphics
+              driver needs to be installed. To select this driver by
+              default, add the command line parameter
+              <literal>/with_wddm</literal> when invoking the Windows
+              Guest Additions installer. This is only required for Vista
+              and Windows 7.
+            </para>
+          </note>
+
+          <note>
+            <para>
+              For Windows Aero to run correctly on a guest, the guest's
+              VRAM size needs to be configured to at least 128 MB.
+            </para>
+          </note>
+
           <para>
-            For Windows Aero to run correctly on a guest, the guest's
-            VRAM size needs to be configured to at least 128 MB.
+            For more options regarding unattended guest installations,
+            consult the command line help by using the command:
           </para>
-        </note>
-
-        <para>
-          For more options regarding unattended guest installations,
-          consult the command line help by using the command:
-        </para>
 
 <screen>VBoxWindowsAdditions.exe /?</screen>
+
+        </simplesect>
 
       </sect3>
 
@@ -778,6 +800,27 @@
 
       </sect3>
 
+      <sect3 id="additions-linux-install-unattended">
+
+        <title>Unattended Installation of the Linux Guest Additions</title>
+
+        <para>
+          You can configure unattended installation of the
+          &product-name; Guest Additions when you create a new VM using
+          the <emphasis role="bold">Create Virtual Machine</emphasis>
+          wizard. Select the <emphasis role="bold">Guest
+          Additions</emphasis> check box on the
+          <emphasis role="bold">Unattended Guest OS Install</emphasis>
+          page of the wizard.
+        </para>
+
+        <para>
+          Guest Additions are installed automatically, following
+          completion of the guest OS installation.
+        </para>
+
+      </sect3>
+
       <sect3 id="additions-linux-graphics-mouse">
 
         <title>Graphics and Mouse Integration</title>
@@ -821,48 +864,79 @@
         <para>
           Starting from &product-name; 7, Linux guest screen resize
           functionality for guests running VMSVGA graphics configuration
-          has been changed. Since then, this functionality consists
-          of a standalone daemon called VBoxDRMClient and its Desktop
+          has been changed. Since then, this functionality consists of a
+          standalone daemon called VBoxDRMClient and its Desktop
           Environment helper counterpart.
         </para>
 
         <para>
-          VBoxDRMClient is running as a root process and, in fact, is
-          a bridge between host and guest's vmwgfx driver. This means that
-          VBoxDRMClient listens to screen resize hints from host and
-          forwards them to vmwgfx driver. This allows to make guest screen resize
-          functionality available before user performed graphical log-in.
+          VBoxDRMClient runs as a root process and is a bridge between
+          the host and the guest's vmwgfx driver. This means that
+          VBoxDRMClient listens to screen resize hints from the host and
+          forwards them to the vmwgfx driver. This enables guest screen
+          resize functionality to be available before the user has
+          performed a graphical login.
         </para>
 
         <para>
           In order to perform Desktop Environment specific actions, such
-          as setting primary screen in multi monitor setup, a Desktop Environment
-          helper is used. Once user performed graphical log-in operation,
-          helper daemon starts in scope of user session and attempts to
-          connect to VBoxDRMClient using IPC connection. Once VBoxDRMClient received
-          corresponding command from host, it is forwarded to helper daemon
-          over IPC and action then performed.
+          as setting the primary screen in a multimonitor setup, a
+          Desktop Environment helper is used. Once the user has
+          performed a graphical login operation, the helper daemon
+          starts with user session scope and attempts to connect to
+          VBoxDRMClient using an IPC connection. When VBoxDRMClient has
+          received a corresponding command from the host, it is
+          forwarded to the helper daemon over IPC and the action is then
+          performed.
         </para>
 
         <para>
-          By default, VBoxDRMClient allows any process to connect to its IPC
-          socket. This can be restricted once two actions are taken. Starting
-          from &product-name; 7, Guest Additions Linux installer will also
-          create 'vboxdrmipc' user group. Corresponding user needs to be added
-          into this group. The last action is to set the following guest property:
+          By default, VBoxDRMClient allows any process to connect to its
+          IPC socket. This can be restricted by using the following
+          steps:
+        </para>
+
+        <orderedlist>
+
+          <listitem>
+            <para>
+              The Guest Additions Linux installer creates a
+              <literal>vboxdrmipc</literal> user group. A corresponding
+              user needs to be added to this group.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              You must set the <literal>DRMIpcRestricted</literal> guest
+              property, as follows:
+            </para>
 
 <screen>VBoxManage guestproperty set "VM name" /VirtualBox/GuestAdd/DRMIpcRestricted 1 \
 --flags RDONLYGUEST</screen>
-        </para>
+
+            <para>
+              It is important to set only the RDONLYGUEST flag for the
+              property, so that it cannot be changed from inside the
+              guest.
+            </para>
+          </listitem>
+
+        </orderedlist>
+
+        <note>
+          <para>
+            Both steps are required. If one of them is missing, all
+            processes will have access to the IPC socket.
+          </para>
+        </note>
 
         <para>
-          Note, it is important to set RDONLYGUEST flag to the property, so
-          it cannot be changed from inside guest. All actions are required. If one of
-          them is missing, all processes will have access to IPC socket. Restricted
-          mode can be disabled by deleting guest property:
+          Restricted mode can be disabled by unsetting the guest
+          property, as follows:
+        </para>
 
 <screen>VBoxManage guestproperty unset "VM name" /VirtualBox/GuestAdd/DRMIpcRestricted</screen>
-        </para>
 
       </sect3>
 
@@ -979,8 +1053,7 @@
               Mount the <filename>VBoxGuestAdditions.iso</filename> file
               as your Oracle Solaris guest's virtual CD-ROM drive,
               exactly the same way as described for a Windows guest in
-              <xref
-            linkend="mountingadditionsiso" />.
+              <xref linkend="mountingadditionsiso" />.
             </para>
 
             <para>
@@ -1011,6 +1084,27 @@
           </listitem>
 
         </orderedlist>
+
+      </sect3>
+
+      <sect3 id="additions-solaris-install-unattended">
+
+        <title>Unattended Installation of the Oracle Solaris Guest Additions</title>
+
+        <para>
+          You can configure unattended installation of the
+          &product-name; Guest Additions when you create a new VM using
+          the <emphasis role="bold">Create Virtual Machine</emphasis>
+          wizard. Select the <emphasis role="bold">Guest
+          Additions</emphasis> check box on the
+          <emphasis role="bold">Unattended Guest OS Install</emphasis>
+          page of the wizard.
+        </para>
+
+        <para>
+          Guest Additions are installed automatically, following
+          completion of the guest OS installation.
+        </para>
 
       </sect3>
 
@@ -1124,7 +1218,7 @@
         <para>
           If a VM is not currently running, you can configure shared
           folders in the virtual machine's
-          <emphasis role="bold">Settings</emphasis> dialog.
+          <emphasis role="bold">Settings</emphasis> window.
         </para>
       </listitem>
 
@@ -1159,9 +1253,9 @@
         <para>
           Transient shares, that are added at runtime and disappear when
           the VM is powered off. These can be created using a check box
-          in the VirtualBox Manager, or by using the
-          <option>--transient</option> option of the <command>VBoxManage
-          sharedfolder add</command> command.
+          in &vbox-mgr;, or by using the <option>--transient</option>
+          option of the <command>VBoxManage sharedfolder add</command>
+          command.
         </para>
       </listitem>
 
@@ -1172,8 +1266,8 @@
       that the guest is either allowed to both read and write, or just
       read files on the host. By default, shared folders are read-write.
       Read-only folders can be created using a check box in the
-      VirtualBox Manager, or with the <option>--readonly</option> option
-      of the <command>VBoxManage sharedfolder add</command> command.
+      &vbox-mgr;, or with the <option>--readonly</option> option of the
+      <command>VBoxManage sharedfolder add</command> command.
     </para>
 
     <para>
@@ -1187,7 +1281,7 @@
       <listitem>
         <para>
           The host operating system must support symlinks. For example,
-          a Mac OS X, Linux, or Oracle Solaris host is required.
+          a macOS, Linux, or Oracle Solaris host is required.
         </para>
       </listitem>
 
@@ -1278,9 +1372,9 @@
           <para>
             Replace <replaceable>sharename</replaceable>, use a
             lowercase string, with the share name specified with
-            <command>VBoxManage</command> or the VirtualBox Manager.
-            Replace <replaceable>mountpoint</replaceable> with the path
-            where you want the share to be mounted on the guest, such as
+            <command>VBoxManage</command> or &vbox-mgr;. Replace
+            <replaceable>mountpoint</replaceable> with the path where
+            you want the share to be mounted on the guest, such as
             <filename>/mnt/share</filename>. The usual mount rules
             apply. For example, create this directory first if it does
             not exist yet.
@@ -1492,7 +1586,7 @@ VBoxControl sharedfolder list</screen>
 
     <figure id="fig-drag-drop-options">
       <title>Drag and Drop Menu Options</title>
-    <mediaobject>
+     <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/dnd-modes.png"
                    width="10cm" />
@@ -1541,7 +1635,7 @@ VBoxControl sharedfolder list</screen>
     <note>
       <para>
         Drag and drop support depends on the frontend being used. At the
-        moment, only the VirtualBox Manager frontend provides this
+        moment, only the &vbox-mgr; frontend provides this
         functionality.
       </para>
     </note>
@@ -1798,7 +1892,7 @@ VBoxControl sharedfolder list</screen>
         clip, then &product-name; will attempt to use your host's video
         acceleration hardware instead of performing overlay stretching
         and color conversion in software, which would be slow. This
-        currently works for Windows, Linux and Mac OS X host platforms,
+        currently works for Windows, Linux and macOS host platforms,
         provided that your host operating system can make use of 2D
         video acceleration in the first place.
       </para>
@@ -1885,7 +1979,7 @@ VBoxControl sharedfolder list</screen>
 
     <figure id="fig-seamless-windows">
       <title>Seamless Windows on a Host Desktop</title>
-    <mediaobject>
+     <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/seamless.png" width="14cm" />
         </imageobject>
@@ -2096,14 +2190,27 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       to create new folders and to rename or delete files.
     </para>
 
+    <para>
+      This feature is useful when the VM window of a guest is not
+      visible. For example, when the guest is running in headless mode.
+    </para>
+
+    <note>
+      <para>
+        To use the Guest Control File Manager, the guest must be
+        running. For powered-off guests, it is disabled automatically.
+      </para>
+    </note>
+
     <figure id="fig-guest-control-fm">
       <title>Guest Control File Manager</title>
-    <mediaobject>
+     <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/guest-fm.png"
             width="12cm" />
         </imageobject>
       </mediaobject>
+
     </figure>
 
     <para>
@@ -2125,14 +2232,29 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
 
         <listitem>
           <para>
-            Open the Guest Control File Manager.
+            Open the Guest Control File Manager. Do either of the
+            following:
           </para>
 
-          <para>
-            In the guest VM, select
-            <emphasis role="bold">Machine</emphasis>,
-            <emphasis role="bold">File Manager</emphasis>.
-          </para>
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                In the guest VM, select
+                <emphasis role="bold">Machine</emphasis>,
+                <emphasis role="bold">File Manager</emphasis>.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                In &vbox-mgr;, click on the machine name. Click
+                <emphasis role="bold">File Manager</emphasis> in the
+                machine tools menu for the VM.
+              </para>
+            </listitem>
+
+          </itemizedlist>
 
           <para>
             The left pane shows the files on the host system.
@@ -2166,8 +2288,8 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
           </para>
 
           <para>
-            You can copy and move files from a guest to the host system
-            or from the host system to the guest.
+            You can copy and move files from the guest to the host
+            system or from the host system to the guest.
           </para>
         </listitem>
 
@@ -2250,7 +2372,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
           <listitem>
             <para>
               &product-name; supports memory ballooning only on 64-bit
-              hosts. It is not supported on Mac OS X hosts.
+              hosts. It is not supported on macOS hosts.
             </para>
           </listitem>
 
@@ -2357,7 +2479,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       <note>
         <para>
           &product-name; supports Page Fusion only on 64-bit hosts, and
-          it is not supported on Mac OS X hosts. Page Fusion currently
+          it is not supported on macOS hosts. Page Fusion currently
           works only with Windows 2000 and later guests.
         </para>
       </note>
@@ -2468,54 +2590,60 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
         system's monitor topology. Monitor topology means the resolution
         of each virtual monitor and its state (disabled/enabled). The
         resolution of a virtual monitor can be modified from the host
-        side either by resizing the window that hosts the virtual monitor,
-        through the view menu or through
-        <code>VBoxManage controlvm "vmname" setscreenlayout</code>.
-        On guest operating systems with X11/Wayland desktops this is
-        put into effect by either of two following services:
+        side either by resizing the window that hosts the virtual
+        monitor, by using the <emphasis role="bold">View</emphasis> menu
+        or the <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> setscreenlayout</command>
+        command. On guest operating systems with X11/Wayland desktops
+        this is put into effect by either of the following two services:
       </para>
 
-      <screen>
+<screen>
         VBoxClient --vmsvga
         VBoxDRMClient
       </screen>
 
       <para>
-        Here are some details about guest screen resolution control
-        functionality:
+        The following are some details about guest screen resolution
+        control functionality:
       </para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            On X11/Wayland desktops the resizing service is started during
-            desktop session initialization, that is desktop login. On X11
-            desktops <code>VBoxClient --vmsvga</code> handles screen
-            topology through the RandR extension.
-            On Wayland clients <code>VBoxDRMClient</code> is used. The
-            decision is made automatically at each desktop session start.
+            On X11/Wayland desktops the resizing service is started
+            during desktop session initialization, that is desktop
+            login. On X11 desktops <code>VBoxClient --vmsvga</code>
+            handles screen topology through the RandR extension. On
+            Wayland clients <code>VBoxDRMClient</code> is used. The
+            decision is made automatically at each desktop session
+            start.
           </para>
         </listitem>
+
         <listitem>
           <para>
-            On 32 bit guest operating systems <code>VBoxDRMClient</code>
-            is always used, in order to work around bugs.
+            On 32-bit guest operating systems
+            <command>VBoxDRMClient</command> is always used, in order to
+            work around bugs.
           </para>
         </listitem>
+
         <listitem>
           <para>
-            Since the mentioned monitor topology control services are
-            initialized during the desktop session start, it is impossible
-            to control the monitor resolution of display managers such as
-            gdm, lightdm. This default behavior can be changed by setting
-            the guest property <code>/VirtualBox/GuestAdd/DRMResize</code>
-            of the virtual machine to any value. Please refer to
-            <xref linkend="guestadd-guestprops" /> for updating guest
-            properties. When this guest property is set then
-            <code>VBoxDRMClient</code> is started during the guest OS boot
-            and stays active all the time, for both ithe display manager
-            login screen and the desktop session.
+            Since the monitor topology control services are initialized
+            during the desktop session start, it is impossible to
+            control the monitor resolution of display managers such as
+            GDM or LightDM. This default behavior can be changed by
+            setting the guest property
+            <literal>/VirtualBox/GuestAdd/DRMResize</literal> of the
+            virtual machine to any value. See
+            <xref linkend="guestadd-guestprops" /> for details of how to
+            update guest properties. When this guest property is set
+            then <command>VBoxDRMClient</command> is started during the
+            guest OS boot and stays active all the time, for both the
+            display manager login screen and the desktop session.
           </para>
         </listitem>
 
@@ -2524,13 +2652,15 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       <sect3 id="guestadd-resizing-linux-limitations">
 
         <title>Known Limitations</title>
+
         <para>
-          <code>VBoxDRMClient</code> is not able to handle arbitrary guest
-          monitor topologies. Specifically, disabling a guest monitor
-          (except the last one) invalidates the monitor topology due to
-          limitations in the Linux kernel module <code>vmwgfx.ko</code>.
-          iFor example, when the guest is configured to have 4 monitors
-          it is not recommended to disable the 2nd or 3rd monitor.
+          <command>VBoxDRMClient</command> is not able to handle
+          arbitrary guest monitor topologies. Specifically, disabling a
+          guest monitor that is not the last one invalidates the monitor
+          topology due to limitations in the
+          <literal>vmwgfx.ko</literal> Linux kernel module. For example,
+          when the guest is configured to have four monitors it is not
+          recommended to disable the second or third monitor.
         </para>
 
       </sect3>

@@ -65,10 +65,9 @@
 
     <para>
       Even when the extension is installed, the VRDP server is disabled
-      by default. It can easily be enabled on a per-VM basis either in
-      the VirtualBox Manager in the
-      <emphasis role="bold">Display</emphasis> settings, see
-      <xref linkend="settings-display" />, or with the
+      by default. It can easily be enabled on a per-VM basis either from
+      &vbox-mgr; in the <emphasis role="bold">Display</emphasis>
+      settings, see <xref linkend="settings-display" />, or with the
       <command>VBoxManage</command> command, as follows:
     </para>
 
@@ -102,10 +101,10 @@
     <para>
       The actual port used by a running VM can be either queried with
       the <command>VBoxManage showvminfo</command> command or seen in
-      the GUI on the <emphasis role="bold">Runtime</emphasis> tab of the
-      <emphasis role="bold">Session Information</emphasis> dialog, which
-      is accessible from the <emphasis role="bold">Machine</emphasis>
-      menu of the VM window.
+      &vbox-mgr; on the <emphasis role="bold">Runtime</emphasis> tab of
+      the <emphasis role="bold">Session Information</emphasis> dialog,
+      which is accessible from the
+      <emphasis role="bold">Machine</emphasis> menu of the VM window.
     </para>
 
     <para>
@@ -250,17 +249,17 @@
       <title>VBoxHeadless, the Remote Desktop Server</title>
 
       <para>
-        While any VM started from the VirtualBox Manager is capable of
-        running virtual machines remotely, it is not convenient to have
-        to run the full GUI if you never want to have VMs displayed
-        locally in the first place. In particular, if you are running
-        server hardware whose only purpose is to host VMs, and all your
-        VMs are supposed to run remotely over VRDP, then it is pointless
-        to have a graphical user interface on the server at all. This is
+        While any VM started from &vbox-mgr; is capable of running
+        virtual machines remotely, it is not convenient to have to run
+        the full GUI if you never want to have VMs displayed locally in
+        the first place. In particular, if you are running server
+        hardware whose only purpose is to host VMs, and all your VMs are
+        supposed to run remotely over VRDP, then it is pointless to have
+        a graphical user interface on the server at all. This is
         especially true for Linux or Oracle Solaris hosts, as the
-        VirtualBox Manager comes with dependencies on the Qt and SDL
-        libraries. This is inconvenient if you would rather not have the
-        X Window system on your server at all.
+        &vbox-mgr; comes with dependencies on the Qt and SDL libraries.
+        This is inconvenient if you would rather not have the X Window
+        system on your server at all.
       </para>
 
       <para>
@@ -324,11 +323,10 @@
 
         <listitem>
           <para>
-            Start <command>VBoxHeadless</command> from the VirtualBox
-            Manager GUI, by pressing the Shift key when starting a
-            virtual machine or by selecting
-            <emphasis role="bold">Headless Start</emphasis> from the
-            <emphasis role="bold">Machine</emphasis> menu.
+            Start <command>VBoxHeadless</command> from &vbox-mgr;, by
+            pressing the Shift key when starting a virtual machine or by
+            selecting <emphasis role="bold">Headless Start</emphasis>
+            from the <emphasis role="bold">Machine</emphasis> menu.
           </para>
         </listitem>
 
@@ -573,7 +571,7 @@
         &product-name; versions.
       </para>
 
-    </sect2>
+      </sect2>
 
     <sect2 id="vbox-auth">
 
@@ -637,7 +635,7 @@
 
                 <listitem>
                   <para>
-                    On Mac OS X hosts, <command>VBoxAuth.dylib</command>
+                    On macOS hosts, <command>VBoxAuth.dylib</command>
                     authenticates users against the host's directory
                     service.
                   </para>
@@ -1068,7 +1066,7 @@ $ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/
       &product-name; host to another, while the virtual machine is
       running. This works regardless of the host operating system that
       is running on the hosts. You can teleport virtual machines between
-      Oracle Solaris and Mac OS X hosts, for example.
+      Oracle Solaris and macOS hosts, for example.
     </para>
 
     <para>

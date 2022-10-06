@@ -32,7 +32,7 @@
   <para>
     As installation of &product-name; varies depending on your host
     operating system, the following sections provide installation
-    instructions for Windows, Mac OS X, Linux, and Oracle Solaris.
+    instructions for Windows, macOS, Linux, and Oracle Solaris.
   </para>
 
   <sect1 id="installation_windows">
@@ -418,16 +418,16 @@
 
   <sect1 id="installation-mac">
 
-    <title>Installing on Mac OS X Hosts</title>
+    <title>Installing on macOS Hosts</title>
 
     <sect2 id="install-mac-performing">
 
       <title>Performing the Installation</title>
 
       <para>
-        For Mac OS X hosts, &product-name; ships in a
+        For macOS hosts, &product-name; ships in a
         <filename>dmg</filename> disk image file. Perform the following
-        steps to install on a Mac OS X host:
+        steps to install on a macOS host:
       </para>
 
       <orderedlist>
@@ -564,8 +564,8 @@
         a driver module called <command>vboxdrv</command> into the
         system kernel. The kernel is the part of the operating system
         which controls your processor and physical hardware. Without
-        this kernel module, you can still use the VirtualBox Manager to
-        configure virtual machines, but they will not start.
+        this kernel module, you can still use &vbox-mgr; to configure
+        virtual machines, but they will not start.
       </para>
 
       <para>
@@ -1417,6 +1417,115 @@ zonecfg:vboxzone&gt;exit</screen>
       <para>
         Reboot the zone using <command>zoneadm</command> and you should
         be able to run &product-name; from within the configured zone.
+      </para>
+
+    </sect2>
+
+  </sect1>
+
+  <sect1 id="install-ext-pack">
+
+    <title>Installing an Extension Pack</title>
+
+    <para>
+      Extension packs provide extra functionality to the &product-name;
+      base package, such as extended USB device support and cloud
+      integration features. See <xref linkend="intro-installing"/>.
+    </para>
+
+    <para>
+      To install an &product-name; extension pack, do the following:
+    </para>
+
+    <orderedlist>
+
+      <listitem>
+        <para>
+          Double-click on the extension package file name.
+        </para>
+
+        <para>
+          &product-name; extension packs have a
+          <filename>.vbox-extpack</filename> file name extension.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Follow the on-screen instructions to install the extension
+          pack.
+        </para>
+      </listitem>
+
+    </orderedlist>
+
+    <para>
+      You can also use the Extension Pack Manager tool to install an
+      extension pack. See <xref linkend="install-ext-pack-manager"/>.
+    </para>
+
+    <sect2 id="install-ext-pack-manager">
+
+      <title>The Extension Pack Manager</title>
+
+      <para>
+        Extension packs can be installed and managed using the
+        <emphasis role="bold">Extension Pack Manager</emphasis> tool in
+        &vbox-mgr;.
+      </para>
+
+      <para>
+        The Extension Pack Manager lists the extension packs that are
+        currently installed on the host, and enables you to install and
+        uninstall extension packs.
+      </para>
+
+      <para>
+        To display the Extension Pack Manager, go to the global
+        <emphasis role="bold">Tools</emphasis> menu and click
+        <emphasis role="bold">Extensions</emphasis>. The Extension Pack
+        Manager is shown.
+      </para>
+
+      <para>
+        To install an extension pack using the Extension Pack Manager,
+        click <emphasis role="bold">Install</emphasis> and select an
+        extension package file. The extension pack is installed on the
+        host and listed in Extension Pack Manager.
+      </para>
+
+      <para>
+        To uninstall an extension pack with the Extension Pack Manager,
+        do the following:
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Select the extension pack in the Extension Pack Manager
+            window and click <emphasis role="bold">Uninstall</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click <emphasis role="bold">Remove</emphasis> in the prompt
+            dialog.
+          </para>
+
+          <para>
+            The extension pack is uninstalled from the host and removed
+            from the Extension Pack Manager.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+      <para>
+        Alternatively, you can use the <command>VBoxManage</command>
+        command line to install and manage &product-name; extension
+        packs. See <xref linkend="vboxmanage-extpack" />.
       </para>
 
     </sect2>

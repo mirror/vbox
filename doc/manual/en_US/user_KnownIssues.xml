@@ -65,7 +65,7 @@
 
       <listitem>
         <para>
-          Mac OS X guests (Mac OS X hosts only)
+          Mac OS X guests (macOS hosts only)
         </para>
       </listitem>
 
@@ -114,6 +114,16 @@
     </para>
 
     <itemizedlist>
+
+      <listitem>
+        <para>
+          The macOS installer packages for &product-name; 7 currently do
+          not include the Internal Networking feature, which is
+          available on all other platforms. This will be addressed with
+          an update of &product-name; 7. For setups which depend on this
+          functionality it is best to keep using &product-name; 6.1.
+        </para>
+      </listitem>
 
       <listitem>
         <para>
@@ -277,14 +287,14 @@
       <listitem>
         <para>
           Preserving the aspect ratio in scale mode works only on
-          Windows hosts and on Mac OS X hosts.
+          Windows hosts and on macOS hosts.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          On <emphasis role="bold">Mac OS X hosts,</emphasis> the
-          following features are not yet implemented:
+          On <emphasis role="bold">macOS hosts</emphasis>, the following
+          features are not yet implemented:
         </para>
 
         <itemizedlist>
@@ -308,6 +318,13 @@
           </listitem>
 
         </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">macOS/ARM64 (Apple silicon) host
+          package</emphasis>
+        </para>
       </listitem>
 
       <listitem>

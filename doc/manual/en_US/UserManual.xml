@@ -20,6 +20,7 @@
 
     SPDX-License-Identifier: GPL-3.0-only
 -->
+
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
   "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
 <!ENTITY % all.entities SYSTEM "all-entities.ent">
