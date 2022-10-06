@@ -2559,9 +2559,7 @@ static void pgmGstFlushPaePdpes(PVMCPU pVCpu)
  */
 static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3)
 {
-# if 0
     if (uCr3 != pVCpu->pgm.s.GCPhysNstGstCR3)
-# endif
     {
         PGMPTWALK    Walk;
         PGMPTWALKGST GstWalk;
@@ -2581,14 +2579,12 @@ static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPh
         return rc;
     }
 
-# if 0
     /*
      * If the nested-guest CR3 has not changed, then the previously
      * translated CR3 result (i.e. GCPhysCR3) is passed back.
      */
     *pGCPhysCr3 = pVCpu->pgm.s.GCPhysCR3;
     return VINF_SUCCESS;
-# endif
 }
 #endif
 
