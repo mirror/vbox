@@ -24,13 +24,14 @@
     <name>multimedia keys</name>
     <id>80b4c26e-43fc-44f8-b515-351cff9269ce</id>
     <row>
-        <key><!-- Power -->
+        <key><!-- Poweroff -->
             <position>317</position>
             <usageid>0x81</usageid>
             <usagepage>0x01</usagepage>
             <scancodeprefix></scancodeprefix>
             <scancode></scancode>
-            <staticcaption>⭘</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_poweroff_32px.png</image>
         </key>
         <key><!-- WWW back -->
             <position>300</position>
@@ -38,7 +39,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x6A</scancode>
-            <staticcaption>🡄</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_backward_32px.png</image>
         </key>
         <key><!-- WWW home -->
             <position>301</position>
@@ -46,7 +48,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x32</scancode>
-            <staticcaption>🏠</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_home_32px.png</image>
         </key>
         <key><!-- WWW forward -->
             <position>302</position>
@@ -54,7 +57,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x69</scancode>
-            <staticcaption>🡆</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_forward_32px.png</image>
         </key>
         <key><!-- WWW reload -->
             <position>315</position>
@@ -62,7 +66,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x67</scancode>
-            <staticcaption>🗘</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_reload_32px.png</image>
         </key>
         <key><!-- WWW stop -->
             <position>314</position>
@@ -70,7 +75,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x68</scancode>
-            <staticcaption>🗙</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_stop_32px.png</image>
         </key>
         <key><!-- WWW Search -->
             <position>313</position>
@@ -78,7 +84,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x65</scancode>
-            <staticcaption>🔍</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_search_32px.png</image>
         </key>
         <space>
             <width>0</width>
@@ -89,7 +96,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x10</scancode>
-            <staticcaption>⏮️</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_previous_track_32px.png</image>
         </key>
         <key><!-- Next Media Track-->
             <position>308</position>
@@ -97,16 +105,17 @@
             <usagepage>0x0C</usagepage>
             <scancode>0x19</scancode>
             <scancodeprefix>0xE0</scancodeprefix>
-            <staticcaption>⏭️</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_next_track_32px.png</image>
         </key>
-
         <key><!-- Stop -->
             <position>309</position>
             <usageid>0xB7</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x24</scancode>
             <scancodeprefix>0xE0</scancodeprefix>
-            <staticcaption>⏹️</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_media_stop_32px.png</image>
         </key>
         <key><!-- Play/Pause -->
             <position>310</position>
@@ -114,18 +123,20 @@
             <usagepage>0x0C</usagepage>
             <scancode>0x22</scancode>
             <scancodeprefix>0xE0</scancodeprefix>
-            <staticcaption>⏯️</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_play_pause_32px.png</image>
         </key>
         <space>
             <width>0</width>
         </space>
-        <key><!-- Mail -->
+        <key><!-- EMail -->
             <position>303</position>
             <usageid>0x018A</usageid>
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x6C</scancode>
-            <staticcaption>✉</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_email_32px.png</image>
         </key>
         <key><!-- Calculator -->
             <position>311</position>
@@ -133,7 +144,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x21</scancode>
-            <staticcaption>🖩️</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_calculator_32px.png</image>
         </key>
         <key><!-- My Computer -->
             <position>312</position>
@@ -141,7 +153,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x6B</scancode>
-            <staticcaption>💻️️</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_mycomputer_32px.png</image>
         </key>
         <key><!-- Media -->
             <position>316</position>
@@ -149,7 +162,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x6D</scancode>
-            <staticcaption>♬</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_media_32px.png</image>
         </key>
         <space>
             <width>0</width>
@@ -160,7 +174,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x20</scancode>
-            <staticcaption>🔇</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_mute_32px.png</image>
         </key>
         <key><!-- Volume Down -->
             <position>305</position>
@@ -168,7 +183,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x2E</scancode>
-            <staticcaption>🔉</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_volume_down_32px.png</image>
         </key>
         <key><!-- Volume Up -->
             <position>306</position>
@@ -176,7 +192,8 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x30</scancode>
-            <staticcaption>🔊</staticcaption>
+            <staticcaption></staticcaption>
+            <image>soft_keyboard_multimedia_volume_up_32px.png</image>
         </key>
         <space>
             <height>0</height>

@@ -446,6 +446,9 @@ public:
     void setStaticCaption(const QString &strCaption);
     const QString &staticCaption() const;
 
+    void setImageByName(const QString &strCaption);
+    const QImage &image() const;
+
     void setParentWidget(UISoftKeyboardWidget* pParent);
     QVector<LONG> scanCodeWithPrefix() const;
 
@@ -512,6 +515,7 @@ private:
     QString m_strStaticCaption;
     bool    m_fIsOSMenuKey;
     double  m_fCornerRadius;
+    QImage  m_image;
 };
 
 
@@ -567,6 +571,7 @@ public:
     QUuid uid() const;
 
     void drawTextInRect(const UISoftKeyboardKey &key, QPainter &painter);
+    void drawKeyImageInRect(const UISoftKeyboardKey &key, QPainter &painter);
 
 private:
 
@@ -1723,6 +1728,18 @@ const QString &UISoftKeyboardKey::staticCaption() const
     return m_strStaticCaption;
 }
 
+void UISoftKeyboardKey::setImageByName(const QString &strImageFileName)
+{
+    if (strImageFileName.isEmpty())
+        return;
+    m_image = QImage(QString(":/%1").arg(strImageFileName));
+}
+
+const QImage &UISoftKeyboardKey::image() const
+{
+    return m_image;
+}
+
 void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
 {
     m_pParentWidget = pParent;
@@ -2150,7 +2167,6 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
      {
          painter.drawText(QRect(0, 0, keyGeometry.width(), keyGeometry.height()),
                           Qt::AlignHCenter | Qt::AlignVCenter, strTopleftString);
-
      }
      else
      {
@@ -2161,6 +2177,16 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
      }
 }
 
+void UISoftKeyboardLayout::drawKeyImageInRect(const UISoftKeyboardKey &key, QPainter &painter)
+{
+    if (key.image().isNull())
+        return;
+    const QRect &keyGeometry = key.keyGeometry();
+    int iMargin = 0.1 * qMax(keyGeometry.width(), keyGeometry.height());
+    int size = qMin(keyGeometry.width() - 2 * iMargin, keyGeometry.height() - 2 * iMargin);
+    painter.drawImage(QRect(0.5 * (keyGeometry.width() - size), 0.5 * (keyGeometry.height() - size),
+                            size, size), key.image());
+}
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardColorTheme implementation.                                                                                     *
@@ -2316,6 +2342,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     painterFont.setBold(true);
     painter.setFont(painterFont);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
     painter.scale(m_fScaleFactorX, m_fScaleFactorY);
     int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
     float fLedRadius =  0.8 * unitSize;
@@ -2362,7 +2389,10 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             /* Draw the key shape: */
             painter.drawPath(key.painterPath());
 
-            currentLayout.drawTextInRect(key, painter);
+            if (key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
+                currentLayout.drawKeyImageInRect(key, painter);
+            else
+                currentLayout.drawTextInRect(key, painter);
             /* Draw small LED like circles on the modifier/lock keys: */
             if (key.type() != KeyType_Ordinary)
             {
@@ -3429,6 +3459,8 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         }
         else if (m_xmlReader.name() == QLatin1String("staticcaption"))
             key.setStaticCaption(m_xmlReader.readElementText());
+        else if (m_xmlReader.name() == QLatin1String("image"))
+            key.setImageByName(m_xmlReader.readElementText());
         else
             m_xmlReader.skipCurrentElement();
     }
