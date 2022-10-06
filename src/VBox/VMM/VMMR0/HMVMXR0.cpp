@@ -6697,7 +6697,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
 
 #ifdef HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
-            hmR0VmxReadAllRoFieldsVmcs(pVmxTransient);
+            vmxHCReadAllRoFieldsVmcs(pVCpu, pVmxTransient);
 #endif
 
             /*
