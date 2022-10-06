@@ -4942,6 +4942,61 @@ static int supdrvNtProtectVerifyStubForVmProcess(PSUPDRVNTPROTECT pNtProtect, PR
 }
 
 
+static const char *supdrvNtProtectHandleTypeIndexToName(ULONG idxType, char *pszName, size_t cbName)
+{
+    /*
+     * Query the object types.
+     */
+    uint32_t  cbBuf    = _8K;
+    uint8_t  *pbBuf    = (uint8_t *)RTMemAllocZ(_8K);
+    ULONG     cbNeeded = cbBuf;
+    NTSTATUS rcNt = NtQueryObject(NULL, ObjectTypesInformation, pbBuf, cbBuf, &cbNeeded);
+    while (rcNt == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        cbBuf = RT_ALIGN_32(cbNeeded + 256, _64K);
+        RTMemFree(pbBuf);
+        pbBuf = (uint8_t *)RTMemAllocZ(cbBuf);
+        if (pbBuf)
+            rcNt = NtQueryObject(NULL, ObjectTypesInformation, pbBuf, cbBuf, &cbNeeded);
+        else
+            break;
+    }
+    if (NT_SUCCESS(rcNt))
+    {
+        Assert(cbNeeded <= cbBuf);
+
+        POBJECT_TYPES_INFORMATION pObjTypes = (OBJECT_TYPES_INFORMATION *)pbBuf;
+        POBJECT_TYPE_INFORMATION  pCurType  = &pObjTypes->FirstType;
+        ULONG cLeft = pObjTypes->NumberOfTypes;
+        while (cLeft-- > 0 && (uintptr_t)&pCurType[1] - (uintptr_t)pbBuf < cbNeeded)
+        {
+            if (pCurType->TypeIndex == idxType)
+            {
+                PCRTUTF16 const pwszSrc = pCurType->TypeName.Buffer;
+                AssertBreak(pwszSrc);
+                size_t          idxName = pCurType->TypeName.Length / sizeof(RTUTF16);
+                AssertBreak(idxName > 0);
+                AssertBreak(idxName < 128);
+                if (idxName >= cbName)
+                    idxName = cbName - 1;
+                pszName[idxName] = '\0';
+                while (idxName-- > 0)
+                    pszName[idxName] = (char )pwszSrc[idxName];
+                RTMemFree(pbBuf);
+                return pszName;
+            }
+
+            /* next */
+            pCurType = (POBJECT_TYPE_INFORMATION)(  (uintptr_t)pCurType->TypeName.Buffer
+                                                  + RT_ALIGN_32(pCurType->TypeName.MaximumLength, sizeof(uintptr_t)));
+        }
+    }
+
+    RTMemFree(pbBuf);
+    return "unknown";
+}
+
+
 /**
  * Worker for supdrvNtProtectVerifyProcess that verifies the handles to a VM
  * process and its thread.
@@ -5008,6 +5063,10 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
     uint32_t cEvilThreadHandles    = 0;
     uint32_t cBenignThreadHandles  = 0;
 
+    uint32_t cEvilInheritableHandles   = 0;
+    uint32_t cBenignInheritableHandles = 0;
+    char     szTmpName[32];
+
     SYSTEM_HANDLE_INFORMATION_EX const *pInfo = (SYSTEM_HANDLE_INFORMATION_EX const *)pbBuf;
     ULONG_PTR i = pInfo->NumberOfHandles;
     AssertRelease(RT_UOFFSETOF_DYN(SYSTEM_HANDLE_INFORMATION_EX, Handles[i]) == cbNeeded);
@@ -5070,6 +5129,37 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
             cEvilThreadHandles++;
             pszType = "thread";
         }
+        else if (   (pHandleInfo->HandleAttributes & OBJ_INHERIT)
+                 && pHandleInfo->UniqueProcessId == hProtectedPid)
+        {
+            /* No handles should be marked inheritable, except files and two events.
+               Handles to NT 'directory' objects are especially evil, because of
+               KnownDlls faking. See bugref{10294} for details.
+
+               Correlating the ObjectTypeIndex to a type is complicated, so instead
+               we try referecing the handle and check the type that way.  So, only
+               file and events objects are allowed to be marked inheritable at the
+               moment. Add more in whitelist fashion if needed. */
+            void *pvObject = NULL;
+            rcNt = ObReferenceObjectByHandle(pHandleInfo->HandleValue, 0, *IoFileObjectType, KernelMode, &pvObject, NULL);
+            if (rcNt == STATUS_OBJECT_TYPE_MISMATCH)
+                rcNt = ObReferenceObjectByHandle(pHandleInfo->HandleValue, 0, *ExEventObjectType, KernelMode, &pvObject, NULL);
+            if (NT_SUCCESS(rcNt))
+            {
+                ObDereferenceObject(pvObject);
+                cBenignInheritableHandles++;
+                continue;
+            }
+
+            if (rcNt != STATUS_OBJECT_TYPE_MISMATCH)
+            {
+                cBenignInheritableHandles++;
+                continue;
+            }
+
+            cEvilInheritableHandles++;
+            pszType = supdrvNtProtectHandleTypeIndexToName(pHandleInfo->ObjectTypeIndex, szTmpName, sizeof(szTmpName));
+        }
         else
             continue;
 
@@ -5099,15 +5189,15 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
 # endif
             || g_pfnObRegisterCallbacks)
         {
-            LogRel(("vboxdrv: Found evil handle to budding VM process: pid=%p h=%p acc=%#x attr=%#x type=%s\n",
+            LogRel(("vboxdrv: Found evil handle to budding VM process: pid=%p h=%p acc=%#x attr=%#x type=%s (%u)\n",
                     pHandleInfo->UniqueProcessId, pHandleInfo->HandleValue,
-                    pHandleInfo->GrantedAccess, pHandleInfo->HandleAttributes, pszType));
+                    pHandleInfo->GrantedAccess, pHandleInfo->HandleAttributes, pszType, pHandleInfo->ObjectTypeIndex));
             rc = RTErrInfoAddF(pErrInfo, VERR_SUPDRV_HARDENING_EVIL_HANDLE,
                                *pErrInfo->pszMsg
-                               ? "\nFound evil handle to budding VM process: pid=%p h=%p acc=%#x attr=%#x type=%s"
-                               : "Found evil handle to budding VM process: pid=%p h=%p acc=%#x attr=%#x type=%s",
+                               ? "\nFound evil handle to budding VM process: pid=%p h=%p acc=%#x attr=%#x type=%s (%u)"
+                               : "Found evil handle to budding VM process: pid=%p h=%p acc=%#x attr=%#x type=%s (%u)",
                                pHandleInfo->UniqueProcessId, pHandleInfo->HandleValue,
-                               pHandleInfo->GrantedAccess, pHandleInfo->HandleAttributes, pszType);
+                               pHandleInfo->GrantedAccess, pHandleInfo->HandleAttributes, pszType, pHandleInfo->ObjectTypeIndex);
 
             /* Try add the process name. */
             PEPROCESS pOffendingProcess;

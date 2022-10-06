@@ -2485,6 +2485,113 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis)
 }
 
 
+#ifdef IN_RING3
+/**
+ * Verifies that we don't have any inheritable handles around, other than a few
+ * ones for file and event objects.
+ *
+ * When finding an inheritable handle of a different type, it will change it to
+ * non-inhertiable.  This must NOT be called in the final process prior to
+ * opening the device!
+ *
+ * @returns VBox status code
+ * @param   pThis               The process scanning state structure.
+ */
+static int supHardNtVpCheckHandles(PSUPHNTVPSTATE pThis)
+{
+    SUP_DPRINTF(("supHardNtVpCheckHandles:\n"));
+
+    /*
+     * Take a snapshot of all the handles in the system.
+     * (Because the current process handle snapshot was added in Windows 8,
+     * so we cannot use that yet.)
+     */
+    uint32_t    cbBuf    = _256K;
+    uint8_t    *pbBuf    = (uint8_t *)RTMemAlloc(cbBuf);
+    ULONG       cbNeeded = cbBuf;
+    NTSTATUS rcNt = NtQuerySystemInformation(SystemExtendedHandleInformation, pbBuf, cbBuf, &cbNeeded);
+    if (!NT_SUCCESS(rcNt))
+    {
+        while (   rcNt == STATUS_INFO_LENGTH_MISMATCH
+               && cbNeeded > cbBuf
+               && cbBuf <= _32M)
+        {
+            cbBuf = RT_ALIGN_32(cbNeeded + _4K, _64K);
+            RTMemFree(pbBuf);
+            pbBuf = (uint8_t *)RTMemAlloc(cbBuf);
+            if (!pbBuf)
+                return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_MEMORY, "Failed to allocate %zu bytes querying handles.", cbBuf);
+            rcNt = NtQuerySystemInformation(SystemExtendedHandleInformation, pbBuf, cbBuf, &cbNeeded);
+        }
+        if (!NT_SUCCESS(rcNt))
+        {
+            RTMemFree(pbBuf);
+            return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_MEMORY, "Failed to allocate %zu bytes querying handles.", cbBuf);
+        }
+    }
+
+    /*
+     * Examine the snapshot for handles for this process.
+     */
+    int                                 rcRet     = VINF_SUCCESS;
+    HANDLE const                        idProcess = RTNtCurrentTeb()->ClientId.UniqueProcess;
+    SYSTEM_HANDLE_INFORMATION_EX const *pInfo     = (SYSTEM_HANDLE_INFORMATION_EX const *)pbBuf;
+    ULONG_PTR                           i         = pInfo->NumberOfHandles;
+    AssertRelease(RT_UOFFSETOF_DYN(SYSTEM_HANDLE_INFORMATION_EX, Handles[i]) == cbNeeded);
+    while (i-- > 0)
+    {
+        SYSTEM_HANDLE_ENTRY_INFO_EX const *pHandleInfo = &pInfo->Handles[i];
+        if (   (pHandleInfo->HandleAttributes & OBJ_INHERIT)
+            && pHandleInfo->UniqueProcessId == idProcess)
+        {
+            ULONG cbNeeded2 = 0;
+            rcNt = NtQueryObject(pHandleInfo->HandleValue, ObjectTypeInformation,
+                                 pThis->abMemory, sizeof(pThis->abMemory), &cbNeeded2);
+            if (NT_SUCCESS(rcNt))
+            {
+                POBJECT_TYPE_INFORMATION pTypeInfo = (POBJECT_TYPE_INFORMATION)pThis->abMemory;
+                if (   pTypeInfo->TypeName.Length == sizeof(L"File") - sizeof(wchar_t)
+                    && memcmp(pTypeInfo->TypeName.Buffer, L"File", sizeof(L"File") - sizeof(wchar_t)) == 0)
+                    SUP_DPRINTF(("supHardNtVpCheckHandles: Inheritable file handle: %p\n", pHandleInfo->HandleValue));
+                else if (   pTypeInfo->TypeName.Length == sizeof(L"Event") - sizeof(wchar_t)
+                         && memcmp(pTypeInfo->TypeName.Buffer, L"Event", sizeof(L"Event") - sizeof(wchar_t)) == 0)
+                    SUP_DPRINTF(("supHardNtVpCheckHandles: Inheritable event handle: %p\n", pHandleInfo->HandleValue));
+                else
+                {
+                    OBJECT_HANDLE_FLAG_INFORMATION SetInfo;
+                    SetInfo.Inherit = FALSE;
+                    SetInfo.ProtectFromClose = FALSE;
+                    rcNt = NtSetInformationObject(pHandleInfo->HandleValue, ObjectHandleFlagInformation,
+                                                  &SetInfo, sizeof(SetInfo));
+                    if (NT_SUCCESS(rcNt))
+                    {
+                        SUP_DPRINTF(("supHardNtVpCheckHandles: Marked %ls handle non-inheritable: %p\n",
+                                     pTypeInfo->TypeName.Buffer, pHandleInfo->HandleValue));
+                        pThis->cFixes++;
+                    }
+                    else
+                    {
+                        rcRet = supHardNtVpSetInfo2(pThis, VERR_SUP_VP_SET_HANDLE_NOINHERIT,
+                                                    "NtSetInformationObject(%p,,,) -> %#x", pHandleInfo->HandleValue, rcNt);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                rcRet = supHardNtVpSetInfo2(pThis, VERR_SUP_VP_QUERY_HANDLE_TYPE,
+                                            "NtQueryObject(%p,,,,) -> %#x", pHandleInfo->HandleValue, rcNt);
+                break;
+            }
+
+        }
+    }
+    RTMemFree(pbBuf);
+    return rcRet;
+}
+#endif /* IN_RING3 */
+
+
 /**
  * Verifies the given process.
  *
@@ -2548,6 +2655,10 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
                 rc = supHardNtVpCheckExe(pThis);
             if (RT_SUCCESS(rc))
                 rc = supHardNtVpCheckDlls(pThis);
+#ifdef IN_RING3
+            if (enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED)
+                rc = supHardNtVpCheckHandles(pThis);
+#endif
 
             if (pcFixes)
                 *pcFixes = pThis->cFixes;
