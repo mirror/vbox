@@ -340,6 +340,7 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_B_64(Oracle6,  "Oracle Linux 6.x (64-bit)",  2048, 16, 10),
     VBOX_LINUX_SUBTYPE_B_64(Oracle7,  "Oracle Linux 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
     VBOX_LINUX_SUBTYPE_B_64(Oracle8,  "Oracle Linux 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_64(Oracle9,  "Oracle Linux 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
 
     VBOX_LINUX_SUBTYPE_B_32(RedHat,   "Red Hat (32-bit)",      2048, 16, 20),
     VBOX_LINUX_SUBTYPE_B_64(RedHat,   "Red Hat (64-bit)",      2048, 16, 20),
@@ -353,6 +354,7 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_B_64(RedHat6,  "Red Hat 6.x (64-bit)",  1024, 16, 10),
     VBOX_LINUX_SUBTYPE_B_64(RedHat7,  "Red Hat 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
     VBOX_LINUX_SUBTYPE_B_64(RedHat8,  "Red Hat 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_64(RedHat9,  "Red Hat 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
 
     VBOX_LINUX_SUBTYPE_A_32(OpenSUSE,            "openSUSE (32-bit)",               1024, 16, 8),
     VBOX_LINUX_SUBTYPE_A_64(OpenSUSE,            "openSUSE (64-bit)",               1024, 16, 8),

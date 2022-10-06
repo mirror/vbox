@@ -160,7 +160,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_RedHat6_x64      = 0x5A104,
     VBOXOSTYPE_RedHat7_x64      = 0x5A105,  // 64-bit only
     VBOXOSTYPE_RedHat8_x64      = 0x5A106,  // 64-bit only
-    VBOXOSTYPE_RedHat_latest_x64 = VBOXOSTYPE_RedHat8_x64,
+    VBOXOSTYPE_RedHat9_x64      = 0x5A107,  // 64-bit only
+    VBOXOSTYPE_RedHat_latest_x64 = VBOXOSTYPE_RedHat9_x64,
     VBOXOSTYPE_Turbolinux       = 0x5B000,
     VBOXOSTYPE_Turbolinux_x64   = 0x5B100,
     VBOXOSTYPE_Ubuntu           = 0x5C000,
@@ -217,7 +218,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Oracle6_x64      = 0x5E103,
     VBOXOSTYPE_Oracle7_x64      = 0x5E104,  // 64-bit only
     VBOXOSTYPE_Oracle8_x64      = 0x5E105,  // 64-bit only
-    VBOXOSTYPE_Oracle_latest_x64 = VBOXOSTYPE_Oracle8_x64,
+    VBOXOSTYPE_Oracle9_x64      = 0x5E106,  // 64-bit only
+    VBOXOSTYPE_Oracle_latest_x64 = VBOXOSTYPE_Oracle9_x64,
     VBOXOSTYPE_FreeBSD          = 0x60000,
     VBOXOSTYPE_FreeBSD_x64      = 0x60100,
     VBOXOSTYPE_OpenBSD          = 0x61000,
