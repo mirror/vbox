@@ -101,9 +101,9 @@
 #define FS_PER_NS                   1000000
 
 /**
- * Femtoseconds in a day. Still fits within int64_t.
+ * Femtoseconds in a day. Still fits within uint64_t.
  */
-#define FS_PER_DAY                  (1000000LL * 60 * 60 * 24 * FS_PER_NS)
+#define FS_PER_DAY                  (1000000000ULL * 60 * 60 * 24 * FS_PER_NS)
 
 /**
  * Number of HPET ticks in 100 years, ICH9 frequency.
@@ -464,7 +464,7 @@ DECLINLINE(uint64_t) hpetAdjustComparator(PHPETTIMER pHpetTimer, uint64_t fConfi
 DECLINLINE(void) hpetTimerSetFrequencyHint(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTimer,
                                            uint64_t fConfig, uint64_t uPeriod)
 {
-    if (fConfig & HPET_TN_PERIODIC)
+    if ((fConfig & HPET_TN_PERIODIC) && uPeriod && (uPeriod < UINT32_MAX))
     {
         uint64_t const nsPeriod = hpetTicksToNs(pThis, uPeriod);
         if (nsPeriod < RT_NS_100MS)
@@ -640,7 +640,7 @@ static uint64_t hpetTimerRegRead64(PHPET pThis, uint32_t iTimerNo, uint32_t iTim
                 break;
 
             case HPET_TN_CMP:
-                u64Value = ASMAtomicReadU64(&pHpetTimer->u64Config);
+                u64Value = ASMAtomicReadU64(&pHpetTimer->u64Cmp);
                 Log(("HPET[%u]: read64 HPET_TN_CMP: %#RX64\n", iTimerNo, u64Value));
                 break;
 
@@ -814,7 +814,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
 
 
 /**
- * 32-bit write to a HPET timer register.
+ * 64-bit write to a HPET timer register.
  *
  * @returns Strict VBox status code.
  *
