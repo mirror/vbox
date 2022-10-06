@@ -201,7 +201,7 @@
       </para>
       <para>
         Эта команда выполняет ту же функцию, что и Менеджер виртуальных
-        носителей. Смотрите <xref linkend="vdis"/>.
+        носителей. Смотрите <xref linkend="virtual-media-manager"/>.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-list-extpacks">
@@ -232,7 +232,7 @@
       </para>
       <para>
         Эта команда выполняет ту же функцию, что и Менеджер виртуальных
-        носителей. Смотрите <xref linkend="vdis"/>.
+        носителей. Смотрите <xref linkend="virtual-media-manager"/>.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-list-groups">
@@ -274,7 +274,7 @@
       </para>
       <para>
         Эта команда выполняет ту же функцию, что и Менеджер виртуальных
-        носителей. Смотрите <xref linkend="vdis"/>.
+        носителей. Смотрите <xref linkend="virtual-media-manager"/>.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-list-hostcpuids">

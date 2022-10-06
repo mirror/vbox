@@ -85,7 +85,7 @@
     <para>
       Можно использовать Менеджер Виртуальных Носителей для передачи
       клонированного носителя на другой хост или импортировать его в &product-name;.
-      Смотрите <xref linkend="vdis" /> и <xref linkend="cloningvdis" />.
+      Смотрите <xref linkend="virtual-media-manager" /> и <xref linkend="cloningvdis" />.
     </para>
     <variablelist>
       <varlistentry>

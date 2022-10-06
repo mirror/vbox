@@ -85,7 +85,7 @@
     <para>
       You can use the Virtual Media Manager to transfer the cloned image
       to another host system or reimport it into &product-name;. See
-      <xref linkend="vdis" /> and <xref linkend="cloningvdis" />.
+      <xref linkend="virtual-media-manager" /> and <xref linkend="cloningvdis" />.
     </para>
     <variablelist>
       <varlistentry>

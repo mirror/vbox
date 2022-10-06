@@ -726,7 +726,7 @@ it unless this changes. -->
           <term><option>--memory=<replaceable>размер</replaceable></option></term>
           <listitem><para>
               Задает количество оперативной памяти хоста, выделенной ВМ.
-              Размер в МБ. Смотрите <xref linkend="gui-createvm" />.
+              Размер в МБ. Смотрите <xref linkend="create-vm-wizard" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>

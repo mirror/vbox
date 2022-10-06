@@ -757,7 +757,7 @@ it unless this changes. -->
           <listitem><para>
               Specifies the amount of host system RAM to allocate to the
               VM. The size is in MB. See
-              <xref linkend="gui-createvm" />.
+              <xref linkend="create-vm-wizard" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
