@@ -3852,67 +3852,67 @@ AssertCompileMemberAlignment(VMXVEXITINFO, u64Qual, 8);
 #define VMXVEXITINFO_INIT_WITH_INSTR_LEN(a_uReason, a_cbInstr) \
     { (a_uReason), (a_cbInstr), { 0 }, VMXINSTRID_NONE, 0, 0, 0, 0, 0 }
 
-/** Initialize a VMXVEXITINFO structure from exit reason and exit qualifier. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER(a_uReason, a_uQualifier) \
-    { (a_uReason), 0, { 0 }, VMXINSTRID_NONE, (a_uQualifier), 0, 0, 0, 0 }
+/** Initialize a VMXVEXITINFO structure from exit reason and exit qualification. */
+#define VMXVEXITINFO_INIT_WITH_QUAL(a_uReason, a_uQual) \
+    { (a_uReason), 0, { 0 }, VMXINSTRID_NONE, (a_uQual), 0, 0, 0, 0 }
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification,
  *  instruction info and length. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO(a_uReason, a_uQualifier, a_uInstrInfo, a_cbInstr) \
-    { (a_uReason), (a_cbInstr), { a_uInstrInfo }, VMXINSTRID_NONE, (a_uQualifier), 0, 0, 0, 0 }
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO(a_uReason, a_uQual, a_uInstrInfo, a_cbInstr) \
+    { (a_uReason), (a_cbInstr), { a_uInstrInfo }, VMXINSTRID_NONE, (a_uQual), 0, 0, 0, 0 }
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification,
  *  instruction info and length all copied from a VMXTRANSIENT structure. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(a_pVmxTransient) \
-    VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO((a_pVmxTransient)->uExitReason, \
-                                                    (a_pVmxTransient)->uExitQual, \
-                                                    (a_pVmxTransient)->ExitInstrInfo.u, \
-                                                    (a_pVmxTransient)->cbExitInstr)
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(a_pVmxTransient) \
+    VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO((a_pVmxTransient)->uExitReason, \
+                                               (a_pVmxTransient)->uExitQual, \
+                                               (a_pVmxTransient)->ExitInstrInfo.u, \
+                                               (a_pVmxTransient)->cbExitInstr)
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification,
  *  instruction length (no info). */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(a_uReason, a_uQualifier, a_cbInstr) \
-    { (a_uReason), (a_cbInstr), { 0 }, VMXINSTRID_NONE, (a_uQualifier), 0, 0, 0, 0 }
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(a_uReason, a_uQual, a_cbInstr) \
+    { (a_uReason), (a_cbInstr), { 0 }, VMXINSTRID_NONE, (a_uQual), 0, 0, 0, 0 }
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier and
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification and
  *  instruction length (no info) all copied from a VMXTRANSIENT structure. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(a_pVmxTransient) \
-    VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN((a_pVmxTransient)->uExitReason, \
-                                                   (a_pVmxTransient)->uExitQual, \
-                                                   (a_pVmxTransient)->cbExitInstr)
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(a_pVmxTransient) \
+    VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN((a_pVmxTransient)->uExitReason, \
+                                              (a_pVmxTransient)->uExitQual, \
+                                              (a_pVmxTransient)->cbExitInstr)
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification,
  *  instruction info, instruction length and guest linear address. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_AND_LIN_ADDR(a_uReason, a_uQualifier, a_uInstrInfo, \
-                                                                     a_cbInstr, a_uGstLinAddr) \
-    { (a_uReason), (a_cbInstr), { (a_uInstrInfo) }, VMXINSTRID_NONE, (a_uQualifier), (a_uGstLinAddr), 0, 0, 0 }
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_AND_LIN_ADDR(a_uReason, a_uQual, a_uInstrInfo, \
+                                                                a_cbInstr, a_uGstLinAddr) \
+    { (a_uReason), (a_cbInstr), { (a_uInstrInfo) }, VMXINSTRID_NONE, (a_uQual), (a_uGstLinAddr), 0, 0, 0 }
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification,
  *  instruction info, instruction length and guest linear address all copied
  *  from a VMXTRANSIENT structure. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_AND_LIN_ADDR_FROM_TRANSIENT(a_pVmxTransient) \
-    VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_AND_LIN_ADDR((a_pVmxTransient)->uExitReason, \
-                                                                (a_pVmxTransient)->uExitQual, \
-                                                                (a_pVmxTransient)->ExitInstrInfo.u, \
-                                                                (a_pVmxTransient)->cbExitInstr, \
-                                                                (a_pVmxTransient)->uGuestLinearAddr)
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_AND_LIN_ADDR_FROM_TRANSIENT(a_pVmxTransient) \
+    VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_AND_LIN_ADDR((a_pVmxTransient)->uExitReason, \
+                                                            (a_pVmxTransient)->uExitQual, \
+                                                            (a_pVmxTransient)->ExitInstrInfo.u, \
+                                                            (a_pVmxTransient)->cbExitInstr, \
+                                                            (a_pVmxTransient)->uGuestLinearAddr)
 
 /** Initialize a VMXVEXITINFO structure from exit reason and pending debug
  *  exceptions. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_DBG_XCPTS(a_uReason, a_uPendingDbgXcpts) \
+#define VMXVEXITINFO_INIT_WITH_DBG_XCPTS(a_uReason, a_uPendingDbgXcpts) \
     { (a_uReason), 0, { 0 }, VMXINSTRID_NONE, 0, 0, 0, (a_uPendingDbgXcpts), 0 }
 
 /** Initialize a VMXVEXITINFO structure from exit reason and pending debug
  *  exceptions both copied from a VMXTRANSIENT structure. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_DBG_XCPTS_FROM_TRANSIENT(a_pVmxTransient) \
-    VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_DBG_XCPTS((a_pVmxTransient)->uExitReason, (a_pVmxTransient)->uGuestPendingDbgXcpts)
+#define VMXVEXITINFO_INIT_WITH_DBG_XCPTS_FROM_TRANSIENT(a_pVmxTransient) \
+    VMXVEXITINFO_INIT_WITH_DBG_XCPTS((a_pVmxTransient)->uExitReason, (a_pVmxTransient)->uGuestPendingDbgXcpts)
 
 
-/** Initialize a VMXVEXITINFO structure from exit reason, exit qualifier,
+/** Initialize a VMXVEXITINFO structure from exit reason, exit qualification,
  *  instruction length, guest linear address and guest physical address. */
-#define VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_AND_GST_ADDRESSES(a_uReason, a_uQualifier, a_cbInstr, \
-                                                                         a_uGstLinAddr, a_uGstPhysAddr) \
-    { (a_uReason), (a_cbInstr), { 0 }, VMXINSTRID_NONE, (a_uQualifier), (a_uGstLinAddr), (a_uGstPhysAddr), 0, 0 }
+#define VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_AND_GST_ADDRESSES(a_uReason, a_uQual, a_cbInstr, \
+                                                                    a_uGstLinAddr, a_uGstPhysAddr) \
+    { (a_uReason), (a_cbInstr), { 0 }, VMXINSTRID_NONE, (a_uQual), (a_uGstLinAddr), (a_uGstPhysAddr), 0, 0 }
 
 
 /**
