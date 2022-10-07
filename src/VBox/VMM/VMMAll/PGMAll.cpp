@@ -2963,8 +2963,8 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
                 else
                 {
                     /*
-                     * We can't translate the PAE PDPEs through the guest's EPT tables right now
-                     * but we must -NOT- fail right now. This is because we're called from a Mov CRx
+                     * Second-level address translation of the PAE PDPE has failed but we must -NOT-
+                     * abort and return a failure now. This is because we're called from a Mov CRx
                      * instruction (or similar operation). Let's just pretend success but flag that
                      * we need to map this PDPE lazily later.
                      *
