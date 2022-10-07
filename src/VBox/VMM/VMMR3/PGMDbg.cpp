@@ -3207,10 +3207,6 @@ void pgmLogState(PVM pVM)
         LOG_PGMCPU_MEMBER("#RX64",  aGstPaePdpeRegs[1].u);
         LOG_PGMCPU_MEMBER("#RX64",  aGstPaePdpeRegs[2].u);
         LOG_PGMCPU_MEMBER("#RX64",  aGstPaePdpeRegs[3].u);
-        LOG_PGMCPU_MEMBER("RGp",    aGCPhysGstPaePDsMonitored[0]);
-        LOG_PGMCPU_MEMBER("RGp",    aGCPhysGstPaePDsMonitored[1]);
-        LOG_PGMCPU_MEMBER("RGp",    aGCPhysGstPaePDsMonitored[2]);
-        LOG_PGMCPU_MEMBER("RGp",    aGCPhysGstPaePDsMonitored[3]);
         LOG_PGMCPU_MEMBER("#RX64",  fGstPaeMbzPteMask);
         LOG_PGMCPU_MEMBER("#RX64",  fGstPaeMbzPdeMask);
         LOG_PGMCPU_MEMBER("#RX64",  fGstPaeMbzBigPdeMask);

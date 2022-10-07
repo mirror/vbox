@@ -850,7 +850,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
             pPGM->apGstPaePDsR3[i]             = NULL;
             pPGM->apGstPaePDsR0[i]             = NIL_RTR0PTR;
             pPGM->aGCPhysGstPaePDs[i]          = NIL_RTGCPHYS;
-            pPGM->aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
 
         pPGM->fA20Enabled      = true;

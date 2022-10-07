@@ -3499,8 +3499,6 @@ typedef struct PGMCPU
     R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
-    /** The physical addresses of the monitored guest page directories (PAE). */
-    RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
     /** Mask containing the MBZ PTE bits. */
     uint64_t                        fGstPaeMbzPteMask;
     /** Mask containing the MBZ PDE bits. */
