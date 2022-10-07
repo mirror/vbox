@@ -2728,7 +2728,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
     RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
     RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
     {
         RTGCPHYS GCPhysOut;
         int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
@@ -2835,7 +2835,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
         RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
         RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+        if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
         {
             RTGCPHYS GCPhysOut;
             int rc2 = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
@@ -2952,7 +2952,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
 
             RTGCPHYS GCPhys;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-            if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+            if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
             {
                 PGMPTWALK      Walk;
                 PGMPTWALKGST   GstWalk;
@@ -3030,7 +3030,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
     {
         RTGCPHYS GCPhysOut;
         int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
