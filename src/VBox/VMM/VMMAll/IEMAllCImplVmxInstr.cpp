@@ -695,6 +695,9 @@ DECLINLINE(uint8_t) iemVmxGetEventType(uint32_t uVector, uint32_t fFlags)
  *
  * @returns @c true if PAE paging mode is used, @c false otherwise.
  * @param   pVmcs       Pointer to the virtual VMCS.
+ *
+ * @warning Only use this prior to switching the guest-CPU state with the
+ *          nested-guest CPU state!
  */
 DECL_FORCE_INLINE(bool) iemVmxVmcsIsGuestPaePagingEnabled(PCVMXVVMCS pVmcs)
 {
@@ -1506,41 +1509,36 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
         pVmcs->u32PreemptTimer = iemVmxCalcPreemptTimer(pVCpu);
 
     /*
-     * PAE PDPTEs.
-     *
-     * If EPT is enabled and PAE paging was used at the time of the VM-exit,
-     * the PDPTEs are saved from the VMCS. Otherwise they're undefined but
-     * we zero them for consistency.
+     * Save the guest PAE PDPTEs.
      */
-    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+    if (   !CPUMIsGuestInPAEModeEx(&pVCpu->cpum.GstCtx)
+        || !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT))
     {
-        if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
-            &&  (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
-            &&  (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
-        {
-            pVmcs->u64GuestPdpte0.u = pVCpu->cpum.GstCtx.aPaePdpes[0].u;
-            pVmcs->u64GuestPdpte1.u = pVCpu->cpum.GstCtx.aPaePdpes[1].u;
-            pVmcs->u64GuestPdpte2.u = pVCpu->cpum.GstCtx.aPaePdpes[2].u;
-            pVmcs->u64GuestPdpte3.u = pVCpu->cpum.GstCtx.aPaePdpes[3].u;
-        }
-        else
-        {
-            pVmcs->u64GuestPdpte0.u = 0;
-            pVmcs->u64GuestPdpte1.u = 0;
-            pVmcs->u64GuestPdpte2.u = 0;
-            pVmcs->u64GuestPdpte3.u = 0;
-        }
-
-        /* Clear PGM's copy of the EPT pointer for added safety. */
-        PGMSetGuestEptPtr(pVCpu, 0 /* uEptPtr */);
-    }
-    else
-    {
+        /*
+         * Without EPT or when the nested-guest is not using PAE paging, the values saved
+         * in the VMCS during VM-exit are undefined. We zero them here for consistency.
+         */
         pVmcs->u64GuestPdpte0.u = 0;
         pVmcs->u64GuestPdpte1.u = 0;
         pVmcs->u64GuestPdpte2.u = 0;
         pVmcs->u64GuestPdpte3.u = 0;
     }
+    else
+    {
+        /*
+         * With EPT and when the nested-guest is using PAE paging, we update the PDPTEs from
+         * the nested-guest CPU context. Both IEM (Mov CRx) and hardware-assisted execution
+         * of the nested-guest is expected to have updated them.
+         */
+        pVmcs->u64GuestPdpte0.u = pVCpu->cpum.GstCtx.aPaePdpes[0].u;
+        pVmcs->u64GuestPdpte1.u = pVCpu->cpum.GstCtx.aPaePdpes[1].u;
+        pVmcs->u64GuestPdpte2.u = pVCpu->cpum.GstCtx.aPaePdpes[2].u;
+        pVmcs->u64GuestPdpte3.u = pVCpu->cpum.GstCtx.aPaePdpes[3].u;
+    }
+
+    /* Clear PGM's copy of the EPT pointer for added safety. */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+        PGMSetGuestEptPtr(pVCpu, 0 /* uEptPtr */);
 }
 
 
@@ -5977,7 +5975,7 @@ static int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr) R
     const char * const pszFailure = "VM-exit";
 
     /*
-     * When EPT is used, we only validate the PAE PDPTEs provided in the VMCS.
+     * When EPT is used, we need to validate the PAE PDPTEs provided in the VMCS.
      * Otherwise, we load any PAE PDPTEs referenced by CR3 at a later point.
      */
     if (   iemVmxVmcsIsGuestPaePagingEnabled(pVmcs)
@@ -5991,8 +5989,7 @@ static int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr) R
         aPaePdptes[3].u = pVmcs->u64GuestPdpte3.u;
 
         /* Check validity of the PDPTEs. */
-        bool const fValid = PGMGstArePaePdpesValid(pVCpu, &aPaePdptes[0]);
-        if (fValid)
+        if (PGMGstArePaePdpesValid(pVCpu, &aPaePdptes[0]))
         { /* likely */ }
         else
         {
@@ -7036,37 +7033,42 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
     /*
      * Load the guest's PAE PDPTEs.
      */
-    if (iemVmxVmcsIsGuestPaePagingEnabled(pVmcs))
+    if (!iemVmxVmcsIsGuestPaePagingEnabled(pVmcs))
     {
-        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
-        {
-            /*
-             * With EPT, we've already validated these while checking the guest state.
-             * Just load them directly from the VMCS here.
-             */
-            X86PDPE aPaePdptes[X86_PG_PAE_PDPE_ENTRIES];
-            aPaePdptes[0].u = pVmcs->u64GuestPdpte0.u;
-            aPaePdptes[1].u = pVmcs->u64GuestPdpte1.u;
-            aPaePdptes[2].u = pVmcs->u64GuestPdpte2.u;
-            aPaePdptes[3].u = pVmcs->u64GuestPdpte3.u;
-            AssertCompile(RT_ELEMENTS(aPaePdptes) == RT_ELEMENTS(pVCpu->cpum.GstCtx.aPaePdpes));
-            for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->cpum.GstCtx.aPaePdpes); i++)
-                pVCpu->cpum.GstCtx.aPaePdpes[i].u = aPaePdptes[i].u;
-        }
+        /*
+         * When PAE paging is not used we clear the PAE PDPTEs for safety
+         * in case we might be switching from a PAE host to a non-PAE guest.
+         */
+        pVCpu->cpum.GstCtx.aPaePdpes[0].u = 0;
+        pVCpu->cpum.GstCtx.aPaePdpes[1].u = 0;
+        pVCpu->cpum.GstCtx.aPaePdpes[2].u = 0;
+        pVCpu->cpum.GstCtx.aPaePdpes[3].u = 0;
+    }
+    else if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+    {
+        /*
+         * With EPT and the nested-guest using PAE paging, we've already validated the PAE PDPTEs
+         * while checking the guest state. We can load them into the nested-guest CPU state now.
+         * They'll later be used while mapping CR3 and the PAE PDPTEs.
+         */
+        pVCpu->cpum.GstCtx.aPaePdpes[0].u = pVmcs->u64GuestPdpte0.u;
+        pVCpu->cpum.GstCtx.aPaePdpes[1].u = pVmcs->u64GuestPdpte1.u;
+        pVCpu->cpum.GstCtx.aPaePdpes[2].u = pVmcs->u64GuestPdpte2.u;
+        pVCpu->cpum.GstCtx.aPaePdpes[3].u = pVmcs->u64GuestPdpte3.u;
+    }
+    else
+    {
+        /*
+         * Without EPT and the nested-guest using PAE paging, we must load the PAE PDPTEs
+         * referenced by CR3. This involves loading (and mapping) CR3 and validating them now.
+         */
+        int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64GuestCr3.u);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
         else
         {
-            /*
-             * Without EPT, we must load the PAE PDPTEs referenced by CR3.
-             * This involves loading (and mapping) CR3 and validating them now.
-             */
-            int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64GuestCr3.u);
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-            {
-                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
-            }
+            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
         }
     }
 
