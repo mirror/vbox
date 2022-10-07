@@ -4683,7 +4683,7 @@ IEMIMPL_FP_F2 cvtpd2dq,  0 ; @todo AVX variants due to register size differences
 ; @param    A3      Pointer to the second single precision floating point value (input).
 ;
 %macro IEMIMPL_FP_F2_R32 1
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r32, 12
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r32, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR A0
@@ -4694,11 +4694,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r32, 12
         movdqu   [A1 + IEMSSERESULT.uResult], xmm0
 
         SSE_ST_FXSTATE_MXCSR A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128_r32
 
-BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r32, 12
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r32, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
         AVX_LD_XSAVEAREA_MXCSR A0
@@ -4735,7 +4735,7 @@ IEMIMPL_FP_F2_R32 sqrtss
 ; @param    A3      Pointer to the second double precision floating point value (input).
 ;
 %macro IEMIMPL_FP_F2_R64 1
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r64, 12
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR A0
@@ -4746,11 +4746,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r64, 12
         movdqu   [A1 + IEMSSERESULT.uResult], xmm0
 
         SSE_ST_FXSTATE_MXCSR A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128_r64
 
-BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r64, 12
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
         AVX_LD_XSAVEAREA_MXCSR A0
@@ -4761,7 +4761,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r64, 12
         vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
 
         AVX128_ST_XSAVEAREA_MXCSR A1
-        IEMIMPL_AVX_PROLOGUE
+        IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128_r64
 %endmacro
@@ -4788,7 +4788,7 @@ IEMIMPL_FP_F2_R64 sqrtsd
 ; @param    A3      Pointer to the second media register size operand (input).
 ;
 %macro IEMIMPL_CVT_F2 2
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR A0
@@ -4799,11 +4799,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         movdqu   [A1 + IEMSSERESULT.uResult], xmm0
 
         SSE_ST_FXSTATE_MXCSR A1, A0
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
-BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
         AVX_LD_XSAVEAREA_MXCSR A0
@@ -4814,11 +4814,11 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
         vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
 
         AVX128_ST_XSAVEAREA_MXCSR A1
-        IEMIMPL_AVX_PROLOGUE
+        IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128
 
-BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
         AVX_LD_XSAVEAREA_MXCSR A0
@@ -4833,7 +4833,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
         vmovdqu    [A1 + IEMAVX256RESULT.uResult], ymm0
 
         AVX256_ST_XSAVEAREA_MXCSR A1
-        IEMIMPL_AVX_PROLOGUE
+        IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u256
 %endmacro
