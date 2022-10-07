@@ -58,6 +58,25 @@
 # define VMX_USE_MSC_INTRINSICS 0
 #endif
 
+/**
+ * Whether we think the assembler supports VMX instructions.
+ *
+ * Guess that GCC 5 should have sufficient recent enough binutils.
+ */
+#if RT_INLINE_ASM_GNU_STYLE && RT_GNUC_PREREQ(5,0)
+# define VMX_USE_GNU_STYLE_INLINE_VMX_INSTRUCTIONS 1
+#else
+# define VMX_USE_GNU_STYLE_INLINE_VMX_INSTRUCTIONS 0
+#endif
+
+/** Whether we can use the subsection trick to put error handling code
+ *  elsewhere. */
+#if VMX_USE_GNU_STYLE_INLINE_VMX_INSTRUCTIONS && defined(__ELF__)
+# define VMX_USE_GNU_STYLE_INLINE_SECTION_TRICK 1
+#else
+# define VMX_USE_GNU_STYLE_INLINE_SECTION_TRICK 0
+#endif
+
 /* Skip checking VMREAD/VMWRITE failures on non-strict builds. */
 #ifndef VBOX_STRICT
 # define VBOX_WITH_VMREAD_VMWRITE_NOCHECK
@@ -884,6 +903,57 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
 #  endif
 
+# elif VMX_USE_GNU_STYLE_INLINE_VMX_INSTRUCTIONS
+    RTCCUINTREG uTmp = 0;
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __asm__ __volatile__("vmread  %[uField],%[uDst]"
+                         : [uDst] "=mr" (uTmp)
+                         : [uField] "r" ((RTCCUINTREG)uFieldEnc));
+    *pData = (uint32_t)uTmp;
+    return VINF_SUCCESS;
+#  else
+#if 0
+    int      rc;
+    __asm__ __volatile__("vmread  %[uField],%[uDst]\n\t"
+                         "movl    %[rcSuccess],%[rc]\n\t"
+#    if VMX_USE_GNU_STYLE_INLINE_SECTION_TRICK
+                         "jna     1f\n\t"
+                         ".section .text.vmread_failures, \"ax?\"\n\t"
+                         "1:\n\t"
+                         "movl    %[rcInvalidVmcsPtr],%[rc]\n\t"
+                         "jnz     2f\n\t"
+                         "movl    %[rcInvalidVmcsField],%[rc]\n\t"
+                         "2:\n\t"
+                         "jmp     3f\n\t"
+                         ".previous\n\t"
+                         "3:\n\t"
+#    else
+                         "ja      1f\n\t"
+                         "movl    %[rcInvalidVmcsPtr],%[rc]\n\t"
+                         "jnz     1f\n\t"
+                         "movl    %[rcInvalidVmcsField],%[rc]\n\t"
+                         "1:\n\t"
+#    endif
+                         : [uDst] "=mr" (uTmp)
+                         , [rc] "=r" (rc)
+                         : [uField] "r" ((RTCCUINTREG)uFieldEnc)
+                         , [rcSuccess] "i" (VINF_SUCCESS)
+                         , [rcInvalidVmcsPtr] "i" (VERR_VMX_INVALID_VMCS_PTR)
+                         , [rcInvalidVmcsField] "i" (VERR_VMX_INVALID_VMCS_FIELD));
+    *pData = uTmp;
+    return rc;
+#else
+    int fSuccess, fFieldError;
+    __asm__ __volatile__("vmread  %[uField],%[uDst]"
+                         : [uDst] "=mr" (uTmp)
+                         , "=@cca" (fSuccess)
+                         , "=@ccnc" (fFieldError)
+                         : [uField] "r" ((RTCCUINTREG)uFieldEnc));
+    *pData = uTmp;
+    return RT_LIKELY(fSuccess) ? VINF_SUCCESS : fFieldError ? VERR_VMX_INVALID_VMCS_FIELD : VERR_VMX_INVALID_VMCS_PTR;
+#endif
+#  endif
+
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
     __asm__ __volatile__ (
@@ -974,6 +1044,56 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
 #  endif
 
+# elif VMX_USE_GNU_STYLE_INLINE_VMX_INSTRUCTIONS
+    uint64_t uTmp = 0;
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __asm__ __volatile__("vmreadq %[uField],%[uDst]"
+                         : [uDst] "=m" (uTmp)
+                         : [uField] "r" ((uint64_t)uFieldEnc));
+    *pData = uTmp;
+    return VINF_SUCCESS;
+#  elif 0
+    int      rc;
+    __asm__ __volatile__("vmreadq %[uField],%[uDst]\n\t"
+                         "movl    %[rcSuccess],%[rc]\n\t"
+#    if VMX_USE_GNU_STYLE_INLINE_SECTION_TRICK
+                         "jna     1f\n\t"
+                         ".section .text.vmread_failures, \"ax?\"\n\t"
+                         "1:\n\t"
+                         "movl    %[rcInvalidVmcsPtr],%[rc]\n\t"
+                         "jnz     2f\n\t"
+                         "movl    %[rcInvalidVmcsField],%[rc]\n\t"
+                         "2:\n\t"
+                         "jmp     3f\n\t"
+                         ".previous\n\t"
+                         "3:\n\t"
+#    else
+                         "ja      1f\n\t"
+                         "movl    %[rcInvalidVmcsPtr],%[rc]\n\t"
+                         "jnz     1f\n\t"
+                         "movl    %[rcInvalidVmcsField],%[rc]\n\t"
+                         "1:\n\t"
+#    endif
+                         : [uDst] "=mr" (uTmp)
+                         , [rc] "=r" (rc)
+                         : [uField] "r" ((uint64_t)uFieldEnc)
+                         , [rcSuccess] "i" (VINF_SUCCESS)
+                         , [rcInvalidVmcsPtr] "i" (VERR_VMX_INVALID_VMCS_PTR)
+                         , [rcInvalidVmcsField] "i" (VERR_VMX_INVALID_VMCS_FIELD)
+                         );
+    *pData = uTmp;
+    return rc;
+#  else
+    int fSuccess, fFieldError;
+    __asm__ __volatile__("vmread  %[uField],%[uDst]"
+                         : [uDst] "=mr" (uTmp)
+                         , "=@cca" (fSuccess)
+                         , "=@ccnc" (fFieldError)
+                         : [uField] "r" ((RTCCUINTREG)uFieldEnc));
+    *pData = uTmp;
+    return RT_LIKELY(fSuccess) ? VINF_SUCCESS : fFieldError ? VERR_VMX_INVALID_VMCS_FIELD : VERR_VMX_INVALID_VMCS_PTR;
+#  endif
+
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
     __asm__ __volatile__ (
@@ -1002,6 +1122,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
        );
     return rc;
 #  endif
+
 # else
 #  error "Shouldn't be here..."
 # endif
