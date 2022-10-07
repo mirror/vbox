@@ -37,5 +37,10 @@ if defined(VBOX_WITH_NAT_SERVICE) && defined(VBOX_WITH_MAIN) \
  include $(PATH_SUB_CURRENT)/NAT/Makefile.kmk
 endif
 
+# Internal network switch
+if defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
+ include $(PATH_SUB_CURRENT)/IntNetSwitch/Makefile.kmk
+endif
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

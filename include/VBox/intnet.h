@@ -48,6 +48,12 @@
 RT_C_DECLS_BEGIN
 
 
+/** The userspace internal network service identifier. */
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
+# define INTNET_R3_SVC_NAME "org.virtualbox.intnet"
+#endif
+
+
 /**
  * Generic two-sided ring buffer.
  *
