@@ -8990,7 +8990,7 @@ HMVMX_EXIT_DECL vmxHCExitVmclear(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmclear(pVCpu, &ExitInfo);
@@ -9051,7 +9051,7 @@ HMVMX_EXIT_DECL vmxHCExitVmptrld(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmptrld(pVCpu, &ExitInfo);
@@ -9083,7 +9083,7 @@ HMVMX_EXIT_DECL vmxHCExitVmptrst(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_WRITE, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmptrst(pVCpu, &ExitInfo);
@@ -9120,7 +9120,7 @@ HMVMX_EXIT_DECL vmxHCExitVmread(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
         HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_WRITE, &ExitInfo.GCPtrEffAddr);
 
@@ -9208,7 +9208,7 @@ HMVMX_EXIT_DECL vmxHCExitVmwrite(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
         HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
@@ -9268,7 +9268,7 @@ HMVMX_EXIT_DECL vmxHCExitVmxon(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmxon(pVCpu, &ExitInfo);
@@ -9299,7 +9299,7 @@ HMVMX_EXIT_DECL vmxHCExitInvvpid(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedInvvpid(pVCpu, &ExitInfo);
@@ -9331,7 +9331,7 @@ HMVMX_EXIT_DECL vmxHCExitInvept(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedInvept(pVCpu, &ExitInfo);
@@ -9411,7 +9411,7 @@ HMVMX_EXIT_DECL vmxHCExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
                  * length. However, if delivery of a software interrupt, software exception or privileged
                  * software exception causes a VM-exit, that too provides the VM-exit instruction length.
                  */
-                VMXVEXITINFO const      ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+                VMXVEXITINFO const      ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
                 VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT(pVmxTransient->uExitIntInfo,
                                                                                pVmxTransient->uExitIntErrorCode,
                                                                                pVmxTransient->uIdtVectoringInfo,
@@ -9503,7 +9503,7 @@ HMVMX_EXIT_DECL vmxHCExitTaskSwitchNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
     vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
 
-    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
     VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
                                                                             pVmxTransient->uIdtVectoringErrorCode);
     return IEMExecVmxVmexitTaskSwitch(pVCpu, &ExitInfo, &ExitEventInfo);
@@ -9538,7 +9538,7 @@ HMVMX_EXIT_DECL vmxHCExitInvlpgNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
 
-        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return vmxHCExitInvlpg(pVCpu, pVmxTransient);
@@ -9587,7 +9587,7 @@ HMVMX_EXIT_DECL vmxHCExitVmreadVmwriteNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
         vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
 
-        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
@@ -9658,7 +9658,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
             }
             if (fIntercept)
             {
-                VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+                VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
                 rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
             }
             else
@@ -9687,7 +9687,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
                 uint32_t const uIntercept = s_auCrXReadIntercepts[iCrReg];
                 if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, uIntercept))
                 {
-                    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+                    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
                     rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
                 }
                 else
@@ -9712,7 +9712,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
             if (   (uGstHostMask & X86_CR0_TS)
                 && (uReadShadow  & X86_CR0_TS))
             {
-                VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+                VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
                 rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
             }
             else
@@ -9735,7 +9735,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
 
             if (CPUMIsGuestVmxLmswInterceptSet(&pVCpu->cpum.GstCtx, uNewMsw))
             {
-                VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+                VMXVEXITINFO ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
                 ExitInfo.u64GuestLinearAddr = GCPtrEffDst;
                 rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
             }
@@ -9773,7 +9773,7 @@ HMVMX_EXIT_DECL vmxHCExitMovDRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
         vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
 
-        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return vmxHCExitMovDRx(pVCpu, pVmxTransient);
@@ -9826,7 +9826,7 @@ HMVMX_EXIT_DECL vmxHCExitIoInstrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
             }
         }
 
-        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_AND_LIN_ADDR_FROM_TRANSIENT(pVmxTransient);
+        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_AND_LIN_ADDR_FROM_TRANSIENT(pVmxTransient);
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return vmxHCExitIoInstr(pVCpu, pVmxTransient);
@@ -9903,7 +9903,7 @@ HMVMX_EXIT_DECL vmxHCExitMtfNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     /** @todo NSTVMX: Should consider debugging nested-guests using VM debugger. */
     vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_DBG_XCPTS_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_DBG_XCPTS_FROM_TRANSIENT(pVmxTransient);
     return IEMExecVmxVmexitTrapLike(pVCpu, &ExitInfo);
 }
 
@@ -9957,7 +9957,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitTprBelowThresholdNested(PVMCPUCC pVCpu, PVMXTRANSI
     if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_TPR_SHADOW))
     {
         vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
-        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_DBG_XCPTS_FROM_TRANSIENT(pVmxTransient);
+        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_DBG_XCPTS_FROM_TRANSIENT(pVmxTransient);
         return IEMExecVmxVmexitTrapLike(pVCpu, &ExitInfo);
     }
     return vmxHCExitTprBelowThreshold(pVCpu, pVmxTransient);
@@ -9982,7 +9982,7 @@ HMVMX_EXIT_DECL vmxHCExitApicAccessNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     Log4Func(("at offset %#x type=%u\n", VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual),
               VMX_EXIT_QUAL_APIC_ACCESS_TYPE(pVmxTransient->uExitQual)));
 
-    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO const      ExitInfo      = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_FROM_TRANSIENT(pVmxTransient);
     VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
                                                                             pVmxTransient->uIdtVectoringErrorCode);
     return IEMExecVmxVmexitApicAccess(pVCpu, &ExitInfo, &ExitEventInfo);
@@ -10064,7 +10064,7 @@ HMVMX_EXIT_DECL vmxHCExitInvpcidNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
         vmxHCReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
 
-        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+        VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return vmxHCExitInvpcid(pVCpu, pVmxTransient);
@@ -10169,7 +10169,7 @@ HMVMX_EXIT_DECL vmxHCExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
     vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
     vmxHCReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
 
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
+    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_FROM_TRANSIENT(pVmxTransient);
     return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
@@ -10286,11 +10286,11 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         if (Walk.fFailed & PGM_WALKFAIL_EPT_VIOLATION)
         {
             VMXVEXITINFO const ExitInfo
-                = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN_AND_GST_ADDRESSES(VMX_EXIT_EPT_VIOLATION,
-                                                                                   pVmxTransient->uExitQual,
-                                                                                   pVmxTransient->cbExitInstr,
-                                                                                   pVmxTransient->uGuestLinearAddr,
-                                                                                   pVmxTransient->uGuestPhysicalAddr);
+                = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN_AND_GST_ADDRESSES(VMX_EXIT_EPT_VIOLATION,
+                                                                              pVmxTransient->uExitQual,
+                                                                              pVmxTransient->cbExitInstr,
+                                                                              pVmxTransient->uGuestLinearAddr,
+                                                                              pVmxTransient->uGuestPhysicalAddr);
             return IEMExecVmxVmexitEptViolation(pVCpu, &ExitInfo, &ExitEventInfo);
         }
 
