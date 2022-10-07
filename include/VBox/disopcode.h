@@ -602,6 +602,8 @@ enum OPCODES
     OP_PCMPISTRI,
     OP_AESKEYGEN,
     OP_RORX,
+    OP_RDRAND,
+    OP_RDSEED,
     OP_VEX3B,
     OP_VEX2B,
 /** @} */

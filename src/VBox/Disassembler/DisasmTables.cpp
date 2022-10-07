@@ -3059,8 +3059,8 @@ const DISOPCODE g_aMapX86_Group9[8] =
     INVALID_OPCODE_MOD_RM(0x),
     INVALID_OPCODE_MOD_RM(0x),
     INVALID_OPCODE_MOD_RM(0x),
-    INVALID_OPCODE_MOD_RM(0x),
-    INVALID_OPCODE_MOD_RM(0x),
+    OP("rdrand %Ev",         IDX_ParseModRM,     0,             0,       OP_RDRAND,    OP_PARM_Ev,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("rdseed %Ev",         IDX_ParseModRM,     0,             0,       OP_RDSEED,    OP_PARM_Ev,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
 const DISOPCODE g_aMapX86_Group10[8] =
