@@ -2859,7 +2859,7 @@ VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPUCC pVCpu, uint32_t uExitReason, VM
     RTGCPTR            GCPtrDisp;
     uint32_t const     uInstrInfo = iemVmxGetExitInstrInfo(pVCpu, uExitReason, uInstrId, &GCPtrDisp);
 
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO(uExitReason, GCPtrDisp, uInstrInfo, cbInstr);
+    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO(uExitReason, GCPtrDisp, uInstrInfo, cbInstr);
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
@@ -2874,7 +2874,7 @@ VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPUCC pVCpu, uint32_t uExitReason, VM
  */
 VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, uint8_t cbInstr) RT_NOEXCEPT
 {
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_INVLPG, GCPtrPage, cbInstr);
+    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_INVLPG, GCPtrPage, cbInstr);
     Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode || !RT_HI_U32(ExitInfo.u64Qual));
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
@@ -2905,13 +2905,12 @@ VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPUCC pVCpu, uint32_t uGuestCr0, uint16_t 
         Log2(("lmsw: Guest intercept -> VM-exit\n"));
         bool const fMemOperand = RT_BOOL(GCPtrEffDst != NIL_RTGCPTR);
         VMXVEXITINFO ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER,  0) /* CR0 */
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_LMSW_OP,   fMemOperand)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_LMSW_DATA, uNewMsw)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                          VMX_EXIT_QUAL_CRX_ACCESS_LMSW),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER,  0) /* CR0 */
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_LMSW_OP,   fMemOperand)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_LMSW_DATA, uNewMsw)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,  VMX_EXIT_QUAL_CRX_ACCESS_LMSW),
+                                                        cbInstr);
         if (fMemOperand)
         {
             Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode || !RT_HI_U32(GCPtrEffDst));
@@ -2963,11 +2962,11 @@ VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
         {
             Log2(("clts: Guest intercept -> VM-exit\n"));
             VMXVEXITINFO const ExitInfo
-                = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                                   RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 0) /* CR0 */
-                                                                 | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                              VMX_EXIT_QUAL_CRX_ACCESS_CLTS),
-                                                                 cbInstr);
+                = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                              RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 0) /* CR0 */
+                                                            | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
+                                                                         VMX_EXIT_QUAL_CRX_ACCESS_CLTS),
+                                                            cbInstr);
             return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
         }
         return VINF_VMX_MODIFIES_BEHAVIOR;
@@ -3007,12 +3006,11 @@ VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPUCC pVCpu, uint8_t iCrReg, uint64
     {
         Log2(("mov_Cr_Rd: (CR%u) Guest intercept -> VM-exit\n", iCrReg));
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, iCrReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                          VMX_EXIT_QUAL_CRX_ACCESS_WRITE),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, iCrReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS, VMX_EXIT_QUAL_CRX_ACCESS_WRITE),
+                                                        cbInstr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
@@ -3063,12 +3061,11 @@ VBOXSTRICTRC iemVmxVmexitInstrMovFromCr3(PVMCPUCC pVCpu, uint8_t iGReg, uint8_t 
     {
         Log2(("mov_Rd_Cr: (CR3) Guest intercept -> VM-exit\n"));
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                          VMX_EXIT_QUAL_CRX_ACCESS_READ),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS, VMX_EXIT_QUAL_CRX_ACCESS_READ),
+                                                        cbInstr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -3099,12 +3096,12 @@ VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPUCC pVCpu, uint64_t uNewCr3, uint8_t
     {
         Log2(("mov_Cr_Rd: (CR3) Guest intercept -> VM-exit\n"));
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                          VMX_EXIT_QUAL_CRX_ACCESS_WRITE),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                           RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
+                                                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
+                                                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
+                                                                      VMX_EXIT_QUAL_CRX_ACCESS_WRITE),
+                                                         cbInstr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -3131,12 +3128,11 @@ VBOXSTRICTRC iemVmxVmexitInstrMovFromCr8(PVMCPUCC pVCpu, uint8_t iGReg, uint8_t 
     {
         Log2(("mov_Rd_Cr: (CR8) Guest intercept -> VM-exit\n"));
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                          VMX_EXIT_QUAL_CRX_ACCESS_READ),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS, VMX_EXIT_QUAL_CRX_ACCESS_READ),
+                                                        cbInstr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -3164,12 +3160,11 @@ VBOXSTRICTRC iemVmxVmexitInstrMovToCr8(PVMCPUCC pVCpu, uint8_t iGReg, uint8_t cb
     {
         Log2(("mov_Cr_Rd: (CR8) Guest intercept -> VM-exit\n"));
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,
-                                                                          VMX_EXIT_QUAL_CRX_ACCESS_WRITE),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_CRX,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS, VMX_EXIT_QUAL_CRX_ACCESS_WRITE),
+                                                        cbInstr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -3199,14 +3194,14 @@ VBOXSTRICTRC iemVmxVmexitInstrMovDrX(PVMCPUCC pVCpu, VMXINSTRID uInstrId, uint8_
     if (pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT)
     {
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MOV_DRX,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_REGISTER,  iDrReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_GENREG,    iGReg)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_DIRECTION,
-                                                                          uInstrId == VMXINSTRID_MOV_TO_DRX
-                                                                          ? VMX_EXIT_QUAL_DRX_DIRECTION_WRITE
-                                                                          : VMX_EXIT_QUAL_DRX_DIRECTION_READ),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MOV_DRX,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_REGISTER,  iDrReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_GENREG,    iGReg)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_DIRECTION,
+                                                                     uInstrId == VMXINSTRID_MOV_TO_DRX
+                                                                     ? VMX_EXIT_QUAL_DRX_DIRECTION_WRITE
+                                                                     : VMX_EXIT_QUAL_DRX_DIRECTION_READ),
+                                                        cbInstr);
             return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
@@ -3236,15 +3231,15 @@ VBOXSTRICTRC iemVmxVmexitInstrIo(PVMCPUCC pVCpu, VMXINSTRID uInstrId, uint16_t u
     if (CPUMIsGuestVmxIoInterceptSet(pVCpu, u16Port, cbAccess))
     {
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_IO_INSTR,
-                                                               RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,  fImm)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port)
-                                                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION,
-                                                                          uInstrId == VMXINSTRID_IO_IN
-                                                                          ? VMX_EXIT_QUAL_IO_DIRECTION_IN
-                                                                          : VMX_EXIT_QUAL_IO_DIRECTION_OUT),
-                                                             cbInstr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_IO_INSTR,
+                                                          RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,  fImm)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port)
+                                                        | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION,
+                                                                     uInstrId == VMXINSTRID_IO_IN
+                                                                     ? VMX_EXIT_QUAL_IO_DIRECTION_IN
+                                                                     : VMX_EXIT_QUAL_IO_DIRECTION_OUT),
+                                                        cbInstr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -3307,18 +3302,18 @@ VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPUCC pVCpu, VMXINSTRID uInstrId, uint16_
             uGuestLinearAddr = 0;
 
         VMXVEXITINFO const ExitInfo
-            = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_INFO_AND_LIN_ADDR(VMX_EXIT_IO_INSTR,
-                                                                             RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,   cbAccess - 1)
-                                                                           | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
-                                                                           | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_STRING, 1)
-                                                                           | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_REP,    fRep)
-                                                                           | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,
-                                                                                        VMX_EXIT_QUAL_IO_ENCODING_DX)
-                                                                           | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port),
-                                                                           IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxInsOutInfo
-                                                                           ? ExitInstrInfo.u : 0,
-                                                                           cbInstr,
-                                                                           uGuestLinearAddr);
+            = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_INFO_AND_LIN_ADDR(VMX_EXIT_IO_INSTR,
+                                                                        RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,   cbAccess - 1)
+                                                                      | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
+                                                                      | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_STRING, 1)
+                                                                      | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_REP,    fRep)
+                                                                      | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,
+                                                                                   VMX_EXIT_QUAL_IO_ENCODING_DX)
+                                                                      | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port),
+                                                                      IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxInsOutInfo
+                                                                      ? ExitInstrInfo.u : 0,
+                                                                      cbInstr,
+                                                                      uGuestLinearAddr);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
@@ -3336,7 +3331,7 @@ VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPUCC pVCpu, VMXINSTRID uInstrId, uint16_
  */
 VBOXSTRICTRC iemVmxVmexitInstrMwait(PVMCPUCC pVCpu, bool fMonitorHwArmed, uint8_t cbInstr) RT_NOEXCEPT
 {
-    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_MWAIT, fMonitorHwArmed, cbInstr);
+    VMXVEXITINFO const ExitInfo = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_MWAIT, fMonitorHwArmed, cbInstr);
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
@@ -9983,10 +9978,10 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
              */
             LogFlowFunc(("Raising APIC-access VM-exit from #PF handler at offset %#x\n", offAccess));
             VMXVEXITINFO const ExitInfo
-                = VMXVEXITINFO_INIT_WITH_QUALIFIER_AND_INSTR_LEN(VMX_EXIT_APIC_ACCESS,
-                                                                   RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
-                                                                 | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess),
-                                                                 HmExitAux.Vmx.cbInstr);
+                = VMXVEXITINFO_INIT_WITH_QUAL_AND_INSTR_LEN(VMX_EXIT_APIC_ACCESS,
+                                                              RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
+                                                            | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess),
+                                                            HmExitAux.Vmx.cbInstr);
             VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(HmExitAux.Vmx.uIdtVectoringInfo,
                                                                                     HmExitAux.Vmx.uIdtVectoringErrCode);
             VBOXSTRICTRC const      rcStrict      = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
