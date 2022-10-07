@@ -2949,10 +2949,42 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
         {
             PVMCC   pVM = pVCpu->CTX_SUFF(pVM);
             RTHCPTR HCPtr;
-            RTGCPHYS const GCPhys = PGM_A20_APPLY(pVCpu, PaePdpe.u & X86_PDPE_PG_MASK);
+
+            RTGCPHYS GCPhys;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+            {
+                PGMPTWALK      Walk;
+                PGMPTWALKGST   GstWalk;
+                RTGCPHYS const GCPhysNested = PaePdpe.u & X86_PDPE_PG_MASK;
+                int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysNested, &Walk, &GstWalk);
+                if (RT_SUCCESS(rc))
+                    GCPhys = Walk.GCPhys;
+                else
+                {
+                    /*
+                     * We can't translate the PAE PDPEs through the guest's EPT tables right now
+                     * but we must -NOT- fail right now. This is because we're called from a Mov CRx
+                     * instruction (or similar operation). Let's just pretend success but flag that
+                     * we need to map this PDPE lazily later.
+                     *
+                     * See Intel spec. 25.3 "Changes to instruction behavior in VMX non-root operation".
+                     * See Intel spec. 28.3.1 "EPT Overview".
+                     */
+                    pVCpu->pgm.s.apGstPaePDsR3[i]    = 0;
+                    pVCpu->pgm.s.apGstPaePDsR0[i]    = 0;
+                    pVCpu->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
+                    continue;
+                }
+            }
+            else
+#endif
+            {
+                GCPhys = PGM_A20_APPLY(pVCpu, PaePdpe.u & X86_PDPE_PG_MASK);
+            }
 
             PGM_LOCK_VOID(pVM);
-            PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
             AssertReturnStmt(pPage, PGM_UNLOCK(pVM), VERR_PGM_INVALID_PDPE_ADDR);
             int const rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
             PGM_UNLOCK(pVM);
@@ -2974,11 +3006,6 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
         pVCpu->pgm.s.apGstPaePDsR0[i]    = 0;
         pVCpu->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
     }
-
-    /*
-     * Update CPUM with the PAE PDPEs.
-     */
-    CPUMSetGuestPaePdpes(pVCpu, paPaePdpes);
     return VINF_SUCCESS;
 }
 
@@ -3011,7 +3038,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
             GCPhysCR3 = GCPhysOut;
         else
         {
-            AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
+            Log(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
             return rc;
         }
     }
@@ -3043,8 +3070,9 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
 #endif
 
             /*
-             * Map the PDPEs and update CPUM.
+             * Update CPUM and map the 4 PAE PDPEs.
              */
+            CPUMSetGuestPaePdpes(pVCpu, &aPaePdpes[0]);
             rc = PGMGstMapPaePdpes(pVCpu, &aPaePdpes[0]);
             if (RT_SUCCESS(rc))
             {

@@ -4904,21 +4904,42 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
             pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCR3;
 #  endif
 
-            /*
-             * Update CPUM and map the 4 PDs too.
-             */
             X86PDPE aGstPaePdpes[X86_PG_PAE_PDPE_ENTRIES];
-            memcpy(&aGstPaePdpes, HCPtrGuestCR3, sizeof(aGstPaePdpes));
-            PGMGstMapPaePdpes(pVCpu, &aGstPaePdpes[0]);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            /*
+             * When EPT is enabled by the nested-hypervisor and the nested-guest is in PAE mode,
+             * the guest-CPU context would've already been updated with the 4 PAE PDPEs specified
+             * in the virtual VMCS. The PDPEs can differ from those in guest memory referenced by
+             * the translated nested-guest CR3. We -MUST- use the PDPEs provided in the virtual VMCS
+             * rather than those in guest memory.
+             *
+             * See Intel spec. 26.3.2.4 "Loading Page-Directory-Pointer-Table Entries".
+             */
+            if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
+                CPUMGetGuestPaePdpes(pVCpu, &aGstPaePdpes[0]);
+            else
+#endif
+            {
+                /* Update CPUM with the PAE PDPEs referenced by CR3. */
+                memcpy(&aGstPaePdpes, HCPtrGuestCR3, sizeof(aGstPaePdpes));
+                CPUMSetGuestPaePdpes(pVCpu, &aGstPaePdpes[0]);
+            }
 
-            pVCpu->pgm.s.GCPhysPaeCR3 = GCPhysCR3;
+            /*
+             * Map the 4 PAE PDPEs.
+             */
+            rc = PGMGstMapPaePdpes(pVCpu, &aGstPaePdpes[0]);
+            if (RT_SUCCESS(rc))
+            {
 #  ifdef IN_RING3
-            pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = true;
-            pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = true;
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
 #  else
-            pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
-            pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = true;
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = true;
 #  endif
+                pVCpu->pgm.s.GCPhysPaeCR3 = GCPhysCR3;
+            }
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
 #  ifdef IN_RING3
@@ -5029,7 +5050,10 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
     /* nothing to do */
 #endif
 
-    /** @todo This should probably be moved inside \#if PGM_GST_TYPE == PGM_TYPE_PAE? */
+    /*
+     * PAE PDPEs (and CR3) might have been mapped via PGMGstMapPaePdpesAtCr3()
+     * prior to switching to PAE in pfnMapCr3(), so we need to clear them here.
+     */
     pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
     pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
     pVCpu->pgm.s.GCPhysPaeCR3            = NIL_RTGCPHYS;
