@@ -264,6 +264,7 @@ static int drvR3IntNetCallSvc(PDRVINTNET pThis, uint32_t uOperation, void *pvArg
 }
 
 
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
 /**
  * Calls the internal networking switch service living in either R0 or in another R3 process.
  *
@@ -275,7 +276,6 @@ static int drvR3IntNetCallSvc(PDRVINTNET pThis, uint32_t uOperation, void *pvArg
  */
 static int drvR3IntNetCallSvcAsync(PDRVINTNET pThis, uint32_t uOperation, void *pvArg, unsigned cbArg)
 {
-#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
     if (pThis->fIntNetR3Svc)
     {
         xpc_object_t hObj = xpc_dictionary_create_empty();
@@ -285,9 +285,9 @@ static int drvR3IntNetCallSvcAsync(PDRVINTNET pThis, uint32_t uOperation, void *
         return VINF_SUCCESS;
     }
     else
-#endif
         return PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, uOperation, pvArg, cbArg);
 }
+#endif
 
 
 /**
