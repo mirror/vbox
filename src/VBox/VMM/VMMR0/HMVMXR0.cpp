@@ -4165,7 +4165,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPUCC pVCpu, int rcVMRun, PVMXTRANS
             int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &pVCpu->hm.s.vmx.LastError.u32ExitReason);
             rc    |= VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
             AssertRC(rc);
-            vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_EXIT_QUALIFICATION>(pVCpu, pVmxTransient);
 
             pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hmr0.s.idEnteredCpu;
             /* LastError.idCurrentCpu was already updated in hmR0VmxPreRunGuestCommitted().
