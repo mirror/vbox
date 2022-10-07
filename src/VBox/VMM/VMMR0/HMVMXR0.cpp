@@ -4861,9 +4861,10 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
         /* The exit reason is always available. */
         pVmxExitAux->uReason = pVmxTransient->uExitReason;
 
+
         if (fWhat & HMVMX_READ_EXIT_QUALIFICATION)
         {
-            vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_EXIT_QUALIFICATION>(pVCpu, pVmxTransient);
             pVmxExitAux->u64Qual = pVmxTransient->uExitQual;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_EXIT_QUALIFICATION;
@@ -4872,7 +4873,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_IDT_VECTORING_INFO)
         {
-            vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_IDT_VECTORING_INFO>(pVCpu, pVmxTransient);
             pVmxExitAux->uIdtVectoringInfo = pVmxTransient->uIdtVectoringInfo;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_IDT_VECTORING_INFO;
@@ -4881,7 +4882,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_IDT_VECTORING_ERROR_CODE)
         {
-            vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_IDT_VECTORING_ERROR_CODE>(pVCpu, pVmxTransient);
             pVmxExitAux->uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_IDT_VECTORING_ERROR_CODE;
@@ -4890,7 +4891,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_EXIT_INSTR_LEN)
         {
-            vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_EXIT_INSTR_LEN>(pVCpu, pVmxTransient);
             pVmxExitAux->cbInstr = pVmxTransient->cbExitInstr;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_EXIT_INSTR_LEN;
@@ -4899,7 +4900,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_EXIT_INTERRUPTION_INFO)
         {
-            vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_EXIT_INTERRUPTION_INFO>(pVCpu, pVmxTransient);
             pVmxExitAux->uExitIntInfo = pVmxTransient->uExitIntInfo;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_INFO;
@@ -4908,7 +4909,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE)
         {
-            vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE>(pVCpu, pVmxTransient);
             pVmxExitAux->uExitIntErrCode = pVmxTransient->uExitIntErrorCode;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE;
@@ -4917,7 +4918,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_EXIT_INSTR_INFO)
         {
-            vmxHCReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_EXIT_INSTR_INFO>(pVCpu, pVmxTransient);
             pVmxExitAux->InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_EXIT_INSTR_INFO;
@@ -4926,7 +4927,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_GUEST_LINEAR_ADDR)
         {
-            vmxHCReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_GUEST_LINEAR_ADDR>(pVCpu, pVmxTransient);
             pVmxExitAux->u64GuestLinearAddr = pVmxTransient->uGuestLinearAddr;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_GUEST_LINEAR_ADDR;
@@ -4935,7 +4936,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
 
         if (fWhat & HMVMX_READ_GUEST_PHYSICAL_ADDR)
         {
-            vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_GUEST_PHYSICAL_ADDR>(pVCpu, pVmxTransient);
             pVmxExitAux->u64GuestPhysAddr = pVmxTransient->uGuestPhysicalAddr;
 #ifdef VBOX_STRICT
             fWhat &= ~HMVMX_READ_GUEST_PHYSICAL_ADDR;
@@ -4945,7 +4946,7 @@ VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint
         if (fWhat & HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
+            vmxHCReadToTransientSlow<HMVMX_READ_GUEST_PENDING_DBG_XCPTS>(pVCpu, pVmxTransient);
             pVmxExitAux->u64GuestPendingDbgXcpts = pVmxTransient->uGuestPendingDbgXcpts;
 #else
             pVmxExitAux->u64GuestPendingDbgXcpts = 0;

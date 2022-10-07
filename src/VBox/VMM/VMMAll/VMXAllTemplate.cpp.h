@@ -1357,6 +1357,18 @@ DECLINLINE(void) vmxHCReadIdtVectoringErrorCodeVmcs(PVMCPUCC pVCpu, PVMXTRANSIEN
 template<uint32_t const a_fReadMask>
 static void vmxHCReadToTransientSlow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    AssertCompile((a_fReadMask & ~(  HMVMX_READ_EXIT_QUALIFICATION
+                                   | HMVMX_READ_EXIT_INSTR_LEN
+                                   | HMVMX_READ_EXIT_INSTR_INFO
+                                   | HMVMX_READ_IDT_VECTORING_INFO
+                                   | HMVMX_READ_IDT_VECTORING_ERROR_CODE
+                                   | HMVMX_READ_EXIT_INTERRUPTION_INFO
+                                   | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE
+                                   | HMVMX_READ_GUEST_LINEAR_ADDR
+                                   | HMVMX_READ_GUEST_PHYSICAL_ADDR
+                                   | HMVMX_READ_GUEST_PENDING_DBG_XCPTS
+                                   )) == 0);
+
     if ((pVmxTransient->fVmcsFieldsRead & a_fReadMask) != a_fReadMask)
     {
         uint32_t const fVmcsFieldsRead = pVmxTransient->fVmcsFieldsRead;
@@ -1415,6 +1427,12 @@ static void vmxHCReadToTransientSlow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
             int const rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,      &pVmxTransient->uGuestPhysicalAddr);
             AssertRC(rc);
         }
+        if (   (a_fReadMask      & HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
+            && !(fVmcsFieldsRead & HMVMX_READ_GUEST_PENDING_DBG_XCPTS))
+        {
+            int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS,      &pVmxTransient->uGuestPendingDbgXcpts);
+            AssertRC(rc);
+        }
 
         pVmxTransient->fVmcsFieldsRead |= a_fReadMask;
     }
@@ -1436,6 +1454,18 @@ static void vmxHCReadToTransientSlow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
 template<uint32_t const a_fReadMask>
 DECLINLINE(void) vmxHCReadToTransient(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    AssertCompile((a_fReadMask & ~(  HMVMX_READ_EXIT_QUALIFICATION
+                                   | HMVMX_READ_EXIT_INSTR_LEN
+                                   | HMVMX_READ_EXIT_INSTR_INFO
+                                   | HMVMX_READ_IDT_VECTORING_INFO
+                                   | HMVMX_READ_IDT_VECTORING_ERROR_CODE
+                                   | HMVMX_READ_EXIT_INTERRUPTION_INFO
+                                   | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE
+                                   | HMVMX_READ_GUEST_LINEAR_ADDR
+                                   | HMVMX_READ_GUEST_PHYSICAL_ADDR
+                                   | HMVMX_READ_GUEST_PENDING_DBG_XCPTS
+                                   )) == 0);
+
     if (RT_LIKELY(!(pVmxTransient->fVmcsFieldsRead & a_fReadMask)))
     {
         if (a_fReadMask & HMVMX_READ_EXIT_QUALIFICATION)
@@ -1481,6 +1511,11 @@ DECLINLINE(void) vmxHCReadToTransient(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         if (a_fReadMask & HMVMX_READ_GUEST_PHYSICAL_ADDR)
         {
             int const rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,      &pVmxTransient->uGuestPhysicalAddr);
+            AssertRC(rc);
+        }
+        if (a_fReadMask & HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
+        {
+            int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS,      &pVmxTransient->uGuestPendingDbgXcpts);
             AssertRC(rc);
         }
 
