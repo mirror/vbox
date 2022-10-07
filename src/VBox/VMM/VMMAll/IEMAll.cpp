@@ -5170,8 +5170,8 @@ void iemSseStoreResult(PVMCPUCC pVCpu, PCIEMSSERESULT pResult, uint8_t iXmmReg) 
     pFpuCtx->MXCSR |= pResult->MXCSR & X86_MXCSR_XCPT_FLAGS;
 
     /* The result is only updated if there is no unmasked exception pending. */
-    if ((  ~((pFpuCtx->MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
-         & (pFpuCtx->MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0)
+    if ((  ~((pFpuCtx->MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT)
+         & (pFpuCtx->MXCSR & X86_MXCSR_XCPT_FLAGS)) == 0)
         pVCpu->cpum.GstCtx.XState.x87.aXMM[iXmmReg] = pResult->uResult;
 }
 
