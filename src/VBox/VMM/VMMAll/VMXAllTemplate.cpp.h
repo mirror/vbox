@@ -10328,16 +10328,12 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
 
-//#  define DSL_IRQ_FIX_1
-#  define DSL_IRQ_FIX_2
-
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     if (CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_EPT))
     {
         int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
         AssertRCReturn(rc, rc);
 
-#  ifdef DSL_IRQ_FIX_2
         vmxHCReadToTransient<  HMVMX_READ_EXIT_QUALIFICATION
                              | HMVMX_READ_EXIT_INSTR_LEN
                              | HMVMX_READ_EXIT_INTERRUPTION_INFO
@@ -10360,11 +10356,6 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
             return rcStrict;
         }
         bool const fClearEventOnForward = VCPU_2_VMXSTATE(pVCpu).Event.fPending; /* paranoia. should not inject events below.  */
-#  else
-        vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
-        vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
-        VBOXSTRICTRC rcStrict;
-#  endif
 
         RTGCPHYS const GCPhysNestedFault = pVmxTransient->uGuestPhysicalAddr;
         uint64_t const uExitQual         = pVmxTransient->uExitQual;
@@ -10393,40 +10384,10 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         Log7Func(("PGM (uExitQual=%#RX64, %RGp, %RGv) -> %Rrc (fFailed=%d)\n",
                   uExitQual, GCPhysNestedFault, GCPtrNestedFault, VBOXSTRICTRC_VAL(rcStrict), Walk.fFailed));
         if (RT_SUCCESS(rcStrict))
-        {
-#  ifdef DSL_IRQ_FIX_1
-            /*
-             * If it's our VMEXIT, we're responsible for re-injecting any event which delivery
-             * might have triggered this VMEXIT.  If we forward the problem to the inner VMM,
-             * it's its problem to deal with that issue.  This means that it's troublesome to
-             * call vmxHCCheckExitDueToEventDelivery before PGMR0NestedTrap0eHandlerNestedPaging
-             * have decided who's VMEXIT it is. Unfortunately, we're a bit of a pickle then if
-             * we end up with an informational status here, as we _must_ _not_ drop events either.
-             */
-            /** @todo need better solution for this.  Better solution should probably be
-             *        applied to other exits too...   */
-            if (rcStrict == VINF_SUCCESS)
-            {
-                vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
-                vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
-                vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-                vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
-                vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
-
-                vmxHCCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
-            }
-#  endif
             return rcStrict;
-        }
 
-#  ifndef DSL_IRQ_FIX_2
-        vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
-        vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
-#  else
         if (fClearEventOnForward)
             VCPU_2_VMXSTATE(pVCpu).Event.fPending = false;
-#  endif
 
         VMXVEXITEVENTINFO const ExitEventInfo = VMXVEXITEVENTINFO_INIT_ONLY_IDT(pVmxTransient->uIdtVectoringInfo,
                                                                                 pVmxTransient->uIdtVectoringErrorCode);
