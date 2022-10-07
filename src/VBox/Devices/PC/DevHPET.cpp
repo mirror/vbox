@@ -98,23 +98,25 @@
 /**
  * Femtosecods in a nanosecond
  */
-#define FS_PER_NS                   1000000
+#define FS_PER_NS                   UINT32_C(1000000)
 
-/** Number of HPET ticks per second (Hz), ICH9 frequency.
- * Value: 14318179 */
-#define HPET_TICKS_PER_SEC_ICH9     ((RT_NS_1SEC * FS_PER_NS) / HPET_CLK_PERIOD_ICH9)
+/** Number of HPET ticks per second (Hz), ICH9 frequency.  */
+#define HPET_TICKS_PER_SEC_ICH9     UINT32_C(14318180)
+AssertCompile(HPET_TICKS_PER_SEC_ICH9 == (RT_NS_1SEC_64 * FS_PER_NS + HPET_CLK_PERIOD_ICH9 / 2) / HPET_CLK_PERIOD_ICH9);
 
-/** Number of HPET ticks per second (Hz), made-up PIIX frequency.
- * Value: 100000000   */
-#define HPET_TICKS_PER_SEC_PIIX     ((RT_NS_1SEC * FS_PER_NS) / HPET_CLK_PERIOD_PIIX)
+/** Number of HPET ticks per second (Hz), made-up PIIX frequency.  */
+#define HPET_TICKS_PER_SEC_PIIX     UINT32_C(100000000)
+AssertCompile(HPET_TICKS_PER_SEC_PIIX == (RT_NS_1SEC_64 * FS_PER_NS + HPET_CLK_PERIOD_PIIX / 2) / HPET_CLK_PERIOD_PIIX);
 
-/** Number of HPET ticks in 100 years, ICH9 frequency.
- * Value: 45153809294400000 (0x00A06B26'7B3F9A00) */
+/** Number of HPET ticks in 100 years (approximate), ICH9 frequency.
+ * Value: 45153812448000000 (0x00A06B27'3737B800) */
 #define HPET_TICKS_IN_100YR_ICH9    (HPET_TICKS_PER_SEC_ICH9 * RT_SEC_1DAY_64 * 365 * 100)
+AssertCompile(HPET_TICKS_IN_100YR_ICH9 >= UINT64_C(45153812448000000));
 
 /**  Number of HPET ticks in 100 years, made-up PIIX frequency.
  * Value: 315360000000000000 (0x0460623F'C85E0000) */
 #define HPET_TICKS_IN_100YR_PIIX    (HPET_TICKS_PER_SEC_PIIX * RT_SEC_1DAY_64 * 365 * 100)
+AssertCompile(HPET_TICKS_IN_100YR_PIIX >= UINT64_C(315360000000000000));
 
 /** @name Interrupt type
  * @{ */
