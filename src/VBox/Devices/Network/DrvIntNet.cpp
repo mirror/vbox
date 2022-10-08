@@ -1937,7 +1937,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         xpc_connection_set_event_handler(hXpcCon, ^(xpc_object_t hObj) {
             if (xpc_get_type(hObj) == XPC_TYPE_ERROR)
             {
-                /** @todo Error handling - reconnecting. */                
+                /** @todo Error handling - reconnecting. */
             }
             else
             {

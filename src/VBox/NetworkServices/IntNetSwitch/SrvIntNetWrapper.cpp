@@ -40,12 +40,8 @@
 
 #include <VBox/types.h>
 #include <VBox/intnet.h>
-#include <VBox/err.h>
 #include <iprt/asm.h>
-#include <iprt/mem.h>
 #include <iprt/mp.h>
-
-#include <sys/mman.h>
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
