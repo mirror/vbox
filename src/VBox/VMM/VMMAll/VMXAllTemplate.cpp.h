@@ -567,49 +567,6 @@ static const uint32_t g_aVmcsFields[] =
 };
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
-#ifdef VBOX_STRICT
-static const uint32_t g_aVmcsSegBase[] =
-{
-    VMX_VMCS_GUEST_ES_BASE,
-    VMX_VMCS_GUEST_CS_BASE,
-    VMX_VMCS_GUEST_SS_BASE,
-    VMX_VMCS_GUEST_DS_BASE,
-    VMX_VMCS_GUEST_FS_BASE,
-    VMX_VMCS_GUEST_GS_BASE
-};
-static const uint32_t g_aVmcsSegSel[] =
-{
-    VMX_VMCS16_GUEST_ES_SEL,
-    VMX_VMCS16_GUEST_CS_SEL,
-    VMX_VMCS16_GUEST_SS_SEL,
-    VMX_VMCS16_GUEST_DS_SEL,
-    VMX_VMCS16_GUEST_FS_SEL,
-    VMX_VMCS16_GUEST_GS_SEL
-};
-static const uint32_t g_aVmcsSegLimit[] =
-{
-    VMX_VMCS32_GUEST_ES_LIMIT,
-    VMX_VMCS32_GUEST_CS_LIMIT,
-    VMX_VMCS32_GUEST_SS_LIMIT,
-    VMX_VMCS32_GUEST_DS_LIMIT,
-    VMX_VMCS32_GUEST_FS_LIMIT,
-    VMX_VMCS32_GUEST_GS_LIMIT
-};
-static const uint32_t g_aVmcsSegAttr[] =
-{
-    VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS,
-    VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS,
-    VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS,
-    VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS,
-    VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS,
-    VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS
-};
-AssertCompile(RT_ELEMENTS(g_aVmcsSegSel)   == X86_SREG_COUNT);
-AssertCompile(RT_ELEMENTS(g_aVmcsSegLimit) == X86_SREG_COUNT);
-AssertCompile(RT_ELEMENTS(g_aVmcsSegBase)  == X86_SREG_COUNT);
-AssertCompile(RT_ELEMENTS(g_aVmcsSegAttr)  == X86_SREG_COUNT);
-#endif /* VBOX_STRICT */
-
 #ifdef HMVMX_USE_FUNCTION_TABLE
 /**
  * VMX_EXIT dispatch table.
@@ -1344,7 +1301,12 @@ DECLINLINE(void) vmxHCReadToTransient(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         pVmxTransient->fVmcsFieldsRead |= a_fReadMask;
     }
     else
+    {
+        /** @todo add a release counter. */
+        Log11Func(("a_fReadMask=%#x fVmcsFieldsRead=%#x => %#x - Taking inefficient code path!\n",
+                   a_fReadMask, pVmxTransient->fVmcsFieldsRead, a_fReadMask & pVmxTransient->fVmcsFieldsRead));
         vmxHCReadToTransientSlow<a_fReadMask>(pVCpu, pVmxTransient);
+    }
 }
 
 
@@ -2712,10 +2674,6 @@ static int vmxHCExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uint3
     /*
      * Commit it to the VMCS.
      */
-    Assert((uint32_t)VMX_VMCS16_GUEST_SEG_SEL(iSegReg)           == g_aVmcsSegSel[iSegReg]);
-    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg)         == g_aVmcsSegLimit[iSegReg]);
-    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg) == g_aVmcsSegAttr[iSegReg]);
-    Assert((uint32_t)VMX_VMCS_GUEST_SEG_BASE(iSegReg)            == g_aVmcsSegBase[iSegReg]);
     int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS16_GUEST_SEG_SEL(iSegReg),           pSelReg->Sel);      AssertRC(rc);
     rc     = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg),         pSelReg->u32Limit); AssertRC(rc);
     rc     = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_SEG_BASE(iSegReg),            pSelReg->u64Base);  AssertRC(rc);
@@ -3242,10 +3200,18 @@ template<uint32_t const a_iSegReg>
 DECLINLINE(void) vmxHCImportGuestSegReg(PVMCPUCC pVCpu)
 {
     AssertCompile(a_iSegReg < X86_SREG_COUNT);
-    Assert((uint32_t)VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg)           == g_aVmcsSegSel[a_iSegReg]);
-    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg)         == g_aVmcsSegLimit[a_iSegReg]);
-    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg) == g_aVmcsSegAttr[a_iSegReg]);
-    Assert((uint32_t)VMX_VMCS_GUEST_SEG_BASE(a_iSegReg)            == g_aVmcsSegBase[a_iSegReg]);
+    /* Check that the macros we depend upon here and in the export parenter function works: */
+#define MY_SEG_VMCS_FIELD(a_FieldPrefix, a_FieldSuff) \
+        (  a_iSegReg == X86_SREG_ES ? a_FieldPrefix ## ES ## a_FieldSuff \
+         : a_iSegReg == X86_SREG_CS ? a_FieldPrefix ## CS ## a_FieldSuff \
+         : a_iSegReg == X86_SREG_SS ? a_FieldPrefix ## SS ## a_FieldSuff \
+         : a_iSegReg == X86_SREG_DS ? a_FieldPrefix ## DS ## a_FieldSuff \
+         : a_iSegReg == X86_SREG_FS ? a_FieldPrefix ## FS ## a_FieldSuff \
+         : a_iSegReg == X86_SREG_GS ? a_FieldPrefix ## GS ## a_FieldSuff : 0)
+    AssertCompile(VMX_VMCS_GUEST_SEG_BASE(a_iSegReg)             == MY_SEG_VMCS_FIELD(VMX_VMCS_GUEST_,_BASE));
+    AssertCompile(VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg)            == MY_SEG_VMCS_FIELD(VMX_VMCS16_GUEST_,_SEL));
+    AssertCompile(VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg)          == MY_SEG_VMCS_FIELD(VMX_VMCS32_GUEST_,_LIMIT));
+    AssertCompile(VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg)  == MY_SEG_VMCS_FIELD(VMX_VMCS32_GUEST_,_ACCESS_RIGHTS));
 
     PCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[a_iSegReg];
 
