@@ -3274,7 +3274,7 @@ DECLINLINE(void) vmxHCImportGuestSegReg(PVMCPUCC pVCpu)
  *
  * @remarks Called with interrupts and/or preemption disabled.
  */
-static void vmxHCImportGuestLdtr(PVMCPUCC pVCpu)
+DECLINLINE(void) vmxHCImportGuestLdtr(PVMCPUCC pVCpu)
 {
     uint16_t u16Sel;
     uint64_t u64Base;
