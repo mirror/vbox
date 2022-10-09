@@ -4435,400 +4435,6 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
 
 
 /**
- * Worker for VMXR0ImportStateOnDemand.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS info. object.
- * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
- */
-static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_t fWhat)
-{
-    int      rc   = VINF_SUCCESS;
-    PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    uint32_t u32Val;
-
-    /*
-     * Note! This is hack to workaround a mysterious BSOD observed with release builds
-     *       on Windows 10 64-bit hosts. Profile and debug builds are not affected and
-     *       neither are other host platforms.
-     *
-     *       Committing this temporarily as it prevents BSOD.
-     *
-     * Update: This is very likely a compiler optimization bug, see @bugref{9180}.
-     */
-#ifdef RT_OS_WINDOWS
-    if (pVM == 0 || pVM == (void *)(uintptr_t)-1)
-        return VERR_HM_IPE_1;
-#endif
-
-    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatImportGuestState, x);
-
-    /*
-     * We disable interrupts to make the updating of the state and in particular
-     * the fExtrn modification atomic wrt to preemption hooks.
-     */
-    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
-
-    fWhat &= pCtx->fExtrn;
-    if (fWhat)
-    {
-        do
-        {
-            if (fWhat & CPUMCTX_EXTRN_RIP)
-                vmxHCImportGuestRip(pVCpu);
-
-            if (fWhat & CPUMCTX_EXTRN_RFLAGS)
-                vmxHCImportGuestRFlags(pVCpu, pVmcsInfo);
-
-            if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
-                vmxHCImportGuestIntrState(pVCpu, pVmcsInfo);
-
-            if (fWhat & CPUMCTX_EXTRN_RSP)
-            {
-                rc = VMXReadVmcsNw(VMX_VMCS_GUEST_RSP, &pCtx->rsp);
-                AssertRC(rc);
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
-            {
-                PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-                bool const fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
-                if (fWhat & CPUMCTX_EXTRN_CS)
-                {
-                    vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu);
-                    vmxHCImportGuestRip(pVCpu);
-                    if (fRealOnV86Active)
-                        pCtx->cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
-                    EMHistoryUpdatePC(pVCpu, pCtx->cs.u64Base + pCtx->rip, true /* fFlattened */);
-                }
-                if (fWhat & CPUMCTX_EXTRN_SS)
-                {
-                    vmxHCImportGuestSegReg<X86_SREG_SS>(pVCpu);
-                    if (fRealOnV86Active)
-                        pCtx->ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
-                }
-                if (fWhat & CPUMCTX_EXTRN_DS)
-                {
-                    vmxHCImportGuestSegReg<X86_SREG_DS>(pVCpu);
-                    if (fRealOnV86Active)
-                        pCtx->ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
-                }
-                if (fWhat & CPUMCTX_EXTRN_ES)
-                {
-                    vmxHCImportGuestSegReg<X86_SREG_ES>(pVCpu);
-                    if (fRealOnV86Active)
-                        pCtx->es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
-                }
-                if (fWhat & CPUMCTX_EXTRN_FS)
-                {
-                    vmxHCImportGuestSegReg<X86_SREG_FS>(pVCpu);
-                    if (fRealOnV86Active)
-                        pCtx->fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
-                }
-                if (fWhat & CPUMCTX_EXTRN_GS)
-                {
-                    vmxHCImportGuestSegReg<X86_SREG_GS>(pVCpu);
-                    if (fRealOnV86Active)
-                        pCtx->gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
-                }
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_TABLE_MASK)
-            {
-                if (fWhat & CPUMCTX_EXTRN_LDTR)
-                    vmxHCImportGuestLdtr(pVCpu);
-
-                if (fWhat & CPUMCTX_EXTRN_GDTR)
-                {
-                    rc = VMXReadVmcsNw(VMX_VMCS_GUEST_GDTR_BASE,    &pCtx->gdtr.pGdt);  AssertRC(rc);
-                    rc = VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);           AssertRC(rc);
-                    pCtx->gdtr.cbGdt = u32Val;
-                }
-
-                /* Guest IDTR. */
-                if (fWhat & CPUMCTX_EXTRN_IDTR)
-                {
-                    rc = VMXReadVmcsNw(VMX_VMCS_GUEST_IDTR_BASE,    &pCtx->idtr.pIdt);  AssertRC(rc);
-                    rc = VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);           AssertRC(rc);
-                    pCtx->idtr.cbIdt = u32Val;
-                }
-
-                /* Guest TR. */
-                if (fWhat & CPUMCTX_EXTRN_TR)
-                {
-                    /* Real-mode emulation using virtual-8086 mode has the fake TSS (pRealModeTSS) in TR,
-                       don't need to import that one. */
-                    if (!pVmcsInfo->pShared->RealMode.fRealOnV86Active)
-                        vmxHCImportGuestTr(pVCpu);
-                }
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_DR7)
-            {
-                if (!pVCpu->hmr0.s.fUsingHyperDR7)
-                {
-                    rc = VMXReadVmcsNw(VMX_VMCS_GUEST_DR7, &pCtx->dr[7]);
-                    AssertRC(rc);
-                }
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
-            {
-                rc = VMXReadVmcsNw(VMX_VMCS_GUEST_SYSENTER_EIP,  &pCtx->SysEnter.eip);  AssertRC(rc);
-                rc = VMXReadVmcsNw(VMX_VMCS_GUEST_SYSENTER_ESP,  &pCtx->SysEnter.esp);  AssertRC(rc);
-                rc = VMXReadVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS, &u32Val);              AssertRC(rc);
-                pCtx->SysEnter.cs = u32Val;
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
-            {
-                if (   pVM->hmr0.s.fAllow64BitGuests
-                    && (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
-                    pCtx->msrKERNELGSBASE = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
-            {
-                if (   pVM->hmr0.s.fAllow64BitGuests
-                    && (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
-                {
-                    pCtx->msrLSTAR  = ASMRdMsr(MSR_K8_LSTAR);
-                    pCtx->msrSTAR   = ASMRdMsr(MSR_K6_STAR);
-                    pCtx->msrSFMASK = ASMRdMsr(MSR_K8_SF_MASK);
-                }
-            }
-
-            if (fWhat & (CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
-            {
-                PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-                PCVMXAUTOMSR       pMsrs           = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-                uint32_t const     cMsrs           = pVmcsInfo->cExitMsrStore;
-                Assert(pMsrs);
-                Assert(cMsrs <= VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc));
-                Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
-                for (uint32_t i = 0; i < cMsrs; i++)
-                {
-                    uint32_t const idMsr = pMsrs[i].u32Msr;
-                    switch (idMsr)
-                    {
-                        case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsrs[i].u64Value);     break;
-                        case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsrs[i].u64Value);   break;
-                        case MSR_K6_EFER:           /* Can't be changed without causing a VM-exit */  break;
-                        default:
-                        {
-                            uint32_t idxLbrMsr;
-                            if (pVM->hmr0.s.vmx.fLbr)
-                            {
-                                if (hmR0VmxIsLbrBranchFromMsr(pVM, idMsr, &idxLbrMsr))
-                                {
-                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
-                                    pVmcsInfoShared->au64LbrFromIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
-                                    break;
-                                }
-                                if (hmR0VmxIsLbrBranchToMsr(pVM, idMsr, &idxLbrMsr))
-                                {
-                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
-                                    pVmcsInfoShared->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
-                                    break;
-                                }
-                                if (idMsr == pVM->hmr0.s.vmx.idLbrTosMsr)
-                                {
-                                    pVmcsInfoShared->u64LbrTosMsr = pMsrs[i].u64Value;
-                                    break;
-                                }
-                                /* Fallthru (no break) */
-                            }
-                            pCtx->fExtrn = 0;
-                            pVCpu->hm.s.u32HMError = pMsrs->u32Msr;
-                            ASMSetFlags(fEFlags);
-                            AssertMsgFailed(("Unexpected MSR in auto-load/store area. idMsr=%#RX32 cMsrs=%u\n", idMsr, cMsrs));
-                            return VERR_HM_UNEXPECTED_LD_ST_MSR;
-                        }
-                    }
-                }
-            }
-
-            if (fWhat & CPUMCTX_EXTRN_CR_MASK)
-            {
-                if (fWhat & CPUMCTX_EXTRN_CR0)
-                {
-                    uint64_t u64Cr0;
-                    uint64_t u64Shadow;
-                    rc = VMXReadVmcsNw(VMX_VMCS_GUEST_CR0,            &u64Cr0);       AssertRC(rc);
-                    rc = VMXReadVmcsNw(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow);    AssertRC(rc);
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
-                    u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
-                           | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-#else
-                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
-                    {
-                        u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
-                               | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-                    }
-                    else
-                    {
-                        /*
-                         * We've merged the guest and nested-guest's CR0 guest/host mask while executing
-                         * the nested-guest using hardware-assisted VMX. Accordingly we need to
-                         * re-construct CR0. See @bugref{9180#c95} for details.
-                         */
-                        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-                        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-                        u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
-                               | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
-                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
-                    }
-#endif
-                    VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
-                    CPUMSetGuestCR0(pVCpu, u64Cr0);
-                    VMMRZCallRing3Enable(pVCpu);
-                }
-
-                if (fWhat & CPUMCTX_EXTRN_CR4)
-                {
-                    uint64_t u64Cr4;
-                    uint64_t u64Shadow;
-                    rc  = VMXReadVmcsNw(VMX_VMCS_GUEST_CR4,            &u64Cr4);      AssertRC(rc);
-                    rc |= VMXReadVmcsNw(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow);   AssertRC(rc);
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
-                    u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
-                           | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-#else
-                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
-                    {
-                        u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
-                               | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-                    }
-                    else
-                    {
-                        /*
-                         * We've merged the guest and nested-guest's CR4 guest/host mask while executing
-                         * the nested-guest using hardware-assisted VMX. Accordingly we need to
-                         * re-construct CR4. See @bugref{9180#c95} for details.
-                         */
-                        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-                        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-                        u64Cr4 = (u64Cr4                     & ~pVmcsInfo->u64Cr4Mask)
-                               | (pVmcsNstGst->u64GuestCr4.u &  pVmcsNstGst->u64Cr4Mask.u)
-                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
-                    }
-#endif
-                    pCtx->cr4 = u64Cr4;
-                }
-
-                if (fWhat & CPUMCTX_EXTRN_CR3)
-                {
-                    /* CR0.PG bit changes are always intercepted, so it's up to date. */
-                    if (   pVM->hmr0.s.vmx.fUnrestrictedGuest
-                        || (   pVM->hmr0.s.fNestedPaging
-                            && CPUMIsGuestPagingEnabledEx(pCtx)))
-                    {
-                        uint64_t u64Cr3;
-                        rc = VMXReadVmcsNw(VMX_VMCS_GUEST_CR3, &u64Cr3);  AssertRC(rc);
-                        if (pCtx->cr3 != u64Cr3)
-                        {
-                            pCtx->cr3 = u64Cr3;
-                            VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-                        }
-
-                        /*
-                         * If the guest is in PAE mode, sync back the PDPE's into the guest state.
-                         * CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date.
-                         */
-                        if (CPUMIsGuestInPAEModeEx(pCtx))
-                        {
-                            X86PDPE aPaePdpes[4];
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &aPaePdpes[0].u);     AssertRC(rc);
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &aPaePdpes[1].u);     AssertRC(rc);
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &aPaePdpes[2].u);     AssertRC(rc);
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &aPaePdpes[3].u);     AssertRC(rc);
-                            if (memcmp(&aPaePdpes[0], &pCtx->aPaePdpes[0], sizeof(aPaePdpes)))
-                            {
-                                memcpy(&pCtx->aPaePdpes[0], &aPaePdpes[0], sizeof(aPaePdpes));
-                                /* PGM now updates PAE PDPTEs while updating CR3. */
-                                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-                            }
-                        }
-                    }
-                }
-            }
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (fWhat & CPUMCTX_EXTRN_HWVIRT)
-            {
-                if (   (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
-                    && !CPUMIsGuestInVmxNonRootMode(pCtx))
-                {
-                    Assert(CPUMIsGuestInVmxRootMode(pCtx));
-                    rc = vmxHCCopyShadowToNstGstVmcs(pVCpu, pVmcsInfo);
-                    if (RT_SUCCESS(rc))
-                    { /* likely */ }
-                    else
-                        break;
-                }
-            }
-#endif
-        } while (0);
-
-        if (RT_SUCCESS(rc))
-        {
-            /* Update fExtrn. */
-            pCtx->fExtrn &= ~fWhat;
-
-            /* If everything has been imported, clear the HM keeper bit. */
-            if (!(pCtx->fExtrn & HMVMX_CPUMCTX_EXTRN_ALL))
-            {
-                pCtx->fExtrn &= ~CPUMCTX_EXTRN_KEEPER_HM;
-                Assert(!pCtx->fExtrn);
-            }
-        }
-    }
-    else
-        AssertMsg(!pCtx->fExtrn || (pCtx->fExtrn & HMVMX_CPUMCTX_EXTRN_ALL), ("%#RX64\n", pCtx->fExtrn));
-
-    /*
-     * Restore interrupts.
-     */
-    ASMSetFlags(fEFlags);
-
-    STAM_PROFILE_ADV_STOP(& pVCpu->hm.s.StatImportGuestState, x);
-
-    if (RT_SUCCESS(rc))
-    { /* likely */ }
-    else
-        return rc;
-
-    /*
-     * Honor any pending CR3 updates.
-     *
-     * Consider this scenario: VM-exit -> VMMRZCallRing3Enable() -> do stuff that causes a longjmp -> VMXR0CallRing3Callback()
-     * -> VMMRZCallRing3Disable() -> hmR0VmxImportGuestState() -> Sets VMCPU_FF_HM_UPDATE_CR3 pending -> return from the longjmp
-     * -> continue with VM-exit handling -> hmR0VmxImportGuestState() and here we are.
-     *
-     * The reason for such complicated handling is because VM-exits that call into PGM expect CR3 to be up-to-date and thus
-     * if any CR3-saves -before- the VM-exit (longjmp) postponed the CR3 update via the force-flag, any VM-exit handler that
-     * calls into PGM when it re-saves CR3 will end up here and we call PGMUpdateCR3(). This is why the code below should
-     * -NOT- check if CPUMCTX_EXTRN_CR3 is set!
-     *
-     * The longjmp exit path can't check these CR3 force-flags and call code that takes a lock again. We cover for it here.
-     *
-     * The force-flag is checked first as it's cheaper for potential superfluous calls to this function.
-     */
-    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3)
-        && VMMRZCallRing3IsEnabled(pVCpu))
-    {
-        Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
-        PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Saves the guest state from the VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
@@ -4839,7 +4445,7 @@ VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 {
     AssertPtr(pVCpu);
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-    return hmR0VmxImportGuestState(pVCpu, pVmcsInfo, fWhat);
+    return vmxHCImportGuestState(pVCpu, pVmcsInfo, fWhat);
 }
 
 
@@ -4991,7 +4597,7 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
     if (fImportState)
     {
-        int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+        int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
         AssertRCReturn(rc, rc);
     }
 
@@ -5022,7 +4628,7 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
         /* We shouldn't restore the host MSRs without saving the guest MSRs first. */
         if (!fImportState)
         {
-            int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS);
+            int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS);
             AssertRCReturn(rc, rc);
         }
         hmR0VmxLazyRestoreHostMsrs(pVCpu);
@@ -7128,7 +6734,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
          */
         if (fStepping)
         {
-            int rc = hmR0VmxImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+            int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
             AssertRC(rc);
             if (   pVCpu->cpum.GstCtx.rip    != DbgState.uRipStart
                 || pVCpu->cpum.GstCtx.cs.Sel != DbgState.uCsStart)
@@ -7155,7 +6761,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
      */
     if (pVCpu->hmr0.s.fClearTrapFlag)
     {
-        int rc = hmR0VmxImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
+        int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
         AssertRC(rc);
         pVCpu->hmr0.s.fClearTrapFlag = false;
         pVCpu->cpum.GstCtx.eflags.Bits.u1TF = 0;

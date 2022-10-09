@@ -3450,10 +3450,10 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
      *
      * Update: This is very likely a compiler optimization bug, see @bugref{9180}.
      */
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     if (pVM == 0 || pVM == (void *)(uintptr_t)-1)
         return VERR_HM_IPE_1;
-# endif
+#endif
 
     STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatImportGuestState, x);
 
