@@ -8910,7 +8910,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     vmxHCReadToTransient<  HMVMX_READ_EXIT_QUALIFICATION
                          | HMVMX_READ_GUEST_PHYSICAL_ADDR>(pVCpu, pVmxTransient);
     vmxHCImportGuestRip(pVCpu);
-    vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu;
+    vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu);
 
     /*
      * Ask PGM for information about the given GCPhys.  We need to check if we're
