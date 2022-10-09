@@ -4497,7 +4497,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                 bool const fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
                 if (fWhat & CPUMCTX_EXTRN_CS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_CS);
+                    vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu);
                     vmxHCImportGuestRip(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
@@ -4505,31 +4505,31 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                 }
                 if (fWhat & CPUMCTX_EXTRN_SS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_SS);
+                    vmxHCImportGuestSegReg<X86_SREG_SS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_DS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_DS);
+                    vmxHCImportGuestSegReg<X86_SREG_DS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_ES)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_ES);
+                    vmxHCImportGuestSegReg<X86_SREG_ES>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_FS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_FS);
+                    vmxHCImportGuestSegReg<X86_SREG_FS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_GS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_GS);
+                    vmxHCImportGuestSegReg<X86_SREG_GS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
                 }

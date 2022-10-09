@@ -3234,33 +3234,34 @@ static void vmxHCFixUnusableSegRegAttr(PVMCPUCC pVCpu, PCPUMSELREG pSelReg, cons
  * context.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   iSegReg     The segment register number (X86_SREG_XXX).
+ * @tparam  a_iSegReg   The segment register number (X86_SREG_XXX).
  *
  * @remarks Called with interrupts and/or preemption disabled.
  */
-static void vmxHCImportGuestSegReg(PVMCPUCC pVCpu, uint32_t iSegReg)
+template<uint32_t const a_iSegReg>
+DECLINLINE(void) vmxHCImportGuestSegReg(PVMCPUCC pVCpu)
 {
-    Assert(iSegReg < X86_SREG_COUNT);
-    Assert((uint32_t)VMX_VMCS16_GUEST_SEG_SEL(iSegReg)           == g_aVmcsSegSel[iSegReg]);
-    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg)         == g_aVmcsSegLimit[iSegReg]);
-    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg) == g_aVmcsSegAttr[iSegReg]);
-    Assert((uint32_t)VMX_VMCS_GUEST_SEG_BASE(iSegReg)            == g_aVmcsSegBase[iSegReg]);
+    AssertCompile(a_iSegReg < X86_SREG_COUNT);
+    Assert((uint32_t)VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg)           == g_aVmcsSegSel[a_iSegReg]);
+    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg)         == g_aVmcsSegLimit[a_iSegReg]);
+    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg) == g_aVmcsSegAttr[a_iSegReg]);
+    Assert((uint32_t)VMX_VMCS_GUEST_SEG_BASE(a_iSegReg)            == g_aVmcsSegBase[a_iSegReg]);
 
-    PCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
+    PCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[a_iSegReg];
 
     uint16_t u16Sel;
-    int rc = VMX_VMCS_READ_16(pVCpu, VMX_VMCS16_GUEST_SEG_SEL(iSegReg), &u16Sel);   AssertRC(rc);
+    int rc = VMX_VMCS_READ_16(pVCpu, VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg), &u16Sel);   AssertRC(rc);
     pSelReg->Sel      = u16Sel;
     pSelReg->ValidSel = u16Sel;
 
-    rc     = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg), &pSelReg->u32Limit); AssertRC(rc);
-    rc     = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_SEG_BASE(iSegReg), &pSelReg->u64Base);     AssertRC(rc);
+    rc     = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg), &pSelReg->u32Limit); AssertRC(rc);
+    rc     = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_SEG_BASE(a_iSegReg), &pSelReg->u64Base);     AssertRC(rc);
 
     uint32_t u32Attr;
-    rc     = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg), &u32Attr);   AssertRC(rc);
+    rc     = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg), &u32Attr);   AssertRC(rc);
     pSelReg->Attr.u   = u32Attr;
     if (u32Attr & X86DESCATTR_UNUSABLE)
-        vmxHCFixUnusableSegRegAttr(pVCpu, pSelReg, "ES\0CS\0SS\0DS\0FS\0GS" + iSegReg * 3);
+        vmxHCFixUnusableSegRegAttr(pVCpu, pSelReg, "ES\0CS\0SS\0DS\0FS\0GS" + a_iSegReg * 3);
 
     pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
 }
@@ -3301,7 +3302,7 @@ static void vmxHCImportGuestLdtr(PVMCPUCC pVCpu)
  *
  * @remarks Called with interrupts and/or preemption disabled.
  */
-static void vmxHCImportGuestTr(PVMCPUCC pVCpu)
+DECLINLINE(void) vmxHCImportGuestTr(PVMCPUCC pVCpu)
 {
     uint16_t u16Sel;
     uint64_t u64Base;
@@ -3331,7 +3332,7 @@ static void vmxHCImportGuestTr(PVMCPUCC pVCpu)
  * @remarks Do -not- call this function directly, use vmxHCImportGuestState()
  *          instead!!!
  */
-static void vmxHCImportGuestRip(PVMCPUCC pVCpu)
+DECLINLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
 {
     uint64_t u64Val;
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
@@ -3357,7 +3358,7 @@ static void vmxHCImportGuestRip(PVMCPUCC pVCpu)
  * @remarks Do -not- call this function directly, use vmxHCImportGuestState()
  *          instead!!!
  */
-static void vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+DECLINLINE(void) vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (pCtx->fExtrn & CPUMCTX_EXTRN_RFLAGS)
@@ -3394,7 +3395,7 @@ static void vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
  * @remarks Do -not- call this function directly, use vmxHCImportGuestState()
  *          instead!!!
  */
-static void vmxHCImportGuestIntrState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+DECLINLINE(void) vmxHCImportGuestIntrState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
     uint32_t u32Val;
     int rc = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, &u32Val);    AssertRC(rc);
@@ -3494,39 +3495,39 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
 #endif
                 if (fWhat & CPUMCTX_EXTRN_CS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_CS);
-                    vmxHCImportGuestRip(pVCpu);
+                    vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu);
+                    vmxHCImportGuestRip(pVCpu); /** @todo WTF? */
                     if (fRealOnV86Active)
                         pCtx->cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
                     EMHistoryUpdatePC(pVCpu, pCtx->cs.u64Base + pCtx->rip, true /* fFlattened */);
                 }
                 if (fWhat & CPUMCTX_EXTRN_SS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_SS);
+                    vmxHCImportGuestSegReg<X86_SREG_SS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_DS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_DS);
+                    vmxHCImportGuestSegReg<X86_SREG_DS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_ES)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_ES);
+                    vmxHCImportGuestSegReg<X86_SREG_ES>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_FS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_FS);
+                    vmxHCImportGuestSegReg<X86_SREG_FS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_GS)
                 {
-                    vmxHCImportGuestSegReg(pVCpu, X86_SREG_GS);
+                    vmxHCImportGuestSegReg<X86_SREG_GS>(pVCpu);
                     if (fRealOnV86Active)
                         pCtx->gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
                 }
@@ -8909,7 +8910,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     vmxHCReadToTransient<  HMVMX_READ_EXIT_QUALIFICATION
                          | HMVMX_READ_GUEST_PHYSICAL_ADDR>(pVCpu, pVmxTransient);
     vmxHCImportGuestRip(pVCpu);
-    vmxHCImportGuestSegReg(pVCpu, X86_SREG_CS);
+    vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu;
 
     /*
      * Ask PGM for information about the given GCPhys.  We need to check if we're
