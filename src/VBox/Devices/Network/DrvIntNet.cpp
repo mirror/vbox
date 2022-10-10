@@ -244,7 +244,7 @@ static int drvR3IntNetCallSvc(PDRVINTNET pThis, uint32_t uOperation, void *pvArg
 #if defined(RT_OS_DARWIN) && defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
     if (pThis->fIntNetR3Svc)
     {
-        xpc_object_t hObj = xpc_dictionary_create_empty();
+        xpc_object_t hObj = xpc_dictionary_create(NULL, NULL, 0);
         xpc_dictionary_set_uint64(hObj, "req-id", uOperation);
         xpc_dictionary_set_data(hObj, "req", pvArg, cbArg);
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
@@ -278,7 +278,7 @@ static int drvR3IntNetCallSvcAsync(PDRVINTNET pThis, uint32_t uOperation, void *
 {
     if (pThis->fIntNetR3Svc)
     {
-        xpc_object_t hObj = xpc_dictionary_create_empty();
+        xpc_object_t hObj = xpc_dictionary_create(NULL, NULL, 0);
         xpc_dictionary_set_uint64(hObj, "req-id", uOperation);
         xpc_dictionary_set_data(hObj, "req", pvArg, cbArg);
         xpc_connection_send_message(pThis->hXpcCon, hObj);
@@ -311,7 +311,7 @@ static int drvR3IntNetMapBufferPointers(PDRVINTNET pThis)
 #if defined(RT_OS_DARWIN) && defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
     if (pThis->fIntNetR3Svc)
     {
-        xpc_object_t hObj = xpc_dictionary_create_empty();
+        xpc_object_t hObj = xpc_dictionary_create(NULL, NULL, 0);
         xpc_dictionary_set_uint64(hObj, "req-id", VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS);
         xpc_dictionary_set_data(hObj, "req", &GetBufferPtrsReq, sizeof(GetBufferPtrsReq));
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
