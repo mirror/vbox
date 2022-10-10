@@ -2836,8 +2836,8 @@ static int nemR3DarwinStatisticsRegister(PVM pVM, VMCPUID idCpu, PNEMCPU pNemCpu
 
     NEM_REG_COUNTER(&pVmxStats->StatExitAll,      "/NEM/CPU%u/Exit/All", "Total exits (including nested-guest exits).");
 
-    NEM_REG_COUNTER(&pVmxState->StatImportGuestStateFallback, "/NEM/CPU%u/ImportGuestStateFallback", "Times vmxHCImportGuestState took the fallback code path.");
-    NEM_REG_COUNTER(&pVmxState->StatReadToTransientFallback,  "/NEM/CPU%u/ReadToTransientFallback",  "Times vmxHCReadToTransient took the fallback code path.");
+    NEM_REG_COUNTER(&pVmxStats->StatImportGuestStateFallback, "/NEM/CPU%u/ImportGuestStateFallback", "Times vmxHCImportGuestState took the fallback code path.");
+    NEM_REG_COUNTER(&pVmxStats->StatReadToTransientFallback,  "/NEM/CPU%u/ReadToTransientFallback",  "Times vmxHCReadToTransient took the fallback code path.");
 
 #ifdef VBOX_WITH_STATISTICS
     NEM_REG_PROFILE(&pNemCpu->StatProfGstStateImport, "/NEM/CPU%u/ImportGuestState", "Profiling of importing guest state from hardware after VM-exit.");
