@@ -3831,7 +3831,7 @@ static int vmxHCImportGuestStateEx(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
 template<uint64_t const a_fWhat>
 static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t fEFlags)
 {
-    AssertCompile(a_fWhat != 0);
+    Assert(a_fWhat != 0); /* No AssertCompile as the assertion probably kicks in before the compiler (clang) discards it. */
     AssertCompile(!(a_fWhat & ~HMVMX_CPUMCTX_EXTRN_ALL));
     Assert(   (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == a_fWhat
            || (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == (a_fWhat & ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)));
@@ -4189,6 +4189,7 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
         ? RT_LIKELY(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
         :           !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3) )
         return VINF_SUCCESS;
+    RT_NOREF_PV(fEFlags);
 #endif
 
     Assert(!(ASMAtomicUoReadU64(&pVCpu->cpum.GstCtx.fExtrn) & CPUMCTX_EXTRN_CR3));
@@ -4258,8 +4259,8 @@ DECLINLINE(int) vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, co
                                     & ((a_fWhat | a_fDoneLocal | a_fDonePostExit) & HMVMX_CPUMCTX_EXTRN_ALL);
         if (RT_LIKELY(   (   fWhatToDo ==   (a_fWhat & HMVMX_CPUMCTX_EXTRN_ALL & ~(a_fDoneLocal | a_fDonePostExit))
                           || fWhatToDo == (  a_fWhat & HMVMX_CPUMCTX_EXTRN_ALL & ~(a_fDoneLocal | a_fDonePostExit)
-                                           & ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)) /* fetch with INHIBIT_INT/NMI */)
-                      && fWhatToDo != 0 /*possible when CPUMCTX_EXTRN_ALL is used post-exit*/))
+                                           & ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)) /* fetch with INHIBIT_INT/NMI */))
+            && (a_fWhat & HMVMX_CPUMCTX_EXTRN_ALL & ~(a_fDoneLocal | a_fDonePostExit)) != 0 /* just in case */)
         {
             int const rc = vmxHCImportGuestStateInner<  a_fWhat
                                                       & HMVMX_CPUMCTX_EXTRN_ALL
