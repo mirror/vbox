@@ -227,7 +227,7 @@ static void intnetR3IfCtxClose(PINTNETIFCTXINT pThis)
 
 
 DECLHIDDEN(int) IntNetR3IfCtxCreate(PINTNETIFCTX phIfCtx, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
-                                    const char *pszTrunk, size_t cbSend, size_t cbRecv, uint32_t fFlags)
+                                    const char *pszTrunk, uint32_t cbSend, uint32_t cbRecv, uint32_t fFlags)
 {
     AssertPtrReturn(phIfCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pszNetwork, VERR_INVALID_POINTER);
