@@ -455,7 +455,7 @@ static DECLCALLBACK(int) intnetR3RecvThread(RTTHREAD hThreadSelf, void *pvUser)
         if (RT_SUCCESS(rc))
         {
             /* Send an empty message. */
-            xpc_object_t hObjPoke = xpc_dictionary_create_empty();
+            xpc_object_t hObjPoke = xpc_dictionary_create(NULL, NULL, 0);
             xpc_connection_send_message(pSession->hXpcCon, hObjPoke);
         }
         else if (   rc != VERR_TIMEOUT

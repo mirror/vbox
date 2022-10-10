@@ -41,6 +41,27 @@
 #include <VBox/intnet.h>
 
 
+
+/**
+ * Low-level internal network access helpers to hide away the different variants (R0 SUP or R3 XPC on macOS).
+ */
+/** Internal networking interface context handle. */
+typedef struct INTNETIFCTXINT *INTNETIFCTX;
+/** Pointer to an internal networking interface context handle. */
+typedef INTNETIFCTX *PINTNETIFCTX;
+
+
+DECLHIDDEN(int) IntNetR3IfCtxCreate(PINTNETIFCTX phIfCtx, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
+                                    const char *pszTrunk, size_t cbSend, size_t cbRecv, uint32_t fFlags);
+DECLHIDDEN(int) IntNetR3IfCtxDestroy(INTNETIFCTX hIfCtx);
+DECLHIDDEN(int) IntNetR3IfCtxQueryBufferPtr(INTNETIFCTX hIfCtx, PINTNETBUF *ppIfBuf);
+DECLHIDDEN(int) IntNetR3IfCtxSetActive(INTNETIFCTX hIfCtx, bool fActive);
+DECLHIDDEN(int) IntNetR3IfCtxSetPromiscuous(INTNETIFCTX hIfCtx, bool fPromiscuous);
+DECLHIDDEN(int) IntNetR3IfSend(INTNETIFCTX hIfCtx);
+DECLHIDDEN(int) IntNetR3IfWait(INTNETIFCTX hIfCtx, uint32_t cMillies);
+DECLHIDDEN(int) IntNetR3IfWaitAbort(INTNETIFCTX hIfCtx);
+
+
 /**
  * Convenience class implementing an IntNet connection.
  */
@@ -86,9 +107,8 @@ public:
 
 
 private:
-    PSUPDRVSESSION m_pSession;
-    INTNETIFHANDLE m_hIf;
-    PINTNETBUF m_pIfBuf;
+    INTNETIFCTX m_hIf;
+    PINTNETBUF  m_pIfBuf;
 
     PFNINPUT m_pfnInput;
     void *m_pvUser;
@@ -119,11 +139,6 @@ public:
     int ifClose();
 
 private:
-    int r3Init();
-    void r3Fini();
-
-    int vmmInit();
-
     int ifOpen(const RTCString &strNetwork,
                INTNETTRUNKTYPE enmTrunkType,
                const RTCString &strTrunk);

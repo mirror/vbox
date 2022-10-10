@@ -67,7 +67,9 @@ PROGRAMS += VBoxNetNAT
  endif
 VBoxNetNAT_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBOXMAINDLL,VBOXMAINCLIENTEXE)
 VBoxNetNAT_NAME     := VBoxNetNAT
-VBoxNetNAT_DEFS      = IPv6
+VBoxNetNAT_DEFS      = \
+ 	IPv6 \
+ 	$(if $(VBOX_WITH_INTNET_SERVICE_IN_R3),VBOX_WITH_INTNET_SERVICE_IN_R3,)
 # VBoxNetNAT_DEFS.linux = WITH_VALGRIND # instrument lwip memp.c
 VBoxNetNAT_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
 # Convince Solaris headers to expose socket stuff we need.
@@ -103,6 +105,7 @@ VBoxNetNAT_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 VBoxNetNAT_SOURCES = \
 	VBoxNetLwipNAT.cpp \
 	../NetLib/IntNetIf.cpp \
+	../NetLib/IntNetIfCtx.cpp \
 	../NetLib/VBoxNetPortForwardString.cpp \
 	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES)) \
 	proxy_pollmgr.c \

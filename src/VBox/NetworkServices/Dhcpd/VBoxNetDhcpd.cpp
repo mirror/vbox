@@ -87,6 +87,8 @@ extern "C"
 # include <iprt/win/windows.h>
 #endif
 
+#include "IntNetIf.h"
+
 struct delete_pbuf
 {
     delete_pbuf() {}
@@ -94,10 +96,6 @@ struct delete_pbuf
 };
 
 typedef std::unique_ptr<pbuf, delete_pbuf> unique_ptr_pbuf;
-
-
-#define CALL_VMMR0(op, req) \
-    (SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, (op), 0, &(req).Hdr))
 
 
 class VBoxNetDhcpd
@@ -108,9 +106,8 @@ private:
     PRTLOGGER m_pStderrReleaseLogger;
 
     /* intnet plumbing */
-    PSUPDRVSESSION m_pSession;
-    INTNETIFHANDLE m_hIf;
-    PINTNETBUF m_pIfBuf;
+    INTNETIFCTX    m_hIf;
+    PINTNETBUF     m_pIfBuf;
 
     /* lwip stack connected to the intnet */
     struct netif m_LwipNetif;
@@ -177,29 +174,19 @@ private:
 
 VBoxNetDhcpd::VBoxNetDhcpd()
   : m_pStderrReleaseLogger(NULL),
-    m_pSession(NIL_RTR0PTR),
     m_hIf(INTNET_HANDLE_INVALID),
     m_pIfBuf(NULL),
     m_LwipNetif(),
     m_Config(NULL),
     m_Dhcp4Pcb(NULL)
 {
-    int rc;
-
     logInitStderr();
-
-    rc = r3Init();
-    if (RT_FAILURE(rc))
-        return;
-
-    vmmInit();
 }
 
 
 VBoxNetDhcpd::~VBoxNetDhcpd()
 {
     ifClose();
-    r3Fini();
 }
 
 
@@ -240,37 +227,6 @@ int VBoxNetDhcpd::logInitStderr()
 }
 
 
-int VBoxNetDhcpd::r3Init()
-{
-    AssertReturn(m_pSession == NIL_RTR0PTR, VERR_GENERAL_FAILURE);
-
-    int rc = SUPR3Init(&m_pSession);
-    return rc;
-}
-
-
-void VBoxNetDhcpd::r3Fini()
-{
-    if (m_pSession == NIL_RTR0PTR)
-        return;
-
-    SUPR3Term();
-    m_pSession = NIL_RTR0PTR;
-}
-
-
-int VBoxNetDhcpd::vmmInit()
-{
-    char szPathVMMR0[RTPATH_MAX];
-    int rc = RTPathExecDir(szPathVMMR0, sizeof(szPathVMMR0));
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szPathVMMR0, sizeof(szPathVMMR0), "VMMR0.r0");
-    if (RT_SUCCESS(rc))
-        rc = SUPR3LoadVMM(szPathVMMR0, NULL /*pErrInfo*/);
-    return rc;
-}
-
-
 int VBoxNetDhcpd::ifInit(const RTCString &strNetwork,
                          const RTCString &strTrunk,
                          INTNETTRUNKTYPE enmTrunkType)
@@ -297,90 +253,32 @@ int VBoxNetDhcpd::ifOpen(const RTCString &strNetwork,
                          const RTCString &strTrunk,
                          INTNETTRUNKTYPE enmTrunkType)
 {
-    AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
-    AssertReturn(m_hIf == INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
+    AssertReturn(m_hIf == NULL, VERR_GENERAL_FAILURE);
 
-    INTNETOPENREQ OpenReq;
-    RT_ZERO(OpenReq);
+    if (enmTrunkType == kIntNetTrunkType_Invalid)
+        enmTrunkType = kIntNetTrunkType_WhateverNone;
 
-    OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    OpenReq.Hdr.cbReq = sizeof(OpenReq);
-    OpenReq.pSession = m_pSession;
-
-    int rc = RTStrCopy(OpenReq.szNetwork, sizeof(OpenReq.szNetwork), strNetwork.c_str());
-    AssertRCReturn(rc, rc);
-
-    rc = RTStrCopy(OpenReq.szTrunk, sizeof(OpenReq.szTrunk), strTrunk.c_str());
-    AssertRCReturn(rc, rc);
-
-    if (enmTrunkType != kIntNetTrunkType_Invalid)
-        OpenReq.enmTrunkType = enmTrunkType;
-    else
-        OpenReq.enmTrunkType = kIntNetTrunkType_WhateverNone;
-
-    OpenReq.fFlags = 0;
-    OpenReq.cbSend = _128K;
-    OpenReq.cbRecv = _256K;
-
-    OpenReq.hIf = INTNET_HANDLE_INVALID;
-
-    rc = CALL_VMMR0(VMMR0_DO_INTNET_OPEN, OpenReq);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    m_hIf = OpenReq.hIf;
-    AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
-
-    return VINF_SUCCESS;
+    return IntNetR3IfCtxCreate(&m_hIf, strNetwork.c_str(), enmTrunkType,
+                               strTrunk.c_str(), _128K /*cbSend*/, _256K /*cbRecv*/,
+                               0 /*fFlags*/);
 }
 
 
 int VBoxNetDhcpd::ifGetBuf()
 {
-    AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
-    AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
+    AssertReturn(m_hIf != NULL, VERR_GENERAL_FAILURE);
     AssertReturn(m_pIfBuf == NULL, VERR_GENERAL_FAILURE);
 
-    INTNETIFGETBUFFERPTRSREQ GetBufferPtrsReq;
-    int rc;
-
-    GetBufferPtrsReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    GetBufferPtrsReq.Hdr.cbReq = sizeof(GetBufferPtrsReq);
-    GetBufferPtrsReq.pSession = m_pSession;
-    GetBufferPtrsReq.hIf = m_hIf;
-
-    GetBufferPtrsReq.pRing0Buf = NIL_RTR0PTR;
-    GetBufferPtrsReq.pRing3Buf = NULL;
-
-    rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, GetBufferPtrsReq);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    m_pIfBuf = GetBufferPtrsReq.pRing3Buf;
-    AssertReturn(m_pIfBuf != NULL, VERR_GENERAL_FAILURE);
-
-    return VINF_SUCCESS;
+    return IntNetR3IfCtxQueryBufferPtr(m_hIf, &m_pIfBuf);
 }
 
 
 int VBoxNetDhcpd::ifActivate()
 {
-    AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
-    AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
+    AssertReturn(m_hIf != NULL, VERR_GENERAL_FAILURE);
     AssertReturn(m_pIfBuf != NULL, VERR_GENERAL_FAILURE);
 
-    INTNETIFSETACTIVEREQ ActiveReq;
-    int rc;
-
-    ActiveReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    ActiveReq.Hdr.cbReq = sizeof(ActiveReq);
-    ActiveReq.pSession = m_pSession;
-    ActiveReq.hIf = m_hIf;
-
-    ActiveReq.fActive = 1;
-
-    rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_SET_ACTIVE, ActiveReq);
-    return rc;
+    return IntNetR3IfCtxSetActive(m_hIf, true /*fActive*/);
 }
 
 
@@ -397,14 +295,7 @@ void VBoxNetDhcpd::ifPump()
         /*
          * Wait for input:
          */
-        INTNETIFWAITREQ WaitReq;
-        WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        WaitReq.Hdr.cbReq = sizeof(WaitReq);
-        WaitReq.pSession = m_pSession;
-        WaitReq.hIf = m_hIf;
-        WaitReq.cMillies = RT_INDEFINITE_WAIT;
-        int rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_WAIT, WaitReq);
-
+        int rc = IntNetR3IfWait(m_hIf, RT_INDEFINITE_WAIT);
         /*
          * Process any pending input before we wait again:
          */
@@ -423,8 +314,7 @@ void VBoxNetDhcpd::ifPump()
 
 int VBoxNetDhcpd::ifProcessInput()
 {
-    AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
-    AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
+    AssertReturn(m_hIf != NULL, VERR_GENERAL_FAILURE);
     AssertReturn(m_pIfBuf != NULL, VERR_GENERAL_FAILURE);
 
     PCINTNETHDR pHdr = IntNetRingGetNextFrameToRead(&m_pIfBuf->Recv);
@@ -543,36 +433,18 @@ err_t VBoxNetDhcpd::netifLinkOutput(pbuf *pPBuf)
 
 int VBoxNetDhcpd::ifFlush()
 {
-    INTNETIFSENDREQ SendReq;
-
-    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    SendReq.Hdr.cbReq = sizeof(SendReq);
-    SendReq.pSession = m_pSession;
-
-    SendReq.hIf = m_hIf;
-
-    return CALL_VMMR0(VMMR0_DO_INTNET_IF_SEND, SendReq);
+    return IntNetR3IfSend(m_hIf);
 }
 
 
 int VBoxNetDhcpd::ifClose()
 {
-    if (m_hIf == INTNET_HANDLE_INVALID)
+    if (m_hIf == NULL)
         return VINF_SUCCESS;
 
-    INTNETIFCLOSEREQ CloseReq;
-
-    CloseReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    CloseReq.Hdr.cbReq = sizeof(CloseReq);
-    CloseReq.pSession = m_pSession;
-
-    CloseReq.hIf = m_hIf;
-
-    m_hIf = INTNET_HANDLE_INVALID;
-    m_pIfBuf = NULL;
-
-    CALL_VMMR0(VMMR0_DO_INTNET_IF_CLOSE, CloseReq);
-    return VINF_SUCCESS;
+    int rc = IntNetR3IfCtxDestroy(m_hIf);
+    m_hIf = NULL;
+    return rc;
 }
 
 
