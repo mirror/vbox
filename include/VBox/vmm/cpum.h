@@ -1127,6 +1127,8 @@ typedef struct CPUMFEATURES
     uint32_t        fRdSeed : 1;
     /** Support PCLMULQDQ instruction. */
     uint32_t        fPclMul : 1;
+    /** Supports AES-NI (six AESxxx instructions). */
+    uint32_t        fAesNi : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -1187,7 +1189,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 31;
+    uint32_t        fPadding0 : 30;
 
 
     /** @name SVM
