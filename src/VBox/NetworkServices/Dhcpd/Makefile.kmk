@@ -89,7 +89,7 @@ VBoxNetDHCP_SOURCES = \
 	IPv4Pool.cpp \
 	Timestamp.cpp \
 	VBoxNetDhcpd.cpp \
-	../NetLib/IntNetIfCtx.cpp \
+	../NetLib/IntNetIf.cpp \
 	../../Main/glue/VBoxLogRelCreate.cpp \
 	../../Main/glue/GetVBoxUserHomeDirectory.cpp \
 	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))

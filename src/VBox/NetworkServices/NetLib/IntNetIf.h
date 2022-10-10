@@ -50,105 +50,63 @@ typedef struct INTNETIFCTXINT *INTNETIFCTX;
 /** Pointer to an internal networking interface context handle. */
 typedef INTNETIFCTX *PINTNETIFCTX;
 
+/**
+ * User input callback function.
+ *
+ * @param pvUser    The user specified argument.
+ * @param pvFrame   The pointer to the frame data.
+ * @param cbFrame   The length of the frame data.
+ */
+typedef DECLCALLBACKTYPE(void, FNINPUT,(void *pvUser, void *pvFrame, uint32_t cbFrame));
 
-DECLHIDDEN(int) IntNetR3IfCtxCreate(PINTNETIFCTX phIfCtx, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
-                                    const char *pszTrunk, uint32_t cbSend, uint32_t cbRecv, uint32_t fFlags);
-DECLHIDDEN(int) IntNetR3IfCtxDestroy(INTNETIFCTX hIfCtx);
-DECLHIDDEN(int) IntNetR3IfCtxQueryBufferPtr(INTNETIFCTX hIfCtx, PINTNETBUF *ppIfBuf);
-DECLHIDDEN(int) IntNetR3IfCtxSetActive(INTNETIFCTX hIfCtx, bool fActive);
-DECLHIDDEN(int) IntNetR3IfCtxSetPromiscuous(INTNETIFCTX hIfCtx, bool fPromiscuous);
+/** Pointer to the user input callback function. */
+typedef FNINPUT *PFNINPUT;
+
+/**
+ * User GSO input callback function.
+ *
+ * @param pvUser    The user specified argument.
+ * @param pcGso     The pointer to the GSO context.
+ * @param cbFrame   The length of the GSO data.
+ */
+typedef DECLCALLBACKTYPE(void, FNINPUTGSO,(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame));
+
+/** Pointer to the user GSO input callback function. */
+typedef FNINPUTGSO *PFNINPUTGSO;
+
+
+/**
+ * An output frame in the send ring buffer.
+ *
+ * Obtained with IntNetR3IfCtxQueryOutputFrame().  Caller should copy frame
+ * contents to pvFrame and pass the frame structure to IntNetR3IfCtxOutputFrameCommit()
+ * to be sent to the network.
+ */
+typedef struct INTNETFRAME
+{
+    /** The intrnal network frame header. */
+    PINTNETHDR pHdr;
+    /** The actual frame data. */
+    void       *pvFrame;
+} INTNETFRAME;
+typedef INTNETFRAME *PINTNETFRAME;
+typedef const INTNETFRAME *PCINTNETFRAME;
+
+
+DECLHIDDEN(int) IntNetR3IfCreate(PINTNETIFCTX phIfCtx, const char *pszNetwork);
+DECLHIDDEN(int) IntNetR3IfCreateEx(PINTNETIFCTX phIfCtx, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
+                                   const char *pszTrunk, uint32_t cbSend, uint32_t cbRecv, uint32_t fFlags);
+DECLHIDDEN(int) IntNetR3IfDestroy(INTNETIFCTX hIfCtx);
+DECLHIDDEN(int) IntNetR3IfQueryBufferPtr(INTNETIFCTX hIfCtx, PINTNETBUF *ppIfBuf);
+DECLHIDDEN(int) IntNetR3IfSetActive(INTNETIFCTX hIfCtx, bool fActive);
+DECLHIDDEN(int) IntNetR3IfSetPromiscuous(INTNETIFCTX hIfCtx, bool fPromiscuous);
 DECLHIDDEN(int) IntNetR3IfSend(INTNETIFCTX hIfCtx);
 DECLHIDDEN(int) IntNetR3IfWait(INTNETIFCTX hIfCtx, uint32_t cMillies);
 DECLHIDDEN(int) IntNetR3IfWaitAbort(INTNETIFCTX hIfCtx);
 
-
-/**
- * Convenience class implementing an IntNet connection.
- */
-class IntNetIf
-{
-public:
-    /**
-     * User input callback function.
-     *
-     * @param pvUser    The user specified argument.
-     * @param pvFrame   The pointer to the frame data.
-     * @param cbFrame   The length of the frame data.
-     */
-    typedef DECLCALLBACKTYPE(void, FNINPUT,(void *pvUser, void *pvFrame, uint32_t cbFrame));
-
-    /** Pointer to the user input callback function. */
-    typedef FNINPUT *PFNINPUT;
-
-    /**
-     * User GSO input callback function.
-     *
-     * @param pvUser    The user specified argument.
-     * @param pcGso     The pointer to the GSO context.
-     * @param cbFrame   The length of the GSO data.
-     */
-    typedef DECLCALLBACKTYPE(void, FNINPUTGSO,(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame));
-
-    /** Pointer to the user GSO input callback function. */
-    typedef FNINPUTGSO *PFNINPUTGSO;
-
-
-    /**
-     * An output frame in the send ring buffer.
-     *
-     * Obtained with getOutputFrame().  Caller should copy frame
-     * contents to pvFrame and pass the frame structure to ifOutput()
-     * to be sent to the network.
-     */
-    struct Frame {
-        PINTNETHDR pHdr;
-        void *pvFrame;
-    };
-
-
-private:
-    INTNETIFCTX m_hIf;
-    PINTNETBUF  m_pIfBuf;
-
-    PFNINPUT m_pfnInput;
-    void *m_pvUser;
-
-    PFNINPUTGSO m_pfnInputGSO;
-    void *m_pvUserGSO;
-
-public:
-    IntNetIf();
-    ~IntNetIf();
-
-    int init(const RTCString &strNetwork,
-             INTNETTRUNKTYPE enmTrunkType = kIntNetTrunkType_WhateverNone,
-             const RTCString &strTrunk = RTCString());
-    void uninit();
-
-    int setInputCallback(PFNINPUT pfnInput, void *pvUser);
-    int setInputGSOCallback(PFNINPUTGSO pfnInputGSO, void *pvUser);
-
-    int ifSetPromiscuous(bool fPromiscuous = true);
-
-    int ifPump();
-    int ifAbort();
-
-    int getOutputFrame(Frame &rFrame, size_t cbFrame);
-    int ifOutput(Frame &rFrame);
-
-    int ifClose();
-
-private:
-    int ifOpen(const RTCString &strNetwork,
-               INTNETTRUNKTYPE enmTrunkType,
-               const RTCString &strTrunk);
-    int ifGetBuf();
-    int ifActivate();
-
-    int ifWait(uint32_t cMillies = RT_INDEFINITE_WAIT);
-    int ifProcessInput();
-
-    int ifFlush();
-};
+DECLHIDDEN(int) IntNetR3IfPumpPkts(INTNETIFCTX hIfCtx, PFNINPUT pfnInput, void *pvUser,
+                                   PFNINPUTGSO pfnInputGso, void *pvUserGso);
+DECLHIDDEN(int) IntNetR3IfQueryOutputFrame(INTNETIFCTX hIfCtx, uint32_t cbFrame, PINTNETFRAME pFrame);
+DECLHIDDEN(int) IntNetR3IfOutputFrameCommit(INTNETIFCTX hIfCtx, PCINTNETFRAME pFrame);
 
 #endif /* !VBOX_INCLUDED_SRC_NetLib_IntNetIf_h */

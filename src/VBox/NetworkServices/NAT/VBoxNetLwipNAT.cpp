@@ -149,7 +149,7 @@ class VBoxNetLwipNAT
     ComPtr<INATNetwork> m_net;
 
     RTMAC m_MacAddress;
-    IntNetIf m_IntNetIf;
+    INTNETIFCTX m_hIf;
     RTTHREAD m_hThrRecv;
 
     /** Home folder location; used as default directory for several paths. */
@@ -482,7 +482,7 @@ int VBoxNetLwipNAT::init()
     /* end of COM initialization */
 
     /* connect to the intnet */
-    rc = m_IntNetIf.init(m_strNetworkName);
+    rc = IntNetR3IfCreate(&m_hIf, m_strNetworkName.c_str());
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1391,7 +1391,7 @@ VBoxNetLwipNAT::run()
      */
 
     /* tell the intnet input pump to terminate */
-    m_IntNetIf.ifAbort();
+    IntNetR3IfWaitAbort(m_hIf);
 
     /* tell the lwIP tcpip thread to terminate */
     vboxLwipCoreFinalize(VBoxNetLwipNAT::onLwipTcpIpFini, this);
@@ -1864,14 +1864,12 @@ VBoxNetLwipNAT::receiveThread(RTTHREAD hThreadSelf, void *pvUser)
     if (FAILED(hrc))
         return VERR_GENERAL_FAILURE;
 
-    rc = self->m_IntNetIf.setInputCallback(VBoxNetLwipNAT::processFrame, self);
-    AssertRCReturn(rc, rc);
-
-    rc = self->m_IntNetIf.ifPump();
+    rc = IntNetR3IfPumpPkts(self->m_hIf, VBoxNetLwipNAT::processFrame, self,
+                            NULL /*pfnInputGso*/, NULL /*pvUserGso*/);
     if (rc == VERR_SEM_DESTROYED)
         return VINF_SUCCESS;
 
-    LogRel(("receiveThread: ifPump: unexpected %Rrc\n", rc));
+    LogRel(("receiveThread: IntNetR3IfPumpPkts: unexpected %Rrc\n", rc));
     return VERR_INVALID_STATE;
 }
 
@@ -1954,13 +1952,13 @@ VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
         return ERR_ARG;
 
     size_t cbFrame = (size_t)pPBuf->tot_len - ETH_PAD_SIZE;
-    IntNetIf::Frame frame;
-    rc = self->m_IntNetIf.getOutputFrame(frame, cbFrame);
+    INTNETFRAME Frame;
+    rc = IntNetR3IfQueryOutputFrame(self->m_hIf, cbFrame, &Frame);
     if (RT_FAILURE(rc))
         return ERR_MEM;
 
-    pbuf_copy_partial(pPBuf, frame.pvFrame, (u16_t)cbFrame, ETH_PAD_SIZE);
-    rc = self->m_IntNetIf.ifOutput(frame);
+    pbuf_copy_partial(pPBuf, Frame.pvFrame, (u16_t)cbFrame, ETH_PAD_SIZE);
+    rc = IntNetR3IfOutputFrameCommit(self->m_hIf, &Frame);
     if (RT_FAILURE(rc))
         return ERR_IF;
 

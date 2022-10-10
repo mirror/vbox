@@ -105,7 +105,6 @@ VBoxNetNAT_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 VBoxNetNAT_SOURCES = \
 	VBoxNetLwipNAT.cpp \
 	../NetLib/IntNetIf.cpp \
-	../NetLib/IntNetIfCtx.cpp \
 	../NetLib/VBoxNetPortForwardString.cpp \
 	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES)) \
 	proxy_pollmgr.c \
