@@ -357,7 +357,9 @@ static uint32_t intnetR3SessionDestroy(PSUPDRVSESSION pSession)
 {
     PSUPDRVDEVEXT pDevExt = pSession->pDevExt;
     uint32_t cRefs = ASMAtomicDecU32(&pDevExt->cRefs);
+    xpc_connection_set_context(pSession->hXpcCon, NULL);
     xpc_connection_cancel(pSession->hXpcCon);
+    pSession->hXpcCon = NULL;
     xpc_transaction_end();
 
     /* Tear down the receive wait thread. */

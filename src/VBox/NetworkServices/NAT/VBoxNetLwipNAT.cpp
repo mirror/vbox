@@ -1953,7 +1953,7 @@ VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
 
     size_t cbFrame = (size_t)pPBuf->tot_len - ETH_PAD_SIZE;
     INTNETFRAME Frame;
-    rc = IntNetR3IfQueryOutputFrame(self->m_hIf, cbFrame, &Frame);
+    rc = IntNetR3IfQueryOutputFrame(self->m_hIf, (uint32_t)cbFrame, &Frame);
     if (RT_FAILURE(rc))
         return ERR_MEM;
 
