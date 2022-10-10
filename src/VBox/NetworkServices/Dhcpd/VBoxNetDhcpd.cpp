@@ -134,16 +134,8 @@ private:
     int ifInit(const RTCString &strNetwork,
                const RTCString &strTrunk = RTCString(),
                INTNETTRUNKTYPE enmTrunkType = kIntNetTrunkType_WhateverNone);
-    int ifOpen(const RTCString &strNetwork,
-               const RTCString &strTrunk,
-               INTNETTRUNKTYPE enmTrunkType);
-    int ifGetBuf();
-    int ifActivate();
 
     int ifProcessInput();
-    int ifFlush();
-
-    int ifClose();
 
     void ifPump();
     int ifInput(void *pvSegFrame, uint32_t cbSegFrame);
@@ -181,7 +173,12 @@ VBoxNetDhcpd::VBoxNetDhcpd()
 
 VBoxNetDhcpd::~VBoxNetDhcpd()
 {
-    ifClose();
+    if (m_hIf != NULL)
+    {
+        int rc = IntNetR3IfCtxDestroy(m_hIf);
+        AssertRC(rc);
+        m_hIf = NULL;
+    }
 }
 
 
@@ -226,54 +223,20 @@ int VBoxNetDhcpd::ifInit(const RTCString &strNetwork,
                          const RTCString &strTrunk,
                          INTNETTRUNKTYPE enmTrunkType)
 {
-    int rc;
-
-    rc = ifOpen(strNetwork, strTrunk, enmTrunkType);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = ifGetBuf();
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = ifActivate();
-    if (RT_FAILURE(rc))
-        return rc;
-
-    return VINF_SUCCESS;
-}
-
-
-int VBoxNetDhcpd::ifOpen(const RTCString &strNetwork,
-                         const RTCString &strTrunk,
-                         INTNETTRUNKTYPE enmTrunkType)
-{
-    AssertReturn(m_hIf == NULL, VERR_GENERAL_FAILURE);
-
     if (enmTrunkType == kIntNetTrunkType_Invalid)
         enmTrunkType = kIntNetTrunkType_WhateverNone;
 
-    return IntNetR3IfCtxCreate(&m_hIf, strNetwork.c_str(), enmTrunkType,
-                               strTrunk.c_str(), _128K /*cbSend*/, _256K /*cbRecv*/,
-                               0 /*fFlags*/);
-}
+    int rc = IntNetR3IfCtxCreate(&m_hIf, strNetwork.c_str(), enmTrunkType,
+                                 strTrunk.c_str(), _128K /*cbSend*/, _256K /*cbRecv*/,
+                                 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+    {
+        rc = IntNetR3IfCtxQueryBufferPtr(m_hIf, &m_pIfBuf);
+        if (RT_SUCCESS(rc))
+            rc = IntNetR3IfCtxSetActive(m_hIf, true /*fActive*/);
+    }
 
-
-int VBoxNetDhcpd::ifGetBuf()
-{
-    AssertReturn(m_hIf != NULL, VERR_GENERAL_FAILURE);
-    AssertReturn(m_pIfBuf == NULL, VERR_GENERAL_FAILURE);
-
-    return IntNetR3IfCtxQueryBufferPtr(m_hIf, &m_pIfBuf);
-}
-
-
-int VBoxNetDhcpd::ifActivate()
-{
-    AssertReturn(m_hIf != NULL, VERR_GENERAL_FAILURE);
-    AssertReturn(m_pIfBuf != NULL, VERR_GENERAL_FAILURE);
-
-    return IntNetR3IfCtxSetActive(m_hIf, true /*fActive*/);
+    return rc;
 }
 
 
@@ -421,25 +384,8 @@ err_t VBoxNetDhcpd::netifLinkOutput(pbuf *pPBuf)
     pbuf_copy_partial(pPBuf, pvFrame, cbFrame, ETH_PAD_SIZE);
     IntNetRingCommitFrameEx(&m_pIfBuf->Send, pHdr, cbFrame);
 
-    ifFlush();
+    IntNetR3IfSend(m_hIf);
     return ERR_OK;
-}
-
-
-int VBoxNetDhcpd::ifFlush()
-{
-    return IntNetR3IfSend(m_hIf);
-}
-
-
-int VBoxNetDhcpd::ifClose()
-{
-    if (m_hIf == NULL)
-        return VINF_SUCCESS;
-
-    int rc = IntNetR3IfCtxDestroy(m_hIf);
-    m_hIf = NULL;
-    return rc;
 }
 
 
