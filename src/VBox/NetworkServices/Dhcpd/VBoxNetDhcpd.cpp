@@ -131,11 +131,6 @@ private:
     /*
      * Boilerplate code.
      */
-    int r3Init();
-    void r3Fini();
-
-    int vmmInit();
-
     int ifInit(const RTCString &strNetwork,
                const RTCString &strTrunk = RTCString(),
                INTNETTRUNKTYPE enmTrunkType = kIntNetTrunkType_WhateverNone);

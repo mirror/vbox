@@ -97,8 +97,7 @@ typedef INTNETIFCTXINT *PINTNETIFCTXINT;
  * @returns VBox status code.
  * @param   pThis           The internal network driver instance data.
  * @param   uOperation      The operation to execute.
- * @param   pvArg           Pointer to the argument data.
- * @param   cbArg           Size of the argument data in bytes.
+ * @param   pReqHdr         Pointer to the request header.
  */
 static int intnetR3IfCtxCallSvc(PINTNETIFCTXINT pThis, uint32_t uOperation, PSUPVMMR0REQHDR pReqHdr)
 {
@@ -137,8 +136,7 @@ static int intnetR3IfCtxCallSvc(PINTNETIFCTXINT pThis, uint32_t uOperation, PSUP
  * @returns VBox status code.
  * @param   pThis           The internal network driver instance data.
  * @param   uOperation      The operation to execute.
- * @param   pvArg           Pointer to the argument data.
- * @param   cbArg           Size of the argument data in bytes.
+ * @param   pReqHdr         Pointer to the request header.
  */
 static int intnetR3IfCtxCallSvcAsync(PINTNETIFCTXINT pThis, uint32_t uOperation, PSUPVMMR0REQHDR pReqHdr)
 {
