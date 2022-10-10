@@ -1997,6 +1997,10 @@ DECLINLINE(int) nemR3DarwinHandleExitCommon(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT
 
     /** @todo Only copy the state on demand (the R0 VT-x code saves some stuff unconditionally and the VMX template assumes that
      * when handling exits). */
+    /*
+     * Note! What is being fetched here must match the default value for the
+     *       a_fDonePostExit parameter of vmxHCImportGuestState exactly!
+     */
     rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
 
@@ -2817,18 +2821,23 @@ static int nemR3DarwinStatisticsRegister(PVM pVM, VMCPUID idCpu, PNEMCPU pNemCpu
            NEM_REG_STAT(a_pVar, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, a_szNmFmt, a_szDesc)
 #define NEM_REG_COUNTER(a, b, desc) NEM_REG_STAT(a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, b, desc)
 
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR0Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR0", "CR0 read.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR2Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR2", "CR2 read.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR3Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR3", "CR3 read.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR4Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR4", "CR4 read.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR8Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR8", "CR8 read.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR0Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR0", "CR0 write.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR2Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR2", "CR2 write.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR3Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR3", "CR3 write.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR4Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR4", "CR4 write.");
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR8Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR8", "CR8 write.");
+    PVMXSTATISTICS const pVmxStats = pNemCpu->pVmxStats;
 
-    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitAll, "/NEM/CPU%u/Exit/All",         "Total exits (including nested-guest exits).");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR0Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR0", "CR0 read.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR2Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR2", "CR2 read.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR3Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR3", "CR3 read.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR4Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR4", "CR4 read.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR8Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR8", "CR8 read.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR0Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR0", "CR0 write.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR2Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR2", "CR2 write.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR3Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR3", "CR3 write.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR4Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR4", "CR4 write.");
+    NEM_REG_COUNTER(&pVmxStats->StatExitCR8Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR8", "CR8 write.");
+
+    NEM_REG_COUNTER(&pVmxStats->StatExitAll,      "/NEM/CPU%u/Exit/All", "Total exits (including nested-guest exits).");
+
+    NEM_REG_COUNTER(&pVmxState->StatImportGuestStateFallback, "/NEM/CPU%u/ImportGuestStateFallback", "Times vmxHCImportGuestState took the fallback code path.");
+    NEM_REG_COUNTER(&pVmxState->StatReadToTransientFallback,  "/NEM/CPU%u/ReadToTransientFallback",  "Times vmxHCReadToTransient took the fallback code path.");
 
 #ifdef VBOX_WITH_STATISTICS
     NEM_REG_PROFILE(&pNemCpu->StatProfGstStateImport, "/NEM/CPU%u/ImportGuestState", "Profiling of importing guest state from hardware after VM-exit.");
@@ -2839,7 +2848,7 @@ static int nemR3DarwinStatisticsRegister(PVM pVM, VMCPUID idCpu, PNEMCPU pNemCpu
         const char *pszExitName = HMGetVmxExitName(j);
         if (pszExitName)
         {
-            int rc = STAMR3RegisterF(pVM, &pNemCpu->pVmxStats->aStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+            int rc = STAMR3RegisterF(pVM, &pVmxStats->aStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                      STAMUNIT_OCCURENCES, pszExitName, "/NEM/CPU%u/Exit/Reason/%02x", idCpu, j);
             AssertRCReturn(rc, rc);
         }
@@ -3708,7 +3717,7 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
              */
             if (fStepping)
             {
-                int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+                int rc = vmxHCImportGuestStateEx(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
                 AssertRC(rc);
                 if (   pVCpu->cpum.GstCtx.rip    != DbgState.uRipStart
                     || pVCpu->cpum.GstCtx.cs.Sel != DbgState.uCsStart)
@@ -3732,7 +3741,7 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
      */
     if (pVCpu->nem.s.fClearTrapFlag)
     {
-        int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
+        int rc = vmxHCImportGuestStateEx(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
         AssertRC(rc);
         pVCpu->nem.s.fClearTrapFlag = false;
         pVCpu->cpum.GstCtx.eflags.Bits.u1TF = 0;

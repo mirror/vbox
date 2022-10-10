@@ -4445,7 +4445,7 @@ VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 {
     AssertPtr(pVCpu);
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-    return vmxHCImportGuestState(pVCpu, pVmcsInfo, fWhat);
+    return vmxHCImportGuestStateEx(pVCpu, pVmcsInfo, fWhat);
 }
 
 
@@ -4597,7 +4597,7 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
     if (fImportState)
     {
-        int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+        int rc = vmxHCImportGuestStateEx(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
         AssertRCReturn(rc, rc);
     }
 
@@ -4628,7 +4628,7 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
         /* We shouldn't restore the host MSRs without saving the guest MSRs first. */
         if (!fImportState)
         {
-            int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS);
+            int rc = vmxHCImportGuestStateEx(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS);
             AssertRCReturn(rc, rc);
         }
         hmR0VmxLazyRestoreHostMsrs(pVCpu);
@@ -4883,7 +4883,7 @@ VMMR0DECL(int) VMXR0AssertionCallback(PVMCPUCC pVCpu)
     HM_DISABLE_PREEMPT(pVCpu);
 
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-    vmxHCImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+    vmxHCImportGuestStateEx(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
     CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
 
@@ -6153,7 +6153,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     if (   (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
         && !fIsRdtscIntercepted)
     {
-        vmxHCImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
+        vmxHCImportGuestStateEx(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
 
         /* NB: Because we call hmR0VmxAddAutoLoadStoreMsr with fUpdateHostMsr=true,
            it's safe even after hmR0VmxUpdateAutoLoadHostMsrs has already been done. */
@@ -6314,16 +6314,18 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
              * We don't import CR0 (when unrestricted guest execution is unavailable) despite
              * checking for real-mode while exporting the state because all bits that cause
              * mode changes wrt CR0 are intercepted.
+             *
+             * Note! This mask _must_ match the default value for the a_fDonePostExit value
+             *       for the vmxHCImportGuestState template!
              */
-            uint64_t const fImportMask = CPUMCTX_EXTRN_INHIBIT_INT
+            rc = vmxHCImportGuestState<  CPUMCTX_EXTRN_INHIBIT_INT
                                        | CPUMCTX_EXTRN_INHIBIT_NMI
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
                                        | HMVMX_CPUMCTX_EXTRN_ALL
 #elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
                                        | CPUMCTX_EXTRN_RFLAGS
 #endif
-                                       ;
-            rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, fImportMask);
+                                       , 0 /*a_fDoneLocal*/, 0 /*a_fDonePostExit*/>(pVCpu, pVmcsInfo, __FUNCTION__);
             AssertRC(rc);
 
             /*
@@ -6510,7 +6512,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     /* Paranoia. */
     Assert(VmxTransient.pVmcsInfo == &pVCpu->hmr0.s.vmx.VmcsInfoNstGst);
 
-    /* Setup pointer so PGM/IEM can query VM-exit auxiliary info. on demand in ring-0. */
+    /* Setup pointer so PGM/IEM can query VM-exit auxiliary info on demand in ring-0. */
     pVCpu->hmr0.s.vmx.pVmxTransient = &VmxTransient;
 
     VBOXSTRICTRC rcStrict = VERR_INTERNAL_ERROR_5;
@@ -6734,7 +6736,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
          */
         if (fStepping)
         {
-            int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+            int rc = vmxHCImportGuestStateEx(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
             AssertRC(rc);
             if (   pVCpu->cpum.GstCtx.rip    != DbgState.uRipStart
                 || pVCpu->cpum.GstCtx.cs.Sel != DbgState.uCsStart)
@@ -6761,7 +6763,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
      */
     if (pVCpu->hmr0.s.fClearTrapFlag)
     {
-        int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
+        int rc = vmxHCImportGuestStateEx(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
         AssertRC(rc);
         pVCpu->hmr0.s.fClearTrapFlag = false;
         pVCpu->cpum.GstCtx.eflags.Bits.u1TF = 0;

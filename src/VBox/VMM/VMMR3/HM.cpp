@@ -798,7 +798,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
             HM_REG_STAT(a_pVar, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, a_szNmFmt, a_szDesc)
 
 #ifdef VBOX_WITH_STATISTICS
-
         HM_REG_PROFILE(&pHmCpu->StatPoke,                   "/PROF/CPU%u/HM/Poke", "Profiling of RTMpPokeCpu.");
         HM_REG_PROFILE(&pHmCpu->StatSpinPoke,               "/PROF/CPU%u/HM/PokeWait", "Profiling of poke wait.");
         HM_REG_PROFILE(&pHmCpu->StatSpinPokeFailed,         "/PROF/CPU%u/HM/PokeWaitFailed", "Profiling of poke wait when RTMpPokeCpu fails.");
@@ -820,6 +819,8 @@ static int hmR3InitFinalizeR3(PVM pVM)
 #endif
 # define HM_REG_COUNTER(a, b, desc) HM_REG_STAT(a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, b, desc)
 
+        HM_REG_COUNTER(&pHmCpu->StatImportGuestStateFallback, "/HM/CPU%u/ImportGuestStateFallback", "Times vmxHCImportGuestState took the fallback code path.");
+        HM_REG_COUNTER(&pHmCpu->StatReadToTransientFallback,  "/HM/CPU%u/ReadToTransientFallback",  "Times vmxHCReadToTransient took the fallback code path.");
 #ifdef VBOX_WITH_STATISTICS
         HM_REG_COUNTER(&pHmCpu->StatExitAll,                "/HM/CPU%u/Exit/All", "Total exits (excludes nested-guest and debug loops exits).");
         HM_REG_COUNTER(&pHmCpu->StatDebugExitAll,           "/HM/CPU%u/Exit/DebugAll", "Total debug-loop exits.");

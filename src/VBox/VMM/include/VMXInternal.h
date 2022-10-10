@@ -184,6 +184,9 @@ typedef struct VMXSTATISTICS
     STAMPROFILEADV          StatSpinPoke;
     STAMPROFILEADV          StatSpinPokeFailed;
 
+    STAMCOUNTER             StatImportGuestStateFallback;
+    STAMCOUNTER             StatReadToTransientFallback;
+
     STAMCOUNTER             StatInjectInterrupt;
     STAMCOUNTER             StatInjectXcpt;
     STAMCOUNTER             StatInjectReflect;

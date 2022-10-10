@@ -468,8 +468,7 @@ typedef struct CPUMCTX
     uint64_t            uMsrPadding0;       /**< no longer used (used to hold a copy of APIC base MSR). */
     /** @} */
 
-    /** 0x228 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
-     * Currently only used internally in NEM/win.  */
+    /** 0x228 - Externalized state tracker, CPUMCTX_EXTRN_XXX. */
     uint64_t            fExtrn;
 
     uint64_t            au64Unused[2];
