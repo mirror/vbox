@@ -1844,7 +1844,12 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
         {
             /* Powering VM off: */
             UINotificationProgressMachinePowerOff *pNotification =
-                new UINotificationProgressMachinePowerOff(pItem->toLocal()->machine());
+                new UINotificationProgressMachinePowerOff(pItem->toLocal()->machine(),
+                                                          CConsole() /* dummy */,
+                                                          gEDataManager->discardStateOnPowerOff(pItem->id()));
+            pNotification->setProperty("machine_id", pItem->id());
+            connect(pNotification, &UINotificationProgressMachinePowerOff::sigMachinePoweredOff,
+                    this, &UIVirtualBoxManager::sltHandlePoweredOffMachine);
             gpNotificationCenter->append(pNotification);
         }
         /* For real cloud machine: */
@@ -1853,6 +1858,23 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
             /* Powering cloud VM off: */
             UINotificationProgressCloudMachinePowerOff *pNotification =
                 new UINotificationProgressCloudMachinePowerOff(pItem->toCloud()->machine());
+            gpNotificationCenter->append(pNotification);
+        }
+    }
+}
+
+void UIVirtualBoxManager::sltHandlePoweredOffMachine(bool fSuccess, bool fIncludingDiscard)
+{
+    /* Was previous step successful? */
+    if (fSuccess)
+    {
+        /* Do we have other tasks? */
+        if (fIncludingDiscard)
+        {
+            /* Discard state if requested: */
+            AssertPtrReturnVoid(sender());
+            UINotificationProgressSnapshotRestore *pNotification =
+                new UINotificationProgressSnapshotRestore(sender()->property("machine_id").toUuid());
             gpNotificationCenter->append(pNotification);
         }
     }

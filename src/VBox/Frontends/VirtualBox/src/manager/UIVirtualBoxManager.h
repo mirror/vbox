@@ -288,6 +288,10 @@ private slots:
         void sltPerformShutdownMachine();
         /** Handles call to power machine off. */
         void sltPerformPowerOffMachine();
+        /** Handles signal about machine powered off.
+          * @param  fSuccess           Brings whether machine was powered off successfully.
+          * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
+        void sltHandlePoweredOffMachine(bool fSuccess, bool fIncludingDiscard);
 
         /** Handles call to show global tool corresponding to passed @a pAction. */
         void sltPerformShowGlobalTool(QAction *pAction);
