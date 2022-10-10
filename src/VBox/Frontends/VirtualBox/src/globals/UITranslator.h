@@ -77,6 +77,19 @@ public:
     /** Returns tr("%n second(s)"). */
     static QString secondsToString(uint32_t cVal);
 
+    /** Returns tr("%n year(s) ago"). */
+    static QString yearsToStringAgo(uint32_t cVal);
+    /** Returns tr("%n month(s) ago"). */
+    static QString monthsToStringAgo(uint32_t cVal);
+    /** Returns tr("%n day(s) ago"). */
+    static QString daysToStringAgo(uint32_t cVal);
+    /** Returns tr("%n hour(s) ago"). */
+    static QString hoursToStringAgo(uint32_t cVal);
+    /** Returns tr("%n minute(s) ago"). */
+    static QString minutesToStringAgo(uint32_t cVal);
+    /** Returns tr("%n second(s) ago"). */
+    static QString secondsToStringAgo(uint32_t cVal);
+
     /** Returns the decimal separator for the current locale. */
     static QString decimalSep();
     /** Returns the regexp string that defines the format of the human-readable size representation. */

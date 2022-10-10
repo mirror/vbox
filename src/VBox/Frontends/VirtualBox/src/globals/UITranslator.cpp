@@ -301,6 +301,42 @@ QString UITranslator::secondsToString(uint32_t cVal)
 }
 
 /* static */
+QString UITranslator::yearsToStringAgo(uint32_t cVal)
+{
+    return QApplication::translate("UITranslator", "%n year(s) ago", "", cVal);
+}
+
+/* static */
+QString UITranslator::monthsToStringAgo(uint32_t cVal)
+{
+    return QApplication::translate("UITranslator", "%n month(s) ago", "", cVal);
+}
+
+/* static */
+QString UITranslator::daysToStringAgo(uint32_t cVal)
+{
+    return QApplication::translate("UITranslator", "%n day(s) ago", "", cVal);
+}
+
+/* static */
+QString UITranslator::hoursToStringAgo(uint32_t cVal)
+{
+    return QApplication::translate("UITranslator", "%n hour(s) ago", "", cVal);
+}
+
+/* static */
+QString UITranslator::minutesToStringAgo(uint32_t cVal)
+{
+    return QApplication::translate("UITranslator", "%n minute(s) ago", "", cVal);
+}
+
+/* static */
+QString UITranslator::secondsToStringAgo(uint32_t cVal)
+{
+    return QApplication::translate("UITranslator", "%n second(s) ago", "", cVal);
+}
+
+/* static */
 QString UITranslator::decimalSep()
 {
     return QString(QLocale::system().decimalPoint());
