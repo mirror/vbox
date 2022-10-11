@@ -36,10 +36,10 @@
 #define IN_INTNET_R3
 #include "IntNetSwitchInternal.h"
 
-#include <VBox/intnet.h>
 #include <VBox/err.h>
 #include <VBox/vmm/vmm.h>
 #include <iprt/asm.h>
+#include <iprt/critsect.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
@@ -54,7 +54,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 
 /**
  * Registered object.
@@ -97,8 +96,8 @@ typedef struct SUPDRVDEVEXT
 {
     /** Number of references to this service. */
     uint32_t volatile               cRefs;
-    /** Mutex to serialize the initialization, usage counting and objects. */
-    RTSEMFASTMUTEX                  hMtx;
+    /** Critical section to serialize the initialization, usage counting and objects. */
+    RTCRITSECT                      CritSect;
     /** List of registered objects. Protected by the spinlock. */
     PSUPDRVOBJ volatile             pObjs;
 } SUPDRVDEVEXT;
@@ -112,7 +111,7 @@ typedef SUPDRVDEVEXT *PSUPDRVDEVEXT;
 typedef struct SUPDRVSESSION
 {
     PSUPDRVDEVEXT                   pDevExt;
-    /** List of generic usage records. (protected by SUPDRVDEVEXT::hMtx) */
+    /** List of generic usage records. (protected by SUPDRVDEVEXT::CritSect) */
     PSUPDRVUSAGE volatile           pUsage;
     /** The XPC connection handle for this session. */
     xpc_connection_t                hXpcCon;
@@ -157,7 +156,7 @@ INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enm
     }
 
     PSUPDRVDEVEXT pDevExt = pSession->pDevExt;
-    RTSemFastMutexRequest(pDevExt->hMtx);
+    RTCritSectEnter(&pDevExt->CritSect);
 
     /* The object. */
     pObj->pNext         = pDevExt->pObjs;
@@ -169,7 +168,7 @@ INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enm
     pUsage->pNext       = pSession->pUsage;
     pSession->pUsage    = pUsage;
 
-    RTSemFastMutexRelease(pDevExt->hMtx);
+    RTCritSectLeave(&pDevExt->CritSect);
     return pObj;
 }
 
@@ -183,7 +182,7 @@ INTNETR3DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fN
 
     RT_NOREF(fNoBlocking);
 
-    RTSemFastMutexRequest(pDevExt->hMtx);
+    RTCritSectEnter(&pDevExt->CritSect);
 
     /*
      * Reference the object.
@@ -219,7 +218,7 @@ INTNETR3DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fN
         }
     }
 
-    RTSemFastMutexRelease(pDevExt->hMtx);
+    RTCritSectLeave(&pDevExt->CritSect);
     return rc;
 }
 
@@ -241,7 +240,7 @@ INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     /*
      * Acquire the spinlock and look for the usage record.
      */
-    RTSemFastMutexRequest(pDevExt->hMtx);
+    RTCritSectEnter(&pDevExt->CritSect);
 
     for (pUsagePrev = NULL, pUsage = pSession->pUsage;
          pUsage;
@@ -295,7 +294,7 @@ INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
         }
     }
 
-    RTSemFastMutexRelease(pDevExt->hMtx);
+    RTCritSectLeave(&pDevExt->CritSect);
 
     /*
      * Call the destructor and free the object if required.
@@ -379,7 +378,7 @@ static uint32_t intnetR3SessionDestroy(PSUPDRVSESSION pSession)
     if (pSession->pUsage)
     {
         PSUPDRVUSAGE  pUsage;
-        RTSemFastMutexRequest(pDevExt->hMtx);
+        RTCritSectEnter(&pDevExt->CritSect);
 
         while ((pUsage = pSession->pUsage) != NULL)
         {
@@ -408,16 +407,20 @@ static uint32_t intnetR3SessionDestroy(PSUPDRVSESSION pSession)
                     Assert(pObjPrev);
                 }
 
+                RTCritSectLeave(&pDevExt->CritSect);
+
                 if (pObj->pfnDestructor)
                     pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
                 RTMemFree(pObj);
+
+                RTCritSectEnter(&pDevExt->CritSect);
             }
 
             /* free it and continue. */
             RTMemFree(pUsage);
         }
 
-        RTSemFastMutexRelease(pDevExt->hMtx);
+        RTCritSectLeave(&pDevExt->CritSect);
         AssertMsg(!pSession->pUsage, ("Some buster reregistered an object during desturction!\n"));
     }
 
@@ -447,13 +450,7 @@ static DECLCALLBACK(int) intnetR3RecvThread(RTTHREAD hThreadSelf, void *pvUser)
         if (pSession->fTerminate)
             break;
 
-        INTNETIFWAITREQ WaitReq;
-        WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        WaitReq.Hdr.cbReq    = sizeof(WaitReq);
-        WaitReq.pSession     = NULL;
-        WaitReq.hIf          = pSession->hIfWait;
-        WaitReq.cMillies     = 30000; /* 30s - don't wait forever, timeout now and then. */
-        int rc = IntNetR0IfWaitReq(pSession, &WaitReq);
+        int rc = IntNetR0IfWait(pSession->hIfWait, pSession, 30000); /* 30s - don't wait forever, timeout now and then. */
         if (RT_SUCCESS(rc))
         {
             /* Send an empty message. */
@@ -463,7 +460,7 @@ static DECLCALLBACK(int) intnetR3RecvThread(RTTHREAD hThreadSelf, void *pvUser)
         else if (   rc != VERR_TIMEOUT
                  && rc != VERR_INTERRUPTED)
         {
-            LogFlow(("drvR3IntNetRecvRun: returns %Rrc\n", rc));
+            LogFlow(("intnetR3RecvThread: returns %Rrc\n", rc));
             return rc;
         }
     }
@@ -634,8 +631,7 @@ DECLCALLBACK(void) xpcConnHandler(xpc_connection_t hXpcCon)
                 if (!cRefs)
                 {
                     /* Last one cleans up the global data. */
-                    RTSemFastMutexDestroy(pDevExt->hMtx);
-                    pDevExt->hMtx = NIL_RTSEMFASTMUTEX;
+                    RTCritSectDelete(&pDevExt->CritSect);
                 }
             }
         }
@@ -679,7 +675,7 @@ int main(int argc, char **argv)
         IntNetR0Init();
 
         g_DevExt.pObjs = NULL;
-        rc = RTSemFastMutexCreate(&g_DevExt.hMtx);
+        rc = RTCritSectInit(&g_DevExt.CritSect);
         if (RT_SUCCESS(rc))
             xpc_main(xpcConnHandler); /* Never returns. */
 

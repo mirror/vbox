@@ -32,14 +32,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define IN_INTNET_TESTCASE
-#define IN_INTNET_R3
-
 #include "IntNetSwitchInternal.h"
 
-
-#include <VBox/types.h>
-#include <VBox/intnet.h>
 #include <iprt/asm.h>
 #include <iprt/mp.h>
 

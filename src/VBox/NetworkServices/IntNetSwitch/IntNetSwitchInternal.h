@@ -35,6 +35,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define IN_INTNET_TESTCASE
+#define IN_INTNET_R3
+
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 
@@ -45,6 +48,7 @@
 typedef struct SUPDRVSESSION *MYPSUPDRVSESSION;
 #define PSUPDRVSESSION  MYPSUPDRVSESSION
 
+#include <VBox/intnet.h>
 #include <VBox/sup.h>
 
 
