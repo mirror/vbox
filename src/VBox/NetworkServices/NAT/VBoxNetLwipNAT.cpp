@@ -483,8 +483,8 @@ int VBoxNetLwipNAT::init()
 
     /* connect to the intnet */
     rc = IntNetR3IfCreate(&m_hIf, m_strNetworkName.c_str());
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_SUCCESS(rc))
+        rc = IntNetR3IfSetActive(m_hIf, true /*fActive*/);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
