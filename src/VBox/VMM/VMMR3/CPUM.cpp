@@ -1739,14 +1739,34 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     Assert(pGuestVmxMsrs);
 
     /*
-     * While it would be nice to check this earlier while initializing fNestedVmxEpt
-     * but we would not have enumearted host features then, so do it at least now.
+     * While it would be nice to check this earlier while initializing
+     * fNestedVmxEpt but we would not have enumearted host features then, so do
+     * it at least now.
      */
-    if (   !pVM->cpum.s.HostFeatures.fNoExecute
-        && pVM->cpum.s.fNestedVmxEpt)
+    /** @todo r=bird: Why don't we just ditch the fNestedVmxEpt and
+     *        fNestedVmxUnrestrictedGuest state members and read the CFGM stuff
+     *        here?  Neither of them have any purpose beyond keeping the two value
+     *        read in cpumR3CpuIdReadConfig for use here.  They aren't even
+     *        necessarily correct after the feature merging has taken place.  */
+    if (pVM->cpum.s.fNestedVmxEpt)
     {
-        LogRel(("CPUM: Warning! EPT not exposed to the guest since NX isn't available on the host.\n"));
-        pVM->cpum.s.fNestedVmxEpt               = false;
+        const char *pszWhy = NULL;
+        if (!VM_IS_HM_ENABLED(pVM) && !VM_IS_EXEC_ENGINE_IEM(pVM))
+            pszWhy = "execution engine is neither HM nor IEM";
+        else if (VM_IS_HM_ENABLED(pVM) && !HMIsNestedPagingActive(pVM))
+            pszWhy = "nested paging is not enabled for the VM or it is not supported by the host";
+        else if (VM_IS_HM_ENABLED(pVM) && !pVM->cpum.s.HostFeatures.fNoExecute)
+            pszWhy = "NX is not available on the host";
+        if (pszWhy)
+        {
+            LogRel(("CPUM: Warning! EPT not exposed to the guest because %s.\n", pszWhy));
+            pVM->cpum.s.fNestedVmxEpt               = false;
+        }
+    }
+    if (    pVM->cpum.s.fNestedVmxUnrestrictedGuest
+        && !pVM->cpum.s.fNestedVmxEpt)
+    {
+        LogRel(("CPUM: WARNING! Can't expose \"Unrestricted Guest\" to the guest when EPT is not exposed!\n"));
         pVM->cpum.s.fNestedVmxUnrestrictedGuest = false;
     }
 

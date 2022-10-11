@@ -2737,26 +2737,20 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             /** @cfgm{/CPUM/NestedVmxEpt, bool, true}
-             * Whether to expose the EPT feature to the guest. The default is false. When
-             * disabled will automatically prevent exposing features that rely on
-             */
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxEpt", &pVM->cpum.s.fNestedVmxEpt, false);
+             * Whether to expose the EPT feature to the guest. The default is true.
+             * When disabled will automatically prevent exposing features that rely
+             * on it.  This is dependent upon nested paging being enabled for the. */
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxEpt", &pVM->cpum.s.fNestedVmxEpt, true);
             AssertLogRelRCReturn(rc, rc);
 
             /** @cfgm{/CPUM/NestedVmxUnrestrictedGuest, bool, true}
-             * Whether to expose the Unrestricted Guest feature to the guest. The default is
-             * false. When disabled will automatically prevent exposing features that rely on
-             * it.
+             * Whether to expose the Unrestricted Guest feature to the guest. The
+             * default is the same a /CPUM/Nested/VmxEpt. When disabled will
+             * automatically prevent exposing features that rely on it.
              */
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxUnrestrictedGuest", &pVM->cpum.s.fNestedVmxUnrestrictedGuest, false);
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxUnrestrictedGuest", &pVM->cpum.s.fNestedVmxUnrestrictedGuest,
+                                    pVM->cpum.s.fNestedVmxEpt);
             AssertLogRelRCReturn(rc, rc);
-
-            if (    pVM->cpum.s.fNestedVmxUnrestrictedGuest
-                && !pVM->cpum.s.fNestedVmxEpt)
-            {
-                LogRel(("CPUM: WARNING! Can't expose \"Unrestricted Guest\" to the guest when EPT is not exposed!\n"));
-                pVM->cpum.s.fNestedVmxUnrestrictedGuest = false;
-            }
 #endif
         }
     }
