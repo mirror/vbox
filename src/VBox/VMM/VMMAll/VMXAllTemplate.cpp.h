@@ -3290,6 +3290,27 @@ DECLINLINE(void) vmxHCImportGuestTr(PVMCPUCC pVCpu)
 
 
 /**
+ * Core: Imports the guest RIP from the VMCS back into the guest-CPU context.
+ *
+ * @returns The RIP value.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ *
+ * @remarks Called with interrupts and/or preemption disabled, should not assert!
+ * @remarks Do -not- call this function directly!
+ */
+DECL_FORCE_INLINE(uint64_t) vmxHCImportGuestCoreRip(PVMCPUCC pVCpu)
+{
+    uint64_t u64Val;
+    int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RIP, &u64Val);
+    AssertRC(rc);
+
+    pVCpu->cpum.GstCtx.rip = u64Val;
+
+    return u64Val;
+}
+
+
+/**
  * Imports the guest RIP from the VMCS back into the guest-CPU context.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
@@ -3300,17 +3321,40 @@ DECLINLINE(void) vmxHCImportGuestTr(PVMCPUCC pVCpu)
  */
 DECLINLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
 {
-    uint64_t u64Val;
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    if (pCtx->fExtrn & CPUMCTX_EXTRN_RIP)
+    if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP)
     {
-        int rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RIP, &u64Val);
-        AssertRC(rc);
-
-        pCtx->rip = u64Val;
-        EMHistoryUpdatePC(pVCpu, pCtx->rip, false);
-        pCtx->fExtrn &= ~CPUMCTX_EXTRN_RIP;
+        EMHistoryUpdatePC(pVCpu, vmxHCImportGuestCoreRip(pVCpu), false);
+        pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_RIP;
     }
+}
+
+
+/**
+ * Core: Imports the guest RFLAGS from the VMCS back into the guest-CPU context.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ *
+ * @remarks Called with interrupts and/or preemption disabled, should not assert!
+ * @remarks Do -not- call this function directly!
+ */
+DECL_FORCE_INLINE(void) vmxHCImportGuestCoreRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+{
+    uint64_t u64Val;
+    int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RFLAGS, &u64Val);
+    AssertRC(rc);
+
+    pVCpu->cpum.GstCtx.rflags.u64 = u64Val;
+#ifndef IN_NEM_DARWIN
+    PCVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+    if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+    {
+        pVCpu->cpum.GstCtx.eflags.Bits.u1VM   = 0;
+        pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL = pVmcsInfoShared->RealMode.Eflags.Bits.u2IOPL;
+    }
+#else
+    RT_NOREF(pVmcsInfo);
+#endif
 }
 
 
@@ -3326,25 +3370,10 @@ DECLINLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
  */
 DECLINLINE(void) vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    if (pCtx->fExtrn & CPUMCTX_EXTRN_RFLAGS)
+    if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RFLAGS)
     {
-        uint64_t u64Val;
-        int rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RFLAGS, &u64Val);
-        AssertRC(rc);
-
-        pCtx->rflags.u64 = u64Val;
-#ifndef IN_NEM_DARWIN
-        PCVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-        if (pVmcsInfoShared->RealMode.fRealOnV86Active)
-        {
-            pCtx->eflags.Bits.u1VM   = 0;
-            pCtx->eflags.Bits.u2IOPL = pVmcsInfoShared->RealMode.Eflags.Bits.u2IOPL;
-        }
-#else
-        RT_NOREF(pVmcsInfo);
-#endif
-        pCtx->fExtrn &= ~CPUMCTX_EXTRN_RFLAGS;
+        vmxHCImportGuestCoreRFlags(pVCpu, pVmcsInfo);
+        pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_RFLAGS;
     }
 }
 
@@ -3846,11 +3875,16 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
     if (   (a_fWhat & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS))
         && pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS))
     {
-        if (a_fWhat & CPUMCTX_EXTRN_RIP)
-            vmxHCImportGuestRip(pVCpu);
-
         if (a_fWhat & CPUMCTX_EXTRN_RFLAGS)
-            vmxHCImportGuestRFlags(pVCpu, pVmcsInfo);
+            vmxHCImportGuestCoreRFlags(pVCpu, pVmcsInfo);
+
+        if (a_fWhat & CPUMCTX_EXTRN_RIP)
+        {
+            if (!(a_fWhat & CPUMCTX_EXTRN_CS))
+                EMHistoryUpdatePC(pVCpu, vmxHCImportGuestCoreRip(pVCpu), false);
+            else
+                vmxHCImportGuestCoreRip(pVCpu);
+        }
     }
 
     /* Note! vmxHCImportGuestIntrState may also include RIP and RFLAGS and update fExtrn. */
@@ -3865,49 +3899,65 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
 
     if (a_fWhat & CPUMCTX_EXTRN_SREG_MASK)
     {
-        PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-#ifndef IN_NEM_DARWIN
+#ifndef IN_NEM_DARWIN /* NEM/Darwin: HV supports only unrestricted guest execution. */
+        PVMXVMCSINFOSHARED const pVmcsInfoShared = pVmcsInfo->pShared;
         bool const fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
-#else
-        bool const fRealOnV86Active = false; /* HV supports only unrestricted guest execution. */
 #endif
         if (a_fWhat & CPUMCTX_EXTRN_CS)
         {
             vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu);
-            vmxHCImportGuestRip(pVCpu); /** @todo WTF? */
+#ifndef IN_NEM_DARWIN /* NEM/Darwin: HV supports only unrestricted guest execution. */
             if (fRealOnV86Active)
                 pVCpu->cpum.GstCtx.cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
+#endif
+            /** @todo try get rid of this carp, it smells is probably never ever used: */
+            if (   !(a_fWhat & CPUMCTX_EXTRN_RIP)
+                && (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP))
+            {
+                vmxHCImportGuestCoreRip(pVCpu);
+                pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_RIP;
+            }
             EMHistoryUpdatePC(pVCpu, pVCpu->cpum.GstCtx.cs.u64Base + pVCpu->cpum.GstCtx.rip, true /* fFlattened */);
         }
         if (a_fWhat & CPUMCTX_EXTRN_SS)
         {
             vmxHCImportGuestSegReg<X86_SREG_SS>(pVCpu);
+#ifndef IN_NEM_DARWIN
             if (fRealOnV86Active)
                 pVCpu->cpum.GstCtx.ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
+#endif
         }
         if (a_fWhat & CPUMCTX_EXTRN_DS)
         {
             vmxHCImportGuestSegReg<X86_SREG_DS>(pVCpu);
+#ifndef IN_NEM_DARWIN
             if (fRealOnV86Active)
                 pVCpu->cpum.GstCtx.ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
+#endif
         }
         if (a_fWhat & CPUMCTX_EXTRN_ES)
         {
             vmxHCImportGuestSegReg<X86_SREG_ES>(pVCpu);
+#ifndef IN_NEM_DARWIN
             if (fRealOnV86Active)
                 pVCpu->cpum.GstCtx.es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
+#endif
         }
         if (a_fWhat & CPUMCTX_EXTRN_FS)
         {
             vmxHCImportGuestSegReg<X86_SREG_FS>(pVCpu);
+#ifndef IN_NEM_DARWIN
             if (fRealOnV86Active)
                 pVCpu->cpum.GstCtx.fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
+#endif
         }
         if (a_fWhat & CPUMCTX_EXTRN_GS)
         {
             vmxHCImportGuestSegReg<X86_SREG_GS>(pVCpu);
+#ifndef IN_NEM_DARWIN
             if (fRealOnV86Active)
                 pVCpu->cpum.GstCtx.gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
+#endif
         }
     }
 
@@ -3919,7 +3969,7 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
         int const rc1 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_GDTR_BASE,    &pVCpu->cpum.GstCtx.gdtr.pGdt); AssertRC(rc1);
         uint32_t u32Val;
         int const rc2 = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val); AssertRC(rc2);
-        pVCpu->cpum.GstCtx.gdtr.cbGdt = u32Val;
+        pVCpu->cpum.GstCtx.gdtr.cbGdt = (uint16_t)u32Val;
     }
 
     /* Guest IDTR. */
@@ -3928,7 +3978,7 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
         int const rc1 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_IDTR_BASE,    &pVCpu->cpum.GstCtx.idtr.pIdt); AssertRC(rc1);
         uint32_t u32Val;
         int const rc2 = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val); AssertRC(rc2);
-        pVCpu->cpum.GstCtx.idtr.cbIdt = u32Val;
+        pVCpu->cpum.GstCtx.idtr.cbIdt = (uint64_t)u32Val;
     }
 
     /* Guest TR. */
