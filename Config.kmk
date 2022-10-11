@@ -529,6 +529,7 @@ endif
 # Enable forced driverless mode by default.
 if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DRIVERLESS_FORCED = 1
+ VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
 endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
