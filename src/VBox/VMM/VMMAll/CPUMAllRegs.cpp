@@ -1890,17 +1890,16 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
  */
 VMM_INT_DECL(bool) CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu)
 {
-    if (!CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.s.Guest))
+    switch (CPUMGetGuestInNestedHwvirtMode(&pVCpu->cpum.s.Guest))
     {
-        uint32_t const fEFlags = pVCpu->cpum.s.Guest.eflags.u;
-        return RT_BOOL(fEFlags & X86_EFL_IF);
+        case CPUMHWVIRT_NONE:
+        default:
+            return pVCpu->cpum.s.Guest.eflags.Bits.u1IF;
+        case CPUMHWVIRT_VMX:
+            return CPUMIsGuestVmxPhysIntrEnabled(&pVCpu->cpum.s.Guest);
+        case CPUMHWVIRT_SVM:
+            return CPUMIsGuestSvmPhysIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
     }
-
-    if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
-        return CPUMIsGuestVmxPhysIntrEnabled(&pVCpu->cpum.s.Guest);
-
-    Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest));
-    return CPUMIsGuestSvmPhysIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
 }
 
 
@@ -2023,17 +2022,15 @@ VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PCVMCPU pVCpu)
      *        SVM hypervisors must track NMI blocking themselves by intercepting
      *        the IRET instruction after injection of an NMI.
      */
-    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (   !CPUMIsGuestInNestedHwvirtMode(pCtx)
-        ||  CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-        || !CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_VIRT_NMI))
+    if (   !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
+        || !CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.s.Guest, VMX_PIN_CTLS_VIRT_NMI))
         return VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /*
      * Return the state of virtual-NMI blocking, if we are executing a
      * VMX nested-guest with virtual-NMIs enabled.
      */
-    return CPUMIsGuestVmxVirtNmiBlocking(pCtx);
+    return CPUMIsGuestVmxVirtNmiBlocking(&pVCpu->cpum.s.Guest);
 }
 
 
@@ -2055,21 +2052,15 @@ VMM_INT_DECL(void) CPUMSetGuestNmiBlocking(PVMCPU pVCpu, bool fBlock)
      *        SVM hypervisors must track NMI blocking themselves by intercepting
      *        the IRET instruction after injection of an NMI.
      */
-    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (   !CPUMIsGuestInNestedHwvirtMode(pCtx)
-        ||  CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-        || !CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_VIRT_NMI))
+    if (   !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
+        || !CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.s.Guest, VMX_PIN_CTLS_VIRT_NMI))
     {
-        if (fBlock)
-        {
-            if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-        }
+        if (fBlock == VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        { /* probably likely */ }
+        else if (fBlock)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
         else
-        {
-            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-        }
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         return;
     }
 
@@ -2077,7 +2068,7 @@ VMM_INT_DECL(void) CPUMSetGuestNmiBlocking(PVMCPU pVCpu, bool fBlock)
      * Set the state of virtual-NMI blocking, if we are executing a
      * VMX nested-guest with virtual-NMIs enabled.
      */
-    return CPUMSetGuestVmxVirtNmiBlocking(pCtx, fBlock);
+    return CPUMSetGuestVmxVirtNmiBlocking(&pVCpu->cpum.s.Guest, fBlock);
 }
 
 

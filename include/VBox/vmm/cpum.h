@@ -1958,7 +1958,41 @@ DECLINLINE(bool) CPUMIsGuestInVmxNonRootMode(PCCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMIsGuestInNestedHwvirtMode(PCCPUMCTX pCtx)
 {
+#if 0
     return CPUMIsGuestInVmxNonRootMode(pCtx) || CPUMIsGuestInSvmNestedHwVirtMode(pCtx);
+#else
+    if (pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_NONE)
+        return false;
+    if (pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX)
+    {
+        Assert(!pCtx->hwvirt.vmx.fInVmxNonRootMode || pCtx->hwvirt.vmx.fInVmxRootMode);
+        return pCtx->hwvirt.vmx.fInVmxNonRootMode;
+    }
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
+    return RT_BOOL(pCtx->hwvirt.svm.Vmcb.ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
+#endif
+}
+
+/**
+ * Checks if we are executing inside an SVM or VMX nested hardware-virtualized
+ * guest.
+ *
+ * @retval  CPUMHWVIRT_NONE if not in SVM or VMX non-root mode.
+ * @retval  CPUMHWVIRT_VMX if in VMX non-root mode.
+ * @retval  CPUMHWVIRT_SVM if in SVM non-root mode.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(CPUMHWVIRT) CPUMGetGuestInNestedHwvirtMode(PCCPUMCTX pCtx)
+{
+    if (pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_NONE)
+        return CPUMHWVIRT_NONE;
+    if (pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX)
+    {
+        Assert(!pCtx->hwvirt.vmx.fInVmxNonRootMode || pCtx->hwvirt.vmx.fInVmxRootMode);
+        return pCtx->hwvirt.vmx.fInVmxNonRootMode ? CPUMHWVIRT_VMX : CPUMHWVIRT_NONE;
+    }
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
+    return pCtx->hwvirt.svm.Vmcb.ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN ? CPUMHWVIRT_SVM : CPUMHWVIRT_NONE;
 }
 
 /**
