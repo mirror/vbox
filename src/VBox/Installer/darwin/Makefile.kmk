@@ -607,8 +607,10 @@ ifdef VBOX_WITH_INTNET_SERVICE_IN_R3
  	XPCServices/org.virtualbox.intnet.xpc/Contents/MacOS/VBoxIntNetSwitch
  VBOX_DI_VBAPP_MISC_FILES += \
  	XPCServices/org.virtualbox.intnet.xpc/Contents/Info.plist
- VBOX_DI_VBAPP_SYMLINKS += \
- 	Resources/VirtualBoxVM.app/Contents/XPCServices=>../../../XPCServices
+ ifdef VBOX_WITH_QTGUI
+  VBOX_DI_VBAPP_SYMLINKS += \
+  	Resources/VirtualBoxVM.app/Contents/XPCServices=>../../../XPCServices
+ endif
 endif
 
 VBOX_VIRTUALBOX_APP_ENTITLEMENTS := $(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist
