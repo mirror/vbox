@@ -1983,6 +1983,10 @@ VirtualBox.app_SOURCES = \
  	src/platform/darwin/VM-PkgInfo=>PkgInfo \
  	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
  	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
+ifdef VBOX_WITH_INTNET_SERVICE_IN_R3
+ VirtualBoxVM.app_SYMLINKS = \
+ 	XPCServices=>../../../XPCServices
+endif
 
  $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
