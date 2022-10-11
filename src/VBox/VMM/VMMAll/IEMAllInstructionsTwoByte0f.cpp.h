@@ -837,7 +837,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * XMM, XMM.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 1);
@@ -859,7 +859,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
     else
     {
         /*
-         * XMM, [mem128].
+         * XMM128, [mem128].
          */
         IEM_MC_BEGIN(3, 2);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
@@ -902,7 +902,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullR32_To_Full, PFNIEMAIMPLFPSSEF2U128R32, pfnU1
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * XMM, XMM.
+         * XMM128, XMM32.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 1);
@@ -924,7 +924,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullR32_To_Full, PFNIEMAIMPLFPSSEF2U128R32, pfnU1
     else
     {
         /*
-         * XMM, [mem32].
+         * XMM128, [mem32].
          */
         IEM_MC_BEGIN(3, 2);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
@@ -967,7 +967,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * XMM, XMM.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 1);
@@ -989,7 +989,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
     else
     {
         /*
-         * XMM, [mem128].
+         * XMM128, [mem128].
          */
         IEM_MC_BEGIN(3, 2);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
@@ -12779,7 +12779,7 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq)
         IEM_MC_PREPARE_FPU_USAGE();
         IEM_MC_FPU_TO_MMX_MODE();
 
-        IEM_MC_REF_GREG_U64(puDst,          IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_REF_GREG_U64(puDst,          IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_MREG_U64_CONST(puSrc,    IEM_GET_MODRM_RM_8(bRm));
         IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_pmovmskb_u64, puDst, puSrc);
 
