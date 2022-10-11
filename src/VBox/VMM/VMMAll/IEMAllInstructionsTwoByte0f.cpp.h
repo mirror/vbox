@@ -12394,8 +12394,8 @@ FNIEMOP_DEF_1(iemOpCommonBswapGReg, uint8_t, iReg)
             IEM_MC_BEGIN(1, 0);
             IEM_MC_ARG(uint32_t *,  pu32Dst, 0);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
             IEM_MC_CALL_VOID_AIMPL_1(iemAImpl_bswap_u32, pu32Dst);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
@@ -12438,7 +12438,7 @@ FNIEMOP_DEF(iemOp_bswap_rCX_r9)
 /** Opcode 0x0f 0xca. */
 FNIEMOP_DEF(iemOp_bswap_rDX_r10)
 {
-    IEMOP_MNEMONIC(bswap_rDX_r9, "bswap rDX/r9");
+    IEMOP_MNEMONIC(bswap_rDX_r9, "bswap rDX/r10");
     IEMOP_HLP_MIN_486();
     return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDX | pVCpu->iem.s.uRexB);
 }
@@ -12447,7 +12447,7 @@ FNIEMOP_DEF(iemOp_bswap_rDX_r10)
 /** Opcode 0x0f 0xcb. */
 FNIEMOP_DEF(iemOp_bswap_rBX_r11)
 {
-    IEMOP_MNEMONIC(bswap_rBX_r9, "bswap rBX/r9");
+    IEMOP_MNEMONIC(bswap_rBX_r9, "bswap rBX/r11");
     IEMOP_HLP_MIN_486();
     return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBX | pVCpu->iem.s.uRexB);
 }
