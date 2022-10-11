@@ -6309,15 +6309,23 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
 
             /*
              * Always import the guest-interruptibility state as we need it while evaluating
-             * injecting events on re-entry.
+             * injecting events on re-entry.  We could in *theory* postpone reading it for
+             * exits that does not involve instruction emulation, but since most exits are
+             * for instruction emulation (exceptions being external interrupts, shadow
+             * paging building page faults and EPT violations, and interrupt window stuff)
+             * this is a reasonable simplification.
              *
              * We don't import CR0 (when unrestricted guest execution is unavailable) despite
              * checking for real-mode while exporting the state because all bits that cause
              * mode changes wrt CR0 are intercepted.
              *
-             * Note! This mask _must_ match the default value for the a_fDonePostExit value
-             *       for the vmxHCImportGuestState template!
+             * Note! This mask _must_ match the default value for the default a_fDonePostExit
+             *       value for the vmxHCImportGuestState template!
              */
+            /** @todo r=bird: consider dropping the INHIBIT_XXX and fetch the state
+             * explicitly in the exit handlers and injection function.  That way we have
+             * fewer clusters of vmread spread around the code, because the EM history
+             * executor won't execute very many non-exiting instructions before stopping. */
             rc = vmxHCImportGuestState<  CPUMCTX_EXTRN_INHIBIT_INT
                                        | CPUMCTX_EXTRN_INHIBIT_NMI
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
