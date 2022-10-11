@@ -101,24 +101,6 @@ typedef std::unique_ptr<pbuf, delete_pbuf> unique_ptr_pbuf;
 class VBoxNetDhcpd
 {
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(VBoxNetDhcpd);
-
-private:
-    PRTLOGGER m_pStderrReleaseLogger;
-
-    /* intnet plumbing */
-    INTNETIFCTX    m_hIf;
-    PINTNETBUF     m_pIfBuf;
-
-    /* lwip stack connected to the intnet */
-    struct netif m_LwipNetif;
-
-    Config *m_Config;
-
-    /* listening pcb */
-    struct udp_pcb *m_Dhcp4Pcb;
-
-    DHCPD m_server;
-
 public:
     VBoxNetDhcpd();
     ~VBoxNetDhcpd();
@@ -126,20 +108,30 @@ public:
     int main(int argc, char **argv);
 
 private:
+    /** The logger instance. */
+    PRTLOGGER       m_pStderrReleaseLogger;
+    /** Internal network interface handle. */
+    INTNETIFCTX     m_hIf;
+    /** lwip stack connected to the intnet */
+    struct netif    m_LwipNetif;
+    /** The DHCP server config. */
+    Config          *m_Config;
+    /** Listening pcb */
+    struct udp_pcb  *m_Dhcp4Pcb;
+    /** DHCP server instance. */
+    DHCPD           m_server;
+
     int logInitStderr();
 
     /*
-     * Boilerplate code.
+     * Internal network plumbing.
      */
     int ifInit(const RTCString &strNetwork,
                const RTCString &strTrunk = RTCString(),
                INTNETTRUNKTYPE enmTrunkType = kIntNetTrunkType_WhateverNone);
 
-    int ifProcessInput();
-
-    void ifPump();
-    int ifInput(void *pvSegFrame, uint32_t cbSegFrame);
-
+    static DECLCALLBACK(void) ifInput(void *pvUser, void *pvFrame, uint32_t cbFrame);
+    void ifInputWorker(void *pvFrame, uint32_t cbFrame);
 
     /*
      * lwIP callbacks
@@ -161,8 +153,7 @@ private:
 
 VBoxNetDhcpd::VBoxNetDhcpd()
   : m_pStderrReleaseLogger(NULL),
-    m_hIf(INTNET_HANDLE_INVALID),
-    m_pIfBuf(NULL),
+    m_hIf(NULL),
     m_LwipNetif(),
     m_Config(NULL),
     m_Dhcp4Pcb(NULL)
@@ -193,19 +184,17 @@ int VBoxNetDhcpd::logInitStderr()
 {
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
 
-    PRTLOGGER pLogger;
-    int rc;
-
     uint32_t fFlags = 0;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
 
-    rc = RTLogCreate(&pLogger, fFlags,
-                     "all -sup all.restrict -default.restrict",
-                     NULL,      /* environment base */
-                     RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                     RTLOGDEST_STDERR, NULL);
+    PRTLOGGER pLogger;
+    int rc = RTLogCreate(&pLogger, fFlags,
+                         "all -sup all.restrict -default.restrict",
+                         NULL,      /* environment base */
+                         RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                         RTLOGDEST_STDERR, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Failed to init stderr logger: %Rrs\n", rc);
@@ -230,110 +219,16 @@ int VBoxNetDhcpd::ifInit(const RTCString &strNetwork,
                                 strTrunk.c_str(), _128K /*cbSend*/, _256K /*cbRecv*/,
                                 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
-    {
-        rc = IntNetR3IfQueryBufferPtr(m_hIf, &m_pIfBuf);
-        if (RT_SUCCESS(rc))
-            rc = IntNetR3IfSetActive(m_hIf, true /*fActive*/);
-    }
+        rc = IntNetR3IfSetActive(m_hIf, true /*fActive*/);
 
     return rc;
 }
 
 
-/**
- * Process incoming packages forever.
- *
- * @note This function normally never returns, given that the process is
- *       typically just killed when shutting down a network.
- */
-void VBoxNetDhcpd::ifPump()
+void VBoxNetDhcpd::ifInputWorker(void *pvFrame, uint32_t cbFrame)
 {
-    for (;;)
-    {
-        /*
-         * Wait for input:
-         */
-        int rc = IntNetR3IfWait(m_hIf, RT_INDEFINITE_WAIT);
-        /*
-         * Process any pending input before we wait again:
-         */
-        if (   RT_SUCCESS(rc)
-            || rc == VERR_INTERRUPTED
-            || rc == VERR_TIMEOUT /* paranoia */)
-            ifProcessInput();
-        else
-        {
-            DHCP_LOG_MSG_ERROR(("ifWait failed: %Rrc\n", rc));
-            return;
-        }
-    }
-}
-
-
-int VBoxNetDhcpd::ifProcessInput()
-{
-    AssertReturn(m_hIf != NULL, VERR_GENERAL_FAILURE);
-    AssertReturn(m_pIfBuf != NULL, VERR_GENERAL_FAILURE);
-
-    PCINTNETHDR pHdr = IntNetRingGetNextFrameToRead(&m_pIfBuf->Recv);
-    while (pHdr)
-    {
-        const uint8_t u8Type = pHdr->u8Type;
-        void *pvSegFrame;
-        uint32_t cbSegFrame;
-
-        if (u8Type == INTNETHDR_TYPE_FRAME)
-        {
-            pvSegFrame = IntNetHdrGetFramePtr(pHdr, m_pIfBuf);
-            cbSegFrame = pHdr->cbFrame;
-
-            ifInput(pvSegFrame, cbSegFrame);
-        }
-        else if (u8Type == INTNETHDR_TYPE_GSO)
-        {
-            size_t cbGso = pHdr->cbFrame;
-            size_t cbFrame = cbGso - sizeof(PDMNETWORKGSO);
-
-            PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr, m_pIfBuf);
-            if (PDMNetGsoIsValid(pGso, cbGso, cbFrame))
-            {
-                const uint32_t cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
-                for (uint32_t i = 0; i < cSegs; ++i)
-                {
-                    uint8_t abHdrScratch[256];
-                    pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame,
-                                                         abHdrScratch,
-                                                         i, cSegs,
-                                                         &cbSegFrame);
-                    ifInput(pvSegFrame, (uint32_t)cbFrame);
-                }
-            }
-        }
-
-        /* Advance: */
-        IntNetRingSkipFrame(&m_pIfBuf->Recv);
-        pHdr = IntNetRingGetNextFrameToRead(&m_pIfBuf->Recv);
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Got a frame from the internal network, feed it to the lwIP stack.
- */
-int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
-{
-    if (pvFrame == NULL)
-        return VERR_INVALID_PARAMETER;
-
-    if (   cbFrame <= sizeof(RTNETETHERHDR)
-        || cbFrame > UINT16_MAX - ETH_PAD_SIZE)
-        return VERR_INVALID_PARAMETER;
-
     struct pbuf *p = pbuf_alloc(PBUF_RAW, (u16_t)cbFrame + ETH_PAD_SIZE, PBUF_POOL);
-    if (RT_UNLIKELY(p == NULL))
-        return VERR_NO_MEMORY;
+    AssertPtrReturnVoid(p);
 
     /*
      * The code below is inlined version of:
@@ -362,7 +257,21 @@ int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
     } while (RT_UNLIKELY(q != NULL));
 
     m_LwipNetif.input(p, &m_LwipNetif);
-    return VINF_SUCCESS;
+}
+
+
+/**
+ * Got a frame from the internal network, feed it to the lwIP stack.
+ */
+/*static*/
+DECLCALLBACK(void) VBoxNetDhcpd::ifInput(void *pvUser, void *pvFrame, uint32_t cbFrame)
+{
+    AssertReturnVoid(pvFrame);
+    AssertReturnVoid(   cbFrame > sizeof(RTNETETHERHDR)
+                     && cbFrame <= UINT16_MAX - ETH_PAD_SIZE);
+
+    VBoxNetDhcpd *self = static_cast<VBoxNetDhcpd *>(pvUser);
+    self->ifInputWorker(pvFrame, cbFrame);
 }
 
 
@@ -374,17 +283,14 @@ err_t VBoxNetDhcpd::netifLinkOutput(pbuf *pPBuf)
     if (pPBuf->tot_len < sizeof(struct eth_hdr)) /* includes ETH_PAD_SIZE */
         return ERR_ARG;
 
-    PINTNETHDR pHdr;
-    void *pvFrame;
     u16_t cbFrame = pPBuf->tot_len - ETH_PAD_SIZE;
-    int rc = IntNetRingAllocateFrame(&m_pIfBuf->Send, cbFrame, &pHdr, &pvFrame);
+    INTNETFRAME Frame;
+    int rc = IntNetR3IfQueryOutputFrame(m_hIf, cbFrame, &Frame);
     if (RT_FAILURE(rc))
         return ERR_MEM;
 
-    pbuf_copy_partial(pPBuf, pvFrame, cbFrame, ETH_PAD_SIZE);
-    IntNetRingCommitFrameEx(&m_pIfBuf->Send, pHdr, cbFrame);
-
-    IntNetR3IfSend(m_hIf);
+    pbuf_copy_partial(pPBuf, Frame.pvFrame, cbFrame, ETH_PAD_SIZE);
+    IntNetR3IfOutputFrameCommit(m_hIf, &Frame);
     return ERR_OK;
 }
 
@@ -466,7 +372,8 @@ int VBoxNetDhcpd::main(int argc, char **argv)
                 /*
                  * Pump packets more or less for ever.
                  */
-                ifPump();
+                rc = IntNetR3IfPumpPkts(m_hIf, ifInput, this,
+                                        NULL /*pfnInputGso*/, NULL /*pvUserGso*/);
             }
             else
                 DHCP_LOG_MSG_ERROR(("Terminating - vboxLwipCoreInitialize failed: %Rrc\n", rc));
