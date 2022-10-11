@@ -3891,26 +3891,13 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
     if (a_fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
         vmxHCImportGuestIntrState(pVCpu, pVmcsInfo);
 
-    if (a_fWhat & CPUMCTX_EXTRN_RSP)
+    if (a_fWhat & (CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TR))
     {
-        int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RSP, &pVCpu->cpum.GstCtx.rsp);
-        AssertRC(rc);
-    }
-
-    if (a_fWhat & CPUMCTX_EXTRN_SREG_MASK)
-    {
-#ifndef IN_NEM_DARWIN /* NEM/Darwin: HV supports only unrestricted guest execution. */
-        PVMXVMCSINFOSHARED const pVmcsInfoShared = pVmcsInfo->pShared;
-        bool const fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
-#endif
         if (a_fWhat & CPUMCTX_EXTRN_CS)
         {
             vmxHCImportGuestSegReg<X86_SREG_CS>(pVCpu);
-#ifndef IN_NEM_DARWIN /* NEM/Darwin: HV supports only unrestricted guest execution. */
-            if (fRealOnV86Active)
-                pVCpu->cpum.GstCtx.cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
-#endif
-            /** @todo try get rid of this carp, it smells is probably never ever used: */
+            /** @todo try get rid of this carp, it smells and is probably never ever
+             *        used: */
             if (   !(a_fWhat & CPUMCTX_EXTRN_RIP)
                 && (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP))
             {
@@ -3920,45 +3907,51 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
             EMHistoryUpdatePC(pVCpu, pVCpu->cpum.GstCtx.cs.u64Base + pVCpu->cpum.GstCtx.rip, true /* fFlattened */);
         }
         if (a_fWhat & CPUMCTX_EXTRN_SS)
-        {
             vmxHCImportGuestSegReg<X86_SREG_SS>(pVCpu);
-#ifndef IN_NEM_DARWIN
-            if (fRealOnV86Active)
-                pVCpu->cpum.GstCtx.ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
-#endif
-        }
         if (a_fWhat & CPUMCTX_EXTRN_DS)
-        {
             vmxHCImportGuestSegReg<X86_SREG_DS>(pVCpu);
-#ifndef IN_NEM_DARWIN
-            if (fRealOnV86Active)
-                pVCpu->cpum.GstCtx.ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
-#endif
-        }
         if (a_fWhat & CPUMCTX_EXTRN_ES)
-        {
             vmxHCImportGuestSegReg<X86_SREG_ES>(pVCpu);
-#ifndef IN_NEM_DARWIN
-            if (fRealOnV86Active)
-                pVCpu->cpum.GstCtx.es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
-#endif
-        }
         if (a_fWhat & CPUMCTX_EXTRN_FS)
-        {
             vmxHCImportGuestSegReg<X86_SREG_FS>(pVCpu);
-#ifndef IN_NEM_DARWIN
-            if (fRealOnV86Active)
-                pVCpu->cpum.GstCtx.fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
-#endif
-        }
         if (a_fWhat & CPUMCTX_EXTRN_GS)
-        {
             vmxHCImportGuestSegReg<X86_SREG_GS>(pVCpu);
+
+        /* Guest TR.
+           Real-mode emulation using virtual-8086 mode has the fake TSS
+           (pRealModeTSS) in TR, don't need to import that one. */
 #ifndef IN_NEM_DARWIN
-            if (fRealOnV86Active)
-                pVCpu->cpum.GstCtx.gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
+        PVMXVMCSINFOSHARED const pVmcsInfoShared  = pVmcsInfo->pShared;
+        bool const               fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
+        if ((a_fWhat & CPUMCTX_EXTRN_TR) && !fRealOnV86Active)
+#else
+        if (a_fWhat & CPUMCTX_EXTRN_TR)
 #endif
+            vmxHCImportGuestTr(pVCpu);
+
+#ifndef IN_NEM_DARWIN /* NEM/Darwin: HV supports only unrestricted guest execution. */
+        if (fRealOnV86Active)
+        {
+            if (a_fWhat & CPUMCTX_EXTRN_CS)
+                pVCpu->cpum.GstCtx.cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
+            if (a_fWhat & CPUMCTX_EXTRN_SS)
+                pVCpu->cpum.GstCtx.ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
+            if (a_fWhat & CPUMCTX_EXTRN_DS)
+                pVCpu->cpum.GstCtx.ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
+            if (a_fWhat & CPUMCTX_EXTRN_ES)
+                pVCpu->cpum.GstCtx.es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
+            if (a_fWhat & CPUMCTX_EXTRN_FS)
+                pVCpu->cpum.GstCtx.fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
+            if (a_fWhat & CPUMCTX_EXTRN_GS)
+                pVCpu->cpum.GstCtx.gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
         }
+#endif
+    }
+
+    if (a_fWhat & CPUMCTX_EXTRN_RSP)
+    {
+        int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RSP, &pVCpu->cpum.GstCtx.rsp);
+        AssertRC(rc);
     }
 
     if (a_fWhat & CPUMCTX_EXTRN_LDTR)
@@ -3979,17 +3972,6 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
         uint32_t u32Val;
         int const rc2 = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val); AssertRC(rc2);
         pVCpu->cpum.GstCtx.idtr.cbIdt = (uint64_t)u32Val;
-    }
-
-    /* Guest TR. */
-    if (a_fWhat & CPUMCTX_EXTRN_TR)
-    {
-#ifndef IN_NEM_DARWIN
-        /* Real-mode emulation using virtual-8086 mode has the fake TSS (pRealModeTSS) in TR,
-           don't need to import that one. */
-        if (!pVmcsInfo->pShared->RealMode.fRealOnV86Active)
-#endif
-            vmxHCImportGuestTr(pVCpu);
     }
 
     if (a_fWhat & CPUMCTX_EXTRN_DR7)
