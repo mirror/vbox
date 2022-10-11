@@ -653,7 +653,7 @@ DECLCALLBACK(void) xpcConnHandler(xpc_connection_t hXpcCon)
             if (RT_SUCCESS(rc))
             {
                 xpc_connection_set_context(hXpcCon, pSession);
-                xpc_connection_activate(hXpcCon);
+                xpc_connection_resume(hXpcCon);
                 xpc_transaction_begin();
                 ASMAtomicIncU32(&g_DevExt.cRefs);
                 return;

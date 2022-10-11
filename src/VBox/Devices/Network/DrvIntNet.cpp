@@ -1946,7 +1946,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
             }
         });
 
-        xpc_connection_activate(hXpcCon);
+        xpc_connection_resume(hXpcCon);
         pThis->hXpcCon      = hXpcCon;
         pThis->fIntNetR3Svc = true;
 #else

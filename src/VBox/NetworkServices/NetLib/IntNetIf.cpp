@@ -270,7 +270,7 @@ DECLHIDDEN(int) IntNetR3IfCreateEx(PINTNETIFCTX phIfCtx, const char *pszNetwork,
                     }
                 });
 
-                xpc_connection_activate(hXpcCon);
+                xpc_connection_resume(hXpcCon);
                 pThis->hXpcCon      = hXpcCon;
 # endif
                 pThis->fIntNetR3Svc = true;
