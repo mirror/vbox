@@ -4355,7 +4355,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4384,7 +4384,7 @@ FNIEMOP_DEF(iemOp_cvttss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4481,7 +4481,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4510,7 +4510,7 @@ FNIEMOP_DEF(iemOp_cvttsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4747,7 +4747,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4776,7 +4776,7 @@ FNIEMOP_DEF(iemOp_cvtss2si_Gy_Wss)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4873,7 +4873,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
@@ -4902,7 +4902,7 @@ FNIEMOP_DEF(iemOp_cvtsd2si_Gy_Wsd)
             IEM_MC_IF_MXCSR_XCPT_PENDING()
                 IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_ELSE()
-                IEM_MC_STORE_GREG_I32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), i32Dst);
             IEM_MC_ENDIF();
 
             IEM_MC_ADVANCE_RIP();
