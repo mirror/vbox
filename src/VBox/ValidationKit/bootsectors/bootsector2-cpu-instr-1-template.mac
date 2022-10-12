@@ -295,7 +295,7 @@ BEGINPROC TMPL_NM(TestCmpxchg32)
         mov     rax, -1            ; Load registers with 64-bit values
         mov     rbx, -2
         mov     rcx, -3
-        cmpxchg ebx, ecx           ; Not equal, writes eax
+        cmpxchg ebx, ecx           ; Not equal, writes ebx to eax
         mov     edx, -2            ; Clears high dword
         TEST_ASSERT_SIMPLE rax, rdx, jz, "CMPXCHG reg, unequal, rax set"
         mov     rdx, -2            ; All ones still in high dword
@@ -332,10 +332,44 @@ BEGINPROC TMPL_NM(TestCmpxchg32)
         mov     rbx, -4
         push    rbx
         mov     rcx, -5
-        cmpxchg [rsp], ecx         ; Not equal, writes eax
+        cmpxchg [rsp], ecx         ; Equal, writes ecx to memory
         mov     rdx, -4            ; All ones in high dword
         TEST_ASSERT_SIMPLE rax, rdx, jz, "CMPXCHG mem, equal, rax not set"
         pop     rbx
+
+        ;
+        ; CMPXCHG8B mem, reg - values equal, memory written
+        ; compares edx:eax with mem64
+        ;
+        mov     rdx, -1            ; Load registers with 64-bit values
+        mov     rax, -4
+        mov     rcx, -1
+        mov     rbx, -5
+        mov     rsi, -4
+        push    rsi
+        cmpxchg8b [rsp]            ; Equal, writes ecx:ebx to memory
+        mov     rsi, -4            ; All ones in high dword
+        TEST_ASSERT_SIMPLE rax, rsi, jz, "CMPXCHG8B mem, equal, rax not set"
+        mov     rsi, -1            ; All ones in high dword
+        TEST_ASSERT_SIMPLE rdx, rsi, jz, "CMPXCHG8B mem, equal, rdx not set"
+        pop     rsi
+
+        ;
+        ; CMPXCHG8B mem, reg - values unequal, edx:eax written
+        ; compares edx:eax with mem64
+        ;
+        mov     rdx, -1            ; Load registers with 64-bit values
+        mov     rax, -2
+        mov     rcx, -1
+        mov     rbx, -4
+        mov     rsi, -3
+        push    rsi
+        cmpxchg8b [rsp]            ; Not equal, writes memory to edx:eax
+        mov     esi, -3            ; Clears high dword
+        TEST_ASSERT_SIMPLE rax, rsi, jz, "CMPXCHG8B mem, unequal, rax set"
+        mov     esi, -1            ; Clears high dword
+        TEST_ASSERT_SIMPLE rdx, rsi, jz, "CMPXCHG8B mem, unequal, rdx set"
+        pop     rsi
 
 %endif
 
