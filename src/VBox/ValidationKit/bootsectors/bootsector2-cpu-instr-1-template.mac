@@ -157,6 +157,116 @@ ENDPROC   TMPL_NM(TestMemFences)
 
 
 ;;
+; Floating-point to integer conversion (SSE/SSE2).
+; Neither Intel nor AMD explicitly document what happens for the 32-bit forms
+; of CVTxx2SI in 64-bit mode with regard to the high dword of a 64-bit
+; destination register.
+;
+; @uses XMM0, and BS2_SEL_SPARE0 is trashed.
+;
+BEGINPROC TMPL_NM(TestCvtSize)
+        push    xBP
+        mov     xBP, xSP
+        push    sAX
+        push    xBX
+        push    xCX
+        push    xDX
+        push    xDI
+        push    xSI
+        sub     xSP, 80h                ; iret stack frame space.
+        mov     xSI, xSP                ; Save the stack register.
+
+        mov     xAX, .s_szSubTestName
+        call    TMPL_NM_CMN(TestSub)
+
+        ;
+        ; SSE2 supported?
+        ;
+        mov     eax, 1
+        xor     ecx, ecx
+        cpuid
+        test    edx, X86_CPUID_FEATURE_EDX_SSE2
+        jz      .skip
+
+%ifdef TMPL_64BIT
+
+        ;
+        ; Have to enable OSFXSR for SSE instructions to work.
+        ;
+        mov     rcx,cr4
+        mov     rsi,rcx
+        or      rcx,200h
+        mov     cr4,rcx
+
+        ;
+        ; Load 32-bit float -2.75 into XMM0
+        ;
+        mov     eax, 0C0300000h
+        movd    xmm0, eax
+        mov     rbx, -1            ; make sure high dword is not zero
+        cvtss2si ebx, xmm0         ; result is -3
+        mov     eax, -3            ; high dword of rax zeroed
+        TEST_ASSERT_SIMPLE rbx, rax, jz, "CVTSS2SI EBX"
+
+        mov     eax, 0C0300000h
+        movd    xmm0, eax
+        mov     rbx, -1
+        cvttss2si ebx, xmm0        ; result is -2
+        mov     eax, -2
+        TEST_ASSERT_SIMPLE rbx, rax, jz, "CVTTSS2SI EBX"
+
+        ;
+        ; Load 64-bit double -2.75 into XMM0
+        ;
+        mov     rax, 0C006000000000000h
+        movd    xmm0, rax
+        mov     rbx, -1
+        cvtsd2si ebx, xmm0
+        mov     eax, -3
+        TEST_ASSERT_SIMPLE rbx, rax, jz, "CVTSD2SI EBX"
+
+        mov     rax, 0C006000000000000h
+        mov     rbx, -1
+        movd    xmm0, rax
+        cvttsd2si ebx, xmm0
+        mov     eax,-2
+        TEST_ASSERT_SIMPLE rbx, rax, jz, "CVTTSD2SI EBX"
+
+        ;
+        ; Restore prior CR4 value
+        ;
+        mov     cr4,rsi
+%endif
+
+        ;
+        ; Done.
+        ;
+        call    TMPL_NM_CMN(TestSubDone)
+.done:
+        mov     xSP, xSI
+        add     xSP, 80h
+        pop     xSI
+        pop     xDI
+        pop     xDX
+        pop     xCX
+        pop     xBX
+        pop     sAX
+        leave
+        ret
+
+.skip:
+        mov     xAX, .s_szSse2Missing
+        call    TMPL_NM_CMN(TestSubDone)
+        jmp     .done
+
+.s_szSubTestName:
+        db      TMPL_MODE_STR, ', cvtss2si et al.', 0
+.s_szSse2Missing:
+        db      'SSE2 is missing', 0
+ENDPROC   TMPL_NM(TestCvtSize)
+
+
+;;
 ; Proving intel manual wrong about using REX.X for BSWAP R8-R15 on 64-bit.
 ; Checking the 'undefined' 16-bit bswap behavior.
 ;
@@ -304,6 +414,10 @@ BITS TMPL_BITS
 
         call    TMPL_NM(TestMemFences)
         call    TMPL_NM(TestBSwap)
+%ifdef TMPL_64BIT
+        ; Specifically tests 64-bit behavior.
+        call    TMPL_NM(TestCvtSize)
+%endif
 
         ;
         ; Back to real mode.
