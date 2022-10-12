@@ -32,7 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # The internal network switch module.
 #
 PROGRAMS += VBoxIntNetSwitch
-VBoxNetSwitch_TEMPLATE := VBOXR3EXE
+VBoxIntNetSwitch_TEMPLATE := VBOXR3EXE
 
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 VBoxIntNetSwitch_DEFS      = KBUILD_TYPE="$(KBUILD_TYPE)"
