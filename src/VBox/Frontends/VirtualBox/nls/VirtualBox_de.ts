@@ -2289,11 +2289,11 @@
     </message>
     <message>
         <source>&amp;Extension Pack Manager</source>
-        <translation>Zusatz&amp;pakete-Manager</translation>
+        <translation>Erweiterungs&amp;pakete-Manager</translation>
     </message>
     <message>
         <source>Open the Extension Pack Manager</source>
-        <translation>Öffnet den Manager für Zusatzpakete</translation>
+        <translation>Öffnet den Manager für Erweiterungspakete</translation>
     </message>
     <message>
         <source>&amp;Network Manager</source>
@@ -2418,15 +2418,15 @@
     </message>
     <message>
         <source>Extension Pack Manager</source>
-        <translation>Zusatzpakete-Manager</translation>
+        <translation>Erweiterungspakete-Manager</translation>
     </message>
     <message>
         <source>Install extension pack</source>
-        <translation>Zusatzpaket installieren</translation>
+        <translation>Erweiterungspaket installieren</translation>
     </message>
     <message>
         <source>Install Extension Pack</source>
-        <translation>Zusatzpakete installieren</translation>
+        <translation>Erweiterungspakete installieren</translation>
     </message>
     <message>
         <source>&amp;Uninstall...</source>
@@ -2434,11 +2434,11 @@
     </message>
     <message>
         <source>Uninstall selected extension pack</source>
-        <translation>Gewähltes Zusatzpaket deinstallieren</translation>
+        <translation>Gewähltes Erweiterungspaket deinstallieren</translation>
     </message>
     <message>
         <source>Uninstall Extension Pack</source>
-        <translation>Zusatzpaket deinstallieren</translation>
+        <translation>Erweiterungspaket deinstallieren</translation>
     </message>
     <message>
         <source>&amp;Clear</source>
@@ -2989,15 +2989,15 @@
     </message>
     <message>
         <source>Holds the amount of base memory the virtual machine will have.</source>
-        <translation>Legt die Größe des Basis-Arbeitsspeichers für die virtuelle Maschine fest.</translation>
+        <translation>Legt die Größe des Hauptspeichers für die virtuelle Maschine fest.</translation>
     </message>
     <message>
         <source>Minimum possible base memory size.</source>
-        <translation>Minimaler Wert des Basis-Arbeitsspeichers.</translation>
+        <translation>Minimal möglicher Wert des Hauptspeichers.</translation>
     </message>
     <message>
         <source>Maximum possible base memory size.</source>
-        <translation>Maximaler Wert des Basis-Arbeitsspeichers.</translation>
+        <translation>Maximal möglicher Wert des Hauptspeichers.</translation>
     </message>
 </context>
 <context>
@@ -6227,7 +6227,7 @@
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="obsolete">Aktiviert DCHP-Unterstützung für dieses Netzwerk.</translation>
+        <translation type="obsolete">Aktiviert DHCP-Unterstützung für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
@@ -6411,7 +6411,7 @@
     </message>
     <message>
         <source>VirtualBox Extension Pack</source>
-        <translation>VirtualBox Zusatzpaket</translation>
+        <translation>VirtualBox Erweiterungspaket</translation>
     </message>
 </context>
 <context>
@@ -6530,18 +6530,18 @@
     </message>
     <message>
         <source>Minimum possible execution cap.</source>
-        <translation>Minimaler Wert für die CPU-Begrenzung.</translation>
+        <translation>Minimal möglicher Wert für die CPU-Begrenzung.</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation>Maximaler Wert für die CPU-Begrenzung.</translation>
+        <translation>Maximal möglicher Wert für die CPU-Begrenzung.</translation>
     </message>
 </context>
 <context>
     <name>UIExtensionPackManager</name>
     <message>
         <source>Extension Pack Manager</source>
-        <translation>Zusatzpakete-Manager</translation>
+        <translation>Manager für Erweiterungspakete</translation>
     </message>
     <message>
         <source>Close</source>
@@ -6581,15 +6581,15 @@
     </message>
     <message>
         <source>Registered extension packs</source>
-        <translation>Registrierte Zusatzpakete</translation>
+        <translation>Registrierte Erweiterungspakete</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation>Zusatzpaket-Datei auswählen</translation>
+        <translation>Erweiterungspaket-Datei auswählen</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation>Zusatzpakete (%1)</translation>
+        <translation>Erweiterungspakete (%1)</translation>
     </message>
     <message>
         <source>Active</source>
@@ -6609,11 +6609,11 @@
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="obsolete">Zusatzpaket auswählen</translation>
+        <translation type="obsolete">Erweiterungspaket auswählen</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="obsolete">Zusatzpakete (%1)</translation>
+        <translation type="obsolete">Erweiterungspakete (%1)</translation>
     </message>
 </context>
 <context>
@@ -7023,7 +7023,7 @@
     </message>
     <message>
         <source>No Guest Session
-Please use the Session Panel to start 
+Please use the Session Panel to start
 a guest session</source>
         <translation type="vanished">Keine Gastsitzung vorhanden</translation>
     </message>
@@ -7821,7 +7821,7 @@ a guest session</source>
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>Lists all installed packages.</source>
-        <translation type="vanished">Zeigt alle installierten Zusatzpakete.</translation>
+        <translation type="vanished">Zeigt alle installierten Erweiterungspakete an.</translation>
     </message>
     <message>
         <source>Active</source>
@@ -7837,19 +7837,19 @@ a guest session</source>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="vanished">Zusatzpaket auswählen</translation>
+        <translation type="vanished">Erweiterungspaket auswählen</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="vanished">Zusatzpakete (%1)</translation>
+        <translation type="vanished">Erweiterungspakete (%1)</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="vanished">Zusatzpakete</translation>
+        <translation type="vanished">Erweiterungspakete</translation>
     </message>
     <message>
         <source>&amp;Extension Packages</source>
-        <translation type="vanished">&amp;Zusatzpakete</translation>
+        <translation type="vanished">&amp;Erweiterungspakete</translation>
     </message>
     <message>
         <source>Add Package</source>
@@ -8388,7 +8388,7 @@ a guest session</source>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="vanished">Aktiviert DCHP-Unterstützung für dieses Netzwerk.</translation>
+        <translation type="vanished">Aktiviert DHCP-Unterstützung für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
@@ -10720,7 +10720,7 @@ a guest session</source>
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation>Die Fernsteuerung wurde für diese virtuelle Maschine aktiviert. Dafür ist allerdings die Installation des &lt;i&gt;%1&lt;/i&gt; notwendig. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite oder ihre VM wird ohne Fernsteuerung gestartet.</translation>
+        <translation>Die Fernsteuerung wurde für diese virtuelle Maschine aktiviert. Dafür ist allerdings die Installation des &lt;i&gt;%1&lt;/i&gt; notwendig. Bitte installieren Sie dieses Erweiterungspaket von der VirtualBox-Webseite oder ihre VM wird ohne Fernsteuerung gestartet.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -10943,7 +10943,7 @@ a guest session</source>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation type="vanished">Sie möchten diese virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite.</translation>
+        <translation type="vanished">Sie möchten diese virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Erweiterungspaket von der VirtualBox-Webseite.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
@@ -10996,7 +10996,7 @@ a guest session</source>
     </message>
     <message>
         <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Sie möchten die Festplatten dieser virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite.</translation>
+        <translation>Sie möchten die Festplatten dieser virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Erweiterungspaket von der VirtualBox-Webseite.</translation>
     </message>
     <message>
         <source>Disk encryption cipher type not specified.</source>
@@ -12240,7 +12240,7 @@ a guest session</source>
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation>USB-2.0/3.0-Unterstützung wurde für diese virtuelle Maschine aktiviert. Dafür ist allerdings die Installation des &lt;i&gt;%1&lt;/i&gt; notwendig. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite oder deaktivieren Sie die USB-2.0/3.0-Unterstützung zum Starten der Maschine.</translation>
+        <translation>USB-2.0/3.0-Unterstützung wurde für diese virtuelle Maschine aktiviert. Dafür ist allerdings die Installation des &lt;i&gt;%1&lt;/i&gt; notwendig. Bitte installieren Sie dieses Erweiterungspaket von der VirtualBox-Webseite oder deaktivieren Sie die USB-2.0/3.0-Unterstützung zum Starten der Maschine.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
@@ -13706,11 +13706,11 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; konnte nicht installiert werden.</translation>
+        <translation type="vanished">Das Erweiterungspaket &lt;b&gt;%1&lt;/b&gt; konnte nicht installiert werden.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; konnte nicht deinstalliert werden.</translation>
+        <translation type="vanished">Das Erweiterungspaket &lt;b&gt;%1&lt;/b&gt; konnte nicht deinstalliert werden.</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -13726,15 +13726,15 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; konnte nicht geöffnet werden.</translation>
+        <translation>Das Erweiterungspaket &lt;b&gt;%1&lt;/b&gt; konnte nicht geöffnet werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Sie sind dabei, ein Zusatzpaket für VirtualBox zu installieren. Zusatzpakete ergänzen die Funktionalität von VirtualBox und können Systemprogramme enthalten, die Ihr System potentiell gefärden könnten. Bitte kontrollieren Sie die Beschreibung sorgfältig und fahren Sie nur fort, falls Sie das Zusatzpaket von einer vertrauenswürdigen Quelle erhalten haben.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Beschreibung:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Sie sind dabei, ein Erweiterungspaket für VirtualBox zu installieren. Erweiterungspakete ergänzen die Funktionalität von VirtualBox und können Systemprogramme enthalten, die Ihr System potentiell gefärden könnten. Bitte kontrollieren Sie die Beschreibung sorgfältig und fahren Sie nur fort, falls Sie das Erweiterungspaket von einer vertrauenswürdigen Quelle erhalten haben.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Beschreibung:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie sind dabei, das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; zu entfernen.&lt;/p&gt;&lt;p&gt;Möchten Sie das Paket wirklich löschen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie sind dabei, das Erweiterungspaket &lt;b&gt;%1&lt;/b&gt; zu entfernen.&lt;/p&gt;&lt;p&gt;Möchten Sie das Paket wirklich löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
@@ -13750,11 +13750,11 @@ a guest session</source>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="vanished">Das Zusatzpaket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; wurde erfolgreich installiert.</translation>
+        <translation type="vanished">Das Erweiterungspaket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; wurde erfolgreich installiert.</translation>
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>Zusatzpakete ergänzen die Funktionalität von VirtualBox und können Systemprogramme enthalten, die Ihr System potentiell gefärden. Bitte kontrollieren Sie die Beschreibung sorgfältig und fahren Sie nur fort, falls Sie das Zusatzpaket von einer vertrauenswürdigen Quelle erhalten haben.</translation>
+        <translation>Erweiterungspakete ergänzen die Funktionalität von VirtualBox und können Systemprogramme enthalten, die Ihr System potentiell gefärden. Bitte kontrollieren Sie die Beschreibung sorgfältig und fahren Sie nur fort, falls Sie das Erweiterungspaket von einer vertrauenswürdigen Quelle erhalten haben.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -13846,7 +13846,7 @@ a guest session</source>
     </message>
     <message>
         <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie haben Version %1 des &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installiert.&lt;/p&gt;&lt;p&gt;Sie sollten Version %3 dieses Zusatzpaketes von Oracle herunterladen und installieren!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie haben Version %1 des &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installiert.&lt;/p&gt;&lt;p&gt;Sie sollten Version %3 dieses Erweiterungspaketes von Oracle herunterladen und installieren!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
@@ -13854,7 +13854,7 @@ a guest session</source>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie dieses Zusatzpaket installieren?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie dieses Erweiterungspaket installieren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
@@ -14387,7 +14387,7 @@ a guest session</source>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie sind dabei, ein Zusatzpaket für VirtualBox zu installieren. Zusatzpakete ergänzen die Funktionalität von VirtualBox und können Systemprogramme enthalten, die Ihr System potentiell gefärden könnten. Bitte kontrollieren Sie die Beschreibung sorgfältig und fahren Sie nur fort, falls Sie das Zusatzpaket von einer vertrauenswürdigen Quelle erhalten haben.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Beschreibung:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie sind dabei, ein Erweiterungspaket für VirtualBox zu installieren. Erweiterungspakete ergänzen die Funktionalität von VirtualBox und können Systemprogramme enthalten, die Ihr System potentiell gefärden könnten. Bitte kontrollieren Sie die Beschreibung sorgfältig und fahren Sie nur fort, falls Sie das Erweiterungspaket von einer vertrauenswürdigen Quelle erhalten haben.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Beschreibung:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -14456,19 +14456,19 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to acquire cloud provider manager.</source>
-        <translation type="vanished">Der Cloud-Provider-Manager konnte nicht erstellt werden.</translation>
+        <translation type="vanished">Der Cloudanbieter-Manager konnte nicht erstellt werden.</translation>
     </message>
     <message>
         <source>Failed to acquire cloud provider manager parameter.</source>
-        <translation>Die Parameter für den Cloud-Provider-Manager konnten nicht ermittelt werden.</translation>
+        <translation>Die Parameter für den Cloudanbieter-Manager konnten nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Failed to find cloud provider with following uuid: &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Konnte keinen Cloud-Provider mit der folgenden UUID finden: &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="vanished">Konnte keinen Cloudanbieter mit der folgenden UUID finden: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to acquire cloud provider parameter.</source>
-        <translation>Parameter für Cloud-Provider konnte nicht ermittelt werden.</translation>
+        <translation>Parameter für Cloudanbieter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Failed to find cloud profile with following name: &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -14488,11 +14488,11 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to acquire cloud profile parameter.</source>
-        <translation>Parameter für Cloud-Provider konnte nicht ermittelt werden.</translation>
+        <translation>Parameter für Cloudanbieter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Failed to assign cloud profile parameter.</source>
-        <translation>Parameter für Cloud-Provider konnte nicht zugewiesen werden.</translation>
+        <translation>Parameter für Cloudanbieter konnte nicht zugewiesen werden.</translation>
     </message>
     <message>
         <source>Failed to create cloud client.</source>
@@ -15163,7 +15163,7 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to acquire Extension Pack Manager.</source>
-        <translation>Zusatzpakete Manager konnte nicht geladen werden.</translation>
+        <translation>Erweiterungspakete Manager konnte nicht geladen werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create VFS explorer ...</source>
@@ -15409,15 +15409,15 @@ a guest session</source>
     </message>
     <message>
         <source>Extension Pack failure ...</source>
-        <translation>Zusatzpaket-Fehler ...</translation>
+        <translation>Erweiterungspaket-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack Manager parameter.</source>
-        <translation>Fehler beim Abrufen der Zusatzpakete-Manager-Parameter.</translation>
+        <translation>Fehler beim Abrufen der Erweiterungspakete-Manager-Parameter.</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack parameter.</source>
-        <translation>Fehler beim Abrufen der Zusatzpaket-Parameter.</translation>
+        <translation>Fehler beim Abrufen der Erweiterungspaket-Parameter.</translation>
     </message>
     <message>
         <source>Failed to acquire VSD parameter.</source>
@@ -15433,7 +15433,7 @@ a guest session</source>
     </message>
     <message>
         <source>Can&apos;t get Extension Pack Manager ...</source>
-        <translation>Konnte Zusatzpakete-Manager nicht aufrufen ...</translation>
+        <translation>Konnte Erweiterungspakete-Manager nicht aufrufen ...</translation>
     </message>
     <message>
         <source>Failed to create VSD.</source>
@@ -16945,7 +16945,7 @@ a guest session</source>
     </message>
     <message>
         <source>Holds the maximum number of frames per second. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation>Hält die maximale Anzahl von Bildern pro Sekunde. Weitere Frames werden übersprungen. Das Reduzieren dieses Werts erhöht die Anzahl der übersprungenen Frames und reduziert die Dateigröße.</translation>
+        <translation>Enthält die maximale Anzahl von Bildern pro Sekunde. Weitere Frames werden übersprungen. Das Reduzieren dieses Werts erhöht die Anzahl der übersprungenen Frames und reduziert die Dateigröße.</translation>
     </message>
     <message>
         <source>fps</source>
@@ -17163,7 +17163,7 @@ a guest session</source>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="vanished">Zusatzpakete</translation>
+        <translation type="vanished">Erweiterungspakete</translation>
     </message>
     <message>
         <source>Proxy</source>
@@ -18539,7 +18539,7 @@ a guest session</source>
     </message>
     <message>
         <source>Extensions</source>
-        <translation>Zusatzpakete</translation>
+        <translation>Erweiterungspakete</translation>
     </message>
     <message>
         <source>Activities</source>
@@ -20357,7 +20357,7 @@ a guest session</source>
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
-        <translation>Wenn diese Option aktiviert ist, werden mehrere versteckte Objekte im Dateibrowser angezeigt</translation>
+        <translation>Wenn ausgewählt, werden mehrere versteckte Objekte im Dateibrowser angezeigt</translation>
     </message>
     <message>
         <source>VISO Creator</source>
@@ -22077,7 +22077,7 @@ a guest session</source>
     </message>
     <message>
         <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
-        <translation>Wenn ausgewählt, wird Headless Boot (ohne GUI) für die unbeaufsichtigte Gastbetriebssysteminstallation einer neu erstellten virtuellen Maschine aktiviert.</translation>
+        <translation>Wenn ausgewählt, wird die unbeaufsichtigte Gastbetriebssysteminstallation einer neu erstellten virtuellen Maschine ohne GUI ausgeführt.</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
