@@ -720,7 +720,7 @@ class TestSetLogic(ModelLogicBase):
             aoRet.append(TestSetData().initFromDbRow(aoRow));
         return aoRet;
 
-    def isTestBoxExecutingToRapidly(self, idTestBox): ## s/To/Too/
+    def isTestBoxExecutingTooRapidly(self, idTestBox): ## s/To/Too/
         """
         Checks whether the specified test box is executing tests too rapidly.
 
@@ -842,4 +842,3 @@ class TestSetDataTestCase(ModelDataBaseTestCase):
 if __name__ == '__main__':
     unittest.main();
     # not reached.
-

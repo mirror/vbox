@@ -577,7 +577,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
         #
         if    fIdle \
           and oTestBoxData.fEnabled \
-          and not TestSetLogic(oDb).isTestBoxExecutingToRapidly(oTestBoxData.idTestBox) \
+          and not TestSetLogic(oDb).isTestBoxExecutingTooRapidly(oTestBoxData.idTestBox) \
           and oStatusData.enmState == TestBoxStatusData.ksTestBoxState_Idle: # (paranoia)
             dResponse = SchedulerBase.scheduleNewTask(oDb, oTestBoxData, oStatusData.iWorkItem, self._oSrvGlue.getBaseUrl());
             if dResponse is not None:
