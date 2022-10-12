@@ -12141,7 +12141,6 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm)
     IEM_MC_MEM_COMMIT_AND_UNMAP(pu64MemDst, IEM_ACCESS_DATA_RW);
     IEM_MC_COMMIT_EFLAGS(EFlags);
     IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
-        /** @todo Testcase: Check effect of cmpxchg8b on bits 63:32 in rax and rdx. */
         IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u64EaxEdx.s.Lo);
         IEM_MC_STORE_GREG_U32(X86_GREG_xDX, u64EaxEdx.s.Hi);
     IEM_MC_ENDIF();
