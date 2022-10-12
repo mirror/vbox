@@ -122,7 +122,7 @@
     <name>QIDialogContainer</name>
     <message>
         <source>Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>Wird geladen</translation>
     </message>
 </context>
 <context>
@@ -154,7 +154,7 @@
     <name>QILineEdit</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Kopieren</translation>
+        <translation>&amp;Kopieren</translation>
     </message>
 </context>
 <context>
@@ -185,7 +185,7 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
 </context>
 <context>
@@ -240,50 +240,50 @@
     <name>UIAccelerationFeaturesEditor</name>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished">Hardware-Virtualisierung:</translation>
+        <translation>Hardware-Virtualisierung:</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">&amp;VT-x/AMD-V aktivieren</translation>
+        <translation>&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Durch Aktivieren dieser Option wird die virtuelle Maschine einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) verwenden, falls dieser Modus verfügbar ist.</translation>
+        <translation>Durch Aktivieren dieser Option wird die virtuelle Maschine einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) verwenden, falls dieser Modus verfügbar ist.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">Nested P&amp;aging aktivieren</translation>
+        <translation>Nested P&amp;aging aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Durch Auswählen dieser Option wird die virtuelle Maschine den Modus &quot;Nested Paging&quot; verwenden, falls die CPU dies unterstützt (nur falls VT-x/AMD-V aktiviert ist).</translation>
+        <translation>Durch Auswählen dieser Option wird die virtuelle Maschine den Modus &quot;Nested Paging&quot; verwenden, falls die CPU dies unterstützt (nur falls VT-x/AMD-V aktiviert ist).</translation>
     </message>
 </context>
 <context>
     <name>UIAcquirePublicKeyDialog</name>
     <message>
         <source>Choose a public key file</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei mit öffentlichem Schlüssel auswählen</translation>
     </message>
     <message>
         <source>Public key</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffentlicher Schlüssel</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable locations. If you have one, please put it under one of those folders OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using one of the following tools to generate it:&lt;br&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Keinen öffentlichen Schlüssel id_rsa[.pub] in den Suchpfaden gefunden. Falls ein öffentlicher Schlüssel vorhanden sein sollte, diesen in einen der Suchpfade kopieren ODER den Inhalt der Schlüsseldatei in das untere Feld kopieren:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Falls kein Schlüssel vorhanden ist, kann mit den folgenden Werkzeugen ein Schlüssel erzeugt werden:&lt;br&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable location. If you have one, please put it under specified folder OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using the following tool to generate it:&lt;br&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Keinen öffentlichen Schlüssel id_rsa[.pub] in den Suchpfaden gefunden. Falls ein öffentlicher Schlüssel vorhanden sein sollte, diesen in einen der Suchpfade kopieren ODER den Inhalt der Schlüsseldatei in das untere Feld kopieren:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Falls kein Schlüssel vorhanden ist, kann mit den folgenden Werkzeugen ein Schlüssel erzeugt werden:&lt;br&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>Paste public key</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffentlichen Schlüssel einfügen</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation type="unfinished"></translation>
+        <translation>Durchsuchen</translation>
     </message>
 </context>
 <context>
@@ -2118,467 +2118,467 @@
     <message>
         <source>[Root]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Copy Key Fingerprint (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Schlüssel-Fingerabdruck kopieren (%1)</translation>
     </message>
     <message>
         <source>Connect</source>
         <comment>to cloud VM</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verbinden</translation>
     </message>
     <message>
         <source>Connect with %1 (%2)</source>
         <comment>with terminal application (profile)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verbinden mit %1 (%2)</translation>
     </message>
     <message>
         <source>Connect with %1</source>
         <comment>with terminal application</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verbinden mit %1</translation>
     </message>
     <message>
         <source>Refresh the currently viewed log</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualisiert das momentan angezeigte Log</translation>
     </message>
     <message>
         <source>&amp;Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Logdateien neu laden und Seiten aktualisieren</translation>
     </message>
     <message>
         <source>Toggle guest session panel of the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt / Versteckt die Session-Ansicht des Gast-Dateimanagers</translation>
     </message>
     <message>
         <source>Toggle Guest Session Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt / Versteckt die Ansicht der Gastsitzung</translation>
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO erstellen</translation>
+        <translation>VISO erstellen</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished">Konfiguration</translation>
+        <translation>Konfiguration</translation>
     </message>
     <message>
         <source>Open panel for VISO Creator configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Ansicht für die VISO erstellen-Konfiguration</translation>
     </message>
     <message>
         <source>Open Configuration Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Konfigurations-Ansicht</translation>
     </message>
     <message>
         <source>Open panel for VISO Creator options</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Ansicht für die VISO erstellen-Optionen</translation>
     </message>
     <message>
         <source>Open Options Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Optionen-Ansicht</translation>
     </message>
     <message>
         <source>&amp;Add</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hinzufügen</translation>
     </message>
     <message>
         <source>Add selected item(s) to VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewählte Elemente zum VISO hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation type="unfinished">&amp;Entfernen</translation>
+        <translation>&amp;Entfernen</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewählte Elemente vom VISO entfernen</translation>
     </message>
     <message>
         <source>&amp;New Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Neues Verzeichnis</translation>
     </message>
     <message>
         <source>Create a new directory under the current location</source>
-        <translation type="unfinished">Ein neues Verzeichnis unter dem aktuellen Standort erstellen</translation>
+        <translation>Ein neues Verzeichnis unter dem aktuellen Standort erstellen</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Umbenennen</translation>
     </message>
     <message>
         <source>Rename the selected object</source>
-        <translation type="unfinished">Ausgewähltes Objekt umbenennen</translation>
+        <translation>Ausgewähltes Objekt umbenennen</translation>
     </message>
     <message>
         <source>R&amp;eset</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu&amp;rücksetzen</translation>
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO-Inhalt zurücksetzen.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium aus&amp;wählen</translation>
     </message>
     <message>
         <source>Medium Selector</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium auswählen</translation>
     </message>
     <message>
         <source>Add existing disk image file</source>
-        <translation type="unfinished">Bestehendes Plattenabbild hinzufügen</translation>
+        <translation>Bestehendes Plattenabbild hinzufügen</translation>
     </message>
     <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbild erzeugen</translation>
     </message>
     <message>
         <source>&amp;Refresh...</source>
-        <translation type="unfinished">&amp;Aktualisieren...</translation>
+        <translation>&amp;Aktualisieren...</translation>
     </message>
     <message>
         <source>Refresh disk images</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbilder aktualisieren</translation>
     </message>
     <message>
         <source>&amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Akti&amp;vitäten</translation>
     </message>
     <message>
         <source>&amp;Export...</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;xportieren...</translation>
     </message>
     <message>
         <source>VM Activity Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-Aktivitätsanzeige</translation>
     </message>
     <message>
         <source>Export the chart data into a text file</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagrammdaten in Textdatei exportieren</translation>
     </message>
     <message>
         <source>Export Data to File</source>
-        <translation type="unfinished"></translation>
+        <translation>Daten in Datei exportieren</translation>
     </message>
     <message>
         <source>&amp;Activity Overview...</source>
-        <translation type="unfinished"></translation>
+        <translation>Über&amp;blick Aktivitäten...</translation>
     </message>
     <message>
         <source>Activity Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivitätsanzeige</translation>
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur VM-Aktivitätsanzeige navigieren</translation>
     </message>
     <message>
         <source>&amp;Welcome Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Willkommensbildschirm</translation>
     </message>
     <message>
         <source>Open the Welcome Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Willkommensbildschirm</translation>
     </message>
     <message>
         <source>&amp;Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatz&amp;pakete-Manager</translation>
     </message>
     <message>
         <source>Open the Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Manager für Zusatzpakete</translation>
     </message>
     <message>
         <source>&amp;Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Netzwerk-Manager</translation>
     </message>
     <message>
         <source>Open the Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Netzwerk-Manager</translation>
     </message>
     <message>
         <source>&amp;VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Über&amp;blick VM-Aktivitäten</translation>
     </message>
     <message>
         <source>Open the VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Überblick der VM-Aktivitäten</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Be&amp;enden</translation>
     </message>
     <message>
         <source>[New]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation>[Neu]</translation>
     </message>
     <message>
         <source>Move to Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>In Gruppe verschie&amp;ben</translation>
     </message>
     <message>
         <source>C&amp;onsole</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Konsole</translation>
     </message>
     <message>
         <source>&amp;Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verbindung erstellen</translation>
     </message>
     <message>
         <source>Create console connection to be able to use ssh/vnc clients</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsolen-Verbindung erstellen um SSH-/VNC-Klienten zu benutzen</translation>
     </message>
     <message>
         <source>&amp;Delete Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbindung &amp;löschen</translation>
     </message>
     <message>
         <source>Delete console connection to disconnect ssh/vnc clients</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsolen-Verbindung löschen um SSH-/VNC-Klienten zu trennen</translation>
     </message>
     <message>
         <source>&amp;Configure Console Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsolen-Applikationen konfi&amp;gurieren</translation>
     </message>
     <message>
         <source>Open configuration dialog to edit console application settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurationsdialog öffnen um Einstellungen von Konsolen-Applikationen zu ändern</translation>
     </message>
     <message>
         <source>&amp;Copy Command (serial) for Unix</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommando (seriell) für Unix &amp;kopieren</translation>
     </message>
     <message>
         <source>&amp;Copy Command (serial) for Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommando (seriell) für Windows &amp;kopieren</translation>
     </message>
     <message>
         <source>Copy console command for serial connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsolen-Kommando für serielle Verbindung kopieren</translation>
     </message>
     <message>
         <source>&amp;Copy Command (VNC) for Unix</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommando (VNC) für Unix &amp;kopieren</translation>
     </message>
     <message>
         <source>&amp;Copy Command (VNC) for Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommando (VNC) für Windows &amp;kopieren</translation>
     </message>
     <message>
         <source>Copy console command for VNC connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsolen-Kommando für VNC-Verbindung kopieren</translation>
     </message>
     <message>
         <source>Show &amp;Log</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige &amp;Log</translation>
     </message>
     <message>
         <source>Show cloud console log</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Konsole-Log anzeigen</translation>
     </message>
     <message>
         <source>Terminate</source>
-        <translation type="unfinished"></translation>
+        <translation>Beenden</translation>
     </message>
     <message>
         <source>&amp;Terminate Cloud Instance...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Instanz b&amp;eenden...</translation>
     </message>
     <message>
         <source>Terminate cloud instance of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Instanz der ausgewählten virtuellen Maschinen beenden</translation>
     </message>
     <message>
         <source>Open the machine activity monitor pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Übersicht der VM-Aktivitäten</translation>
     </message>
     <message>
         <source>&amp;File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dateimanager</translation>
     </message>
     <message>
         <source>Open the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Dateimanager</translation>
     </message>
     <message>
         <source>&amp;Extension</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Erweiterung</translation>
     </message>
     <message>
         <source>&amp;Install...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Installieren...</translation>
     </message>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpakete-Manager</translation>
     </message>
     <message>
         <source>Install extension pack</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpaket installieren</translation>
     </message>
     <message>
         <source>Install Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpakete installieren</translation>
     </message>
     <message>
         <source>&amp;Uninstall...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Deinstallieren...</translation>
     </message>
     <message>
         <source>Uninstall selected extension pack</source>
-        <translation type="unfinished"></translation>
+        <translation>Gewähltes Zusatzpaket deinstallieren</translation>
     </message>
     <message>
         <source>Uninstall Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpaket deinstallieren</translation>
     </message>
     <message>
         <source>&amp;Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Löschen</translation>
     </message>
     <message>
         <source>&amp;Console</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Konsole</translation>
     </message>
     <message>
         <source>&amp;Add Application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Applikation &amp;hinzufügen...</translation>
     </message>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Manager für Cloud-Konsolen</translation>
     </message>
     <message>
         <source>Add new cloud console application</source>
-        <translation type="unfinished"></translation>
+        <translation>Eine neue Cloud-Konsolen-Applikation hinzufügen</translation>
     </message>
     <message>
         <source>Add Cloud Console Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Konsolen-Applikation hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Remove Application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Applikation ent&amp;fernen...</translation>
     </message>
     <message>
         <source>Remove selected cloud console application</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewählte Cloud-Konsolen-Applikation entfernen</translation>
     </message>
     <message>
         <source>Remove Cloud Console Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Konsolen-Applikation entfernen</translation>
     </message>
     <message>
         <source>Add new cloud console profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Neues Cloud-Profil hinzufügen</translation>
     </message>
     <message>
         <source>Add Cloud Console Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profil hinzufügen</translation>
     </message>
     <message>
         <source>Remove selected cloud console profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewähltes Cloud-Konsolen-Profil entfernen</translation>
     </message>
     <message>
         <source>Remove Cloud Console Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Konsolen-Profil entfernen</translation>
     </message>
     <message>
         <source>Console &amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsole-&amp;Eigenschaften</translation>
     </message>
     <message>
         <source>Open pane with selected cloud console properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Anzeige der ausgewählten Cloud-Profil-Eigenschaften öffnen</translation>
     </message>
     <message>
         <source>Open Cloud Console Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Eigenschaften der Cloud-Konsole-öffnen</translation>
     </message>
     <message>
         <source>&amp;Resources</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Resourcen</translation>
     </message>
     <message>
         <source>Columns</source>
-        <translation type="unfinished"></translation>
+        <translation>Spalten</translation>
     </message>
     <message>
         <source>VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Überblick VM-Aktivitäten</translation>
     </message>
     <message>
         <source>Show/Hide Columns</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige / Verstecke Spalten</translation>
     </message>
     <message>
         <source>VM Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-Aktivitäten</translation>
     </message>
     <message>
         <source>Switch to selected virtual machine&apos;s activity monitor pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur Aktivitätsanzeige der ausgewählten virtuellen Maschine wechseln</translation>
     </message>
     <message>
         <source>Refresh Viewed Log</source>
-        <translation type="unfinished"></translation>
+        <translation>Angezeigtes Log aktualisieren</translation>
     </message>
     <message>
         <source>Reload Log Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Logdateien neu laden</translation>
     </message>
     <message>
         <source>Add Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Element(e) zu VISO hinzufügen</translation>
     </message>
     <message>
         <source>Remove Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Element(e) von VISO entfernen</translation>
     </message>
     <message>
         <source>Rename Object</source>
-        <translation type="unfinished"></translation>
+        <translation>Objekt umbenennen</translation>
     </message>
     <message>
         <source>Add Disk Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbild hinzufügen</translation>
     </message>
     <message>
         <source>Create Disk Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbild erzeugen</translation>
     </message>
     <message>
         <source>Navigate to VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum Überblick der VM-Aktivitätsanzeige navigieren</translation>
     </message>
     <message>
         <source>Remove Inaccessible Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Nicht zugreifbare Medien entfernen</translation>
     </message>
     <message>
         <source>&amp;Online Documentation...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Online-Dokumentation...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox user manual</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Webbrowser mit dem VirtualBox-Benutzerhandbuch</translation>
     </message>
     <message>
         <source>Remove all inaccessible media</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle nicht zugreifbare Medien entfernen</translation>
     </message>
     <message>
         <source>Display the log viewer window</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt das Fenster der Loganzeige an</translation>
     </message>
 </context>
 <context>
@@ -2746,7 +2746,7 @@
     </message>
     <message>
         <source>Storage Controller (VirtioSCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtioSCSI-Controller</translation>
     </message>
 </context>
 <context>
@@ -2910,30 +2910,30 @@
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished">Wählt den Typ der virtuellen Soundkarte. Ausgehend von dieser Einstellung emuliert VirtualBox unterschiedliche Audiokarten.</translation>
+        <translation>Wählt den Typ der virtuellen Soundkarte. Ausgehend von dieser Einstellung emuliert VirtualBox unterschiedliche Audiokarten.</translation>
     </message>
 </context>
 <context>
     <name>UIAudioFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Output</source>
-        <translation type="unfinished">Aktiviere Audio&amp;ausgabe</translation>
+        <translation>Aktiviere Audio&amp;ausgabe</translation>
     </message>
     <message>
         <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
-        <translation type="unfinished">Aktivieren, damit die Audioausgabe des Gastes auf dem Host wiedergegeben wird, sonst ist der Gast stumm.</translation>
+        <translation>Aktivieren, damit die Audioausgabe des Gastes auf dem Host wiedergegeben wird, sonst ist der Gast stumm.</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Input</source>
-        <translation type="unfinished">Aktiviere Audio&amp;eingabe</translation>
+        <translation>Aktiviere Audio&amp;eingabe</translation>
     </message>
     <message>
         <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
-        <translation type="unfinished">Aktivieren, damit der Gast Audio vom Host aufnehmen kann, sonst wird die Aufnahme stumm sein.</translation>
+        <translation>Aktivieren, damit der Gast Audio vom Host aufnehmen kann, sonst wird die Aufnahme stumm sein.</translation>
     </message>
 </context>
 <context>
@@ -2944,33 +2944,33 @@
     </message>
     <message>
         <source>Selects the audio output driver. The Null Audio Driver makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Richtet den Treiber für Audioausgabe ein. Wird der Null-Audiotreiber ausgewählt, erkennt der Gast eine Audio-Karte, Ein- und Ausgabe werden aber ignoriert.</translation>
     </message>
 </context>
 <context>
     <name>UIAudioSettingsEditor</name>
     <message>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished">Audio &amp;aktivieren</translation>
+        <translation>Audio &amp;aktivieren</translation>
     </message>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation type="unfinished">Der virtuelle PCI Audioadapter verwendet den angegebenen Treiber, um mit dem Audioadapter des Hosts zu kommunizieren.</translation>
+        <translation>Der virtuelle PCI Audioadapter verwendet den angegebenen Treiber, um mit dem Audioadapter des Hosts zu kommunizieren.</translation>
     </message>
 </context>
 <context>
     <name>UIAutoCaptureKeyboardEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished">&amp;Auto-Fangmodus für Tastatur</translation>
+        <translation>&amp;Auto-Fangmodus für Tastatur</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
+        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
 </context>
 <context>
@@ -2989,58 +2989,58 @@
     </message>
     <message>
         <source>Holds the amount of base memory the virtual machine will have.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die Größe des Basis-Arbeitsspeichers für die virtuelle Maschine fest.</translation>
     </message>
     <message>
         <source>Minimum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimaler Wert des Basis-Arbeitsspeichers.</translation>
     </message>
     <message>
         <source>Maximum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximaler Wert des Basis-Arbeitsspeichers.</translation>
     </message>
 </context>
 <context>
     <name>UIBootFailureDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;Abbrechen</translation>
+        <translation>&amp;Abbrechen</translation>
     </message>
     <message>
         <source>Closes this dialog without resetting the guest or mounting a medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließt den Dialog, ohne den Gast zurückzusetzen oder ein Medium einzubinden</translation>
     </message>
     <message>
         <source>&amp;Mount and Retry Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Einbinden und Startvorgang wiederholen</translation>
     </message>
     <message>
         <source>Mounts the selected ISO if any and reboots the vm</source>
-        <translation type="unfinished"></translation>
+        <translation>Bindet die ausgewählte ISO ein, falls vorhanden, und startet die VM neu</translation>
     </message>
     <message>
         <source>The virtual machine failed to boot. That might be caused by a missing operating system or misconfigured boot order. Mounting an operating system install DVD might solve this problem. Selecting an ISO file will attempt to mount it after the dialog is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die virtuelle Maschine konnte nicht gestartet werden. Dies kann durch ein fehlendes Betriebssystem oder eine falsche Bootreihenfolge verursacht werden. Eine Betriebssystem-Installations-DVD einbinden könnte das Problem beheben. Falls eine ISO-Datei ausgewählt wird, wird versucht, diese einzubinden, nachdem dieser Dialog geschlossen wurde.</translation>
     </message>
     <message>
         <source>DVD:</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD:</translation>
     </message>
     <message>
         <source>Do not show this dialog again</source>
-        <translation type="unfinished"></translation>
+        <translation>Diesen Dialog nicht wieder anzeigen</translation>
     </message>
     <message>
         <source>When checked this dialog will not be shown again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird dieser Dialog nicht mehr angezeigt.</translation>
     </message>
     <message>
         <source>Holds the path of the ISO to be attached to machine as boot medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pfad zur ISO-Datei, die als Startmedium der Maschine benutzt werden soll.</translation>
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der ausgewählte Pfad ist ungültig.</translation>
     </message>
 </context>
 <context>
@@ -3059,26 +3059,26 @@
     </message>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices.Move items up and down to change the device order.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die Bootreihenfolge fest. Mittels der Checkboxen auf der linken Seite können Geräte aktiviert bzw. deaktiviert werden. Durch Auf- bzw. Abwärtsbewegen der Einträge wird die Bootreihenfolge geändert.</translation>
     </message>
     <message>
         <source>Moves selected boot item up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewegt das ausgewählte Gerät weiter nach oben und erhöht damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
     <message>
         <source>Moves selected boot item down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewegt das ausgewählte Gerät weiter nach unten und verringert damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
 </context>
 <context>
     <name>UIChipsetEditor</name>
     <message>
         <source>&amp;Chipset:</source>
-        <translation type="unfinished">&amp;Chipsatz:</translation>
+        <translation>&amp;Chipsatz:</translation>
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">Einstellung für den Chipsatz, der für diese VM emuliert werden soll. Die ICH-9-Chipsatz-Emulation ist noch experimentell und sollte nur für Gäste ausgewählt werden, die darauf angewiesen sind (z.B. Mac-OS-X-Gäste).</translation>
+        <translation>Einstellung für den Chipsatz, der für diese VM emuliert werden soll. Die ICH-9-Chipsatz-Emulation ist noch experimentell und sollte nur für Gäste ausgewählt werden, die darauf angewiesen sind (z.B. Mac-OS-X-Gäste).</translation>
     </message>
 </context>
 <context>
@@ -3184,7 +3184,7 @@
     </message>
     <message>
         <source>Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Element</translation>
     </message>
 </context>
 <context>
@@ -3326,106 +3326,106 @@
     <name>UICloudConsoleManager</name>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Manager für Cloud-Konsolen</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Sichern</translation>
+        <translation>Sichern</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Schließen</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Reset changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen der aktuellen Cloud-Konsole verwerfen</translation>
     </message>
     <message>
         <source>Apply changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen der aktuellen Cloud-Konsole speichern</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">Dialog schließen, ohne die Änderungen zu sichern</translation>
+        <translation>Dialog schließen, ohne die Änderungen zu sichern</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Änderungen verwerfen (%1)</translation>
+        <translation>Änderungen verwerfen (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Änderungen sichern (%1)</translation>
+        <translation>Änderungen sichern (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">Fenster schließen (%1)</translation>
+        <translation>Fenster schließen (%1)</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">Name:</translation>
+        <translation>Name:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">Pfad:</translation>
+        <translation>Pfad:</translation>
     </message>
     <message>
         <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argument:</translation>
     </message>
     <message>
         <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Name für diese Konsolen-Applikation eingeben...</translation>
     </message>
     <message>
         <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pfad für diese Konsolen-Applikation eingeben...</translation>
     </message>
     <message>
         <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>Argument für diese Konsolen-Applikation eingeben...</translation>
     </message>
     <message>
         <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>Name für dieses Konsolen-Profil eingeben...</translation>
     </message>
     <message>
         <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>Argument für dieses Konsolen-Profil eingeben...</translation>
     </message>
     <message>
         <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen der aktuellen Konsole verwerfen</translation>
     </message>
     <message>
         <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen der aktuellen Konsole speichern</translation>
     </message>
     <message>
         <source>Add Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Applikation hinzufügen</translation>
     </message>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">Profil hinzufügen</translation>
+        <translation>Profil hinzufügen</translation>
     </message>
     <message>
         <source>Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Applikation</translation>
     </message>
     <message>
         <source>List in Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>In Menu anzeigen</translation>
     </message>
 </context>
 <context>
     <name>UICloudMachineSettingsDialog</name>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Einstellungen</translation>
+        <translation>Einstellungen</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -3433,7 +3433,7 @@
     </message>
     <message>
         <source>Contains a list of cloud machine settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält eine Liste der Cloud-Maschinen-Einstellungen.</translation>
     </message>
 </context>
 <context>
@@ -3543,67 +3543,67 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">Name:</translation>
+        <translation>Name:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation type="unfinished">Eigenschaften:</translation>
+        <translation>Eigenschaften:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation type="unfinished">Enthält Cloud-Profil-Einstellungen</translation>
+        <translation>Enthält Cloud-Profil-Einstellungen</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation type="unfinished">Name für das neue Profil eingeben...</translation>
+        <translation>Name für das neue Profil eingeben...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation type="unfinished">Name für dieses Profil eingeben...</translation>
+        <translation>Name für dieses Profil eingeben...</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation type="unfinished">Änderungen der Profildetails verwerfen</translation>
+        <translation>Änderungen der Profildetails verwerfen</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Hinzufügen</translation>
+        <translation>Hinzufügen</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation type="unfinished">Neues Profil mit dem folgenden Namen hinzufügen</translation>
+        <translation>Neues Profil mit dem folgenden Namen hinzufügen</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation type="unfinished">Profil hinzufügen (%1)</translation>
+        <translation>Profil hinzufügen (%1)</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation type="unfinished">Änderungen des aktuellen Profils speichern</translation>
+        <translation>Änderungen des aktuellen Profils speichern</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="unfinished">Quelle</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>List VMs</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-Liste</translation>
     </message>
     <message>
         <source>Registered cloud providers and profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte Cloud-Anbieter- und -Profile</translation>
     </message>
 </context>
 <context>
@@ -3617,11 +3617,11 @@
     <name>UIColorThemeEditor</name>
     <message>
         <source>Color &amp;Theme:</source>
-        <translation type="unfinished"></translation>
+        <translation>Farb&amp;schema:</translation>
     </message>
     <message>
         <source>Selects the color theme. It can be Light, Dark or automatically detected (default).</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt das Farbschema fest. Dieses kann hell, dunkel oder automatisch (Standard) sein.</translation>
     </message>
 </context>
 <context>
@@ -4532,22 +4532,22 @@
     <message>
         <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Primärer Master</translation>
+        <translation>Primäres IDE-Gerät 0</translation>
     </message>
     <message>
         <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Primärer Slave</translation>
+        <translation>Primäres IDE-Gerät 1</translation>
     </message>
     <message>
         <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Sekundärer Master</translation>
+        <translation>Sekundäres IDE-Gerät 0</translation>
     </message>
     <message>
         <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">Sekundärer Slave</translation>
+        <translation>Sekundäres IDE-Gerät 1</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
@@ -5240,258 +5240,258 @@
     <message>
         <source>Cloud Network [EXPERIMENTAL]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerk [EXPERIMENTELL]</translation>
     </message>
     <message>
         <source>Provisioning</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bereitstellen</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">wird ausgeführt</translation>
+        <translation>Wird ausgeführt</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">wird gestartet</translation>
+        <translation>Wird gestartet</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">wird anhalten</translation>
+        <translation>Wird anhalten</translation>
     </message>
     <message>
         <source>Stopped</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gestoppt</translation>
     </message>
     <message>
         <source>Creating Image</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle Abbild</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">wird beendet</translation>
+        <translation>Wird beendet</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">beendet</translation>
+        <translation>Beendet</translation>
     </message>
     <message>
         <source>Aborted-Saved</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abgebrochen gesichert</translation>
     </message>
     <message>
         <source>None</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Keine</translation>
     </message>
     <message>
         <source>USB MT TouchScreen and TouchPad</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB MT TouchScreen und TouchPad</translation>
     </message>
     <message>
         <source>Host-only Adapter [DEPRECATED]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Host-only Adapter [VERALTET]</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Host-only Netzwerk</translation>
     </message>
     <message>
         <source>Novell NE2000 (NE2000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Novell NE2000 (NE2000)</translation>
     </message>
     <message>
         <source>Novell NE1000 (NE1000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Novell NE1000 (NE1000)</translation>
     </message>
     <message>
         <source>WD EtherCard Plus 16 (WD8013EBT)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WD EtherCard Plus 16 (WD8013EBT)</translation>
     </message>
     <message>
         <source>WD EtherCard Plus (WD8013E)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WD EtherCard Plus (WD8013E)</translation>
     </message>
     <message>
         <source>3Com EtherLink II (3C503)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>3Com EtherLink II (3C503)</translation>
     </message>
     <message>
         <source>3Com EtherLink (3C501)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>3Com EtherLink (3C501)</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>Null Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Null Audiotreiber</translation>
     </message>
     <message>
         <source>OSS Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>OSS Audio</translation>
     </message>
     <message>
         <source>ALSA Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ALSA Audio</translation>
     </message>
     <message>
         <source>Windows Audio Session</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Windows Audio Session</translation>
     </message>
     <message>
         <source>Core Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Core Audio</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zeitüberschreitung (getötet)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zeitüberschreitung (anormal beendet)</translation>
     </message>
     <message>
         <source>Terminated (Normally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Beendet (normal)</translation>
     </message>
     <message>
         <source>Terminated (Signal)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Beendet (durch Signal)</translation>
     </message>
     <message>
         <source>Terminated (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Anormal beendet</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zeitüberschreitung (getötet)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zeitüberschreitung (anormal beendet)</translation>
     </message>
     <message>
         <source>Cloud Network</source>
-        <translation type="unfinished">Cloud-Netzwerk</translation>
+        <translation>Cloud-Netzwerk</translation>
     </message>
     <message>
         <source>Host Only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only-Netzwerk</translation>
     </message>
     <message>
         <source>Visual State</source>
-        <translation type="unfinished"></translation>
+        <translation>Visueller status</translation>
     </message>
     <message>
         <source>Follow System Settings</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>Den Systemeinstellungen anpassen</translation>
     </message>
     <message>
         <source>Light</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hell</translation>
     </message>
     <message>
         <source>Dark</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dunkel</translation>
     </message>
     <message>
         <source>Normal (window)</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Normal (Fenster)</translation>
     </message>
     <message>
         <source>Full-screen</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vollbild</translation>
     </message>
     <message>
         <source>Seamless</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nahtlos</translation>
     </message>
     <message>
         <source>Scaled</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skaliert</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished">nicht verändern</translation>
+        <translation>Nicht verändern</translation>
     </message>
     <message>
         <source>Any</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">Beides</translation>
+        <translation>Beliebig</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">Ja</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <source>No</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">Nein</translation>
+        <translation>Nein</translation>
     </message>
     <message>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished"></translation>
+        <translation>Keine</translation>
     </message>
     <message>
         <source>Hint</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">Vorschlag</translation>
+        <translation>Vorschlag</translation>
     </message>
     <message>
         <source>Automatic</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">automatisch</translation>
+        <translation>Automatisch</translation>
     </message>
     <message>
         <source>None</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Keine</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
-        <translation type="unfinished">Netzwerkbrücke</translation>
+        <translation>Netzwerkbrücke</translation>
     </message>
 </context>
 <context>
@@ -5541,18 +5541,18 @@
     <name>UIDefaultMachineFolderEditor</name>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished">Voreingestellter Pfad für &amp;VMs:</translation>
+        <translation>Voreingestellter Pfad für &amp;VMs:</translation>
     </message>
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">Zeigt den voreingestellten Pfad für virtuelle Maschinen. Neue virtuelle Maschinen werden standardmäßig in diesem Ordner erzeugt und vorhandene werden hier zuerst gesucht.</translation>
+        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Neue virtuelle Maschinen werden standardmäßig in diesem Ordner erzeugt und vorhandene werden hier zuerst gesucht.</translation>
     </message>
 </context>
 <context>
     <name>UIDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">Zeigt die Beschreibung für diese virtuelle Maschine. Das Beschreibungsfeld kann für Kommentare über die Konfiguration des installierten Gastsystems verwendet werden.</translation>
+        <translation>Zeigt die Beschreibung für diese virtuelle Maschine. Das Beschreibungsfeld kann für Kommentare über die Konfiguration des installierten Gastsystems verwendet werden.</translation>
     </message>
 </context>
 <context>
@@ -5994,22 +5994,22 @@
     <message>
         <source>Enabled</source>
         <comment>details (cloud value)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (cloud value)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Deaktiviert</translation>
     </message>
     <message>
         <source>Host-only Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Host-only Netzwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Visual State</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Visueller Stand</translation>
     </message>
 </context>
 <context>
@@ -6021,11 +6021,11 @@
     </message>
     <message>
         <source>Copy value (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert kopieren (%1)</translation>
     </message>
     <message>
         <source>Edit value...</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert bearbeiten...</translation>
     </message>
 </context>
 <context>
@@ -6050,7 +6050,7 @@
     </message>
     <message>
         <source>Contains a list of Virtual Machine details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Einstellungen der virtuellen Maschine.</translation>
     </message>
 </context>
 <context>
@@ -6266,104 +6266,104 @@
     <name>UIDialogPanel</name>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">Feld schließen</translation>
+        <translation>Feld schließen</translation>
     </message>
 </context>
 <context>
     <name>UIDiskEncryptionSettingsEditor</name>
     <message>
         <source>En&amp;able Disk Encryption</source>
-        <translation type="unfinished">Festplattenverschlüsselung &amp;aktivieren</translation>
+        <translation>Festplattenverschlüsselung &amp;aktivieren</translation>
     </message>
     <message>
         <source>When checked, disks attached to this virtual machine will be encrypted.</source>
-        <translation type="unfinished">Aktiviert die Verschlüsselung der Festplatten für die virtuelle Maschine.</translation>
+        <translation>Aktiviert die Verschlüsselung der Festplatten für die virtuelle Maschine.</translation>
     </message>
     <message>
         <source>Disk Encryption C&amp;ipher:</source>
-        <translation type="unfinished">Festplatten-Verschlüsselungsch&amp;iffre:</translation>
+        <translation>Festplatten-Verschlüsselungsch&amp;iffre:</translation>
     </message>
     <message>
         <source>Holds the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiffre für die Verschlüsselung der Festplatten dieser virtuelle Maschine.</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
-        <translation type="unfinished">Neues Passwort &amp;eingeben:</translation>
+        <translation>Neues Passwort &amp;eingeben:</translation>
     </message>
     <message>
         <source>Holds the encryption password for disks attached to this virtual machine.</source>
-        <translation type="unfinished">Passwort für die Verschlüsselung der Festplatten dieser virtuelle Maschine.</translation>
+        <translation>Passwort für die Verschlüsselung der Festplatten dieser virtuelle Maschine.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished">Neues Passwort &amp;bestätigen:</translation>
+        <translation>Neues Passwort &amp;bestätigen:</translation>
     </message>
     <message>
         <source>Confirms the disk encryption password.</source>
-        <translation type="unfinished">Bestätigt das Passwort für die Verschlüsselung der Festplatten.</translation>
+        <translation>Bestätigt das Passwort für die Verschlüsselung der Festplatten.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished">nicht verändern</translation>
+        <translation>Nicht verändern</translation>
     </message>
 </context>
 <context>
     <name>UIDiskVariantWidget</name>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Volle Größe pre-allokieren</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird beim Erstellen der VM das virtuelle Plattenabbild mit der vollen Größe pre-allokiert</translation>
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation type="unfinished"></translation>
+        <translation>In 2GB-Dateien auf&amp;teilen</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, werden die virtuellen Plattenabbilder in 2GB-Dateien aufgeteilt.</translation>
     </message>
 </context>
 <context>
     <name>UIDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fenster unter Mauszeiger hervorholen</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">Holt das Fenster der virtuellen Maschine unter der Maus hervor, wenn der Mauszeiger über das Fenster fährt.</translation>
+        <translation>Holt das Fenster der virtuellen Maschine unter der Maus hervor, wenn der Mauszeiger über das Fenster fährt.</translation>
     </message>
     <message>
         <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Bildschirmschoner &amp;ausschalten</translation>
     </message>
     <message>
         <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird der Host-Bildschirmschoner ausgeschaltet.</translation>
     </message>
 </context>
 <context>
     <name>UIDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">&amp;3D-Beschleunigung aktivieren</translation>
+        <translation>&amp;3D-Beschleunigung aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Durch Aktivieren dieser Checkbox bekommt die virtuelle Maschine Zugriff auf 3D-Grafik-Beschleunigung auf dem Host.</translation>
+        <translation>Durch Aktivieren dieser Checkbox bekommt die virtuelle Maschine Zugriff auf 3D-Grafik-Beschleunigung auf dem Host.</translation>
     </message>
 </context>
 <context>
@@ -6418,11 +6418,11 @@
     <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>VirtualBox Guest Additions</source>
-        <translation type="unfinished">VirtualBox Gasterweiterungen</translation>
+        <translation>VirtualBox Gasterweiterungen</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">Wählen Sie den Ordner aus, in dem die VirtualBox-Gasterweiterungen gespeichert werden sollen</translation>
+        <translation>Wählen Sie den Ordner aus, in dem die VirtualBox-Gasterweiterungen gespeichert werden sollen</translation>
     </message>
 </context>
 <context>
@@ -6440,11 +6440,11 @@
     <name>UIDragAndDropEditor</name>
     <message>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="unfinished">&amp;Drag&apos;n&apos;Drop:</translation>
+        <translation>&amp;Drag&apos;n&apos;Drop:</translation>
     </message>
     <message>
         <source>Holds which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt fest, welche Daten zwischen dem Gast- und Host-Betriebssystem per Drag-and-Drop kopiert werden sollen. Dieses Feature benötigt installierte Gasterweiterungen.</translation>
     </message>
 </context>
 <context>
@@ -6491,38 +6491,38 @@
     <message>
         <source>Result&amp;nbsp;Code:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Component:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Interface:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Callee:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>UIExecutionCapEditor</name>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished">&amp;CPU-Begrenzung:</translation>
+        <translation>&amp;CPU-Begrenzung:</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>Begrenzt die Zeit, die jede virtuelle CPU zur Verfügung hat. Jeder virtuellen CPU wird die Ausführung auf einer physischen CPU bis zu diesem Prozentsatz erlaubt.</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -6530,42 +6530,42 @@
     </message>
     <message>
         <source>Minimum possible execution cap.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimaler Wert für die CPU-Begrenzung.</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximaler Wert für die CPU-Begrenzung.</translation>
     </message>
 </context>
 <context>
     <name>UIExtensionPackManager</name>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpakete-Manager</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Schließen</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog schließen</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">Fenster schließen (%1)</translation>
+        <translation>Fenster schließen (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>Active</source>
@@ -6573,28 +6573,28 @@
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Name</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished">Version</translation>
+        <translation>Version</translation>
     </message>
     <message>
         <source>Registered extension packs</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte Zusatzpakete</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="unfinished">Zusatzpaket auswählen</translation>
+        <translation>Zusatzpaket-Datei auswählen</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="unfinished">Zusatzpakete (%1)</translation>
+        <translation>Zusatzpakete (%1)</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>ext pack</comment>
-        <translation type="unfinished">aktiv</translation>
+        <translation>Aktiv</translation>
     </message>
 </context>
 <context>
@@ -6656,39 +6656,39 @@
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished">Datei&amp;pfad:</translation>
+        <translation>Datei&amp;pfad:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished">&amp;Größe:</translation>
+        <translation>&amp;Größe:</translation>
     </message>
     <message>
         <source>Sets the size of the floppy disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die Größe der Diskette fest.</translation>
     </message>
     <message>
         <source>&amp;Format disk as FAT12</source>
-        <translation type="unfinished"></translation>
+        <translation>Mit FAT12 &amp;formatieren</translation>
     </message>
     <message>
         <source>Formats the floppy disk as FAT12.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskette mit FAT12 &amp;formatieren.</translation>
     </message>
     <message>
         <source>2.88M</source>
-        <translation type="unfinished">360K {2.88M?}</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Create the disk and close this dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbild erzeugen und Dialog schließen.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>File already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei existiert bereits</translation>
     </message>
 </context>
 <context>
@@ -7033,71 +7033,71 @@ a guest session</source>
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished">Dateimanager</translation>
+        <translation>Dateimanager</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">Dialog schließen, ohne die Änderungen zu sichern</translation>
+        <translation>Dialog schließen, ohne die Änderungen zu sichern</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Änderungen verwerfen (%1)</translation>
+        <translation>Änderungen verwerfen (%1)</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>Open Session</source>
-        <translation type="unfinished"></translation>
+        <translation>Sitzung öffnen</translation>
     </message>
     <message>
         <source>Guest File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gast-Dateisystem:</translation>
     </message>
     <message>
         <source>Host File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Dateisystem:</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished">Host</translation>
+        <translation>Host</translation>
     </message>
     <message>
         <source>Machine reference is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Referenz zur Maschine ist ungültig.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest is not currently running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateimanager kann nicht gestartet werden, da der ausgewählte Gast momentan nicht gestartet ist.</translation>
     </message>
     <message>
         <source>File manager cannot work since the guest is paused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateimanager kann nicht gestartet werden, da der ausgewählte Gast momentan pausiert ist.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest does not have the guest additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateimanager kann nicht gestartet werden, da der ausgewählte Gast keine Gasterweiterungen installiert hat.</translation>
     </message>
     <message>
         <source>Enter a valid user name and password to initiate the file manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Einen gültigen Benutzernamen und Passwort eingeben, um den Dateimanager zu starten.</translation>
     </message>
     <message>
         <source>Guest control session is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gastkontrollensitzung gestartet.</translation>
     </message>
     <message>
         <source>Some error has occurred. Please check the log panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ein Fehler ist aufgetreten. Bitte die Logansicht überprüfen.</translation>
     </message>
 </context>
 <context>
@@ -8548,7 +8548,7 @@ a guest session</source>
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
-        <translation type="unfinished">Typ der Grafikkarte, die die VM benutzen soll.</translation>
+        <translation>Typ der Grafikkarte, die die VM benutzen soll.</translation>
     </message>
 </context>
 <context>
@@ -8685,203 +8685,203 @@ a guest session</source>
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>Oracle VM VirtualBox Benutzerhandbuch</translation>
     </message>
     <message>
         <source>Copy Selected Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewählten Text kopieren</translation>
     </message>
     <message>
         <source>Open Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Link öffnen</translation>
     </message>
     <message>
         <source>Open Link in New Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Link in neuem Tab öffnen</translation>
     </message>
     <message>
         <source>Copy Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Link kopieren</translation>
     </message>
     <message>
         <source>Find in Page</source>
-        <translation type="unfinished"></translation>
+        <translation>In Seite suchen</translation>
     </message>
     <message>
         <source>Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>Zoom</translation>
     </message>
     <message>
         <source>Close Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Andere Tabs schließen</translation>
     </message>
     <message>
         <source>Close Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Tab schließen</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished">&amp;Datei</translation>
+        <translation>&amp;Datei</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished">&amp;Ändern</translation>
+        <translation>&amp;Ändern</translation>
     </message>
     <message>
         <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="unfinished">&amp;Anzeige</translation>
+        <translation>&amp;Anzeige</translation>
     </message>
     <message>
         <source>&amp;Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Inhalte</translation>
     </message>
     <message>
         <source>Index</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Suche</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesezeichen</translation>
     </message>
     <message>
         <source>Show &amp;Side Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Seiten&amp;leiste anzeigen</translation>
     </message>
     <message>
         <source>Show &amp;Tool Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Werkzeugleiste anzeigen</translation>
     </message>
     <message>
         <source>Show St&amp;atus Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Statusleiste anzeigen</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished">&amp;Drucken...</translation>
+        <translation>&amp;Drucken...</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Beenden</translation>
     </message>
     <message>
         <source>&amp;Copy Selected Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewählten Text &amp;kopieren</translation>
     </message>
     <message>
         <source>&amp;Find in Page</source>
-        <translation type="unfinished"></translation>
+        <translation>In Seite &amp;suchen</translation>
     </message>
     <message>
         <source>Find Ne&amp;xt</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nächsten Eintrag finden</translation>
     </message>
     <message>
         <source>Find &amp;Previous</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Vorherigen Eintrag finden</translation>
     </message>
     <message>
         <source>Go Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurück</translation>
     </message>
     <message>
         <source>Go Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Vorwärts</translation>
     </message>
     <message>
         <source>Go to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur Startseite gehen</translation>
     </message>
     <message>
         <source>Reload Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Seite neu laden</translation>
     </message>
     <message>
         <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesezeichen hinzufügen</translation>
     </message>
     <message>
         <source>Click to open this link in an external browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Klicken, um diesen Link in einem externen Browser zu öffnen</translation>
     </message>
     <message>
         <source>Click to enlarge the image</source>
-        <translation type="unfinished"></translation>
+        <translation>Klicken, um Bild zu vergrößern</translation>
     </message>
     <message>
         <source>Delete Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesezeichen löschen</translation>
     </message>
     <message>
         <source>Delete All Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Lesezeichen löschen</translation>
     </message>
     <message>
         <source>Close T&amp;ab</source>
-        <translation type="unfinished"></translation>
+        <translation>Tab &amp;schließen</translation>
     </message>
     <message>
         <source>Close &amp;Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Andere Tabs schließen</translation>
     </message>
     <message>
         <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurück zur Startseite gehen</translation>
     </message>
     <message>
         <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuelle Seite neu laden</translation>
     </message>
     <message>
         <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur nächsten Seite gehen</translation>
     </message>
     <message>
         <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur vorherigen Seite gehen</translation>
     </message>
     <message>
         <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Neues Lesezeichen hinzufügen</translation>
     </message>
     <message>
         <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not nicht gefunden.&lt;/h3&gt;Die Seite &lt;b&gt;%1&lt;/b&gt; konnte nicht gefunden werden.&lt;/p&gt;&lt;/div&gt;</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation>Startseite</translation>
     </message>
     <message>
         <source>Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurück</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Vor</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Neu laden</translation>
     </message>
     <message>
         <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Findet einen Text in der aktuellen Seite</translation>
     </message>
     <message>
         <source>Bookmark added:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesezeichen hinzugefügt:</translation>
     </message>
 </context>
 <context>
@@ -9356,27 +9356,27 @@ a guest session</source>
     <name>UIHostnameDomainNameEditor</name>
     <message>
         <source>Hostname should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Hostname muss mindestens 2 Zeichen lang sein. Erlaubte Zeichen sind alphanumerische, &quot;-&quot; und &quot;.&quot;</translation>
     </message>
     <message>
         <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Domainname muss mindestens 2 Zeichen lang sein. Erlaubte Zeichen sind alphanumerische, &quot;-&quot; und &quot;.&quot;</translation>
     </message>
     <message>
         <source>Hostna&amp;me:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Holds the hostname.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Hostnamen.</translation>
     </message>
     <message>
         <source>&amp;Domain Name:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Holds the domain name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Domainnamen.</translation>
     </message>
 </context>
 <context>
@@ -10408,35 +10408,35 @@ a guest session</source>
     <name>UILanguageSettingsEditor</name>
     <message>
         <source>&amp;Interface Languages</source>
-        <translation type="unfinished">&amp;Sprachen der Nutzeroberfläche</translation>
+        <translation>&amp;Sprachen der Nutzeroberfläche</translation>
     </message>
     <message>
         <source>Lists all available user interface languages. The effective language is written in bold. Select Default to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird fett hervorgehoben. Wählen Sie Voreingestellt um die voreingestellte Sprache Ihres Systems einzustellen.</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation type="unfinished">Autor</translation>
+        <translation>Autor</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished">Sprache</translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished">Sprache:</translation>
+        <translation>Sprache:</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished">Autor(en):</translation>
+        <translation>Autor(en):</translation>
     </message>
 </context>
 <context>
@@ -10507,7 +10507,7 @@ a guest session</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Nicht zugreifbar</translation>
+        <translation>Nicht zugreifbar</translation>
     </message>
 </context>
 <context>
@@ -11183,11 +11183,11 @@ a guest session</source>
     </message>
     <message>
         <source>Host-only adapters are no longer supported, use host-only networks instead.</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only-Adapter werden nicht länger unterstützt. Bitte Host-Only-Netzwerke verwenden.</translation>
     </message>
     <message>
         <source>No host-only network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuell ist kein Host-only-Netzwerkname angegeben.</translation>
     </message>
 </context>
 <context>
@@ -11488,23 +11488,23 @@ a guest session</source>
     </message>
     <message>
         <source>Selects the serial port number. You can choose one of the standard serial ports or select User-defined and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Portnummer der seriellen Schnittstelle. Sie können einen der Standardports auswählen, oder Sie wählen Benutzerdefiniert und können die Portparameter frei einstellen.</translation>
     </message>
     <message>
         <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the I/O APIC setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die IRQ-Nummer dieser seriellen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn I/O-APIC für diese virtuelle Maschine aktiviert ist.</translation>
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select Disconnected, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stellt den Modus für diese serielle Schnittstelle ein. Falls Nicht verbunden gewählt wurde, wird ein serieller Port emuliert, der jedoch nicht mit dem Host verbunden ist.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the Path/Address field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn diese Box aktiviert wurde, dann versucht die virtuelle Maschine, sich mit der in Pfad/Adresse angegebenen Pipe zu verbinden. Anderenfalls wird die Pipe beim Start der virtuellen Maschine erzeugt.</translation>
     </message>
     <message>
         <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modus  Host-Pipe: Enthält den Pfad zur Pipe auf dem Host. Beispiel: &quot;\\.\pipe\myvbox&quot; (Windows) oder &quot;/tmp/myvbox&quot; (UNIX). Modus Host-Schnittstelle: Enthält den Grätenamen der seriellen Schnittstelle am Host. Beispiel: &quot;COM1&quot; (Windows) oder &quot;/dev/ttyS0&quot; (UNIX).Modus Datei: Enthält den Pfad der Datei, in welche die Ausgabe der seriellen Schnittstelle geschrieben wird. Modus TCP: Enthält &quot;Hostname:Port&quot; (&quot;Mit Pipe/Socket verbinden&quot;) oder den Port.</translation>
     </message>
 </context>
 <context>
@@ -12423,27 +12423,27 @@ a guest session</source>
     <name>UIMaximumGuestScreenSizeEditor</name>
     <message>
         <source>Maximum Guest Screen &amp;Size:</source>
-        <translation type="unfinished">Maximale &amp;Größe Gast-Bildschirm:</translation>
+        <translation>Maximale &amp;Größe Gast-Bildschirm:</translation>
     </message>
     <message>
         <source>&amp;Width:</source>
-        <translation type="unfinished">&amp;Breite:</translation>
+        <translation>&amp;Breite:</translation>
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished">Legt die maximale Breite des Gast-Bildschirms fest, die der Gast einstellen darf.</translation>
+        <translation>Legt die maximale Breite des Gast-Bildschirms fest, die der Gast einstellen darf.</translation>
     </message>
     <message>
         <source>&amp;Height:</source>
-        <translation type="unfinished">&amp;Höhe:</translation>
+        <translation>&amp;Höhe:</translation>
     </message>
     <message>
         <source>Holds the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished">Legt die maximale Höhe des Gast-Bildschirms fest, die der Gast einstellen darf.</translation>
+        <translation>Legt die maximale Höhe des Gast-Bildschirms fest, die der Gast einstellen darf.</translation>
     </message>
     <message>
         <source>Selects maximum guest screen size policy.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die Regel für die maximale Gast-Bildschirmgröße fest.</translation>
     </message>
 </context>
 <context>
@@ -12866,103 +12866,103 @@ a guest session</source>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished">&amp;Attribute</translation>
+        <translation>&amp;Attribute</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished">&amp;Informationen</translation>
+        <translation>&amp;Informationen</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">&amp;Typ:</translation>
+        <translation>&amp;Typ:</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished">&amp;Ort:</translation>
+        <translation>&amp;Ort:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">&amp;Beschreibung:</translation>
+        <translation>&amp;Beschreibung:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished">&amp;Größe:</translation>
+        <translation>&amp;Größe:</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation type="unfinished">Zeigt den Typ des Mediums.</translation>
+        <translation>Zeigt den Typ des Mediums.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation type="unfinished">Zeigt den Speicherort des Mediums.</translation>
+        <translation>Zeigt den Speicherort des Mediums.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished">Speicherort des Mediums auswählen</translation>
+        <translation>Speicherort des Mediums auswählen</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation type="unfinished">Zeigt die Beschreibung des Mediums.</translation>
+        <translation>Zeigt die Beschreibung des Mediums.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation type="unfinished">Zeigt die Größe des Mediums.</translation>
+        <translation>Zeigt die Größe des Mediums.</translation>
     </message>
     <message>
         <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicherort darf nicht leer sein.</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation type="unfinished">Die Größe des Mediums kann nicht von &lt;b&gt;%1&lt;/b&gt; nach &lt;b&gt;%2&lt;/b&gt; verringert werden, weil dies nicht implementiert ist.</translation>
+        <translation>Die Größe des Mediums kann nicht von &lt;b&gt;%1&lt;/b&gt; nach &lt;b&gt;%2&lt;/b&gt; verringert werden, weil dies nicht implementiert ist.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium ist direkt oder indirekt angeschlossen und wird beim Laden von Sicherungspunkten wieder hergestellt.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schreibzugriffe auf das Medium werden nur temporär gespeichert und gehen beim Ausschalten der VM verloren.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium ist direkt angeschlossen und wird beim Speichern von Sicherungspunkten ignoriert.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium ist direkt angeschlossen und kann gleichzeitig von mehreren Maschinen benutzt werden.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished">Das Medium ist direkt angeschlossen und kann von mehreren Maschinen benutzt werden.</translation>
+        <translation>Das Medium ist direkt angeschlossen und kann von mehreren Maschinen benutzt werden.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished">Das Medium kann zugleich von mehreren VMs benutzt werden. Schreibzugriffe gehen auf jeweils gesonderte virtuelle Differenzmedien, die separat für jede VM angelegt werden.</translation>
+        <translation>Das Medium kann zugleich von mehreren VMs benutzt werden. Schreibzugriffe gehen auf jeweils gesonderte virtuelle Differenzmedien, die separat für jede VM angelegt werden.</translation>
     </message>
     <message>
         <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte Plattenabbilder</translation>
     </message>
     <message>
         <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte optische Medien</translation>
     </message>
     <message>
         <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte Disketten</translation>
     </message>
 </context>
 <context>
@@ -13004,15 +13004,15 @@ a guest session</source>
     </message>
     <message>
         <source>Show the previous item matching the search term</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum vorherigen Eintrag der Suchergebnisse navigieren</translation>
     </message>
     <message>
         <source>Show the next item matching the search term</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum nächsten Eintrag der Suchergebnisse navigieren</translation>
     </message>
     <message>
         <source>Enter the search term and press Enter/Return</source>
-        <translation type="unfinished"></translation>
+        <translation>Den Suchbegriff eingeben und Enter/Return drücken</translation>
     </message>
 </context>
 <context>
@@ -13107,54 +13107,54 @@ a guest session</source>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;Abbrechen</translation>
+        <translation>&amp;Abbrechen</translation>
     </message>
     <message>
         <source>Leave &amp;Empty</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Leer lassen</translation>
     </message>
     <message>
         <source>Leave the drive empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Laufwerk leer lassen</translation>
     </message>
     <message>
         <source>C&amp;hoose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Auswählen</translation>
     </message>
     <message>
         <source>Attach the selected medium to the drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Das ausgewählte Medium mit dem Laufwerk verbinden</translation>
     </message>
 </context>
 <context>
     <name>UIMediumSizeAndPathGroupBox</name>
     <message>
         <source>Disk file name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateiname des Plattenabbilds ist nicht eindeutig</translation>
     </message>
     <message>
         <source>Holds the location of the virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Speicherort des virtuellen Plattenabbilds.</translation>
     </message>
     <message>
         <source>Opens file selection dialog so that a location for the disk file can be selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Dateiauswahl-Dialog, um einen Ort für das Plattenbild auszuwählen.</translation>
     </message>
     <message>
         <source>Hard Disk File Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenabbild-Ort und -Größe</translation>
     </message>
     <message>
         <source>Specify a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Einen Ort für das neue virtuelle Plattenabbild festlegen...</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">Bitte geben Sie den Namen der neuen Festplatte an oder wählen Sie das Ordner-Icon, um einen anderen Ordner für die Datei zu wählen.</translation>
+        <translation>Bitte geben Sie den Namen der neuen Festplatte an oder wählen Sie das Ordner-Icon, um einen anderen Ordner für die Datei zu wählen.</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="unfinished">Wählen Sie die Größe der virtuellen Festplatte in Megabyte. Dies ist die maximal nutzbare Größe der virtuellen Festplatte.</translation>
+        <translation>Wählen Sie die Größe der virtuellen Festplatte in Megabyte. Dies ist die maximal nutzbare Größe der virtuellen Festplatte.</translation>
     </message>
 </context>
 <context>
@@ -13169,11 +13169,11 @@ a guest session</source>
     </message>
     <message>
         <source>Minimum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimum-Größe für dieses Medium.</translation>
     </message>
     <message>
         <source>Maximum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximum-Größe für dieses Medium.</translation>
     </message>
 </context>
 <context>
@@ -13255,7 +13255,7 @@ a guest session</source>
     </message>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished">Ändern der Menüleiste des VM-Fensters.</translation>
+        <translation>Erlaub das Ändern der Menüleiste des VM-Fensters.</translation>
     </message>
 </context>
 <context>
@@ -14596,868 +14596,868 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to set global host settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Globale Host-Einstellungen konnten nicht gesichert werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to terminate the cloud instance of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sind Sie sicher, die Cloud-Instanzen der folgenden virtuellen Maschinen zu beenden?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Terminate</source>
         <comment>cloud instance</comment>
-        <translation type="unfinished"></translation>
+        <translation>Beenden</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following cloud virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the instances and boot volumes of these machines as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die folgenden virtuellen Cloud-Maschinen aus der VM-Liste zu entfernen:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Möchten Sie die entsprechenden Instanzen und Boot-Volumen ebenfalls löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete everything</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles löschen</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file cannot be deleted.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Plattenabbild ist nicht zugreifbar und kann daher nicht gelöscht werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The list of inaccessible DVDs is as follows:</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Liste der nicht zugreifbaren DVDs lautet wie folgt:</translation>
     </message>
     <message>
         <source>The list of inaccessible floppy disks is as follows:</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Liste der nicht zugreifbaren Disketten lautet wie folgt:</translation>
     </message>
     <message>
         <source>&lt;p&gt;This will clear the optical disk list by releasing inaccessible DVDs from the virtual machines they are attached to and removing them from the list of registered media.&lt;p&gt;Are you sure?</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dies wird die Liste der optischen Datenträger leeren, indem unzugängliche DVDs von den virtuellen Maschinen, an die sie angeschlossen sind, freigegeben und aus der Liste der registrierten Medien entfernt werden.&lt;p&gt;Sind Sie sicher?</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">Löschen</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>&lt;p&gt;This will clear the floppy disk list by releasing inaccessible disks from the virtual machines they are attached to and removing them from the list of registered media.&lt;p&gt;Are you sure?</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dies wird die Liste der Disketten leeren, indem unzugängliche Disketten von den virtuellen Maschinen, an die sie angeschlossen sind, freigegeben und aus der Liste der registrierten Medien entfernt werden.&lt;p&gt;Sind Sie sicher?</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie das Cloud-Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; entfernen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Wenn dieses Netzwerk von einem oder mehreren Netzwerkadaptern der virtuellen Maschine verwendet wird, können diese Adapter nicht mehr verwendet werden, bis Sie ihre Einstellungen korrigieren, indem Sie entweder einen anderen Netzwerknamen oder einen anderen Adapteranschlusstyp wählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the host-only network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie das Nur-Host-Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; entfernen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Wenn dieses Netzwerk von einem oder mehreren Netzwerkadaptern der virtuellen Maschine verwendet wird, können diese Adapter nicht mehr verwendet werden, bis Sie ihre Einstellungen korrigieren, indem Sie entweder einen anderen Netzwerknamen oder einen anderen Adapteranschlusstyp wählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to close the Cloud Profile Manager?&lt;/p&gt;&lt;p&gt;There seems to be an unsaved changes. You can choose to &lt;b&gt;Accept&lt;/b&gt; or &lt;b&gt;Reject&lt;/b&gt; them automatically or cancel to keep the dialog opened.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie den Cloud Profile Manager schließen?&lt;/p&gt;&lt;p&gt;Es scheinen nicht gespeicherte Änderungen vorhanden zu sein. Sie können sie automatisch &lt;b&gt;Akzeptieren&lt;/b&gt; oder &lt;b&gt;Ablehnen&lt;/b&gt; oder abbrechen, um das Dialogfeld geöffnet zu lassen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Accept</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation>Akzeptieren</translation>
     </message>
     <message>
         <source>Reject</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ablehnen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud console application &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie die Cloud-Konsolenanwendung &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; entfernen?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud console profile &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie das Cloud-Konsolenprofil &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; entfernen?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t find help file ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kann die Hilfedatei nicht finden ...</translation>
     </message>
     <message>
         <source>Failed to find the following help file: &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Die folgende Hilfedatei konnte nicht gefunden werden: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t open URL ...</source>
-        <translation type="unfinished"></translation>
+        <translation>URL kann nicht geöffnet werden ...</translation>
     </message>
     <message>
         <source>BETA build warning!</source>
-        <translation type="unfinished"></translation>
+        <translation>BETA-Build-Warnung!</translation>
     </message>
     <message>
         <source>Experimental build warning!</source>
-        <translation type="unfinished"></translation>
+        <translation>Experimentelles-Build-Warnung!</translation>
     </message>
     <message>
         <source>Invalid Password ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiges Passwort ...</translation>
     </message>
     <message>
         <source>Nothing to update ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Nichts zu aktualisieren ...</translation>
     </message>
     <message>
         <source>New version found ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Neue Version gefunden ...</translation>
     </message>
     <message>
         <source>Update is required ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualisierung ist erforderlich ...</translation>
     </message>
     <message>
         <source>User manual downloaded ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzerhandbuch heruntergeladen ...</translation>
     </message>
     <message>
         <source>Can&apos;t create machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenordner kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenordner konnte nicht unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; erstellt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t overwrite machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenordner kann nicht überschrieben werden ...</translation>
     </message>
     <message>
         <source>Failed to overwrite machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Überschreiben des Maschinenordners unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t remove machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenordner kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Failed to remove machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Entfernen des Maschinenordners unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t add machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht hinzugefügt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t resolve collision ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kollision kann nicht behoben werden ...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Please resolve this name conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie versuchen, Maschine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; in die Gruppe &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; zu verschieben, die bereits ein anderes Element hat mit dem gleichen Namen.&lt;/p&gt;&lt;p&gt;Bitte lösen Sie diesen Namenskonflikt und versuchen Sie es erneut.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to acquire cloud machine settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Maschineneinstellungen konnten nicht abgerufen werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create medium storage at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Erstellen des Mediumspeichers in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t overwrite medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium kann nicht überschrieben werden...</translation>
     </message>
     <message>
         <source>Failed to overwrite medium storage at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Überschreiben des Medienspeichers &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t open license file ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Lizenzdatei kann nicht geöffnet werden ...</translation>
     </message>
     <message>
         <source>Public key missing ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffentlicher Schlüssel fehlt ...</translation>
     </message>
     <message>
         <source>Public key file path is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Dateipfad des öffentlichen Schlüssels ist leer.</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. File doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Öffnen der öffentlichen Schlüsseldatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Datei existiert nicht.</translation>
     </message>
     <message>
         <source>Public key too large ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffentlicher Schlüssel zu groß ...</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. File is too large for the key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Öffnen der öffentlichen Schlüsseldatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Datei ist zu groß für den Schlüssel.</translation>
     </message>
     <message>
         <source>Public key isn&apos;t readable ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffentlicher Schlüssel ist nicht lesbar ...</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Öffnen der öffentlichen Schlüsseldatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Überprüfen Sie die Dateiberechtigungen.</translation>
     </message>
     <message>
         <source>DHCP server isn&apos;t enabled ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP-Server ist nicht aktiviert ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; is set to obtain the address automatically but the corresponding DHCP server is not enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ist so eingestellt, dass es die Adresse automatisch bezieht, aber der entsprechende DHCP-Server ist nicht aktiviert.</translation>
     </message>
     <message>
         <source>Invalid IPv4 address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige IPv4-Adresse ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige IPv4-Adresse.</translation>
     </message>
     <message>
         <source>Invalid IPv4 mask ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige IPv4-Maske ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige IPv4-Maske.</translation>
     </message>
     <message>
         <source>Invalid IPv6 address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige IPv6-Adresse ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige IPv6-Adresse.</translation>
     </message>
     <message>
         <source>Invalid IPv6 prefix length ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige IPv6-Präfixlänge ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 prefix length.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige IPv6-Präfixlänge.</translation>
     </message>
     <message>
         <source>Invalid DHCP server address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige DHCP-Serveradresse ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige DHCP-Serveradresse.</translation>
     </message>
     <message>
         <source>Invalid DHCP server mask ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige DHCP-Servermaske ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige DHCP-Servermaske.</translation>
     </message>
     <message>
         <source>Invalid DHCP lower address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige untere DHCP-Adresse ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige untere Adressgrenze für den DHCP-Server.</translation>
     </message>
     <message>
         <source>Invalid DHCP upper address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige obere DHCP-Adresse ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; hat derzeit keine gültige obere Adressgrenze für den DHCP-Server.</translation>
     </message>
     <message>
         <source>No name specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein Name angegeben ...</translation>
     </message>
     <message>
         <source>No new name specified for the network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Für das zuvor &lt;b&gt;%1&lt;/b&gt; genannte Netzwerk wurde kein neuer Name angegeben.</translation>
     </message>
     <message>
         <source>Name already busy ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Name schon besetzt ...</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Name &lt;b&gt;%1&lt;/b&gt; wird für mehrere Netzwerke verwendet.</translation>
     </message>
     <message>
         <source>No IPv4 prefix specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein IPv4-Präfix angegeben ...</translation>
     </message>
     <message>
         <source>No IPv4 prefix specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Für das NAT-Netzwerk &lt;b&gt;%1&lt;/b&gt; ist kein IPv4-Präfix angegeben.</translation>
     </message>
     <message>
         <source>No IPv6 prefix specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein IPv6-Präfix angegeben ...</translation>
     </message>
     <message>
         <source>No IPv6 prefix specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein IPv6-Präfix für das NAT-Netzwerk &lt;b&gt;%1&lt;/b&gt; angegeben.</translation>
     </message>
     <message>
         <source>Can&apos;t mount image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbild kann nicht gemountet werden...</translation>
     </message>
     <message>
         <source>Can&apos;t send ACPI shutdown ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ACPI-Herunterfahren kann nicht gesendet werden ...</translation>
     </message>
     <message>
         <source>Auto capture keyboard ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-Fangmodus für Tastatur ...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie haben die Option &lt;b&gt;Auto-Fangmodus der Tastatur&lt;/b&gt; aktiviert. Dadurch wird die virtuelle Maschine automatisch jedes Mal, wenn das VM-Fenster aktiviert wird, die Tastatur &lt;b&gt;erfassen&lt;/b&gt; und sie für andere Anwendungen, die auf Ihrem Host-Rechner ausgeführt werden, nicht verfügbar machen: Wenn die Tastatur erfasst wird, werden alle Tastenanschläge (einschließlich Systemanschläge wie Alt-Tab) werden zur VM geleitet.&lt;/p&gt;&lt;p&gt;Sie können jederzeit die &lt;b&gt;Host-Taste&lt;/b&gt; drücken, um Tastatur und Maus (falls diese ebenfalls erfasst wird) wieder in den normalen Betrieb zurückversetzen. Die aktuell zugewiesene Host-Taste wird in der Statusleiste unten im Fenster der virtuellen Maschine angezeigt. Dieses Symbol zeigt zusammen mit dem Maussymbol in der Nähe den aktuellen Tastatur- und Mauserfassungsstatus an.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Mouse integration ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Mauszeiger-Integration ...</translation>
     </message>
     <message>
         <source>Paused VM input ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-Eingabe angehalten ...</translation>
     </message>
     <message>
         <source>Wrong color depth ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Falsche Farbtiefe ...</translation>
     </message>
     <message>
         <source>VirtualBox failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire VirtualBox parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen von VirtualBox-Parametern.</translation>
     </message>
     <message>
         <source>Appliance failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire appliance parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen von Appliance-Parametern.</translation>
     </message>
     <message>
         <source>Host failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire host parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen von Host-Parametern.</translation>
     </message>
     <message>
         <source>Medium failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire medium parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Session failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Session-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire session parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sitzungs-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Machine failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinen-Fehler ...</translation>
     </message>
     <message>
         <source>Snapshot failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire snapshot parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>DHCP server failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP-Server-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire cloud network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerk-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Host network interface failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Netzwerkinterface-Fehler ...</translation>
     </message>
     <message>
         <source>Host only network failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Only-Netzwerkinterface-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire host only network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>NAT network failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire NAT network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Display failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Anzeige-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire display parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anzeigen-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Update failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Update-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire update agent parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Update-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>VSD failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD-Fehler ...</translation>
     </message>
     <message>
         <source>VSD form failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD-Form-Fehler ...</translation>
     </message>
     <message>
         <source>Cloud failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire cloud machine parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Maschinen-Parameter konnte nicht ermittelt werden.</translation>
     </message>
     <message>
         <source>Failed to change the parameter of the medium &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Parameter des Mediums &lt;b&gt;%1&lt;/b&gt; konnte nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to change the parameter of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Parameter der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht geändert werden.</translation>
     </message>
     <message>
         <source>Graphics adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafikadapter-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to change graphics adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Ändern der Grafikadapter-Parameter.</translation>
     </message>
     <message>
         <source>Audio adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Audioadapter-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to change audio adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Parameter des Audioadapters konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Network adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkadapter-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to change network adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkadapter-Parameter konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to change DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP-Server-Parameter konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to change cloud network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerk-Parameter konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to change host network interface parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Netzwerk-Parameter konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to change host only network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only-Parameter konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to change NAT network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk-Parameter konnten nicht geändert werden.</translation>
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Update-Parameter konnten nicht zugewiesen werden.</translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB-Geräte können nicht aufgelistet werden ...</translation>
     </message>
     <message>
         <source>Failed to enumerate host USB devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-USB-Geräte konnten nicht aufgelistet werden.</translation>
     </message>
     <message>
         <source>Can&apos;t open medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium kann nicht geöffnet werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t pause machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht angehalten werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t resume machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht fortgesetzt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t shutdown machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht heruntergefahren werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t create appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance kann nicht erstellt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t register machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht registriert werden...</translation>
     </message>
     <message>
         <source>Failed to register machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht registriert werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine konnte nicht erstellt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t find machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kann Maschine nicht finden...</translation>
     </message>
     <message>
         <source>Failed to find the machine with following ID: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Maschine mit der folgenden ID konnte nicht gefunden werden: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t open machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine lässt sich nicht öffnen...</translation>
     </message>
     <message>
         <source>Can&apos;t create medium storage ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack Manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpakete Manager konnte nicht geladen werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create VFS explorer ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS-Explorer kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create VFS explorer to check files.</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS-Explorer zum Überprüfen von Dateien konnte nicht erstellt werden.</translation>
     </message>
     <message>
         <source>Bad password ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Schlechtes Passwort ...</translation>
     </message>
     <message>
         <source>Can&apos;t interpret appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance kann nicht interpretiert werden ...</translation>
     </message>
     <message>
         <source>Failed to interpret appliance being imported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Importierte Appliance konnte nicht interpretiert werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create VSD ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t find cloud network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerk kann nicht gefunden werden ...</translation>
     </message>
     <message>
         <source>Unable to find the cloud network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Cloud-Netzwerk &lt;b&gt;%1&lt;/b&gt; kann nicht gefunden werden.</translation>
     </message>
     <message>
         <source>Can&apos;t find host network interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Netzwerkschnittstelle kann nicht gefunden werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t find host only network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Only-Netzwerk kann nicht gefunden werden ...</translation>
     </message>
     <message>
         <source>Unable to find the host only network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Only-Netzwerk &lt;b&gt;%1&lt;/b&gt; kann nicht gefunden werden.</translation>
     </message>
     <message>
         <source>Can&apos;t find NAT network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kann NAT-Netzwerk nicht finden ...</translation>
     </message>
     <message>
         <source>Unable to find the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das NAT-Netzwerk &lt;b&gt;%1&lt;/b&gt; kann nicht gefunden werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create DHCP server ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP-Server kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t remove DHCP server ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP-Server kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t create cloud network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerk kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create a cloud network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Erstellen eines Cloud-Netzwerks.</translation>
     </message>
     <message>
         <source>Can&apos;t remove cloud network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerk kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Failed to remove the cloud network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Cloud-Netzwerk &lt;b&gt;%1&lt;/b&gt; konnte nicht entfernt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create host only network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Only-Netzwerk kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create a host only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Erstellen eines Host-Only-Netzwerks.</translation>
     </message>
     <message>
         <source>Can&apos;t remove host only network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Only-Netzwerk kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Failed to remove the host only network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Only-Netzwerk &lt;b&gt;%1&lt;/b&gt; konnte nicht entfernt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create NAT network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Failed to create a NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Erstellen eines NAT-Netzwerks.</translation>
     </message>
     <message>
         <source>Can&apos;t remove NAT network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Failed to remove the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Entfernen des NAT-Netzwerks &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t create cloud profile ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profil kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t remove cloud profile ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profil kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Failed to remove cloud profile.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profil konnte nicht entfernt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t save cloud profiles ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profile können nicht gespeichert werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t import cloud profiles ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profile können nicht importiert werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t refresh cloud machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Maschine kann nicht aktualisiert werden ...</translation>
     </message>
     <message>
         <source>Failed to refresh cloud machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Maschine konnte nicht aktualisiert werden.</translation>
     </message>
     <message>
         <source>Can&apos;t create cloud client ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Client kann nicht erstellt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t close medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium kann nicht geschlossen werden...</translation>
     </message>
     <message>
         <source>Can&apos;t discard saved state ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sicherungspunkt kann nicht verworfen werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t remove machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht entfernt werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t export machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kann nicht exportiert werden ...</translation>
     </message>
     <message>
         <source>Failed to export virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Exportieren der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t attach device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerät kann nicht angeschlossen werden...</translation>
     </message>
     <message>
         <source>Can&apos;t find snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot nicht gefunden...</translation>
     </message>
     <message>
         <source>Can&apos;t change snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot kann nicht geändert werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t run guest install ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gastinstallation kann nicht ausgeführt werden ...</translation>
     </message>
     <message>
         <source>Failed to run unattended guest installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die unbeaufsichtigte Gastinstallation konnte nicht ausgeführt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t attach USB device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB-Gerät kann nicht angeschlossen werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t detach USB device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kann USB-Gerät nicht trennen ...</translation>
     </message>
     <message>
         <source>Can&apos;t attach webcam ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Webcam kann nicht angeschlossen werden...</translation>
     </message>
     <message>
         <source>Can&apos;t detach webcam ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Webcam lässt sich nicht trennen...</translation>
     </message>
     <message>
         <source>Can&apos;t save machine settings ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschineneinstellungen können nicht gespeichert werden ...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle audio input ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Audioeingang kann nicht umgeschaltet werden...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle audio output ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kann die Audioausgabe nicht umschalten ...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle network cable ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkkabel lässt sich nicht umschalten...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle recording ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Aufnahme kann nicht umgeschaltet werden...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle VRDE server ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDE-Server kann nicht umgeschaltet werden ...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Fehler-ID:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity:</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Schwere:</translation>
     </message>
     <message>
         <source>Unable to validate guest additions image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gasterweiterungen können nicht validiert werden ...</translation>
     </message>
     <message>
         <source>Unable to validate extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Erweiterungspaket kann nicht validiert werden ...</translation>
     </message>
     <message>
         <source>Guest additions inactive ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gasterweiterungen inaktiv ...</translation>
     </message>
     <message>
         <source>Extension Pack failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusatzpaket-Fehler ...</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack Manager parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen der Zusatzpakete-Manager-Parameter.</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen der Zusatzpaket-Parameter.</translation>
     </message>
     <message>
         <source>Failed to acquire VSD parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen der VSD-Parameter.</translation>
     </message>
     <message>
         <source>Failed to acquire VSD form parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Abrufen der VSD-Form-Parameter.</translation>
     </message>
     <message>
         <source>Failed to assign VSD parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD-Parameter konnten nicht zugewiesen werden.</translation>
     </message>
     <message>
         <source>Can&apos;t get Extension Pack Manager ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte Zusatzpakete-Manager nicht aufrufen ...</translation>
     </message>
     <message>
         <source>Failed to create VSD.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD konnte nicht erstellt werden.</translation>
     </message>
     <message>
         <source>Can&apos;t open extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kann das Erweiterungspaket nicht öffnen ...</translation>
     </message>
     <message>
         <source>Can&apos;t read extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Erweiterungspaket kann nicht gelesen werden ...</translation>
     </message>
     <message>
         <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Erweiterungspaket &lt;b&gt;%1&lt;/b&gt; konnte nicht gelesen werden.</translation>
     </message>
     <message>
         <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot mit ID=&lt;b&gt;%1&lt;/b&gt; konnte nicht gefunden werden.</translation>
     </message>
     <message>
         <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot mit Name=&lt;b&gt;%1&lt;/b&gt; konnte nicht gefunden werden.</translation>
     </message>
 </context>
 <context>
@@ -15483,73 +15483,73 @@ a guest session</source>
     <name>UIMiniToolbarSettingsEditor</name>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">Mini-Toolbar:</translation>
+        <translation>Mini-Werkzeugleiste:</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished">im &amp;Vollbild-/Seamless-Modus zeigen</translation>
+        <translation>Im &amp;Vollbild-/Nahtlos-Modus zeigen</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
-        <translation type="unfinished">Zeige die Mini-Toolbar im Vollbildmodus und im nahtlosen Modus.</translation>
+        <translation>Zeige die Mini-Werkzeugleiste im Vollbildmodus und im nahtlosen Modus.</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">am &amp;oberen Bildschirmrand zeigen</translation>
+        <translation>Am &amp;oberen Bildschirmrand zeigen</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished">Zeige die Mini-Toolbar am oberen Rand des Bildschirms anstelle der Voreinstellung am unteren Rand des Bildschirms.</translation>
+        <translation>Zeige die Mini-Werkzeugleiste am oberen Rand des Bildschirms anstelle der Voreinstellung am unteren Rand des Bildschirms.</translation>
     </message>
 </context>
 <context>
     <name>UIMonitorCountEditor</name>
     <message>
         <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished">Anzahl &amp;Bildschirme:</translation>
+        <translation>Anzahl &amp;Bildschirme:</translation>
     </message>
     <message>
         <source>Holds the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die Anzahl von virtuellen Monitoren fest, die der virtuellen Maschine bereitgestellt werden.</translation>
     </message>
     <message>
         <source>Minimum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimal mögliche Monitoranzahl.</translation>
     </message>
     <message>
         <source>Maximum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal mögliche Monitoranzahl.</translation>
     </message>
 </context>
 <context>
     <name>UIMotherboardFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>Enable &amp;I/O APIC</source>
-        <translation type="unfinished">&amp;IO-APIC aktivieren</translation>
+        <translation>&amp;IO-APIC aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. Note: don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert die Unterstützung für den Input/Output APIC (I/O-APIC). Dies kann negative Auswirkungen auf die VM-Performance haben. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die Unterstützung nicht, nachdem Sie Windows installiert haben!</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="unfinished">&amp;EFI aktivieren (nur spezielle Gäste)</translation>
+        <translation>&amp;EFI aktivieren (nur spezielle Gäste)</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished">Aktiviert das Extended Firmware Interface (EFI), das zum Booten von manchen speziellen Gästen benötigt wird. Nicht-EFI-fähige Gäste können nicht booten, wenn diese Option aktiviert ist.</translation>
+        <translation>Aktiviert das Extended Firmware Interface (EFI), das zum Booten von manchen speziellen Gästen benötigt wird. Nicht-EFI-fähige Gäste können nicht booten, wenn diese Option aktiviert ist.</translation>
     </message>
     <message>
         <source>Hardware Clock in &amp;UTC Time</source>
-        <translation type="unfinished">Hardware-Uhr in &amp;UTC</translation>
+        <translation>Hardware-Uhr in &amp;UTC</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished">Durch Aktivierung wird die virtuelle Echtzeituhr die Uhrzeit in UTC bereitstellen, anderenfalls in lokaler (Host-)Zeit. Unix-Gäste erwarten die Zeit normalerweise in UTC.</translation>
+        <translation>Durch Aktivierung wird die virtuelle Echtzeituhr die Uhrzeit in UTC bereitstellen, anderenfalls in lokaler (Host-)Zeit. Unix-Gäste erwarten die Zeit normalerweise in UTC.</translation>
     </message>
 </context>
 <context>
@@ -15603,94 +15603,94 @@ a guest session</source>
     </message>
     <message>
         <source>Invalid name</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Name</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Name:</translation>
+        <translation>&amp;Name:</translation>
     </message>
     <message>
         <source>&amp;Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ordner:</translation>
     </message>
     <message>
         <source>&amp;ISO Image:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ISO Abbild:</translation>
     </message>
     <message>
         <source>&amp;Edition:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Holds the name for virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt den Namen für die virtuelle Maschine fest.</translation>
     </message>
     <message>
         <source>Selects the folder hosting virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt den Ordner aus, der die virtuelle Maschine enthält.</translation>
     </message>
     <message>
         <source>Selects an ISO image to be attached to the virtual machine or used in unattended install.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt ein ISO-Image aus, das an die virtuelle Maschine eingehängt oder in der unbeaufsichtigten Installation verwendet werden soll.</translation>
     </message>
 </context>
 <context>
     <name>UINativeWizard</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Hilfe</translation>
+        <translation>&amp;Hilfe</translation>
     </message>
     <message>
         <source>Open corresponding Help topic.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnen Sie das entsprechende Hilfethema.</translation>
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="unfinished">&amp;Experten-Modus</translation>
+        <translation>&amp;Experten-Modus</translation>
     </message>
     <message>
         <source>Switch to the Expert Mode, a one-page dialog for experienced users.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wechseln Sie in den Expertenmodus, einen einseitigen Dialog für erfahrene Benutzer.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="unfinished">&amp;Geführter Modus</translation>
+        <translation>&amp;Geführter Modus</translation>
     </message>
     <message>
         <source>Switch to the Guided Mode, a step-by-step dialog with detailed explanations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wechseln Sie in den geführten Modus, einen Schritt-für-Schritt-Dialog mit ausführlichen Erklärungen.</translation>
     </message>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished">&amp;Zurück</translation>
+        <translation>&amp;Zurück</translation>
     </message>
     <message>
         <source>Go to previous wizard page.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur vorherigen Seite des Assistenten gehen.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">&amp;Vorwärts</translation>
+        <translation>&amp;Vorwärts</translation>
     </message>
     <message>
         <source>Go to next wizard page.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zur nächsten Seite des Assistenten gehen.</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fertigstellen</translation>
     </message>
     <message>
         <source>Commit all wizard data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Assistentendaten übernehmen.</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;Abbrechen</translation>
+        <translation>&amp;Abbrechen</translation>
     </message>
     <message>
         <source>Cancel wizard execution.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausführung des Assistenten abbrechen.</translation>
     </message>
 </context>
 <context>
@@ -15734,547 +15734,547 @@ a guest session</source>
     </message>
     <message>
         <source>Holds how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt fest, wie dieser virtuelle Adapter mit dem realen Netzwerk des Host-Betriebssystems verbunden ist.</translation>
     </message>
     <message>
         <source>Holds the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt den Netzwerkadapter auf dem Hostsystem fest, den der Datenverkehr zu und von dieser Netzwerkkarte durchläuft.</translation>
     </message>
     <message>
         <source>Holds the driver to be used with this network card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den mit dieser Netzwerkkarte zu verwendeten Treiber.</translation>
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Namen des NAT-Netzwerks, mit dem diese Netzwerkkarte verbunden wird. Sie können Netzwerke mit dem Netzwerk-Manager erstellen und entfernen.</translation>
     </message>
     <message>
         <source>Holds the name of the host-only network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Namen des Host-Only-Netzwerks, mit dem diese Netzwerkkarte verbunden wird. Sie können Netzwerke mit dem Netzwerk-Manager hinzufügen und entfernen.</translation>
     </message>
     <message>
         <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den virtuellen Netzwerkadapter auf dem Hostsystem, den der Datenverkehr zu und von dieser Netzwerkkarte durchläuft. Sie können Adapter mit dem Netzwerk-Manager erstellen und entfernen.</translation>
     </message>
     <message>
         <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>(experimentell) Enthält den Namen des Cloud-Netzwerks, mit dem diese Netzwerkkarte verbunden wird. Sie können Netzwerke mit dem Netzwerk-Manager hinzufügen und entfernen.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkFeaturesEditor</name>
     <message>
         <source>A&amp;dvanced</source>
-        <translation type="unfinished">&amp;Erweitert</translation>
+        <translation>&amp;Erweitert</translation>
     </message>
     <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="unfinished">Zeigt erweiterte Einstellungen für den Netzwerkadapter.</translation>
+        <translation>Zeigt erweiterte Einstellungen für den Netzwerkadapter.</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished">Adapter&amp;typ:</translation>
+        <translation>Adapter&amp;typ:</translation>
     </message>
     <message>
         <source>Holds the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Typ des virtuellen Netzwerkadapters. Abhängig von diesem Wert stellt VirtualBox der virtuellen Maschine unterschiedliche Netzwerkhardware zur Verfügung.</translation>
     </message>
     <message>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished">&amp;Promiscuous-Modus:</translation>
+        <translation>&amp;Promiscuous-Modus:</translation>
     </message>
     <message>
         <source>Holds the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Promiscuous-Modus-Richtlinie des Netzwerkadapters, wenn er mit einem internen Netzwerk, einem Host-Only-Netzwerk oder einer Brücke verbunden ist.</translation>
     </message>
     <message>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished">&amp;MAC-Adresse:</translation>
+        <translation>&amp;MAC-Adresse:</translation>
     </message>
     <message>
         <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerade Zahl sein.</translation>
+        <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerade Zahl sein.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Erzeugt eine neue zufällige MAC-Adresse.</translation>
+        <translation>Erzeugt eine neue zufällige MAC-Adresse.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished">Konfiguration:</translation>
+        <translation>Konfiguration:</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form name=value and will depend on the driver. Use shift-enter to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Konfigurationseinstellungen für den Netzwerkanschlusstreiber. Die Einstellungen sollten die Form Name=Wert haben und hängen vom Treiber ab. Verwenden Sie Shift-Enter, um einen neuen Eintrag hinzuzufügen.</translation>
     </message>
     <message>
         <source>&amp;Cable Connected</source>
-        <translation type="unfinished">&amp;Kabel verbunden</translation>
+        <translation>&amp;Kabel verbunden</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished">Verbindet die virtuelle Maschine mit dem virtuellen Netzwerkkabel.</translation>
+        <translation>Verbindet die virtuelle Maschine mit dem virtuellen Netzwerkkabel.</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;Port-Weiterleitung</translation>
+        <translation>&amp;Port-Weiterleitung</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished">Öffnet den Dialog für Regeln zur Portweiterleitung.</translation>
+        <translation>Öffnet den Dialog für Regeln zur Portweiterleitung.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkManager</name>
     <message>
         <source>Host-only Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only-Netzwerke</translation>
     </message>
     <message>
         <source>NAT Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerke</translation>
     </message>
     <message>
         <source>Cloud Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Netzwerke</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Name</translation>
     </message>
     <message>
         <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Maske</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">Kleinste Adresse</translation>
+        <translation>Kleinste Adresse</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">Größte Adresse</translation>
+        <translation>Größte Adresse</translation>
     </message>
     <message>
         <source>IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4-Präfix</translation>
     </message>
     <message>
         <source>IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6-Präfix</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP-Server</translation>
+        <translation>DHCP-Server</translation>
     </message>
     <message>
         <source>Provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Provider</translation>
     </message>
     <message>
         <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil</translation>
     </message>
     <message>
         <source>Network Manager</source>
-        <translation type="unfinished">Netzwerk-Manager</translation>
+        <translation>Netzwerk-Manager</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Sichern</translation>
+        <translation>Sichern</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Schließen</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen der aktuellen Netzwerkdetails zurücksetzen</translation>
     </message>
     <message>
         <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation>Wendet die Änderungen der aktuellen Netzwerkdetails an</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">Dialog schließen, ohne die Änderungen zu sichern</translation>
+        <translation>Dialog schließen, ohne die Änderungen zu sichern</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Änderungen verwerfen (%1)</translation>
+        <translation>Änderungen verwerfen (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Änderungen sichern (%1)</translation>
+        <translation>Änderungen sichern (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">Fenster schließen (%1)</translation>
+        <translation>Fenster schließen (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
+        <translation>Subnetz auswählen</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished">&amp;Name:</translation>
+        <translation>&amp;Name:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">Legt den Namen für dieses Netzwerk fest.</translation>
+        <translation>Legt den Namen für dieses Netzwerk fest.</translation>
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Anbieter:</translation>
     </message>
     <message>
         <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Cloud-Anbieter für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;rofil:</translation>
     </message>
     <message>
         <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält das Cloud-Profil für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Id:</translation>
     </message>
     <message>
         <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die ID für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt die ID für dieses Netzwerk aus.</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">Änderungen verwerfen</translation>
+        <translation>Änderungen in aktuellen Schnittstellendetails zurücksetzen</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">Änderungen sichern</translation>
+        <translation>Wenden Sie Änderungen an den aktuellen Schnittstellendetails an</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Name:</translation>
+        <translation>&amp;Name:</translation>
     </message>
     <message>
         <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Maske:</translation>
     </message>
     <message>
         <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Namen für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kleinster Wert:</translation>
     </message>
     <message>
         <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die untere Adresse, die an dieses Netzwerk gebunden ist.</translation>
     </message>
     <message>
         <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Größte Adresse:</translation>
     </message>
     <message>
         <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die obere Adresse, die an dieses Netzwerk gebunden ist.</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;Adapter</translation>
+        <translation>&amp;Adapter</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">&amp;DHCP-Server</translation>
+        <translation>&amp;DHCP-Server</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">Adapter &amp;automatisch konfigurieren</translation>
+        <translation>Adapter &amp;automatisch konfigurieren</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">Adapter &amp;manuell konfigurieren</translation>
+        <translation>Adapter &amp;manuell konfigurieren</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">&amp;IPv4-Adresse:</translation>
+        <translation>&amp;IPv4-Adresse:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">Zeigt die IPv4-Adresse für diesen Adapter.</translation>
+        <translation>Zeigt die IPv4-Adresse für diesen Adapter.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4-Netz&amp;maske:</translation>
+        <translation>IPv4-Netz&amp;maske:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">Zeigt die IPv4-Netzmaske für diesen Adapter.</translation>
+        <translation>Zeigt die IPv4-Netzmaske für diesen Adapter.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">I&amp;Pv6-Adresse:</translation>
+        <translation>I&amp;Pv6-Adresse:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Zeigt die IPv6-Adresse für diesen Adapter falls IPv6 unterstützt wird.</translation>
+        <translation>Zeigt die IPv6-Adresse für diesen Adapter falls IPv6 unterstützt wird.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6-Präfix&amp;länge:</translation>
+        <translation>IPv6-Präfix&amp;länge:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Zeigt die IPv6-Präfixlänge für diesen Adapter falls IPv6 unterstützt wird.</translation>
+        <translation>Zeigt die IPv6-Präfixlänge für diesen Adapter falls IPv6 unterstützt wird.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Server &amp;aktivieren</translation>
+        <translation>Server &amp;aktivieren</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">Startet den DHCP-Server beim Start der Maschine.</translation>
+        <translation>Startet den DHCP-Server beim Start der Maschine.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">Server-A&amp;dresse:</translation>
+        <translation>Server-A&amp;dresse:</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die Adresse des DHCP-Servers der die IP-Adressen für das Netzwerk an diesem Hostadapter verwaltet.</translation>
+        <translation>Zeigt die Adresse des DHCP-Servers der die IP-Adressen für das Netzwerk an diesem Hostadapter verwaltet.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">Server-&amp;Maske:</translation>
+        <translation>Server-&amp;Maske:</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die Netzmaske des DHCP-Servers, der die IP-Adressen an diesem Host-only Netzwerkadapter verwaltet.</translation>
+        <translation>Zeigt die Netzmaske des DHCP-Servers, der die IP-Adressen an diesem Host-only Netzwerkadapter verwaltet.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">&amp;Kleinste Adresse:</translation>
+        <translation>&amp;Kleinste Adresse:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die kleinste IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
+        <translation>Zeigt die kleinste IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">&amp;Größte Adresse:</translation>
+        <translation>&amp;Größte Adresse:</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die größte IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
+        <translation>Zeigt die größte IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">Änderungen des aktuellen DHCP-Servers verwerfen</translation>
+        <translation>Änderungen des aktuellen DHCP-Servers verwerfen</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">Änderungen des aktuellen DHCP-Servers sichern</translation>
+        <translation>Änderungen des aktuellen DHCP-Servers sichern</translation>
     </message>
     <message>
         <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Allgemeine Optionen</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;Port-Weiterleitung</translation>
+        <translation>&amp;Port-Weiterleitung</translation>
     </message>
     <message>
         <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;4-Präfix:</translation>
     </message>
     <message>
         <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den IPv4-Präfix für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;6-Präfix:</translation>
     </message>
     <message>
         <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den IPv6-Präfix für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;DHCP aktivieren</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">Aktiviert DCHP-Unterstützung für dieses Netzwerk.</translation>
+        <translation>Aktiviert DHCP-Unterstützung für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 aktivieren</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">Aktiviert IPv6-Unterstützung für dieses Netzwerk.</translation>
+        <translation>Aktiviert IPv6-Unterstützung für dieses Netzwerk.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">Verwende als voreingestellte IPv6-&amp;Route</translation>
+        <translation>Verwende als voreingestellte IPv6-&amp;Route</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">Legt fest ob dieses Netzwerk als die voreingestellte IPv6-Route verwendet werden soll.</translation>
+        <translation>Legt fest ob dieses Netzwerk als die voreingestellte IPv6-Route verwendet werden soll.</translation>
     </message>
     <message>
         <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Adapter</translation>
+        <translation>Adapter</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">automatisch konfiguriert</translation>
+        <translation>automatisch konfiguriert</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">manuell konfiguriert</translation>
+        <translation>manuell konfiguriert</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4-Adresse</translation>
+        <translation>IPv4-Adresse</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nicht gesetzt</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 Netzmaske</translation>
+        <translation>IPv4 Netzmaske</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nicht gesetzt</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6-Adresse</translation>
+        <translation>IPv6-Adresse</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">IPv6-Präfixlänge</translation>
+        <translation>IPv6-Präfixlänge</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nicht gesetzt</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">Adresse</translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">Netzmaske</translation>
+        <translation>Netzmaske</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>nicht gesetzt</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Netzwerk-Name</translation>
+        <translation>Netzwerk-Name</translation>
     </message>
     <message>
         <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 Netzwerk-Präfix</translation>
     </message>
     <message>
         <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 Netzwerk-Präfix</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">Unterstützt DHCP</translation>
+        <translation>Unterstützt DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">ja</translation>
+        <translation>ja</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">nein</translation>
+        <translation>nein</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">Unterstützt IPv6</translation>
+        <translation>Unterstützt IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Default IPv6-Route</translation>
+        <translation>Default IPv6-Route</translation>
     </message>
     <message>
         <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte NAT-Netzwerke</translation>
     </message>
     <message>
         <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte Cloud-Netzwerke</translation>
     </message>
     <message>
         <source>Registered host-only networks</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrierte Host-only-Netzwerke</translation>
     </message>
 </context>
 <context>
@@ -16403,334 +16403,334 @@ a guest session</source>
     <name>UINetworkSettingsEditor</name>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">Netzwerkadapter &amp;aktivieren</translation>
+        <translation>Netzwerkadapter &amp;aktivieren</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">Aktiviert den virtuellen Netzwerkadapter für die virtuelle Maschine.</translation>
+        <translation>Aktiviert den virtuellen Netzwerkadapter für die virtuelle Maschine.</translation>
     </message>
 </context>
 <context>
     <name>UINotificationCenter</name>
     <message>
         <source>Open notification center</source>
-        <translation type="unfinished"></translation>
+        <translation>Benachrichtigungscenter öffnen</translation>
     </message>
     <message>
         <source>Toggle ascending/descending order</source>
-        <translation type="unfinished"></translation>
+        <translation>Aufsteigende/absteigende Reihenfolge umschalten</translation>
     </message>
     <message>
         <source>Keep finished progresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Abgeschlossene Fortschritte behalten</translation>
     </message>
     <message>
         <source>Delete finished notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Fertige Benachrichtigungen löschen</translation>
     </message>
     <message>
         <source>Align Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Unten ausrichten</translation>
     </message>
     <message>
         <source>Align Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Oben ausrichten</translation>
     </message>
 </context>
 <context>
     <name>UINotificationDownloader</name>
     <message>
         <source>Downloading Extension Pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Erweiterungspaket wird herunterladen ...</translation>
     </message>
     <message>
         <source>Downloading Guest Additions ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gasterweiterungen werden herunterladen ...</translation>
     </message>
     <message>
         <source>Downloading User Manual ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzerhandbuch wird herunterladen ...</translation>
     </message>
 </context>
 <context>
     <name>UINotificationProgress</name>
     <message>
         <source>Creating medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium erstellen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Location:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Size:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Ort:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Größe:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Copying medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium kopieren ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;From:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;To:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Von:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Nach:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished">Medium verschieben ...</translation>
+        <translation>Medium verschieben ...</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished">Mediumgröße anpassen ...</translation>
+        <translation>Mediumgröße anpassen ...</translation>
     </message>
     <message>
         <source>Deleting medium storage ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium wird gelöscht ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Location:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Ort:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Copying machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine kopieren ...</translation>
     </message>
     <message>
         <source>Powering VM up ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VM hochfahren ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;VM Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Moving machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschine verschieben ...</translation>
     </message>
     <message>
         <source>Saving VM state ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-Status sichern ...</translation>
     </message>
     <message>
         <source>Powering VM off ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VM ausschalten ...</translation>
     </message>
     <message>
         <source>Removing machine media ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenmedien entfernen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Machine Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Maschinenname:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Updating VFS explorer ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualisieren des VFS-Explorers ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Path:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Pfad:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Removing VFS explorer files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS-Explorer-Dateien werden entfernt ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Path:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Files:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Pfad:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Dateien:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Creating subnet selection VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Subnetzauswahl-VSD-Form erstellen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Anbieter:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profil:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Creating launch VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Start-VSD-Form wird erstellt ...</translation>
     </message>
     <message>
         <source>Creating export VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Export-VSD-Form erstellen ...</translation>
     </message>
     <message>
         <source>Creating import VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Import-VSD-Form erstellen ...</translation>
     </message>
     <message>
         <source>Listing cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Abbilder auflisten ...</translation>
     </message>
     <message>
         <source>Listing cloud source boot volumes ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Quellen-Bootvolumen auflisten ...</translation>
     </message>
     <message>
         <source>Listing cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Instanzen auflisten ...</translation>
     </message>
     <message>
         <source>Listing cloud source instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Quell-Instanzen auflisten ...</translation>
     </message>
     <message>
         <source>Adding cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM hinzufügen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Instance Name:&lt;/b&gt; %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Anbieter:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profil:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Instanzname:&lt;/b&gt; %3</translation>
     </message>
     <message>
         <source>Creating cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM erstellen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;VM Name:&lt;/b&gt; %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Anbieter:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profil:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;VM-Name:&lt;/b&gt; %3</translation>
     </message>
     <message>
         <source>Deleting cloud VM files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Löschen von Cloud-VM-Dateien ...</translation>
     </message>
     <message>
         <source>Removing cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM wird entfernt ...</translation>
     </message>
     <message>
         <source>Powering cloud VM up ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM hochfahren ...</translation>
     </message>
     <message>
         <source>Powering cloud VM off ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM ausschalten ...</translation>
     </message>
     <message>
         <source>Shutting cloud VM down ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM wird heruntergefahren ...</translation>
     </message>
     <message>
         <source>Terminating cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM wird beendet ...</translation>
     </message>
     <message>
         <source>Creating cloud VM settings form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Form für Cloud-VM-Einstellungen erstellen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cloud VM Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Cloud-VM-Name:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Applying cloud VM settings form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Form für Cloud-VM-Einstellungen anwenden ...</translation>
     </message>
     <message>
         <source>Creating cloud console connection ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Konsolenverbindung wird erstellt ...</translation>
     </message>
     <message>
         <source>Deleting cloud console connection ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbindung zur Cloud-Konsole wird gelöscht ...</translation>
     </message>
     <message>
         <source>Acquire cloud console log ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Protokoll der Cloud-Konsole abrufen ...</translation>
     </message>
     <message>
         <source>Taking snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot erstellen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;VM Name:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Snapshot Name:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;VM-Name:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Snapshot-Name:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Restoring snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot wird wiederhergestellt ...</translation>
     </message>
     <message>
         <source>Deleting snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot löschen ...</translation>
     </message>
     <message>
         <source>Writing appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance schreiben ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;To:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Nach:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Reading appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance lesen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;From:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Von:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Importing appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance importieren ...</translation>
     </message>
     <message>
         <source>Installing package ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Paket installieren ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Uninstalling package ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Paket deinstallieren ...</translation>
     </message>
     <message>
         <source>Installing image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbild installieren ...</translation>
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Only-Netzwerkschnittstelle erstellen ...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-Only-Netzwerkschnittstelle entfernen ...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD-Formwert festlegen ...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Wert:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Checking for new version of %1 ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Suche nach neuer Version von %1 ...</translation>
     </message>
     <message>
         <source>Checking for new version ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Suche nach neuer Version ...</translation>
     </message>
 </context>
 <context>
     <name>UIParavirtProviderEditor</name>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished">&amp;Paravirtualisierung:</translation>
+        <translation>&amp;Paravirtualisierung:</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
-        <translation type="unfinished">Wählt die Art der Paravirtualisierung für diese virtuelle Maschine aus.</translation>
+        <translation>Wählt die Art der Paravirtualisierung für diese virtuelle Maschine aus.</translation>
     </message>
 </context>
 <context>
     <name>UIPointingHIDEditor</name>
     <message>
         <source>&amp;Pointing Device:</source>
-        <translation type="unfinished">&amp;Zeigergerät:</translation>
+        <translation>&amp;Zeigergerät:</translation>
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
-        <translation type="unfinished">Legt fest, ob das emulierte Zeigergerät entweder eine Standard-PS/2-Maus, ein USB-Tablet oder ein USB-Multi-Touch-Tablet ist.</translation>
+        <translation>Legt fest, ob das emulierte Zeigergerät entweder eine Standard-PS/2-Maus, ein USB-Tablet oder ein USB-Multi-Touch-Tablet ist.</translation>
     </message>
 </context>
 <context>
@@ -16810,23 +16810,23 @@ a guest session</source>
     <name>UIProcessorFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">PA&amp;E/NX aktivieren</translation>
+        <translation>PA&amp;E/NX aktivieren</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">Aktiviert die Unterstützung für Physical Address Extension (PAE) für Gäste. Nur möglich, wenn die Host-CPU diesen Modus ebenfalls unterstützt.</translation>
+        <translation>Aktiviert die Unterstützung für Physical Address Extension (PAE) für Gäste. Nur möglich, wenn die Host-CPU diesen Modus ebenfalls unterstützt.</translation>
     </message>
     <message>
         <source>Enable Nested &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Nested &amp;VT-x/AMD-V aktivieren</translation>
+        <translation>Nested &amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
-        <translation type="unfinished">Aktiviert die Unterstützung für verschachtelte Hardware-Virtualisierung für Gäste.</translation>
+        <translation>Aktiviert die Unterstützung für verschachtelte Hardware-Virtualisierung für Gäste.</translation>
     </message>
 </context>
 <context>
@@ -16862,153 +16862,153 @@ a guest session</source>
     <name>UIProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">&amp;Automatische Erkennung der Proxy-Einstellungen</translation>
+        <translation>&amp;Automatische Erkennung der Proxy-Einstellungen</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Versucht, die Proxy-Einstellungen des Hosts für den Test auf eine neue VirtualBox-Version oder für das Herunterladen der Gasterweiterungen automatisch zu erkennen.</translation>
+        <translation>Versucht, die Proxy-Einstellungen des Hosts für den Test auf eine neue VirtualBox-Version oder für das Herunterladen der Gasterweiterungen automatisch zu erkennen.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">&amp;Direkte Internetverbindung</translation>
+        <translation>&amp;Direkte Internetverbindung</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Kein Proxy wird für das Herunterladen der Gasterweiterungen oder für den Test auf eine neue VirtualBox-Version verwendet.</translation>
+        <translation>Kein Proxy wird für das Herunterladen der Gasterweiterungen oder für den Test auf eine neue VirtualBox-Version verwendet.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">&amp;Manuelle Proxy-Konfiguration</translation>
+        <translation>&amp;Manuelle Proxy-Konfiguration</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">Die gewählten Proxy-Einstellungen werden für das Herunterladen der Gasterweiterungen oder für die Überprüfung auf eine neue VirtualBox-Version verwendet.</translation>
+        <translation>Die gewählten Proxy-Einstellungen werden für das Herunterladen der Gasterweiterungen oder für die Überprüfung auf eine neue VirtualBox-Version verwendet.</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">&amp;URL:</translation>
+        <translation>&amp;URL:</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">Enthält die Proxy-URL. Das Format lautet wie folgt: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation>Enthält die Proxy-URL. Das Format lautet wie folgt: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
-        <translation type="unfinished">Au&amp;fnahme aktivieren</translation>
+        <translation>Au&amp;fnahme aktivieren</translation>
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
-        <translation type="unfinished">Aktiviert die Videoaufzeichnung dieser Sitzung in eine Datei.</translation>
+        <translation>Aktiviert die Videoaufzeichnung dieser Sitzung in eine Datei.</translation>
     </message>
     <message>
         <source>Recording &amp;Mode:</source>
-        <translation type="unfinished">Aufnahme&amp;modus:</translation>
+        <translation>Aufnahme&amp;modus:</translation>
     </message>
     <message>
         <source>Holds the recording mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enhält den Aufnahmemodus.</translation>
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished">Datei&amp;pfad:</translation>
+        <translation>Datei&amp;pfad:</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished">Geben Sie hier den Namen für die Videoaufzeichnungsdatei an.</translation>
+        <translation>Geben Sie hier den Namen für die Videoaufzeichnungsdatei an.</translation>
     </message>
     <message>
         <source>Frame Si&amp;ze:</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame-G&amp;röße:</translation>
     </message>
     <message>
         <source>User Defined</source>
-        <translation type="unfinished">benutzerdefiniert</translation>
+        <translation>benutzerdefiniert</translation>
     </message>
     <message>
         <source>Holds the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Auflösung (Bildgröße) des aufgezeichneten Videos.</translation>
     </message>
     <message>
         <source>Holds the horizontal resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die horizontale Auflösung (Bildbreite) des aufgezeichneten Videos.</translation>
     </message>
     <message>
         <source>Holds the vertical resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die vertikale Auflösung (Bildhöhe) des aufgezeichneten Videos.</translation>
     </message>
     <message>
         <source>Frame R&amp;ate:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bilder pro Sekunde:</translation>
     </message>
     <message>
         <source>Holds the maximum number of frames per second. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hält die maximale Anzahl von Bildern pro Sekunde. Weitere Frames werden übersprungen. Das Reduzieren dieses Werts erhöht die Anzahl der übersprungenen Frames und reduziert die Dateigröße.</translation>
     </message>
     <message>
         <source>fps</source>
-        <translation type="unfinished">fps</translation>
+        <translation>fps</translation>
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="unfinished">%1 fps</translation>
+        <translation>%1 fps</translation>
     </message>
     <message>
         <source>Minimum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimal mögliche Framerate.</translation>
     </message>
     <message>
         <source>Maximum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal mögliche Bildrate.</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
-        <translation type="unfinished">&amp;Video-Qualität:</translation>
+        <translation>&amp;Video-Qualität:</translation>
     </message>
     <message>
         <source>Holds the quality. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Qualität. Wenn Sie diesen Wert erhöhen, sieht das Video auf Kosten einer höheren Dateigröße besser aus.</translation>
     </message>
     <message>
         <source>kbps</source>
-        <translation type="unfinished">kbps</translation>
+        <translation>kbps</translation>
     </message>
     <message>
         <source>Holds the bitrate in kilobits per second. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geben Sie hier die Bitrate in Kilobit pro Sekunde an. Größere Werte ergeben eine bessere Qualität auf Kosten größerer Dateien.</translation>
     </message>
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="unfinished">niedrig</translation>
+        <translation>niedrig</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="unfinished">mittel</translation>
+        <translation>mittel</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="unfinished">hoch</translation>
+        <translation>hoch</translation>
     </message>
     <message>
         <source>&amp;Audio Quality:</source>
-        <translation type="unfinished">&amp;Audio-Qualität:</translation>
+        <translation>&amp;Audio-Qualität:</translation>
     </message>
     <message>
         <source>Holds the quality. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Audioqualität. Wenn Sie diesen Wert erhöhen, enthält das Video besseres Audio auf Kosten einer höheren Dateigröße.</translation>
     </message>
     <message>
         <source>Scree&amp;ns:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bildschirme:</translation>
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;Ungefährt %1 MB pro Videominute&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Ungefährt %1 MB pro Videominute&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -17035,15 +17035,15 @@ a guest session</source>
     </message>
     <message>
         <source>Scale &amp;Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Skalierungs&amp;faktor:</translation>
     </message>
     <message>
         <source>Selects the index of monitor guest screen scale factor being defined for.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt den Index des Gastbildschirms aus, für den der Skalierungsfaktor definiert wird.</translation>
     </message>
     <message>
         <source>Holds the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Skalierungsfaktor des Gastbildschirms.</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -17051,11 +17051,11 @@ a guest session</source>
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimal möglicher Skalierungsfaktor.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal möglicher Skalierungsfaktor.</translation>
     </message>
 </context>
 <context>
@@ -17187,7 +17187,7 @@ a guest session</source>
     </message>
     <message>
         <source>Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Interface</translation>
     </message>
 </context>
 <context>
@@ -17268,168 +17268,168 @@ a guest session</source>
     <name>UISharedClipboardEditor</name>
     <message>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished">&amp;Gemeinsame Zwischenablage:</translation>
+        <translation>&amp;Gemeinsame Zwischenablage:</translation>
     </message>
     <message>
         <source>Holds which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält, welche Zwischenablagedaten zwischen dem Gast- und dem Host-Betriebssystem kopiert werden. Diese Funktion erfordert die Installation der Gasterweiterungen im Gastbetriebssystem.</translation>
     </message>
 </context>
 <context>
     <name>UISharedFolderDetailsEditor</name>
     <message>
         <source>Add Share</source>
-        <translation type="unfinished">Ordner hinzufügen</translation>
+        <translation>Ordner hinzufügen</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation type="unfinished">Ordner ändern</translation>
+        <translation>Ordner ändern</translation>
     </message>
     <message>
         <source>Folder Path:</source>
-        <translation type="unfinished">Ordner-Pfad:</translation>
+        <translation>Ordner-Pfad:</translation>
     </message>
     <message>
         <source>Folder Name:</source>
-        <translation type="unfinished">Ordner-Name:</translation>
+        <translation>Ordner-Name:</translation>
     </message>
     <message>
         <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">Zeigt den Namen des gemeinsamen Ordners (wie er vom Gastsystem gesehen wird).</translation>
+        <translation>Zeigt den Namen des gemeinsamen Ordners (wie er vom Gastsystem gesehen wird).</translation>
     </message>
     <message>
         <source>Holds the path of the shared folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Pfad des gemeinsamen Ordners</translation>
     </message>
     <message>
         <source>Apply the changes and close this dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Änderungen anwenden und diesen Dialog schließen</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">Nur &amp;lesbar</translation>
+        <translation>Nur &amp;lesbar</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">Der Gast erhält nur lesenden Zugriff auf das Verzeichnis.</translation>
+        <translation>Der Gast erhält nur lesenden Zugriff auf das Verzeichnis.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
-        <translation type="unfinished">&amp;Automatisch einbinden</translation>
+        <translation>&amp;Automatisch einbinden</translation>
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation type="unfinished">Falls aktiviert wird der Gast versuchen, die gemeinsamen Ordner beim Start automatisch einzubinden.</translation>
+        <translation>Falls aktiviert wird der Gast versuchen, die gemeinsamen Ordner beim Start automatisch einzubinden.</translation>
     </message>
     <message>
         <source>Mount point:</source>
-        <translation type="unfinished">Einbindepunkte:</translation>
+        <translation>Einbindepunkte:</translation>
     </message>
     <message>
         <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
-        <translation type="unfinished">Wohin der automatisch eingebundene Ordner auf dem Gast eingehängt werden soll. Ein Laufwerksbuchstabe (z.B. &apos;G:&apos;) für Windows- oder OS/2-Gäste, oder ein Pfad für andere Gasttypen. Falls leergelassen, wird der Gast einen passenden Pfad auswählen.</translation>
+        <translation>Wohin der automatisch eingebundene Ordner auf dem Gast eingehängt werden soll. Ein Laufwerksbuchstabe (z.B. &apos;G:&apos;) für Windows- oder OS/2-Gäste, oder ein Pfad für andere Gasttypen. Falls leergelassen, wird der Gast einen passenden Pfad auswählen.</translation>
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">&amp;Permanent erzeugen</translation>
+        <translation>&amp;Permanent erzeugen</translation>
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
-        <translation type="unfinished">Falls aktiviert wird der Gemeinsame Ordner permanent eingerichtet.</translation>
+        <translation>Falls aktiviert wird der Gemeinsame Ordner permanent eingerichtet.</translation>
     </message>
 </context>
 <context>
     <name>UISharedFoldersEditor</name>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="unfinished">&amp;Gemeinsame Ordner</translation>
+        <translation>&amp;Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &apos;share&apos; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listet alle gemeinsamen Ordner auf, auf die dieser virtuelle Maschine zugreifen kann. Verwenden Sie „net use x: \\vboxsvr\share“, um auf einen freigegebenen Ordner namens „share“ von einem DOS-ähnlichen Betriebssystem zuzugreifen, oder „mount -t vboxsf share mount_point“, um darauf von einem Linux-Betriebssystem zuzugreifen. Diese Funktion erfordert Gasterweiterungen.</translation>
     </message>
     <message>
         <source>At</source>
-        <translation type="unfinished">Nach</translation>
+        <translation>Nach</translation>
     </message>
     <message>
         <source>Auto Mount</source>
-        <translation type="unfinished">Automatisches Einbinden</translation>
+        <translation>Automatisches Einbinden</translation>
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished">Zugriff</translation>
+        <translation>Zugriff</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation type="unfinished">Pfad</translation>
+        <translation>Pfad</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished">Gemeinsamen Ordner hinzufügen</translation>
+        <translation>Gemeinsamen Ordner hinzufügen</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished">Fügt einen neuen Gemeinsamen Ordner hinzu.</translation>
+        <translation>Fügt einen neuen Gemeinsamen Ordner hinzu.</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished">Gemeinsamen Ordner ändern</translation>
+        <translation>Gemeinsamen Ordner ändern</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished">Ändert den ausgewählten Gemeinsamen Ordner.</translation>
+        <translation>Ändert den ausgewählten Gemeinsamen Ordner.</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished">Gemeinsamen Ordner löschen</translation>
+        <translation>Gemeinsamen Ordner löschen</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished">Entfernt den ausgewählten Gemeinsamen Ordner.</translation>
+        <translation>Entfernt den ausgewählten Gemeinsamen Ordner.</translation>
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation type="unfinished"> Ordner der virtuellen Maschine</translation>
+        <translation> Ordner der virtuellen Maschine</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="unfinished"> Transiente Ordner</translation>
+        <translation> Transiente Ordner</translation>
     </message>
 </context>
 <context>
     <name>UIShortcutConfigurationEditor</name>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation type="unfinished">&amp;VirtualBox-Manager</translation>
+        <translation>&amp;VirtualBox-Manager</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
-        <translation type="unfinished">Virtuelle &amp;Maschine</translation>
+        <translation>Virtuelle &amp;Maschine</translation>
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="unfinished">Zeigt alle konfigurierbaren Tastenkombinationen.</translation>
+        <translation>Zeigt alle konfigurierbaren Tastenkombinationen.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation type="unfinished">Erlaubt das Filtern der Liste.</translation>
+        <translation>Erlaubt das Filtern der Liste.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Shortcut</source>
-        <translation type="unfinished">Tastenkombination</translation>
+        <translation>Tastenkombination</translation>
     </message>
 </context>
 <context>
@@ -17543,11 +17543,11 @@ a guest session</source>
     <name>UISnapshotFolderEditor</name>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished">Ordner &amp;Sicherungspunkte:</translation>
+        <translation>Ordner &amp;Sicherungspunkte:</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished">Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
+        <translation>Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
     </message>
 </context>
 <context>
@@ -18073,19 +18073,19 @@ a guest session</source>
     </message>
     <message>
         <source>Power off</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausschalten</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>The file %1 has been deleted</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Datei %1 wurde gelöscht</translation>
     </message>
     <message>
         <source>Deleting the file %1 has failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Löschen der Datei %1 ist fehlgeschlagen</translation>
     </message>
 </context>
 <context>
@@ -18104,299 +18104,299 @@ a guest session</source>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished">Ändern der Statusleiste des VM-Fensters.</translation>
+        <translation>Ändern der Statusleiste des VM-Fensters.</translation>
     </message>
 </context>
 <context>
     <name>UIStorageSettingsEditor</name>
     <message>
         <source>Controller: %1</source>
-        <translation type="unfinished">Controller: %1</translation>
+        <translation>Controller: %1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Typ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Typ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Host Drive</source>
-        <translation type="unfinished">Hostlaufwerk</translation>
+        <translation>Hostlaufwerk</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">Datei</translation>
+        <translation>Datei</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Eintrag&amp;nbsp;auf-/zuklappen.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Eintrag&amp;nbsp;auf-/zuklappen.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Festplatte hinzufügen.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Festplatte hinzufügen.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Optisches&amp;nbsp;Laufwerk&amp;nbsp;hinzufügen.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Optisches&amp;nbsp;Laufwerk&amp;nbsp;hinzufügen.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Floppy-Laufwerk hinzufügen.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Floppy-Laufwerk hinzufügen.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Storage Devices</source>
-        <translation type="unfinished">&amp;Massenspeicher</translation>
+        <translation>&amp;Massenspeicher</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished">Informationen</translation>
+        <translation>Informationen</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished">Sie können mehrere Controller verschiedenen Typs anschließen. Momentan besitzt die virtuelle Maschine keinen Controller.</translation>
+        <translation>Sie können mehrere Controller verschiedenen Typs anschließen. Momentan besitzt die virtuelle Maschine keinen Controller.</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="unfinished">Attribute</translation>
+        <translation>Attribute</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Name:</translation>
+        <translation>&amp;Name:</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished">Ändert den Namen des aktuell ausgewählten Controllers.</translation>
+        <translation>Ändert den Namen des aktuell ausgewählten Controllers.</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">&amp;Typ:</translation>
+        <translation>&amp;Typ:</translation>
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished">Wählt den Subtyp des momentan ausgewählten Controllers aus.</translation>
+        <translation>Wählt den Subtyp des momentan ausgewählten Controllers aus.</translation>
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished">&amp;Anzahl Ports:</translation>
+        <translation>&amp;Anzahl Ports:</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">Setzt die Anzahl der Anschlüsse des SATA-Controllers. Dieser Wert kann nicht kleiner sein als der letzte benutzte Port plus 1.</translation>
+        <translation>Setzt die Anzahl der Anschlüsse des SATA-Controllers. Dieser Wert kann nicht kleiner sein als der letzte benutzte Port plus 1.</translation>
     </message>
     <message>
         <source>When checked, allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished">Benutze den Host-I/O-Cache.</translation>
+        <translation>Benutze den Host-I/O-Cache.</translation>
     </message>
     <message>
         <source>Use Host I/O Cache</source>
-        <translation type="unfinished">Host I/O-Cache verwenden</translation>
+        <translation>Host I/O-Cache verwenden</translation>
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished">Wählt den Slot des Controllers, der für diesen Anschluss benutzt wird. Anzahl und Art der verfügbaren Slots sind abhängig vom Typ des Controllers.</translation>
+        <translation>Wählt den Slot des Controllers, der für diesen Anschluss benutzt wird. Anzahl und Art der verfügbaren Slots sind abhängig vom Typ des Controllers.</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
+        <translation>Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translation type="unfinished">&amp;Passthrough</translation>
+        <translation>&amp;Passthrough</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished">Unterdrückt das Auswerfen des Mediums durch den Gast.</translation>
+        <translation>Unterdrückt das Auswerfen des Mediums durch den Gast.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished">&amp;Live-CD/DVD</translation>
+        <translation>&amp;Live-CD/DVD</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
-        <translation type="unfinished">Markiert das Medium als nicht rotierbaren Speicher (SSD).</translation>
+        <translation>Markiert das Medium als nicht rotierbaren Speicher (SSD).</translation>
     </message>
     <message>
         <source>&amp;Solid-state Drive</source>
-        <translation type="unfinished">&amp;SSD-Laufwerk</translation>
+        <translation>&amp;SSD-Laufwerk</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished">Markiert diese virtuelle Platte als hot-pluggable.</translation>
+        <translation>Markiert diese virtuelle Platte als hot-pluggable.</translation>
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished">&amp;Hotplug-fähig</translation>
+        <translation>&amp;Hotplug-fähig</translation>
     </message>
     <message>
         <source>Type (Format):</source>
-        <translation type="unfinished">Typ (Format):</translation>
+        <translation>Typ (Format):</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">Typ:</translation>
+        <translation>Typ:</translation>
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation type="unfinished">virtuelle Größe:</translation>
+        <translation>virtuelle Größe:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation type="unfinished">tatsächliche Größe:</translation>
+        <translation>tatsächliche Größe:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished">Größe:</translation>
+        <translation>Größe:</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished">abgespeichert wie:</translation>
+        <translation>abgespeichert wie:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ort:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">angeschlossen an:</translation>
+        <translation>angeschlossen an:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>mit Schlüssel verschlüsselt:</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished">Zeigt alle Controller für Massenspeicher dieser Maschine sowie die angeschlossenen Abbilder bzw. Host-Laufwerke.</translation>
+        <translation>Zeigt alle Controller für Massenspeicher dieser Maschine sowie die angeschlossenen Abbilder bzw. Host-Laufwerke.</translation>
     </message>
     <message>
         <source>Add Controller</source>
-        <translation type="unfinished">Controller hinzufügen</translation>
+        <translation>Controller hinzufügen</translation>
     </message>
     <message>
         <source>PIIX3 (IDE)</source>
-        <translation type="unfinished">PIIX3 (IDE)</translation>
+        <translation>PIIX3 (IDE)</translation>
     </message>
     <message>
         <source>PIIX4 (Default IDE)</source>
-        <translation type="unfinished">PIIX4 (Default IDE)</translation>
+        <translation>PIIX4 (Default IDE)</translation>
     </message>
     <message>
         <source>ICH6 (IDE)</source>
-        <translation type="unfinished">ICH6 (IDE)</translation>
+        <translation>ICH6 (IDE)</translation>
     </message>
     <message>
         <source>AHCI (SATA)</source>
-        <translation type="unfinished">AHCI (SATA)</translation>
+        <translation>AHCI (SATA)</translation>
     </message>
     <message>
         <source>LsiLogic (Default SCSI)</source>
-        <translation type="unfinished">LsiLogic (Default SCSI)</translation>
+        <translation>LsiLogic (Default SCSI)</translation>
     </message>
     <message>
         <source>BusLogic (SCSI)</source>
-        <translation type="unfinished">BusLogic (SCSI)</translation>
+        <translation>BusLogic (SCSI)</translation>
     </message>
     <message>
         <source>LsiLogic SAS (SAS)</source>
-        <translation type="unfinished">LsiLogic SAS (SAS)</translation>
+        <translation>LsiLogic SAS (SAS)</translation>
     </message>
     <message>
         <source>I82078 (Floppy)</source>
-        <translation type="unfinished">I82078 (Floppy)</translation>
+        <translation>I82078 (Floppy)</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>NVMe (PCIe)</source>
-        <translation type="unfinished">NVMe (PCIe)</translation>
+        <translation>NVMe (PCIe)</translation>
     </message>
     <message>
         <source>virtio-scsi</source>
-        <translation type="unfinished">virtio-scsi</translation>
+        <translation>virtio-scsi</translation>
     </message>
     <message>
         <source>Remove Controller</source>
-        <translation type="unfinished">Controller entfernen</translation>
+        <translation>Controller entfernen</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished">Anschluss hinzufügen</translation>
+        <translation>Anschluss hinzufügen</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Platte</translation>
+        <translation>Platte</translation>
     </message>
     <message>
         <source>Optical Drive</source>
-        <translation type="unfinished">Optisches Laufwerk</translation>
+        <translation>Optisches Laufwerk</translation>
     </message>
     <message>
         <source>Floppy Drive</source>
-        <translation type="unfinished">Diskettenlaufwerk</translation>
+        <translation>Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished">Anschluss entfernen</translation>
+        <translation>Anschluss entfernen</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished">Fügt einen neuen Controller für Massenspeicher hinzu.</translation>
+        <translation>Fügt einen neuen Controller für Massenspeicher hinzu.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished">Entfernt den ausgewählten Controller für Massenspeicher.</translation>
+        <translation>Entfernt den ausgewählten Controller für Massenspeicher.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished">Fügt ein neues Massenspeichergerät hinzu.</translation>
+        <translation>Fügt ein neues Massenspeichergerät hinzu.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished">Entfernt das ausgewählt Massenspeichergerät.</translation>
+        <translation>Entfernt das ausgewählt Massenspeichergerät.</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
-        <translation type="unfinished">&amp;Festplatte:</translation>
+        <translation>&amp;Festplatte:</translation>
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
-        <translation type="unfinished">Wählen Sie ein Festplattenabbild. Der Gast kann auf die Daten dieser Datei als virtuelle Festplatte zugreifen.</translation>
+        <translation>Wählen Sie ein Festplattenabbild. Der Gast kann auf die Daten dieser Datei als virtuelle Festplatte zugreifen.</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished">&amp;Optisches Laufwerk:</translation>
+        <translation>&amp;Optisches Laufwerk:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished">Wählen Sie ein Abbild eines optischen Mediums oder ein physisches Laufwerk am Host aus. Der Gast kann auf diese Daten als Medium im virtuellen Laufwerk zugreifen.</translation>
+        <translation>Wählen Sie ein Abbild eines optischen Mediums oder ein physisches Laufwerk am Host aus. Der Gast kann auf diese Daten als Medium im virtuellen Laufwerk zugreifen.</translation>
     </message>
     <message>
         <source>Floppy &amp;Drive:</source>
-        <translation type="unfinished">Disketten&amp;laufwerk:</translation>
+        <translation>Disketten&amp;laufwerk:</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished">Wählen Sie ein Diskettenabbild oder ein physisches Diskettenlaufwerk aus. Der Gast kann auf diese Daten als Medium im virtuellen Laufwerk zugreifen.</translation>
+        <translation>Wählen Sie ein Diskettenabbild oder ein physisches Diskettenlaufwerk aus. Der Gast kann auf diese Daten als Medium im virtuellen Laufwerk zugreifen.</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Hard Disk...</source>
-        <translation type="unfinished">Virtuelle Festplatte auswählen/erzeugen...</translation>
+        <translation>Virtuelle Festplatte auswählen/erzeugen...</translation>
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation type="unfinished">Abbild auswählen...</translation>
+        <translation>Abbild auswählen...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
-        <translation type="unfinished">Virtuelles optisches Medium auswählen/erzeugen...</translation>
+        <translation>Virtuelles optisches Medium auswählen/erzeugen...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="unfinished">Entfernt das virtuelle Medium aus dem Laufwerk</translation>
+        <translation>Entfernt das virtuelle Medium aus dem Laufwerk</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
-        <translation type="unfinished">Virtuelles Diskettenlaufwerk auswählen/erzeugen...</translation>
+        <translation>Virtuelles Diskettenlaufwerk auswählen/erzeugen...</translation>
     </message>
 </context>
 <context>
@@ -18426,55 +18426,55 @@ a guest session</source>
     </message>
     <message>
         <source>Holds the snapshot name</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Snapshot-Namen</translation>
     </message>
     <message>
         <source>Holds the snapshot description</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Snapshot-Beschreibung</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">Ok</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Take Snapshot and close the dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot erstellen und den Dialog schließen</translation>
     </message>
     <message>
         <source>Close dialog without taking a snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog schließen, ohne einen Snapshot zu machen</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Accept</source>
-        <translation type="unfinished"></translation>
+        <translation>Akzeptieren</translation>
     </message>
     <message>
         <source>Accept (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Akzeptieren (%1)</translation>
     </message>
     <message>
         <source>Cancel (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbrechen (%1)</translation>
     </message>
     <message>
         <source>Show Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Hilfe anzeigen (%1)</translation>
     </message>
 </context>
 <context>
@@ -18504,7 +18504,7 @@ a guest session</source>
     <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Erweitert die Seite „%1“</translation>
     </message>
 </context>
 <context>
@@ -18539,19 +18539,19 @@ a guest session</source>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Zusatzpakete</translation>
+        <translation>Zusatzpakete</translation>
     </message>
     <message>
         <source>Activities</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivitäten</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivität</translation>
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished">Dateimanager</translation>
+        <translation>Dateimanager</translation>
     </message>
 </context>
 <context>
@@ -18596,49 +18596,49 @@ a guest session</source>
     </message>
     <message>
         <source>Contains a list of VirtualBox tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält eine Liste von VirtualBox-Werkzeugen.</translation>
     </message>
 </context>
 <context>
     <name>UITranslator</name>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Jahr</numerusform>
             <numerusform>%n Jahre</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Monat</numerusform>
             <numerusform>%n Monate</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Tag</numerusform>
             <numerusform>%n Tage</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Stunde</numerusform>
             <numerusform>%n Stunden</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Minute</numerusform>
             <numerusform>%n Minuten</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n Sekunde</numerusform>
             <numerusform>%n Sekunden</numerusform>
         </translation>
@@ -18646,143 +18646,143 @@ a guest session</source>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="unfinished">B</translation>
+        <translation>B</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="unfinished">KB</translation>
+        <translation>KB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="unfinished">GB</translation>
+        <translation>GB</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="unfinished">TB</translation>
+        <translation>TB</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="unfinished">PB</translation>
+        <translation>PB</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation type="unfinished">benutzerdefiniert</translation>
+        <translation>benutzerdefiniert</translation>
     </message>
 </context>
 <context>
     <name>UIUSBControllerEditor</name>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="unfinished">USB-&amp;1.1-Controller (OHCI)</translation>
+        <translation>USB-&amp;1.1-Controller (OHCI)</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished">Wählt den virtuellen OHCI-Controller für USB-1.0-Unterstützung für diese virtuelle Maschine aus.</translation>
+        <translation>Wählt den virtuellen OHCI-Controller für USB-1.0-Unterstützung für diese virtuelle Maschine aus.</translation>
     </message>
     <message>
         <source>USB &amp;2.0 (OHCI + EHCI) Controller</source>
-        <translation type="unfinished">USB &amp;2.0 (OHCI + EHCI)-Kontroller</translation>
+        <translation>USB &amp;2.0 (OHCI + EHCI)-Kontroller</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI and EHCI controllers of this machine. Together they provide USB 2.0 support.</source>
-        <translation type="unfinished">Wenn ausgewählt, werden die virtuellen EHCI-/OHCI-Controller aktiviert. Diese bieten dann USB-2.0-Unterstützung für die virtuelle Maschine.</translation>
+        <translation>Wenn ausgewählt, werden die virtuellen EHCI-/OHCI-Controller aktiviert. Diese bieten dann USB-2.0-Unterstützung für die virtuelle Maschine.</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="unfinished">USB-&amp;3.0-Controller (xHCI)</translation>
+        <translation>USB-&amp;3.0-Controller (xHCI)</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished">Wählt den virtuellen xHCI-Controller für USB-3.0-Unterstützung für diese virtuelle Maschine aus.</translation>
+        <translation>Wählt den virtuellen xHCI-Controller für USB-3.0-Unterstützung für diese virtuelle Maschine aus.</translation>
     </message>
 </context>
 <context>
     <name>UIUSBFilterDetailsEditor</name>
     <message>
         <source>USB Filter Details</source>
-        <translation type="unfinished">Filter für USB-Geräte</translation>
+        <translation>Filter für USB-Geräte</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Name:</translation>
+        <translation>&amp;Name:</translation>
     </message>
     <message>
         <source>Holds the filter name.</source>
-        <translation type="unfinished">Zeigt den Namen des Filters.</translation>
+        <translation>Zeigt den Namen des Filters.</translation>
     </message>
     <message>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished">&amp;Hersteller-ID:</translation>
+        <translation>&amp;Hersteller-ID:</translation>
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished">Legt die Hersteller-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
+        <translation>Legt die Hersteller-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
     </message>
     <message>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished">&amp;Produkt-ID:</translation>
+        <translation>&amp;Produkt-ID:</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished">Legt die Produkt-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
+        <translation>Legt die Produkt-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
     </message>
     <message>
         <source>&amp;Revision:</source>
-        <translation type="unfinished">&amp;Revisions-Nr:</translation>
+        <translation>&amp;Revisions-Nr:</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished">Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;IIFF&lt;/tt&gt;, wobei &lt;tt&gt;I&lt;/tt&gt; dezimale Ziffern für den ganzzahligen Anteil und &lt;tt&gt;F&lt;/tt&gt; dezimale Ziffern für den Bruchteil darstellen. Eine leere Zeichenfolge passt auf beliebige Revisionsnummern.</translation>
+        <translation>Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;IIFF&lt;/tt&gt;, wobei &lt;tt&gt;I&lt;/tt&gt; dezimale Ziffern für den ganzzahligen Anteil und &lt;tt&gt;F&lt;/tt&gt; dezimale Ziffern für den Bruchteil darstellen. Eine leere Zeichenfolge passt auf beliebige Revisionsnummern.</translation>
     </message>
     <message>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished">&amp;Hersteller:</translation>
+        <translation>&amp;Hersteller:</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished">Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.</translation>
+        <translation>Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.</translation>
     </message>
     <message>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished">&amp;Produkt:</translation>
+        <translation>&amp;Produkt:</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished">Verwendet den Produktnamen als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Produktnamen.</translation>
+        <translation>Verwendet den Produktnamen als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Produktnamen.</translation>
     </message>
     <message>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished">&amp;Seriennr.:</translation>
+        <translation>&amp;Seriennr.:</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished">Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.</translation>
+        <translation>Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.</translation>
     </message>
     <message>
         <source>Por&amp;t:</source>
-        <translation type="unfinished">&amp;Port:</translation>
+        <translation>&amp;Port:</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished">Legt den USB-Port für den Filter fest mit &lt;i&gt;genauer&lt;/i&gt; Übereinstimmung fest. Eine leere Zeichenfolge passt auf beliebig Ports.</translation>
+        <translation>Legt den USB-Port für den Filter fest mit &lt;i&gt;genauer&lt;/i&gt; Übereinstimmung fest. Eine leere Zeichenfolge passt auf beliebig Ports.</translation>
     </message>
     <message>
         <source>R&amp;emote:</source>
-        <translation type="unfinished">&amp;Fernzugriff:</translation>
+        <translation>&amp;Fernzugriff:</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (No), to a VRDP client&apos;s computer (Yes), or both (Any).</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt fest, ob dieser Filter für USB-Geräte gilt, die lokal an den Hostcomputer angeschlossen sind (Nein), an den Computer eines VRDP-Clients (Ja) oder beides (Beliebig).</translation>
     </message>
 </context>
 <context>
@@ -18843,68 +18843,68 @@ a guest session</source>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Neuer Filter %1</translation>
+        <translation>Neuer Filter %1</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">&amp;Filter für USB-Geräte</translation>
+        <translation>&amp;Filter für USB-Geräte</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation type="unfinished">Zeigt alle USB-Filter dieser VM. Die Checkbox auf der linken Seite legt fest, ob ein Filter aktiviert ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Filter hinzuzufügen oder zu entfernen.</translation>
+        <translation>Zeigt alle USB-Filter dieser VM. Die Checkbox auf der linken Seite legt fest, ob ein Filter aktiviert ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Filter hinzuzufügen oder zu entfernen.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished">Leeren Filter hinzufügen</translation>
+        <translation>Leeren Filter hinzufügen</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Fügt einen neuen USB-Filter hinzu, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
+        <translation>Fügt einen neuen USB-Filter hinzu, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished">Filter von einem Gerät hinzufügen</translation>
+        <translation>Filter von einem Gerät hinzufügen</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">Fügt einen neuen USB-Filter hinzu und initialisiert alle Felder mit den Werten des ausgewählten Gerätes, das an den PC angeschlossen ist.</translation>
+        <translation>Fügt einen neuen USB-Filter hinzu und initialisiert alle Felder mit den Werten des ausgewählten Gerätes, das an den PC angeschlossen ist.</translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished">Filter ändern</translation>
+        <translation>Filter ändern</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished">Ändert den ausgewählten USB-Filter.</translation>
+        <translation>Ändert den ausgewählten USB-Filter.</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished">Filter entfernen</translation>
+        <translation>Filter entfernen</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished">Entfernt den ausgewählten USB-Filter.</translation>
+        <translation>Entfernt den ausgewählten USB-Filter.</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished">Bewege Filter nach oben</translation>
+        <translation>Bewege Filter nach oben</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished">Bewegt den ausgewählten USB-Filter nach oben.</translation>
+        <translation>Bewegt den ausgewählten USB-Filter nach oben.</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished">Bewege Filter nach unten</translation>
+        <translation>Bewege Filter nach unten</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished">Bewegt den ausgewählten USB-Filter nach unten.</translation>
+        <translation>Bewegt den ausgewählten USB-Filter nach unten.</translation>
     </message>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, aktiv</translation>
+        <translation>%1, aktiv</translation>
     </message>
 </context>
 <context>
@@ -18912,23 +18912,23 @@ a guest session</source>
     <message>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
-        <translation type="unfinished">&lt;keine Geräte verfügbar&gt;</translation>
+        <translation>&lt;keine Geräte verfügbar&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">Keine unterstützten Geräte mit dem PC verbunden</translation>
+        <translation>Keine unterstützten Geräte mit dem PC verbunden</translation>
     </message>
 </context>
 <context>
     <name>UIUSBSettingsEditor</name>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">&amp;USB-Controller aktivieren</translation>
+        <translation>&amp;USB-Controller aktivieren</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">Aktiviert den virtuellen USB-Controller für diese Maschine.</translation>
+        <translation>Aktiviert den virtuellen USB-Controller für diese Maschine.</translation>
     </message>
 </context>
 <context>
@@ -18982,59 +18982,59 @@ a guest session</source>
     <name>UIUpdateSettingsEditor</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished">Durch Aktivierung erlauben Sie eine periodische Abfrage der VirtualBox-Webseite nach einer neuen Version von VirtualBox.</translation>
+        <translation>Wenn aktiviert, wird periodisch nach einer neuen Version von VirtualBox auf der VirtualBox-Website gesucht.</translation>
     </message>
     <message>
         <source>&amp;Check for Updates</source>
-        <translation type="unfinished">Nach &amp;Updates suchen</translation>
+        <translation>Nach &amp;Updates suchen</translation>
     </message>
     <message>
         <source>&amp;Once per:</source>
-        <translation type="unfinished">&amp;Einmal pro:</translation>
+        <translation>&amp;Einmal pro:</translation>
     </message>
     <message>
         <source>Selects how often the new version check should be performed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt aus, wie oft die neue Versionsprüfung durchgeführt werden soll.</translation>
     </message>
     <message>
         <source>Next Check:</source>
-        <translation type="unfinished">Nächste Überprüfung:</translation>
+        <translation>Nächste Überprüfung:</translation>
     </message>
     <message>
         <source>Check for:</source>
-        <translation type="unfinished">Überprüfen auf:</translation>
+        <translation>Überprüfen auf:</translation>
     </message>
     <message>
         <source>&amp;Stable Release Versions</source>
-        <translation type="unfinished">&amp;Stabile Versionen</translation>
+        <translation>&amp;Stabile Versionen</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about stable updates to VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird über stabile Updates für VirtualBox benachrichtigt.</translation>
     </message>
     <message>
         <source>&amp;All New Releases</source>
-        <translation type="unfinished">&amp;Alle neuen Versionen</translation>
+        <translation>&amp;Alle neuen Versionen</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird über alle Updates für VirtualBox benachrichtigt.</translation>
     </message>
     <message>
         <source>All New Releases and &amp;Pre-Releases</source>
-        <translation type="unfinished">Alle Versionen inkl. &amp;Vorab-Versionen</translation>
+        <translation>Alle Versionen inkl. &amp;Vorab-Versionen</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases and pre-release versions of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird über stabile Updates und Vorabversionen für VirtualBox benachrichtigt.</translation>
     </message>
     <message>
         <source>All New Releases, &amp;Pre-Releases and Testing Builds</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle stabilen Versionen, &amp;Vorabversionen und Testversionen</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases, pre-release versions and testing builds of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird über alle neuen VirtualBox-Versionen, Vorabversionen und Test-Builds von VirtualBox benachrichtigt.</translation>
     </message>
 </context>
 <context>
@@ -19048,134 +19048,134 @@ a guest session</source>
     <name>UIUserNamePasswordEditor</name>
     <message>
         <source>Invalid username</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Benutzername</translation>
     </message>
     <message>
         <source>Pass&amp;word</source>
-        <translation type="unfinished"></translation>
+        <translation>Pass&amp;wort</translation>
     </message>
     <message>
         <source>&amp;Repeat Password</source>
-        <translation type="unfinished"></translation>
+        <translation>Passwort &amp;wiederholen</translation>
     </message>
     <message>
         <source>U&amp;sername</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Benutzername</translation>
     </message>
     <message>
         <source>Holds username.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Benutzernamen.</translation>
     </message>
     <message>
         <source>Holds password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält das Passwort.</translation>
     </message>
     <message>
         <source>Holds the repeated password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält das wiederholte Passwort.</translation>
     </message>
     <message>
         <source>Invalid password pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiges Passwortpaar</translation>
     </message>
 </context>
 <context>
     <name>UIVMActivityOverviewWidget</name>
     <message>
         <source>Used</source>
-        <translation type="unfinished">Benutzt</translation>
+        <translation>Benutzt</translation>
     </message>
     <message>
         <source>Host CPU Load</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-CPU-Last</translation>
     </message>
     <message>
         <source>User</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzer</translation>
     </message>
     <message>
         <source>Kernel</source>
-        <translation type="unfinished"></translation>
+        <translation>Kernel</translation>
     </message>
     <message>
         <source>Total</source>
-        <translation type="unfinished">Insgesamt</translation>
+        <translation>Insgesamt</translation>
     </message>
     <message>
         <source>Host RAM Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-RAM-Nutzung</translation>
     </message>
     <message>
         <source>Free</source>
-        <translation type="unfinished">Frei</translation>
+        <translation>Frei</translation>
     </message>
     <message>
         <source>Host File System</source>
-        <translation type="unfinished">Host-Dateisystem</translation>
+        <translation>Host-Dateisystem</translation>
     </message>
     <message>
         <source>N/A</source>
-        <translation type="unfinished"></translation>
+        <translation>Nicht verfügbar</translation>
     </message>
     <message>
         <source>VM Name</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>CPU Guest</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU-Gast</translation>
     </message>
     <message>
         <source>CPU VMM</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>RAM Used/Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwendeter RAM/Gesamt</translation>
     </message>
     <message>
         <source>RAM %</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Network Up Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Upload-Rate</translation>
     </message>
     <message>
         <source>Network Down Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Download-Rate</translation>
     </message>
     <message>
         <source>Network Up Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Upload insgesamt</translation>
     </message>
     <message>
         <source>Network Down Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Download insgesamt</translation>
     </message>
     <message>
         <source>Disk Read Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Platten Lese-Durchsatz</translation>
     </message>
     <message>
         <source>Disk Write Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>Platten Schreib-Durchsatz</translation>
     </message>
     <message>
         <source>Disk Read Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Platte insgesamt gelesen</translation>
     </message>
     <message>
         <source>Disk Write Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Platte insgesamt geschrieben</translation>
     </message>
     <message>
         <source>VM Exits</source>
-        <translation type="unfinished">VM-Exits</translation>
+        <translation>VM-Exits</translation>
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle virtuellen Maschinen auflisten</translation>
     </message>
 </context>
 <context>
@@ -19600,51 +19600,51 @@ a guest session</source>
     </message>
     <message>
         <source>Copy All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles kopieren</translation>
     </message>
     <message>
         <source>VM &amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-&amp;Aktivitäten</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Schließen</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">Dialog schließen, ohne die Änderungen zu sichern</translation>
+        <translation>Dialog schließen, ohne die Änderungen zu sichern</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Close this dialog (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog schließen (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>This metric requires guest additions to work.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Metrik erfordert die Gasterweiterungen, um zu funktionieren.</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished">Exportieren</translation>
+        <translation>Exportieren</translation>
     </message>
     <message>
         <source>Sec.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sek.</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivitätsdaten der Maschine „%1“ exportieren</translation>
     </message>
 </context>
 <context>
@@ -19904,97 +19904,97 @@ a guest session</source>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hilfe</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog schließen</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Dialoghilfe an</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">Fenster schließen (%1)</translation>
+        <translation>Fenster schließen (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Hilfe an (%1)</translation>
     </message>
     <message>
         <source>Close this machine&apos;s logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließt das Log dieser Maschine</translation>
     </message>
     <message>
         <source>Select machines to show their log</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinen auswählen, die ihr Log anzeigen sollen</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Keine Logs für die Maschine %1 gefunden. Klicken Sie auf die Schaltfläche &lt;b&gt;Neu laden&lt;/b&gt;, um den Log-Ordner &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt; neu zu laden</translation>
     </message>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation type="unfinished">%1 - Log-Anzeige</translation>
+        <translation>%1 - Log-Anzeige</translation>
     </message>
 </context>
 <context>
     <name>UIVRDEAuthLibraryEditor</name>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished">V&amp;RDP-Authentisierungsbibliothek:</translation>
+        <translation>V&amp;RDP-Authentisierungsbibliothek:</translation>
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP).</translation>
+        <translation>Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP).</translation>
     </message>
 </context>
 <context>
     <name>UIVRDESettingsEditor</name>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Server &amp;aktivieren</translation>
+        <translation>Server &amp;aktivieren</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol), über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
+        <translation>Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol), über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished">&amp;Serverport:</translation>
+        <translation>&amp;Serverport:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify 0 (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Portnummer des VRDP-Servers. Sie können 0 (Null) angeben, um Port 3389 auszuwählen, den Standardport für RDP.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">Authentisierungs&amp;methode:</translation>
+        <translation>Authentisierungs&amp;methode:</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished">Festlegen der VRDP Authentisierungsmethode.</translation>
+        <translation>Festlegen der VRDP Authentisierungsmethode.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">&amp;Zeitüberschreitung für Authentisierung:</translation>
+        <translation>&amp;Zeitüberschreitung für Authentisierung:</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">Legt die maximale Zeit für die Anmeldung des Gastes in Millisekunden fest.</translation>
+        <translation>Legt die maximale Zeit für die Anmeldung des Gastes in Millisekunden fest.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Erweitert:</translation>
+        <translation>Erweitert:</translation>
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation type="unfinished">&amp;Gleichzeitige Verbindungen erlauben</translation>
+        <translation>&amp;Gleichzeitige Verbindungen erlauben</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished">Legt fest, ob mehrere gleichzeitige Verbindungen zur VM erlaubt sind.</translation>
+        <translation>Legt fest, ob mehrere gleichzeitige Verbindungen zur VM erlaubt sind.</translation>
     </message>
 </context>
 <context>
@@ -20013,15 +20013,15 @@ a guest session</source>
     </message>
     <message>
         <source>Holds the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Größe des Videospeichers, die der virtuellen Maschine zur Verfügung gestellt wird.</translation>
     </message>
     <message>
         <source>Minimum possible video memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimal mögliche Größe des Videospeichers.</translation>
     </message>
     <message>
         <source>Maximum possible video memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal mögliche Größe des Videospeichers.</translation>
     </message>
 </context>
 <context>
@@ -20059,29 +20059,29 @@ a guest session</source>
     <name>UIVirtualCPUEditor</name>
     <message>
         <source>&amp;Processors:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prozessoren:</translation>
     </message>
     <message>
         <source>Holds the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält die Anzahl der virtuellen CPUs in der virtuellen Maschine. Sie benötigen Hardware-Virtualisierungsunterstützung auf Ihrem Hostsystem, um mehr als eine virtuelle CPU zu verwenden.</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished">%1 CPU</translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>Minimum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimal mögliche virtuelle CPU-Anzahl.</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished">%1 CPUs</translation>
+        <translation>%1 CPUs</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximal mögliche virtuelle CPU-Anzahl.</translation>
     </message>
 </context>
 <context>
@@ -20105,12 +20105,12 @@ a guest session</source>
     <name>UIVirtualMachineItemCloud</name>
     <message>
         <source>Loading ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Wird geladen ...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Inaccessible&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name)</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Nicht zugreifbar&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Inaccessible</source>
@@ -20118,12 +20118,12 @@ a guest session</source>
     </message>
     <message>
         <source>Empty</source>
-        <translation type="unfinished">leer</translation>
+        <translation>leer</translation>
     </message>
     <message>
         <source>Inaccessible</source>
         <comment>VM</comment>
-        <translation type="unfinished">Nicht zugreifbar</translation>
+        <translation>Nicht zugreifbar</translation>
     </message>
 </context>
 <context>
@@ -20131,16 +20131,16 @@ a guest session</source>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sitzung %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sitzung %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">Nicht zugreifbar</translation>
+        <translation>Nicht zugreifbar</translation>
     </message>
 </context>
 <context>
@@ -20277,102 +20277,102 @@ a guest session</source>
     <name>UIVisoCreatorWidget</name>
     <message>
         <source>Click to show/hide the tree view.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klicken Sie hier, um die Baumansicht anzuzeigen/auszublenden.</translation>
     </message>
     <message>
         <source>Shows the current location.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den aktuellen Ort an.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">Größe</translation>
+        <translation>Größe</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">Änderungsdatum</translation>
+        <translation>Änderungsdatum</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">Eigentümer</translation>
+        <translation>Eigentümer</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">Zugriffsrechte</translation>
+        <translation>Zugriffsrechte</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">Lokaler Pfad</translation>
+        <translation>Lokaler Pfad</translation>
     </message>
     <message>
         <source>ISO Path</source>
-        <translation type="unfinished">ISO-Pfad</translation>
+        <translation>ISO-Pfad</translation>
     </message>
     <message>
         <source>Host File System</source>
-        <translation type="unfinished">Host-Dateisystem</translation>
+        <translation>Host-Dateisystem</translation>
     </message>
     <message>
         <source>VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO Inhalt</translation>
     </message>
     <message>
         <source>C&amp;reate</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;rzeugen</translation>
     </message>
     <message>
         <source>Creates VISO file with the selected content</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstellt eine VISO-Datei mit dem ausgewählten Inhalt</translation>
     </message>
     <message>
         <source>Opens the help browser and navigates to the related section</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Hilfe-Ansicht und navigiert zum entsprechenden Abschnitt</translation>
     </message>
     <message>
         <source>VISO Name:</source>
-        <translation type="unfinished">VISO Name:</translation>
+        <translation>VISO Name:</translation>
     </message>
     <message>
         <source>Custom VISO options:</source>
-        <translation type="unfinished">Benutzerdefinierte VISO-Optionen:</translation>
+        <translation>Benutzerdefinierte VISO-Optionen:</translation>
     </message>
     <message>
         <source>Remove current option.</source>
-        <translation type="unfinished">Aktuelle Option entfernen.</translation>
+        <translation>Aktuelle Option entfernen.</translation>
     </message>
     <message>
         <source>Holds the name of the VISO medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Namen des VISO-Mediums.</translation>
     </message>
     <message>
         <source>Holds options for VISO creation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält Optionen für die VISO-Erstellung.</translation>
     </message>
     <message>
         <source>Show Hidden Objects</source>
-        <translation type="unfinished">Zeigt versteckte Objekte an</translation>
+        <translation>Zeigt versteckte Objekte an</translation>
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn diese Option aktiviert ist, werden mehrere versteckte Objekte im Dateibrowser angezeigt</translation>
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO erstellen</translation>
+        <translation>VISO erstellen</translation>
     </message>
 </context>
 <context>
     <name>UIVisualStateEditor</name>
     <message>
         <source>Visual &amp;State:</source>
-        <translation type="unfinished"></translation>
+        <translation>Visueller &amp;status:</translation>
     </message>
     <message>
         <source>Selects the visual state. If machine is running it will be applied as soon as possible, otherwise desired one will be defined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt den visuellen Zustand aus. Wenn die Maschine läuft, wird es so schnell wie möglich angewendet, andernfalls wird gewünschtes definiert.</translation>
     </message>
 </context>
 <context>
@@ -20405,47 +20405,47 @@ a guest session</source>
     <name>UIWizardAddCloudVM</name>
     <message>
         <source>Add Cloud Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-VM hinzufügen</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation type="unfinished">Ort</translation>
+        <translation>Ort</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="unfinished">Quelle</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profilmanager öffnen...</translation>
     </message>
     <message>
         <source>Add VM from cloud service provider.</source>
-        <translation type="unfinished"></translation>
+        <translation>VM vom Clouddienstanbieter hinzufügen.</translation>
     </message>
     <message>
         <source>Source to add from</source>
-        <translation type="unfinished"></translation>
+        <translation>Quelle, von der hinzugefügt werden soll</translation>
     </message>
     <message>
         <source>Please choose the source to add cloud virtual machine from.  This can be one of known cloud service providers below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie die Quelle aus, aus der die virtuelle Cloud-Maschine hinzugefügt werden soll. Dies kann einer der unten aufgeführten bekannten Cloud-Dienstanbieter sein.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;Quelle:</translation>
+        <translation>&amp;Quelle:</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Profil:</translation>
     </message>
     <message>
         <source>&amp;Instances:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Instanzen:</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eines der Cloud-Dienstprofile aus, die Sie registriert haben, um eine virtuelle Maschine hinzuzufügen. Die vorhandene Instanzliste wird aktualisiert. Um fortzufahren, wählen Sie mindestens eine Instanz aus, um darauf basierend eine virtuelle Maschine hinzuzufügen.</translation>
     </message>
 </context>
 <context>
@@ -20618,27 +20618,27 @@ a guest session</source>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle Festplatte kopieren</translation>
     </message>
     <message>
         <source>Virtual Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateityp der virtuellen Festplatte</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the destination virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie den Dateityp aus, den Sie für das Image des virtuellen Ziellaufwerks verwenden möchten. Wenn Sie dieses nicht mit anderer Virtualisierungssoftware verwenden müssen, können Sie diese Einstellung unverändert lassen.</translation>
     </message>
     <message>
         <source>Location and size of the disk image</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicherort und Größe des Disk-Images</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei&amp;typ und Variante der Festplatte</translation>
     </message>
     <message>
         <source>copy</source>
-        <translation type="unfinished"></translation>
+        <translation>kopieren</translation>
     </message>
 </context>
 <context>
@@ -20813,67 +20813,67 @@ a guest session</source>
     </message>
     <message>
         <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonname darf nicht leer sein</translation>
     </message>
     <message>
         <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Pfad ist ungültig</translation>
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Klonname ist nicht eindeutig</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Name:</translation>
+        <translation>&amp;Name:</translation>
     </message>
     <message>
         <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pfad:</translation>
     </message>
     <message>
         <source>Holds a name for the new virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält einen Namen für die neue virtuelle Maschine.</translation>
     </message>
     <message>
         <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gibt den Speicherort der neuen virtuellen Maschine auf dem Hosts an.</translation>
     </message>
     <message>
         <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC-Adressen-&amp;Richtlinie:</translation>
     </message>
     <message>
         <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die MAC-Adressen-Richtlinie für das Klonen fest:</translation>
     </message>
     <message>
         <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation>Hard&amp;ware-UUIDs beibehalten</translation>
     </message>
     <message>
         <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, werden auch alle virtuellen Laufwerke der Quell-VM geklont.</translation>
     </message>
     <message>
         <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt ist, spart die geklonte VM Speicherplatz, indem sie die Festplatten-Images der Quell-VM teilt.</translation>
     </message>
     <message>
         <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt ist, wird nur der aktuelle Zustand der Quell-VM geklont.</translation>
     </message>
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt ist, werden auch alle gespeicherten Zustände der Quell-VM geklont.</translation>
     </message>
     <message>
         <source>When checked, disk names will be preserved during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt ist, werden die Laufwerksnamen während des Klonens beibehalten.</translation>
     </message>
     <message>
         <source>When checked, hardware UUIDs will be preserved during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt ist, werden Hardware-UUIDs während des Klonens beibehalten.</translation>
     </message>
 </context>
 <context>
@@ -21168,47 +21168,47 @@ a guest session</source>
     </message>
     <message>
         <source>Virtual &amp;machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle &amp;Maschinen</translation>
     </message>
     <message>
         <source>Format &amp;settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Format-&amp;Einstellungen</translation>
     </message>
     <message>
         <source>&amp;Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Appliance-Einstellungen</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Profil:</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profilmanager öffnen...</translation>
     </message>
     <message>
         <source>Do not ask me about it, leave custom &amp;image for future usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Nicht danach fragen, das benutzerdefinierte &amp;Image für die zukünftige Verwendung behalten</translation>
     </message>
     <message>
         <source>Holds the path of the file selected for export.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Pfad der für den Export ausgewählten Datei.</translation>
     </message>
     <message>
         <source>Format settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Formateinstellungen</translation>
     </message>
     <message>
         <source>Virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle Maschinen</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eines der Cloud-Service-Profile aus, die Sie registriert haben, um virtuelle Maschinen zu exportieren. Es wird verwendet, um eine Netzwerkverbindung herzustellen, die zum Hochladen das Daten der virtuellen Maschine in eine Remote-Cloud-Einrichtung erforderlich ist.</translation>
     </message>
     <message>
         <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie einen Dateinamen aus, in den die virtuelle Appliance exportiert werden soll. Außerdem können Sie eine Reihe von Optionen festlegen, die die Größe und den Inhalt des resultierenden Archivs beeinflussen.</translation>
     </message>
 </context>
 <context>
@@ -21424,67 +21424,67 @@ a guest session</source>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profilmanager öffnen...</translation>
     </message>
     <message>
         <source>Holds the path of the file selected for import.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Pfad der für den Import ausgewählten Datei.</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">MAC-Adressen aller Netzwerkadapter mit einbeziehen</translation>
+        <translation>MAC-Adressen aller Netzwerkadapter mit einbeziehen</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished">Die MAC-Adressen aller Netzwerkadapter während des Importierens mit einbeziehen.</translation>
+        <translation>Die MAC-Adressen aller Netzwerkadapter während des Importierens mit einbeziehen.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">Nur MAC-Adressen der NAT-Netzwerk-Adapter mit einbeziehen</translation>
+        <translation>Nur MAC-Adressen der NAT-Netzwerk-Adapter mit einbeziehen</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished">Während des Importierens nur MAC-Adressen der NAT-Netzwerk-Adapater mit einbeziehen.</translation>
+        <translation>Während des Importierens nur MAC-Adressen der NAT-Netzwerk-Adapater mit einbeziehen.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">Neue MAC-Adressen für alle Netzwerkadapter generieren</translation>
+        <translation>Neue MAC-Adressen für alle Netzwerkadapter generieren</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished">Während des Importierens neue MAC-Adressen für alle Netzwerk-Adapater generieren.</translation>
+        <translation>Während des Importierens neue MAC-Adressen für alle Netzwerk-Adapater generieren.</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;rofil:</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">Basisordner der virtuellen &amp;Maschine:</translation>
+        <translation>Basisordner der virtuellen &amp;Maschine:</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC-Adressen-&amp;Richtlinie:</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">Zusätzliche Optionen:</translation>
+        <translation>Zusätzliche Optionen:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">Festplatten als VD&amp;I importieren</translation>
+        <translation>Festplatten als VD&amp;I importieren</translation>
     </message>
     <message>
         <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="unfinished">Wenn ausgewählt, werden alle Festplatten dieser Appliance im VDI-Format importiert.</translation>
+        <translation>Wenn ausgewählt, werden alle Festplatten dieser Appliance im VDI-Format importiert.</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eines der Cloud-Service-Profile aus, von denen Sie sich registriert haben, um virtuelle Maschinen zu importieren. Die entsprechende Maschinenliste wird aktualisiert. Um fortzufahren, wählen Sie unten eine der zu importierenden Maschinen aus.</translation>
     </message>
     <message>
         <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eine Datei aus, aus der die virtuelle Appliance importiert werden soll. VirtualBox unterstützt derzeit den Import von Appliances, die im Open Virtualization Format (OVF) gespeichert sind. Um fortzufahren, wählen Sie unten die zu importierende Datei aus.</translation>
     </message>
 </context>
 <context>
@@ -21600,47 +21600,47 @@ a guest session</source>
     </message>
     <message>
         <source>Location</source>
-        <translation type="unfinished">Ort</translation>
+        <translation>Ort</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="unfinished">Quelle</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>&amp;Images</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Abbilder</translation>
     </message>
     <message>
         <source>&amp;Boot Volumes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Boot Volumen</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Profilmanager öffnen...</translation>
     </message>
     <message>
         <source>Location to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Ort, der erstellt werden soll</translation>
     </message>
     <message>
         <source>Please choose the location to create cloud virtual machine in.  This can be one of known cloud service providers below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie den Ort aus, an dem die virtuelle Cloud-Maschine erstellt werden soll. Dies kann einer der unten aufgeführten bekannten Cloud-Dienstanbieter sein.</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished">&amp;Ort:</translation>
+        <translation>&amp;Ort:</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Profil:</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;Quelle:</translation>
+        <translation>&amp;Quelle:</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eines der Cloud-Dienstprofile aus, für die Sie sich registriert haben, um eine virtuelle Maschine zu erstellen. Die vorhandene Image-Liste wird aktualisiert. Um fortzufahren, wählen Sie eines der Images aus, um darauf basierend eine virtuelle Maschine zu erstellen.</translation>
     </message>
 </context>
 <context>
@@ -21730,11 +21730,11 @@ a guest session</source>
     </message>
     <message>
         <source>Virtual Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateityp der virtuellen Festplatte</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei&amp;typ und Variante der Festplatte</translation>
     </message>
 </context>
 <context>
@@ -21805,303 +21805,303 @@ a guest session</source>
     </message>
     <message>
         <source>Username and Password</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzername und Passwort</translation>
     </message>
     <message>
         <source>Selects an installation medium (ISO file) for the Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt ein Installationsmedium (ISO-Datei) für die Gasterweiterungen aus.</translation>
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Gast&amp;erweiterungen</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusätzliche Optionen</translation>
     </message>
     <message>
         <source>&amp;Product Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Produktschlüssel:</translation>
     </message>
     <message>
         <source>&amp;Install in Background</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Im Hintergrund installieren</translation>
     </message>
     <message>
         <source>&amp;Enable EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;EFI aktivieren (nur spezielle Gäste)</translation>
     </message>
     <message>
         <source>Virtual machine Name and Operating System</source>
-        <translation type="unfinished"></translation>
+        <translation>Name und Betriebssystem der virtuellen Maschine</translation>
     </message>
     <message>
         <source>Please choose a descriptive name and destination folder for the new virtual machine. The name you choose will be used throughout VirtualBox to identify this machine. Additionally, you can select an ISO image which may be used to install the guest operating system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie einen aussagekräftigen Namen und einen Zielordner für die neue virtuelle Maschine. Der von Ihnen gewählte Name wird in VirtualBox verwendet, um diese Maschine zu identifizieren. Außerdem können Sie ein ISO-Image auswählen, das zum Installieren des Gastbetriebssystems verwendet werden kann.</translation>
     </message>
     <message>
         <source>&amp;Skip Unattended Installation</source>
-        <translation type="unfinished"></translation>
+        <translation>Unbeaufsichtigte Installation über&amp;springen</translation>
     </message>
     <message>
         <source>When checked, the unattended install is disabled and the selected ISO is mounted on the vm.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird die unbeaufsichtigte Installation deaktiviert und das ausgewählte ISO in der VM eingebunden.</translation>
     </message>
     <message>
         <source>No ISO image is selected, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es ist kein ISO-Image ausgewählt, das Gastbetriebssystem muss manuell installiert werden.</translation>
     </message>
     <message>
         <source>OS type cannot be determined from the selected ISO, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Betriebssystemtyp kann nicht anhand des ausgewählten ISO bestimmt werden, das Gastbetriebssystem muss manuell installiert werden.</translation>
     </message>
     <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dieser Betriebssystemtyp kann nicht unbeaufsichtigt installiert werden. Die Installation muss manuell gestartet werden.</translation>
     </message>
     <message>
         <source>You have selected to skip unattended guest OS install, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie haben ausgewählt, die unbeaufsichtigte Installation des Gastbetriebssystems zu überspringen, das Gastbetriebssystem muss manuell installiert werden.</translation>
     </message>
     <message>
         <source>This OS type can be installed unattendedly. The install will start after this wizard is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dieser Betriebssystemtyp kann unbeaufsichtigt installiert werden. Die Installation beginnt, nachdem dieser Assistent geschlossen wurde.</translation>
     </message>
     <message>
         <source>Invalid file path or unreadable file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Dateipfad oder nicht lesbare Datei</translation>
     </message>
     <message>
         <source>Unattended Guest OS Install Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Einrichtung der unbeaufsichtigten Installation des Gastbetriebssystems</translation>
     </message>
     <message>
         <source>Hardware</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardware</translation>
     </message>
     <message>
         <source>Virtual Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle Festplatte</translation>
     </message>
     <message>
         <source>&amp;Do Not Add a Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Keine Festplatte hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Create a Virtual Hard Disk Now</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Jetzt eine virtuelle Festplatte erstellen</translation>
     </message>
     <message>
         <source>U&amp;se an Existing Virtual Hard Disk File</source>
-        <translation type="unfinished"></translation>
+        <translation>Eine &amp;vorhandene virtuelle Festplattendatei verwenden</translation>
     </message>
     <message>
         <source>Chooses a Virtual Hard Fisk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt eine virtuelle Festplattendatei...</translation>
     </message>
     <message>
         <source>D&amp;isk Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Platten-&amp;Größe:</translation>
     </message>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Volle Größe erzeugen</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird dem Image der virtuellen Festplatte während der VM-Erstellung die volle Größe zugewiesen</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished">Bitte wählen Sie, ob die neue virtuelle Festplatte erst nach und nach zur Laufzeit (dynamisch) alloziert werden soll oder ob die Platte jetzt sofort vollständig alloziert werden soll (feste Größe).</translation>
+        <translation>Bitte wählen Sie, ob die neue virtuelle Festplatte erst nach und nach zur Laufzeit (dynamisch) alloziert werden soll oder ob die Platte jetzt sofort vollständig alloziert werden soll (feste Größe).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Eine &lt;b&gt;dynamisch allozierte&lt;/b&gt; Datei einer virtuellen Platte belegt nur dann Platz auf der physischen Platte des Hosts, wenn der Gast Daten schreibt. Einmal belegter Platz wird nicht automatisch freigegeben.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Eine &lt;b&gt;dynamisch allozierte&lt;/b&gt; Datei einer virtuellen Platte belegt nur dann Platz auf der physischen Platte des Hosts, wenn der Gast Daten schreibt. Einmal belegter Platz wird nicht automatisch freigegeben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Das Erzeugen einer Datei &lt;b&gt;fester Größe&lt;/b&gt; dauert auf manchen Systemen länger aber bietet eine etwas bessere Performance.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das Erzeugen einer Datei &lt;b&gt;fester Größe&lt;/b&gt; dauert auf manchen Systemen länger aber bietet eine etwas bessere Performance.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Name and &amp;Operating System</source>
-        <translation type="unfinished"></translation>
+        <translation>Name und &amp;Betriebssystem</translation>
     </message>
     <message>
         <source>&amp;Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Unbeaufsichtigte Installation</translation>
     </message>
     <message>
         <source>Hard Dis&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>Festpla&amp;tte</translation>
     </message>
     <message>
         <source>H&amp;ardware</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;ardware</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei&amp;typ und Variante der Festplatte</translation>
     </message>
     <message>
         <source>Invalid path or unreadable ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Pfad oder nicht lesbare ISO-Datei</translation>
     </message>
     <message>
         <source>Invalid username and/or password</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Benutzername und/oder Passwort</translation>
     </message>
     <message>
         <source>Invalid hostname or domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Hostname oder Domänenname</translation>
     </message>
     <message>
         <source>Virtual machine name is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Name der virtuellen Maschine ist ungültig</translation>
     </message>
     <message>
         <source>Invalid ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige ISO-Datei</translation>
     </message>
     <message>
         <source>No valid disk is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein gültiger Datenträger ausgewählt</translation>
     </message>
     <message>
         <source>Invalid disk size</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige Festplattengröße</translation>
     </message>
     <message>
         <source>Machine Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenname und Betriebssystemtyp</translation>
     </message>
     <message>
         <source>Machine Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenname</translation>
     </message>
     <message>
         <source>Machine Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Maschinenordner</translation>
     </message>
     <message>
         <source>ISO Image</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO Image</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Gast-Betriebssystem</translation>
+        <translation>Gast-Betriebssystem</translation>
     </message>
     <message>
         <source>Skip Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Unbeaufsichtigte Installation überspringen</translation>
     </message>
     <message>
         <source>Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Unbeaufsichtigte Installation</translation>
     </message>
     <message>
         <source>Username</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzername</translation>
     </message>
     <message>
         <source>Product Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Produktschlüssel</translation>
     </message>
     <message>
         <source>Hostname/Domain Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostname/Domänenname</translation>
     </message>
     <message>
         <source>Install in Background</source>
-        <translation type="unfinished"></translation>
+        <translation>Im Hintergrund installieren</translation>
     </message>
     <message>
         <source>Install Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Gasterweiterungen installieren</translation>
     </message>
     <message>
         <source>Guest Additions ISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Gasterweiterungen ISO</translation>
     </message>
     <message>
         <source>Base Memory</source>
-        <translation type="unfinished">Hauptspeicher</translation>
+        <translation>Hauptspeicher</translation>
     </message>
     <message>
         <source>Processor(s)</source>
-        <translation type="unfinished">Prozessor(en)</translation>
+        <translation>Prozessor(en)</translation>
     </message>
     <message>
         <source>EFI Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>EFI aktivieren</translation>
     </message>
     <message>
         <source>Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Platte</translation>
     </message>
     <message>
         <source>Disk Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Platten-Größe</translation>
     </message>
     <message>
         <source>Pre-allocate Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Volle Größe erzeugen</translation>
     </message>
     <message>
         <source>Attached Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Angeschlossene Platte</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>keine</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>Zusammenfassung</translation>
     </message>
     <message>
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die folgende Seite fasst die Konfiguration zusammen, die Sie für die neue virtuelle Maschine ausgewählt haben. Wenn Sie mit der Konfiguration zufrieden sind, klicken Sie auf Fertig stellen, um die virtuelle Maschine zu erstellen. Alternativ können Sie zurückgehen und die Konfiguration ändern.</translation>
     </message>
     <message>
         <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiges Installationsmedium für die Gasterweiterungen</translation>
     </message>
     <message>
         <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enthält den Produktschlüssel.</translation>
     </message>
     <message>
         <source>When checked, the guest additions will be installed after the guest OS install.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, werden die Gasterweiterungen nach der Installation des Gastbetriebssystems installiert.</translation>
     </message>
     <message>
         <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn ausgewählt, wird Headless Boot (ohne GUI) für die unbeaufsichtigte Gastbetriebssysteminstallation einer neu erstellten virtuellen Maschine aktiviert.</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished">Aktiviert das Extended Firmware Interface (EFI), das zum Booten von manchen speziellen Gästen benötigt wird. Nicht-EFI-fähige Gäste können nicht booten, wenn diese Option aktiviert ist.</translation>
+        <translation>Aktiviert das Extended Firmware Interface (EFI), das zum Booten von manchen speziellen Gästen benötigt wird. Nicht-EFI-fähige Gäste können nicht booten, wenn diese Option aktiviert ist.</translation>
     </message>
     <message>
         <source>Detected OS type: %1. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erkannter Betriebssystemtyp: %1. %2</translation>
     </message>
     <message>
         <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie können die unbeaufsichtigte Installation des Gastbetriebssystems konfigurieren, indem Sie den Benutzernamen, das Kennwort und den Hostnamen ändern. Zusätzlich können Sie die Installation von Gasterweiterungen aktivieren. Für Microsoft Windows-Gäste ist es möglich, einen Produktschlüssel bereitzustellen.</translation>
     </message>
     <message>
         <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie können die Hardware der virtuellen Maschine ändern, indem Sie die Menge an RAM und die Anzahl der virtuellen CPUs ändern. Auch das Aktivieren von EFI ist möglich.</translation>
     </message>
     <message>
         <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wenn Sie möchten, können Sie der neuen Maschine eine virtuelle Festplatte hinzufügen. Sie können entweder eine neue Festplattendatei erstellen oder eine vorhandene auswählen. Alternativ können Sie eine virtuelle Maschine ohne virtuelle Festplatte erstellen.</translation>
     </message>
     <message>
         <source>Guest &amp;Additions ISO:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gast&amp;erweiterungen ISO:</translation>
     </message>
 </context>
 <context>
