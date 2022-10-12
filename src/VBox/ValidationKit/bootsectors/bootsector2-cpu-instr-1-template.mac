@@ -267,6 +267,100 @@ ENDPROC   TMPL_NM(TestCvtSize)
 
 
 ;;
+; Test what  CMPXCHG with 32-bit operand size does to 64-bit registers,
+; as this is not particularly well documented by either Intel or AMD.
+;
+; @uses No registers, but BS2_SEL_SPARE0 is trashed.
+;
+BEGINPROC TMPL_NM(TestCmpxchg32)
+        push    xBP
+        mov     xBP, xSP
+        push    sAX
+        push    xBX
+        push    xCX
+        push    xDX
+        push    xDI
+        push    xSI
+        sub     xSP, 80h                ; iret stack frame space.
+        mov     xSI, xSP                ; Save the stack register.
+
+        mov     xAX, .s_szSubTestName
+        call    TMPL_NM_CMN(TestSub)
+
+%ifdef TMPL_64BIT
+
+        ;
+        ; CMPXCHG reg, reg - values not equal, eax written
+        ;
+        mov     rax, -1            ; Load registers with 64-bit values
+        mov     rbx, -2
+        mov     rcx, -3
+        cmpxchg ebx, ecx           ; Not equal, writes eax
+        mov     edx, -2            ; Clears high dword
+        TEST_ASSERT_SIMPLE rax, rdx, jz, "CMPXCHG reg, unequal, rax set"
+        mov     rdx, -2            ; All ones still in high dword
+        TEST_ASSERT_SIMPLE rbx, rdx, jz, "CMPXCHG reg, unequal, rbx not set"
+
+        ;
+        ; CMPXCHG reg, reg - values equal, first operand written
+        ;
+        mov     rax, -4            ; Load registers with 64-bit values
+        mov     rbx, -4
+        mov     rcx, -5
+        cmpxchg ebx, ecx           ; Equal, writes ecx to ebx
+        mov     edx, -5            ; Clears high dword
+        TEST_ASSERT_SIMPLE rbx, rdx, jz, "CMPXCHG reg, equal, rbx set"
+        mov     rdx, -4            ; All ones still in high dword
+        TEST_ASSERT_SIMPLE rax, rdx, jz, "CMPXCHG reg, equal, rax not set"
+
+        ;
+        ; CMPXCHG mem, reg - values not equal, eax written
+        ;
+        mov     rax, -1            ; Load registers with 64-bit values
+        mov     rbx, -2
+        push    rbx
+        mov     rcx, -3
+        cmpxchg [rsp], ecx         ; Not equal, writes eax
+        mov     edx, -2            ; Clears high dword
+        TEST_ASSERT_SIMPLE rax, rdx, jz, "CMPXCHG mem, unequal, rax set"
+        pop     rbx
+
+        ;
+        ; CMPXCHG mem, reg - values equal, first operand written
+        ;
+        mov     rax, -4            ; Load registers with 64-bit values
+        mov     rbx, -4
+        push    rbx
+        mov     rcx, -5
+        cmpxchg [rsp], ecx         ; Not equal, writes eax
+        mov     rdx, -4            ; All ones in high dword
+        TEST_ASSERT_SIMPLE rax, rdx, jz, "CMPXCHG mem, equal, rax not set"
+        pop     rbx
+
+%endif
+
+        ;
+        ; Done.
+        ;
+        call    TMPL_NM_CMN(TestSubDone)
+.done:
+        mov     xSP, xSI
+        add     xSP, 80h
+        pop     xSI
+        pop     xDI
+        pop     xDX
+        pop     xCX
+        pop     xBX
+        pop     sAX
+        leave
+        ret
+
+.s_szSubTestName:
+        db      TMPL_MODE_STR, ', 32-bit CMPXCHG in 64-bit mode', 0
+ENDPROC   TMPL_NM(TestCmpxchg32)
+
+
+;;
 ; Proving intel manual wrong about using REX.X for BSWAP R8-R15 on 64-bit.
 ; Checking the 'undefined' 16-bit bswap behavior.
 ;
@@ -417,6 +511,7 @@ BITS TMPL_BITS
 %ifdef TMPL_64BIT
         ; Specifically tests 64-bit behavior.
         call    TMPL_NM(TestCvtSize)
+        call    TMPL_NM(TestCmpxchg32)
 %endif
 
         ;
