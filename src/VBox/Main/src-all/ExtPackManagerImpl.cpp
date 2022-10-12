@@ -3328,6 +3328,10 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
                 }
             }
         }
+        else if (SUCCEEDED(hrc) && !pExtPack)
+        {
+            hrc = setError(E_FAIL, tr("Extension pack '%s' is not installed.\n"), a_pstrName->c_str());
+        }
 
         /*
          * Do VirtualBoxReady callbacks now for any freshly installed
