@@ -279,6 +279,7 @@ COPY (SELECT * FROM TestBoxStrTab WHERE idStr IN (
             'TestGroups',
             'TestGroupMembers',
             'SchedGroups',
+            'TestBoxStrTab',
             'TestBoxes',
             'SchedGroupMembers',
             'TestBoxesInSchedGroups',
