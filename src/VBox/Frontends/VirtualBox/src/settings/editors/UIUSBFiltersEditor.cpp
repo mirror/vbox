@@ -130,7 +130,8 @@ QString USBFilterTreeWidgetItem::defaultText() const
 *   Class UIUSBMenu implementation.                                                                                              *
 *********************************************************************************************************************************/
 
-UIUSBMenu::UIUSBMenu(QWidget *)
+UIUSBMenu::UIUSBMenu(QWidget *pParent)
+    : QMenu(pParent)
 {
     connect(this, &UIUSBMenu::aboutToShow,
             this, &UIUSBMenu::processAboutToShow);
@@ -377,11 +378,14 @@ void UIUSBFiltersEditor::sltCreateFilter()
 
 void UIUSBFiltersEditor::sltAddFilter()
 {
-    m_pMenuUSBDevices->exec(QCursor::pos());
+    if (m_pMenuUSBDevices)
+        m_pMenuUSBDevices->exec(QCursor::pos());
 }
 
 void UIUSBFiltersEditor::sltAddFilterConfirmed(QAction *pAction)
 {
+    if (!m_pMenuUSBDevices)
+        return;
     /* Get USB device: */
     const CUSBDevice comUsb = m_pMenuUSBDevices->getUSB(pAction);
     if (comUsb.isNull())
