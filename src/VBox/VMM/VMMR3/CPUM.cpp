@@ -1325,14 +1325,6 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
     Assert(!fIsNstGstHwExecAllowed || pHostVmxMsrs);
     Assert(pGuestFeatures->fVmx);
 
-    /*
-     * We don't support the following MSRs yet:
-     *   - True Pin-based VM-execution controls.
-     *   - True Processor-based VM-execution controls.
-     *   - True VM-entry VM-execution controls.
-     *   - True VM-exit VM-execution controls.
-     */
-
     /* Basic information. */
     uint8_t const fTrueVmxMsrs = 1;
     {
