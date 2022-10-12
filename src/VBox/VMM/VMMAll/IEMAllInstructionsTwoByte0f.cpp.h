@@ -11930,7 +11930,7 @@ FNIEMOP_DEF(iemOp_pinsrw_Vdq_RyMw_Ib)
 /** Opcode      0x0f 0xc5 - pextrw Gd, Nq, Ib */
 FNIEMOP_DEF(iemOp_pextrw_Gd_Nq_Ib)
 {
-    /*IEMOP_MNEMONIC3(RMI_REG, PEXTRW, pinsrw, Gd, Nq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);*/ /** @todo */
+    /*IEMOP_MNEMONIC3(RMI_REG, PEXTRW, pextrw, Gd, Nq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);*/ /** @todo */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
