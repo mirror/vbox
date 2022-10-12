@@ -543,7 +543,9 @@ DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, void *pvRam, size_t cb,
         hrc = hv_vm_map_space(pVM->nem.s.uVmAsid, pvRam, GCPhys, cb, fHvMemProt);
     else
         hrc = hv_vm_map(pvRam, GCPhys, cb, fHvMemProt);
-    return nemR3DarwinHvSts2Rc(hrc);
+    if (hrc != HV_SUCCESS)
+        LogRel(("Failed to map %RGp LB %zu fProt=%#x/%#x hrc=%\n", GCPhys, cb, fPageProt, fHvMemProt));
+    return VINF_SUCCESS; //nemR3DarwinHvSts2Rc(hrc);
 }
 
 
