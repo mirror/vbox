@@ -6313,11 +6313,11 @@
     <name>UIDiskVariantWidget</name>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation>&amp;Volle Größe pre-allokieren</translation>
+        <translation>&amp;Volle Größe im Voraus allozieren</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation>Wenn ausgewählt, wird beim Erstellen der VM das virtuelle Plattenabbild mit der vollen Größe pre-allokiert</translation>
+        <translation>Wenn ausgewählt, wird beim Erstellen der VM das virtuelle Plattenabbild im Voraus mit der vollen Größe alloziert</translation>
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
