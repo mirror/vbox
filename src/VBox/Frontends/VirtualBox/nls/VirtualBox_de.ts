@@ -2145,7 +2145,7 @@
     </message>
     <message>
         <source>&amp;Reload</source>
-        <translation>&amp;Aktualisieren</translation>
+        <translation>Neu &amp;laden</translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
