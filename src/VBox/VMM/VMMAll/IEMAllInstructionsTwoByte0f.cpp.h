@@ -10330,7 +10330,11 @@ FNIEMOP_DEF(iemOp_cmpxchg_Ev_Gv)
 
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, IEM_ACCESS_DATA_RW);
                 IEM_MC_COMMIT_EFLAGS(EFlags);
-                IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u32Eax);
+
+                IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
+                    IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u32Eax);
+                IEM_MC_ENDIF();
+
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
