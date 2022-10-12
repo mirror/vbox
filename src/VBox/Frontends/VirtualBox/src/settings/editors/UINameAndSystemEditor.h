@@ -196,14 +196,6 @@ private:
         bool  m_fChooseType;
     /** @} */
 
-    /** @name Options
-     * @{ */
-        /** Holds whether host supports hardware virtualization. */
-        bool  m_fSupportsHWVirtEx;
-        /** Holds whether host supports long mode. */
-        bool  m_fSupportsLongMode;
-    /** @} */
-
     /** @name Values
      * @{ */
         /** Holds the current family ID list. */

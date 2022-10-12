@@ -61,8 +61,6 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     , m_fChooseImage(fChooseImage)
     , m_fChooseEdition(fChooseEdition)
     , m_fChooseType(fChooseType)
-    , m_fSupportsHWVirtEx(false)
-    , m_fSupportsLongMode(false)
     , m_pLayout(0)
     , m_pLabelName(0)
     , m_pLabelPath(0)
@@ -376,9 +374,6 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     /* Populate combo-box with OS types related to currently selected family id: */
     foreach (const UIGuestOSType &guiType, m_types.value(m_strFamilyId))
     {
-        /* Skip 64bit OS types if hardware virtualization or long mode is not supported: */
-        if (guiType.is64bit && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
-            continue;
         const int idxItem = m_pComboType->count();
         m_pComboType->insertItem(idxItem, guiType.typeDescription);
         m_pComboType->setItemData(idxItem, guiType.typeId, TypeID);
@@ -396,7 +391,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     else if (m_strFamilyId == "Windows")
     {
         QString strDefaultID = "Windows10";
-        if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
+        if (ARCH_BITS == 64)
             strDefaultID += "_64";
         const int iIndexWin10 = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexWin10 != -1)
@@ -406,7 +401,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     else if (m_strFamilyId == "Linux")
     {
         QString strDefaultID = "Oracle";
-        if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
+        if (ARCH_BITS == 64)
             strDefaultID += "_64";
         const int iIndexUbuntu = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexUbuntu != -1)
@@ -458,13 +453,6 @@ void UINameAndSystemEditor::prepare()
 
 void UINameAndSystemEditor::prepareThis()
 {
-    if (m_fChooseType)
-    {
-        /* Check if host supports (AMD-V or VT-x) and long mode: */
-        CHost comHost = uiCommon().host();
-        m_fSupportsHWVirtEx = comHost.GetProcessorFeature(KProcessorFeature_HWVirtEx);
-        m_fSupportsLongMode = comHost.GetProcessorFeature(KProcessorFeature_LongMode);
-    }
 }
 
 void UINameAndSystemEditor::prepareWidgets()
