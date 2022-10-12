@@ -1752,7 +1752,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
         if (pszWhy)
         {
             LogRel(("CPUM: Warning! EPT not exposed to the guest because %s.\n", pszWhy));
-            pVM->cpum.s.fNestedVmxEpt               = false;
+            pVM->cpum.s.fNestedVmxEpt = false;
         }
     }
     if (    pVM->cpum.s.fNestedVmxUnrestrictedGuest
