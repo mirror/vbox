@@ -463,6 +463,7 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
                                                              iemAImpl_pcmpistri_u128,
                                                              iemAImpl_pcmpistri_u128_fallback),
                                  pu32Ecx, pEFlags, pSrc, bImmArg);
+        /** @todo testcase: High dword of RCX cleared? */
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -493,6 +494,7 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
                                                              iemAImpl_pcmpistri_u128,
                                                              iemAImpl_pcmpistri_u128_fallback),
                                  pu32Ecx, pEFlags, pSrc, bImmArg);
+        /** @todo testcase: High dword of RCX cleared? */
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
