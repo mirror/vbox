@@ -160,7 +160,7 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxDDU.so \
 	VBoxVMM.so \
 	VBoxRT.so \
-	$(if $(VBOX_WITH_LIBSSH),VBoxLibSsh.so,) \ \
+	$(if $(VBOX_WITH_LIBSSH),VBoxLibSsh.so,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD), VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_SHARED_FOLDERS), VBoxSharedFolders.so,) \
