@@ -1200,14 +1200,18 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 }
 
 /**
- * Builds a host file list from a given path (and optional filter).
+ * Builds a host file list from a given path.
  *
  * @return VBox status code.
  * @param  strPath              Directory on the host to build list from.
  * @param  strSubDir            Current sub directory path; needed for recursion.
  *                              Set to an empty path.
+ * @param  pszPathReal          Scratch buffer for holding the resolved real path.
+ *                              Needed for recursion.
+ * @param  cbPathReal           Size (in bytes) of \a pszPathReal.
  */
-int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
+int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
+                           char *pszPathReal, size_t cbPathReal)
 {
     Utf8Str strPathAbs = strPath;
     if (   !strPathAbs.endsWith("/")
@@ -1270,7 +1274,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                 if (!(mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_Recursive))
                                     break;
 
-                                vrc = AddDirFromHost(strPath, strEntry);
+                                vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal);
                                 break;
                             }
 
@@ -1286,25 +1290,24 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                             {
                                 if (mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks)
                                 {
-                                    Utf8Str strEntryAbs = strPathAbs + Utf8Str(Entry.szName);
+                                    Utf8Str strEntryAbs = strPathAbs + (const char *)Entry.szName;
 
-                                    char szPathReal[RTPATH_MAX];
-                                    vrc = RTPathReal(strEntryAbs.c_str(), szPathReal, sizeof(szPathReal));
+                                    vrc = RTPathReal(strEntryAbs.c_str(), pszPathReal, cbPathReal);
                                     if (RT_SUCCESS(vrc))
                                     {
-                                        vrc = RTPathQueryInfo(szPathReal, &objInfo, RTFSOBJATTRADD_NOTHING);
+                                        vrc = RTPathQueryInfo(pszPathReal, &objInfo, RTFSOBJATTRADD_NOTHING);
                                         if (RT_SUCCESS(vrc))
                                         {
                                             if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                                             {
                                                 LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (directory)\n",
-                                                         strEntryAbs.c_str(), szPathReal));
-                                                vrc = AddDirFromHost(strPath, strEntry);
+                                                         strEntryAbs.c_str(), pszPathReal));
+                                                vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal);
                                             }
                                             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                                             {
                                                 LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (file)\n",
-                                                         strEntryAbs.c_str(), szPathReal));
+                                                         strEntryAbs.c_str(), pszPathReal));
                                                 vrc = AddEntryFromHost(strEntry, &objInfo);
                                             }
                                             else
@@ -1313,7 +1316,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
 
                                         if (RT_FAILURE(vrc))
                                             LogRel2(("Guest Control: Unable to query symbolic link info for '%s', rc=%Rrc\n",
-                                                     szPathReal, vrc));
+                                                     pszPathReal, vrc));
                                     }
                                     else
                                     {
@@ -1803,7 +1806,10 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                 if (RT_SUCCESS(vrc))
                 {
                     if (itSrc->enmType == FsObjType_Directory)
-                        vrc = pFsList->AddDirFromHost(strSrc);
+                    {
+                        char szPathReal[RTPATH_MAX];
+                        vrc = pFsList->AddDirFromHost(strSrc /* strPath */, "" /* strSubDir */, szPathReal, sizeof(szPathReal));
+                    }
                     else
                         vrc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);
                 }
