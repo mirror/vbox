@@ -67,7 +67,7 @@
  *  guest. */
 #define ISOFILE_FLAG_COPY_FROM_ISO       RT_BIT(0)
 /** Execute file on the guest after it has
- *  been successfully transfered. */
+ *  been successfully transferred. */
 #define ISOFILE_FLAG_EXECUTE             RT_BIT(7)
 /** File is optional, does not have to be
  *  existent on the .ISO. */
@@ -128,7 +128,7 @@ int GuestSessionTask::createAndSetProgressObject(ULONG cOperations /* = 1 */)
     return VINF_SUCCESS;
 }
 
-#if 0 /* unsed */
+#if 0 /* unused */
 /** @note The task object is owned by the thread after this returns, regardless of the result.  */
 int GuestSessionTask::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
 {
@@ -230,7 +230,7 @@ int GuestSessionTask::setProgressSuccess(void)
 /**
  * Sets the task's progress object to an error using a string message.
  *
- * @returns Returns \a hr for covenience.
+ * @returns Returns \a hr for convenience.
  * @param   hr                  Progress operation result to set.
  * @param   strMsg              Message to set.
  */
@@ -264,7 +264,7 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
 /**
  * Sets the task's progress object to an error using a string message and a guest error info object.
  *
- * @returns Returns \a hr for covenience.
+ * @returns Returns \a hr for convenience.
  * @param   hr                  Progress operation result to set.
  * @param   strMsg              Message to set.
  * @param   guestErrorInfo      Guest error info to use.
@@ -466,13 +466,13 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
         return vrc;
 
     /*
-     * Even if we succeeded until here make sure to check whether we really transfered
+     * Even if we succeeded until here make sure to check whether we really transferred
      * everything.
      */
     if (   cbSize > 0
         && cbWrittenTotal == 0)
     {
-        /* If nothing was transfered but the file size was > 0 then "vbox_cat" wasn't able to write
+        /* If nothing was transferred but the file size was > 0 then "vbox_cat" wasn't able to write
          * to the destination -> access denied. */
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(tr("Writing guest file \"%s\" to host file \"%s\" failed: Access denied"),
@@ -483,7 +483,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
     {
         /* If we did not copy all let the user know. */
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                            Utf8StrFmt(tr("Copying guest file \"%s\" to host file \"%s\" failed (%RU64/%RU64 bytes transfered)"),
+                            Utf8StrFmt(tr("Copying guest file \"%s\" to host file \"%s\" failed (%RU64/%RU64 bytes transferred)"),
                                        strSrcFile.c_str(), strDstFile.c_str(), cbWrittenTotal, cbSize));
         vrc = VERR_INTERRUPTED;
     }
@@ -782,13 +782,13 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
         return vrc;
 
     /*
-     * Even if we succeeded until here make sure to check whether we really transfered
+     * Even if we succeeded until here make sure to check whether we really transferred
      * everything.
      */
     if (   cbSize > 0
         && cbWrittenTotal == 0)
     {
-        /* If nothing was transfered but the file size was > 0 then "vbox_cat" wasn't able to write
+        /* If nothing was transferred but the file size was > 0 then "vbox_cat" wasn't able to write
          * to the destination -> access denied. */
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(tr("Writing to guest file \"%s\" failed: Access denied"),
@@ -799,7 +799,7 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
     {
         /* If we did not copy all let the user know. */
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                            Utf8StrFmt(tr("Copying to guest file \"%s\" failed (%RU64/%RU64 bytes transfered)"),
+                            Utf8StrFmt(tr("Copying to guest file \"%s\" failed (%RU64/%RU64 bytes transferred)"),
                                        strDstFile.c_str(), cbWrittenTotal, cbSize));
         vrc = VERR_INTERRUPTED;
     }
@@ -2812,4 +2812,3 @@ int GuestSessionTaskUpdateAdditions::Run(void)
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
-
