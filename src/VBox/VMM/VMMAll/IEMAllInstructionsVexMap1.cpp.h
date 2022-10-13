@@ -3761,7 +3761,87 @@ FNIEMOP_DEF(iemOp_vpcmpeqd_Vx_Hx_Wx)
 
 
 /** Opcode VEX.0F 0x77 - vzeroupperv vzeroallv */
-FNIEMOP_STUB(iemOp_vzeroupperv__vzeroallv);
+FNIEMOP_DEF(iemOp_vzeroupperv__vzeroallv)
+{
+    Assert(pVCpu->iem.s.uVexLength <= 1);
+    if (pVCpu->iem.s.uVexLength == 0)
+    {
+        /*
+         * 128-bit: vzeroupper
+         */
+        IEMOP_MNEMONIC(vzeroupper, "vzeroupper");
+        IEM_MC_BEGIN(0, 0);
+
+        IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
+
+        IEM_MC_CLEAR_YREG_128_UP(0);
+        IEM_MC_CLEAR_YREG_128_UP(1);
+        IEM_MC_CLEAR_YREG_128_UP(2);
+        IEM_MC_CLEAR_YREG_128_UP(3);
+        IEM_MC_CLEAR_YREG_128_UP(4);
+        IEM_MC_CLEAR_YREG_128_UP(5);
+        IEM_MC_CLEAR_YREG_128_UP(6);
+        IEM_MC_CLEAR_YREG_128_UP(7);
+
+        if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
+        {
+            IEM_MC_CLEAR_YREG_128_UP( 8);
+            IEM_MC_CLEAR_YREG_128_UP( 9);
+            IEM_MC_CLEAR_YREG_128_UP(10);
+            IEM_MC_CLEAR_YREG_128_UP(11);
+            IEM_MC_CLEAR_YREG_128_UP(12);
+            IEM_MC_CLEAR_YREG_128_UP(13);
+            IEM_MC_CLEAR_YREG_128_UP(14);
+            IEM_MC_CLEAR_YREG_128_UP(15);
+        }
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * 256-bit: vzeroall
+         */
+        IEMOP_MNEMONIC(vzeroall, "vzeroall");
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint32_t,  uZero);
+
+        IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
+
+        IEM_MC_ASSIGN(uZero, 0);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(0, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(1, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(2, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(3, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(4, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(5, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(6, uZero);
+        IEM_MC_STORE_YREG_U32_ZX_VLMAX(7, uZero);
+
+        if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
+        {
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX( 8, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX( 9, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX(10, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX(11, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX(12, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX(13, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX(14, uZero);
+            IEM_MC_STORE_YREG_U32_ZX_VLMAX(15, uZero);
+        }
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /*  Opcode VEX.66.0F 0x77 - invalid */
 /*  Opcode VEX.F3.0F 0x77 - invalid */
 /*  Opcode VEX.F2.0F 0x77 - invalid */
