@@ -80,7 +80,6 @@ struct UIDataSettingsMachineGeneral
                && (m_strName == other.m_strName)
                && (m_strGuestOsTypeId == other.m_strGuestOsTypeId)
                && (m_strSnapshotsFolder == other.m_strSnapshotsFolder)
-               && (m_strSnapshotsHomeDir == other.m_strSnapshotsHomeDir)
                && (m_clipboardMode == other.m_clipboardMode)
                && (m_dndMode == other.m_dndMode)
                && (m_strDescription == other.m_strDescription)

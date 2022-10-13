@@ -297,6 +297,9 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
     /* Prepare new data: */
     UIDataSettingsMachineNetworkAdapter newAdapterData;
 
+    /* Save slot number: */
+    newAdapterData.m_iSlot = m_iSlot;
+
     if (m_pEditorNetworkSettings)
     {
         /* Save adapter activity state: */
@@ -304,47 +307,23 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
 
         /* Save attachment type & alternative name: */
         newAdapterData.m_attachmentType = attachmentType();
-        switch (newAdapterData.m_attachmentType)
-        {
-            case KNetworkAttachmentType_Null:
-                break;
-            case KNetworkAttachmentType_NAT:
-                break;
-            case KNetworkAttachmentType_Bridged:
-                newAdapterData.m_strBridgedAdapterName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Bridged);
-                break;
-            case KNetworkAttachmentType_Internal:
-                newAdapterData.m_strInternalNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Internal);
-                break;
-            case KNetworkAttachmentType_HostOnly:
-                newAdapterData.m_strHostInterfaceName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_HostOnly);
-                break;
-            case KNetworkAttachmentType_Generic:
-                newAdapterData.m_strGenericDriverName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Generic);
-                break;
-            case KNetworkAttachmentType_NATNetwork:
-                newAdapterData.m_strNATNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_NATNetwork);
-                break;
+        newAdapterData.m_strBridgedAdapterName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Bridged);
+        newAdapterData.m_strInternalNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Internal);
+        newAdapterData.m_strHostInterfaceName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_HostOnly);
+        newAdapterData.m_strGenericDriverName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Generic);
+        newAdapterData.m_strNATNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_NATNetwork);
 #ifdef VBOX_WITH_CLOUD_NET
-            case KNetworkAttachmentType_Cloud:
-                newAdapterData.m_strCloudNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Cloud);
-                break;
-#endif /* VBOX_WITH_CLOUD_NET */
+        newAdapterData.m_strCloudNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_Cloud);
+#endif
 #ifdef VBOX_WITH_VMNET
-            case KNetworkAttachmentType_HostOnlyNetwork:
-                newAdapterData.m_strHostOnlyNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_HostOnlyNetwork);
-                break;
-#endif /* VBOX_WITH_VMNET */
-            default:
-                break;
-        }
+        newAdapterData.m_strHostOnlyNetworkName = m_pEditorNetworkSettings->valueName(KNetworkAttachmentType_HostOnlyNetwork);
+#endif
 
         /* Save settings: */
         newAdapterData.m_adapterType = m_pEditorNetworkSettings->adapterType();
         newAdapterData.m_promiscuousMode = m_pEditorNetworkSettings->promiscuousMode();
         newAdapterData.m_strMACAddress = m_pEditorNetworkSettings->macAddress();
-        if (newAdapterData.m_attachmentType == KNetworkAttachmentType_Generic)
-            newAdapterData.m_strGenericProperties = m_pEditorNetworkSettings->genericProperties();
+        newAdapterData.m_strGenericProperties = m_pEditorNetworkSettings->genericProperties();
         newAdapterData.m_fCableConnected = m_pEditorNetworkSettings->cableConnected();
 
         /* Save port forwarding rules: */

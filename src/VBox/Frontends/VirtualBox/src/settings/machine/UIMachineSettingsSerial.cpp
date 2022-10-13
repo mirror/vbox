@@ -281,6 +281,9 @@ void UIMachineSettingsSerial::putPortDataToCache(UISettingsCacheMachineSerialPor
     /* Prepare new data: */
     UIDataSettingsMachineSerialPort newPortData;
 
+    /* Save port number: */
+    newPortData.m_iSlot = m_iSlot;
+
     /* Save port data: */
     if (m_pCheckBoxPort)
         newPortData.m_fPortEnabled = m_pCheckBoxPort->isChecked();
