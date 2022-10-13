@@ -153,9 +153,6 @@ private:
     /** Returns whether page with certain @a iPageId is available. */
     bool isPageAvailable(int iPageId) const;
 
-    /** Returns whether settings were changed. */
-    bool isSettingsChanged();
-
     /** Recalculates configuration access level. */
     void updateConfigurationAccessLevel();
 

@@ -874,18 +874,6 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId) const
     return true;
 }
 
-bool UISettingsDialogMachine::isSettingsChanged()
-{
-    bool fIsSettingsChanged = false;
-    foreach (UISettingsPage *pPage, m_pSelector->settingPages())
-    {
-        pPage->putToCache();
-        if (!fIsSettingsChanged && pPage->changed())
-            fIsSettingsChanged = true;
-    }
-    return fIsSettingsChanged;
-}
-
 void UISettingsDialogMachine::updateConfigurationAccessLevel()
 {
     /* Determine new configuration access level: */

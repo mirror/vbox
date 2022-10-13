@@ -527,6 +527,18 @@ void UISettingsDialog::revalidate()
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_fValid);
 }
 
+bool UISettingsDialog::isSettingsChanged()
+{
+    bool fIsSettingsChanged = false;
+    foreach (UISettingsPage *pPage, m_pSelector->settingPages())
+    {
+        pPage->putToCache();
+        if (!fIsSettingsChanged && pPage->changed())
+            fIsSettingsChanged = true;
+    }
+    return fIsSettingsChanged;
+}
+
 void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
 {
     /* Determine which settings-page had called for revalidation: */

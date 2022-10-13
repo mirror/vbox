@@ -153,6 +153,9 @@ protected:
     /** Validates data correctness. */
     void revalidate();
 
+    /** Returns whether settings were changed. */
+    bool isSettingsChanged();
+
     /** Holds the page selector instance. */
     UISettingsSelector *m_pSelector;
     /** Holds the page stack instance. */
