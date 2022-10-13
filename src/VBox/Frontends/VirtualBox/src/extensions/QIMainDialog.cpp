@@ -281,7 +281,8 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
         {
             if (pEvent->modifiers() == Qt::NoModifier && m_fRejectByEscape)
             {
-                reject();
+                setResult(QDialog::Rejected);
+                close();
                 return;
             }
             break;
@@ -292,7 +293,8 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
         {
             if (pEvent->modifiers() == Qt::ControlModifier)
             {
-                reject();
+                setResult(QDialog::Rejected);
+                close();
                 return;
             }
             break;
