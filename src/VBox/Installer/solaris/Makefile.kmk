@@ -345,6 +345,7 @@ SOLARIS_STRIP_BINS = \
 	VBoxRT.so \
 	VBoxDDU.so \
 	VBoxVMM.so \
+	$(if $(VBOX_WITH_LIBSSH),VBoxLibSsh.so,) \
 	VBoxXPCOM.so \
 	VBoxXPCOMC.so \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
