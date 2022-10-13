@@ -43,13 +43,11 @@ SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 __version__ = "$Revision$"
 
 # Standard python imports
-from datetime import datetime, timedelta
 import sys
 import os
-from optparse import OptionParser, OptionGroup;  # pylint: disable=deprecated-module
+from optparse import OptionParser;  # pylint: disable=deprecated-module
 import shutil
 import tempfile;
-import time;
 import zipfile;
 
 # Add Test Manager's modules path
@@ -57,53 +55,34 @@ g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abs
 sys.path.append(g_ksTestManagerDir)
 
 # Test Manager imports
-from common                     import utils;
 from testmanager                import config;
+from testmanager.core.db        import TMDatabaseConnection;
+from testmanager.core.testset   import TestSetData, TestSetLogic;
 
-##
-## @todo r=bird: Since this is CLEARLY COPIED from filearchiver.py, why doesn't the log start with a svn copy?
-##
-## This will be rewritten as a single purpose job. I don't want to have any 'command' arguments, there
-## should be as few arguments as possible since this is a cronjob and it gets most of it's info from the
-## config.py file rather than the command line.
-##
-## I don't think processDir() will work at all in the form it is.  That one is assuming the flat structure
-## of the directory containing the most recent tests that should be zipped up and put on the storage server.
-## What this script needs to process is the nested (by year/month/day/(hour / x * x)) layout and handle those
-## files.  It could be a good simplification to get the selection of TestSets to run on from the database.
-##
-## On reflection, we can either have a window of files that get rescanned (e.g. starting two weeks and going
-## back a two more) everytime the batch job runs, OR we could add a flag in the database indicating whether
-## we've processed a TestSet (maybe a quota pass number).  The latter would be much more efficient but
-## require a rather large database change (adding a column to a table with close to 20 million rows).
-##
 
 class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
     """
     Log+files comp
     """
 
-    def __init__(self, sCmd, oOptions):
+    def __init__(self, oOptions):
         """
         Parse command line
         """
-        self.fVerbose       = oOptions.fVerbose;
-        self.sCmd           = sCmd;
-        self.sSrcDir        = oOptions.sSrcDir;
-        if not self.sSrcDir :
-            self.sSrcDir    = config.g_ksFileAreaRootDir;    ## @todo r=bird: This CANNOT be right.
-        self.sDstDir        = config.g_ksZipFileAreaRootDir; ## @todo r=bird: This isn't used.
-        self.sTempDir       = oOptions.sTempDir;
-        if not self.sTempDir:
-            self.sTempDir   = tempfile.gettempdir();
-        #self.oTestSetLogic = TestSetLogic(TMDatabaseConnection(self.dprint if self.fVerbose else None));
-        #self.oTestSetLogic = TestSetLogic(TMDatabaseConnection(None));
-        self.fDryRun        = oOptions.fDryRun;
-        self.asFileExt      = [];
-        self.asFileExt      = oOptions.asFileExt and oOptions.asFileExt.split(',');
-        self.cOlderThanDays = oOptions.cOlderThanDays;
-        self.cbBiggerThan   = oOptions.uBiggerThanKb * 1024; # Kilobyte (kB) to bytes.
-        self.fForce         = oOptions.fForce;
+        self.fDryRun            = oOptions.fDryRun;
+        self.fVerbose           = oOptions.fVerbose;
+        self.sTempDir           = tempfile.gettempdir();
+
+        self.dprint('Connecting to DB ...');
+        self.oTestSetLogic      = TestSetLogic(TMDatabaseConnection(self.dprint if self.fVerbose else None));
+
+        ## Fetches (and handles) all testsets up to this age (in hours).
+        self.uHoursAgeToHandle  = 24;
+        ## Always remove files with these extensions.
+        self.asRemoveFileExt    = [ 'webm' ];
+        ## Always remove files which are bigger than this limit.
+        #  Set to 0 to disable.
+        self.cbRemoveBiggerThan = 128 * 1024 * 1024;
 
     def dprint(self, sText):
         """ Verbose output. """
@@ -174,72 +153,67 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                     fRc = False;
         return fRc;
 
-    def _processTestSetZip(self, idTestSet, sFile, sCurDir):
+    def _processTestSetZip(self, idTestSet, sSrcZipFileAbs):
         """
-        Worker for processDir.
-        Same return codes as processDir.
-        """
+        Worker for processOneTestSet, which processes the testset's ZIP file.
 
+        Returns success indicator.
+        """
         _ = idTestSet
 
-        sSrcZipFileAbs = os.path.join(sCurDir, sFile);
-        print('Processing ZIP archive "%s" ...' % (sSrcZipFileAbs));
-
         with tempfile.NamedTemporaryFile(dir=self.sTempDir, delete=False) as tmpfile:
-            sDstZipFileAbs = tmpfile.name
-        self.dprint('Using temporary ZIP archive "%s"' % (sDstZipFileAbs));
+            sDstZipFileAbs = tmpfile.name;
 
         fRc = True;
 
         try:
             oSrcZipFile = zipfile.ZipFile(sSrcZipFileAbs, 'r');                             # pylint: disable=consider-using-with
+            self.dprint('Processing ZIP archive "%s" ...' % (sSrcZipFileAbs));
             try:
                 if not self.fDryRun:
                     oDstZipFile = zipfile.ZipFile(sDstZipFileAbs, 'w');                     # pylint: disable=consider-using-with
+                    self.dprint('Using temporary ZIP archive "%s"' % (sDstZipFileAbs));
                 try:
+                    #
+                    # First pass: Gather information if we need to do some re-packing.
+                    #
+                    fDoRepack = False;
+                    aoFilesToRepack = [];
                     for oCurFile in oSrcZipFile.infolist():
-
                         self.dprint('Handling File "%s" ...' % (oCurFile.filename))
                         sFileExt = os.path.splitext(oCurFile.filename)[1];
 
-                        fDoRepack = True; # Re-pack all unless told otherwise.
-
                         if  sFileExt \
-                        and sFileExt[1:] in self.asFileExt:
+                        and sFileExt[1:] in self.asRemoveFileExt:
                             self.dprint('\tMatches excluded extensions')
-                            fDoRepack = False;
-
-                        if  self.cbBiggerThan \
-                        and oCurFile.file_size > self.cbBiggerThan:
-                            self.dprint('\tIs bigger than %d bytes (%d bytes)' % (self.cbBiggerThan, oCurFile.file_size))
-                            fDoRepack = False;
-
-                        if fDoRepack \
-                           and self.cOlderThanDays:
-                            tsMaxAge  = datetime.now() - timedelta(days = self.cOlderThanDays);
-                            tsFile    = datetime(year   = oCurFile.date_time[0],
-                                                 month  = oCurFile.date_time[1],
-                                                 day    = oCurFile.date_time[2],
-                                                 hour   = oCurFile.date_time[3],
-                                                 minute = oCurFile.date_time[4],
-                                                 second = oCurFile.date_time[5]);
-                            if tsFile < tsMaxAge:
-                                self.dprint('\tIs older than %d days (%s)' % (self.cOlderThanDays, tsFile))
-                                fDoRepack = False;
-
-                        if fDoRepack:
-                            self.dprint('Re-packing file "%s"' % (oCurFile.filename,))
-                            if not self.fDryRun:
-                                oBuf = oSrcZipFile.read(oCurFile);
-                                oDstZipFile.writestr(oCurFile, oBuf);
+                            fDoRepack = True;
+                        elif     self.cbRemoveBiggerThan \
+                             and oCurFile.file_size > self.cbRemoveBiggerThan:
+                            self.dprint('\tIs bigger than %d bytes (%d bytes)' % (self.cbRemoveBiggerThan, oCurFile.file_size))
+                            fDoRepack = True;
                         else:
-                            print('Deleting file "%s"' % (oCurFile.filename,))
+                            aoFilesToRepack.append(oCurFile);
+
+                    if not fDoRepack:
+                        oSrcZipFile.close();
+                        self.dprint('No re-packing necessary, skipping ZIP archive');
+                        return True;
+
+                    #
+                    # Second pass: Re-pack all needed files into our temporary ZIP archive.
+                    #
+                    for oCurFile in aoFilesToRepack:
+                        self.dprint('Re-packing file "%s"' % (oCurFile.filename,))
+                        if not self.fDryRun:
+                            oBuf = oSrcZipFile.read(oCurFile);
+                            oDstZipFile.writestr(oCurFile, oBuf);
+
                     if not self.fDryRun:
                         oDstZipFile.close();
+
                 except Exception as oXcpt4:
-                    print(oXcpt4);
-                    return (None, 'Error handling file "%s" of archive "%s": %s'
-                                % (oCurFile.filename, sSrcZipFileAbs, oXcpt4,), None);
+                    print('Error handling file "%s" of archive "%s": %s' % (oCurFile.filename, sSrcZipFileAbs, oXcpt4,));
+                    return False;
 
                 oSrcZipFile.close();
 
@@ -248,109 +222,56 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                     fRc = self._replaceFile(sSrcZipFileAbs, sDstZipFileAbs, self.fDryRun);
 
             except Exception as oXcpt3:
-                return (None, 'Error creating temporary ZIP archive "%s": %s' % (sDstZipFileAbs, oXcpt3,), None);
+                print('Error creating temporary ZIP archive "%s": %s' % (sDstZipFileAbs, oXcpt3,));
+                return False;
+
         except Exception as oXcpt1:
             # Construct a meaningful error message.
-            try:
-                if os.path.exists(sSrcZipFileAbs):
-                    return (None, 'Error opening "%s": %s' % (sSrcZipFileAbs, oXcpt1), None);
-                if not os.path.exists(sFile):
-                    return (None, 'File "%s" not found. [%s]' % (sSrcZipFileAbs, sFile), None);
-                return (None, 'Error opening "%s" inside "%s": %s' % (sSrcZipFileAbs, sFile, oXcpt1), None);
-            except Exception as oXcpt2:
-                return (None, 'WTF? %s; %s' % (oXcpt1, oXcpt2,), None);
+            if os.path.exists(sSrcZipFileAbs):
+                print('Error: Opening file "%s" failed: %s' % (sSrcZipFileAbs, oXcpt1));
+            else:
+                print('Error: File "%s" not found.' % (sSrcZipFileAbs,));
+            return False;
 
         return fRc;
 
 
-    def processDir(self, sCurDir):
+    def processOneTestSet(self, idTestSet, sBasename):
         """
-        Process the given directory (relative to sSrcDir and sDstDir).
+        Processes one single testset.
+
         Returns success indicator.
         """
 
-        if not self.asFileExt:
-            print('Must specify at least one file extension to delete.');
-            return False;
-
-        if self.fVerbose:
-            self.dprint('Processing directory: %s' % (sCurDir,));
-
-        #
-        # Sift thought the directory content, collecting subdirectories and
-        # sort relevant files by test set.
-        # Generally there will either be subdirs or there will be files.
-        #
-        asSubDirs = [];
-        dTestSets = {};
-        sCurPath = os.path.abspath(os.path.join(self.sSrcDir, sCurDir));
-        for sFile in os.listdir(sCurPath):
-            if os.path.isdir(os.path.join(sCurPath, sFile)):
-                if sFile not in [ '.', '..' ]:
-                    asSubDirs.append(sFile);
-            elif sFile.startswith('TestSet-') \
-            and  sFile.endswith('zip'):
-                # Parse the file name. ASSUMES 'TestSet-%d-filename' format.
-                iSlash1 = sFile.find('-');
-                iSlash2 = sFile.find('-', iSlash1 + 1);
-                if iSlash2 <= iSlash1:
-                    self.warning('Bad filename (1): "%s"' % (sFile,));
-                    continue;
-
-                try:    idTestSet = int(sFile[(iSlash1 + 1):iSlash2]);
-                except:
-                    self.warning('Bad filename (2): "%s"' % (sFile,));
-                    if self.fVerbose:
-                        self.dprint('\n'.join(utils.getXcptInfo(4)));
-                    continue;
-
-                if idTestSet <= 0:
-                    self.warning('Bad filename (3): "%s"' % (sFile,));
-                    continue;
-
-                if iSlash2 + 2 >= len(sFile):
-                    self.warning('Bad filename (4): "%s"' % (sFile,));
-                    continue;
-                sName = sFile;
-
-                # Add it.
-                if idTestSet not in dTestSets:
-                    dTestSets[idTestSet] = [];
-                asTestSet = dTestSets[idTestSet];
-                asTestSet.append(sName);
-
-        #
-        # Test sets.
-        #
         fRc = True;
-        for idTestSet, oTestSet in dTestSets.items():
-            try:
-                if self._processTestSetZip(idTestSet, oTestSet[0], sCurDir) is not True:
-                    fRc = False;
-            except:
-                self.warning('TestSet %d: Exception in _processTestSetZip:\n%s' % (idTestSet, '\n'.join(utils.getXcptInfo()),));
-                fRc = False;
+        self.dprint('Processing testset %d' % (idTestSet,));
 
-        #
-        # Sub dirs.
-        #
-        self.dprint('Processing sub-directories');
-        for sSubDir in asSubDirs:
-            if self.processDir(os.path.join(sCurDir, sSubDir)) is not True:
-                fRc = False;
+        # Construct absolute ZIP file path.
+        # ZIP is hardcoded in config, so do here.
+        sSrcZipFileAbs = os.path.join(config.g_ksZipFileAreaRootDir, sBasename + '.zip');
 
-        #
-        # Try Remove the directory iff it's not '.' and it's been unmodified
-        # for the last 24h (race protection).
-        #
-        if sCurDir != '.':
-            try:
-                fpModTime = float(os.path.getmtime(sCurPath));
-                if fpModTime + (24*3600) <= time.time():
-                    if utils.noxcptRmDir(sCurPath) is True:
-                        self.dprint('Removed "%s".' % (sCurPath,));
-            except:
-                pass;
+        if self._processTestSetZip(idTestSet, sSrcZipFileAbs) is not True:
+            fRc = False;
+
+        return fRc;
+
+    def processTestSets(self):
+        """
+        Processes all testsets according to the set configuration.
+
+        Returns success indicator.
+        """
+
+        aoTestSets = self.oTestSetLogic.fetchByAge(cHoursBack = self.uHoursAgeToHandle);
+        cTestSets = len(aoTestSets);
+        print('Found %d entries in DB' % cTestSets);
+        if not cTestSets:
+            return True; # Nothing to do (yet).
+
+        fRc = True;
+        for oTestSet in aoTestSets:
+            fRc = self.processOneTestSet(oTestSet.idTestSet, oTestSet.sBaseFilename) and fRc;
+            # Keep going.
 
         return fRc;
 
@@ -361,17 +282,6 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         # Parse options.
         #
 
-        if len(sys.argv) < 2:
-            print('Must specify a main command!\n');
-            return 1;
-
-        sCommand = sys.argv[1];
-
-        asCmds = [ 'delete-files' ];
-        if sCommand not in asCmds:
-            print('Unknown main command! Must be one of: %s\n' % ', '.join(asCmds));
-            return 1;
-
         oParser = OptionParser();
 
         # Generic options.
@@ -381,24 +291,8 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
                            help = 'Quiet operation.');
         oParser.add_option('-d', '--dry-run', dest = 'fDryRun',  action = 'store_true',  default = False,
                            help = 'Dry run, do not make any changes.');
-        oParser.add_option('--source-dir', type = 'string', dest = 'sSrcDir',
-                           help = 'Specifies the source directory to process.');
-        oParser.add_option('--temp-dir', type = 'string', dest = 'sTempDir',
-                           help = 'Specifies the temp directory to use.');
-        oParser.add_option('--force', dest = 'fForce', action = 'store_true', default = False,
-                           help = 'Forces the operation.');
 
-        if sCommand == 'delete-files':
-            oGroup = OptionGroup(oParser, "File deletion options", "Deletes files from testset archives.");
-            oGroup.add_option('--file-ext', type = 'string', dest = 'asFileExt',
-                              help = 'Selects files with the given extensions.');
-            oGroup.add_option('--older-than-days', type = 'int', dest = 'cOlderThanDays', default = 0,
-                              help = 'Selects all files which are older than NUM days.');
-            oGroup.add_option('--bigger-than-kb', type = 'int', dest = 'uBiggerThanKb', default = 0,
-                              help = 'Selects all files which are bigger than (kB).\nA kilobyte is 1024 bytes.');
-            oParser.add_option_group(oGroup);
-
-        (oOptions, asArgs) = oParser.parse_args(sys.argv[2:]);
+        (oOptions, asArgs) = oParser.parse_args(sys.argv[1:]);
         if asArgs != []:
             oParser.print_help();
             return 1;
@@ -413,10 +307,8 @@ class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
         #
         fRc = False;
 
-        if sCommand == 'delete-files':
-            print('Job: Deleting files from archive');
-            oBatchJob = ArchiveDelFilesBatchJob(sCommand, oOptions);
-            fRc = oBatchJob.processDir(oBatchJob.sSrcDir);
+        oBatchJob = ArchiveDelFilesBatchJob(oOptions);
+        fRc = oBatchJob.processTestSets();
 
         if oOptions.fVerbose:
             print('SUCCESS' if fRc else 'FAILURE');
