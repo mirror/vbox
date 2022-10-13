@@ -57,7 +57,7 @@ sys.path.append(g_ksTestManagerDir)
 # Test Manager imports
 from testmanager                import config;
 from testmanager.core.db        import TMDatabaseConnection;
-from testmanager.core.testset   import TestSetData, TestSetLogic;
+from testmanager.core.testset   import TestSetLogic;
 
 
 class ArchiveDelFilesBatchJob(object): # pylint: disable=too-few-public-methods
