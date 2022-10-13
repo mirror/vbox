@@ -342,6 +342,23 @@ void UISettingsDialog::polishEvent(QShowEvent *pEvent)
     QIWithRetranslateUI<QIMainDialog>::polishEvent(pEvent);
 }
 
+void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
+{
+    /* Check whether there are unsaved settings
+     * which will be lost in such case: */
+    if (   !isSettingsChanged()
+        || msgCenter().confirmSettingsDiscarding())
+    {
+        /* Call to base-class: */
+        QIWithRetranslateUI<QIMainDialog>::closeEvent(pEvent);
+    }
+    else
+    {
+        /* Otherwise ignore this: */
+        pEvent->ignore();
+    }
+}
+
 void UISettingsDialog::loadData(QVariant &data)
 {
     /* Mark serialization started: */
@@ -803,7 +820,7 @@ void UISettingsDialog::prepareWidgets()
                 m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
                                                  QDialogButtonBox::NoButton);
 #endif
-                connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::reject);
+                connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::close);
                 connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
 #ifndef VBOX_WS_MAC
                 connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,

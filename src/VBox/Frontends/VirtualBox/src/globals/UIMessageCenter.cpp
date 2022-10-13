@@ -779,7 +779,17 @@ void UIMessageCenter::warnAboutStateChange(QWidget *pParent /* = 0*/) const
     setWarningShown("warnAboutStateChange", false);
 }
 
-bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::confirmSettingsDiscarding(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>The machine settings were changed.</p>"
+                             "<p>Would you like to discard the changed settings or to keep editing them?</p>"),
+                          0 /* auto-confirm id */,
+                          tr("Discard changes"), tr("Keep editing"));
+
+}
+
+bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>The machine settings were changed while you were editing them. "

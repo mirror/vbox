@@ -306,6 +306,7 @@ public:
         void cannotSaveSettings(const QString strDetails, QWidget *pParent = 0) const;
         void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
         void warnAboutStateChange(QWidget *pParent = 0) const;
+        bool confirmSettingsDiscarding(QWidget *pParent = 0) const;
         bool confirmSettingsReloading(QWidget *pParent = 0) const;
         int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
         bool confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent = 0) const;
