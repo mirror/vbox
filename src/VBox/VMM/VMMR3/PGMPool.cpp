@@ -599,6 +599,27 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                             pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
                     }
                     goto default_case;
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+                case PGMPOOLKIND_EPT_PD_FOR_EPT_PD: /* Large pages reference 2 MB of physical memory, so we must clear them. */
+                    if (pPage->cPresent)
+                    {
+                        PEPTPD pShwPD = (PEPTPD)PGMPOOL_PAGE_2_PTR_V2(pPool->CTX_SUFF(pVM), pVCpu, pPage);
+                        for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
+                        {
+                            if (   (pShwPD->a[i].u & EPT_PRESENT_MASK)
+                                && (pShwPD->a[i].u & EPT_E_LEAF))
+                            {
+                                pShwPD->a[i].u = 0;
+                                Assert(pPage->cPresent);
+                                pPage->cPresent--;
+                            }
+                        }
+                        if (pPage->cPresent == 0)
+                            pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
+                    }
+                    goto default_case;
+# endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 #endif /* PGM_WITH_LARGE_PAGES */
 
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
@@ -612,7 +633,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                 case PGMPOOLKIND_EPT_PT_FOR_PHYS:
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
                 case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
-                case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+                case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
                 case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
                 case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
 #endif
@@ -621,15 +642,6 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                     {
                         void *pvShw = PGMPOOL_PAGE_2_PTR_V2(pPool->CTX_SUFF(pVM), pVCpu, pPage);
                         STAM_PROFILE_START(&pPool->StatZeroPage, z);
-#ifdef VBOX_STRICT
-                        if (PGMPOOL_PAGE_IS_NESTED(pPage))
-                        {
-                            PEPTPT pPT = (PEPTPT)pvShw;
-                            for (unsigned idxPt = 0; idxPt < RT_ELEMENTS(pPT->a); idxPt++)
-                                if (pPT->a[idxPt].u & EPT_PRESENT_MASK)
-                                    Assert(!(pPT->a[idxPt].u & EPT_E_LEAF));  /* We don't support large pages as of yet. */
-                        }
-#endif
 #if 0
                         /* Useful check for leaking references; *very* expensive though. */
                         switch (pPage->enmKind)
@@ -792,6 +804,28 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
     AssertRC(rc);
 }
 
+
+/**
+ * Stringifies a PGMPOOLACCESS value.
+ */
+static const char *pgmPoolPoolAccessToStr(uint8_t enmAccess)
+{
+    switch ((PGMPOOLACCESS)enmAccess)
+    {
+        case PGMPOOLACCESS_DONTCARE:         return "DONTCARE";
+        case PGMPOOLACCESS_USER_RW:          return "USER_RW";
+        case PGMPOOLACCESS_USER_R:           return "USER_R";
+        case PGMPOOLACCESS_USER_RW_NX:       return "USER_RW_NX";
+        case PGMPOOLACCESS_USER_R_NX:        return "USER_R_NX";
+        case PGMPOOLACCESS_SUPERVISOR_RW:    return "SUPERVISOR_RW";
+        case PGMPOOLACCESS_SUPERVISOR_R:     return "SUPERVISOR_R";
+        case PGMPOOLACCESS_SUPERVISOR_RW_NX: return "SUPERVISOR_RW_NX";
+        case PGMPOOLACCESS_SUPERVISOR_R_NX:  return "SUPERVISOR_R_NX";
+    }
+    return "Unknown Access";
+}
+
+
 /**
  * Stringifies a PGMPOOLKIND value.
  */
@@ -861,6 +895,8 @@ static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
             return "ROOT_NESTED";
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
             return "EPT_PT_FOR_EPT_PT";
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
+            return "EPT_PT_FOR_EPT_2MB";
         case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
             return "EPT_PD_FOR_EPT_PD";
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
@@ -957,11 +993,11 @@ static DECLCALLBACK(void) pgmR3PoolInfoPages(PVM pVM, PCDBGFINFOHLP pHlp, const 
         if (   enmKind != PGMPOOLKIND_INVALID
             && enmKind != PGMPOOLKIND_FREE)
         {
-            pHlp->pfnPrintf(pHlp, "#%04x: HCPhys=%RHp GCPhys=%RGp %s %s%s%s\n",
+            pHlp->pfnPrintf(pHlp, "#%04x: HCPhys=%RHp GCPhys=%RGp %s %s %s%s%s\n",
                             iPage, pPage->Core.Key, GCPhys, pPage->fA20Enabled ? "A20 " : "!A20",
                             pgmPoolPoolKindToStr(enmKind),
-                            pPage->fCached ? " cached" : "",
-                            pPage->fMonitored ? " monitored" : "");
+                            pPage->enmAccess == PGMPOOLACCESS_DONTCARE ? "" : pgmPoolPoolAccessToStr(pPage->enmAccess),
+                            pPage->fCached ? " cached" : "", pPage->fMonitored ? " monitored" : "");
             if (!--cLeft)
                 break;
         }
@@ -1130,6 +1166,28 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 break;
             }
 
+            case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
+            {
+                PCEPTPT const pShwPT = (PCEPTPT)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
+                {
+                    uint64_t const uShw = pShwPT->a[j].u;
+                    if (uShw & EPT_E_LEAF)
+                        pgmR3PoolCheckError(&State, "Leafness-error: idx=%#x shw=%RX64 (2MB)\n", j, uShw);
+                    else if (uShw & EPT_PRESENT_MASK)
+                    {
+                        RTGCPHYS const GCPhysSubPage = pPage->GCPhys | (j << PAGE_SHIFT);
+                        RTHCPHYS       HCPhys        = NIL_RTHCPHYS;
+                        int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), GCPhysSubPage, &HCPhys);
+                        if (   rc != VINF_SUCCESS
+                            || (uShw & EPT_E_PG_MASK) != HCPhys)
+                            pgmR3PoolCheckError(&State, "Mismatch HCPhys: rc=%Rrc idx=%#x guest %RX64 shw=%RX64 vs %RHp\n",
+                                                rc, j, GCPhysSubPage, uShw, HCPhys);
+                    }
+                }
+                break;
+            }
+
             case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
             {
                 PCEPTPD const pShwPD = (PCEPTPD)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
@@ -1159,8 +1217,8 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                             PPGMPOOLPAGE pSubPage = HCPHYS_TO_POOL_PAGE(uShw & EPT_E_PG_MASK);
                             if (pSubPage)
                             {
-                                /** @todo adjust for 2M page to shadow PT mapping.   */
-                                if (pSubPage->enmKind != PGMPOOLKIND_EPT_PT_FOR_EPT_PT)
+                                if (   pSubPage->enmKind != PGMPOOLKIND_EPT_PT_FOR_EPT_PT
+                                    && pSubPage->enmKind != PGMPOOLKIND_EPT_PT_FOR_EPT_2MB)
                                     pgmR3PoolCheckError(&State, "Wrong sub-table type: idx=%#x guest %RX64 shw=%RX64: idxSub=%#x %s\n",
                                                         j, uGst, uShw, pSubPage->idx, pgmPoolPoolKindToStr(pSubPage->enmKind));
                                 if (pSubPage->fA20Enabled != pPage->fA20Enabled)
@@ -1172,7 +1230,6 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                             }
                             else
                                 pgmR3PoolCheckError(&State, "sub table not found: idx=%#x shw=%RX64\n", j, uShw);
-
                         }
                         if (      (uShw & (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
                                != (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE)

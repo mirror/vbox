@@ -50,7 +50,7 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
                                        bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk, bool *pfLockTaken);
 # if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) && PGM_SHW_TYPE == PGM_TYPE_EPT
 static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage,
-                                               unsigned iPte, PPGMPTWALKGST pGstWalkAll);
+                                               unsigned iPte, PCPGMPTWALKGST pGstWalkAll);
 static int  PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage, RTGCPHYS GCPhysPage, unsigned cPages,
                                          uint32_t uErr, PPGMPTWALKGST pGstWalkAll);
 static int  PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage, RTGCPHYS GCPhysPage, PPGMPTWALKGST pGstWalkAll);
@@ -2520,22 +2520,28 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
  * @note    Not to be used for 2/4MB pages!
  */
 static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage,
-                                               unsigned iPte, PPGMPTWALKGST pGstWalkAll)
+                                               unsigned iPte, PCPGMPTWALKGST pGstWalkAll)
 {
+    /*
+     * Do not make assumptions about anything other than the final PTE entry in the
+     * guest page table walk result. For instance, while mapping 2M PDEs as 4K pages,
+     * the PDE might still be having its leaf bit set.
+     *
+     * In the future, we could consider introducing a generic SLAT macro like PSLATPTE
+     * and using that instead of passing the full SLAT translation result.
+     */
     PGM_A20_ASSERT_MASKED(pVCpu, GCPhysPage);
     Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
     Assert(!pShwPage->fDirty);
     Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT);
-
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    AssertMsg(GCPhysPage == (pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK),
-              ("GCPhys=%RGp Ept=%RX64\n", GCPhysPage, pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK));
+    AssertMsg((pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK) == GCPhysPage,
+              ("PTE address mismatch. GCPhysPage=%RGp Pte=%RX64\n", GCPhysPage, pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK));
 
     /*
      * Find the ram range.
      */
     PPGMPAGE pPage;
-    int rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
+    int rc = pgmPhysGetPageEx(pVCpu->CTX_SUFF(pVM), GCPhysPage, &pPage);
     AssertRCReturnVoid(rc);
 
     Assert(!PGM_PAGE_IS_BALLOONED(pPage));
@@ -2545,15 +2551,19 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
     /** @todo This needs to be applied to the regular case below, not here. And,
      *        no we should *NOT* make the page writble, instead we need to write
      *        protect them if necessary. */
-    if (   PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
-        && PGM_PAGE_IS_ZERO(pPage)
-        && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+    if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
+        &&  (   PGM_PAGE_IS_ZERO(pPage)
+             || (   (pGstWalkAll->u.Ept.Pte.u & EPT_E_WRITE)
+                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 #  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
-        && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
+                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
 #  endif
 #  ifdef VBOX_WITH_PAGE_SHARING
-        && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
+                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
 #  endif
+                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_BALLOONED
+             )
+          )
        )
     {
         AssertMsgFailed(("GCPhysPage=%RGp\n", GCPhysPage)); /** @todo Shouldn't happen but if it does deal with it later. */
@@ -2660,7 +2670,6 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
     Assert(pPd);
     EPTPDE Pde = pPd->a[iPde];
 
-# if 0  /* Enable this later? */
     /* In the guest SMP case we could have blocked while another VCPU reused this page table. */
     if (!SHW_PDE_IS_P(Pde))
     {
@@ -2672,17 +2681,42 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
     /* Can happen in the guest SMP case; other VCPU activated this PDE while we were blocking to handle the page fault. */
     if (SHW_PDE_IS_BIG(Pde))
     {
-        Assert(pVM->pgm.s.fNestedPaging);
         Log7Func(("CPU%d: SyncPage: %RGp changed behind our back!\n", pVCpu->idCpu, GCPhysNestedPage));
         return VINF_SUCCESS;
     }
-# else
-    AssertMsg(SHW_PDE_IS_P(Pde), ("Pde=%RX64 iPde=%u\n", Pde.u, iPde));
-    Assert(!SHW_PDE_IS_BIG(Pde));
-# endif
 
     PPGMPOOLPAGE pShwPage = pgmPoolGetPage(pPool, Pde.u & EPT_PDE_PG_MASK);
     PEPTPT       pPt      = (PEPTPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+
+    /*
+     * If we've shadowed a guest EPT PDE that maps a 2M page using a 4K table,
+     * then sync the 4K sub-page in the 2M range.
+     */
+    if (pGstWalkAll->u.Ept.Pde.u & EPT_E_LEAF)
+    {
+        Assert(!SHW_PDE_IS_BIG(Pde));
+
+        Assert(pGstWalkAll->u.Ept.Pte.u == 0);
+        Assert((Pde.u & EPT_PRESENT_MASK) == (pGstWalkAll->u.Ept.Pde.u & EPT_PRESENT_MASK));
+        Assert(pShwPage->GCPhys == (pGstWalkAll->u.Ept.Pde.u & EPT_PDE2M_PG_MASK));
+
+#if defined(VBOX_STRICT) && defined(DEBUG_ramshankar)
+        PPGMPAGE pPage;
+        rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage); AssertRC(rc);
+        Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
+        Assert(pShwPage->enmKind == PGMPOOLKIND_EPT_PT_FOR_EPT_2MB);
+#endif
+        uint64_t const fGstPteFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask & ~EPT_E_LEAF;
+        pGstWalkAll->u.Ept.Pte.u = GCPhysPage | fGstPteFlags;
+
+        unsigned const iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
+        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll);
+        Log7Func(("4K: GCPhysPage=%RGp iPte=%u ShwPte=%08llx\n", GCPhysPage, iPte, SHW_PTE_LOG64(pPt->a[iPte])));
+
+        /* Restore modifications did to the guest-walk result above in case callers might inspect them later. */
+        pGstWalkAll->u.Ept.Pte.u = 0;
+        return VINF_SUCCESS;
+    }
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
 # ifdef PGM_SYNC_N_PAGES
@@ -2794,7 +2828,7 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
 
     PEPTPD         pPd;
     PEPTPDPT       pPdpt;
-    unsigned const iPde = (GCPhysNestedPage >> EPT_PD_SHIFT)   & EPT_PD_MASK;
+    unsigned const iPde = (GCPhysNestedPage >> EPT_PD_SHIFT) & EPT_PD_MASK;
     int rc = pgmShwGetNestedEPTPDPtr(pVCpu, GCPhysNestedPage, &pPdpt, &pPd, pGstWalkAll);
     if (rc != VINF_SUCCESS)
     {
@@ -2815,22 +2849,158 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
 # ifdef PGM_WITH_LARGE_PAGES
     if (BTH_IS_NP_ACTIVE(pVM))
     {
-        /* Check if we allocated a big page before for this 2 MB range and disable it. */
+        /*
+         * Check if the guest is mapping a 2M page here.
+         */
         PPGMPAGE pPage;
         rc = pgmPhysGetPageEx(pVM, GCPhysPage & X86_PDE2M_PAE_PG_MASK, &pPage);
-        if (   RT_SUCCESS(rc)
-            && PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+        AssertRCReturn(rc, rc);
+        if (pGstWalkAll->u.Ept.Pde.u & EPT_E_LEAF)
         {
-            Log7Func(("Disabling large page %RGp\n", GCPhysPage));
-            Assert(PGM_A20_IS_ENABLED(pVCpu));  /* Should never be in A20M mode in VMX operation. */
-            PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
-            pVM->pgm.s.cLargePagesDisabled++;
+            /* A20 is always enabled in VMX root and non-root operation. */
+            Assert(PGM_A20_IS_ENABLED(pVCpu));
+
+            RTHCPHYS HCPhys = NIL_RTHCPHYS;
+            if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+            {
+                STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
+                AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+            }
+            else if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED)
+            {
+                /* Recheck the entire 2 MB range to see if we can use it again as a large page. */
+                rc = pgmPhysRecheckLargePage(pVM, GCPhysPage, pPage);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                    Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
+                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                }
+            }
+            else if (PGMIsUsingLargePages(pVM))
+            {
+                rc = pgmPhysAllocLargePage(pVM, GCPhysPage);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                    Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
+                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                }
+            }
+
+            /*
+             * If we have a 2M large page, we can map the guest's 2M large page right away.
+             */
+            uint64_t const fShwBigPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask;
+            if (HCPhys != NIL_RTHCPHYS)
+            {
+                Pde.u = HCPhys | fShwBigPdeFlags;
+                Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzBigPdeMask));
+                Assert(Pde.u & EPT_E_LEAF);
+                SHW_PDE_ATOMIC_SET2(*pPde, Pde);
+
+                /* Add a reference to the first page only. */
+                PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPde, PGM_PAGE_GET_TRACKING(pPage), pPage, iPde);
+
+                Assert(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED);
+
+                STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
+                Log7Func(("GstPde=%RGp ShwPde=%RX64 [2M]\n", pGstWalkAll->u.Ept.Pde.u, Pde.u));
+                return VINF_SUCCESS;
+            }
+
+            /*
+             * We didn't get a perfect 2M fit. Split the 2M page into 4K pages.
+             * The page ought not to be marked as a big (2M) page at this point.
+             */
+            Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
+
+            /* Determine the right kind of large page to avoid incorrect cached entry reuse. */
+            PGMPOOLACCESS enmAccess;
+            {
+                Assert(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_USER_EXECUTE));  /* Mode-based execute control for EPT not supported. */
+                bool const fNoExecute = !(pGstWalkAll->u.Ept.Pde.u & EPT_E_EXECUTE);
+                if (pGstWalkAll->u.Ept.Pde.u & EPT_E_WRITE)
+                    enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_RW_NX : PGMPOOLACCESS_SUPERVISOR_RW;
+                else
+                    enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_R_NX  : PGMPOOLACCESS_SUPERVISOR_R;
+            }
+
+            /*
+             * Allocate & map a 4K shadow table to cover the 2M guest page.
+             */
+            PPGMPOOLPAGE   pShwPage;
+            RTGCPHYS const GCPhysPt = pGstWalkAll->u.Ept.Pde.u & EPT_PDE2M_PG_MASK;
+            rc = pgmPoolAlloc(pVM, GCPhysPt, PGMPOOLKIND_EPT_PT_FOR_EPT_2MB, enmAccess, PGM_A20_IS_ENABLED(pVCpu),
+                              pShwPde->idx, iPde, false /*fLockPage*/, &pShwPage);
+            if (   rc == VINF_SUCCESS
+                || rc == VINF_PGM_CACHED_PAGE)
+            { /* likely */ }
+            else
+            {
+               STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
+               AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS);
+            }
+
+            PSHWPT pPt = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+            Assert(pPt);
+            Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
+            if (rc == VINF_SUCCESS)
+            {
+                /* The 4K PTEs shall inherit the flags of the 2M PDE page sans the leaf bit. */
+                uint64_t const fShwPteFlags = fShwBigPdeFlags & ~EPT_E_LEAF;
+
+                /* Sync each 4K pages in the 2M range. */
+                for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++)
+                {
+                    RTGCPHYS const GCPhysSubPage = GCPhysPt | (iPte << GUEST_PAGE_SHIFT);
+                    pGstWalkAll->u.Ept.Pte.u = GCPhysSubPage | fShwPteFlags;
+                    Assert(!(pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptMbzPteMask));
+                    PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysSubPage, pShwPage, iPte, pGstWalkAll);
+                    Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u [2M->4K]\n", pGstWalkAll->u.Ept.Pte, pPt->a[iPte].u, iPte));
+                    if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
+                        break;
+                }
+
+                /* Restore modifications did to the guest-walk result above in case callers might inspect them later. */
+                pGstWalkAll->u.Ept.Pte.u = 0;
+            }
+            else
+            {
+                Assert(rc == VINF_PGM_CACHED_PAGE);
+#  if defined(VBOX_STRICT) && defined(DEBUG_ramshankar)
+                /* Paranoia - Verify address of each of the subpages are what they should be. */
+                RTGCPHYS GCPhysSubPage = GCPhysPt;
+                for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++, GCPhysSubPage += GUEST_PAGE_SIZE)
+                {
+                    PPGMPAGE pSubPage;
+                    rc = pgmPhysGetPageEx(pVM, GCPhysSubPage, &pSubPage);
+                    AssertRC(rc);
+                    AssertMsg(   PGM_PAGE_GET_HCPHYS(pSubPage) == SHW_PTE_GET_HCPHYS(pPt->a[iPte])
+                              || !SHW_PTE_IS_P(pPt->a[iPte]),
+                              ("PGM 2M page and shadow PTE conflict. GCPhysSubPage=%RGp Page=%RHp Shw=%RHp\n",
+                               GCPhysSubPage, PGM_PAGE_GET_HCPHYS(pSubPage), SHW_PTE_GET_HCPHYS(pPt->a[iPte])));
+                }
+#  endif
+                rc = VINF_SUCCESS; /* Cached entry; assume it's still fully valid. */
+            }
+
+            /* Save the new PDE. */
+            uint64_t const fShwPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedPdeMask;
+            Pde.u = pShwPage->Core.Key | fShwPdeFlags;
+            Assert(!(Pde.u & EPT_E_LEAF));
+            Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzPdeMask));
+            SHW_PDE_ATOMIC_SET2(*pPde, Pde);
+            STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
+            Log7Func(("GstPde=%RGp ShwPde=%RX64 iPde=%u\n", pGstWalkAll->u.Ept.Pde.u, pPde->u, iPde));
+            return rc;
         }
     }
 # endif /* PGM_WITH_LARGE_PAGES */
 
     /*
-     * Allocate & map the page table.
+     * Allocate & map the shadow page table.
      */
     PSHWPT       pPt;
     PPGMPOOLPAGE pShwPage;
@@ -2881,12 +3051,13 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
                      * This could be MMIO pages reserved by the nested-hypevisor or genuinely not-present pages.
                      * Ensure the shadow tables entry is not-present.
                      */
-                    /** @todo We currently don't sync. them to cause EPT misconfigs and trap all of them
-                     *        using EPT violation and walk the guest EPT tables to determine EPT
-                     *        misconfigs VM-exits for the nested-guest. In the future we could optimize
-                     *        this by using a specific combination of reserved bits which we can
-                     *        immediately identify as EPT misconfigs for the nested-guest without having
-                     *        to walk its EPT tables. Tracking non-present entries might be tricky...
+                    /** @todo We currently don't configure these to cause EPT misconfigs but rather trap
+                     *        them using EPT violations and walk the guest EPT tables to determine
+                     *        whether they are EPT misconfigs VM-exits for the nested-hypervisor. We
+                     *        could optimize this by using a specific combination of reserved bits
+                     *        which we could immediately identify as EPT misconfigs of the
+                     *        nested-hypervisor without having to walk its EPT tables. However, tracking
+                     *        non-present entries might be tricky...
                      */
                     AssertMsg(!pPt->a[iPteCur].u, ("%RX64\n", pPt->a[iPteCur].u));
                 }
@@ -2914,7 +3085,8 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
 
     /* Save the new PDE. */
     uint64_t const fShwPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedPdeMask;
-    AssertReturn(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_LEAF), VERR_NOT_SUPPORTED);  /* Implement this later. */
+    Assert(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_LEAF));
+    Assert(!(pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptMbzPdeMask));
     Pde.u = pShwPage->Core.Key | fShwPdeFlags;
     SHW_PDE_ATOMIC_SET2(*pPde, Pde);
     Log7Func(("GstPde=%RGp ShwPde=%RX64 iPde=%u\n", pGstWalkAll->u.Ept.Pde.u, pPde->u, iPde));

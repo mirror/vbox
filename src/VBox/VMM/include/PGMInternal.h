@@ -1945,6 +1945,8 @@ typedef enum PGMPOOLKIND
 
     /** Shw: EPT page table;                        Gst: EPT page table. */
     PGMPOOLKIND_EPT_PT_FOR_EPT_PT,
+    /** Shw: EPT page table;                        Gst: 2MB page. */
+    PGMPOOLKIND_EPT_PT_FOR_EPT_2MB,
     /** Shw: EPT page directory table;              Gst: EPT page directory. */
     PGMPOOLKIND_EPT_PD_FOR_EPT_PD,
     /** Shw: EPT page directory pointer table;      Gst: EPT page directory pointer table. */
@@ -2343,6 +2345,7 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
  */
 #define PGMPOOL_PAGE_IS_NESTED(a_pPage)         PGMPOOL_PAGE_IS_KIND_NESTED((a_pPage)->enmKind)
 #define PGMPOOL_PAGE_IS_KIND_NESTED(a_enmKind)  (   (a_enmKind) == PGMPOOLKIND_EPT_PT_FOR_EPT_PT     \
+                                                 || (a_enmKind) == PGMPOOLKIND_EPT_PT_FOR_EPT_2MB    \
                                                  || (a_enmKind) == PGMPOOLKIND_EPT_PD_FOR_EPT_PD     \
                                                  || (a_enmKind) == PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT \
                                                  || (a_enmKind) == PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4)
@@ -3575,6 +3578,8 @@ typedef struct PGMCPU
     uint64_t                        fGstEptShadowedPteMask;
     /** Mask containing the EPT PDE bits we shadow. */
     uint64_t                        fGstEptShadowedPdeMask;
+    /** Mask containing the EPT PDE (2M) bits we shadow. */
+    uint64_t                        fGstEptShadowedBigPdeMask;
     /** Mask containing the EPT PDPTE bits we shadow. */
     uint64_t                        fGstEptShadowedPdpteMask;
     /** Mask containing the EPT PML4E bits we shadow. */

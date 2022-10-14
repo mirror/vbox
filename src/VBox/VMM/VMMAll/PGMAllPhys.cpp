@@ -1156,6 +1156,7 @@ int pgmPhysRecheckLargePage(PVMCC pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
 
     Assert(!VM_IS_NEM_ENABLED(pVM)); /** @todo NEM: Large page support. */
 
+    AssertCompile(X86_PDE2M_PAE_PG_MASK == EPT_PDE2M_PG_MASK);  /* Paranoia: Caller uses this for guest EPT tables as well. */
     GCPhys &= X86_PDE2M_PAE_PG_MASK;
 
     /* Check the base page. */

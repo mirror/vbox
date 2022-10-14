@@ -2321,6 +2321,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
         case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
             return PGMPOOL_PAGE_IS_KIND_NESTED(enmKind2);
@@ -2574,6 +2575,7 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_32BIT_PD_PHYS:
                 case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+                case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
                 case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
 #endif
                     break;
@@ -2648,6 +2650,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
             break;
 
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
         case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
@@ -2756,6 +2759,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
             break;
 
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
         case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
             /* Nothing to monitor here. */
             Assert(!pPage->fMonitored);
@@ -3510,6 +3514,9 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 #ifdef PGM_WITH_LARGE_PAGES
         /* Large page case only. */
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:    /* X86_PDE4M_PS is same as leaf bit in EPT; be careful! */
+#endif
         {
             Assert(pVM->pgm.s.fNestedPaging);
 
@@ -4013,6 +4020,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
         case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
         case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
@@ -4057,6 +4065,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
         case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
         case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
@@ -4674,8 +4683,8 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
     }
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+
 /**
  * Clears references to shadowed pages in a SLAT EPT page table.
  *
@@ -4700,6 +4709,73 @@ DECLINLINE(void) pgmPoolTrackDerefNestedPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage
         }
     }
 }
+
+
+/**
+ * Clear references to guest physical memory in a SLAT 2MB EPT page table.
+ *
+ * @param   pPool   The pool.
+ * @param   pPage   The page.
+ * @param   pShwPT  The shadow page table (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefNestedPTEPT2MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPT pShwPT)
+{
+    Assert(pPage->fA20Enabled);
+    RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
+    for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
+    {
+        X86PGPAEUINT const uShwPte = pShwPT->a[i].u;
+        Assert((uShwPte & UINT64_C(0xfff0000000000f80)) == 0); /* Access, Dirty, UserX (not supported) and ignored bits 7, 11. */
+        if (uShwPte & EPT_PRESENT_MASK)
+        {
+            Log7Func(("Shw=%RX64 GstPte=%RX64\n", uShwPte, GCPhys));
+            pgmPoolTracDerefGCPhys(pPool, pPage, uShwPte & EPT_PTE_PG_MASK, GCPhys, i);
+            if (!pPage->cPresent)
+                break;
+        }
+    }
+}
+
+
+/**
+ * Clear references to shadowed pages in a SLAT EPT page directory.
+ *
+ * @param   pPool   The pool.
+ * @param   pPage   The page.
+ * @param   pShwPD  The shadow page directory (mapping of the page).
+ * @param   pGstPD  The guest page directory.
+ */
+DECLINLINE(void) pgmPoolTrackDerefNestedPDEpt(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPD pShwPD, PCEPTPD pGstPD)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
+    {
+        X86PGPAEUINT const uPde = pShwPD->a[i].u;
+#ifdef PGM_WITH_LARGE_PAGES
+        AssertMsg((uPde & UINT64_C(0xfff0000000000f00)) == 0, ("uPde=%RX64\n", uPde));
+#else
+        AssertMsg((uPde & UINT64_C(0xfff0000000000f80)) == 0, ("uPde=%RX64\n", uPde));
+#endif
+        if (uPde & EPT_PRESENT_MASK)
+        {
+#ifdef PGM_WITH_LARGE_PAGES
+            if (uPde & EPT_E_LEAF)
+            {
+                Log4(("pgmPoolTrackDerefPDEPT: i=%d pde=%RX64 GCPhys=%RX64\n", i, uPde & EPT_PDE2M_PG_MASK, pPage->GCPhys));
+                pgmPoolTracDerefGCPhys(pPool, pPage, uPde & EPT_PDE2M_PG_MASK, pGstPD->a[i].u & EPT_PDE2M_PG_MASK, i);
+            }
+            else
+#endif
+            {
+                PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, uPde & EPT_PDE_PG_MASK);
+                if (pSubPage)
+                    pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+                else
+                    AssertFatalMsgFailed(("%RX64\n", pShwPD->a[i].u & EPT_PDE_PG_MASK));
+            }
+        }
+    }
+}
+
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
@@ -4867,7 +4943,6 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
             {
                 Log4(("pgmPoolTrackDerefPDEPT: i=%d pde=%RX64 GCPhys=%RX64\n",
                       i, uPde & EPT_PDE2M_PG_MASK, pPage->GCPhys));
-                Assert(!PGMPOOL_PAGE_IS_NESTED(pPage)); /* We don't support large guest EPT yet. */
                 pgmPoolTracDerefGCPhys(pPool, pPage, uPde & EPT_PDE2M_PG_MASK,
                                        pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */,
                                        i);
@@ -5028,18 +5103,23 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
         {
-            STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
             void *pvGst;
             int const rc = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
             pgmPoolTrackDerefNestedPTEPT(pPool, pPage, (PEPTPT)pvShw, (PCEPTPT)pvGst);
-            PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
-            STAM_PROFILE_STOP(&pPool->StatTrackDerefGCPhys, g);
             break;
         }
 
-        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
-            pgmPoolTrackDerefPDEPT(pPool, pPage, (PEPTPD)pvShw);
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
+            pgmPoolTrackDerefNestedPTEPT2MB(pPool, pPage, (PEPTPT)pvShw);
             break;
+
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
+        {
+            void *pvGst;
+            int const rc = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+            pgmPoolTrackDerefNestedPDEpt(pPool, pPage, (PEPTPD)pvShw, (PCEPTPD)pvGst);
+            break;
+        }
 
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
             pgmPoolTrackDerefPDPTEPT(pPool, pPage, (PEPTPDPT)pvShw);
@@ -5047,7 +5127,8 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif
 
         default:
-            AssertFatalMsgFailed(("enmKind=%d GCPhys=%RGp\n", pPage->enmKind, pPage->GCPhys));
+            AssertFatalMsgFailed(("enmKind=%d [%s] GCPhys=%RGp\n",
+                                  pPage->enmKind, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
     }
 
     /* paranoia, clear the shadow page. Remove this laser (i.e. let Alloc and ClearAll do it). */
@@ -5805,6 +5886,8 @@ static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
             return "PGMPOOLKIND_ROOT_NESTED";
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
             return "PGMPOOLKIND_EPT_PT_FOR_EPT_PT";
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
+            return "PGMPOOLKIND_EPT_PT_FOR_EPT_2MB";
         case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
             return "PGMPOOLKIND_EPT_PD_FOR_EPT_PD";
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
