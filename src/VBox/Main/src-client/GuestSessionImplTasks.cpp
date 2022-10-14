@@ -1209,9 +1209,11 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
  * @param  pszPathReal          Scratch buffer for holding the resolved real path.
  *                              Needed for recursion.
  * @param  cbPathReal           Size (in bytes) of \a pszPathReal.
+ * @param  pDirEntry            Where to store looked up directory information for handled paths.
+ *                              Needed for recursion.
  */
 int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
-                           char *pszPathReal, size_t cbPathReal)
+                           char *pszPathReal, size_t cbPathReal, PRTDIRENTRYEX pDirEntry)
 {
     Utf8Str strPathAbs = strPath;
     if (   !strPathAbs.endsWith("/")
@@ -1248,8 +1250,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                     do
                     {
                         /* Retrieve the next directory entry. */
-                        RTDIRENTRYEX Entry;
-                        vrc = RTDirReadEx(hDir, &Entry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                        vrc = RTDirReadEx(hDir, pDirEntry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
                         if (RT_FAILURE(vrc))
                         {
                             if (vrc == VERR_NO_MORE_FILES)
@@ -1257,16 +1258,16 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                             break;
                         }
 
-                        Utf8Str strEntry = strPathSub + Utf8Str(Entry.szName);
+                        Utf8Str strEntry = strPathSub + Utf8Str(pDirEntry->szName);
 
                         LogFlowFunc(("Entry '%s'\n", strEntry.c_str()));
 
-                        switch (Entry.Info.Attr.fMode & RTFS_TYPE_MASK)
+                        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                         {
                             case RTFS_TYPE_DIRECTORY:
                             {
                                 /* Skip "." and ".." entries. */
-                                if (RTDirEntryExIsStdDotLink(&Entry))
+                                if (RTDirEntryExIsStdDotLink(pDirEntry))
                                     break;
 
                                 LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
@@ -1274,7 +1275,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                 if (!(mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_Recursive))
                                     break;
 
-                                vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal);
+                                vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal, pDirEntry);
                                 break;
                             }
 
@@ -1282,7 +1283,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                             {
                                 LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
 
-                                vrc = AddEntryFromHost(strEntry, &Entry.Info);
+                                vrc = AddEntryFromHost(strEntry, &pDirEntry->Info);
                                 break;
                             }
 
@@ -1290,7 +1291,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                             {
                                 if (mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks)
                                 {
-                                    Utf8Str strEntryAbs = strPathAbs + (const char *)Entry.szName;
+                                    Utf8Str strEntryAbs = strPathAbs + (const char *)pDirEntry->szName;
 
                                     vrc = RTPathReal(strEntryAbs.c_str(), pszPathReal, cbPathReal);
                                     if (RT_SUCCESS(vrc))
@@ -1302,7 +1303,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                             {
                                                 LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (directory)\n",
                                                          strEntryAbs.c_str(), pszPathReal));
-                                                vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal);
+                                                vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal, pDirEntry);
                                             }
                                             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                                             {
@@ -1808,7 +1809,9 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                     if (itSrc->enmType == FsObjType_Directory)
                     {
                         char szPathReal[RTPATH_MAX];
-                        vrc = pFsList->AddDirFromHost(strSrc /* strPath */, "" /* strSubDir */, szPathReal, sizeof(szPathReal));
+                        RTDIRENTRYEX DirEntry;
+                        vrc = pFsList->AddDirFromHost(strSrc /* strPath */, "" /* strSubDir */,
+                                                      szPathReal, sizeof(szPathReal), &DirEntry);
                     }
                     else
                         vrc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);

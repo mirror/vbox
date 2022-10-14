@@ -130,7 +130,7 @@ public:
     int AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir = "");
 
     int AddEntryFromHost(const Utf8Str &strFile, PCRTFSOBJINFO pcObjInfo);
-    int AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir, char *pszPathReal, size_t cbPathReal);
+    int AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir, char *pszPathReal, size_t cbPathReal, PRTDIRENTRYEX pDirEntry);
 
 public:
 
