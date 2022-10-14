@@ -2830,7 +2830,9 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
     PEPTPDPT       pPdpt;
     unsigned const iPde = (GCPhysNestedPage >> EPT_PD_SHIFT) & EPT_PD_MASK;
     int rc = pgmShwGetNestedEPTPDPtr(pVCpu, GCPhysNestedPage, &pPdpt, &pPd, pGstWalkAll);
-    if (rc != VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
     {
         STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
         AssertRC(rc);
@@ -3025,7 +3027,6 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
     {
         /* Sync the page we've already translated through SLAT. */
         const unsigned iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        Assert((pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK) == GCPhysPage);
         PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll);
         Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u\n", pGstWalkAll->u.Ept.Pte.u, pPt->a[iPte].u, iPte));
 
@@ -3069,7 +3070,7 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
     else
     {
         Assert(rc == VINF_PGM_CACHED_PAGE);
-# ifdef VBOX_STRICT
+# if defined(VBOX_STRICT) && defined(DEBUG_ramshankar)
         /* Paranoia - Verify address of the page is what it should be. */
         PPGMPAGE pPage;
         rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
