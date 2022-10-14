@@ -915,9 +915,9 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
         }
         else
         {
-            pVmcsInfo->pbVirtApic     = &pVCpu->cpum.GstCtx.hwvirt.vmx.abVirtApicPage[0];
-            pVmcsInfo->HCPhysVirtApic = GVMMR0ConvertGVMPtr2HCPhys(pVM, pVmcsInfo->pbVirtApic);
-            Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
+            /* These are setup later while marging the nested-guest VMCS. */
+            Assert(pVmcsInfo->pbVirtApic == NULL);
+            Assert(pVmcsInfo->HCPhysVirtApic == NIL_RTHCPHYS);
         }
     }
 
@@ -5715,11 +5715,9 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, cPleGapTicks);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, cPleWindowTicks);
     }
-    if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
-    {
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
+    if (pVmcsInfoNstGst->HCPhysVirtApic != HCPhysVirtApic)
         rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, HCPhysVirtApic);
-    }
+    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
     if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, HCPhysApicAccess);
     rc |= VMXWriteVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, uPendingDbgXcpts);
