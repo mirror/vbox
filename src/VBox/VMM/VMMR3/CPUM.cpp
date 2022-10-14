@@ -1113,8 +1113,6 @@ static void cpumR3InitVmxHwVirtState(PVM pVM)
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abMsrBitmap) == VMX_V_MSR_BITMAP_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == (VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES) * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
-        AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_PAGES * X86_PAGE_SIZE);
-        AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_SIZE);
 
         /* Initialize non-zero values. */
         pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
@@ -1143,7 +1141,6 @@ DECLINLINE(void) cpumR3ResetVmxHwVirtState(PVMCPU pVCpu)
     RT_ZERO(pCtx->hwvirt.vmx.aExitMsrLoadArea);
     RT_ZERO(pCtx->hwvirt.vmx.abMsrBitmap);
     RT_ZERO(pCtx->hwvirt.vmx.abIoBitmap);
-    RT_ZERO(pCtx->hwvirt.vmx.abVirtApicPage);
 
     pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
     pCtx->hwvirt.vmx.GCPhysShadowVmcs  = NIL_RTGCPHYS;

@@ -585,59 +585,56 @@ typedef struct CPUMCTX
                  * @todo r=bird: Do we really need to keep copies for these?  Couldn't we just
                  *       access the guest memory directly as needed? */
                 uint8_t                 abIoBitmap[VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE];
-                /** 0x11000 - The virtual-APIC page.
-                 * @note This is used by VT-x hardware... */
-                uint8_t                 abVirtApicPage[VMX_V_VIRT_APIC_SIZE];
 
-                /** 0x12000 - Guest physical address of the VMXON region. */
+                /** 0x11000 - Guest physical address of the VMXON region. */
                 RTGCPHYS                GCPhysVmxon;
-                /** 0x12008 - Guest physical address of the current VMCS pointer. */
+                /** 0x11008 - Guest physical address of the current VMCS pointer. */
                 RTGCPHYS                GCPhysVmcs;
-                /** 0x12010 - Guest physical address of the shadow VMCS pointer. */
+                /** 0x11010 - Guest physical address of the shadow VMCS pointer. */
                 RTGCPHYS                GCPhysShadowVmcs;
-                /** 0x12018 - Last emulated VMX instruction/VM-exit diagnostic. */
+                /** 0x11018 - Last emulated VMX instruction/VM-exit diagnostic. */
                 VMXVDIAG                enmDiag;
-                /** 0x1201c - VMX abort reason. */
+                /** 0x1101c - VMX abort reason. */
                 VMXABORT                enmAbort;
-                /** 0x12020 - Last emulated VMX instruction/VM-exit diagnostic auxiliary info.
+                /** 0x11020 - Last emulated VMX instruction/VM-exit diagnostic auxiliary info.
                  *  (mainly used for info. that's not part of the VMCS). */
                 uint64_t                uDiagAux;
-                /** 0x12028 - VMX abort auxiliary info. */
+                /** 0x11028 - VMX abort auxiliary info. */
                 uint32_t                uAbortAux;
-                /** 0x1202c - Whether the guest is in VMX root mode. */
+                /** 0x1102c - Whether the guest is in VMX root mode. */
                 bool                    fInVmxRootMode;
-                /** 0x1202d - Whether the guest is in VMX non-root mode. */
+                /** 0x1102d - Whether the guest is in VMX non-root mode. */
                 bool                    fInVmxNonRootMode;
-                /** 0x1202e - Whether the injected events are subjected to event intercepts.  */
+                /** 0x1102e - Whether the injected events are subjected to event intercepts.  */
                 bool                    fInterceptEvents;
-                /** 0x1202f - Whether blocking of NMI (or virtual-NMIs) was in effect in VMX
+                /** 0x1102f - Whether blocking of NMI (or virtual-NMIs) was in effect in VMX
                  *  non-root mode before execution of IRET. */
                 bool                    fNmiUnblockingIret;
-                /** 0x12030 - Guest TSC timestamp of the first PAUSE instruction that is
+                /** 0x11030 - Guest TSC timestamp of the first PAUSE instruction that is
                  *  considered to be the first in a loop. */
                 uint64_t                uFirstPauseLoopTick;
-                /** 0x12038 - Guest TSC timestamp of the previous PAUSE instruction. */
+                /** 0x11038 - Guest TSC timestamp of the previous PAUSE instruction. */
                 uint64_t                uPrevPauseTick;
-                /** 0x12040 - Guest TSC timestamp of VM-entry (used for VMX-preemption
+                /** 0x11040 - Guest TSC timestamp of VM-entry (used for VMX-preemption
                  *  timer). */
                 uint64_t                uEntryTick;
-                /** 0x12048 - Virtual-APIC write offset (until trap-like VM-exit). */
+                /** 0x11048 - Virtual-APIC write offset (until trap-like VM-exit). */
                 uint16_t                offVirtApicWrite;
-                /** 0x1204a - Whether virtual-NMI blocking is in effect. */
+                /** 0x1104a - Whether virtual-NMI blocking is in effect. */
                 bool                    fVirtNmiBlocking;
-                /** 0x1204b - Padding. */
+                /** 0x1104b - Padding. */
                 uint8_t                 abPadding0[5];
-                /** 0x12050 - Guest VMX MSRs. */
+                /** 0x11050 - Guest VMX MSRs. */
                 VMXMSRS                 Msrs;
             } vmx;
         } CPUM_UNION_NM(s);
 
-        /** 0x12130 - Hardware virtualization type currently in use. */
+        /** 0x11130 - Hardware virtualization type currently in use. */
         CPUMHWVIRT              enmHwvirt;
-        /** 0x12134 - Global interrupt flag - AMD only (always true on Intel). */
+        /** 0x11134 - Global interrupt flag - AMD only (always true on Intel). */
         bool                    fGif;
         bool                    afPadding1[3];
-        /** 0x12138 - A subset of guest force flags that are saved while running the
+        /** 0x11138 - A subset of guest force flags that are saved while running the
          *  nested-guest. */
 #ifdef VMCPU_WITH_64_BIT_FFS
         uint64_t                fLocalForcedActions;
@@ -646,7 +643,7 @@ typedef struct CPUMCTX
         uint32_t                fPadding;
 #endif
 #if 0
-        /** 0x12140 - Pad to 64 byte boundary. */
+        /** 0x11140 - Pad to 64 byte boundary. */
         uint8_t                 abPadding0[8+16+32];
 #endif
     } hwvirt;
@@ -720,15 +717,14 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrStore
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrLoadArea,      X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abMsrBitmap,           X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abIoBitmap,            X86_PAGE_SIZE);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abVirtApicPage,        X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                  8);
 AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            0x7000);
 AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,      0xa0d4);
 AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) vmx.abIoBitmap,            0xf000);
-AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) vmx.fVirtNmiBlocking,      0x1204a);
-AssertCompileMemberOffset(CPUMCTX,    hwvirt.enmHwvirt,                                   0x12130);
-AssertCompileMemberOffset(CPUMCTX,    hwvirt.fGif,                                        0x12134);
-AssertCompileMemberOffset(CPUMCTX,    hwvirt.fLocalForcedActions,                         0x12138);
+AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) vmx.fVirtNmiBlocking,      0x1104a);
+AssertCompileMemberOffset(CPUMCTX,    hwvirt.enmHwvirt,                                   0x11130);
+AssertCompileMemberOffset(CPUMCTX,    hwvirt.fGif,                                        0x11134);
+AssertCompileMemberOffset(CPUMCTX,    hwvirt.fLocalForcedActions,                         0x11138);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);

@@ -271,7 +271,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.aExitMsrLoadArea, 4096);
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.abMsrBitmap, 4096);
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.abIoBitmap, 4096);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.abVirtApicPage, 4096);
 
     PVM pVM = NULL; NOREF(pVM);
 

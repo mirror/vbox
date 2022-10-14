@@ -266,7 +266,6 @@ struc CPUMCPU
     .Guest.hwvirt.vmx.aExitMsrLoadArea      resb        0x2000
     .Guest.hwvirt.vmx.abMsrBitmap           resb        0x1000
     .Guest.hwvirt.vmx.abIoBitmap            resb        0x1000+0x1000
-    .Guest.hwvirt.vmx.abVirtApicPage        resb        0x1000
     alignb 8
     .Guest.hwvirt.vmx.GCPhysVmxon           resq        1
     .Guest.hwvirt.vmx.GCPhysVmcs            resq        1
