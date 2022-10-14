@@ -5127,8 +5127,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif
 
         default:
-            AssertFatalMsgFailed(("enmKind=%d [%s] GCPhys=%RGp\n",
-                                  pPage->enmKind, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
+            AssertFatalMsgFailed(("enmKind=%d GCPhys=%RGp\n", pPage->enmKind, pPage->GCPhys));
     }
 
     /* paranoia, clear the shadow page. Remove this laser (i.e. let Alloc and ClearAll do it). */
