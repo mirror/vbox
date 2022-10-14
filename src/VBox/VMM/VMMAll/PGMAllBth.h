@@ -1178,10 +1178,12 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
     Assert(pWalk->fEffective & (PGM_PTATTRS_EPT_R_MASK | PGM_PTATTRS_EPT_W_MASK | PGM_PTATTRS_EPT_X_SUPER_MASK));
     Assert(pWalk->fIsSlat);
 
-    /* Paranoia: Remove later. */
+#ifdef DEBUG_ramshankar
+    /* Paranoia. */
     Assert(RT_BOOL(pWalk->fEffective & PGM_PTATTRS_R_MASK)  ==  RT_BOOL(pWalk->fEffective & PGM_PTATTRS_EPT_R_MASK));
     Assert(RT_BOOL(pWalk->fEffective & PGM_PTATTRS_W_MASK)  ==  RT_BOOL(pWalk->fEffective & PGM_PTATTRS_EPT_W_MASK));
     Assert(RT_BOOL(pWalk->fEffective & PGM_PTATTRS_NX_MASK) == !RT_BOOL(pWalk->fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK));
+#endif
 
     /*
      * Check page-access permissions.
@@ -1244,10 +1246,10 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
      * Check if this fault address is flagged for special treatment.
      * This handles faults on an MMIO or write-monitored page.
      *
-     * If this happens to be the VMX APIC-access page, we sync it in the shadow tables
-     * and emulate the APIC-access VM-exit by calling IEM's VMX APIC-access #PF handler
-     * registered for the page. Once the page is mapped in the shadow tables, subsequent
-     * APIC-access VM-exits for the nested-guest will be triggered by hardware.
+     * If this happens to be the VMX APIC-access page, we don't treat is as MMIO
+     * but rather sync it further below (as a regular guest page) which lets
+     * hardware-assisted execution trigger the APIC-access VM-exits of the
+     * nested-guest directly.
      */
     PPGMPAGE pPage;
     rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
