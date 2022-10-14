@@ -6120,15 +6120,51 @@ EMIT_R80_BY_I16(iemAImpl_fisubr_r80_by_i16, iemAImpl_fsubr_r80_by_r80)
 /*********************************************************************************************************************************
 *   x87 FPU Trigometric Operations                                                                                               *
 *********************************************************************************************************************************/
+static uint16_t iemAImpl_fpatan_r80_by_r80_normal(PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2, PIEMFPURESULT pFpuRes, uint16_t fFcw, uint16_t fFsw)
+{
+    softfloat_state_t SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
+    extFloat80_t y = iemFpuSoftF80FromIprt(pr80Val1);
+    extFloat80_t x = iemFpuSoftF80FromIprt(pr80Val2);
+    extFloat80_t v;
+    (void)fFcw;
 
+    v = extF80_atan2(y, x, &SoftState);
+
+    iemFpuSoftF80ToIprt(&pFpuRes->r80Result, v);
+    return fFsw;
+}
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                     PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3);
 
+    if (RTFLOAT80U_IS_NORMAL(pr80Val1) && RTFLOAT80U_IS_NORMAL(pr80Val2))
+    {
+        fFsw = iemAImpl_fpatan_r80_by_r80_normal(pr80Val1, pr80Val2, pFpuRes, fFcw, fFsw);
+
+        fFsw |= X86_FSW_PE | (7 << X86_FSW_TOP_SHIFT);
+        if (!(fFcw & X86_FCW_PM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+    else
+    {
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+        {
+            pFpuRes->r80Result = *pr80Val2;
+            fFsw |= X86_FSW_ES | X86_FSW_B | (6 << X86_FSW_TOP_SHIFT);
+        }
+        else
+        {
+            pFpuRes->r80Result = g_r80Indefinite;
+            fFsw |= (7 << X86_FSW_TOP_SHIFT);
+        }
+    }
+
+    pFpuRes->FSW = fFsw;
+}
 #endif /* IEM_WITHOUT_ASSEMBLY */
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
