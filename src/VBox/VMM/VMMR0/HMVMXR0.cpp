@@ -5622,14 +5622,6 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
         Assert(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
         RTGCPHYS const GCPhysApicAccess = pVmcsNstGst->u64AddrApicAccess.u;
 
-        /* Disabling this since we adjust the shadow page table permissions in (SyncHandlerPte). */
-#if 0
-        /** @todo NSTVMX: This is not really correct but currently is required to make
-         *        things work. We need to re-enable the page handler when we fallback to
-         *        IEM execution of the nested-guest! */
-        PGMHandlerPhysicalPageTempOff(pVM, GCPhysApicAccess, GCPhysApicAccess);
-#endif
-
         void          *pvPage;
         PGMPAGEMAPLOCK PgLockApicAccess;
         int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysApicAccess, &pvPage, &PgLockApicAccess);
@@ -6558,20 +6550,6 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
             rcStrict = rcRun;
             break;
         }
-
-        /* Disabling this since we adjust the shadow page table permissions in (SyncHandlerPte). */
-#if 0
-        /*
-         * Undo temporary disabling of the APIC-access page monitoring we did in hmR0VmxMergeVmcsNested.
-         * This is needed for NestedTrap0eHandler (and IEM) to cause nested-guest APIC-access VM-exits.
-         */
-        if (VmxTransient.pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-        {
-            PVMXVVMCS const pVmcsNstGst      = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-            RTGCPHYS const  GCPhysApicAccess = pVmcsNstGst->u64AddrApicAccess.u;
-            PGMHandlerPhysicalReset(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess);
-        }
-#endif
 
         /*
          * Profile the VM-exit.
