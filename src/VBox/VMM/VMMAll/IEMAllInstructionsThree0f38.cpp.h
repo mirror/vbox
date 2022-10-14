@@ -266,6 +266,66 @@ FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
 }
 
 
+/**
+ * Common worker for SSE-style AES-NI instructions of the form:
+ *      aesxxx  xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 4. AES-NI cpuid checks.
+ *
+ * Unlike iemOpCommonSse41_FullFull_To_Full, the @a pfnU128 worker function
+ * takes no FXSAVE state, just the operands.
+ *
+ * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSsse3_FullFull_To_Full,
+ *      iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse42_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonAesNi_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode      0x0f 0x38 0x00. */
 FNIEMOP_DEF(iemOp_pshufb_Pq_Qq)
 {
@@ -1389,16 +1449,52 @@ FNIEMOP_STUB(iemOp_sha256msg2_Vdq_Wdq);
 /*  Opcode 0x66 0x0f 0x38 0xd8 - invalid. */
 /*  Opcode 0x66 0x0f 0x38 0xd9 - invalid. */
 /*  Opcode 0x66 0x0f 0x38 0xda - invalid. */
+
+
 /** Opcode 0x66 0x0f 0x38 0xdb. */
-FNIEMOP_STUB(iemOp_aesimc_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_aesimc_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, AESIMC, aesimc, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAesNi_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_aesimc_u128, iemAImpl_aesimc_u128_fallback));
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0xdc. */
-FNIEMOP_STUB(iemOp_aesenc_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_aesenc_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, AESENC, aesenc, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAesNi_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_aesenc_u128, iemAImpl_aesenc_u128_fallback));
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0xdd. */
-FNIEMOP_STUB(iemOp_aesenclast_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_aesenclast_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, AESENCLAST, aesenclast, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAesNi_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_aesenclast_u128, iemAImpl_aesenclast_u128_fallback));
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0xde. */
-FNIEMOP_STUB(iemOp_aesdec_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_aesdec_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, AESDEC, aesdec, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAesNi_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_aesdec_u128, iemAImpl_aesdec_u128_fallback));
+}
+
+
 /** Opcode 0x66 0x0f 0x38 0xdf. */
-FNIEMOP_STUB(iemOp_aesdeclast_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_aesdeclast_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, AESDECLAST, aesdeclast, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAesNi_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_aesdeclast_u128, iemAImpl_aesdeclast_u128_fallback));
+}
+
 
 /*  Opcode 0x66 0x0f 0x38 0xe0 - invalid. */
 /*  Opcode 0x66 0x0f 0x38 0xe1 - invalid. */
