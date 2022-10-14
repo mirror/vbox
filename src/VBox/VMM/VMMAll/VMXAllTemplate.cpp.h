@@ -9437,7 +9437,10 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
      * Ask PGM for information about the given GCPhys.  We need to check if we're
      * out of sync first.
      */
-    NEMHCDARWINHMACPCCSTATE State = { RT_BOOL(pVmxTransient->uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_WRITE), false, false };
+    NEMHCDARWINHMACPCCSTATE State = { RT_BOOL(pVmxTransient->uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_WRITE),
+                                      RT_BOOL(pVmxTransient->uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH),
+                                      false,
+                                      false };
     PGMPHYSNEMPAGEINFO      Info;
     int rc = PGMPhysNemPageInfoChecker(pVM, pVCpu, pVmxTransient->uGuestPhysicalAddr, State.fWriteAccess, &Info,
                                        nemR3DarwinHandleMemoryAccessPageCheckerCallback, &State);
