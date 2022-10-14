@@ -1558,7 +1558,6 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         uint8_t const  fMemTypeUc        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_MEMTYPE_UC);
         uint8_t const  fMemTypeWb        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB);
         uint8_t const  f2MPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDE_2M);
-        uint8_t const  f1GPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDPTE_1G);
         uint8_t const  fInvept           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT);
         /** @todo Nested VMX: Support accessed/dirty bits, see @bugref{10092#c25}. */
         /* uint8_t const  fAccessDirty      = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY); */
@@ -1573,7 +1572,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_MEMTYPE_UC,                        fMemTypeUc)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_MEMTYPE_WB,                        fMemTypeWb)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDE_2M,                            f2MPage)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDPTE_1G,                          f1GPage)
+                                    //| RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDPTE_1G,                          0)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT,                            fInvept)
                                     //| RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY,                      0)
                                     //| RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION,         0)
