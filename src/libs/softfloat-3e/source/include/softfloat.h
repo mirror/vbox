@@ -302,6 +302,7 @@ extFloat80_t extF80_sqrt( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_sin( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_cos( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 void extF80_sincos( extFloat80_t, extFloat80_t*, extFloat80_t* SOFTFLOAT_STATE_DECL_COMMA );
+extFloat80_t extF80_atan2( extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_ylog2x( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_ylog2xp1( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_scale_extF80( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
