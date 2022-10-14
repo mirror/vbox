@@ -1865,39 +1865,39 @@ Utf8Str GuestSession::i_guestErrorToString(int rcGuest)
     switch (rcGuest)
     {
         case VERR_INVALID_VM_HANDLE:
-            strError += Utf8StrFmt(tr("VMM device is not available (is the VM running?)"));
+            strError.printf(tr("VMM device is not available (is the VM running?)"));
             break;
 
         case VERR_HGCM_SERVICE_NOT_FOUND:
-            strError += Utf8StrFmt(tr("The guest execution service is not available"));
+            strError.printf(tr("The guest execution service is not available"));
             break;
 
         case VERR_ACCOUNT_RESTRICTED:
-            strError += Utf8StrFmt(tr("The specified user account on the guest is restricted and can't be used to logon"));
+            strError.printf(tr("The specified user account on the guest is restricted and can't be used to logon"));
             break;
 
         case VERR_AUTHENTICATION_FAILURE:
-            strError += Utf8StrFmt(tr("The specified user was not able to logon on guest"));
+            strError.printf(tr("The specified user was not able to logon on guest"));
             break;
 
         case VERR_TIMEOUT:
-            strError += Utf8StrFmt(tr("The guest did not respond within time"));
+            strError.printf(tr("The guest did not respond within time"));
             break;
 
         case VERR_CANCELLED:
-            strError += Utf8StrFmt(tr("The session operation was canceled"));
+            strError.printf(tr("The session operation was canceled"));
             break;
 
         case VERR_GSTCTL_MAX_CID_OBJECTS_REACHED:
-            strError += Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
+            strError.printf(tr("Maximum number of concurrent guest processes has been reached"));
             break;
 
         case VERR_NOT_FOUND:
-            strError += Utf8StrFmt(tr("The guest execution service is not ready (yet)"));
+            strError.printf(tr("The guest execution service is not ready (yet)"));
             break;
 
         default:
-            strError += Utf8StrFmt("%Rrc", rcGuest);
+            strError.printf("%Rrc", rcGuest);
             break;
     }
 

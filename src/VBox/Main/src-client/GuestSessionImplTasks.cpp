@@ -1448,7 +1448,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
     if (mDest.isEmpty())
     {
-        strErrorInfo = Utf8StrFmt(tr("Host destination must not be empty"));
+        strErrorInfo.printf(tr("Host destination must not be empty"));
         vrc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1463,7 +1463,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
             if (strSrc.isEmpty())
             {
-                strErrorInfo = Utf8StrFmt(tr("Guest source entry must not be empty"));
+                strErrorInfo.printf(tr("Guest source entry must not be empty"));
                 vrc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1500,8 +1500,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                     strErrorInfo = GuestBase::getErrorAsString(tr("Guest file lookup failed"),
                                                                GuestErrorInfo(GuestErrorInfo::Type_ToolStat, vrcGuest, strSrc.c_str()));
                 else
-                    strErrorInfo = Utf8StrFmt(tr("Guest file lookup for \"%s\" failed: %Rrc"),
-                                              strSrc.c_str(), vrc);
+                    strErrorInfo.printf(tr("Guest file lookup for \"%s\" failed: %Rrc"),
+                                        strSrc.c_str(), vrc);
                 break;
             }
 
@@ -1509,7 +1509,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType != FsObjType_Directory)
                 {
-                    strErrorInfo = Utf8StrFmt(tr("Guest source is not a file: %s"), strSrc.c_str());
+                    strErrorInfo.printf(tr("Guest source is not a file: %s"), strSrc.c_str());
                     vrc = VERR_NOT_A_FILE;
                     break;
                 }
@@ -1518,7 +1518,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType != FsObjType_File)
                 {
-                    strErrorInfo = Utf8StrFmt(tr("Guest source is not a directory: %s"), strSrc.c_str());
+                    strErrorInfo.printf(tr("Guest source is not a directory: %s"), strSrc.c_str());
                     vrc = VERR_NOT_A_DIRECTORY;
                     break;
                 }
@@ -1540,8 +1540,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                 if (RT_FAILURE(vrc))
                 {
                     delete pFsList;
-                    strErrorInfo = Utf8StrFmt(tr("Error adding guest source '%s' to list: %Rrc"),
-                                              strSrc.c_str(), vrc);
+                    strErrorInfo.printf(tr("Error adding guest source '%s' to list: %Rrc"),
+                                        strSrc.c_str(), vrc);
                     break;
                 }
 
@@ -1576,7 +1576,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
     if (RT_FAILURE(vrc))
     {
         if (strErrorInfo.isEmpty())
-            strErrorInfo = Utf8StrFmt(tr("Failed with %Rrc"), vrc);
+            strErrorInfo.printf(tr("Failed with %Rrc"), vrc);
         setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
@@ -1751,7 +1751,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
     if (mDest.isEmpty())
     {
-        strErrorInfo = Utf8StrFmt(tr("Guest destination must not be empty"));
+        strErrorInfo.printf(tr("Guest destination must not be empty"));
         vrc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1766,7 +1766,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
             if (strSrc.isEmpty())
             {
-                strErrorInfo = Utf8StrFmt(tr("Host source entry must not be empty"));
+                strErrorInfo.printf(tr("Host source entry must not be empty"));
                 vrc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1775,7 +1775,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             vrc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_FAILURE(vrc))
             {
-                strErrorInfo = Utf8StrFmt(tr("No such host file/directory: %s"), strSrc.c_str());
+                strErrorInfo.printf(tr("No such host file/directory: %s"), strSrc.c_str());
                 break;
             }
 
@@ -1783,7 +1783,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType != FsObjType_Directory)
                 {
-                    strErrorInfo = Utf8StrFmt(tr("Host source is not a file: %s"), strSrc.c_str());
+                    strErrorInfo.printf(tr("Host source is not a file: %s"), strSrc.c_str());
                     vrc = VERR_NOT_A_FILE;
                     break;
                 }
@@ -1792,7 +1792,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType == FsObjType_Directory)
                 {
-                    strErrorInfo = Utf8StrFmt(tr("Host source is not a directory: %s"), strSrc.c_str());
+                    strErrorInfo.printf(tr("Host source is not a directory: %s"), strSrc.c_str());
                     vrc = VERR_NOT_A_DIRECTORY;
                     break;
                 }
@@ -1817,8 +1817,8 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                 if (RT_FAILURE(vrc))
                 {
                     delete pFsList;
-                    strErrorInfo = Utf8StrFmt(tr("Error adding host source '%s' to list: %Rrc"),
-                                              strSrc.c_str(), vrc);
+                    strErrorInfo.printf(tr("Error adding host source '%s' to list: %Rrc"),
+                                        strSrc.c_str(), vrc);
                     break;
                 }
 
@@ -1853,7 +1853,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
     if (RT_FAILURE(vrc))
     {
         if (strErrorInfo.isEmpty())
-            strErrorInfo = Utf8StrFmt(tr("Failed with %Rrc"), vrc);
+            strErrorInfo.printf(tr("Failed with %Rrc"), vrc);
         setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
