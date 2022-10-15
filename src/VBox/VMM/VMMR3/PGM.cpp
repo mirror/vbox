@@ -1678,7 +1678,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
                                           | (RT_BF_GET(fEptVpidCap, VMX_BF_EPT_VPID_CAP_PDE_2M) ^ 1) << EPT_E_BIT_LEAF;
     uint64_t const fGstEptMbzBigPdpteMask = EPT_PDPTE1G_MBZ_MASK
                                           | (RT_BF_GET(fEptVpidCap, VMX_BF_EPT_VPID_CAP_PDPTE_1G) ^ 1) << EPT_E_BIT_LEAF;
-    uint64_t const GCPhysRsvdAddrMask     = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000fffffffffffff); /* bits 63:52 ignored */
+    //uint64_t const GCPhysRsvdAddrMask     = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000fffffffffffff); /* bits 63:52 ignored */
 #endif
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -1724,14 +1724,15 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
                && !pVM->cpum.ro.GuestFeatures.fVmxSppEpt
                && !pVM->cpum.ro.GuestFeatures.fVmxEptXcptVe
                && !(fEptVpidCap & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY));
-        /* We need to shadow reserved bits as guest EPT tables can set them to trigger EPT misconfigs.  */
-        pVCpu->pgm.s.fGstEptShadowedPteMask    = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT;
-        pVCpu->pgm.s.fGstEptShadowedPdeMask    = GCPhysRsvdAddrMask | EPT_PRESENT_MASK;
-        pVCpu->pgm.s.fGstEptShadowedBigPdeMask = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT | EPT_E_LEAF;
-        pVCpu->pgm.s.fGstEptShadowedPdpteMask  = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT | EPT_E_LEAF;
-        pVCpu->pgm.s.fGstEptShadowedPml4eMask  = GCPhysRsvdAddrMask | EPT_PRESENT_MASK | EPT_PML4E_MBZ_MASK;
+        /* We currently do -not- shadow reserved bits in guest page tables but instead trap them using non-present permissions,
+           see todo in (NestedSyncPT). */
+        pVCpu->pgm.s.fGstEptShadowedPteMask    = EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT;
+        pVCpu->pgm.s.fGstEptShadowedPdeMask    = EPT_PRESENT_MASK;
+        pVCpu->pgm.s.fGstEptShadowedBigPdeMask = EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT | EPT_E_LEAF;
+        pVCpu->pgm.s.fGstEptShadowedPdpteMask  = EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT | EPT_E_LEAF;
+        pVCpu->pgm.s.fGstEptShadowedPml4eMask  = EPT_PRESENT_MASK | EPT_PML4E_MBZ_MASK;
         /* If mode-based execute control for EPT is enabled, we would need to include bit 10 in the present mask. */
-        pVCpu->pgm.s.fGstEptPresentMask       = EPT_PRESENT_MASK;
+        pVCpu->pgm.s.fGstEptPresentMask        = EPT_PRESENT_MASK;
 #endif
     }
 
