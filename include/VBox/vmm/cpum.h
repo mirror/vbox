@@ -2123,8 +2123,8 @@ DECLINLINE(void) CPUMUpdateInterruptShadowSsStiEx(PCPUMCTX pCtx, bool fInhibited
         pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
     else
     {
-        pCtx->fInhibit |= (fInhibitedBySs  ? CPUMCTX_INHIBIT_SHADOW_SS  : (uint8_t)0)
-                       |  (fInhibitedBySti ? CPUMCTX_INHIBIT_SHADOW_STI : (uint8_t)0);
+        pCtx->fInhibit |= (fInhibitedBySs  ? (uint8_t)CPUMCTX_INHIBIT_SHADOW_SS  : (uint8_t)0)
+                       |  (fInhibitedBySti ? (uint8_t)CPUMCTX_INHIBIT_SHADOW_STI : (uint8_t)0);
         pCtx->uRipInhibitInt = rip;
     }
 }
