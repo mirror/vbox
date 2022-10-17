@@ -2208,8 +2208,7 @@ DECLINLINE(void) CPUMClearInterruptInhibitingByNmi(PCPUMCTX pCtx)
  * Extended version of CPUMClearInterruptInhibitingByNmi() that takes VMX
  * non-root mode into account when doing the updating.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   fInhibited  The new state.
+ * @param   pCtx        Current guest CPU context.
  */
 DECLINLINE(void) CPUMClearInterruptInhibitingByNmiEx(PCPUMCTX pCtx)
 {
@@ -2240,7 +2239,7 @@ DECLINLINE(void) CPUMUpdateInterruptInhibitingByNmi(PCPUMCTX pCtx, bool fInhibit
  * Extended version of CPUMUpdateInterruptInhibitingByNmi() that takes VMX
  * non-root mode into account when doing the updating.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Current guest CPU context.
  * @param   fInhibited  The new state.
  */
 DECLINLINE(void) CPUMUpdateInterruptInhibitingByNmiEx(PCPUMCTX pCtx, bool fInhibited)
