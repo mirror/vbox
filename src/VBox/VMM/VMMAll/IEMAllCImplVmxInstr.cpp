@@ -1470,7 +1470,7 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
     }
 
     /* Blocking-by-STI. */
-    if (!(pVCpu->cpum.GstCtx.fInhibit & CPUMCTX_INHIBIT_SHADOW))
+    if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
     { /* probable */}
     else
     {
