@@ -606,6 +606,12 @@ DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, const void *pvRam, size
          */
         Assert(!g_fAppleHvNoWX); /* We should come here only once. */
 
+        /*
+         * Try unmapping the region first (the code on Catalina doesn't remove it form the map if vm_map_protect() fails and
+         * causes the following hv_vm_map call to fail...).
+         */
+        hv_vm_unmap(GCPhys, cb);
+
          /* Start with an RW mapping (most of the time the guest needs to write something there before it can execute code). */
         fHvMemProt &= ~HV_MEMORY_EXEC;
         g_fAppleHvNoWX = true;
