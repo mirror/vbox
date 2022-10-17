@@ -2181,7 +2181,7 @@ DECLINLINE(void) CPUMSetInterruptInhibitingByNmi(PCPUMCTX pCtx)
  * Extended version of CPUMSetInterruptInhibitingByNmi() that takes VMX non-root
  * mode into account when marking interrupts as inhibited by NMI.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Current guest CPU context.
  */
 DECLINLINE(void) CPUMSetInterruptInhibitingByNmiEx(PCPUMCTX pCtx)
 {
