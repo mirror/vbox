@@ -1919,10 +1919,10 @@ DECLINLINE(void) CPUMSetGuestGif(PCPUMCTX pCtx, bool fGif)
 
 /**
  * Checks if we're in an "interrupt shadow", i.e. after a STI, POP SS or MOV SS.
- *  
+ *
  * This also inhibit NMIs, except perhaps for nested guests.
- *  
- * @returns true if interrupts are inhibited by interrupt shadow, false if not. 
+ *
+ * @returns true if interrupts are inhibited by interrupt shadow, false if not.
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
  * @note    Does not clear fInhibit when CPUMCTX::uRipInhibitInt differs
@@ -1940,9 +1940,9 @@ DECLINLINE(bool) CPUMIsInInterruptShadow(PCCPUMCTX pCtx)
 /**
  * Checks if we're in an "interrupt shadow", i.e. after a STI, POPF or MOV SS,
  * updating the state if stale.
- *  
+ *
  * This also inhibit NMIs, except perhaps for nested guests.
- *  
+ *
  * @returns true if interrupts are inhibited by interrupt shadow, false if not.
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
