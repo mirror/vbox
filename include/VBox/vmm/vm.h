@@ -489,8 +489,6 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #define VMCPU_FF_DBGF                       RT_BIT_64(VMCPU_FF_DBGF_BIT)
 /** The bit number for VMCPU_FF_DBGF. */
 #define VMCPU_FF_DBGF_BIT                   10
-/** This action forces the VM to service any pending updates to CR3 (used only
- *  by HM). */
 /** Hardware virtualized nested-guest interrupt pending. */
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_64(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 11
@@ -522,12 +520,8 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /* 21 used to be VMCPU_FF_SELM_SYNC_TSS (raw-mode only). */
 /* 22 used to be VMCPU_FF_SELM_SYNC_GDT (raw-mode only). */
 /* 23 used to be VMCPU_FF_SELM_SYNC_LDT (raw-mode only). */
-/** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
-#define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_64(VMCPU_FF_INHIBIT_INTERRUPTS_BIT)
-#define VMCPU_FF_INHIBIT_INTERRUPTS_BIT     24
-/** Block injection of non-maskable interrupts to the guest. */
-#define VMCPU_FF_BLOCK_NMIS                 RT_BIT_64(VMCPU_FF_BLOCK_NMIS_BIT)
-#define VMCPU_FF_BLOCK_NMIS_BIT             25
+/* 24 used to be VMCPU_FF_INHIBIT_INTERRUPTS, which moved to CPUMCTX::fInhibit in v7.0.4. */
+/* 25 used to be VMCPU_FF_BLOCK_NMIS, which moved to CPUMCTX::fInhibit in v7.0.4. */
 /** Force return to Ring-3. */
 #define VMCPU_FF_TO_R3                      RT_BIT_64(VMCPU_FF_TO_R3_BIT)
 #define VMCPU_FF_TO_R3_BIT                  28
@@ -575,7 +569,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
                                                  | VM_FF_EMT_RENDEZVOUS )
 /** High priority VMCPU pre-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
-                                                 | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF \
+                                                 | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_DBGF \
                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
                                                  | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
                                                  | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW )
@@ -583,8 +577,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /** High priority VM pre raw-mode execution mask. */
 #define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK        (  VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY )
 /** High priority VMCPU pre raw-mode execution mask. */
-#define VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK     (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
-                                                 | VMCPU_FF_INHIBIT_INTERRUPTS )
+#define VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK     (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL )
 
 /** High priority post-execution actions. */
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (  VM_FF_PGM_NO_MEMORY )

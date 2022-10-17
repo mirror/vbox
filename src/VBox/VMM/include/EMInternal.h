@@ -164,9 +164,6 @@ typedef struct EMCPU
      *  EMSTATE_IEM_THEN_REM state. */
     uint32_t                cIemThenRemInstructions;
 
-    /** Inhibit interrupts for this instruction. Valid only when VM_FF_INHIBIT_INTERRUPTS is set. */
-    RTGCUINTPTR             GCPtrInhibitInterrupts;
-
     /** Start of the current time slice in ms. */
     uint64_t                u64TimeSliceStart;
     /** Start of the current time slice in thread execution time (ms). */
@@ -195,8 +192,10 @@ typedef struct EMCPU
         RTGCPTR             uMonitorRDX;    /**< Monitor hint. */
     } MWait;
 
+#if 0
     /** Make sure the jmp_buf is at a 32-byte boundrary. */
-    uint64_t                au64Padding1[3];
+    uint64_t                au64Padding1[4];
+#endif
     union
     {
         /** Padding used in the other rings.

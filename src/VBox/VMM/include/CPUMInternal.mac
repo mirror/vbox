@@ -121,7 +121,6 @@ endstruc
 struc CPUMCPU
     ;
     ; Guest context state
-    ; (Identical to the .Hyper chunk below and to CPUMCTX in cpum.mac.)
     ;
     .Guest                      resq    0
     .Guest.eax                  resq    1
@@ -182,21 +181,6 @@ struc CPUMCPU
     .Guest.gs.u64Base           resq    1
     .Guest.gs.u32Limit          resd    1
     .Guest.gs.Attr              resd    1
-    .Guest.eip                  resq    1
-    .Guest.eflags               resq    1
-    .Guest.cr0                  resq    1
-    .Guest.cr2                  resq    1
-    .Guest.cr3                  resq    1
-    .Guest.cr4                  resq    1
-    .Guest.dr                   resq    8
-    .Guest.gdtrPadding          resw    3
-    .Guest.gdtr                 resw    0
-    .Guest.gdtr.cbGdt           resw    1
-    .Guest.gdtr.pGdt            resq    1
-    .Guest.idtrPadding          resw    3
-    .Guest.idtr                 resw    0
-    .Guest.idtr.cbIdt           resw    1
-    .Guest.idtr.pIdt            resq    1
     .Guest.ldtr.Sel             resw    1
     .Guest.ldtr.PaddingSel      resw    1
     .Guest.ldtr.ValidSel        resw    1
@@ -211,6 +195,24 @@ struc CPUMCPU
     .Guest.tr.u64Base           resq    1
     .Guest.tr.u32Limit          resd    1
     .Guest.tr.Attr              resd    1
+    .Guest.eip                  resq    1
+    .Guest.eflags               resq    1
+    .Guest.fInhibit             resb    1
+    alignb 8
+    .Guest.uRipInhibitInt       resq    1
+    .Guest.cr0                  resq    1
+    .Guest.cr2                  resq    1
+    .Guest.cr3                  resq    1
+    .Guest.cr4                  resq    1
+    .Guest.dr                   resq    8
+    .Guest.gdtrPadding          resw    3
+    .Guest.gdtr                 resw    0
+    .Guest.gdtr.cbGdt           resw    1
+    .Guest.gdtr.pGdt            resq    1
+    .Guest.idtrPadding          resw    3
+    .Guest.idtr                 resw    0
+    .Guest.idtr.cbIdt           resw    1
+    .Guest.idtr.pIdt            resq    1
     .Guest.SysEnter.cs          resb    8
     .Guest.SysEnter.eip         resb    8
     .Guest.SysEnter.esp         resb    8
@@ -221,7 +223,6 @@ struc CPUMCPU
     .Guest.msrCSTAR             resb    8
     .Guest.msrSFMASK            resb    8
     .Guest.msrKERNELGSBASE      resb    8
-    .Guest.uMsrPadding0         resb    8
 
     alignb 8
     .Guest.fExtrn               resq    1
@@ -289,8 +290,8 @@ struc CPUMCPU
     alignb 8
     .Guest.hwvirt.enmHwvirt                 resd        1
     .Guest.hwvirt.fGif                      resb        1
-    alignb 8
-    .Guest.hwvirt.fLocalForcedActions       resd        1
+    alignb 4
+    .Guest.hwvirt.fSavedInhibit             resd        1
     alignb 64
 
     .GuestMsrs                  resq    0

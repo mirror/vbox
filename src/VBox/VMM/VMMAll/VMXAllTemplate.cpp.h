@@ -1697,38 +1697,28 @@ static void vmxHCExportGuestApicTpr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient
  */
 static uint32_t vmxHCGetGuestIntrStateAndUpdateFFs(PVMCPUCC pVCpu)
 {
+    uint32_t fIntrState = 0;
+
     /*
      * Check if we should inhibit interrupt delivery due to instructions like STI and MOV SS.
      */
-    uint32_t fIntrState = 0;
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
     {
         /* If inhibition is active, RIP and RFLAGS should've been imported from the VMCS already. */
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS);
 
-        PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-        if (pCtx->rip == EMGetInhibitInterruptsPC(pVCpu))
-        {
-            if (pCtx->eflags.Bits.u1IF)
-                fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
-            else
-                fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
-        }
-        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-        {
-            /*
-             * We can clear the inhibit force flag as even if we go back to the recompiler
-             * without executing guest code in VT-x, the flag's condition to be cleared is
-             * met and thus the cleared state is correct.
-             */
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-        }
+        /** @todo r=bird: This heuristic isn't all that correct, it would be safer
+         * to always use MOVSS here.  Best deal would be to track both bits in CPUM. */
+        if (pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
+            fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
+        else
+            fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
     }
 
     /*
      * Check if we should inhibit NMI delivery.
      */
-    if (CPUMIsGuestNmiBlocking(pVCpu))
+    if (CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
         fIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
 
     /*
@@ -3379,6 +3369,27 @@ DECLINLINE(void) vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 
 
 /**
+ * Worker for vmxHCImportGuestIntrState that handles the case where any of the
+ * relevant VMX_VMCS32_GUEST_INT_STATE bits are set.
+ */
+DECL_NO_INLINE(static,void) vmxHCImportGuestIntrStateSlow(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uint32_t fGstIntState)
+{
+    /*
+     * We must import RIP here to set our EM interrupt-inhibited state.
+     * We also import RFLAGS as our code that evaluates pending interrupts
+     * before VM-entry requires it.
+     */
+    vmxHCImportGuestRip(pVCpu);
+    vmxHCImportGuestRFlags(pVCpu, pVmcsInfo);
+
+    CPUMUpdateInterruptShadowEx(&pVCpu->cpum.GstCtx,
+                                RT_BOOL(fGstIntState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)),
+                                pVCpu->cpum.GstCtx.rip);
+    CPUMUpdateInterruptInhibitingByNmiEx(&pVCpu->cpum.GstCtx, RT_BOOL(fGstIntState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI));
+}
+
+
+/**
  * Imports the guest interruptibility-state from the VMCS back into the guest-CPU
  * context.
  *
@@ -3398,31 +3409,11 @@ DECLINLINE(void) vmxHCImportGuestIntrState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsIn
     int rc = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, &u32Val);    AssertRC(rc);
     if (!u32Val)
     {
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-/** @todo r=bird: This is a call which isn't necessary most of the time, this
- * path is taken on basically all exits. Try find a way to eliminating it. */
-        CPUMSetGuestNmiBlocking(pVCpu, false);
+        CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
+        CPUMClearInterruptInhibitingByNmiEx(&pVCpu->cpum.GstCtx);
     }
     else
-    {
-/** @todo consider this branch for non-inlining. */
-        /*
-         * We must import RIP here to set our EM interrupt-inhibited state.
-         * We also import RFLAGS as our code that evaluates pending interrupts
-         * before VM-entry requires it.
-         */
-        vmxHCImportGuestRip(pVCpu);
-        vmxHCImportGuestRFlags(pVCpu, pVmcsInfo);
-
-        if (u32Val & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
-            EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
-        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-
-        bool const fNmiBlocking = RT_BOOL(u32Val & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI);
-        CPUMSetGuestNmiBlocking(pVCpu, fNmiBlocking);
-    }
+        vmxHCImportGuestIntrStateSlow(pVCpu, pVmcsInfo, u32Val);
 }
 
 
@@ -4926,7 +4917,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
      * An event that's already pending has already performed all necessary checks.
      */
     if (   !VCPU_2_VMXSTATE(pVCpu).Event.fPending
-        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        && !CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
     {
         /** @todo SMI. SMIs take priority over NMIs. */
 
@@ -4946,7 +4937,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
              * receive an NMI while the guest-interruptibility state bit depends on whether
              * the nested-hypervisor is using virtual-NMIs.
              */
-            if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            if (!CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                 if (   fIsNestedGuest
@@ -4960,7 +4951,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                 /* We've injected the NMI, bail. */
                 return VINF_SUCCESS;
             }
-            else if (!fIsNestedGuest)
+            if (!fIsNestedGuest)
                 vmxHCSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
         }
 
@@ -6162,11 +6153,8 @@ DECLINLINE(void) vmxHCAdvanceGuestRipBy(PVMCPUCC pVCpu, uint32_t cbInstr)
     /* Advance the RIP. */
     pVCpu->cpum.GstCtx.rip += cbInstr;
     ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP);
-
-    /* Update interrupt inhibition. */
-    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        && pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
+    /** @todo clear RF? */
 }
 
 
@@ -6290,10 +6278,8 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
         if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI
             && enmRaise == IEMXCPTRAISE_PREV_EVENT
             && (pVmcsInfo->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
-            && CPUMIsGuestNmiBlocking(pVCpu))
-        {
-            CPUMSetGuestNmiBlocking(pVCpu, false);
-        }
+            && CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
+            CPUMClearInterruptInhibitingByNmiEx(&pVCpu->cpum.GstCtx);
 
         switch (enmRaise)
         {
@@ -6375,7 +6361,7 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
         }
     }
     else if (   (pVmcsInfo->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
-             && !CPUMIsGuestNmiBlocking(pVCpu))
+             && !CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
     {
         if (    VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo)
              && VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo) != X86_XCPT_DF
@@ -6388,7 +6374,7 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
              *
              * See Intel spec. 31.7.1.2 "Resuming Guest Software After Handling An Exception".
              */
-            CPUMSetGuestNmiBlocking(pVCpu, true);
+            CPUMSetInterruptInhibitingByNmiEx(&pVCpu->cpum.GstCtx);
             Log4Func(("Set NMI blocking. uExitReason=%u\n", pVmxTransient->uExitReason));
         }
         else if (   pVmxTransient->uExitReason == VMX_EXIT_EPT_VIOLATION
@@ -6405,7 +6391,7 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
              */
             if (VMX_EXIT_QUAL_EPT_IS_NMI_UNBLOCK_IRET(pVmxTransient->uExitQual))
             {
-                CPUMSetGuestNmiBlocking(pVCpu, true);
+                CPUMSetInterruptInhibitingByNmiEx(&pVCpu->cpum.GstCtx);
                 Log4Func(("Set NMI blocking. uExitReason=%u\n", pVmxTransient->uExitReason));
             }
         }
@@ -7653,7 +7639,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitNmiWindow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
         HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
     }
 
-    Assert(!CPUMIsGuestNmiBlocking(pVCpu));
+    Assert(!CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx));
 
     /*
      * If block-by-STI is set when we get this VM-exit, it means the CPU doesn't block NMIs following STI.
@@ -7665,8 +7651,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitNmiWindow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS));
     if (fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
     {
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
 
         fIntrState &= ~VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
         rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, fIntrState);

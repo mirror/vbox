@@ -149,6 +149,22 @@ struc CPUMCTXCORE
     .gs.u64Base         resq    1
     .gs.u32Limit        resd    1
     .gs.Attr            resd    1
+
+    .ldtr.Sel           resw    1
+    .ldtr.PaddingSel    resw    1
+    .ldtr.ValidSel      resw    1
+    .ldtr.fFlags        resw    1
+    .ldtr.u64Base       resq    1
+    .ldtr.u32Limit      resd    1
+    .ldtr.Attr          resd    1
+    .tr.Sel             resw    1
+    .tr.PaddingSel      resw    1
+    .tr.ValidSel        resw    1
+    .tr.fFlags          resw    1
+    .tr.u64Base         resq    1
+    .tr.u32Limit        resd    1
+    .tr.Attr            resd    1
+
     .eip                resq    1
     .eflags             resq    1
 endstruc
@@ -216,21 +232,6 @@ struc CPUMCTX
     .gs.u64Base         resq    1
     .gs.u32Limit        resd    1
     .gs.Attr            resd    1
-    .eip                resq    1
-    .eflags             resq    1
-    .cr0                resq    1
-    .cr2                resq    1
-    .cr3                resq    1
-    .cr4                resq    1
-    .dr                 resq    8
-    .gdtrPadding        resw    3
-    .gdtr               resw    0
-    .gdtr.cbGdt         resw    1
-    .gdtr.pGdt          resq    1
-    .idtrPadding        resw    3
-    .idtr               resw    0
-    .idtr.cbIdt         resw    1
-    .idtr.pIdt          resq    1
     .ldtr.Sel           resw    1
     .ldtr.PaddingSel    resw    1
     .ldtr.ValidSel      resw    1
@@ -245,6 +246,24 @@ struc CPUMCTX
     .tr.u64Base         resq    1
     .tr.u32Limit        resd    1
     .tr.Attr            resd    1
+    .eip                resq    1
+    .eflags             resq    1
+    .fInhibit           resb    1
+    alignb 8
+    .uRipInhibitInt     resq    1
+    .cr0                resq    1
+    .cr2                resq    1
+    .cr3                resq    1
+    .cr4                resq    1
+    .dr                 resq    8
+    .gdtrPadding        resw    3
+    .gdtr               resw    0
+    .gdtr.cbGdt         resw    1
+    .gdtr.pGdt          resq    1
+    .idtrPadding        resw    3
+    .idtr               resw    0
+    .idtr.cbIdt         resw    1
+    .idtr.pIdt          resq    1
     .SysEnter.cs        resb    8
     .SysEnter.eip       resb    8
     .SysEnter.esp       resb    8
@@ -255,7 +274,6 @@ struc CPUMCTX
     .msrCSTAR           resb    8
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
-    .uMsrPadding0       resb    8
 
     alignb 8
     .fExtrn             resq    1
@@ -322,8 +340,8 @@ struc CPUMCTX
     alignb 8
     .hwvirt.enmHwvirt                   resd        1
     .hwvirt.fGif                        resb        1
-    alignb 8
-    .hwvirt.fLocalForcedActions         resd        1
+    alignb 4
+    .hwvirt.fSavedInhibit               resd        1
     alignb 64
 endstruc
 

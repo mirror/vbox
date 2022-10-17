@@ -2691,12 +2691,7 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
 #endif
 
         if (fWhat & CPUMCTX_EXTRN_INHIBIT_INT)
-        {
-            if (pVmcbCtrl->IntShadow.n.u1IntShadow)
-                EMSetInhibitInterruptsPC(pVCpu, pVmcbGuest->u64RIP);
-            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-        }
+            CPUMUpdateInterruptShadowEx(pCtx, pVmcbCtrl->IntShadow.n.u1IntShadow, pVmcbGuest->u64RIP);
 
         if (fWhat & CPUMCTX_EXTRN_RIP)
             pCtx->rip = pVmcbGuest->u64RIP;
@@ -3503,41 +3498,6 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPUCC pVCpu)
 
 
 /**
- * Checks if the guest (or nested-guest) has an interrupt shadow active right
- * now.
- *
- * @returns @c true if the interrupt shadow is active, @c false otherwise.
- * @param   pVCpu   The cross context virtual CPU structure.
- *
- * @remarks No-long-jump zone!!!
- * @remarks Has side-effects with VMCPU_FF_INHIBIT_INTERRUPTS force-flag.
- */
-static bool hmR0SvmIsIntrShadowActive(PVMCPUCC pVCpu)
-{
-    /*
-     * Instructions like STI and MOV SS inhibit interrupts till the next instruction
-     * completes. Check if we should inhibit interrupts or clear any existing
-     * interrupt inhibition.
-     */
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-    {
-        if (pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
-        {
-            /*
-             * We can clear the inhibit force flag as even if we go back to the recompiler
-             * without executing guest code in AMD-V, the flag's condition to be cleared is
-             * met and thus the cleared state is correct.
-             */
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            return false;
-        }
-        return true;
-    }
-    return false;
-}
-
-
-/**
  * Sets the virtual interrupt intercept control in the VMCB.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
@@ -3611,8 +3571,8 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEvent(PVMCPUCC pVCpu, PCSVMTRANSIENT p
     Assert(pVmcb);
 
     bool const fGif        = CPUMGetGuestGif(pCtx);
-    bool const fIntShadow  = hmR0SvmIsIntrShadowActive(pVCpu);
-    bool const fBlockNmi   = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    bool const fIntShadow  = CPUMIsInInterruptShadowWithUpdate(pCtx);
+    bool const fBlockNmi   = CPUMAreInterruptsInhibitedByNmi(pCtx);
 
     Log4Func(("fGif=%RTbool fBlockNmi=%RTbool fIntShadow=%RTbool fIntPending=%RTbool fNmiPending=%RTbool\n",
               fGif, fBlockNmi, fIntShadow, VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
@@ -3733,7 +3693,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     Assert(!TRPMHasTrap(pVCpu));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu);
+    bool const fIntShadow = CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx);
 #ifdef VBOX_STRICT
     PCCPUMCTX  pCtx       = &pVCpu->cpum.GstCtx;
     bool const fGif       = CPUMGetGuestGif(pCtx);
@@ -3781,12 +3741,9 @@ static void hmR0SvmInjectPendingEvent(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
          * which will set the VMCS field after actually delivering the NMI which we read on
          * VM-exit to determine the state.
          */
-        if (    Event.n.u3Type   == SVM_EVENT_NMI
-            &&  Event.n.u8Vector == X86_XCPT_NMI
-            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-        {
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-        }
+        if (   Event.n.u3Type   == SVM_EVENT_NMI
+            && Event.n.u8Vector == X86_XCPT_NMI)
+            CPUMSetInterruptInhibitingByNmi(&pVCpu->cpum.GstCtx);
 
         /*
          * Inject it (update VMCB for injection by the hardware).
@@ -3808,7 +3765,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
      * hardware-assisted SVM. In which case, we would not have any events pending (above)
      * but we still need to intercept IRET in order to eventually clear NMI inhibition.
      */
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+    if (CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
         hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_IRET);
 
     /*
@@ -6710,7 +6667,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PSVMTRANSIENT pSvm
 
                     /* If we are re-injecting an NMI, clear NMI blocking. */
                     if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI)
-                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                        CPUMClearInterruptInhibitingByNmi(&pVCpu->cpum.GstCtx);
 
                     /* Determine a vectoring #PF condition, see comment in hmR0SvmExitXcptPF(). */
                     if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
@@ -6801,13 +6758,9 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PSVMTRANSIENT pSvm
  */
 DECLINLINE(void) hmR0SvmAdvanceRip(PVMCPUCC pVCpu, uint32_t cb)
 {
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    pCtx->rip += cb;
-
-    /* Update interrupt shadow. */
-    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    pVCpu->cpum.GstCtx.rip += cb;
+    CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
+    /** @todo clear RF. */
 }
 
 

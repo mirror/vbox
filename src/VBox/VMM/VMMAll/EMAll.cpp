@@ -80,55 +80,6 @@ VMM_INT_DECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 
 
 /**
- * Sets the PC for which interrupts should be inhibited.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   PC          The PC.
- */
-VMMDECL(void) EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC)
-{
-    pVCpu->em.s.GCPtrInhibitInterrupts = PC;
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-}
-
-
-/**
- * Gets the PC for which interrupts should be inhibited.
- *
- * There are a few instructions which inhibits or delays interrupts
- * for the instruction following them. These instructions are:
- *      - STI
- *      - MOV SS, r/m16
- *      - POP SS
- *
- * @returns The PC for which interrupts should be inhibited.
- * @param   pVCpu       The cross context virtual CPU structure.
- *
- */
-VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
-{
-    return pVCpu->em.s.GCPtrInhibitInterrupts;
-}
-
-
-/**
- * Checks if interrupt inhibiting is enabled for the current instruction.
- *
- * @returns true if interrupts are inhibited, false if not.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(bool) EMIsInhibitInterruptsActive(PVMCPU pVCpu)
-{
-    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-        return false;
-    if (pVCpu->em.s.GCPtrInhibitInterrupts == CPUMGetGuestRIP(pVCpu))
-        return true;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-    return false;
-}
-
-
-/**
  * Enables / disable hypercall instructions.
  *
  * This interface is used by GIM to tell the execution monitors whether the

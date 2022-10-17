@@ -160,7 +160,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.Msrs);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.enmHwvirt);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);
-    GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.fSavedInhibit);
     /** @todo NSTVMX: add rest of hwvirt fields when code is more
      *        finalized. */
     GEN_CHECK_OFF(CPUMCTX, XState);

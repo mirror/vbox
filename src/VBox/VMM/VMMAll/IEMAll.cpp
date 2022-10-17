@@ -3659,12 +3659,8 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
      * Evaluate whether NMI blocking should be in effect.
      * Normally, NMI blocking is in effect whenever we inject an NMI.
      */
-    bool fBlockNmi;
-    if (   u8Vector == X86_XCPT_NMI
-        && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT))
-        fBlockNmi = true;
-    else
-        fBlockNmi = false;
+    bool fBlockNmi = u8Vector == X86_XCPT_NMI
+                  && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
@@ -3709,9 +3705,8 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
     /*
      * Set NMI blocking if necessary.
      */
-    if (   fBlockNmi
-        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    if (fBlockNmi)
+        CPUMSetInterruptInhibitingByNmi(&pVCpu->cpum.GstCtx);
 
     /*
      * Do recursion accounting.
@@ -9603,7 +9598,7 @@ static VBOXSTRICTRC iemHandleNestedInstructionBoundaryFFs(PVMCPUCC pVCpu, VBOXST
          * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
          */
         else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW)
-                 && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                 && !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)
                  && !TRPMHasTrap(pVCpu))
         {
             Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
@@ -9625,14 +9620,14 @@ static VBOXSTRICTRC iemHandleNestedInstructionBoundaryFFs(PVMCPUCC pVCpu, VBOXST
     else  if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
     {
         rcStrict = iemVmxApicWriteEmulation(pVCpu);
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(!CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx));
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
     }
     /* MTF takes priority over VMX-preemption timer. */
     else
     {
         rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* u64ExitQual */);
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(!CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx));
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
     }
     return rcStrict;
@@ -9713,8 +9708,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
        mov ss, Gr has just completed successfully. */
     if (   fExecuteInhibit
         && rcStrict == VINF_SUCCESS
-        && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        && EMIsInhibitInterruptsActive(pVCpu))
+        && CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx))
     {
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, pVCpu->iem.s.fBypassHandlers, pVCpu->iem.s.fDisregardLock);
         if (rcStrict == VINF_SUCCESS)
@@ -9758,7 +9752,8 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
         }
         else if (pVCpu->iem.s.cActiveMappings > 0)
             iemMemRollback(pVCpu);
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS); /* hope this is correct for all exceptional cases... */
+        /** @todo drop this after we bake this change into RIP advancing. */
+        CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx); /* hope this is correct for all exceptional cases... */
     }
 
     /*
@@ -10016,7 +10011,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
      *        possible here? For now we assert it is indeed only an interrupt. */
     if (   fIntrEnabled
         && TRPMHasTrap(pVCpu)
-        && EMGetInhibitInterruptsPC(pVCpu) != pVCpu->cpum.GstCtx.rip)
+        && !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx))
     {
         uint8_t     u8TrapNo;
         TRPMEVENT   enmType;
@@ -10101,8 +10096,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                         fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
                                                       | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                       | VMCPU_FF_TLB_FLUSH
-                                                      | VMCPU_FF_INHIBIT_INTERRUPTS
-                                                      | VMCPU_FF_BLOCK_NMIS
                                                       | VMCPU_FF_UNHALT );
 
                         if (RT_LIKELY(   (   !fCpu
@@ -10283,8 +10276,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
                         fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
                                                       | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                       | VMCPU_FF_TLB_FLUSH
-                                                      | VMCPU_FF_INHIBIT_INTERRUPTS
-                                                      | VMCPU_FF_BLOCK_NMIS
                                                       | VMCPU_FF_UNHALT );
                         if (RT_LIKELY(   (   (   !fCpu
                                               || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))

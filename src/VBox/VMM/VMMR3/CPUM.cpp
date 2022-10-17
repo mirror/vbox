@@ -159,6 +159,11 @@
 #define CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID    RT_BIT(12)
 
 
+/** For saved state only: Block injection of non-maskable interrupts to the guest.
+ * @note This flag was moved to CPUMCTX::fInhibit in v7.0.2. */
+#define CPUM_OLD_VMCPU_FF_BLOCK_NMIS            RT_BIT_64(25)
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -2540,7 +2545,8 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.Vmcb,           sizeof(pGstCtx->hwvirt.svm.Vmcb));
             SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.abMsrBitmap[0], sizeof(pGstCtx->hwvirt.svm.abMsrBitmap));
             SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.abIoBitmap[0],  sizeof(pGstCtx->hwvirt.svm.abIoBitmap));
-            SSMR3PutU32(pSSM,    pGstCtx->hwvirt.fLocalForcedActions);
+            /* This is saved in the old VMCPUM_FF format.  Change if more flags are added. */
+            SSMR3PutU32(pSSM,    pGstCtx->hwvirt.fSavedInhibit & CPUMCTX_INHIBIT_NMI ? CPUM_OLD_VMCPU_FF_BLOCK_NMIS : 0);
             SSMR3PutBool(pSSM,   pGstCtx->hwvirt.fGif);
         }
         if (pVM->cpum.s.GuestFeatures.fVmx)
@@ -2826,7 +2832,13 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.svm.Vmcb,           sizeof(pGstCtx->hwvirt.svm.Vmcb));
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.svm.abMsrBitmap[0], sizeof(pGstCtx->hwvirt.svm.abMsrBitmap));
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.svm.abIoBitmap[0],  sizeof(pGstCtx->hwvirt.svm.abIoBitmap));
-                        SSMR3GetU32(pSSM,      &pGstCtx->hwvirt.fLocalForcedActions);
+
+                        uint32_t fSavedLocalFFs = 0;
+                        rc = SSMR3GetU32(pSSM,      &fSavedLocalFFs);
+                        AssertRCReturn(rc, rc);
+                        Assert(fSavedLocalFFs == 0 || fSavedLocalFFs == CPUM_OLD_VMCPU_FF_BLOCK_NMIS);
+                        pGstCtx->hwvirt.fSavedInhibit = fSavedLocalFFs & CPUM_OLD_VMCPU_FF_BLOCK_NMIS ? CPUMCTX_INHIBIT_NMI : 0;
+
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.fGif);
                     }
                 }
@@ -3999,7 +4011,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     bool const fVmx = pVM->cpum.s.GuestFeatures.fVmx;
 
     pHlp->pfnPrintf(pHlp, "VCPU[%u] hardware virtualization state:\n", pVCpu->idCpu);
-    pHlp->pfnPrintf(pHlp, "fLocalForcedActions          = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
+    pHlp->pfnPrintf(pHlp, "fSavedInhibit                = %#RX32\n",  pCtx->hwvirt.fSavedInhibit);
     pHlp->pfnPrintf(pHlp, "In nested-guest hwvirt mode  = %RTbool\n", CPUMIsGuestInNestedHwvirtMode(pCtx));
 
     if (fSvm)

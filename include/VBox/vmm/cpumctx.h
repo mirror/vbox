@@ -266,6 +266,9 @@ typedef struct CPUMCTXCORE
     CPUMSELREG          gs;
     /** @} */
 
+    CPUMSELREG          ldtr;
+    CPUMSELREG          tr;
+
     /** The program counter. */
     union
     {
@@ -398,6 +401,13 @@ typedef struct CPUMCTX
         } CPUM_STRUCT_NM(n);
     } CPUM_UNION_NM(s);
 
+    /** The task register.
+     * Only the guest context uses all the members. */
+    CPUMSELREG          ldtr;
+    /** The task register.
+     * Only the guest context uses all the members. */
+    CPUMSELREG          tr;
+
     /** The program counter. */
     union
     {
@@ -415,14 +425,19 @@ typedef struct CPUMCTX
 
     /** @} */ /*(CPUMCTXCORE)*/
 
+    /** Interrupt & exception inhibiting (CPUMCTX_INHIBIT_XXX). */
+    uint8_t             fInhibit;
+    uint8_t             abPadding[7];
+    /** The RIP value fInhibit is/was valid for. */
+    uint64_t            uRipInhibitInt;
 
     /** @name Control registers.
      * @{ */
     uint64_t            cr0;
     uint64_t            cr2;
     uint64_t            cr3;
-    /** @todo the 4 PAE PDPE registers. See PGMCPU::aGstPaePdpeRegs. */
     uint64_t            cr4;
+    /** @todo Add the 4 PAE PDPE registers. See PGMCPU::aGstPaePdpeRegs. */
     /** @} */
 
     /** Debug registers.
@@ -445,13 +460,6 @@ typedef struct CPUMCTX
     /** Interrupt Descriptor Table register. */
     VBOXIDTR            idtr;
 
-    /** The task register.
-     * Only the guest context uses all the members. */
-    CPUMSELREG          ldtr;
-    /** The task register.
-     * Only the guest context uses all the members. */
-    CPUMSELREG          tr;
-
     /** The sysenter msr registers.
      * This member is not used by the hypervisor context. */
     CPUMSYSENTER        SysEnter;
@@ -465,13 +473,16 @@ typedef struct CPUMCTX
     uint64_t            msrCSTAR;           /**< Compatibility mode syscall rip. */
     uint64_t            msrSFMASK;          /**< syscall flag mask. */
     uint64_t            msrKERNELGSBASE;    /**< swapgs exchange value. */
-    uint64_t            uMsrPadding0;       /**< no longer used (used to hold a copy of APIC base MSR). */
     /** @} */
 
-    /** 0x228 - Externalized state tracker, CPUMCTX_EXTRN_XXX. */
+    /** 0x230 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
+     * @todo Move up after uRipInhibitInt after fInhibit moves into RFLAGS.
+     *       That will put this in the same cacheline as RIP, RFLAGS and CR0
+     *       which are typically always imported and exported again during an
+     *       VM exit. */
     uint64_t            fExtrn;
 
-    uint64_t            au64Unused[2];
+    uint64_t            u64Unused;
 
     /** 0x240 - PAE PDPTEs. */
     X86PDPE             aPaePdpes[4];
@@ -633,19 +644,13 @@ typedef struct CPUMCTX
         CPUMHWVIRT              enmHwvirt;
         /** 0x11134 - Global interrupt flag - AMD only (always true on Intel). */
         bool                    fGif;
-        bool                    afPadding1[3];
-        /** 0x11138 - A subset of guest force flags that are saved while running the
-         *  nested-guest. */
-#ifdef VMCPU_WITH_64_BIT_FFS
-        uint64_t                fLocalForcedActions;
-#else
-        uint32_t                fLocalForcedActions;
-        uint32_t                fPadding;
-#endif
-#if 0
-        /** 0x11140 - Pad to 64 byte boundary. */
-        uint8_t                 abPadding0[8+16+32];
-#endif
+        /** 0x11135 - Padding. */
+        bool                    afPadding0[3];
+        /** 0x11138 - A subset of guest inhibit flags (CPUMCTX_INHIBIT_XXX) that are
+         *  saved while running the nested-guest. */
+        uint32_t                fSavedInhibit;
+        /** 0x1113c - Pad to 64 byte boundary. */
+        uint8_t                 abPadding1[4];
     } hwvirt;
 } CPUMCTX;
 #pragma pack()
@@ -655,56 +660,58 @@ AssertCompileSizeAlignment(CPUMCTX, 64);
 AssertCompileSizeAlignment(CPUMCTX, 32);
 AssertCompileSizeAlignment(CPUMCTX, 16);
 AssertCompileSizeAlignment(CPUMCTX, 8);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rax,   0);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rcx,   8);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rdx,  16);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rbx,  24);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rsp,  32);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rbp,  40);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rsi,  48);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rdi,  56);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.)  r8,  64);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.)  r9,  72);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r10,  80);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r11,  88);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r12,  96);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r13, 104);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r14, 112);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r15, 120);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) es, 128);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) cs, 152);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ss, 176);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ds, 200);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) fs, 224);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) gs, 248);
-AssertCompileMemberOffset(CPUMCTX,                        rip, 272);
-AssertCompileMemberOffset(CPUMCTX,                     rflags, 280);
-AssertCompileMemberOffset(CPUMCTX,                        cr0, 288);
-AssertCompileMemberOffset(CPUMCTX,                        cr2, 296);
-AssertCompileMemberOffset(CPUMCTX,                        cr3, 304);
-AssertCompileMemberOffset(CPUMCTX,                        cr4, 312);
-AssertCompileMemberOffset(CPUMCTX,                         dr, 320);
-AssertCompileMemberOffset(CPUMCTX,                       gdtr, 384+6);
-AssertCompileMemberOffset(CPUMCTX,                       idtr, 400+6);
-AssertCompileMemberOffset(CPUMCTX,                       ldtr, 416);
-AssertCompileMemberOffset(CPUMCTX,                         tr, 440);
-AssertCompileMemberOffset(CPUMCTX,                   SysEnter, 464);
-AssertCompileMemberOffset(CPUMCTX,                    msrEFER, 488);
-AssertCompileMemberOffset(CPUMCTX,                    msrSTAR, 496);
-AssertCompileMemberOffset(CPUMCTX,                     msrPAT, 504);
-AssertCompileMemberOffset(CPUMCTX,                   msrLSTAR, 512);
-AssertCompileMemberOffset(CPUMCTX,                   msrCSTAR, 520);
-AssertCompileMemberOffset(CPUMCTX,                  msrSFMASK, 528);
-AssertCompileMemberOffset(CPUMCTX,            msrKERNELGSBASE, 536);
-AssertCompileMemberOffset(CPUMCTX,                  aPaePdpes, 0x240);
-AssertCompileMemberOffset(CPUMCTX,                       aXcr, 0x260);
-AssertCompileMemberOffset(CPUMCTX,                fXStateMask, 0x270);
-AssertCompileMemberOffset(CPUMCTX,                fUsedFpuGuest, 0x278);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(u.) XState, 0x300);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(u.) abXState, 0x300);
-AssertCompileMemberAlignment(CPUMCTX, CPUM_UNION_NM(u.) XState, 0x100);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rax, 0x0000);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rcx, 0x0008);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rdx, 0x0010);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rbx, 0x0018);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rsp, 0x0020);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rbp, 0x0028);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rsi, 0x0030);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rdi, 0x0038);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.)  r8, 0x0040);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.)  r9, 0x0048);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r10, 0x0050);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r11, 0x0058);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r12, 0x0060);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r13, 0x0068);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r14, 0x0070);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r15, 0x0078);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) es, 0x0080);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) cs, 0x0098);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ss, 0x00b0);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ds, 0x00c8);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) fs, 0x00e0);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) gs, 0x00f8);
+AssertCompileMemberOffset(CPUMCTX,                                      ldtr, 0x0110);
+AssertCompileMemberOffset(CPUMCTX,                                        tr, 0x0128);
+AssertCompileMemberOffset(CPUMCTX,                                       rip, 0x0140);
+AssertCompileMemberOffset(CPUMCTX,                                    rflags, 0x0148);
+AssertCompileMemberOffset(CPUMCTX,                                  fInhibit, 0x0150);
+AssertCompileMemberOffset(CPUMCTX,                            uRipInhibitInt, 0x0158);
+AssertCompileMemberOffset(CPUMCTX,                                       cr0, 0x0160);
+AssertCompileMemberOffset(CPUMCTX,                                       cr2, 0x0168);
+AssertCompileMemberOffset(CPUMCTX,                                       cr3, 0x0170);
+AssertCompileMemberOffset(CPUMCTX,                                       cr4, 0x0178);
+AssertCompileMemberOffset(CPUMCTX,                                        dr, 0x0180);
+AssertCompileMemberOffset(CPUMCTX,                                      gdtr, 0x01c0+6);
+AssertCompileMemberOffset(CPUMCTX,                                      idtr, 0x01d0+6);
+AssertCompileMemberOffset(CPUMCTX,                                  SysEnter, 0x01e0);
+AssertCompileMemberOffset(CPUMCTX,                                   msrEFER, 0x01f8);
+AssertCompileMemberOffset(CPUMCTX,                                   msrSTAR, 0x0200);
+AssertCompileMemberOffset(CPUMCTX,                                    msrPAT, 0x0208);
+AssertCompileMemberOffset(CPUMCTX,                                  msrLSTAR, 0x0210);
+AssertCompileMemberOffset(CPUMCTX,                                  msrCSTAR, 0x0218);
+AssertCompileMemberOffset(CPUMCTX,                                 msrSFMASK, 0x0220);
+AssertCompileMemberOffset(CPUMCTX,                           msrKERNELGSBASE, 0x0228);
+AssertCompileMemberOffset(CPUMCTX,                                 aPaePdpes, 0x0240);
+AssertCompileMemberOffset(CPUMCTX,                                      aXcr, 0x0260);
+AssertCompileMemberOffset(CPUMCTX,                               fXStateMask, 0x0270);
+AssertCompileMemberOffset(CPUMCTX,                             fUsedFpuGuest, 0x0278);
+AssertCompileMemberOffset(CPUMCTX,                  CPUM_UNION_NM(u.) XState, 0x0300);
+AssertCompileMemberOffset(CPUMCTX,                CPUM_UNION_NM(u.) abXState, 0x0300);
+AssertCompileMemberAlignment(CPUMCTX,               CPUM_UNION_NM(u.) XState, 0x0100);
 /* Only do spot checks for hwvirt */
-AssertCompileMemberAlignment(CPUMCTX,                   hwvirt, 0x1000);
+AssertCompileMemberAlignment(CPUMCTX,                                 hwvirt, 0x1000);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,                  X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap,           X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            X86_PAGE_SIZE);
@@ -724,7 +731,7 @@ AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) vmx.abIoBitmap,  
 AssertCompileMemberOffset(CPUMCTX,    hwvirt.CPUM_UNION_NM(s.) vmx.fVirtNmiBlocking,      0x1104a);
 AssertCompileMemberOffset(CPUMCTX,    hwvirt.enmHwvirt,                                   0x11130);
 AssertCompileMemberOffset(CPUMCTX,    hwvirt.fGif,                                        0x11134);
-AssertCompileMemberOffset(CPUMCTX,    hwvirt.fLocalForcedActions,                         0x11138);
+AssertCompileMemberOffset(CPUMCTX,    hwvirt.fSavedInhibit,                               0x11138);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);
@@ -1017,6 +1024,35 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 #define CPUMCTX_EXTRN_ALL                       UINT64_C(0x00000ffffffffffc)
 /** All CPUM state bits, including keeper specific ones. */
 #define CPUMCTX_EXTRN_ABSOLUTELY_ALL            UINT64_C(0xfffffffffffffffc)
+/** @} */
+
+
+/** @name CPUMCTX_INHIBIT_XXX - Interrupt inhibiting flags.
+ * @{ */
+/** Interrupt shadow following MOV SS or POP SS.
+ *
+ * When this in effect, both maskable and non-maskable interrupts are blocked
+ * from delivery for one instruction.  Same for certain debug exceptions too,
+ * unlike the STI variant.
+ *
+ * It is implementation specific whether a sequence of two or more of these
+ * instructions will have any effect on the instruction following the last one
+ * of them. */
+#define CPUMCTX_INHIBIT_SHADOW_SS   UINT8_C(0x01)
+/** Interrupt shadow following STI.
+ * Same as CPUMCTX_INHIBIT_SHADOW_SS but without blocking any debug exceptions. */
+#define CPUMCTX_INHIBIT_SHADOW_STI  UINT8_C(0x02)
+/** Mask combining STI and SS shadowing. */
+#define CPUMCTX_INHIBIT_SHADOW      (CPUMCTX_INHIBIT_SHADOW_SS | CPUMCTX_INHIBIT_SHADOW_STI)
+
+/** Interrupts blocked by NMI delivery.  This condition is cleared by IRET.
+ *
+ * Section "6.7 NONMASKABLE INTERRUPT (NMI)" in Intel SDM Vol 3A states that
+ * "The processor also invokes certain hardware conditions to ensure that no
+ * other interrupts, including NMI interrupts, are received until the NMI
+ * handler has completed executing."  This flag indicates that these
+ * conditions are currently active.  */
+#define CPUMCTX_INHIBIT_NMI         UINT8_C(0x04)
 /** @} */
 
 

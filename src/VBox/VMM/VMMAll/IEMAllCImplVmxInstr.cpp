@@ -1187,7 +1187,7 @@ static void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPUCC pVCpu) RT_NOEXCEPT
 static void iemVmxVmentrySaveNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     /* We shouldn't be called multiple times during VM-entry. */
-    Assert(pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions == 0);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit == 0);
 
     /* MTF should not be set outside VMX non-root mode. */
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
@@ -1220,7 +1220,7 @@ static void iemVmxVmentrySaveNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
      * we will be able to generate interrupts that may cause VM-exits for
      * the nested-guest.
      */
-    pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & VMCPU_FF_BLOCK_NMIS;
+    pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = pVCpu->cpum.GstCtx.fInhibit & CPUMCTX_INHIBIT_NMI;
 }
 
 
@@ -1231,11 +1231,11 @@ static void iemVmxVmentrySaveNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
  */
 static void iemVmxVmexitRestoreNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
-    if (pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions)
-    {
-        VMCPU_FF_SET_MASK(pVCpu, pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions);
-        pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = 0;
-    }
+    /** @todo r=bird: why aren't we clearing the nested guest flags first here?
+     *        If there is some other code doing that already, it would be great
+     *        to point to it here... */
+    pVCpu->cpum.GstCtx.fInhibit |= pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit;
+    pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = 0;
 }
 
 
@@ -1465,20 +1465,22 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
     }
     else
     {
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        if (CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
             pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
     }
 
     /* Blocking-by-STI. */
-    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
+    if (!(pVCpu->cpum.GstCtx.fInhibit & CPUMCTX_INHIBIT_SHADOW))
+    { /* probable */}
+    else
     {
         /** @todo NSTVMX: We can't distinguish between blocking-by-MovSS and blocking-by-STI
          *        currently. */
-        pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
+        if (pVCpu->cpum.GstCtx.rip == pVCpu->cpum.GstCtx.uRipInhibitInt)
+            pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI; /** @todo r=bird: Why the STI one? MOVSS seems to block more and the one to use. */
 
         /* Clear inhibition unconditionally since we've ensured it isn't set prior to executing VMLAUNCH/VMRESUME. */
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
     }
     /* Nothing to do for SMI/enclave. We don't support enclaves or SMM yet. */
 
@@ -2563,7 +2565,7 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
 
         /* Clear any saved NMI-blocking state so we don't assert on next VM-entry (if it was in effect on the previous one). */
-        pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions &= ~VMCPU_FF_BLOCK_NMIS;
+        pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit &= ~CPUMCTX_INHIBIT_NMI;
     }
     else
     {
@@ -6995,9 +6997,9 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
     bool const fEntryVectoring = VMXIsVmentryVectoring(pVmcs->u32EntryIntInfo, NULL /* puEntryIntInfoType */);
     if (   !fEntryVectoring
         && (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)))
-        EMSetInhibitInterruptsPC(pVCpu, pVmcs->u64GuestRip.u);
+        CPUMSetInInterruptShadowEx(&pVCpu->cpum.GstCtx, pVmcs->u64GuestRip.u);
     else
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(!CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx));
 
     /* NMI blocking. */
     if (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
@@ -7007,8 +7009,7 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
         else
         {
             pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
-            if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+            CPUMSetInterruptInhibitingByNmi(&pVCpu->cpum.GstCtx);
         }
     }
     else
@@ -7728,8 +7729,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
 
     /** @todo Distinguish block-by-MovSS from block-by-STI. Currently we
      *        use block-by-STI here which is not quite correct. */
-    if (   !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        ||  pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
+    if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
     { /* likely */ }
     else
     {
