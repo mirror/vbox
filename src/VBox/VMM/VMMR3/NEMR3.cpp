@@ -100,6 +100,7 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
                                   "|VmxPleGap"
                                   "|VmxPleWindow"
                                   "|VmxLbr"
+                                  "|CatalinaWxWorkaround"
 #endif
                                   ,
                                   "" /* pszValidNodes */, "NEM" /* pszWho */, 0 /* uInstance */);
