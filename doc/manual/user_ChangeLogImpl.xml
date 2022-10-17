@@ -89,7 +89,6 @@ Rules for adding a changelog entry to make them look more uniform:
           VERR_NEM_MAP_PAGES_FAILED errors when starting a VM. The workaround can cause
           severe performance degradation depending on the guest and it is advised to upgrade to BigSur
           or later as Apple is unlikely to fix the issue (bug #21128).</para>
-        <para>Linux Guest Additions: Introduce initial support for kernel 6.1</para>
       </listitem>
 
       <listitem>
