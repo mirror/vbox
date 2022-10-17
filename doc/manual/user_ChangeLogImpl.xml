@@ -81,32 +81,32 @@ Rules for adding a changelog entry to make them look more uniform:
       <listitem>
         <para>Known issue: VMs having more than one vCPU configured will not work properly on macOS
           Catalina due to an unknown memory corruption issue. Either lower the number of vCPUs to 1
-          or upgrade to BigSur or later where the issue does not occur.</para>
+          or upgrade to BigSur or later where the issue does not occur</para>
       </listitem>
 
       <listitem>
         <para>macOS hosts: Added workaround for a bug in the Hypervisor framework on Catalina causing
           VERR_NEM_MAP_PAGES_FAILED errors when starting a VM. The workaround can cause
           severe performance degradation depending on the guest and it is advised to upgrade to BigSur
-          or later as Apple is unlikely to fix the issue (bug #21128).</para>
+          or later as Apple is unlikely to fix the issue (bug #21128)</para>
       </listitem>
 
       <listitem>
         <para>macOS hosts: Re-introduced support for internal networking, this is considered a bit
-          experimental still.</para>
+          experimental still</para>
       </listitem>
 
       <listitem>
-        <para>Linux Guest Additions: Introduce initial support for kernel 6.1</para>
+        <para>Linux Guest Additions: Introduced initial support for kernel 6.1</para>
       </listitem>
 
       <listitem>
         <para>Linux Guest Additions: Fixed issue when VBoxClient seamless service
-          caused crash of some X11 applications (bug #21132)</para>
+          caused a crash of some X11 applications (bug #21132)</para>
       </listitem>
 
       <listitem>
-        <para>GUI: Fixed a glitch in the log viewer which was causing wrong log file to be saved.</para>
+        <para>GUI: Fixed a glitch in the log viewer which was causing wrong log file to be saved</para>
       </listitem>
 
     </itemizedlist>
