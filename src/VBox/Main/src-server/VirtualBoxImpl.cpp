@@ -6172,10 +6172,16 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
         Utf8Str strExtPack;
         hrc = m->pSystemProperties->getDefaultCryptoExtPack(strExtPack);
         if (FAILED(hrc))
+        {
+            RTCritSectLeave(&m->CritSectModCrypto);
             return hrc;
+        }
         if (strExtPack.isEmpty())
+        {
+            RTCritSectLeave(&m->CritSectModCrypto);
             return setError(VBOX_E_OBJECT_NOT_FOUND,
                             tr("Ńo extension pack providing a cryptographic support module could be found"));
+        }
 
         Utf8Str strCryptoLibrary;
         int vrc = m->ptrExtPackManager->i_getCryptoLibraryPathForExtPack(&strExtPack, &strCryptoLibrary);
