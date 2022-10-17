@@ -79,7 +79,7 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>TBD</para>
+        <para>Linux Guest Additions: Introduce initial support for kernel 6.1</para>
       </listitem>
 
     </itemizedlist>
