@@ -562,7 +562,8 @@ bool SeamlessX11::interruptEventWait(void)
     }
 
     /* Message contents set to zero. */
-    XClientMessageEvent clientMessage = { ClientMessage, 0, 0, 0, 0, 0, 8 };
+    XClientMessageEvent clientMessage =
+        { ClientMessage, 0, 0, 0, 0, XInternAtom(pDisplay, "VBOX_CLIENT_SEAMLESS_HEARTBEAT", false), 8 };
 
     if (XSendEvent(pDisplay, DefaultRootWindow(mDisplay), false,
                    PropertyChangeMask, (XEvent *)&clientMessage))
