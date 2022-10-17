@@ -479,7 +479,7 @@ void UIVMLogViewerWidget::sltSave()
         if (QFile::exists(strNewFileName))
             QFile::remove(strNewFileName);
         /* Copy log into the file: */
-        QFile::copy(comMachine.QueryLogFilename(m_pTabWidget->currentIndex()), strNewFileName);
+        QFile::copy(fileName, strNewFileName);
     }
 }
 
