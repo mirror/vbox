@@ -1956,7 +1956,7 @@ DECLINLINE(bool) CPUMIsInInterruptShadowWithUpdate(PCPUMCTX pCtx)
     if (pCtx->uRipInhibitInt == pCtx->rip)
         return true;
 
-    pCtx->fInhibit &= ~(uint8_t)CPUMCTX_INHIBIT_SHADOW;
+    pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
     return false;
 }
 
@@ -1993,7 +1993,7 @@ DECLINLINE(void) CPUMSetInInterruptShadowEx(PCPUMCTX pCtx, uint64_t rip)
  */
 DECLINLINE(void) CPUMClearInterruptShadow(PCPUMCTX pCtx)
 {
-    pCtx->fInhibit &= ~(uint8_t)CPUMCTX_INHIBIT_SHADOW;
+    pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
 }
 
 /**
@@ -2007,7 +2007,7 @@ DECLINLINE(void) CPUMUpdateInterruptShadow(PCPUMCTX pCtx, bool fInhibited)
 {
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
     if (!fInhibited)
-        pCtx->fInhibit &= ~(uint8_t)CPUMCTX_INHIBIT_SHADOW;
+        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
     else
     {
         pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
@@ -2026,7 +2026,7 @@ DECLINLINE(void) CPUMUpdateInterruptShadow(PCPUMCTX pCtx, bool fInhibited)
 DECLINLINE(bool) CPUMUpdateInterruptShadowEx(PCPUMCTX pCtx, bool fInhibited, uint64_t rip)
 {
     if (!fInhibited)
-        pCtx->fInhibit &= ~(uint8_t)CPUMCTX_INHIBIT_SHADOW;
+        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
     else
     {
         pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
@@ -2107,7 +2107,7 @@ DECLINLINE(void) CPUMSetInterruptInhibitingByNmiEx(PCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMClearInterruptInhibitingByNmi(PCPUMCTX pCtx)
 {
-    pCtx->fInhibit &= ~(uint8_t)CPUMCTX_INHIBIT_NMI;
+    pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_NMI;
 }
 
 /**
@@ -2137,7 +2137,7 @@ DECLINLINE(void) CPUMClearInterruptInhibitingByNmiEx(PCPUMCTX pCtx)
 DECLINLINE(void) CPUMUpdateInterruptInhibitingByNmi(PCPUMCTX pCtx, bool fInhibited)
 {
     if (!fInhibited)
-        pCtx->fInhibit &= ~(uint8_t)CPUMCTX_INHIBIT_NMI;
+        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_NMI;
     else
         pCtx->fInhibit |= CPUMCTX_INHIBIT_NMI;
 }
