@@ -3088,7 +3088,7 @@ VMMDECL(bool) CPUMR3IsStateRestorePending(PVM pVM)
  * Formats the EFLAGS value into mnemonics.
  *
  * @param   pszEFlags   Where to write the mnemonics. (Assumes sufficient buffer space.)
- * @param   efl         The EFLAGS value.
+ * @param   efl         The EFLAGS value with fInhibit in bits 31:24.
  */
 static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
 {
@@ -3115,6 +3115,9 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
         { "ac", "na", X86_EFL_AF },
         { "po", "pe", X86_EFL_PF },
         { "cy", "nc", X86_EFL_CF },
+        { "inh-ss",  NULL, (uint32_t)CPUMCTX_INHIBIT_SHADOW_SS  << 24 },
+        { "inh-sti", NULL, (uint32_t)CPUMCTX_INHIBIT_SHADOW_STI << 24 },
+        { "inh-nmi", NULL, (uint32_t)CPUMCTX_INHIBIT_NMI        << 24 },
     };
     char *psz = pszEFlags;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
@@ -3151,7 +3154,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
      */
     uint32_t efl = pCtxCore->eflags.u32;
     char szEFlags[80];
-    cpumR3InfoFormatFlags(&szEFlags[0], efl);
+    cpumR3InfoFormatFlags(&szEFlags[0], efl | ((uint32_t)pCtx->fInhibit << 24));
 
     /*
      * Format the registers.

@@ -1938,12 +1938,13 @@ DECLINLINE(bool) CPUMIsInInterruptShadow(PCCPUMCTX pCtx)
 }
 
 /**
- * Checks if we're in an "interrupt shadow", i.e. after a STI, POPF or MOV SS,
+ * Checks if we're in an "interrupt shadow", i.e. after a STI, POP SS or MOV SS,
  * updating the state if stale.
  *
  * This also inhibit NMIs, except perhaps for nested guests.
  *
- * @returns true if interrupts are inhibited by interrupt shadow, false if not.
+ * @retval  true if interrupts are inhibited by interrupt shadow.
+ * @retval  false if not.
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
  */
@@ -1961,7 +1962,54 @@ DECLINLINE(bool) CPUMIsInInterruptShadowWithUpdate(PCPUMCTX pCtx)
 }
 
 /**
- * Sets the "interrupt shadow" flag, after a STI, POPF or MOV SS instruction.
+ * Checks if we're in an "interrupt shadow" due to a POP SS or MOV SS
+ * instruction.
+ *
+ * This also inhibit NMIs, except perhaps for nested guests.
+ *
+ * @retval  true if interrupts are inhibited due to POP/MOV SS.
+ * @retval  false if not.
+ * @param   pCtx    Current guest CPU context.
+ * @note    Requires pCtx->rip to be up to date.
+ * @note    Does not clear fInhibit when CPUMCTX::uRipInhibitInt differs
+ *          from CPUMCTX::rip.
+ * @note    Both CPUMIsInInterruptShadowAfterSti() and this function may return
+ *          true depending on the execution engine being used.
+ */
+DECLINLINE(bool) CPUMIsInInterruptShadowAfterSs(PCCPUMCTX pCtx)
+{
+    if (!(pCtx->fInhibit & CPUMCTX_INHIBIT_SHADOW_SS))
+        return false;
+
+    CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
+    return pCtx->uRipInhibitInt == pCtx->rip;
+}
+
+/**
+ * Checks if we're in an "interrupt shadow" due to an STI instruction.
+ *
+ * This also inhibit NMIs, except perhaps for nested guests.
+ *
+ * @retval  true if interrupts are inhibited due to STI.
+ * @retval  false if not.
+ * @param   pCtx    Current guest CPU context.
+ * @note    Requires pCtx->rip to be up to date.
+ * @note    Does not clear fInhibit when CPUMCTX::uRipInhibitInt differs
+ *          from CPUMCTX::rip.
+ * @note    Both CPUMIsInInterruptShadowAfterSs() and this function may return
+ *          true depending on the execution engine being used.
+ */
+DECLINLINE(bool) CPUMIsInInterruptShadowAfterSti(PCCPUMCTX pCtx)
+{
+    if (!(pCtx->fInhibit & CPUMCTX_INHIBIT_SHADOW_STI))
+        return false;
+
+    CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
+    return pCtx->uRipInhibitInt == pCtx->rip;
+}
+
+/**
+ * Sets the "interrupt shadow" flag, after a STI, POP SS or MOV SS instruction.
  *
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
@@ -1974,7 +2022,7 @@ DECLINLINE(void) CPUMSetInInterruptShadow(PCPUMCTX pCtx)
 }
 
 /**
- * Sets the "interrupt shadow" flag, after a STI, POPF or MOV SS instruction,
+ * Sets the "interrupt shadow" flag, after a STI, POP SS or MOV SS instruction,
  * extended version.
  *
  * @param   pCtx    Current guest CPU context.
@@ -1984,6 +2032,32 @@ DECLINLINE(void) CPUMSetInInterruptShadowEx(PCPUMCTX pCtx, uint64_t rip)
 {
     pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
     pCtx->uRipInhibitInt = rip;
+}
+
+/**
+ * Sets the "interrupt shadow" flag after a POP SS or MOV SS instruction.
+ *
+ * @param   pCtx    Current guest CPU context.
+ * @note    Requires pCtx->rip to be up to date.
+ */
+DECLINLINE(void) CPUMSetInInterruptShadowSs(PCPUMCTX pCtx)
+{
+    CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
+    pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW_SS;
+    pCtx->uRipInhibitInt = pCtx->rip;
+}
+
+/**
+ * Sets the "interrupt shadow" flag after an STI instruction.
+ *
+ * @param   pCtx    Current guest CPU context.
+ * @note    Requires pCtx->rip to be up to date.
+ */
+DECLINLINE(void) CPUMSetInInterruptShadowSti(PCPUMCTX pCtx)
+{
+    CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
+    pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW_STI;
+    pCtx->uRipInhibitInt = pCtx->rip;
 }
 
 /**
@@ -2033,6 +2107,26 @@ DECLINLINE(bool) CPUMUpdateInterruptShadowEx(PCPUMCTX pCtx, bool fInhibited, uin
         pCtx->uRipInhibitInt = rip;
     }
     return fInhibited;
+}
+
+/**
+ * Update the two "interrupt shadow" flags separately, extended version.
+ *
+ * @param   pCtx            Current guest CPU context.
+ * @param   fInhibitedBySs  The new state for the MOV SS & POP SS aspect.
+ * @param   fInhibitedBySti The new state for the STI aspect.
+ * @param   rip             The RIP for which it is inhibited.
+ */
+DECLINLINE(void) CPUMUpdateInterruptShadowSsStiEx(PCPUMCTX pCtx, bool fInhibitedBySs, bool fInhibitedBySti, uint64_t rip)
+{
+    if (!(fInhibitedBySs | fInhibitedBySti))
+        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
+    else
+    {
+        pCtx->fInhibit |= (fInhibitedBySs  ? CPUMCTX_INHIBIT_SHADOW_SS  : 0)
+                       |  (fInhibitedBySti ? CPUMCTX_INHIBIT_SHADOW_STI : 0);
+        pCtx->uRipInhibitInt = rip;
+    }
 }
 
 /* VMX forward declarations used by extended function versions: */

@@ -1475,7 +1475,10 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
         if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP)
             pVCpu->cpum.GstCtx.rip = pRun->s.regs.regs.rip;
 
-        CPUMUpdateInterruptShadowEx(&pVCpu->cpum.GstCtx, KvmEvents.interrupt.shadow != 0, pVCpu->cpum.GstCtx.rip);
+        CPUMUpdateInterruptShadowSsStiEx(&pVCpu->cpum.GstCtx,
+                                         RT_BOOL(KvmEvents.interrupt.shadow & KVM_X86_SHADOW_INT_MOV_SS),
+                                         RT_BOOL(KvmEvents.interrupt.shadow & KVM_X86_SHADOW_INT_STI),
+                                         pVCpu->cpum.GstCtx.rip);
         CPUMUpdateInterruptInhibitingByNmi(&pVCpu->cpum.GstCtx, KvmEvents.nmi.masked != 0);
 
         if (KvmEvents.interrupt.injected)
@@ -1864,7 +1867,8 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
         if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
         { /* probably likely */ }
         else
-            KvmEvents.interrupt.shadow = KVM_X86_SHADOW_INT_MOV_SS | KVM_X86_SHADOW_INT_STI;
+            KvmEvents.interrupt.shadow = (CPUMIsInInterruptShadowAfterSs()  ? KVM_X86_SHADOW_INT_MOV_SS : 0)
+                                       | (CPUMIsInInterruptShadowAfterSti() ? KVM_X86_SHADOW_INT_STI    : 0);
 
         /* No flag - this is updated unconditionally. */
         KvmEvents.nmi.masked = CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx);
@@ -2048,9 +2052,13 @@ static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu, struct kvm_
     KvmEvents.flags |= KVM_VCPUEVENT_VALID_SHADOW;
     if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_INHIBIT_INT))
         KvmEvents.interrupt.shadow = !CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx) ? 0
-                                   : KVM_X86_SHADOW_INT_MOV_SS | KVM_X86_SHADOW_INT_STI;
+                                   :   (CPUMIsInInterruptShadowAfterSs()  ? KVM_X86_SHADOW_INT_MOV_SS : 0)
+                                     | (CPUMIsInInterruptShadowAfterSti() ? KVM_X86_SHADOW_INT_STI    : 0);
     else
-        CPUMUpdateInterruptShadowEx(&pVCpu->cpum.GstCtx, KvmEvents.interrupt.shadow != 0, pRun->s.regs.regs.rip);
+        CPUMUpdateInterruptShadowSsStiEx(&pVCpu->cpum.GstCtx,
+                                         RT_BOOL(KvmEvents.interrupt.shadow & KVM_X86_SHADOW_INT_MOV_SS),
+                                         RT_BOOL(KvmEvents.interrupt.shadow & KVM_X86_SHADOW_INT_MOV_STI),
+                                         pRun->s.regs.regs.rip);
 
     if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_INHIBIT_NMI))
         KvmEvents.nmi.masked = CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx);

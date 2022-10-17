@@ -1697,44 +1697,42 @@ static void vmxHCExportGuestApicTpr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient
  */
 static uint32_t vmxHCGetGuestIntrStateAndUpdateFFs(PVMCPUCC pVCpu)
 {
-    uint32_t fIntrState = 0;
+    uint32_t fIntrState;
 
     /*
      * Check if we should inhibit interrupt delivery due to instructions like STI and MOV SS.
      */
-    if (CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
+    if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
+        fIntrState = 0;
+    else
     {
-        /* If inhibition is active, RIP and RFLAGS should've been imported from the VMCS already. */
-        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS);
+        /* If inhibition is active, RIP should've been imported from the VMCS already. */
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RIP);
 
-        /** @todo r=bird: This heuristic isn't all that correct, it would be safer
-         * to always use MOVSS here.  Best deal would be to track both bits in CPUM. */
-        if (pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
-            fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
-        else
+        if (CPUMIsInInterruptShadowAfterSs(&pVCpu->cpum.GstCtx))
             fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
+        else
+        {
+            fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
+
+            /* Block-by-STI must not be set when interrupts are disabled. */
+            AssertStmt(pVCpu->cpum.GstCtx.eflags.Bits.u1IF, fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS);
+        }
     }
 
     /*
      * Check if we should inhibit NMI delivery.
      */
-    if (CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
+    if (!CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
+    { /* likely */ }
+    else
         fIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
 
     /*
      * Validate.
      */
-#ifdef VBOX_STRICT
     /* We don't support block-by-SMI yet.*/
     Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));
-
-    /* Block-by-STI must not be set when interrupts are disabled. */
-    if (fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
-    {
-        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
-        Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_IF);
-    }
-#endif
 
     return fIntrState;
 }
@@ -3382,9 +3380,10 @@ DECL_NO_INLINE(static,void) vmxHCImportGuestIntrStateSlow(PVMCPUCC pVCpu, PCVMXV
     vmxHCImportGuestRip(pVCpu);
     vmxHCImportGuestRFlags(pVCpu, pVmcsInfo);
 
-    CPUMUpdateInterruptShadowEx(&pVCpu->cpum.GstCtx,
-                                RT_BOOL(fGstIntState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)),
-                                pVCpu->cpum.GstCtx.rip);
+    CPUMUpdateInterruptShadowSsStiEx(&pVCpu->cpum.GstCtx,
+                                     RT_BOOL(fGstIntState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS),
+                                     RT_BOOL(fGstIntState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI),
+                                     pVCpu->cpum.GstCtx.rip);
     CPUMUpdateInterruptInhibitingByNmiEx(&pVCpu->cpum.GstCtx, RT_BOOL(fGstIntState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI));
 }
 

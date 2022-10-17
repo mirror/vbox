@@ -4703,7 +4703,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_SReg, uint8_t, iSegReg, uint16_t, uSel)
 {
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
     if (iSegReg == X86_SREG_SS && rcStrict == VINF_SUCCESS)
-        CPUMSetInInterruptShadow(&pVCpu->cpum.GstCtx);
+        CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
     return rcStrict;
 }
 
@@ -4761,7 +4761,7 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
     {
         pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
         if (iSegReg == X86_SREG_SS)
-            CPUMSetInInterruptShadow(&pVCpu->cpum.GstCtx);
+            CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
     }
     return rcStrict;
 }
@@ -7511,7 +7511,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
     IEMMISC_SET_EFL(pVCpu, fEfl);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     if (!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF))
-        CPUMSetInInterruptShadow(&pVCpu->cpum.GstCtx);
+        CPUMSetInInterruptShadowSti(&pVCpu->cpum.GstCtx);
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return VINF_SUCCESS;
 }
