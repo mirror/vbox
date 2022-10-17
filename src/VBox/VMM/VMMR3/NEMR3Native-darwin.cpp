@@ -2994,6 +2994,13 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     rc = CFGMR3QueryBoolDef(pCfgNem, "VmxLbr", &pVM->nem.s.fLbr, false);
     AssertRCReturn(rc, rc);
 
+    /** @cfgm{/NEM/CatalinaWxWorkaround, bool, false}
+     * Whether to allow only W^X guest mappings due to a bug in the Catalina AppleHV
+     * driver refusing RWX when a properly signed binary is used.
+     */
+    rc = CFGMR3QueryBoolDef(pCfgNem, "CatalinaWxWorkaround", &g_fAppleHvNoWX, false);
+    AssertRCReturn(rc, rc);
+
     /*
      * Error state.
      * The error message will be non-empty on failure and 'rc' will be set too.
