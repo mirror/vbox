@@ -7826,26 +7826,19 @@ HMVMX_EXIT_DECL vmxHCExitRdpmc(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    int rc = vmxHCImportGuestState<  CPUMCTX_EXTRN_CR4
-                                   | CPUMCTX_EXTRN_CR0
-                                   | CPUMCTX_EXTRN_RFLAGS
-                                   | CPUMCTX_EXTRN_RIP
-                                   | CPUMCTX_EXTRN_SS>(pVCpu, pVmcsInfo, __FUNCTION__);
+    vmxHCReadToTransient<HMVMX_READ_EXIT_INSTR_LEN>(pVCpu, pVmxTransient);
+    int rc = vmxHCImportGuestState<IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_CR4>(pVCpu, pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    rc = EMInterpretRdpmc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = IEMExecDecodedRdpmc(pVCpu, pVmxTransient->cbExitInstr);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
-        rc = vmxHCAdvanceGuestRip(pVCpu, pVmxTransient);
-        Assert(pVmxTransient->cbExitInstr == 2);
+        ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
     }
-    else
-    {
-        AssertMsgFailed(("vmxHCExitRdpmc: EMInterpretRdpmc failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
-    }
-    return rc;
+    return rcStrict;
 }
 
 

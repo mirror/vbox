@@ -1029,40 +1029,6 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDIS
  *
  */
 
-
-/**
- * Interpret RDPMC.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- *
- */
-VMM_INT_DECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    uint32_t uCR4 = CPUMGetGuestCR4(pVCpu);
-
-    /* If X86_CR4_PCE is not set, then CPL must be zero. */
-    if (    !(uCR4 & X86_CR4_PCE)
-        &&  CPUMGetGuestCPL(pVCpu) != 0)
-    {
-        Assert(CPUMGetGuestCR0(pVCpu) & X86_CR0_PE);
-        return VERR_EM_INTERPRETER; /* genuine #GP */
-    }
-
-    /* Just return zero here; rather tricky to properly emulate this, especially as the specs are a mess. */
-    pRegFrame->rax = 0;
-    pRegFrame->rdx = 0;
-    /** @todo We should trigger a \#GP here if the CPU doesn't support the index in
-     *        ecx but see @bugref{3472}! */
-
-    NOREF(pVM);
-    return VINF_SUCCESS;
-}
-
-
 /* VT-x only: */
 
 /**
