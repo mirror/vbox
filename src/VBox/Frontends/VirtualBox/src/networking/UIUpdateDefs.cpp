@@ -348,11 +348,9 @@ QVector<KUpdateChannel> VBoxUpdateData::supportedUpdateChannels() const
 bool VBoxUpdateData::isEqual(const VBoxUpdateData &another) const
 {
     return    true
-           && (m_strData == another.data())
+           && (m_fCheckEnabled == another.isCheckEnabled())
            && (m_enmUpdatePeriod == another.updatePeriod())
-           && (m_date == another.date())
            && (m_enmUpdateChannel == another.updateChannel())
-           && (m_version == another.version())
               ;
 }
 

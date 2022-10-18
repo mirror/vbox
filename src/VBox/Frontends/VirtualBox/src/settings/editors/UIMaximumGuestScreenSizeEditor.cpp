@@ -52,8 +52,11 @@ UIMaximumGuestScreenSizeValue::UIMaximumGuestScreenSizeValue(MaximumGuestScreenS
 bool UIMaximumGuestScreenSizeValue::equal(const UIMaximumGuestScreenSizeValue &other) const
 {
     return true
-           && (m_enmPolicy == other.m_enmPolicy)
-           && (m_size == other.m_size)
+           && (   (   m_enmPolicy != MaximumGuestScreenSizePolicy_Fixed
+                   && m_enmPolicy == other.m_enmPolicy)
+               || (   m_enmPolicy == MaximumGuestScreenSizePolicy_Fixed
+                   && m_enmPolicy == other.m_enmPolicy
+                   && m_size == other.m_size))
            ;
 }
 
