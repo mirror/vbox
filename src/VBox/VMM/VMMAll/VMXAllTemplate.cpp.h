@@ -9390,7 +9390,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
      * Handle the pagefault trap for the nested shadow table.
      */
     TRPMAssertXcptPF(pVCpu, GCPhys, uErrorCode);
-    rcStrict = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, uErrorCode, CPUMCTX2CORE(pCtx), GCPhys);
+    rcStrict = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, uErrorCode, pCtx, GCPhys);
     TRPMResetTrap(pVCpu);
 
     /* Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}. */
@@ -10747,9 +10747,8 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
 
         PGMPTWALK Walk;
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-        rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, uErr, CPUMCTX2CORE(pCtx),
-                                                        GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault,
-                                                        &Walk);
+        rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, uErr, pCtx, GCPhysNestedFault,
+                                                        fIsLinearAddrValid, GCPtrNestedFault, &Walk);
         Log7Func(("PGM (uExitQual=%#RX64, %RGp, %RGv) -> %Rrc (fFailed=%d)\n",
                   uExitQual, GCPhysNestedFault, GCPtrNestedFault, VBOXSTRICTRC_VAL(rcStrict), Walk.fFailed));
         if (RT_SUCCESS(rcStrict))
@@ -10798,7 +10797,7 @@ HMVMX_EXIT_DECL vmxHCExitEptMisconfigNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         PGMPTWALK Walk;
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         RTGCPHYS const GCPhysNestedFault = pVmxTransient->uGuestPhysicalAddr;
-        VBOXSTRICTRC rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, X86_TRAP_PF_RSVD, CPUMCTX2CORE(pCtx),
+        VBOXSTRICTRC rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, X86_TRAP_PF_RSVD, pCtx,
                                                                      GCPhysNestedFault, false /* fIsLinearAddrValid */,
                                                                      0 /* GCPtrNestedFault */, &Walk);
         if (RT_SUCCESS(rcStrict))

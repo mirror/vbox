@@ -980,14 +980,14 @@ VMMR0_INT_DECL(int)  PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHAND
 VMMR0DECL(int)       PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule,
                                             PCRTGCPTR64 paRegionsGCPtrs);
 VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                                    PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
+                                                    PCPUMCTX pCtx, RTGCPHYS pvFault);
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
                                                       PCPUMCTX pCtx, RTGCPHYS GCPhysFault, uint32_t uErr);
 VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu);
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNestedFault,
+                                                             PCPUMCTX pCtx, RTGCPHYS GCPhysNestedFault,
                                                              bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk);
 # endif
 /** @} */

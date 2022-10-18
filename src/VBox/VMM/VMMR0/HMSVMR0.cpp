@@ -7993,7 +7993,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * Nested page-fault.
      */
     TRPMAssertXcptPF(pVCpu, GCPhysFaultAddr, u32ErrCode);
-    int rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
+    int rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, pCtx, GCPhysFaultAddr);
     TRPMResetTrap(pVCpu);
 
     Log4Func(("#NPF: PGMR0Trap0eHandlerNestedPaging returns %Rrc CS:RIP=%04x:%RX64\n", rc, pCtx->cs.Sel, pCtx->rip));

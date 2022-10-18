@@ -1111,15 +1111,15 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM)
  *                              EMT.
  * @param   enmShwPagingMode    Paging mode for the nested page tables.
  * @param   uErr                The trap error code.
- * @param   pRegFrame           Trap register frame.
+ * @param   pCtx                Pointer to the register context for the CPU.
  * @param   GCPhysFault         The fault address.
  */
 VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                              PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault)
+                                              PCPUMCTX pCtx, RTGCPHYS GCPhysFault)
 {
     int rc;
 
-    LogFlow(("PGMTrap0eHandler: uErr=%RGx GCPhysFault=%RGp eip=%RGv\n", uErr, GCPhysFault, (RTGCPTR)pRegFrame->rip));
+    LogFlow(("PGMTrap0eHandler: uErr=%RGx GCPhysFault=%RGp eip=%RGv\n", uErr, GCPhysFault, (RTGCPTR)pCtx->rip));
     STAM_PROFILE_START(&pGVCpu->pgm.s.StatRZTrap0e, a);
     STAM_STATS({ pGVCpu->pgmr0.s.pStatTrap0eAttributionR0 = NULL; } );
 
@@ -1182,18 +1182,18 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
     switch (enmShwPagingMode)
     {
         case PGMMODE_32_BIT:
-            rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
+            rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pGVCpu, uErr, pCtx, GCPhysFault, &fLockTaken);
             break;
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
+            rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pGVCpu, uErr, pCtx, GCPhysFault, &fLockTaken);
             break;
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
+            rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pGVCpu, uErr, pCtx, GCPhysFault, &fLockTaken);
             break;
         case PGMMODE_EPT:
-            rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
+            rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pGVCpu, uErr, pCtx, GCPhysFault, &fLockTaken);
             break;
         default:
             AssertFailed();
@@ -1217,7 +1217,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
              || rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
              || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
     {
-        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGp error code %x (rip=%RGv)\n", rc, GCPhysFault, uErr, pRegFrame->rip));
+        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGp error code %x (rip=%RGv)\n", rc, GCPhysFault, uErr, pCtx->rip));
         /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about
            single VCPU VMs though. */
         rc = VINF_SUCCESS;
@@ -1239,7 +1239,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
  * @param   pGVCpu              The global (ring-0) CPU structure of the calling
  *                              EMT.
  * @param   uErr                The trap error code.
- * @param   pRegFrame           Trap register frame.
+ * @param   pCtx                Pointer to the register context for the CPU.
  * @param   GCPhysNestedFault   The nested-guest physical address causing the fault.
  * @param   fIsLinearAddrValid  Whether translation of a nested-guest linear address
  *                              caused this fault. If @c false, GCPtrNestedFault
@@ -1249,14 +1249,14 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
  * @param   pWalk               Where to store the SLAT walk result.
  */
 VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNestedFault,
+                                                             PCPUMCTX pCtx, RTGCPHYS GCPhysNestedFault,
                                                              bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk)
 {
     Assert(enmShwPagingMode == PGMMODE_EPT);
     NOREF(enmShwPagingMode);
 
     bool fLockTaken;
-    VBOXSTRICTRC rcStrict = PGM_BTH_NAME_EPT_PROT(NestedTrap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysNestedFault,
+    VBOXSTRICTRC rcStrict = PGM_BTH_NAME_EPT_PROT(NestedTrap0eHandler)(pGVCpu, uErr, pCtx, GCPhysNestedFault,
                                                                        fIsLinearAddrValid, GCPtrNestedFault, pWalk, &fLockTaken);
     if (fLockTaken)
     {
