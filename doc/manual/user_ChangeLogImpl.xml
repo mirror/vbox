@@ -108,6 +108,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Windows hosts: GUI: Fixed missing Qt libraries for vista style and sql driver (bug #21155)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: Fixed a glitch in the log viewer which was causing wrong log file to be saved (bug #21156)</para>
       </listitem>
 
