@@ -3813,7 +3813,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         }
         else
         {
-            pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_TF;
+            pVCpu->cpum.GstCtx.eflags.u |= X86_EFL_TF;
             pVCpu->hm.s.fCtxChanged |= HM_CHANGED_GUEST_RFLAGS;
             pVCpu->hmr0.s.fClearTrapFlag = true;
             fSteppingDB = true;
