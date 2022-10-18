@@ -101,7 +101,7 @@ static int vboxClipboardSvcWinDataGet(uint32_t u32Format, const void *pvSrc, uin
             {
                 /* Do not copy data. The dst buffer is not enough. */
                 RTMemFree(pszBuf);
-                return VERR_BUFFER_OVERFLOW;
+                return VINF_BUFFER_OVERFLOW;
             }
             memcpy(pvDst, pszBuf, cbBuf);
             RTMemFree(pszBuf);
@@ -114,7 +114,7 @@ static int vboxClipboardSvcWinDataGet(uint32_t u32Format, const void *pvSrc, uin
         *pcbActualDst = cbSrc; /* Tell the caller how much space we need. */
 
         if (cbSrc > cbDst)
-            return VERR_BUFFER_OVERFLOW;
+            return VINF_BUFFER_OVERFLOW;
 
         memcpy(pvDst, pvSrc, cbSrc);
     }

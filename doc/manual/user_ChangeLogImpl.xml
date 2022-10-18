@@ -99,6 +99,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Windows host: Shared Clipboard: Fixed issue when only 4Kb of host
+          clipboard buffer was accessible to guest (bug #21149)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux Guest Additions: Introduced initial support for kernel 6.1</para>
       </listitem>
 
