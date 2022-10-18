@@ -1830,10 +1830,10 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
     char szEFlags[80];
     char *psz = szEFlags;
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    uint32_t uEFlags = pCtx->eflags.u32;
+    uint32_t fEFlags = pCtx->eflags.u;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
     {
-        const char *pszAdd = s_aFlags[i].fFlag & uEFlags ? s_aFlags[i].pszSet : s_aFlags[i].pszClear;
+        const char *pszAdd = s_aFlags[i].fFlag & fEFlags ? s_aFlags[i].pszSet : s_aFlags[i].pszClear;
         if (pszAdd)
         {
             strcpy(psz, pszAdd);
@@ -1849,7 +1849,6 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
          * Format the registers.
          */
         if (CPUMIsGuestIn64BitCode(pVCpu))
-        {
             Log(("rax=%016RX64 rbx=%016RX64 rcx=%016RX64 rdx=%016RX64\n"
                  "rsi=%016RX64 rdi=%016RX64 r8 =%016RX64 r9 =%016RX64\n"
                  "r10=%016RX64 r11=%016RX64 r12=%016RX64 r13=%016RX64\n"
@@ -1872,7 +1871,7 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
                  pCtx->rax, pCtx->rbx, pCtx->rcx, pCtx->rdx, pCtx->rsi, pCtx->rdi,
                  pCtx->r8, pCtx->r9, pCtx->r10, pCtx->r11, pCtx->r12, pCtx->r13,
                  pCtx->r14, pCtx->r15,
-                 pCtx->rip, pCtx->rsp, pCtx->rbp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
+                 pCtx->rip, pCtx->rsp, pCtx->rbp, X86_EFL_GET_IOPL(fEFlags), 31, szEFlags,
                  pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
                  pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
                  pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
@@ -1882,11 +1881,10 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
                  pCtx->cr0,  pCtx->cr2, pCtx->cr3,  pCtx->cr4,
                  pCtx->dr[0],  pCtx->dr[1], pCtx->dr[2],  pCtx->dr[3],
                  pCtx->dr[4],  pCtx->dr[5], pCtx->dr[6],  pCtx->dr[7],
-                 pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
+                 pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, fEFlags,
                  pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
                  pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
                  pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
-        }
         else
             Log(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
                  "eip=%08x esp=%08x ebp=%08x iopl=%d %*s\n"
@@ -1902,14 +1900,14 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
                  "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
                  ,
                  pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-                 pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
+                 pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(fEFlags), 31, szEFlags,
                  pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pCtx->dr[0],  pCtx->dr[1],
                  pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pCtx->dr[2],  pCtx->dr[3],
                  pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pCtx->dr[4],  pCtx->dr[5],
                  pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pCtx->dr[6],  pCtx->dr[7],
                  pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pCtx->cr0,  pCtx->cr2,
                  pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pCtx->cr3,  pCtx->cr4,
-                 pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
+                 pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, fEFlags,
                  pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
                  pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
                  pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
@@ -1931,7 +1929,6 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
     }
 
     if (fFlags & HM_DUMP_REG_FLAGS_MSRS)
-    {
         Log(("MSR:\n"
             "EFER         =%016RX64\n"
             "PAT          =%016RX64\n"
@@ -1947,7 +1944,6 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
             pCtx->msrLSTAR,
             pCtx->msrSFMASK,
             pCtx->msrKERNELGSBASE));
-    }
 }
 
 #endif /* VBOX_STRICT */
