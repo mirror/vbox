@@ -451,17 +451,6 @@ DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DISSELREG sel, RTSEL *pVal)
 }
 
 /**
- * Returns the value of the specified segment register including a pointer to the hidden register in the supplied cpu context
- *
- */
-DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, DISSELREG sel, PCPUMSELREG *ppSelReg)
-{
-    AssertReturnStmt((unsigned)sel < RT_ELEMENTS(g_aRegSegIndex), *ppSelReg = NULL, VERR_INVALID_PARAMETER);
-    *ppSelReg = (CPUMSELREG *)((uintptr_t)pCtx + g_aRegHidSegIndex[sel]);
-    return VINF_SUCCESS;
-}
-
-/**
  * Updates the value of the specified 64 bits general purpose register
  *
  */

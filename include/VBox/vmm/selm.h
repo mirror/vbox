@@ -53,7 +53,7 @@ RT_C_DECLS_BEGIN
  */
 
 VMMDECL(int)            SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
-VMMDECL(RTGCPTR)        SELMToFlat(PVMCC pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
+VMMDECL(RTGCPTR)        SELMToFlat(PVMCPUCC pVCpu, unsigned idxSeg, PCPUMCTX pCtx, RTGCPTR Addr);
 VMMDECL(RTGCPTR)        SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
 
 /** Flags for SELMToFlatEx().
@@ -75,8 +75,7 @@ VMMDECL(RTGCPTR)        SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
 #define SELMTOFLAT_FLAGS_HYPER      RT_BIT(10)
 /** @} */
 
-VMMDECL(int)            SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, uint32_t fFlags,
-                                     PRTGCPTR ppvGC);
+VMMDECL(int)            SELMToFlatEx(PVMCPU pVCpu, unsigned idxSeg, PCPUMCTX pCtx, RTGCPTR Addr, uint32_t fFlags, PRTGCPTR ppvGC);
 VMMDECL(int)            SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS,
                                                      PCPUMSELREG pSRegCS, RTGCPTR Addr, PRTGCPTR ppvFlat);
 #ifdef VBOX_WITH_RAW_MODE

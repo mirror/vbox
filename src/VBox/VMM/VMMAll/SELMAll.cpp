@@ -55,22 +55,20 @@
  * for that.
  *
  * @returns Flat address.
- * @param   pVM         The cross context VM structure.
- * @param   SelReg      Selector register
- * @param   pCtxCore    CPU context
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idxSeg      The selector register to use (X86_SREG_XXX).
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   Addr        Address part.
  */
-VMMDECL(RTGCPTR) SELMToFlat(PVMCC pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
+VMMDECL(RTGCPTR) SELMToFlat(PVMCPUCC pVCpu, unsigned idxSeg, PCPUMCTX pCtx, RTGCPTR Addr)
 {
-    PCPUMSELREG    pSReg;
-    PVMCPUCC       pVCpu = VMMGetCpu(pVM);
-
-    int rc = DISFetchRegSegEx(pCtxCore, SelReg, &pSReg); AssertRC(rc);
+    Assert(idxSeg < RT_ELEMENTS(pCtx->aSRegs));
+    PCPUMSELREG pSReg = &pCtx->aSRegs[idxSeg];
 
     /*
      * Deal with real & v86 mode first.
      */
-    if (    pCtxCore->eflags.Bits.u1VM
+    if (    pCtx->eflags.Bits.u1VM
         ||  CPUMIsGuestInRealMode(pVCpu))
     {
         uint32_t uFlat = (uint32_t)Addr & 0xffff;
@@ -82,17 +80,17 @@ VMMDECL(RTGCPTR) SELMToFlat(PVMCC pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, 
     }
 
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
        (Intel(r) 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
-    if (    pCtxCore->cs.Attr.n.u1Long
+    if (    pCtx->cs.Attr.n.u1Long
         &&  CPUMIsGuestInLongMode(pVCpu))
     {
-        switch (SelReg)
+        switch (idxSeg)
         {
-            case DISSELREG_FS:
-            case DISSELREG_GS:
+            case X86_SREG_FS:
+            case X86_SREG_GS:
                 return (RTGCPTR)(pSReg->u64Base + Addr);
 
             default:
@@ -113,26 +111,22 @@ VMMDECL(RTGCPTR) SELMToFlat(PVMCC pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, 
  *
  * @returns VBox status
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   SelReg      Selector register.
- * @param   pCtxCore    CPU context.
+ * @param   idxSeg      The selector register to use (X86_SREG_XXX).
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   Addr        Address part.
  * @param   fFlags      SELMTOFLAT_FLAGS_*
  *                      GDT entires are valid.
  * @param   ppvGC       Where to store the GC flat address.
  */
-VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, uint32_t fFlags, PRTGCPTR ppvGC)
+VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, unsigned idxSeg, PCPUMCTX pCtx, RTGCPTR Addr, uint32_t fFlags, PRTGCPTR ppvGC)
 {
-    /*
-     * Fetch the selector first.
-     */
-    PCPUMSELREG pSReg;
-    int rc = DISFetchRegSegEx(pCtxCore, SelReg, &pSReg);
-    AssertRCReturn(rc, rc); AssertPtr(pSReg);
+    AssertReturn(idxSeg < RT_ELEMENTS(pCtx->aSRegs), VERR_INVALID_PARAMETER);
+    PCPUMSELREG pSReg = &pCtx->aSRegs[idxSeg];
 
     /*
      * Deal with real & v86 mode first.
      */
-    if (    pCtxCore->eflags.Bits.u1VM
+    if (    pCtx->eflags.Bits.u1VM
         ||  CPUMIsGuestInRealMode(pVCpu))
     {
         if (ppvGC)
@@ -147,20 +141,20 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
     }
 
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
        (Intel(r) 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
     RTGCPTR  pvFlat;
     bool     fCheckLimit   = true;
-    if (    pCtxCore->cs.Attr.n.u1Long
+    if (    pCtx->cs.Attr.n.u1Long
         &&  CPUMIsGuestInLongMode(pVCpu))
     {
         fCheckLimit = false;
-        switch (SelReg)
+        switch (idxSeg)
         {
-            case DISSELREG_FS:
-            case DISSELREG_GS:
+            case X86_SREG_FS:
+            case X86_SREG_GS:
                 pvFlat = pSReg->u64Base + Addr;
                 break;
 
