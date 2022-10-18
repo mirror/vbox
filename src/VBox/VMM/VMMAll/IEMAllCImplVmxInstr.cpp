@@ -2466,7 +2466,7 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
 
     Log2(("vmexit: reason=%u qual=%#RX64 cs:rip=%04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 eflags=%#RX32\n", uExitReason,
           pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-          pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.eflags.u32));
+          pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.eflags.u));
 
     /*
      * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.

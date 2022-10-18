@@ -214,7 +214,7 @@ VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo
             pVmcbMemState->u64CR2          = pVCpu->cpum.GstCtx.cr2;
             pVmcbMemState->u64CR0          = pVCpu->cpum.GstCtx.cr0;
             /** @todo Nested paging. */
-            pVmcbMemState->u64RFlags       = pVCpu->cpum.GstCtx.rflags.u64;
+            pVmcbMemState->u64RFlags       = pVCpu->cpum.GstCtx.rflags.u;
             pVmcbMemState->u64RIP          = pVCpu->cpum.GstCtx.rip;
             pVmcbMemState->u64RSP          = pVCpu->cpum.GstCtx.rsp;
             pVmcbMemState->u64RAX          = pVCpu->cpum.GstCtx.rax;
@@ -794,7 +794,7 @@ static VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhys
         pVCpu->cpum.GstCtx.cr2        = pVmcbNstGst->u64CR2;
         pVCpu->cpum.GstCtx.dr[6]      = pVmcbNstGst->u64DR6;
         pVCpu->cpum.GstCtx.dr[7]      = pVmcbNstGst->u64DR7;
-        pVCpu->cpum.GstCtx.rflags.u64 = pVmcbNstGst->u64RFlags;
+        pVCpu->cpum.GstCtx.rflags.u   = pVmcbNstGst->u64RFlags;
         pVCpu->cpum.GstCtx.rax        = pVmcbNstGst->u64RAX;
         pVCpu->cpum.GstCtx.rsp        = pVmcbNstGst->u64RSP;
         pVCpu->cpum.GstCtx.rip        = pVmcbNstGst->u64RIP;
@@ -912,7 +912,7 @@ static VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhys
         else
             LogFlow(("iemSvmVmrun: Entering nested-guest: %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#x\n",
                      pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3,
-                     pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER, pVCpu->cpum.GstCtx.rflags.u64));
+                     pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER, pVCpu->cpum.GstCtx.eflags.u));
 
         LogFlow(("iemSvmVmrun: returns %d\n", VBOXSTRICTRC_VAL(rcStrict)));
 
