@@ -763,11 +763,6 @@ VMMDECL(RTSEL) CPUMGetGuestCS(PCVMCPU pVCpu)
     return 0;
 }
 
-VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
-{
-    return NULL;
-}
-
 VMMDECL(uint32_t) CPUMGetGuestEIP(PCVMCPU pVCpu)
 {
     return 0;

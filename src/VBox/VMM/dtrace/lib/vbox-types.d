@@ -50,7 +50,7 @@ typedef uint32_t                PVMRC;
 typedef struct VM              *PVMR0;
 typedef struct SUPDRVSESSION   *PSUPDRVSESSION;
 typedef struct UVM             *PUVM;
-typedef struct CPUMCTXCORE     *PCPUMCTXCORE;
+typedef struct CPUMCTX         *PCPUMCTX;
 typedef struct SVMVMCB         *PSVMVMCB;
 typedef uint32_t                VMXVDIAG;
 typedef struct VMXVVMCS        *PVMXVVMCS;

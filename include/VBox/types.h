@@ -500,11 +500,6 @@ typedef struct CPUMCTX *PCPUMCTX;
 /** Pointer to a const CPUMCTX. */
 typedef const struct CPUMCTX *PCCPUMCTX;
 
-/** Pointer to a CPU context core. */
-typedef struct CPUMCTXCORE *PCPUMCTXCORE;
-/** Pointer to a const CPU context core. */
-typedef const struct CPUMCTXCORE *PCCPUMCTXCORE;
-
 /** Pointer to a selector register. */
 typedef struct CPUMSELREG *PCPUMSELREG;
 /** Pointer to a const selector register. */

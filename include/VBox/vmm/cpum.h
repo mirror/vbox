@@ -3058,7 +3058,6 @@ VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
 #ifdef VBOX_INCLUDED_vmm_cpumctx_h
 VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu);
 #endif
-VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
 
 /** @name Changed flags.
  * These flags are used to keep track of which important register that

@@ -178,117 +178,6 @@ AssertCompileMemberOffset(CPUMCTXGREG, CPUM_STRUCT_NM(s.) bHi, 1);
 
 
 /**
- * CPU context core.
- *
- * @todo        Eliminate this structure!
- * @deprecated  We don't push any context cores any more in TRPM.
- */
-#pragma pack(1)
-typedef struct CPUMCTXCORE
-{
-    /** @name General Register.
-     * @note  These follow the encoding order (X86_GREG_XXX) and can be accessed as
-     *        an array starting a rax.
-     * @{ */
-    union
-    {
-        uint8_t         al;
-        uint16_t        ax;
-        uint32_t        eax;
-        uint64_t        rax;
-    } CPUM_UNION_NM(rax);
-    union
-    {
-        uint8_t         cl;
-        uint16_t        cx;
-        uint32_t        ecx;
-        uint64_t        rcx;
-    } CPUM_UNION_NM(rcx);
-    union
-    {
-        uint8_t         dl;
-        uint16_t        dx;
-        uint32_t        edx;
-        uint64_t        rdx;
-    } CPUM_UNION_NM(rdx);
-    union
-    {
-        uint8_t         bl;
-        uint16_t        bx;
-        uint32_t        ebx;
-        uint64_t        rbx;
-    } CPUM_UNION_NM(rbx);
-    union
-    {
-        uint16_t        sp;
-        uint32_t        esp;
-        uint64_t        rsp;
-    } CPUM_UNION_NM(rsp);
-    union
-    {
-        uint16_t        bp;
-        uint32_t        ebp;
-        uint64_t        rbp;
-    } CPUM_UNION_NM(rbp);
-    union
-    {
-        uint8_t         sil;
-        uint16_t        si;
-        uint32_t        esi;
-        uint64_t        rsi;
-    } CPUM_UNION_NM(rsi);
-    union
-    {
-        uint8_t         dil;
-        uint16_t        di;
-        uint32_t        edi;
-        uint64_t        rdi;
-    } CPUM_UNION_NM(rdi);
-    uint64_t            r8;
-    uint64_t            r9;
-    uint64_t            r10;
-    uint64_t            r11;
-    uint64_t            r12;
-    uint64_t            r13;
-    uint64_t            r14;
-    uint64_t            r15;
-    /** @} */
-
-    /** @name Segment registers.
-     * @note These follow the encoding order (X86_SREG_XXX) and can be accessed as
-     *       an array starting a es.
-     * @{  */
-    CPUMSELREG          es;
-    CPUMSELREG          cs;
-    CPUMSELREG          ss;
-    CPUMSELREG          ds;
-    CPUMSELREG          fs;
-    CPUMSELREG          gs;
-    /** @} */
-
-    CPUMSELREG          ldtr;
-    CPUMSELREG          tr;
-
-    /** The program counter. */
-    union
-    {
-        uint16_t        ip;
-        uint32_t        eip;
-        uint64_t        rip;
-    } CPUM_UNION_NM(rip);
-
-    /** The flags register. */
-    union
-    {
-        X86EFLAGS       eflags;
-        X86RFLAGS       rflags;
-    } CPUM_UNION_NM(rflags);
-
-} CPUMCTXCORE;
-#pragma pack()
-
-
-/**
  * SVM Host-state area (Nested Hw.virt - VirtualBox's layout).
  *
  * @warning Exercise caution while modifying the layout of this struct. It's
@@ -345,9 +234,6 @@ AssertCompileSize(CPUMHWVIRT, 4);
 #pragma pack(1) /* for VBOXIDTR / VBOXGDTR. */
 typedef struct CPUMCTX
 {
-    /** CPUMCTXCORE Part.
-     * @{ */
-
     /** General purpose registers. */
     union /* no tag! */
     {
@@ -422,8 +308,6 @@ typedef struct CPUMCTX
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
     } CPUM_UNION_NM(rflags);
-
-    /** @} */ /*(CPUMCTXCORE)*/
 
     /** Interrupt & exception inhibiting (CPUMCTX_INHIBIT_XXX). */
     uint8_t             fInhibit;
@@ -848,16 +732,6 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 # define CPUMCTX_XSAVE_C_PTR(a_pCtx, a_iCompBit, a_PtrType) \
     ((a_PtrType)(&(a_pCtx)->abXState[(a_pCtx)->aoffXState[(a_iCompBit)]]))
 #endif
-
-/**
- * Gets the CPUMCTXCORE part of a CPUMCTX.
- */
-# define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->rax)
-
-/**
- * Gets the CPUMCTX part from a CPUMCTXCORE.
- */
-# define CPUMCTX_FROM_CORE(a_pCtxCore) RT_FROM_MEMBER(a_pCtxCore, CPUMCTX, rax)
 
 /**
  * Gets the first selector register of a CPUMCTX.

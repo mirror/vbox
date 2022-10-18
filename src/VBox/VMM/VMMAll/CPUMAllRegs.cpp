@@ -187,18 +187,6 @@ VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVMCPU pVCpu)
 
 
 /**
- * Gets the pointer to the internal CPUMCTXCORE structure.
- * This is only for reading in order to save a few calls.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
-{
-    return CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
-}
-
-
-/**
  * Queries the pointer to the internal CPUMCTX structure.
  *
  * @returns The CPUMCTX pointer.

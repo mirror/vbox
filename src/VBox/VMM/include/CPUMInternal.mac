@@ -75,14 +75,6 @@ endstruc
 %define CPUM_USE_FFXSR_LEAKY            RT_BIT(19)
 %define CPUM_USE_SUPPORTS_LONGMODE      RT_BIT(20)
 
-%define CPUM_HANDLER_DS                 1
-%define CPUM_HANDLER_ES                 2
-%define CPUM_HANDLER_FS                 3
-%define CPUM_HANDLER_GS                 4
-%define CPUM_HANDLER_IRET               5
-%define CPUM_HANDLER_TYPEMASK           0ffh
-%define CPUM_HANDLER_CTXCORE_IN_EBP     RT_BIT(31)
-
 
 struc CPUM
     ;...
