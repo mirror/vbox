@@ -112,10 +112,10 @@ pgmR0HandlerPhysicalHandlerToRing3(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, v
  *      Dummy for forcing ring-3 handling of the access.}
  */
 DECLCALLBACK(VBOXSTRICTRC)
-pgmR0HandlerPhysicalPfHandlerToRing3(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+pgmR0HandlerPhysicalPfHandlerToRing3(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTX pCtx,
                                      RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 {
-    RT_NOREF(pVM, pVCpu, uErrorCode, pRegFrame, pvFault, GCPhysFault, uUser);
+    RT_NOREF(pVM, pVCpu, uErrorCode, pCtx, pvFault, GCPhysFault, uUser);
     return VINF_EM_RAW_EMULATE_INSTR;
 }
 
