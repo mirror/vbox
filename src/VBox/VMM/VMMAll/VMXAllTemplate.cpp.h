@@ -1799,12 +1799,13 @@ static void vmxHCExportGuestRflags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
     {
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
 
-        /* Intel spec. 2.3.1 "System Flags and Fields in IA-32e Mode" claims the upper 32-bits of RFLAGS are reserved (MBZ).
-           Let us assert it as such and use 32-bit VMWRITE. */
-        Assert(!RT_HI_U32(pVCpu->cpum.GstCtx.rflags.u64));
-        X86EFLAGS fEFlags = pVCpu->cpum.GstCtx.eflags;
-        Assert(fEFlags.u32 & X86_EFL_RA1_MASK);
-        Assert(!(fEFlags.u32 & ~(X86_EFL_1 | X86_EFL_LIVE_MASK)));
+        /* Intel spec. 2.3.1 "System Flags and Fields in IA-32e Mode" claims the upper 32-bits
+           of RFLAGS are reserved (MBZ).  We use bits 63:24 for internal purposes, so no need
+           to assert this, the CPUMX86EFLAGS/CPUMX86RFLAGS union masks these off for us.
+           Use 32-bit VMWRITE. */
+        uint32_t fEFlags = pVCpu->cpum.GstCtx.eflags.u;
+        Assert(fEFlags & X86_EFL_RA1_MASK);
+        Assert(!(fEFlags & ~(X86_EFL_1 | X86_EFL_LIVE_MASK)));
 
 #ifndef IN_NEM_DARWIN
         /*
@@ -1818,19 +1819,19 @@ static void vmxHCExportGuestRflags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
             Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
             Assert(!pVmxTransient->fIsNestedGuest);
-            pVmcsInfo->RealMode.Eflags.u32 = fEFlags.u32;    /* Save the original eflags of the real-mode guest. */
-            fEFlags.Bits.u1VM   = 1;                         /* Set the Virtual 8086 mode bit. */
-            fEFlags.Bits.u2IOPL = 0;                         /* Change IOPL to 0, otherwise certain instructions won't fault. */
+            pVmcsInfo->RealMode.Eflags.u32 = fEFlags;        /* Save the original eflags of the real-mode guest. */
+            fEFlags |= X86_EFL_VM;                           /* Set the Virtual 8086 mode bit. */
+            fEFlags &= ~X86_EFL_IOPL;                        /* Change IOPL to 0, otherwise certain instructions won't fault. */
         }
 #else
         RT_NOREF(pVmxTransient);
 #endif
 
-        int rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_RFLAGS, fEFlags.u32);
+        int rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_RFLAGS, fEFlags);
         AssertRC(rc);
 
         ASMAtomicUoAndU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, ~HM_CHANGED_GUEST_RFLAGS);
-        Log4Func(("eflags=%#RX32\n", fEFlags.u32));
+        Log4Func(("eflags=%#RX32\n", fEFlags));
     }
 }
 
@@ -3328,14 +3329,19 @@ DECLINLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
  */
 DECL_FORCE_INLINE(void) vmxHCImportGuestCoreRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
-    uint64_t u64Val;
-    int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RFLAGS, &u64Val);
+    uint64_t fRFlags;
+    int const rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_RFLAGS, &fRFlags);
     AssertRC(rc);
 
-    pVCpu->cpum.GstCtx.rflags.u64 = u64Val;
+    Assert((fRFlags & X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK);
+    Assert((fRFlags & ~(uint64_t)(X86_EFL_1 | X86_EFL_LIVE_MASK)) == 0);
+
+    pVCpu->cpum.GstCtx.rflags.u = fRFlags;
 #ifndef IN_NEM_DARWIN
     PCVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-    if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+    if (!pVmcsInfoShared->RealMode.fRealOnV86Active)
+    { /* mostly likely */ }
+    else
     {
         pVCpu->cpum.GstCtx.eflags.Bits.u1VM   = 0;
         pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL = pVmcsInfoShared->RealMode.Eflags.Bits.u2IOPL;
@@ -4796,7 +4802,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
 
             /* Construct the stack frame for the interrupt/exception handler. */
             VBOXSTRICTRC rcStrict;
-            rcStrict = hmR0VmxRealModeGuestStackPush(pVCpu, pCtx->eflags.u32);
+            rcStrict = hmR0VmxRealModeGuestStackPush(pVCpu, pCtx->eflags.u);
             if (rcStrict == VINF_SUCCESS)
             {
                 rcStrict = hmR0VmxRealModeGuestStackPush(pVCpu, pCtx->cs.Sel);
@@ -4807,7 +4813,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
             /* Clear the required eflag bits and jump to the interrupt/exception handler. */
             if (rcStrict == VINF_SUCCESS)
             {
-                pCtx->eflags.u32 &= ~(X86_EFL_IF | X86_EFL_TF | X86_EFL_RF | X86_EFL_AC);
+                pCtx->eflags.u   &= ~(X86_EFL_IF | X86_EFL_TF | X86_EFL_RF | X86_EFL_AC);
                 pCtx->rip         = IdtEntry.offSel;
                 pCtx->cs.Sel      = IdtEntry.uSel;
                 pCtx->cs.ValidSel = IdtEntry.uSel;
@@ -5101,7 +5107,7 @@ static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
 #ifdef VBOX_STRICT
         if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
         {
-            Assert(pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_IF);
+            Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_IF);
             Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI));
             Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS));
         }
@@ -5146,8 +5152,9 @@ static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
              * to do both since we clear the BS bit from the VMCS while exiting to ring-3.
              */
             Assert(!DBGFIsStepping(pVCpu));
-            uint8_t const fTrapFlag = !!(pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_TF);
-            int rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, fTrapFlag << VMX_BF_VMCS_PENDING_DBG_XCPT_BS_SHIFT);
+            uint8_t const fTrapFlag = !!(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_TF);
+            int rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS,
+                                       fTrapFlag << VMX_BF_VMCS_PENDING_DBG_XCPT_BS_SHIFT);
             AssertRC(rc);
         }
         else
