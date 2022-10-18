@@ -2458,7 +2458,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
                 int rc = PDMGetInterrupt(pVCpu, &bInterrupt);
                 if (RT_SUCCESS(rc))
                 {
-                    Log8(("Injecting interrupt %#x on %u: %04x:%08RX64 efl=%#x\n", bInterrupt, pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.eflags));
+                    Log8(("Injecting interrupt %#x on %u: %04x:%08RX64 efl=%#x\n", bInterrupt, pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.eflags.u));
                     rcStrict = IEMInjectTrap(pVCpu, bInterrupt, TRPM_HARDWARE_INT, 0, 0, 0);
                     Log8(("Injected interrupt %#x on %u (%d)\n", bInterrupt, pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
                 }
@@ -2507,7 +2507,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
  */
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
 {
-    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags));
+    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u));
 #ifdef LOG_ENABLED
     if (LogIs3Enabled())
         nemHCWinLogState(pVM, pVCpu);
@@ -2715,8 +2715,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
         pVCpu->cpum.GstCtx.fExtrn = 0;
     }
 
-    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 => %Rrc\n",
-             pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, VBOXSTRICTRC_VAL(rcStrict) ));
+    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 => %Rrc\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel,
+             pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, VBOXSTRICTRC_VAL(rcStrict) ));
     return rcStrict;
 }
 
