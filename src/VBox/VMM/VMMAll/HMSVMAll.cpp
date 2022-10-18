@@ -67,6 +67,23 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu)
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
 
+    AssertCompile(DISGREG_EAX  == X86_GREG_xAX);
+    AssertCompile(DISGREG_ECX  == X86_GREG_xCX);
+    AssertCompile(DISGREG_EDX  == X86_GREG_xDX);
+    AssertCompile(DISGREG_EBX  == X86_GREG_xBX);
+    AssertCompile(DISGREG_ESP  == X86_GREG_xSP);
+    AssertCompile(DISGREG_EBP  == X86_GREG_xBP);
+    AssertCompile(DISGREG_ESI  == X86_GREG_xSI);
+    AssertCompile(DISGREG_EDI  == X86_GREG_xDI);
+    AssertCompile(DISGREG_R8D  == X86_GREG_x8);
+    AssertCompile(DISGREG_R9D  == X86_GREG_x9);
+    AssertCompile(DISGREG_R10D == X86_GREG_x10);
+    AssertCompile(DISGREG_R11D == X86_GREG_x11);
+    AssertCompile(DISGREG_R12D == X86_GREG_x12);
+    AssertCompile(DISGREG_R13D == X86_GREG_x13);
+    AssertCompile(DISGREG_R14D == X86_GREG_x14);
+    AssertCompile(DISGREG_R15D == X86_GREG_x15);
+
     /*
      * We do this in a loop as we increment the RIP after a successful emulation
      * and the new RIP may be a patched instruction which needs emulation as well.
@@ -88,8 +105,9 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu)
                 int  rc = APICGetTpr(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
                 AssertRC(rc);
 
-                rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
-                AssertRC(rc);
+                uint8_t idxReg = pPatch->uDstOperand;
+                AssertStmt(idxReg < RT_ELEMENTS(pCtx->aGRegs), idxReg = RT_ELEMENTS(pCtx->aGRegs) - 1);
+                pCtx->aGRegs[idxReg].u64 = u8Tpr;
                 pCtx->rip += pPatch->cbOp;
                 pCtx->eflags.Bits.u1RF = 0;
                 break;
@@ -100,10 +118,9 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu)
             {
                 if (pPatch->enmType == HMTPRINSTR_WRITE_REG)
                 {
-                    uint32_t u32Val;
-                    int rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pPatch->uSrcOperand, &u32Val);
-                    AssertRC(rc);
-                    u8Tpr = u32Val;
+                    uint8_t idxReg = pPatch->uDstOperand;
+                    AssertStmt(idxReg < RT_ELEMENTS(pCtx->aGRegs), idxReg = RT_ELEMENTS(pCtx->aGRegs) - 1);
+                    u8Tpr = pCtx->aGRegs[idxReg].u8;
                 }
                 else
                     u8Tpr = (uint8_t)pPatch->uSrcOperand;
