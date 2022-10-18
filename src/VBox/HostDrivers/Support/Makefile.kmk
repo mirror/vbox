@@ -430,7 +430,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	../../Disassembler/DisasmCore.cpp \
 	../../Disassembler/DisasmTables.cpp \
 	../../Disassembler/DisasmTablesX64.cpp \
-	../../Disassembler/DisasmReg.cpp
+	../../Disassembler/DisasmMisc.cpp
 
  SUPR3HardenedStatic_SOURCES.amd64 += \
  	$(VBOX_PATH_RUNTIME_SRC)/common/math/RTUInt128MulByU64.asm \
@@ -537,7 +537,7 @@ if1of ($(KBUILD_TARGET), linux solaris)
  	../../Disassembler/DisasmCore.cpp \
  	../../Disassembler/DisasmTables.cpp \
  	../../Disassembler/DisasmTablesX64.cpp \
- 	../../Disassembler/DisasmReg.cpp
+ 	../../Disassembler/DisasmMisc.cpp
 endif
 
 SUPR3HardenedMain.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
