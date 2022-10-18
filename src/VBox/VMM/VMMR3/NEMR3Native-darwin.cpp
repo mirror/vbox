@@ -851,7 +851,11 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     if (fWhat & CPUMCTX_EXTRN_RIP)
         READ_GREG(HV_X86_RIP, pVCpu->cpum.GstCtx.rip);
     if (fWhat & CPUMCTX_EXTRN_RFLAGS)
-        READ_GREG(HV_X86_RFLAGS, pVCpu->cpum.GstCtx.rflags.u);
+    {
+        uint64_t fRFlagsTmp = 0;
+        READ_GREG(HV_X86_RFLAGS, fRFlagsTmp);
+        pVCpu->cpum.GstCtx.rflags.u = fRFlagsTmp;
+    }
 
     /* Segments */
 #define READ_SEG(a_SReg, a_enmName) \
@@ -1442,7 +1446,7 @@ static int nemR3DarwinExportDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         }
         else
         {
-            pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_TF;
+            pVCpu->cpum.GstCtx.eflags.u |= X86_EFL_TF;
             pVCpu->nem.s.fCtxChanged |= HM_CHANGED_GUEST_RFLAGS;
             pVCpu->nem.s.fClearTrapFlag = true;
             fSteppingDB = true;
@@ -3684,7 +3688,7 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
 
 VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 {
-    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags));
+    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u));
 #ifdef LOG_ENABLED
     if (LogIs3Enabled())
         nemR3DarwinLogState(pVM, pVCpu);
@@ -3773,7 +3777,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     }
 
     LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 => %Rrc\n",
-             pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, VBOXSTRICTRC_VAL(rcStrict) ));
+             pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u, VBOXSTRICTRC_VAL(rcStrict) ));
     return rcStrict;
 }
 
