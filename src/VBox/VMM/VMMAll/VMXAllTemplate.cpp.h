@@ -9169,42 +9169,70 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     }
 
     /*
-     * EMInterpretDRx[Write|Read]() calls CPUMIsGuestIn64BitCode() which requires EFER MSR, CS.
-     * The EFER MSR is always up-to-date.
-     * Update the segment registers and DR7 from the CPU.
+     * Import state.  We must have DR7 loaded here as it's always consulted,
+     * both for reading and writing.  The other debug registers are never
+     * exported as such.
      */
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    vmxHCReadToTransient<HMVMX_READ_EXIT_QUALIFICATION>(pVCpu, pVmxTransient);
-    int rc = vmxHCImportGuestState<CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_DR7>(pVCpu, pVmcsInfo, __FUNCTION__);
+    vmxHCReadToTransient<HMVMX_READ_EXIT_QUALIFICATION | HMVMX_READ_EXIT_INSTR_LEN>(pVCpu, pVmxTransient);
+    int rc = vmxHCImportGuestState<  IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK
+                                   | CPUMCTX_EXTRN_GPRS_MASK
+                                   | CPUMCTX_EXTRN_DR7>(pVCpu, pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
-    Log4Func(("cs:rip=%#04x:%08RX64\n", pCtx->cs.Sel, pCtx->rip));
+    Log4Func(("cs:rip=%#04x:%08RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    uint8_t const iGReg  = VMX_EXIT_QUAL_DRX_GENREG(pVmxTransient->uExitQual);
+    uint8_t const iDrReg = VMX_EXIT_QUAL_DRX_REGISTER(pVmxTransient->uExitQual);
+
+    VBOXSTRICTRC  rcStrict;
     if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
     {
-        rc = EMInterpretDRxWrite(pVM, pVCpu, CPUMCTX2CORE(pCtx),
-                                 VMX_EXIT_QUAL_DRX_REGISTER(pVmxTransient->uExitQual),
-                                 VMX_EXIT_QUAL_DRX_GENREG(pVmxTransient->uExitQual));
-        if (RT_SUCCESS(rc))
-            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_DR7);
+        /*
+         * Write DRx register.
+         */
+        rcStrict = IEMExecDecodedMovDRxWrite(pVCpu, pVmxTransient->cbExitInstr, iDrReg, iGReg);
+        AssertMsg(   rcStrict == VINF_SUCCESS
+                  || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+        if (rcStrict == VINF_SUCCESS)
+            /** @todo r=bird: Not sure why we always flag DR7 as modified here, but I've
+             * kept it for now to avoid breaking something non-obvious. */
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
+                                                                | HM_CHANGED_GUEST_DR7);
+        else if (rcStrict == VINF_IEM_RAISED_XCPT)
+        {
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+            rcStrict = VINF_SUCCESS;
+        }
+
         STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxWrite);
     }
     else
     {
-        rc = EMInterpretDRxRead(pVM, pVCpu, CPUMCTX2CORE(pCtx),
-                                VMX_EXIT_QUAL_DRX_GENREG(pVmxTransient->uExitQual),
-                                VMX_EXIT_QUAL_DRX_REGISTER(pVmxTransient->uExitQual));
+        /*
+         * Read DRx register into a general purpose register.
+         */
+        rcStrict = IEMExecDecodedMovDRxRead(pVCpu, pVmxTransient->cbExitInstr, iGReg, iDrReg);
+        AssertMsg(   rcStrict == VINF_SUCCESS
+                  || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+        if (rcStrict == VINF_SUCCESS)
+        {
+            if (iGReg == X86_GREG_xSP)
+                ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
+                                                                    | HM_CHANGED_GUEST_RSP);
+            else
+                ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+        }
+        else if (rcStrict == VINF_IEM_RAISED_XCPT)
+        {
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+            rcStrict = VINF_SUCCESS;
+        }
+
         STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxRead);
     }
 
-    Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = vmxHCAdvanceGuestRip(pVCpu, pVmxTransient);
-        AssertRCReturn(rc2, rc2);
-        return VINF_SUCCESS;
-    }
-    return rc;
+    return rcStrict;
 }
 
 
