@@ -8371,12 +8371,12 @@ FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
 
 
 /**
- * Common worker for FPU instructions working on ST0 and STn, only affecting
+ * Common worker for FPU instructions working on ST0 and ST1, only affecting
  * flags, and popping twice when done.
  *
  * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
  */
-FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_stN_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
+FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_st1_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
@@ -8406,8 +8406,8 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_stN_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl
 /** Opcode 0xda 0xe9. */
 FNIEMOP_DEF(iemOp_fucompp)
 {
-    IEMOP_MNEMONIC(fucompp_st0_stN, "fucompp st0,stN");
-    return FNIEMOP_CALL_1(iemOpHlpFpuNoStore_st0_stN_pop_pop, iemAImpl_fucom_r80_by_r80);
+    IEMOP_MNEMONIC(fucompp, "fucompp");
+    return FNIEMOP_CALL_1(iemOpHlpFpuNoStore_st0_st1_pop_pop, iemAImpl_fucom_r80_by_r80);
 }
 
 
@@ -9686,8 +9686,8 @@ FNIEMOP_DEF_1(iemOp_fmulp_stN_st0, uint8_t, bRm)
 /** Opcode 0xde 0xd9. */
 FNIEMOP_DEF(iemOp_fcompp)
 {
-    IEMOP_MNEMONIC(fcompp_st0_stN, "fcompp st0,stN");
-    return FNIEMOP_CALL_1(iemOpHlpFpuNoStore_st0_stN_pop_pop, iemAImpl_fcom_r80_by_r80);
+    IEMOP_MNEMONIC(fcompp, "fcompp");
+    return FNIEMOP_CALL_1(iemOpHlpFpuNoStore_st0_st1_pop_pop, iemAImpl_fcom_r80_by_r80);
 }
 
 
