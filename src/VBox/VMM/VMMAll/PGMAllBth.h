@@ -45,8 +45,8 @@
 RT_C_DECLS_BEGIN
 PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
 #ifndef IN_RING3
-PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
-PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNestedFault,
+PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, RTGCPTR pvFault, bool *pfLockTaken);
+PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, RTGCPHYS GCPhysNestedFault,
                                        bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk, bool *pfLockTaken);
 # if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) && PGM_SHW_TYPE == PGM_TYPE_EPT
 static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage,
@@ -225,7 +225,7 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPUCC pVCpu, PPGMPTWALK p
  *
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   uErr            The error code.
- * @param   pRegFrame       The register frame.
+ * @param   pCtx            Pointer to the register context for the CPU.
  * @param   pvFault         The fault address.
  * @param   pPage           The guest page at @a pvFault.
  * @param   pWalk           The guest page table walk result.
@@ -233,7 +233,7 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPUCC pVCpu, PPGMPTWALK p
  * @param   pfLockTaken     PGM lock taken here or not (out).  This is true
  *                          when we're called.
  */
-static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
+static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx,
                                                                 RTGCPTR pvFault, PPGMPAGE pPage, bool *pfLockTaken
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) || defined(DOXYGEN_RUNNING)
                                                                 , PPGMPTWALK pWalk
@@ -336,7 +336,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
 
                 if (pCurType->fKeepPgmLock)
                 {
-                    rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault,
+                    rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pCtx, pvFault, GCPhysFault,
                                                       !pCurType->fRing0DevInsIdx ? pCur->uUser
                                                       : (uintptr_t)PDMDeviceRing0IdxToInstance(pVM, pCur->uUser));
 
@@ -349,7 +349,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                     PGM_UNLOCK(pVM);
                     *pfLockTaken = false;
 
-                    rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, uUser);
+                    rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pCtx, pvFault, GCPhysFault, uUser);
 
                     STAM_PROFILE_STOP(&pCur->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
                 }
@@ -395,7 +395,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
     /** @todo This particular case can cause quite a lot of overhead. E.g. early stage of kernel booting in Ubuntu 6.06
      *        It's writing to an unhandled part of the LDT page several million times.
      */
-    rcStrict = PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault);
+    rcStrict = PGMInterpretInstruction(pVCpu, pvFault);
     LogFlow(("PGM: PGMInterpretInstruction -> rcStrict=%d pPage=%R[pgmpage]\n", VBOXSTRICTRC_VAL(rcStrict), pPage));
     STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2HndUnhandled; });
     return rcStrict;
@@ -410,11 +410,11 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   uErr        The trap error code.
- * @param   pRegFrame   Trap register frame.
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   pvFault     The fault address.
  * @param   pfLockTaken PGM lock taken here or not (out)
  */
-PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken)
+PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, RTGCPTR pvFault, bool *pfLockTaken)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
 
@@ -562,14 +562,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         rc = pgmPhysGetPageEx(pVM, Walk.GCPhys, &pPage);
         if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
-            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pCtx, pvFault, pPage,
                                                                                  pfLockTaken, &Walk, &GstWalk));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, 1, uErr);
 #   else
         rc = pgmPhysGetPageEx(pVM, PGM_A20_APPLY(pVCpu, (RTGCPHYS)pvFault), &pPage);
         if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
-            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
-                                                                                 pfLockTaken));
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pCtx, pvFault, pPage, pfLockTaken));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, 1, uErr);
 #   endif
         AssertRC(rc);
@@ -712,10 +711,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
      */
     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, pfLockTaken,
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pCtx, pvFault, pPage, pfLockTaken,
                                                                              &Walk, &GstWalk));
 # else
-        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, pfLockTaken));
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pCtx, pvFault, pPage, pfLockTaken));
 # endif
 
     /*
@@ -739,7 +738,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
             /* Emulate reads from ballooned pages as they are not present in
                our shadow page tables. (Required for e.g. Solaris guests; soft
                ecc, random nr generator.) */
-            rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault));
+            rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVCpu, pvFault));
             LogFlow(("PGM: PGMInterpretInstruction balloon -> rc=%d pPage=%R[pgmpage]\n", rc, pPage));
             STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageOutOfSyncBallloon));
             STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Ballooned; });
@@ -835,7 +834,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 #    endif
 
                 /* Interpret the access. */
-                rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault));
+                rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVCpu, pvFault));
                 Log(("PGM #PF: WP0 emulation (pvFault=%RGp uErr=%#x cpl=%d fBig=%d fEffUs=%d)\n", pvFault, uErr, CPUMGetGuestCPL(pVCpu), Walk.fBigPage, !!(Walk.fEffective & PGM_PTATTRS_US_MASK)));
                 if (RT_SUCCESS(rc))
                     STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eWPEmulInRZ);
@@ -978,11 +977,11 @@ rc=0
      * meditiation time.
      */
     LogRel(("%s: returns rc=%Rrc pvFault=%RGv uErr=%RX64 cs:rip=%04x:%08RX64\n",
-            __PRETTY_FUNCTION__, rc, pvFault, (uint64_t)uErr, pRegFrame->cs.Sel, pRegFrame->rip));
+            __PRETTY_FUNCTION__, rc, pvFault, (uint64_t)uErr, pCtx->cs.Sel, pCtx->rip));
     return rc;
 
 # else  /* Nested paging, EPT except PGM_GST_TYPE = PROT, NONE.   */
-    NOREF(uErr); NOREF(pRegFrame); NOREF(pvFault);
+    NOREF(uErr); NOREF(pCtx); NOREF(pvFault);
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
     return VERR_PGM_NOT_USED_IN_MODE;
 # endif
@@ -996,7 +995,7 @@ rc=0
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uErr                The error code.
- * @param   pRegFrame           The register frame.
+ * @param   pCtx                Pointer to the register context for the CPU.
  * @param   GCPhysNestedFault   The nested-guest physical address of the fault.
  * @param   pPage               The guest page at @a GCPhysNestedFault.
  * @param   GCPhysFault         The guest-physical address of the fault.
@@ -1006,7 +1005,7 @@ rc=0
  *
  * @note    The caller has taken the PGM lock.
  */
-static VBOXSTRICTRC PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
+static VBOXSTRICTRC PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx,
                                                                       RTGCPHYS GCPhysNestedFault, PPGMPAGE pPage,
                                                                       RTGCPHYS GCPhysFault, PPGMPTWALKGST pGstWalkAll,
                                                                       bool *pfLockTaken)
@@ -1093,14 +1092,14 @@ static VBOXSTRICTRC PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(PVMCPUCC p
 
         if (pCurType->fKeepPgmLock)
         {
-            rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, GCPhysNestedFault, GCPhysFault, uUser);
+            rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pCtx, GCPhysNestedFault, GCPhysFault, uUser);
             STAM_PROFILE_STOP(&pCur->Stat, h);
         }
         else
         {
             PGM_UNLOCK(pVM);
             *pfLockTaken = false;
-            rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, GCPhysNestedFault, GCPhysFault, uUser);
+            rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pCtx, GCPhysNestedFault, GCPhysFault, uUser);
             STAM_PROFILE_STOP(&pCur->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
         }
     }
@@ -1114,7 +1113,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(PVMCPUCC p
     return rcStrict;
 
 #  else
-    RT_NOREF8(pVCpu, uErr, pRegFrame, GCPhysNestedFault, pPage, GCPhysFault, pGstWalkAll, pfLockTaken);
+    RT_NOREF8(pVCpu, uErr, pCtx, GCPhysNestedFault, pPage, GCPhysFault, pGstWalkAll, pfLockTaken);
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
     return VERR_PGM_NOT_USED_IN_MODE;
 #  endif
@@ -1129,7 +1128,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(PVMCPUCC p
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uErr                The fault error (X86_TRAP_PF_*).
- * @param   pRegFrame           The register frame.
+ * @param   pCtx                Pointer to the register context for the CPU.
  * @param   GCPhysNestedFault   The nested-guest physical address of the fault.
  * @param   fIsLinearAddrValid  Whether translation of a nested-guest linear address
  *                              caused this fault. If @c false, GCPtrNestedFault
@@ -1139,7 +1138,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(PVMCPUCC p
  * @param   pfLockTaken         Where to store whether the PGM lock is still held
  *                              when this function completes.
  */
-PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNestedFault,
+PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, RTGCPHYS GCPhysNestedFault,
                                        bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk, bool *pfLockTaken)
 {
     *pfLockTaken = false;
@@ -1164,10 +1163,10 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
      */
     if (fIsLinearAddrValid)
         Log7Func(("cs:rip=%04x:%#08RX64 GCPhysNestedFault=%RGp uErr=%#x GCPtrNestedFault=%RGv\n",
-                  pRegFrame->cs.Sel, pRegFrame->rip, GCPhysNestedFault, uErr, GCPtrNestedFault));
+                  pCtx->cs.Sel, pCtx->rip, GCPhysNestedFault, uErr, GCPtrNestedFault));
     else
         Log7Func(("cs:rip=%04x:%#08RX64 GCPhysNestedFault=%RGp uErr=%#x\n",
-                  pRegFrame->cs.Sel, pRegFrame->rip, GCPhysNestedFault, uErr));
+                  pCtx->cs.Sel, pCtx->rip, GCPhysNestedFault, uErr));
     PGMPTWALKGST GstWalkAll;
     int rc = pgmGstSlatWalk(pVCpu, GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault, pWalk, &GstWalkAll);
     if (RT_FAILURE(rc))
@@ -1257,7 +1256,7 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
         Log7Func(("MMIO: Calling NestedTrap0eHandlerDoAccessHandlers for GCPhys %RGp\n", GCPhysPage));
-        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, GCPhysNestedFault,
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(NestedTrap0eHandlerDoAccessHandlers)(pVCpu, uErr, pCtx, GCPhysNestedFault,
                                                                                    pPage, pWalk->GCPhys, &GstWalkAll,
                                                                                    pfLockTaken));
     }
@@ -1322,7 +1321,7 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
          *       page is not present, which is not true in this case.
          */
         Log7Func(("SyncPage: RW: cs:rip=%04x:%#RX64 GCPhysNestedPage=%RGp uErr=%#RX32 GCPhysPage=%RGp WalkGCPhys=%RGp\n",
-                  pRegFrame->cs.Sel, pRegFrame->rip, GCPhysNestedPage, (uint32_t)uErr, GCPhysPage, pWalk->GCPhys));
+                  pCtx->cs.Sel, pCtx->rip, GCPhysNestedPage, (uint32_t)uErr, GCPhysPage, pWalk->GCPhys));
         rc = PGM_BTH_NAME(NestedSyncPage)(pVCpu, GCPhysNestedPage, GCPhysPage, 1 /* cPages */, uErr, &GstWalkAll);
         if (RT_SUCCESS(rc))
         {
@@ -1336,11 +1335,11 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCO
      * If we get here it is because something failed above => guru meditation time.
      */
     LogRelFunc(("GCPhysNestedFault=%#RGp (%#RGp) uErr=%#RX32 cs:rip=%04x:%08RX64\n", rc, GCPhysNestedFault, GCPhysPage,
-                (uint32_t)uErr, pRegFrame->cs.Sel, pRegFrame->rip));
+                (uint32_t)uErr, pCtx->cs.Sel, pCtx->rip));
     return VERR_PGM_MAPPING_IPE;
 
 # else
-    RT_NOREF7(pVCpu, uErr, pRegFrame, GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault, pWalk);
+    RT_NOREF7(pVCpu, uErr, pCtx, GCPhysNestedFault, fIsLinearAddrValid, GCPtrNestedFault, pWalk);
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
     return VERR_PGM_NOT_USED_IN_MODE;
 # endif

@@ -974,14 +974,14 @@ DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   uErr        The trap error code.
- * @param   pRegFrame   Trap register frame.
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   pvFault     The fault address.
  */
-VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, RTGCPTR pvFault)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
-    Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv cr3=%RGp\n", uErr, pvFault, pRegFrame->cs.Sel, (RTGCPTR)pRegFrame->rip, (RTGCPHYS)CPUMGetGuestCR3(pVCpu)));
+    Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv cr3=%RGp\n", uErr, pvFault, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPHYS)CPUMGetGuestCR3(pVCpu)));
     STAM_PROFILE_START(&pVCpu->pgm.s.Stats.StatRZTrap0e, a);
     STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = NULL; } );
 
@@ -1033,7 +1033,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmBothModeData[idxBth].pfnTrap0eHandler, VERR_PGM_MODE_IPE);
     bool fLockTaken = false;
-    int rc = g_aPgmBothModeData[idxBth].pfnTrap0eHandler(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+    int rc = g_aPgmBothModeData[idxBth].pfnTrap0eHandler(pVCpu, uErr, pCtx, pvFault, &fLockTaken);
     if (fLockTaken)
     {
         PGM_LOCK_ASSERT_OWNER(pVM);
@@ -1055,7 +1055,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
             ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
             ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
         {
-            Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGv error code %x (rip=%RGv)\n", rc, pvFault, uErr, pRegFrame->rip));
+            Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGv error code %x (rip=%RGv)\n", rc, pvFault, uErr, pCtx->rip));
             /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about single VCPU VMs though. */
             rc = VINF_SUCCESS;
         }
@@ -1151,15 +1151,13 @@ VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
  * Executes an instruction using the interpreter.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   Register frame.
  * @param   pvFault     Fault address.
  */
-VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVMCPUCC pVCpu, RTGCPTR pvFault)
 {
-    NOREF(pVM);
-    VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu, pRegFrame, pvFault);
+    RT_NOREF(pvFault);
+    VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu);
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     if (rc != VINF_SUCCESS)

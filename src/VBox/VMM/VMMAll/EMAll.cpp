@@ -957,61 +957,21 @@ VMM_INT_DECL(int) EMInterpretDisasOneEx(PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr, 
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- *                      Updates the EIP if an instruction was executed successfully.
- * @param   pvFault     The fault address (CR2).
  *
- * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
- *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
- *          to worry about e.g. invalid modrm combinations (!)
+ * @remark  Invalid opcode exceptions have a higher priority than \#GP (see
+ *          Intel Architecture System Developers Manual, Vol 3, 5.5) so we don't
+ *          need to worry about e.g. invalid modrm combinations (!)
  */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu)
 {
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
-    NOREF(pvFault);
+    LogFlow(("EMInterpretInstruction %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
 
-    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, pRegFrame, NULL);
+    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, NULL /*pcbWritten*/);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
         rc = VERR_EM_INTERPRETER;
     if (rc != VINF_SUCCESS)
         Log(("EMInterpretInstruction: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
-
-    return rc;
-}
-
-
-/**
- * Interprets the current instruction.
- *
- * @returns VBox status code.
- * @retval  VINF_*                  Scheduling instructions.
- * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
- * @retval  VERR_*                  Fatal errors.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pRegFrame   The register frame.
- *                      Updates the EIP if an instruction was executed successfully.
- * @param   pvFault     The fault address (CR2).
- * @param   pcbWritten  Size of the write (if applicable).
- *
- * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
- *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
- *          to worry about e.g. invalid modrm combinations (!)
- */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
-{
-    LogFlow(("EMInterpretInstructionEx %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    NOREF(pvFault);
-
-    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, pRegFrame, pcbWritten);
-    if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
-                    || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
-        rc = VERR_EM_INTERPRETER;
-    if (rc != VINF_SUCCESS)
-        Log(("EMInterpretInstructionEx: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
 
     return rc;
 }

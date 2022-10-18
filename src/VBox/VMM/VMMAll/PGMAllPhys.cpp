@@ -199,7 +199,7 @@ DECLINLINE(PPGMROMRANGE) pgmPhysRomLookupByBase(PVMCC pVM, RTGCPHYS GCPhys)
  *
  * @remarks The @a uUser argument is the PGMROMRANGE::GCPhys value.
  */
-DECLCALLBACK(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+DECLCALLBACK(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTX pCtx,
                                                     RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 
 {
@@ -233,7 +233,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
                     /** @todo Find other instructions we can safely skip, possibly
                      * adding this kind of detection to DIS or EM. */
                     case OP_MOV:
-                        pRegFrame->rip += cbOp;
+                        pCtx->rip += cbOp;
                         STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZGuestROMWriteHandled);
                         return VINF_SUCCESS;
                 }
@@ -434,10 +434,10 @@ static VBOXSTRICTRC pgmPhysMmio2WriteHandlerCommon(PVMCC pVM, PVMCPUCC pVCpu, ui
  *
  * @remarks The @a uUser is the MMIO2 index.
  */
-DECLCALLBACK(VBOXSTRICTRC) pgmPhysMmio2WritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+DECLCALLBACK(VBOXSTRICTRC) pgmPhysMmio2WritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTX pCtx,
                                                       RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 {
-    RT_NOREF(pVCpu, uErrorCode, pRegFrame);
+    RT_NOREF(pVCpu, uErrorCode, pCtx);
     VBOXSTRICTRC rcStrict = PGM_LOCK(pVM); /* We should already have it, but just make sure we do. */
     if (RT_SUCCESS(rcStrict))
     {

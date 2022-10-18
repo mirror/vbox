@@ -270,7 +270,7 @@ VMM_INT_DECL(VBOXSTRICTRC)      EMHistoryExec(PVMCPUCC pVCpu, PCEMEXITREC pExitR
 VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISCPUSTATE pCpu, unsigned *pcbInstr);
 VMM_INT_DECL(int)               EMInterpretDisasOneEx(PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr,
                                                       PDISCPUSTATE pDISState, unsigned *pcbInstr);
-VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPUCC pVCpu, PCPUMCTXCORE pCoreCtx, RTGCPTR pvFault);
+VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPUCC pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionEx(PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten);
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pCoreCtx,
                                                                  RTGCPTR pvFault, EMCODETYPE enmCodeType);

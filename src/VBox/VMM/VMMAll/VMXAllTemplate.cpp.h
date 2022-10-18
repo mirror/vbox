@@ -6852,15 +6852,14 @@ static VBOXSTRICTRC vmxHCExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     int rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
 
-    Log4Func(("#PF: cs:rip=%#04x:%08RX64 err_code=%#RX32 exit_qual=%#RX64 cr3=%#RX64\n", pCtx->cs.Sel, pCtx->rip,
-              pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual, pCtx->cr3));
+    Log4Func(("#PF: cs:rip=%#04x:%08RX64 err_code=%#RX32 exit_qual=%#RX64 cr3=%#RX64\n", pVCpu->cpum.GstCtx.cs.Sel,
+              pVCpu->cpum.GstCtx.rip, pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual, pVCpu->cpum.GstCtx.cr3));
 
     TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQual, (RTGCUINT)pVmxTransient->uExitIntErrorCode);
-    rc = PGMTrap0eHandler(pVCpu, pVmxTransient->uExitIntErrorCode, CPUMCTX2CORE(pCtx), (RTGCPTR)pVmxTransient->uExitQual);
+    rc = PGMTrap0eHandler(pVCpu, pVmxTransient->uExitIntErrorCode, &pVCpu->cpum.GstCtx, (RTGCPTR)pVmxTransient->uExitQual);
 
     Log4Func(("#PF: rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
@@ -9285,7 +9284,6 @@ HMVMX_EXIT_DECL vmxHCExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
          * weird case. See @bugref{6043}.
          */
         PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
-        PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 /** @todo bird: We can probably just go straight to IOM here and assume that
  *        it's MMIO, then fall back on PGM if that hunch didn't work out so
  *        well.  However, we need to address that aliasing workarounds that
@@ -9295,8 +9293,8 @@ HMVMX_EXIT_DECL vmxHCExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
  *        less locklessly inside IOM.  Need to consider the lookup table
  *        updating and use a bit more carefully first (or do all updates via
  *        rendezvous) */
-        rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
-        Log4Func(("At %#RGp RIP=%#RX64 rc=%Rrc\n", GCPhys, pCtx->rip, VBOXSTRICTRC_VAL(rcStrict)));
+        rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, &pVCpu->cpum.GstCtx, GCPhys, UINT32_MAX);
+        Log4Func(("At %#RGp RIP=%#RX64 rc=%Rrc\n", GCPhys, pVCpu->cpum.GstCtx.rip, VBOXSTRICTRC_VAL(rcStrict)));
         if (   rcStrict == VINF_SUCCESS
             || rcStrict == VERR_PAGE_TABLE_NOT_PRESENT
             || rcStrict == VERR_PAGE_NOT_PRESENT)

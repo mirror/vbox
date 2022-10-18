@@ -7569,7 +7569,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * Interpret the read/writing of DRx.
      */
     /** @todo Decode assist.  */
-    VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
+    VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu);
     Log5(("hmR0SvmExitReadDRx: Emulated DRx access: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
@@ -7948,8 +7948,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         if (!pExitRec)
         {
 
-            rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
-                                                     u32ErrCode);
+            rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, pCtx, GCPhysFaultAddr, u32ErrCode);
 
             /*
              * If we succeed, resume guest execution.
@@ -8292,7 +8291,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     }
 
     TRPMAssertXcptPF(pVCpu, uFaultAddress, uErrCode);
-    int rc = PGMTrap0eHandler(pVCpu, uErrCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
+    int rc = PGMTrap0eHandler(pVCpu, uErrCode, pCtx, (RTGCPTR)uFaultAddress);
 
     Log4Func(("#PF: rc=%Rrc\n", rc));
 
@@ -9112,7 +9111,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         /* We use IEMExecOneBypassEx() here as it supresses attempt to continue emulating any
            instruction(s) when interrupt inhibition is set as part of emulating the VMRUN
            instruction itself, see @bugref{7243#c126} */
-        rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), NULL /* pcbWritten */);
+        rcStrict = IEMExecOneBypassEx(pVCpu, NULL /* pcbWritten */);
     }
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitVmentry, z);
 

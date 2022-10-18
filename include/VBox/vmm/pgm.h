@@ -205,14 +205,13 @@ typedef enum PGMACCESSTYPE
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- *                      NULL on DMA and other non CPU access.
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   uUser       User argument (not a pointer).
  * @thread  EMT(pVCpu)
  */
-typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMRZPHYSPFHANDLER,(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMRZPHYSPFHANDLER,(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTX pCtx,
                                                              RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser));
 /** Pointer to PGM access callback. */
 typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
@@ -618,9 +617,9 @@ VMMDECL(bool)           PGMIsLockOwner(PVMCC pVM);
 VMMDECL(int)            PGMRegisterStringFormatTypes(void);
 VMMDECL(void)           PGMDeregisterStringFormatTypes(void);
 VMMDECL(RTHCPHYS)       PGMGetHyperCR3(PVMCPU pVCpu);
-VMMDECL(int)            PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+VMMDECL(int)            PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, RTGCPTR pvFault);
 VMMDECL(int)            PGMPrefetchPage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
-VMMDECL(VBOXSTRICTRC)   PGMInterpretInstruction(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+VMMDECL(VBOXSTRICTRC)   PGMInterpretInstruction(PVMCPUCC pVCpu, RTGCPTR pvFault);
 VMMDECL(int)            PGMShwGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 VMMDECL(int)            PGMShwMakePageReadonly(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
 VMMDECL(int)            PGMShwMakePageWritable(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
@@ -983,7 +982,7 @@ VMMR0DECL(int)       PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu,
 VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
                                                     PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
-                                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
+                                                      PCPUMCTX pCtx, RTGCPHYS GCPhysFault, uint32_t uErr);
 VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu);
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT

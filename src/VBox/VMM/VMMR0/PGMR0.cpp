@@ -1278,13 +1278,13 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGM
  * @param   pGVCpu              The global (ring-0) CPU structure of the calling
  *                              EMT.
  * @param   enmShwPagingMode    Paging mode for the nested page tables.
- * @param   pRegFrame           Trap register frame.
+ * @param   pCtx                Pointer to the register context for the CPU.
  * @param   GCPhysFault         The fault address.
  * @param   uErr                The error code, UINT32_MAX if not available
  *                              (VT-x).
  */
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
-                                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr)
+                                                      PCPUMCTX pCtx, RTGCPHYS GCPhysFault, uint32_t uErr)
 {
 #ifdef PGM_WITH_MMIO_OPTIMIZATIONS
     STAM_PROFILE_START(&pGVCpu->CTX_SUFF(pStats)->StatR0NpMiscfg, a);
@@ -1329,7 +1329,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
                     PGM_UNLOCK(pGVM);
 
                     Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->pfnPfHandler, uErr, GCPhysFault, uUser));
-                    rc = pHandlerType->pfnPfHandler(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
+                    rc = pHandlerType->pfnPfHandler(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pCtx,
                                                     GCPhysFault, GCPhysFault, uUser);
 
                     STAM_PROFILE_STOP(&pHandler->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
