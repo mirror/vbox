@@ -2241,7 +2241,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
     /*
      * Clear the busy bit in current task's TSS descriptor if it's a task switch due to JMP/IRET.
      */
-    uint32_t u32EFlags = pVCpu->cpum.GstCtx.eflags.u32;
+    uint32_t fEFlags = pVCpu->cpum.GstCtx.eflags.u;
     if (   enmTaskSwitch == IEMTASKSWITCH_JUMP
         || enmTaskSwitch == IEMTASKSWITCH_IRET)
     {
@@ -2269,7 +2269,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
         {
             Assert(   uNewTSSType == X86_SEL_TYPE_SYS_286_TSS_BUSY
                    || uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_BUSY);
-            u32EFlags &= ~X86_EFL_NT;
+            fEFlags &= ~X86_EFL_NT;
         }
     }
 
@@ -2281,7 +2281,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
     {
         Log(("iemTaskSwitch: Switching to the same TSS! enmTaskSwitch=%u GCPtr[Cur|New]TSS=%#RGv\n", enmTaskSwitch, GCPtrCurTSS));
         Log(("uCurCr3=%#x uCurEip=%#x uCurEflags=%#x uCurEax=%#x uCurEsp=%#x uCurEbp=%#x uCurCS=%#04x uCurSS=%#04x uCurLdt=%#x\n",
-             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u32, pVCpu->cpum.GstCtx.eax,
+             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u, pVCpu->cpum.GstCtx.eax,
              pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel,
              pVCpu->cpum.GstCtx.ldtr.Sel));
     }
@@ -2306,7 +2306,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
         /* !! WARNING !! Access -only- the members (dynamic fields) that are mapped, i.e interval [offCurTSS..cbCurTSS). */
         PX86TSS32 pCurTSS32 = (PX86TSS32)((uintptr_t)pvCurTSS32 - offCurTSS);
         pCurTSS32->eip    = uNextEip;
-        pCurTSS32->eflags = u32EFlags;
+        pCurTSS32->eflags = fEFlags;
         pCurTSS32->eax    = pVCpu->cpum.GstCtx.eax;
         pCurTSS32->ecx    = pVCpu->cpum.GstCtx.ecx;
         pCurTSS32->edx    = pVCpu->cpum.GstCtx.edx;
@@ -2350,7 +2350,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
         /* !! WARNING !! Access -only- the members (dynamic fields) that are mapped, i.e interval [offCurTSS..cbCurTSS). */
         PX86TSS16 pCurTSS16 = (PX86TSS16)((uintptr_t)pvCurTSS16 - offCurTSS);
         pCurTSS16->ip    = uNextEip;
-        pCurTSS16->flags = u32EFlags;
+        pCurTSS16->flags = (uint16_t)fEFlags;
         pCurTSS16->ax    = pVCpu->cpum.GstCtx.ax;
         pCurTSS16->cx    = pVCpu->cpum.GstCtx.cx;
         pCurTSS16->dx    = pVCpu->cpum.GstCtx.dx;
