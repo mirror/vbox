@@ -86,9 +86,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>macOS hosts: Added workaround for a bug in the Hypervisor framework on Catalina causing
-          VERR_NEM_MAP_PAGES_FAILED errors when starting a VM. The workaround can cause
-          severe performance degradation depending on the guest and it is advised to upgrade to BigSur
-          or later as Apple is unlikely to fix the issue (bug #21128)</para>
+          VERR_NEM_MAP_PAGES_FAILED errors when starting a VM. (bug #21128)</para>
       </listitem>
 
       <listitem>
