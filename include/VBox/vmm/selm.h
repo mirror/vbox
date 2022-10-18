@@ -76,7 +76,7 @@ VMMDECL(RTGCPTR)        SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
 /** @} */
 
 VMMDECL(int)            SELMToFlatEx(PVMCPU pVCpu, unsigned idxSeg, PCPUMCTX pCtx, RTGCPTR Addr, uint32_t fFlags, PRTGCPTR ppvGC);
-VMMDECL(int)            SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS,
+VMMDECL(int)            SELMValidateAndConvertCSAddr(PVMCPU pVCpu, uint32_t fEFlags, RTSEL SelCPL, RTSEL SelCS,
                                                      PCPUMSELREG pSRegCS, RTGCPTR Addr, PRTGCPTR ppvFlat);
 #ifdef VBOX_WITH_RAW_MODE
 VMM_INT_DECL(void)      SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg);

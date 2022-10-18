@@ -550,7 +550,7 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX
     if (paBpLocL1)
     {
         RTGCPTR GCPtrBp;
-        int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtx->eflags, pCtx->ss.Sel, pCtx->cs.Sel, &pCtx->cs,
+        int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtx->eflags.u, pCtx->ss.Sel, pCtx->cs.Sel, &pCtx->cs,
                                               pCtx->rip /* no -1 outside non-rawmode */, &GCPtrBp);
         AssertRCReturn(rc, rc);
 

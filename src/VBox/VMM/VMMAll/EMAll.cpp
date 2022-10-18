@@ -912,7 +912,7 @@ VMM_INT_DECL(int) EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISCPUSTATE pDis, uns
     int rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pCtx, pCtx->rip, 0, &GCPtrInstr);
 #else
 /** @todo Get the CPU mode as well while we're at it! */
-    int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtx->eflags, pCtx->ss.Sel, pCtx->cs.Sel, &pCtx->cs, pCtx->rip, &GCPtrInstr);
+    int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtx->eflags.u, pCtx->ss.Sel, pCtx->cs.Sel, &pCtx->cs, pCtx->rip, &GCPtrInstr);
 #endif
     if (RT_SUCCESS(rc))
         return EMInterpretDisasOneEx(pVCpu, (RTGCUINTPTR)GCPtrInstr, pDis, pcbInstr);

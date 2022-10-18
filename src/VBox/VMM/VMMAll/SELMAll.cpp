@@ -334,7 +334,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   Efl         Current EFLAGS.
+ * @param   fEFlags     Current EFLAGS.
  * @param   SelCPL      Current privilege level.  Get this from SS - CS might be
  *                      conforming!  A full selector can be passed, we'll only
  *                      use the RPL part.
@@ -343,11 +343,11 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
  * @param   Addr        The address (think IP/EIP/RIP).
  * @param   ppvFlat     Where to store the flat address upon successful return.
  */
-VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS Efl, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREG pSRegCS,
+VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, uint32_t fEFlags, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREG pSRegCS,
                                           RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
-    if (    Efl.Bits.u1VM
-        ||  CPUMIsGuestInRealMode(pVCpu))
+    if (   (fEFlags & X86_EFL_VM)
+        || CPUMIsGuestInRealMode(pVCpu))
         return selmValidateAndConvertCSAddrRealMode(pVCpu, SelCS, pSRegCS, Addr, ppvFlat);
 
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS));
