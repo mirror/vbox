@@ -3139,20 +3139,18 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
  *
  * @param   pVM         The cross context VM structure.
  * @param   pCtx        The context to format.
- * @param   pCtxCore    The context core to format.
  * @param   pHlp        Output functions.
  * @param   enmType     The dump type.
  * @param   pszPrefix   Register name prefix.
  */
-static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType,
-                          const char *pszPrefix)
+static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
 {
     NOREF(pVM);
 
     /*
      * Format the EFLAGS.
      */
-    uint32_t efl = pCtxCore->eflags.u32;
+    uint32_t efl = pCtx->eflags.u32;
     char szEFlags[80];
     cpumR3InfoFormatFlags(&szEFlags[0], efl | ((uint32_t)pCtx->fInhibit << 24));
 
@@ -3170,21 +3168,21 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%sr14=%016RX64 %sr15=%016RX64\n"
                     "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x                %seflags=%08x\n",
-                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
-                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
-                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
-                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
-                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, efl);
+                    pszPrefix, pCtx->rax, pszPrefix, pCtx->rbx, pszPrefix, pCtx->rcx, pszPrefix, pCtx->rdx, pszPrefix, pCtx->rsi, pszPrefix, pCtx->rdi,
+                    pszPrefix, pCtx->r8, pszPrefix, pCtx->r9, pszPrefix, pCtx->r10, pszPrefix, pCtx->r11, pszPrefix, pCtx->r12, pszPrefix, pCtx->r13,
+                    pszPrefix, pCtx->r14, pszPrefix, pCtx->r15,
+                    pszPrefix, pCtx->rip, pszPrefix, pCtx->rsp, pszPrefix, pCtx->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, pCtx->cs.Sel, pszPrefix, pCtx->ss.Sel, pszPrefix, pCtx->ds.Sel, pszPrefix, pCtx->es.Sel,
+                    pszPrefix, pCtx->fs.Sel, pszPrefix, pCtx->gs.Sel, pszPrefix, efl);
             else
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                     "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x                %seflags=%08x\n",
-                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
-                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, efl);
+                    pszPrefix, pCtx->eax, pszPrefix, pCtx->ebx, pszPrefix, pCtx->ecx, pszPrefix, pCtx->edx, pszPrefix, pCtx->esi, pszPrefix, pCtx->edi,
+                    pszPrefix, pCtx->eip, pszPrefix, pCtx->esp, pszPrefix, pCtx->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, pCtx->cs.Sel, pszPrefix, pCtx->ss.Sel, pszPrefix, pCtx->ds.Sel, pszPrefix, pCtx->es.Sel,
+                    pszPrefix, pCtx->fs.Sel, pszPrefix, pCtx->gs.Sel, pszPrefix, efl);
             break;
 
         case CPUMDUMPTYPE_DEFAULT:
@@ -3198,12 +3196,12 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %str=%04x      %seflags=%08x\n"
                     "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%016RX64:%04x %sldtr=%04x\n"
                     ,
-                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
-                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
-                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
-                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
-                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, pCtx->tr.Sel, pszPrefix, efl,
+                    pszPrefix, pCtx->rax, pszPrefix, pCtx->rbx, pszPrefix, pCtx->rcx, pszPrefix, pCtx->rdx, pszPrefix, pCtx->rsi, pszPrefix, pCtx->rdi,
+                    pszPrefix, pCtx->r8, pszPrefix, pCtx->r9, pszPrefix, pCtx->r10, pszPrefix, pCtx->r11, pszPrefix, pCtx->r12, pszPrefix, pCtx->r13,
+                    pszPrefix, pCtx->r14, pszPrefix, pCtx->r15,
+                    pszPrefix, pCtx->rip, pszPrefix, pCtx->rsp, pszPrefix, pCtx->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, pCtx->cs.Sel, pszPrefix, pCtx->ss.Sel, pszPrefix, pCtx->ds.Sel, pszPrefix, pCtx->es.Sel,
+                    pszPrefix, pCtx->fs.Sel, pszPrefix, pCtx->gs.Sel, pszPrefix, pCtx->tr.Sel, pszPrefix, efl,
                     pszPrefix, pCtx->cr0, pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3, pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->ldtr.Sel);
             else
@@ -3213,10 +3211,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %str=%04x      %seflags=%08x\n"
                     "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%08RX64:%04x %sldtr=%04x\n"
                     ,
-                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
-                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, pCtx->tr.Sel, pszPrefix, efl,
+                    pszPrefix, pCtx->eax, pszPrefix, pCtx->ebx, pszPrefix, pCtx->ecx, pszPrefix, pCtx->edx, pszPrefix, pCtx->esi, pszPrefix, pCtx->edi,
+                    pszPrefix, pCtx->eip, pszPrefix, pCtx->esp, pszPrefix, pCtx->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, pCtx->cs.Sel, pszPrefix, pCtx->ss.Sel, pszPrefix, pCtx->ds.Sel, pszPrefix, pCtx->es.Sel,
+                    pszPrefix, pCtx->fs.Sel, pszPrefix, pCtx->gs.Sel, pszPrefix, pCtx->tr.Sel, pszPrefix, efl,
                     pszPrefix, pCtx->cr0, pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3, pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->ldtr.Sel);
             break;
@@ -3243,16 +3241,16 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%str  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
                     "%sSysEnter={cs=%04llx eip=%016RX64 esp=%016RX64}\n"
                     ,
-                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
-                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
-                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
-                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, pCtxCore->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
-                    pszPrefix, pCtxCore->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
-                    pszPrefix, pCtxCore->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
-                    pszPrefix, pCtxCore->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u,
-                    pszPrefix, pCtxCore->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u,
-                    pszPrefix, pCtxCore->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u,
+                    pszPrefix, pCtx->rax, pszPrefix, pCtx->rbx, pszPrefix, pCtx->rcx, pszPrefix, pCtx->rdx, pszPrefix, pCtx->rsi, pszPrefix, pCtx->rdi,
+                    pszPrefix, pCtx->r8, pszPrefix, pCtx->r9, pszPrefix, pCtx->r10, pszPrefix, pCtx->r11, pszPrefix, pCtx->r12, pszPrefix, pCtx->r13,
+                    pszPrefix, pCtx->r14, pszPrefix, pCtx->r15,
+                    pszPrefix, pCtx->rip, pszPrefix, pCtx->rsp, pszPrefix, pCtx->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
+                    pszPrefix, pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
+                    pszPrefix, pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
+                    pszPrefix, pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u,
+                    pszPrefix, pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u,
+                    pszPrefix, pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u,
                     pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1], pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
                     pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5], pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
@@ -3275,14 +3273,14 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%str  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
                     "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
                     ,
-                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, pCtxCore->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1],
-                    pszPrefix, pCtxCore->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
-                    pszPrefix, pCtxCore->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5],
-                    pszPrefix, pCtxCore->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
-                    pszPrefix, pCtxCore->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
-                    pszPrefix, pCtxCore->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
+                    pszPrefix, pCtx->eax, pszPrefix, pCtx->ebx, pszPrefix, pCtx->ecx, pszPrefix, pCtx->edx, pszPrefix, pCtx->esi, pszPrefix, pCtx->edi,
+                    pszPrefix, pCtx->eip, pszPrefix, pCtx->esp, pszPrefix, pCtx->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
+                    pszPrefix, pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1],
+                    pszPrefix, pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
+                    pszPrefix, pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5],
+                    pszPrefix, pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
+                    pszPrefix, pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
+                    pszPrefix, pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
                     pszPrefix, pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
                     pszPrefix, pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
@@ -3539,7 +3537,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp, "Guest CPUM (VCPU %d) state: %s\n", pVCpu->idCpu, pszComment);
 
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    cpumR3InfoOne(pVM, pCtx, CPUMCTX2CORE(pCtx), pHlp, enmType, "");
+    cpumR3InfoOne(pVM, pCtx, pHlp, enmType, "");
 }
 
 
