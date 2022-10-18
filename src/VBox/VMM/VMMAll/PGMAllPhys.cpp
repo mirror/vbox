@@ -223,7 +223,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
              */
             uint32_t     cbOp;
             PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
-            rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
+            rc = EMInterpretDisasCurrent(pVCpu, pDis, &cbOp);
             if (     RT_SUCCESS(rc)
                 &&   pDis->uCpuMode == DISCPUMODE_32BIT  /** @todo why does this matter? */
                 &&  !(pDis->fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP | DISPREFIX_SEG)))

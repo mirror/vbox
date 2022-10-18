@@ -1478,7 +1478,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTA
          */
         unsigned    cbInstr;
         DISCPUSTATE Dis;
-        int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, &Dis, &cbInstr);
+        int rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbInstr);
         if (RT_SUCCESS(rc))
         {
             if (pcbInstr)

@@ -7413,7 +7413,7 @@ static VBOXSTRICTRC hmR0SvmExitWriteMsr(PVMCPUCC pVCpu, PSVMVMCB pVmcb, PSVMTRAN
         else
         {
             PDISCPUSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
-            int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, &cbInstr);
+            int rc = EMInterpretDisasCurrent(pVCpu, pDis, &cbInstr);
             if (   rc == VINF_SUCCESS
                 && pDis->pCurInstr->uOpcode == OP_WRMSR)
                 Assert(cbInstr > 0);
@@ -8114,7 +8114,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         else
         {
             PDISCPUSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
-            int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, &cbInstr);
+            int rc = EMInterpretDisasCurrent(pVCpu, pDis, &cbInstr);
             if (   rc == VINF_SUCCESS
                 && pDis->pCurInstr->uOpcode == OP_VMMCALL)
                 Assert(cbInstr > 0);
@@ -8158,7 +8158,7 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     else
     {
         PDISCPUSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
-        int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, &cbInstr);
+        int rc = EMInterpretDisasCurrent(pVCpu, pDis, &cbInstr);
         if (   rc == VINF_SUCCESS
             && pDis->pCurInstr->uOpcode == OP_PAUSE)
             Assert(cbInstr > 0);
@@ -8511,10 +8511,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 
     if (!(pCtx->cr0 & X86_CR0_NE))
     {
-        PVMCC     pVM  = pVCpu->CTX_SUFF(pVM);
         PDISSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
         unsigned  cbInstr;
-        int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbInstr);
+        int rc = EMInterpretDisasCurrent(pVCpu, pDis, &cbInstr);
         if (RT_SUCCESS(rc))
         {
             /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */

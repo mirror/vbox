@@ -2273,7 +2273,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
     DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "hmR3ReplaceTprInstr");
     DISCPUSTATE     Dis;
     uint32_t        cbOp;
-    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbOp);
+    int rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
         &&  Dis.pCurInstr->uOpcode == OP_MOV
@@ -2326,7 +2326,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
             uint64_t const uSavedRip  = pCtx->rip;
 
             pCtx->rip += cbOp;
-            rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbOp);
+            rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbOp);
             DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Following read");
             pCtx->rip = uSavedRip;
 
@@ -2449,7 +2449,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
      */
     DISCPUSTATE     Dis;
     uint32_t        cbOp;
-    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbOp);
+    int rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
         &&  Dis.pCurInstr->uOpcode == OP_MOV

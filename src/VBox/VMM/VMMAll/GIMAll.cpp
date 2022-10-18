@@ -246,7 +246,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMExecHypercallInstr(PVMCPUCC pVCpu, PCPUMCTX pCtx, 
 
     unsigned    cbInstr;
     DISCPUSTATE Dis;
-    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbInstr);
+    int rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbInstr);
     if (RT_SUCCESS(rc))
     {
         if (pcbInstr)

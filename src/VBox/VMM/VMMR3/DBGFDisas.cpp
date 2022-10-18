@@ -382,14 +382,13 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     /*
      * Get the Sel and GCPtr if fFlags requests that.
      */
-    PCCPUMCTXCORE  pCtxCore   = NULL;
-    PCCPUMSELREG   pSRegCS    = NULL;
+    PCCPUMCTX      pCtx    = CPUMQueryGuestCtxPtr(pVCpu);
+    PCCPUMSELREG   pSRegCS = NULL;
     if (fFlags & DBGF_DISAS_FLAGS_CURRENT_GUEST)
     {
-        pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
-        Sel        = pCtxCore->cs.Sel;
-        pSRegCS    = &pCtxCore->cs;
-        GCPtr      = pCtxCore->rip;
+        Sel        = pCtx->cs.Sel;
+        pSRegCS    = &pCtx->cs;
+        GCPtr      = pCtx->rip;
     }
     /*
      * Check if the selector matches the guest CS, use the hidden
@@ -397,11 +396,10 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
      */
     else
     {
-        pCtxCore = CPUMGetGuestCtxCore(pVCpu);
-        if (pCtxCore->cs.Sel == Sel && Sel != DBGF_SEL_FLAT)
-            pSRegCS = &pCtxCore->cs;
+        if (pCtx->cs.Sel == Sel && Sel != DBGF_SEL_FLAT)
+            pSRegCS = &pCtx->cs;
         else
-            pCtxCore = NULL;
+            pCtx = NULL;
     }
 
     /*
@@ -424,7 +422,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         SelInfo.cbLimit                 = pSRegCS->u32Limit;
         SelInfo.fFlags                  = PGMMODE_IS_LONG_MODE(enmMode)
                                         ? DBGFSELINFO_FLAGS_LONG_MODE
-                                        : enmMode != PGMMODE_REAL && !pCtxCore->eflags.Bits.u1VM
+                                        : enmMode != PGMMODE_REAL && !pCtx->eflags.Bits.u1VM
                                         ? DBGFSELINFO_FLAGS_PROT_MODE
                                         : DBGFSELINFO_FLAGS_REAL_MODE;
 
@@ -477,7 +475,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             SelInfo.u.Raw.Gen.u4Type        = X86_SEL_TYPE_EO;
         }
     }
-    else if (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
+    else if (   (pCtx && pCtx->eflags.Bits.u1VM)
              || enmMode == PGMMODE_REAL
              || (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE)
     {   /* V86 mode or real mode - real mode addressing */
