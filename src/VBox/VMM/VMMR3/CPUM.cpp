@@ -3150,7 +3150,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTY
     /*
      * Format the EFLAGS.
      */
-    uint32_t efl = pCtx->eflags.u32;
+    uint32_t efl = pCtx->eflags.u;
     char szEFlags[80];
     cpumR3InfoFormatFlags(&szEFlags[0], efl | ((uint32_t)pCtx->fInhibit << 24));
 
