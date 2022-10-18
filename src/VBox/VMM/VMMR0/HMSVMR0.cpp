@@ -8462,7 +8462,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
                 HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK
                                                 | CPUMCTX_EXTRN_SREG_MASK /* without ES+DS+GS the app will #GP later - go figure */);
                 Log6(("hmR0SvmExitXcptUD: sysenter/sysexit: %.*Rhxs at %#llx CPL=%u\n", cbInstr, abInstr, GCPtrInstr, uCpl));
-                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, abInstr, cbInstr);
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, GCPtrInstr, abInstr, cbInstr);
                 Log6(("hmR0SvmExitXcptUD: sysenter/sysexit: rcStrict=%Rrc %04x:%08RX64 %08RX64 %04x:%08RX64\n",
                      VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u,
                      pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp));

@@ -1543,8 +1543,7 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, WHV_RUN_VP_EXIT_CONTEXT cons
         //if (pMsg->InstructionByteCount > 0)
         //    Log4(("InstructionByteCount=%#x %.16Rhxs\n", pMsg->InstructionByteCount, pMsg->InstructionBytes));
         if (pExit->MemoryAccess.InstructionByteCount > 0)
-            rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pExit->VpContext.Rip,
-                                                    pExit->MemoryAccess.InstructionBytes, pExit->MemoryAccess.InstructionByteCount);
+            rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, pExit->VpContext.Rip, pExit->MemoryAccess.InstructionBytes, pExit->MemoryAccess.InstructionByteCount);
         else
             rcStrict = IEMExecOne(pVCpu);
         /** @todo do we need to do anything wrt debugging here?   */
@@ -2173,7 +2172,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
             if (nemHcWinIsInterestingUndefinedOpcode(pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes,
                                                      pExit->VpContext.ExecutionState.EferLma && pExit->VpContext.Cs.Long ))
             {
-                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pExit->VpContext.Rip,
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, pExit->VpContext.Rip,
                                                         pExit->VpException.InstructionBytes,
                                                         pExit->VpException.InstructionByteCount);
                 Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> emulated -> %Rrc\n",
@@ -2202,7 +2201,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
                                         pExit->VpException.InstructionByteCount))
             {
 #if 1 /** @todo Need to emulate instruction or we get a triple fault when trying to inject the \#GP... */
-                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pExit->VpContext.Rip,
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, pExit->VpContext.Rip,
                                                         pExit->VpException.InstructionBytes,
                                                         pExit->VpException.InstructionByteCount);
                 Log4(("XcptExit/%u: %04x:%08RX64/%s: #GP -> emulated -> %Rrc\n",

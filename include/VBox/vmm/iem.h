@@ -288,15 +288,12 @@ typedef uint8_t IEMMODE;
 #endif
 
 VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPUCC pVCpu);
-VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten);
-VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPUCC pVCpu, uint32_t *pcbWritten);
+VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, uint64_t OpcodeBytesPC,
                                                          const void *pvOpcodeBytes, size_t cbOpcodeBytes);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPUCC pVCpu, uint32_t *pcbWritten);
-VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, uint64_t OpcodeBytesPC,
                                                                const void *pvOpcodeBytes, size_t cbOpcodeBytes);
-VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
-                                                                      const void *pvOpcodeBytes, size_t cbOpcodeBytes,
-                                                                      uint32_t *pcbWritten);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneIgnoreLock(PVMCPUCC pVCpu);
 VMMDECL(VBOXSTRICTRC)       IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uint32_t cPollRate, uint32_t *pcInstructions);
 /** Statistics returned by IEMExecForExits. */

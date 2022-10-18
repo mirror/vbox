@@ -9796,10 +9796,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPUCC pVCpu)
 }
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecOneEx(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten)
+VMMDECL(VBOXSTRICTRC) IEMExecOneEx(PVMCPUCC pVCpu, uint32_t *pcbWritten)
 {
-    AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
-
     uint32_t const cbOldWritten = pVCpu->iem.s.cbWritten;
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false, false);
     if (rcStrict == VINF_SUCCESS)
@@ -9815,11 +9813,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneEx(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint32
 }
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+VMMDECL(VBOXSTRICTRC) IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, uint64_t OpcodeBytesPC,
                                                    const void *pvOpcodeBytes, size_t cbOpcodeBytes)
 {
-    AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
-
     VBOXSTRICTRC rcStrict;
     if (   cbOpcodeBytes
         && pVCpu->cpum.GstCtx.rip == OpcodeBytesPC)
@@ -9865,11 +9861,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassEx(PVMCPUCC pVCpu, uint32_t *pcbWritten)
 }
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, uint64_t OpcodeBytesPC,
                                                          const void *pvOpcodeBytes, size_t cbOpcodeBytes)
 {
-    AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
-
     VBOXSTRICTRC rcStrict;
     if (   cbOpcodeBytes
         && pVCpu->cpum.GstCtx.rip == OpcodeBytesPC)
@@ -9891,58 +9885,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, PCPUMCT
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassWithPrefetchedByPC");
-    else if (pVCpu->iem.s.cActiveMappings > 0)
-        iemMemRollback(pVCpu);
-
-    return rcStrict;
-}
-
-
-/**
- * For debugging DISGetParamSize, may come in handy.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure of the
- *                          calling EMT.
- * @param   pCtxCore        The context core structure.
- * @param   OpcodeBytesPC   The PC of the opcode bytes.
- * @param   pvOpcodeBytes   Prefeched opcode bytes.
- * @param   cbOpcodeBytes   Number of prefetched bytes.
- * @param   pcbWritten      Where to return the number of bytes written.
- *                          Optional.
- */
-VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
-                                                                const void *pvOpcodeBytes, size_t cbOpcodeBytes,
-                                                                uint32_t *pcbWritten)
-{
-    AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
-
-    uint32_t const cbOldWritten = pVCpu->iem.s.cbWritten;
-    VBOXSTRICTRC rcStrict;
-    if (   cbOpcodeBytes
-        && pVCpu->cpum.GstCtx.rip == OpcodeBytesPC)
-    {
-        iemInitDecoder(pVCpu, true, false);
-#ifdef IEM_WITH_CODE_TLB
-        pVCpu->iem.s.uInstrBufPc      = OpcodeBytesPC;
-        pVCpu->iem.s.pbInstrBuf       = (uint8_t const *)pvOpcodeBytes;
-        pVCpu->iem.s.cbInstrBufTotal  = (uint16_t)RT_MIN(X86_PAGE_SIZE, cbOpcodeBytes);
-        pVCpu->iem.s.offCurInstrStart = 0;
-        pVCpu->iem.s.offInstrNextByte = 0;
-#else
-        pVCpu->iem.s.cbOpcode = (uint8_t)RT_MIN(cbOpcodeBytes, sizeof(pVCpu->iem.s.abOpcode));
-        memcpy(pVCpu->iem.s.abOpcode, pvOpcodeBytes, pVCpu->iem.s.cbOpcode);
-#endif
-        rcStrict = VINF_SUCCESS;
-    }
-    else
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true, false);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassWithPrefetchedByPCWritten");
-        if (pcbWritten)
-            *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
-    }
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 

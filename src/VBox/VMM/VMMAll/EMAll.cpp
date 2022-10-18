@@ -992,9 +992,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
- * @param   pRegFrame   The register frame. IP/EIP/RIP *IS* changed!
- * @param   pvFault     The fault address (CR2).
- * @param   enmCodeType Code type (user/supervisor)
+ * @param   rip         The instruction pointer value.
  *
  * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
@@ -1003,14 +1001,11 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu)
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
-                                                            RTGCPTR pvFault, EMCODETYPE enmCodeType)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, uint64_t rip)
 {
-    LogFlow(("EMInterpretInstructionDisasState %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    NOREF(pDis); NOREF(pvFault); NOREF(enmCodeType);
+    LogFlow(("EMInterpretInstructionDisasState %RGv\n", (RTGCPTR)rip));
 
-    VBOXSTRICTRC rc = IEMExecOneBypassWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
+    VBOXSTRICTRC rc = IEMExecOneBypassWithPrefetchedByPC(pVCpu, rip, pDis->abInstr, pDis->cbCachedInstr);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
         rc = VERR_EM_INTERPRETER;
