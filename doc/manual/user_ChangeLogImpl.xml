@@ -95,6 +95,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>macOS hosts: Fixed VM crash when the guest tries to access a microphone or webcam</para>
+      </listitem>
+
+      <listitem>
         <para>Linux Guest Additions: Introduced initial support for kernel 6.1</para>
       </listitem>
 
