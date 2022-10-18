@@ -2412,7 +2412,7 @@ static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
 
     pVmcb->guest.u64RIP    = pCtx->rip;
     pVmcb->guest.u64RSP    = pCtx->rsp;
-    pVmcb->guest.u64RFlags = pCtx->eflags.u32;
+    pVmcb->guest.u64RFlags = pCtx->eflags.u;
     pVmcb->guest.u64RAX    = pCtx->rax;
 
     bool const fIsNestedGuest = pSvmTransient->fIsNestedGuest;
@@ -2698,7 +2698,7 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
 
         if (fWhat & CPUMCTX_EXTRN_RFLAGS)
         {
-            pCtx->eflags.u32 = pVmcbGuest->u64RFlags;
+            pCtx->eflags.u = pVmcbGuest->u64RFlags;
             if (pVCpu->hmr0.s.fClearTrapFlag)
             {
                 pVCpu->hmr0.s.fClearTrapFlag = false;
@@ -3630,7 +3630,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEvent(PVMCPUCC pVCpu, PCSVMTRANSIENT p
     else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
              && !pVCpu->hm.s.fSingleInstruction)
     {
-        bool const fBlockInt = !pSvmTransient->fIsNestedGuest ? !(pCtx->eflags.u32 & X86_EFL_IF)
+        bool const fBlockInt = !pSvmTransient->fIsNestedGuest ? !(pCtx->eflags.u & X86_EFL_IF)
                                                               : CPUMIsGuestSvmPhysIntrEnabled(pVCpu, pCtx);
         if (    fGif
             && !fBlockInt
@@ -3707,7 +3707,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             fAllowInt = CPUMIsGuestSvmPhysIntrEnabled(pVCpu, pCtx) || CPUMIsGuestSvmVirtIntrEnabled(pVCpu, pCtx);
         else
-            fAllowInt = RT_BOOL(pCtx->eflags.u32 & X86_EFL_IF);
+            fAllowInt = RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
     }
 #endif
 
