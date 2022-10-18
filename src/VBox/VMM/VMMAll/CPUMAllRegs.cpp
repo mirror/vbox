@@ -324,7 +324,7 @@ VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
 
 VMMDECL(int) CPUMSetGuestEFlags(PVMCPU pVCpu, uint32_t eflags)
 {
-    pVCpu->cpum.s.Guest.eflags.u32 = eflags;
+    pVCpu->cpum.s.Guest.eflags.u = eflags;
     pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_RFLAGS;
     return VINF_SUCCESS;
 }
@@ -658,7 +658,7 @@ VMMDECL(uint32_t) CPUMGetGuestEBP(PCVMCPU pVCpu)
 VMMDECL(uint32_t) CPUMGetGuestEFlags(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RFLAGS);
-    return pVCpu->cpum.s.Guest.eflags.u32;
+    return pVCpu->cpum.s.Guest.eflags.u;
 }
 
 
@@ -2086,7 +2086,7 @@ VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PVMCPUCC pVCpu, PCPUMCTX pCtx)
     CPUMSetGuestCR0(pVCpu, pHostState->uCr0 | X86_CR0_PE);
     pCtx->cr3        = pHostState->uCr3;
     CPUMSetGuestCR4(pVCpu, pHostState->uCr4);
-    pCtx->rflags     = pHostState->rflags;
+    pCtx->rflags.u   = pHostState->rflags.u;
     pCtx->rflags.Bits.u1VM = 0;
     pCtx->rip        = pHostState->uRip;
     pCtx->rsp        = pHostState->uRsp;
@@ -2122,7 +2122,7 @@ VMM_INT_DECL(void) CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr)
     pHostState->uCr0     = pCtx->cr0;
     pHostState->uCr3     = pCtx->cr3;
     pHostState->uCr4     = pCtx->cr4;
-    pHostState->rflags   = pCtx->rflags;
+    pHostState->rflags.u = pCtx->rflags.u;
     pHostState->uRip     = pCtx->rip + cbInstr;
     pHostState->uRsp     = pCtx->rsp;
     pHostState->uRax     = pCtx->rax;
