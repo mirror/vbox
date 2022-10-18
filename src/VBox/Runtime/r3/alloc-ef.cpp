@@ -491,7 +491,6 @@ static void rtMemReplaceMallocAndFriends(void)
 # ifdef RT_ARCH_AMD64
 #  ifdef RT_OS_DARWIN
             /* Kludge for: cmp [malloc_def_zone_state], 1; jg 2; call _malloc_initialize; 2: */
-            DISQPVPARAMVAL Parm;
             if (   Dis.ModRM.Bits.Mod == 0
                 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */
                 && (Dis.Param2.fUse & (DISUSE_IMMEDIATE16_SX8 | DISUSE_IMMEDIATE32_SX8 | DISUSE_IMMEDIATE64_SX8))
