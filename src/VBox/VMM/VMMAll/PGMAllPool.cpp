@@ -882,11 +882,10 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
  * @param   pDis        The disassembly of the write instruction.
  * @param   pCtx        Pointer to the register context for the CPU.
  * @param   GCPhysFault The fault address as guest physical address.
- * @param   pvFault     The fault address.
  * @todo VBOXSTRICTRC
  */
 static int pgmRZPoolAccessPfHandlerFlush(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
-                                         PCPUMCTX pCtx, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
+                                         PCPUMCTX pCtx, RTGCPHYS GCPhysFault)
 {
     NOREF(pVM); NOREF(GCPhysFault);
 
@@ -997,11 +996,10 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOO
  * @param   pDis        The disassembly of the write instruction.
  * @param   pCtx        Pointer to the register context for the CPU.
  * @param   GCPhysFault The fault address as guest physical address.
- * @param   pvFault     The fault address.
  * @param   pfReused    Reused state (in/out)
  */
 DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
-                                               PCPUMCTX pCtx, RTGCPHYS GCPhysFault, RTGCPTR pvFault, bool *pfReused)
+                                               PCPUMCTX pCtx, RTGCPHYS GCPhysFault, bool *pfReused)
 {
     Log3(("pgmRZPoolAccessPfHandlerSimple\n"));
     NOREF(pVM);
@@ -1015,7 +1013,7 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPO
         pgmPoolMonitorModifiedInsert(pPool, pPage);
 
     /*
-     * Clear all the pages. ASSUMES that pvFault is readable.
+     * Clear all the pages.
      */
     uint32_t cbWrite = DISGetParamSize(pDis, &pDis->Param1);
     if (cbWrite <= 8)
@@ -1220,7 +1218,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
          */
         if (!(pDis->fPrefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
-            rc = pgmRZPoolAccessPfHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pCtx, GCPhysFault, pvFault, &fReused);
+            rc = pgmRZPoolAccessPfHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pCtx, GCPhysFault, &fReused);
             if (fReused)
                 goto flushPage;
 
@@ -1390,7 +1388,7 @@ flushPage:
      * interpret then. This may be a bit risky, in which case
      * the reuse detection must be fixed.
      */
-    rc = pgmRZPoolAccessPfHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pCtx, GCPhysFault, pvFault);
+    rc = pgmRZPoolAccessPfHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pCtx, GCPhysFault);
     if (    rc == VINF_EM_RAW_EMULATE_INSTR
         &&  fReused)
     {
