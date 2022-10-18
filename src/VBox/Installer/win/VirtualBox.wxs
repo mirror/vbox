@@ -504,6 +504,8 @@
     <ComponentRef Id="cp_MainBinaries" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_QtPlatforms" />
+        <ComponentRef Id="cp_QtSqldrivers" />
+        <ComponentRef Id="cp_QtStyles" />
     <?endif ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <ComponentRef Id="cp_VBoxPyInst" />

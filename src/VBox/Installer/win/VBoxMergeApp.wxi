@@ -432,8 +432,18 @@
                       Source="$(env.PATH_OUT)\bin\platforms\qoffscreen.dll" />
                 <File Id="file_qwindows.dll" Name="qwindows.dll"
                       Source="$(env.PATH_OUT)\bin\platforms\qwindows.dll" />
+            </Component>
+        </Directory>
+        <!-- Qt sqldrivers plugins -->
+        <Directory Id="dir_VBoxAppSqldrivers" Name="sqldrivers">
+            <Component Id="cp_QtSqldrivers" Guid="31ba006b-7dca-40b1-aba0-998eb18bd586" Win64="$(var.Property_Win64)">
                 <File Id="file_qsqlite.dll" Name="qsqlite.dll"
                       Source="$(env.PATH_OUT)\bin\sqldrivers\qsqlite.dll" />
+            </Component>
+        </Directory>
+        <!-- Qt styles plugins -->
+        <Directory Id="dir_VBoxAppStyles" Name="styles">
+            <Component Id="cp_QtStyles" Guid="150837df-f3ae-416f-9ea3-94f1f41b9f41" Win64="$(var.Property_Win64)">
                 <File Id="file_qwindowsvistastyle.dll" Name="qwindowsvistastyle.dll"
                       Source="$(env.PATH_OUT)\bin\styles\qwindowsvistastyle.dll" />
             </Component>
