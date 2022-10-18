@@ -40,9 +40,9 @@ DisasmR3_DEFS           = IN_DIS
 DisasmR3_SOURCES        = \
 	Disasm.cpp \
 	DisasmCore.cpp \
-	DisasmReg.cpp \
 	DisasmTables.cpp \
 	DisasmTablesX64.cpp \
+ 	DisasmMisc.cpp \
 	DisasmFormatBytes.cpp \
 	DisasmFormatYasm.cpp
 
@@ -61,9 +61,9 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY
  DisasmCoreR3_SOURCES    = \
  	DisasmCore.cpp \
- 	DisasmReg.cpp \
  	DisasmTables.cpp \
- 	DisasmTablesX64.cpp
+ 	DisasmTablesX64.cpp \
+ 	DisasmMisc.cpp
 
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES              += DisasmRC
@@ -71,9 +71,9 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY
   DisasmRC_SOURCES        = \
   	DisasmCore.cpp \
-  	DisasmReg.cpp \
   	DisasmTables.cpp \
-  	DisasmTablesX64.cpp
+  	DisasmTablesX64.cpp \
+  	DisasmMisc.cpp
  endif # VBOX_WITH_RAW_MODE
 
  LIBRARIES              += DisasmR0
@@ -81,9 +81,9 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY
  DisasmR0_SOURCES        = \
  	DisasmCore.cpp \
- 	DisasmReg.cpp \
  	DisasmTables.cpp \
- 	DisasmTablesX64.cpp
+ 	DisasmTablesX64.cpp \
+ 	DisasmMisc.cpp
 
 endif # !VBOX_ONLY_VALIDATIONKIT
 
