@@ -153,22 +153,21 @@ DECLINLINE(PCDBGFBPOWNERINTR0) dbgfR0BpOwnerGetByHnd(PVMCC pVM, DBGFBPOWNER hBpO
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   hBp         The breakpoint handle which hit.
  * @param   pBp         The shared breakpoint state.
  * @param   pBpR0       The ring-0 only breakpoint state.
  */
 #ifdef IN_RING0
-DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0)
+DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0)
 #else
-DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBGFBP hBp, PDBGFBPINT pBp)
+DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, DBGFBP hBp, PDBGFBPINT pBp)
 #endif
 {
     uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits); RT_NOREF(cHits);
 
-    RT_NOREF(pRegFrame);
-    LogFlow(("dbgfBpHit: hit breakpoint %u at %04x:%RGv cHits=0x%RX64\n",
-             hBp, pRegFrame->cs.Sel, pRegFrame->rip, cHits));
+    RT_NOREF(pCtx);
+    LogFlow(("dbgfBpHit: hit breakpoint %u at %04x:%RGv cHits=0x%RX64\n", hBp, pCtx->cs.Sel, pCtx->rip, cHits));
 
     int rc = VINF_EM_DBG_BREAKPOINT;
 #ifdef IN_RING0
@@ -334,12 +333,11 @@ DECLINLINE(VBOXSTRICTRC) dbgfBpPortIoHit(PVMCC pVM, PVMCPU pVCpu, bool fBefore, 
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   pCtx        Pointer to the register context for the CPU.
  * @param   idxL2Root   L2 table index of the table root.
  * @param   GCPtrKey    The key to search for.
  */
-static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
-                        uint32_t idxL2Root, RTGCUINTPTR GCPtrKey)
+static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, uint32_t idxL2Root, RTGCUINTPTR GCPtrKey)
 {
     /** @todo We don't use the depth right now but abort the walking after a fixed amount of levels. */
     uint8_t iDepth = 32;
@@ -368,9 +366,9 @@ static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
             if (   pBp
                 && DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_INT3)
 #ifdef IN_RING3
-                return dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp);
+                return dbgfBpHit(pVM, pVCpu, pCtx, hBp, pBp);
 #else
-                return dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
+                return dbgfBpHit(pVM, pVCpu, pCtx, hBp, pBp, pBpR0);
 #endif
 
             /* The entry got corrupted, just abort. */
@@ -482,14 +480,14 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFBpCheckPortIo(PVMCC pVM, PVMCPU pVCpu, RTIOPORT u
  *
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pRegFrame       Pointer to the register frame for the trap.
+ * @param   pCtx            Pointer to the register context for the CPU.
  * @param   uDr6            The DR6 hypervisor register value.
  * @param   fAltStepping    Alternative stepping indicator.
  */
-VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping)
+VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCUINTREG uDr6, bool fAltStepping)
 {
     /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
-    RT_NOREF(pRegFrame);
+    RT_NOREF(pCtx);
 
     /*
      * A breakpoint?
@@ -505,7 +503,7 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
                 pVCpu->dbgf.s.hBpActive = pVM->dbgf.s.aHwBreakpoints[iBp].hBp;
                 pVCpu->dbgf.s.fSingleSteppingRaw = false;
                 LogFlow(("DBGFRZTrap03Handler: hit hw breakpoint %x at %04x:%RGv\n",
-                         pVM->dbgf.s.aHwBreakpoints[iBp].hBp, pRegFrame->cs.Sel, pRegFrame->rip));
+                         pVM->dbgf.s.aHwBreakpoints[iBp].hBp, pCtx->cs.Sel, pCtx->rip));
 
                 return VINF_EM_DBG_BREAKPOINT;
             }
@@ -519,11 +517,11 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         && (pVCpu->dbgf.s.fSingleSteppingRaw || fAltStepping))
     {
         pVCpu->dbgf.s.fSingleSteppingRaw = false;
-        LogFlow(("DBGFRZTrap01Handler: single step at %04x:%RGv\n", pRegFrame->cs.Sel, pRegFrame->rip));
+        LogFlow(("DBGFRZTrap01Handler: single step at %04x:%RGv\n", pCtx->cs.Sel, pCtx->rip));
         return VINF_EM_DBG_STEPPED;
     }
 
-    LogFlow(("DBGFRZTrap01Handler: guest debug event %#x at %04x:%RGv!\n", (uint32_t)uDr6, pRegFrame->cs.Sel, pRegFrame->rip));
+    LogFlow(("DBGFRZTrap01Handler: guest debug event %#x at %04x:%RGv!\n", (uint32_t)uDr6, pCtx->cs.Sel, pCtx->rip));
     return VINF_EM_RAW_GUEST_TRAP;
 }
 
@@ -537,9 +535,9 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   pCtx        Pointer to the register context for the CPU.
  */
-VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx)
 {
 #if defined(IN_RING0)
     uint32_t volatile *paBpLocL1 = pVM->dbgfr0.s.CTX_SUFF(paBpLocL1);
@@ -552,9 +550,8 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX
     if (paBpLocL1)
     {
         RTGCPTR GCPtrBp;
-        int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel, &pRegFrame->cs,
-                                              pRegFrame->rip /* no -1 in R0 */,
-                                              &GCPtrBp);
+        int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtx->eflags, pCtx->ss.Sel, pCtx->cs.Sel, &pCtx->cs,
+                                              pCtx->rip /* no -1 outside non-rawmode */, &GCPtrBp);
         AssertRCReturn(rc, rc);
 
         const uint16_t idxL1      = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(GCPtrBp);
@@ -580,9 +577,9 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX
                 {
                     if (pBp->Pub.u.Int3.GCPtr == (RTGCUINTPTR)GCPtrBp)
 #ifdef IN_RING3
-                        rc = dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp);
+                        rc = dbgfBpHit(pVM, pVCpu, pCtx, hBp, pBp);
 #else
-                        rc = dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
+                        rc = dbgfBpHit(pVM, pVCpu, pCtx, hBp, pBp, pBpR0);
 #endif
                     else
                         rc = VINF_EM_RAW_GUEST_TRAP; /* Genuine guest trap. */
@@ -591,7 +588,7 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX
                     rc = VERR_DBGF_BP_L1_LOOKUP_FAILED;
             }
             else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
-                rc = dbgfBpL2Walk(pVM, pVCpu, pRegFrame, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32L1Entry),
+                rc = dbgfBpL2Walk(pVM, pVCpu, pCtx, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32L1Entry),
                                   DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR((RTGCUINTPTR)GCPtrBp));
             else /* Some invalid type. */
                 rc = VERR_DBGF_BP_L1_LOOKUP_FAILED;

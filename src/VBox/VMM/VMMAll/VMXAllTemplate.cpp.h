@@ -6952,7 +6952,7 @@ static VBOXSTRICTRC vmxHCExitXcptBP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict;
     if (!pVmxTransient->fIsNestedGuest)
-        rcStrict = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx));
+        rcStrict = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.GstCtx);
     else
         rcStrict = VINF_EM_RAW_GUEST_TRAP;
 
@@ -7099,10 +7099,9 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                                                        | X86_DR6_BD | X86_DR6_BS));
 
     int rc;
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (!pVmxTransient->fIsNestedGuest)
     {
-        rc = DBGFTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, VCPU_2_VMXSTATE(pVCpu).fSingleInstruction);
+        rc = DBGFTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.GstCtx, uDR6, VCPU_2_VMXSTATE(pVCpu).fSingleInstruction);
 
         /*
          * Prevents stepping twice over the same instruction when the guest is stepping using
@@ -7130,10 +7129,10 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT(pVCpu);
 
-        pCtx->dr[6] &= ~X86_DR6_B_MASK;
-        pCtx->dr[6] |= uDR6;
+        pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
+        pVCpu->cpum.GstCtx.dr[6] |= uDR6;
         if (CPUMIsGuestDebugStateActive(pVCpu))
-            ASMSetDR6(pCtx->dr[6]);
+            ASMSetDR6(pVCpu->cpum.GstCtx.dr[6]);
 
         HM_RESTORE_PREEMPT();
         VMMRZCallRing3Enable(pVCpu);
@@ -7145,13 +7144,13 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         AssertRCReturn(rc, rc);
 
         /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
-        pCtx->dr[7] &= ~(uint64_t)X86_DR7_GD;
+        pVCpu->cpum.GstCtx.dr[7] &= ~(uint64_t)X86_DR7_GD;
 
         /* Paranoia. */
-        pCtx->dr[7] &= ~(uint64_t)X86_DR7_RAZ_MASK;
-        pCtx->dr[7] |= X86_DR7_RA1_MASK;
+        pVCpu->cpum.GstCtx.dr[7] &= ~(uint64_t)X86_DR7_RAZ_MASK;
+        pVCpu->cpum.GstCtx.dr[7] |= X86_DR7_RA1_MASK;
 
-        rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_DR7, pCtx->dr[7]);
+        rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_DR7, pVCpu->cpum.GstCtx.dr[7]);
         AssertRC(rc);
 
         /*
@@ -7166,7 +7165,7 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
          * Intel 386, see Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
          */
         vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
-                               pVmxTransient->cbExitInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
+                             pVmxTransient->cbExitInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
         return VINF_SUCCESS;
     }
 

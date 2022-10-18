@@ -1126,8 +1126,8 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckPortIo(PVMCC pVM, PVMCPU pVCpu, RTIOPORT 
                                               uint32_t fAccess, uint32_t uValue, bool fBefore);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, DBGFEVENTCTX enmCtx,
                                                      unsigned cArgs, ...);
-VMM_INT_DECL(int)           DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping);
-VMM_INT_DECL(VBOXSTRICTRC)  DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame);
+VMM_INT_DECL(int)           DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCUINTREG uDr6, bool fAltStepping);
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx);
 
 
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */

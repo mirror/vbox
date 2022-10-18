@@ -8555,10 +8555,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * breakpoint). However, for both cases DR6 and DR7 are updated to what the exception
      * handler expects. See AMD spec. 15.12.2 "#DB (Debug)".
      */
-    PVMCC      pVM   = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM   = pVCpu->CTX_SUFF(pVM);
     PSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
-    PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
-    int rc = DBGFTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVmcb->guest.u64DR6, pVCpu->hm.s.fSingleInstruction);
+    int rc = DBGFTrap01Handler(pVM, pVCpu, &pVCpu->cpum.GstCtx, pVmcb->guest.u64DR6, pVCpu->hm.s.fSingleInstruction);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         Log5(("hmR0SvmExitXcptDB: DR6=%#RX64 -> guest trap\n", pVmcb->guest.u64DR6));
@@ -8621,8 +8620,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    VBOXSTRICTRC rc = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    VBOXSTRICTRC rc = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.GstCtx);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         SVMEVENT Event;

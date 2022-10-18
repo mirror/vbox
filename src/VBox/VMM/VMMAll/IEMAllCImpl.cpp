@@ -2897,7 +2897,7 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, IEMINT, enmInt)
         { /* likely: No vbox debugger breakpoints */ }
         else
         {
-            VBOXSTRICTRC rcStrict = DBGFTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx));
+            VBOXSTRICTRC rcStrict = DBGFTrap03Handler(pVM, pVCpu, &pVCpu->cpum.GstCtx);
             Log(("iemCImpl_int: DBGFTrap03Handler -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
             if (rcStrict != VINF_EM_RAW_GUEST_TRAP)
                 return iemSetPassUpStatus(pVCpu, rcStrict);
