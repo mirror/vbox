@@ -191,16 +191,6 @@ static const unsigned g_aRegSegIndex[] =
     RT_OFFSETOF(CPUMCTXCORE, gs)          /* DISSELREG_GS */
 };
 
-static const unsigned g_aRegHidSegIndex[] =
-{
-    RT_OFFSETOF(CPUMCTXCORE, es),         /* DISSELREG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, cs),         /* DISSELREG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ss),         /* DISSELREG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, ds),         /* DISSELREG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fs),         /* DISSELREG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gs)          /* DISSELREG_GS */
-};
-
 /**
  * Macro for accessing segment registers in CPUMCTXCORE structure.
  */
