@@ -3,8 +3,18 @@
 <plist version="1.0">
 <dict>
     <!-- <key>com.apple.security.cs.allow-jit</key>                          <true/> -->
-    <!-- <key>com.apple.security.cs.allow-unsigned-executable-memory</key>   <true/> -->
-    <!-- <key>com.apple.security.cs.disable-executable-page-protection</key> <true/> -->
+    <!--
+      The following two entitlements are required for using AppleHV on Catalina.
+      The first entitlement allows us to have unsigned executable memory in the guests
+      address space like the BIOS code (and essentially all the guests address space which
+      is mapped as RWX).
+      The second entitlement is required in order to map guest memory as RWX into the
+      guests address space.
+      These entitlements are not required starting with BigSur+ where Apple has clearly
+      changed something in their entitlement scheme without properly documenting it.
+    -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>   <true/>
+    <key>com.apple.security.cs.disable-executable-page-protection</key> <true/>
     <!-- For audio input -->
     <key>com.apple.security.device.audio-input</key>                    <true/>
     <!-- For emulated webcam -->

@@ -292,9 +292,6 @@ NEM_TMPL_STATIC const char * const g_apszPageStates[4] = { "not-set", "unmapped"
 static SUPHWVIRTMSRS    g_HmMsrs;
 /** VMX: Set if swapping EFER is supported.  */
 static bool             g_fHmVmxSupportsVmcsEfer = false;
-/** Flag whether the AppleHV code suffers from a bug preventing WX mappings and we need to
- * ping pong between RX and RW mappings depending on what the guest is doing. */
-static bool             g_fAppleHvNoWX = false;
 /** @name APIs imported from Hypervisor.framework.
  * @{ */
 static FN_HV_CAPABILITY                 *g_pfnHvCapability              = NULL; /* Since 10.15 */
@@ -561,29 +558,14 @@ DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, const void *pvRam, size
         fHvMemProt |= HV_MEMORY_READ;
     if (fPageProt & NEM_PAGE_PROT_WRITE)
         fHvMemProt |= HV_MEMORY_WRITE;
-    if (   fPageProt & NEM_PAGE_PROT_EXECUTE
-        && (   !g_fAppleHvNoWX
-            || !(fPageProt & NEM_PAGE_PROT_WRITE)))
+    if (fPageProt & NEM_PAGE_PROT_EXECUTE)
         fHvMemProt |= HV_MEMORY_EXEC;
 
     hv_return_t hrc;
-#if 0 /* Simulates the error path on Catalina without requiring signed binaries. */
-    if (   (fHvMemProt & HV_MEMORY_WRITE)
-        && (fHvMemProt & HV_MEMORY_EXEC))
-        hrc = HV_ERROR;
-    else
-    {
-        if (pVM->nem.s.fCreatedAsid)
-            hrc = hv_vm_map_space(pVM->nem.s.uVmAsid, pvRam, GCPhys, cb, fHvMemProt);
-        else
-            hrc = hv_vm_map(pvRam, GCPhys, cb, fHvMemProt);
-    }
-#else
     if (pVM->nem.s.fCreatedAsid)
         hrc = hv_vm_map_space(pVM->nem.s.uVmAsid, pvRam, GCPhys, cb, fHvMemProt);
     else
         hrc = hv_vm_map(pvRam, GCPhys, cb, fHvMemProt);
-#endif
     if (hrc == HV_SUCCESS)
     {
         if (pu2State)
@@ -593,53 +575,12 @@ DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, const void *pvRam, size
         return VINF_SUCCESS;
     }
 
-    if (   hrc == HV_ERROR
-        && (fHvMemProt & HV_MEMORY_WRITE)
-        && (fHvMemProt & HV_MEMORY_EXEC))
-    {
-        /*
-         * On Catalina 10.15.7 it is impossible to have WX permissions with a properly signed
-         * process due to some bug(?), it works starting with BigSur. So to work around that
-         * we will never have WX mappings but only RW and RX and switch between them on demand for the
-         * guest region in question. This can have a huge negative performance impact if the guest
-         * writes to the same page frequently and executes code there.
-         */
-        Assert(!g_fAppleHvNoWX); /* We should come here only once. */
-
-        /*
-         * Try unmapping the region first (the code on Catalina doesn't remove it form the map if vm_map_protect() fails and
-         * causes the following hv_vm_map call to fail...).
-         */
-        hv_vm_unmap(GCPhys, cb);
-
-         /* Start with an RW mapping (most of the time the guest needs to write something there before it can execute code). */
-        fHvMemProt &= ~HV_MEMORY_EXEC;
-        g_fAppleHvNoWX = true;
-        LogRel(("NEM: AppleHV refuses RWX mappings for the guest, activating workaround, expect decreased performance\n"));
-        if (pVM->nem.s.fCreatedAsid)
-            hrc = hv_vm_map_space(pVM->nem.s.uVmAsid, pvRam, GCPhys, cb, fHvMemProt);
-        else
-            hrc = hv_vm_map(pvRam, GCPhys, cb, fHvMemProt);
-        if (hrc == HV_SUCCESS)
-        {
-            if (pu2State)
-                *pu2State = NEM_DARWIN_PAGE_STATE_WRITABLE; /* Writable without exec. */
-            return VINF_SUCCESS;
-        }
-    }
-
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
-
+#if 0 /* unused */
 DECLINLINE(int) nemR3DarwinProtectPage(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint32_t fPageProt)
 {
-    Assert(   !g_fAppleHvNoWX
-           || (   (fPageProt & NEM_PAGE_PROT_WRITE)
-               && !(fPageProt & NEM_PAGE_PROT_EXECUTE))
-           || (   !(fPageProt & NEM_PAGE_PROT_WRITE)
-               && (fPageProt & NEM_PAGE_PROT_EXECUTE)));
-
     hv_memory_flags_t fHvMemProt = 0;
     if (fPageProt & NEM_PAGE_PROT_READ)
         fHvMemProt |= HV_MEMORY_READ;
@@ -656,7 +597,7 @@ DECLINLINE(int) nemR3DarwinProtectPage(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint
 
     return nemR3DarwinHvSts2Rc(hrc);
 }
-
+#endif
 
 DECLINLINE(int) nemR3NativeGCPhys2R3PtrReadOnly(PVM pVM, RTGCPHYS GCPhys, const void **ppv)
 {
@@ -1209,14 +1150,12 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 
 /**
  * State to pass between vmxHCExitEptViolation
- * and nemHCWinHandleMemoryAccessPageCheckerCallback.
+ * and nemR3DarwinHandleMemoryAccessPageCheckerCallback.
  */
 typedef struct NEMHCDARWINHMACPCCSTATE
 {
     /** Input: Write access. */
     bool    fWriteAccess;
-    /** Input: Instruction fetch access. */
-    bool    fInsnFetch;
     /** Output: Set if we did something. */
     bool    fDidSomething;
     /** Output: Set it we should resume. */
@@ -1263,25 +1202,19 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             }
 
             int rc = VINF_SUCCESS;
-            if (   pInfo->fNemProt & NEM_PAGE_PROT_WRITE
-                && !pState->fInsnFetch)
+            if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
             {
                 void *pvPage;
                 rc = nemR3NativeGCPhys2R3PtrWriteable(pVM, GCPhys, &pvPage);
                 if (RT_SUCCESS(rc))
-                {
-                    uint32_t fProt = pInfo->fNemProt;
-                    if (g_fAppleHvNoWX)
-                        fProt &= ~NEM_PAGE_PROT_EXECUTE; /* Start with RW mapping. */
-                    rc = nemR3DarwinMap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pvPage, X86_PAGE_SIZE, fProt, &u2State);
-                }
+                    rc = nemR3DarwinMap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pvPage, X86_PAGE_SIZE, pInfo->fNemProt, &u2State);
             }
             else if (pInfo->fNemProt & NEM_PAGE_PROT_READ)
             {
                 const void *pvPage;
                 rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhys, &pvPage);
                 if (RT_SUCCESS(rc))
-                    rc = nemR3DarwinMap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pvPage, X86_PAGE_SIZE, pInfo->fNemProt & ~NEM_PAGE_PROT_WRITE, &u2State);
+                    rc = nemR3DarwinMap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pvPage, X86_PAGE_SIZE, pInfo->fNemProt, &u2State);
             }
             else /* Only EXECUTE doesn't work. */
                 AssertReleaseFailed();
@@ -1294,24 +1227,6 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             return rc;
         }
         case NEM_DARWIN_PAGE_STATE_READABLE:
-            if (   g_fAppleHvNoWX
-                && pState->fWriteAccess
-                && (pInfo->fNemProt & NEM_PAGE_PROT_WRITE))
-            {
-                /* Write access to an RWX page which we set to RX due to Catalina woes, convert to RW. */
-                int rc = nemR3DarwinProtectPage(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE);
-
-                pInfo->u2NemState = NEM_DARWIN_PAGE_STATE_WRITABLE;
-                Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: %RGp - RX => RW + %Rrc\n", GCPhys, rc));
-                pState->fDidSomething = true;
-                /*
-                 * We will emulate that single instruction in case the instruction writes to the same page as it executes from to avoid
-                 * an endless loop switching between RW and RX mappings without making any progress.
-                 */
-                pState->fCanResume    = false;
-                return rc;
-            }
-
             if (   !(pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
                 && (pInfo->fNemProt & (NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE)))
             {
@@ -1322,21 +1237,6 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             break;
 
         case NEM_DARWIN_PAGE_STATE_WRITABLE:
-            if (   g_fAppleHvNoWX
-                && pState->fInsnFetch
-                && (pInfo->fNemProt & NEM_PAGE_PROT_EXECUTE))
-            {
-                /* Write access to an RWX page which we set to RW due to Catalina woes, convert to RX. */
-                int rc = nemR3DarwinProtectPage(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE);
-
-                pInfo->u2NemState = NEM_DARWIN_PAGE_STATE_READABLE;
-                Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: %RGp - RW => RX + %Rrc\n", GCPhys, rc));
-                pState->fDidSomething = true;
-                /* Just resume with execution, no emulation in case the instruction being executed is something we don't emulate right now (AVX for example). */
-                pState->fCanResume    = true;
-                return rc;
-            }
-
             if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
             {
                 pState->fCanResume = true;
@@ -1344,7 +1244,6 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
                     Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: Spurious EPT fault\n", GCPhys));
                 return VINF_SUCCESS;
             }
-
             break;
 
         default:
@@ -2992,13 +2891,6 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
      * Whether to enable LBR for the guest. This is disabled by default as it's only
      * useful while debugging and enabling it causes a noticeable performance hit. */
     rc = CFGMR3QueryBoolDef(pCfgNem, "VmxLbr", &pVM->nem.s.fLbr, false);
-    AssertRCReturn(rc, rc);
-
-    /** @cfgm{/NEM/CatalinaWxWorkaround, bool, false}
-     * Whether to allow only W^X guest mappings due to a bug in the Catalina AppleHV
-     * driver refusing RWX when a properly signed binary is used.
-     */
-    rc = CFGMR3QueryBoolDef(pCfgNem, "CatalinaWxWorkaround", &g_fAppleHvNoWX, false);
     AssertRCReturn(rc, rc);
 
     /*

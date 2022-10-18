@@ -9422,7 +9422,6 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
      * out of sync first.
      */
     NEMHCDARWINHMACPCCSTATE State = { RT_BOOL(pVmxTransient->uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_WRITE),
-                                      RT_BOOL(pVmxTransient->uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH),
                                       false,
                                       false };
     PGMPHYSNEMPAGEINFO      Info;
