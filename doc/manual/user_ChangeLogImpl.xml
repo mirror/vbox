@@ -85,6 +85,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Main: Fixed issue when VBoxSVC could become unresponsive if Extension Pack
+          was not installed</para>
+      </listitem>
+
+      <listitem>
         <para>macOS hosts: Added workaround for a bug in the Hypervisor framework on Catalina causing
           VERR_NEM_MAP_PAGES_FAILED errors when starting a VM. (bug #21128)</para>
       </listitem>
