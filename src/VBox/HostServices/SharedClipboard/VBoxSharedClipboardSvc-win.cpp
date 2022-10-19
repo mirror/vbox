@@ -75,7 +75,33 @@ struct SHCLCONTEXT
 };
 
 
-/** @todo Someone please explain the protocol wrt overflows...  */
+/**
+ * Copy clipboard data into the guest buffer.
+ *
+ * At first attempt, guest will provide a buffer of default size.
+ * Usually 1K or 4K (see platform specific Guest Additions code around
+ * VbglR3ClipboardReadData calls). If this buffer is not big enough
+ * to fit host clipboard content, this function will return VINF_BUFFER_OVERFLOW
+ * and provide guest with host's clipboard buffer actual size. This will be a
+ * signal for the guest to re-read host clipboard data providing bigger buffer
+ * to store it.
+ *
+ * @returns IPRT status code.
+ * @returns VINF_BUFFER_OVERFLOW returned when guest buffer size if not big
+ *          enough to store host clipboard data. This is a signal to the guest
+ *          to re-issue host clipboard read request with bigger buffer size
+ *          (specified in @a pcbActualDst output parameter).
+ * @param   pCtx                Shared Clipboard context to use.
+ * @param   uFmt                VBox clipboard format (VBOX_SHCL_FMT_XXX) of copied data.
+ * @param   pvSrc               Pointer to host clipboard data.
+ * @param   cbSrc               Size (in bytes) of actual clipboard data to copy.
+ * @param   pvDst               Pointer to guest buffer to store clipboard data.
+ * @param   cbDst               Size (in bytes) of guest buffer.
+ * @param   pcbActualDst        Actual size (in bytes) of host clipboard data.
+ *                              Only set if guest buffer size if not big enough
+ *                              to store host clipboard content. When set,
+ *                              function returns VINF_BUFFER_OVERFLOW.
+ */
 static int vboxClipboardSvcWinDataGet(uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
                                       void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
 {
