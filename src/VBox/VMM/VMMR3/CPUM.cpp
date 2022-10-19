@@ -144,6 +144,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 
 
@@ -2204,6 +2205,11 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         return rc;
 
     /*
+     * Generate the RFLAGS cookie.
+     */
+    pVM->cpum.s.fReservedRFlagsCookie = RTRandU64() & ~(CPUMX86EFLAGS_HW_MASK_64 | CPUMX86EFLAGS_INT_MASK_64);
+
+    /*
      * Init the VMX/SVM state.
      *
      * This must be done after initializing CPUID/MSR features as we access the
@@ -2219,7 +2225,11 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     else
         Assert(pVM->apCpusR3[0]->cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
 
+    /*
+     * Initialize the general guest CPU state.
+     */
     CPUMR3Reset(pVM);
+
     return VINF_SUCCESS;
 }
 
@@ -2302,7 +2312,9 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     pCtx->cr0                       = X86_CR0_CD | X86_CR0_NW | X86_CR0_ET;  //0x60000010
     pCtx->eip                       = 0x0000fff0;
     pCtx->edx                       = 0x00000600;   /* P6 processor */
-    pCtx->eflags.Bits.u1Reserved0   = 1;
+
+    Assert((pVM->cpum.s.fReservedRFlagsCookie & (X86_EFL_LIVE_MASK | X86_EFL_RAZ_LO_MASK | X86_EFL_RA1_MASK)) == 0);
+    pCtx->rflags.uBoth              = pVM->cpum.s.fReservedRFlagsCookie | X86_EFL_RA1_MASK;
 
     pCtx->cs.Sel                    = 0xf000;
     pCtx->cs.ValidSel               = 0xf000;
@@ -2494,12 +2506,17 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     RT_ZERO(DummyHyperCtx);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        PVMCPU const   pVCpu   = pVM->apCpusR3[idCpu];
+        PCPUMCTX const pGstCtx = &pVCpu->cpum.s.Guest;
 
+        /** @todo ditch this the next time we change the saved state. */
         SSMR3PutStructEx(pSSM, &DummyHyperCtx,           sizeof(DummyHyperCtx),           0, g_aCpumCtxFields, NULL);
 
-        PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
+        uint64_t const fSavedRFlags = pGstCtx->rflags.uBoth;
+        pGstCtx->rflags.uBoth &= CPUMX86EFLAGS_HW_MASK_64; /* Temporarily clear the non-hardware bits in RFLAGS while saving. */
         SSMR3PutStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
+        pGstCtx->rflags.uBoth  = fSavedRFlags;
+
         SSMR3PutStructEx(pSSM, &pGstCtx->XState.x87,     sizeof(pGstCtx->XState.x87),     0, g_aCpumX87Fields, NULL);
         if (pGstCtx->fXStateMask != 0)
             SSMR3PutStructEx(pSSM, &pGstCtx->XState.Hdr, sizeof(pGstCtx->XState.Hdr),     0, g_aCpumXSaveHdrFields, NULL);
@@ -2920,6 +2937,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 rc = SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
             }
             AssertRCReturn(rc, rc);
+
+            /* Deal with the reusing of reserved RFLAGS bits. */
+            pGstCtx->rflags.uBoth |= pVM->cpum.s.fReservedRFlagsCookie;
 
             /* REM and other may have cleared must-be-one fields in DR6 and
                DR7, fix these. */

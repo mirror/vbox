@@ -381,8 +381,12 @@ typedef struct CPUM
     bool                    fNestedVmxUnrestrictedGuest;
     uint8_t                 abPadding1[1];
 
+    /** Random value we store in the reserved RFLAGS bits we don't use ourselves so
+     *  we can detect corruption. */
+    uint64_t                fReservedRFlagsCookie;
+
     /** Align to 64-byte boundary. */
-    uint8_t                 abPadding2[20+4];
+    uint8_t                 abPadding2[16];
 
     /** Host CPU feature information.
      * Externaly visible via the VM structure, aligned on 64-byte boundrary. */

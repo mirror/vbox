@@ -187,6 +187,26 @@ VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVMCPU pVCpu)
 
 
 /**
+ * Checks that the special cookie stored in unused reserved RFLAGS bits
+ *
+ * @retval  true if cookie is ok.
+ * @retval  false if cookie is not ok.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(bool) CPUMAssertGuestRFlagsCookie(PVM pVM, PVMCPU pVCpu)
+{
+    AssertLogRelMsgReturn(      (pVCpu->cpum.s.Guest.rflags.uBoth & ~(uint64_t)(X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK))
+                             == pVM->cpum.s.fReservedRFlagsCookie
+                          && (pVCpu->cpum.s.Guest.rflags.uBoth & X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK,
+                          ("rflags=%#RX64 vs fReservedRFlagsCookie=%#RX64\n",
+                           pVCpu->cpum.s.Guest.rflags.uBoth, pVM->cpum.s.fReservedRFlagsCookie),
+                          false);
+    return true;
+}
+
+
+/**
  * Queries the pointer to the internal CPUMCTX structure.
  *
  * @returns The CPUMCTX pointer.

@@ -230,6 +230,12 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_LIVE_MASK   UINT32_C(0x003f7fd5)
 /** Read as 1 bits. */
 #define X86_EFL_RA1_MASK    RT_BIT_32(1)
+/** Read as 0 bits, excluding bits 31:22.
+ * Bits 3, 5, 15, and 22 thru 31. */
+#define X86_EFL_RAZ_MASK    UINT32_C(0xffc08028)
+/** Read as 0 bits, excluding bits 31:22.
+ * Bits 3, 5 and 15. */
+#define X86_EFL_RAZ_LO_MASK UINT32_C(0x00008028)
 /** IOPL shift. */
 #define X86_EFL_IOPL_SHIFT  12
 /** The IOPL level from the flags. */

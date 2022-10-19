@@ -2209,6 +2209,10 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             else if (fFFDone)
                 fFFDone = false;
 
+#ifdef VBOX_STRICT
+            CPUMAssertGuestRFlagsCookie(pVM, pVCpu);
+#endif
+
             /*
              * Now what to do?
              */

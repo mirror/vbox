@@ -8023,7 +8023,7 @@ IEM_CIMPL_DEF_0(iemCImpl_aaa)
         if (   pVCpu->cpum.GstCtx.eflags.Bits.u1AF
             || (pVCpu->cpum.GstCtx.ax & 0xf) >= 10)
         {
-            iemAImpl_add_u16(&pVCpu->cpum.GstCtx.ax, 0x106, &pVCpu->cpum.GstCtx.eflags.u32);
+            iemAImpl_add_u16(&pVCpu->cpum.GstCtx.ax, 0x106, &pVCpu->cpum.GstCtx.eflags.uBoth);
             pVCpu->cpum.GstCtx.eflags.Bits.u1AF = 1;
             pVCpu->cpum.GstCtx.eflags.Bits.u1CF = 1;
         }
@@ -8068,7 +8068,7 @@ IEM_CIMPL_DEF_0(iemCImpl_aas)
         if (   pVCpu->cpum.GstCtx.eflags.Bits.u1AF
             || (pVCpu->cpum.GstCtx.ax & 0xf) >= 10)
         {
-            iemAImpl_sub_u16(&pVCpu->cpum.GstCtx.ax, 0x106, &pVCpu->cpum.GstCtx.eflags.u32);
+            iemAImpl_sub_u16(&pVCpu->cpum.GstCtx.ax, 0x106, &pVCpu->cpum.GstCtx.eflags.uBoth);
             pVCpu->cpum.GstCtx.eflags.Bits.u1AF = 1;
             pVCpu->cpum.GstCtx.eflags.Bits.u1CF = 1;
         }

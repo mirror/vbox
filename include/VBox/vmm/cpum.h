@@ -1516,9 +1516,12 @@ typedef CPUMDBENTRY const *PCCPUMDBENTRY;
 #ifndef VBOX_FOR_DTRACE_LIB
 
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-VMMDECL(int)                CPUMCpuIdCollectLeavesX86(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves);
-VMMDECL(CPUMCPUVENDOR)      CPUMCpuIdDetectX86VendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
+VMMDECL(int)            CPUMCpuIdCollectLeavesX86(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves);
+VMMDECL(CPUMCPUVENDOR)  CPUMCpuIdDetectX86VendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
 #endif
+
+VMM_INT_DECL(bool)      CPUMAssertGuestRFlagsCookie(PVM pVM, PVMCPU pVCpu);
+
 
 /** @name Guest Register Getters.
  * @{ */
@@ -2752,7 +2755,7 @@ DECLINLINE(bool) CPUMIsGuestVmxEptPagingEnabledEx(PCCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMSetGuestVmxVmSucceed(PCPUMCTX pCtx)
 {
-    pCtx->eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+    pCtx->eflags.uBoth &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
 }
 
 /**
@@ -2762,8 +2765,8 @@ DECLINLINE(void) CPUMSetGuestVmxVmSucceed(PCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMSetGuestVmxVmFailInvalid(PCPUMCTX pCtx)
 {
-    pCtx->eflags.u32 &= ~(X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
-    pCtx->eflags.u32 |= X86_EFL_CF;
+    pCtx->eflags.uBoth &= ~(X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+    pCtx->eflags.uBoth |= X86_EFL_CF;
 }
 
 /**
@@ -2774,8 +2777,8 @@ DECLINLINE(void) CPUMSetGuestVmxVmFailInvalid(PCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMSetGuestVmxVmFailValid(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
 {
-    pCtx->eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
-    pCtx->eflags.u32 |= X86_EFL_ZF;
+    pCtx->eflags.uBoth &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+    pCtx->eflags.uBoth |= X86_EFL_ZF;
     pCtx->hwvirt.vmx.Vmcs.u32RoVmInstrError = enmInsErr;
 }
 

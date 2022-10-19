@@ -227,6 +227,88 @@ typedef enum
 AssertCompileSize(CPUMHWVIRT, 4);
 #endif
 
+/** Number of EFLAGS bits we put aside for the hardware EFLAGS, with the bits
+ * above this we use for storing internal state not visible to the guest.
+ *
+ * The initial plan was to use 24 or 22 here and keep bits that needs clearing
+ * on instruction boundrary in the top of the first 32 bits, allowing us to use
+ * a AND with a 32-bit immediate for clearing both RF and the interrupt shadow
+ * bits.  However, when using anything less than 32, there is a significant code
+ * size increase: VMMR0.ro is 2475709 bytes with 32 bits, 2482069 bytes with 24
+ * bits, and 2482261 bytes with 22 bits.
+ *
+ * So, for now we're best off setting this to 32.
+ */
+#define CPUMX86EFLAGS_HW_BITS       32
+/** Mask for the hardware EFLAGS bits, 64-bit version. */
+#define CPUMX86EFLAGS_HW_MASK_64    (RT_BIT_64(CPUMX86EFLAGS_HW_BITS) - UINT64_C(1))
+/** Mask for the hardware EFLAGS bits, 32-bit version. */
+#if CPUMX86EFLAGS_HW_BITS == 32
+# define CPUMX86EFLAGS_HW_MASK_32   UINT32_MAX
+#elif CPUMX86EFLAGS_HW_BITS < 32 && CPUMX86EFLAGS_HW_BITS >= 22
+# define CPUMX86EFLAGS_HW_MASK_32   (RT_BIT_32(CPUMX86EFLAGS_HW_BITS) - UINT32_C(1))
+#else
+# error "Misconfigured CPUMX86EFLAGS_HW_BITS value!"
+#endif
+
+/** Mask of internal flags kept with EFLAGS, 64-bit version.   */
+#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x0000000000000000)
+/** Mask of internal flags kept with EFLAGS, 32-bit version.   */
+#define CPUMX86EFLAGS_INT_MASK_32   UINT64_C(0x0000000000000000)
+
+
+/**
+ * CPUM EFLAGS.
+ *
+ * This differs from X86EFLAGS in that we could use bits 31:22 for internal
+ * purposes, see CPUMX86EFLAGS_HW_BITS.
+ */
+typedef union CPUMX86EFLAGS
+{
+    /** The full unsigned view, both hardware and VBox bits. */
+    uint32_t        uBoth;
+    /** The plain unsigned view of the hardware bits. */
+#if CPUMX86EFLAGS_HW_BITS == 32
+    uint32_t        u;
+#else
+    uint32_t        u : CPUMX86EFLAGS_HW_BITS;
+#endif
+#ifndef VBOX_FOR_DTRACE_LIB
+    /** The bitfield view. */
+    X86EFLAGSBITS   Bits;
+#endif
+} CPUMX86EFLAGS;
+/** Pointer to CPUM EFLAGS. */
+typedef CPUMX86EFLAGS *PCPUMX86EFLAGS;
+/** Pointer to const CPUM EFLAGS. */
+typedef const CPUMX86EFLAGS *PCCPUMX86EFLAGS;
+
+/**
+ * CPUM RFLAGS.
+ *
+ * This differs from X86EFLAGS in that we use could be using bits 63:22 for
+ * internal purposes, see CPUMX86EFLAGS_HW_BITS.
+ */
+typedef union CPUMX86RFLAGS
+{
+    /** The full unsigned view, both hardware and VBox bits. */
+    uint64_t        uBoth;
+    /** The plain unsigned view of the hardware bits. */
+#if CPUMX86EFLAGS_HW_BITS == 32
+    uint32_t        u;
+#else
+    uint32_t        u : CPUMX86EFLAGS_HW_BITS;
+#endif
+#ifndef VBOX_FOR_DTRACE_LIB
+    /** The bitfield view. */
+    X86EFLAGSBITS   Bits;
+#endif
+} CPUMX86RFLAGS;
+/** Pointer to CPUM RFLAGS. */
+typedef CPUMX86RFLAGS *PCPUMX86RFLAGS;
+/** Pointer to const CPUM RFLAGS. */
+typedef const CPUMX86RFLAGS *PCCPUMX86RFLAGS;
+
 
 /**
  * CPU context.
@@ -305,8 +387,8 @@ typedef struct CPUMCTX
     /** The flags register. */
     union
     {
-        X86EFLAGS       eflags;
-        X86RFLAGS       rflags;
+        CPUMX86EFLAGS   eflags;
+        CPUMX86RFLAGS   rflags;
     } CPUM_UNION_NM(rflags);
 
     /** Interrupt & exception inhibiting (CPUMCTX_INHIBIT_XXX). */
@@ -321,7 +403,6 @@ typedef struct CPUMCTX
     uint64_t            cr2;
     uint64_t            cr3;
     uint64_t            cr4;
-    /** @todo Add the 4 PAE PDPE registers. See PGMCPU::aGstPaePdpeRegs. */
     /** @} */
 
     /** Debug registers.
@@ -350,7 +431,7 @@ typedef struct CPUMCTX
 
     /** @name System MSRs.
      * @{ */
-    uint64_t            msrEFER;
+    uint64_t            msrEFER; /**< @todo move EFER up to the crX registers for better cacheline mojo */
     uint64_t            msrSTAR;            /**< Legacy syscall eip, cs & ss. */
     uint64_t            msrPAT;             /**< Page attribute table. */
     uint64_t            msrLSTAR;           /**< 64 bits mode syscall rip. */
@@ -569,6 +650,7 @@ AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) gs, 0x
 AssertCompileMemberOffset(CPUMCTX,                                      ldtr, 0x0110);
 AssertCompileMemberOffset(CPUMCTX,                                        tr, 0x0128);
 AssertCompileMemberOffset(CPUMCTX,                                       rip, 0x0140);
+AssertCompileMemberOffset(CPUMCTX,                                    eflags, 0x0148);
 AssertCompileMemberOffset(CPUMCTX,                                    rflags, 0x0148);
 AssertCompileMemberOffset(CPUMCTX,                                  fInhibit, 0x0150);
 AssertCompileMemberOffset(CPUMCTX,                            uRipInhibitInt, 0x0158);
