@@ -305,6 +305,7 @@ void extF80_sincos( extFloat80_t, extFloat80_t*, extFloat80_t* SOFTFLOAT_STATE_D
 extFloat80_t extF80_atan2( extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_ylog2x( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_ylog2xp1( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
+extFloat80_t extF80_tan( extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 extFloat80_t extF80_scale_extF80( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_eq( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
 bool extF80_le( extFloat80_t, extFloat80_t SOFTFLOAT_STATE_DECL_COMMA );
