@@ -242,16 +242,16 @@ void UIEmptyFilePathSelector::choose()
     switch (mMode)
     {
         case UIEmptyFilePathSelector::Mode_File_Open:
-            path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+            path = QIFileDialog::getOpenFileName (initDir, mFileFilters, window(), mFileDialogTitle); break;
         case UIEmptyFilePathSelector::Mode_File_Save:
         {
-            path = QIFileDialog::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
+            path = QIFileDialog::getSaveFileName (initDir, mFileFilters, window(), mFileDialogTitle);
             if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
                 path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
             break;
         }
         case UIEmptyFilePathSelector::Mode_Folder:
-            path = QIFileDialog::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
+            path = QIFileDialog::getExistingDirectory (initDir, window(), mFileDialogTitle); break;
     }
     if (path.isEmpty())
         return;
