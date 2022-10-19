@@ -2036,7 +2036,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                                    d.ulSuggestedSizeMB);
 
                             ovf::VirtualDisk vd;
-                            vd.strIdController = vsys.mapControllers[0].strIdController;
+                            vd.strIdController = vsys.mapControllers["0"].strIdController;
                             vd.ulAddressOnParent = 0;
                             vd.strDiskId = d.strDiskId;
                             vsys.mapVirtualDisks[vd.strDiskId] = vd;
