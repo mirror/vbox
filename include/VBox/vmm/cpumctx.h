@@ -650,7 +650,6 @@ AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) gs, 0x
 AssertCompileMemberOffset(CPUMCTX,                                      ldtr, 0x0110);
 AssertCompileMemberOffset(CPUMCTX,                                        tr, 0x0128);
 AssertCompileMemberOffset(CPUMCTX,                                       rip, 0x0140);
-AssertCompileMemberOffset(CPUMCTX,                                    eflags, 0x0148);
 AssertCompileMemberOffset(CPUMCTX,                                    rflags, 0x0148);
 AssertCompileMemberOffset(CPUMCTX,                                  fInhibit, 0x0150);
 AssertCompileMemberOffset(CPUMCTX,                            uRipInhibitInt, 0x0158);
