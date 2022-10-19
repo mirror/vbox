@@ -6181,10 +6181,57 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80_amd,(PCX86FXSTATE pFpuState, 
 
 
 #if defined(IEM_WITHOUT_ASSEMBLY)
+static uint16_t iemAImpl_fptan_r80_r80_normal(PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val, uint16_t fFcw, uint16_t fFsw)
+{
+    softfloat_state_t SoftState = SOFTFLOAT_STATE_INIT_DEFAULTS();
+    extFloat80_t x = iemFpuSoftF80FromIprt(pr80Val);
+    extFloat80_t v;
+    (void)fFcw;
+
+    v = extF80_tan(x, &SoftState);
+
+    iemFpuSoftF80ToIprt(&pFpuResTwo->r80Result1, v);
+    return fFsw;
+}
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | /*X86_FSW_C2 |*/ X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
+
+    if (RTFLOAT80U_IS_NORMAL(pr80Val))
+    {
+        if (pr80Val->s.uExponent >= RTFLOAT80U_EXP_BIAS + 63)
+        {
+            fFsw |= X86_FSW_C2 | (7 << X86_FSW_TOP_SHIFT);
+            pFpuResTwo->r80Result1 = *pr80Val;
+        }
+        else
+        {
+            if (pr80Val->s.uExponent <= RTFLOAT80U_EXP_BIAS - 63)
+            {
+                pFpuResTwo->r80Result1 = *pr80Val;
+            }
+            else
+            {
+                fFsw = iemAImpl_fptan_r80_r80_normal(pFpuResTwo, pr80Val, fFcw, fFsw);
+            }
+
+            pFpuResTwo->r80Result2 = g_ar80One[0];
+
+            fFsw |= X86_FSW_PE;
+            if (!(fFcw & X86_FCW_PM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+    }
+    else
+    {
+        fFsw |= X86_FSW_IE;
+        if (!(fFcw & X86_FCW_IM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    pFpuResTwo->FSW = fFsw;
 }
 #endif /* IEM_WITHOUT_ASSEMBLY */
 
@@ -6197,7 +6244,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80_intel,(PCX86FXSTATE pFpuState, PI
 {
     iemAImpl_fptan_r80_r80(pFpuState, pFpuResTwo, pr80Val);
 }
-
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
