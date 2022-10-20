@@ -547,7 +547,7 @@ PTSTHGCMMOCKSVC TstHgcmMockSvcInst(void)
 /**
  * Waits for a HGCM mock client to connect, extended version.
  *
- * @return VBox status code.
+ * @return Pointer to connected client, or NULL if ran into timeout.
  * @param  pSvc                 HGCM mock service instance.
  * @param  msTimeout            Timeout (in ms) to wait for connection.
  */
@@ -565,7 +565,7 @@ PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnectEx(PTSTHGCMMOCKSVC pSvc, RTMSINTE
 /**
  * Waits for a HGCM mock client to connect.
  *
- * @return VBox status code.
+ * @return Pointer to connected client, or NULL if waiting for connection was aborted.
  * @param  pSvc                 HGCM mock service instance.
  */
 PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc)
