@@ -1698,6 +1698,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_VMFUNC                 0x491
 /** Tertiary processor-based VM execution controls. */
 #define MSR_IA32_VMX_PROCBASED_CTLS3        0x492
+/** Secondary VM-exit controls. */
+#define MSR_IA32_VMX_EXIT_CTLS2             0x493
 
 /** Intel PT - Enable and control for trace packet generation. */
 #define MSR_IA32_RTIT_CTL                   0x570
