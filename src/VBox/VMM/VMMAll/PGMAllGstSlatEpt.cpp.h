@@ -33,8 +33,8 @@
  * Checks if the EPT PTE permissions are valid.
  *
  * @returns @c true if valid, @c false otherwise.
- * @param   uEntry      The EPT page table entry to check.
- * @param   uLevel      The page table walk level.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   uEntry  The EPT page table entry to check.
  */
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_t uEntry)
 {
