@@ -2042,7 +2042,7 @@ FNIEMOP_DEF(iemOp_ud2)
 FNIEMOP_DEF(iemOp_nop_Ev_GrpP)
 {
     /* AMD prefetch group, Intel implements this as NOP Ev (and so do we). */
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->f3DNowPrefetch)
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->f3DNowPrefetch)
     {
         IEMOP_MNEMONIC(GrpPNotSupported, "GrpP");
         return IEMOP_RAISE_INVALID_OPCODE();
