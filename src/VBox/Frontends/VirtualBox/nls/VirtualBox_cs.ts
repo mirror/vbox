@@ -5656,6 +5656,39 @@
         <source>Bridged Adapter</source>
         <translation type="unfinished">Síťový most</translation>
     </message>
+    <message>
+        <source>None</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>v1.2</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>v2.0</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SWTPM</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TPM Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secure Boot</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -6163,6 +6196,21 @@
     <message>
         <source>Visual State</source>
         <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TPM Type</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secure Boot</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (system/secure boot)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14751,7 +14799,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation>Pro tento virtuální počítač je povolena podpora USB 2.0/3,0. Je ale potřeba doinstalovat &lt;b&gt;%1&lt;/b&gt;. Prosíme doinstalujte rozšíření z webových stránek aplikace VirtualBox. Po instalaci bude možno použít podporu pro USB 2.0/3.0, která je nyní do změny nastavení zakázána.</translation>
+        <translation type="vanished">Pro tento virtuální počítač je povolena podpora USB 2.0/3,0. Je ale potřeba doinstalovat &lt;b&gt;%1&lt;/b&gt;. Prosíme doinstalujte rozšíření z webových stránek aplikace VirtualBox. Po instalaci bude možno použít podporu pro USB 2.0/3.0, která je nyní do změny nastavení zakázána.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
@@ -18526,6 +18574,22 @@ p, li { white-space: pre-wrap; }
         <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed.&lt;/p&gt;&lt;p&gt;Would you like to discard the changed settings or to keep editing them?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep editing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -18668,11 +18732,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hardware Clock in &amp;UTC Time</source>
-        <translation type="unfinished">Hardwarový čas v &amp;UTC</translation>
+        <translation type="obsolete">Hardwarový čas v &amp;UTC</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
         <translation type="unfinished">Pokud je zatrženo, bude RTC zařízení ukazovat čas v UTC, jinak bude v lokálním formátu. Operační systém Unix obvykle očekává čas ve formátu UTC.</translation>
+    </message>
+    <message>
+        <source>Enable Hardware Clock in &amp;UTC Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Secure Boot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the secure boot emulation will be enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reset Keys to Default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets secure boot keys to default.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -21666,11 +21750,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="unfinished">Aktuální stav se shoduje se stavem uloženým v aktuálním snímku</translation>
     </message>
     <message>
-        <source>%1 (%2 ago)</source>
-        <comment>date time (how long ago)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
         <translation type="unfinished">%1 od %2</translation>
@@ -22537,6 +22616,17 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
+    <name>UITpmEditor</name>
+    <message>
+        <source>&amp;TPM:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the TPM type to be emulated in this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UITranslator</name>
     <message numerus="yes">
         <source>%n year(s)</source>
@@ -22620,6 +22710,54 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation type="unfinished">Definováno uživatelem</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>

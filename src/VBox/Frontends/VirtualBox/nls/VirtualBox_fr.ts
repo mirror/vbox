@@ -6067,6 +6067,39 @@
         <source>Bridged Adapter</source>
         <translation type="unfinished">Accès par pont</translation>
     </message>
+    <message>
+        <source>None</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>v1.2</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>v2.0</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished">Hôte</translation>
+    </message>
+    <message>
+        <source>SWTPM</source>
+        <comment>TpmType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TPM Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secure Boot</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -6559,6 +6592,21 @@
     <message>
         <source>Visual State</source>
         <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TPM Type</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secure Boot</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (system/secure boot)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15029,7 +15077,7 @@
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation>L&apos;USB 2.0/3.0 est actuellement activé pour cette machine virtuelle. L&apos;installation de &lt;b&gt;%1&lt;/b&gt; est cependant requise. Veuillez installer le pack d&apos;extension depuis le site de téléchargement VirtualBox ou desactiver l&apos;USB 2.0/3.0 afin de pouvoir démarrer la machine.</translation>
+        <translation type="vanished">L&apos;USB 2.0/3.0 est actuellement activé pour cette machine virtuelle. L&apos;installation de &lt;b&gt;%1&lt;/b&gt; est cependant requise. Veuillez installer le pack d&apos;extension depuis le site de téléchargement VirtualBox ou desactiver l&apos;USB 2.0/3.0 afin de pouvoir démarrer la machine.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
@@ -18749,6 +18797,22 @@
         <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed.&lt;/p&gt;&lt;p&gt;Would you like to discard the changed settings or to keep editing them?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep editing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -18891,11 +18955,31 @@
     </message>
     <message>
         <source>Hardware Clock in &amp;UTC Time</source>
-        <translation type="unfinished">Horloge interne en &amp;UTC</translation>
+        <translation type="obsolete">Horloge interne en &amp;UTC</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
         <translation type="unfinished">Si cette case est cochée, l&apos;horloge temps réel de la machine virtuelle retournera le temps universel coordonné (UTC) et sinon le temps local de l&apos;hôte. Les systèmes Unix s&apos;attendent en général à ce que l&apos;horloge matérielle soit réglée sur UTC.</translation>
+    </message>
+    <message>
+        <source>Enable Hardware Clock in &amp;UTC Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Secure Boot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the secure boot emulation will be enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reset Keys to Default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets secure boot keys to default.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -21426,7 +21510,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
-        <translation>%1 (Il y a %2)</translation>
+        <translation type="vanished">%1 (Il y a %2)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
@@ -22389,6 +22473,17 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
+    <name>UITpmEditor</name>
+    <message>
+        <source>&amp;TPM:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the TPM type to be emulated in this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UITranslator</name>
     <message numerus="yes">
         <source>%n year(s)</source>
@@ -22466,6 +22561,48 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation type="unfinished">Défini par l&apos;utilisateur</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>
