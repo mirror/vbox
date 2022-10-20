@@ -63,10 +63,8 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
 DECLINLINE(int) pgmGstMapCr3(PVMCPUCC pVCpu, RTGCPHYS GCPhysCr3, PRTHCPTR pHCPtrGuestCr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
-                          PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
-static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk,
-                              PPGMPTWALKGST pGstWalk);
+static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk,
+                          PPGMPTWALKGST pGstWalk);
 static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3);
 static int pgmShwGetNestedEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPhysNested, PEPTPDPT *ppPdpt, PEPTPD *ppPD,
                                    PPGMPTWALKGST pGstWalkAll);
@@ -2019,13 +2017,10 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST 
     }
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /**
  * Performs a guest second-level address translation (SLAT).
- *
- * The guest paging mode must be 32-bit, PAE or AMD64 when making a call to this
- * function.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
@@ -2034,17 +2029,16 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST 
  *          not valid, except enmType is PGMPTWALKGSTTYPE_INVALID.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
- * @param   GCPhysNested        The nested-guest physical address being translated
- *                              (input).
- * @param   fIsLinearAddrValid  Whether the linear address in @a GCPtrNested is
- *                              valid. This indicates the SLAT is caused when
- *                              translating a nested-guest linear address.
+ * @param   GCPhysNested        The nested-guest physical address being translated.
+ * @param   fIsLinearAddrValid  Whether the linear address in @a GCPtrNested is the
+ *                              cause for this translation.
  * @param   GCPtrNested         The nested-guest virtual address that initiated the
- *                              SLAT. If none, pass NIL_RTGCPTR.
- * @param   pWalk               Where to return the walk result. This is valid for
- *                              some error codes as well.
- * @param   pGstWalk            The second-level paging-mode specific walk
- *                              information.
+ *                              SLAT. If none, pass 0 (and not NIL_RTGCPTR).
+ * @param   pWalk               Where to return the walk result. This is updated for
+ *                              all error codes other than
+ *                              VERR_PGM_NOT_USED_IN_MODE.
+ * @param   pGstWalk            Where to store the second-level paging-mode specific
+ *                              walk info.
  */
 static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
                           PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk)
@@ -2052,6 +2046,8 @@ static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearA
     /* SLAT mode must be valid at this point as this should only be used -after- we have determined SLAT mode. */
     Assert(   pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_DIRECT
            && pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_INVALID);
+    AssertPtr(pWalk);
+    AssertPtr(pGstWalk);
     switch (pVCpu->pgm.s.enmGuestSlatMode)
     {
         case PGMSLAT_EPT:
@@ -2064,43 +2060,8 @@ static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearA
             return VERR_PGM_NOT_USED_IN_MODE;
     }
 }
-
-
-/**
- * Performs a guest second-level address translation (SLAT) for a nested-guest
- * physical address.
- *
- * This version requires the SLAT mode to be provided by the caller because we could
- * be in the process of switching paging modes (MOV CRX) and cannot presume control
- * register values.
- *
- * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   enmSlatMode     The second-level paging mode to use.
- * @param   GCPhysNested    The nested-guest physical address to translate.
- * @param   pWalk           Where to store the walk result.
- * @param   pGstWalk        Where to store the second-level paging-mode specific
- *                          walk information.
- */
-static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk,
-                              PPGMPTWALKGST pGstWalk)
-{
-    AssertPtr(pWalk);
-    AssertPtr(pGstWalk);
-    switch (enmSlatMode)
-    {
-        case PGMSLAT_EPT:
-            pGstWalk->enmType = PGMPTWALKGSTTYPE_EPT;
-            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, false /* fIsLinearaddrValid */, 0 /* GCPtrNested */,
-                                               pWalk, &pGstWalk->u.Ept);
-
-        default:
-            AssertFailed();
-            return VERR_PGM_NOT_USED_IN_MODE;
-    }
-}
-
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+
 
 /**
  * Tries to continue the previous walk.
@@ -2561,7 +2522,7 @@ static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPh
     {
         PGMPTWALK    Walk;
         PGMPTWALKGST GstWalk;
-        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, uCr3, &Walk, &GstWalk);
+        int const rc = pgmGstSlatWalk(pVCpu, uCr3,  false /* fIsLinearAddrValid */,  0 /* GCPtrNested */, &Walk, &GstWalk);
         if (RT_SUCCESS(rc))
         {
             /* Update nested-guest CR3. */
@@ -2955,7 +2916,8 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
                 PGMPTWALK      Walk;
                 PGMPTWALKGST   GstWalk;
                 RTGCPHYS const GCPhysNested = PaePdpe.u & X86_PDPE_PG_MASK;
-                int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysNested, &Walk, &GstWalk);
+                int const rc = pgmGstSlatWalk(pVCpu, GCPhysNested, false /* fIsLinearAddrValid */, 0 /* GCPtrNested */,
+                                              &Walk, &GstWalk);
                 if (RT_SUCCESS(rc))
                     GCPhys = Walk.GCPhys;
                 else
@@ -3550,7 +3512,8 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
              */
             PGMPTWALK    Walk;
             PGMPTWALKGST GstWalk;
-            int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+            int const rc = pgmGstSlatWalk(pVCpu, GCPhysCR3, false /* fIsLinearAddrValid */, 0 /* GCPtrNested */, &Walk,
+                                          &GstWalk);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
