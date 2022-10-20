@@ -635,6 +635,17 @@ int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
     return rc;
 }
 
+/**
+ * Converts a Latin-1 string with LF line endings into an UTF-16 string with CRLF endings.
+ *
+ * @returns VBox status code.
+ * @param   pcszSrc             Latin-1 string to convert.
+ * @param   cbSrc               Size (in bytes) of Latin-1 string to convert.
+ * @param   ppwszDst            Where to return the converted UTF-16 string on success.
+ * @param   pcwDst              Where to return the length (in UTF-16 characters) on success.
+ *
+ * @note    Only converts the source until the string terminator is found (or length limit is hit).
+ */
 int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
                                 PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
@@ -643,51 +654,44 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
     AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
     AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
+    size_t chSrc = 0;
 
     PRTUTF16 pwszDst = NULL;
 
     /* Calculate the space needed. */
-    unsigned cwDst = 0;
-    for (unsigned i = 0; i < cbSrc && pcszSrc[i] != '\0'; ++i)
+    size_t cwDst = 0;
+    for (size_t i = 0; i < cbSrc && pcszSrc[i] != '\0'; ++i)
     {
         if (pcszSrc[i] == VBOX_SHCL_LINEFEED)
             cwDst += 2; /* Space for VBOX_SHCL_CARRIAGERETURN + VBOX_SHCL_LINEFEED. */
         else
             ++cwDst;
+        chSrc++;
     }
 
     pwszDst = (PRTUTF16)RTMemAlloc((cwDst + 1 /* Leave space for the terminator */) * sizeof(RTUTF16));
-    if (!pwszDst)
-        rc = VERR_NO_MEMORY;
+    AssertPtrReturn(pwszDst, VERR_NO_MEMORY);
 
     /* Do the conversion, bearing in mind that Latin-1 expands "naturally" to UTF-16. */
-    if (RT_SUCCESS(rc))
+    for (size_t i = 0, j = 0; i < chSrc; ++i, ++j)
     {
-        for (unsigned i = 0, j = 0; i < cbSrc; ++i, ++j)
+        AssertMsg(j <= cwDst, ("cbSrc=%zu, j=%u vs. cwDst=%u\n", cbSrc, j, cwDst));
+        if (pcszSrc[i] != VBOX_SHCL_LINEFEED)
+            pwszDst[j] = pcszSrc[i];
+        else
         {
-            if (pcszSrc[i] != VBOX_SHCL_LINEFEED)
-                pwszDst[j] = pcszSrc[i];
-            else
-            {
-                pwszDst[j]     = VBOX_SHCL_CARRIAGERETURN;
-                pwszDst[j + 1] = VBOX_SHCL_LINEFEED;
-                ++j;
-            }
+            pwszDst[j]     = VBOX_SHCL_CARRIAGERETURN;
+            pwszDst[j + 1] = VBOX_SHCL_LINEFEED;
+            ++j;
         }
-
-        pwszDst[cwDst] = '\0';  /* Make sure we are zero-terminated. */
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        *ppwszDst = pwszDst;
-        *pcwDst   = cwDst;
-    }
-    else
-        RTMemFree(pwszDst);
+    pwszDst[cwDst] = '\0';  /* Make sure we are zero-terminated. */
 
-    return rc;
+    *ppwszDst = pwszDst;
+    *pcwDst   = cwDst;
+
+    return VINF_SUCCESS;
 }
 
 int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, size_t *pcbDst)
