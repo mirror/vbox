@@ -485,12 +485,14 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 enmMediumVariant = (MediumVariant_T)uMediumVariant;
             }
         }
+        if ((enmMediumVariant & MediumVariant_VmdkRawDisk) && strcmp(format, "VMDK"))
+            return errorSyntax(Disk::tr("Variant 'Rawdisk' requires '--format=VMDK'"));
     }
     else
     {
         if (   !filename
             || !*filename)
-            return errorSyntax(Disk::tr("Parameters --filename is required"));
+            return errorSyntax(Disk::tr("Parameter --filename is required"));
         size = 0;
         if (cmd != CMD_DISK)
             return errorSyntax(Disk::tr("Creating a differencing medium is only supported for hard disks"));
@@ -595,8 +597,8 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                     }
                 if (!fPropertyFound)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                          Disk::tr("The %s is not found in the property list of the requested medium format."),
-                                          pszKey);
+                                          Disk::tr("Property '%s' was not found in the list of medium properties for the requested medium format (%s)."),
+                                          pszKey, format);
                 if (!fBinary)
                     CHECK_ERROR2I_RET(pMedium, SetProperty(Bstr(pszKey).raw(), Bstr(it->m_pszValue).raw()),
                                       RTEXITCODE_FAILURE);

@@ -5045,6 +5045,7 @@ static int vmdkMakeRawDescriptor(PVMDKIMAGE pImage, PVDISKRAW *ppRaw)
         rc = vmkdRawDescOpenDevice(pImage, pszRawDrive, &hRawDrive, &cbSize, &cbSector);
         if (RT_SUCCESS(rc))
         {
+            pImage->cbSize = cbSize;
             /*
              * Create the raw-drive descriptor
              */
@@ -5745,7 +5746,10 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
             PVDISKRAW pRaw = NULL;
             rc = vmdkMakeRawDescriptor(pImage, &pRaw);
             if (RT_FAILURE(rc))
-                return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could get raw descriptor for '%s'"), pImage->pszFilename);
+                return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create raw descriptor for '%s'"),
+                    pImage->pszFilename);
+            if (!cbSize)
+                cbSize = pImage->cbSize;
 
             rc = vmdkCreateRawImage(pImage, pRaw, cbSize);
             vmdkRawDescFree(pRaw);
@@ -5786,20 +5790,30 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
             if (RT_SUCCESS(rc))
                 vmdkDescExtRemoveDummy(pImage, &pImage->Descriptor);
 
-            if (   RT_SUCCESS(rc)
-                && pPCHSGeometry->cCylinders != 0
-                && pPCHSGeometry->cHeads != 0
-                && pPCHSGeometry->cSectors != 0)
-                rc = vmdkDescSetPCHSGeometry(pImage, pPCHSGeometry);
+            pImage->LCHSGeometry = *pLCHSGeometry;
+            pImage->PCHSGeometry = *pPCHSGeometry;
+
+            if (RT_SUCCESS(rc))
+            {
+                if (   pPCHSGeometry->cCylinders != 0
+                    && pPCHSGeometry->cHeads != 0
+                    && pPCHSGeometry->cSectors != 0)
+                    rc = vmdkDescSetPCHSGeometry(pImage, pPCHSGeometry);
+                else if (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
+                {
+                    VDGEOMETRY RawDiskPCHSGeometry;
+                    RawDiskPCHSGeometry.cCylinders = (uint32_t)RT_MIN(pImage->cbSize / 512 / 16 / 63, 16383);
+                    RawDiskPCHSGeometry.cHeads = 16;
+                    RawDiskPCHSGeometry.cSectors = 63;
+                    rc = vmdkDescSetPCHSGeometry(pImage, &RawDiskPCHSGeometry);
+                }
+            }
 
             if (   RT_SUCCESS(rc)
                 && pLCHSGeometry->cCylinders != 0
                 && pLCHSGeometry->cHeads != 0
                 && pLCHSGeometry->cSectors != 0)
                 rc = vmdkDescSetLCHSGeometry(pImage, pLCHSGeometry);
-
-            pImage->LCHSGeometry = *pLCHSGeometry;
-            pImage->PCHSGeometry = *pPCHSGeometry;
 
             pImage->ImageUuid = *pUuid;
             RTUuidClear(&pImage->ParentUuid);

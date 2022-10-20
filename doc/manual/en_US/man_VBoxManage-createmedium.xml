@@ -153,15 +153,17 @@
               </para></listitem>
             <listitem><para>
                 <literal>Split2G</literal> indicates that the disk image
-                is split into 2GB segments. This value is for VMDK only.
+                is split into 2GB segments. This value is valid for VMDK
+                disk images only.
               </para></listitem>
             <listitem><para>
                 <literal>Stream</literal> optimizes the disk image for
-                downloading. This value is for VMDK only.
+                downloading. This value is valid for VMDK disk images
+                only.
               </para></listitem>
             <listitem><para>
                 <literal>ESX</literal> is used for some VMWare products.
-                This value is for VMDK only.
+                This value is valid for VMDK disk images only.
               </para></listitem>
             <listitem><para>
                 <literal>Formatted</literal>
@@ -170,10 +172,11 @@
                 automatically.
               </para></listitem>
             <listitem><para>
-                <literal>RawDisk</literal> used for creating raw disks.
-                This value is for VMDK only. For detailed information
-                about raw disks, see <xref linkend="adv-storage-config"/>
-              </para><para>
+                <literal>RawDisk</literal> is used for creating a VMDK
+                image which provides direct access to the hard disk on
+                the host using its raw interface. This value is valid for
+                VMDK disk images only. For detailed information about raw
+                disk access, see <xref linkend="adv-storage-config"/>.
               </para></listitem>
           </itemizedlist><para>
             Note that not all variant combinations are valid. Specifying
