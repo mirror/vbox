@@ -417,28 +417,28 @@ SnapshotAgeFormat UISnapshotItem::updateAge()
     }
     else if (then.secsTo(now) > 60 * 60 * 24)
     {
-        strAge = tr("%1 (%2)", "date time (how long ago)")
+        strAge = QString("%1 (%2)")
                     .arg(QLocale::system().toString(then, QLocale::ShortFormat),
                          UITranslator::daysToStringAgo(then.secsTo(now) / 60 / 60 / 24));
         enmAgeFormat = SnapshotAgeFormat_InDays;
     }
     else if (then.secsTo(now) > 60 * 60)
     {
-        strAge = tr("%1 (%2)", "date time (how long ago)")
+        strAge = QString("%1 (%2)")
                     .arg(QLocale::system().toString(then, QLocale::ShortFormat),
                          UITranslator::hoursToStringAgo(then.secsTo(now) / 60 / 60));
         enmAgeFormat = SnapshotAgeFormat_InHours;
     }
     else if (then.secsTo(now) > 60)
     {
-        strAge = tr("%1 (%2)", "date time (how long ago)")
+        strAge = QString("%1 (%2)")
                     .arg(QLocale::system().toString(then, QLocale::ShortFormat),
                          UITranslator::minutesToStringAgo(then.secsTo(now) / 60));
         enmAgeFormat = SnapshotAgeFormat_InMinutes;
     }
     else
     {
-        strAge = tr("%1 (%2)", "date time (how long ago)")
+        strAge = QString("%1 (%2)")
                     .arg(QLocale::system().toString(then, QLocale::ShortFormat),
                          UITranslator::secondsToStringAgo(then.secsTo(now)));
         enmAgeFormat = SnapshotAgeFormat_InSeconds;
