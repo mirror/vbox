@@ -9821,7 +9821,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_xrstor,   uint8_t, bRm)
 }
 
 /** Opcode 0x0f 0xae mem/6. */
-FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
 
 /**
  * @opmaps      grp15
