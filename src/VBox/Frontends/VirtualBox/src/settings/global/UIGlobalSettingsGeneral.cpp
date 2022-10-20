@@ -83,6 +83,11 @@ UIGlobalSettingsGeneral::~UIGlobalSettingsGeneral()
     cleanup();
 }
 
+bool UIGlobalSettingsGeneral::changed() const
+{
+    return m_pCache ? m_pCache->wasChanged() : false;
+}
+
 void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */

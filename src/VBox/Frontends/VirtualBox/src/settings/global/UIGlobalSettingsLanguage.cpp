@@ -76,6 +76,11 @@ UIGlobalSettingsLanguage::~UIGlobalSettingsLanguage()
     cleanup();
 }
 
+bool UIGlobalSettingsLanguage::changed() const
+{
+    return m_pCache ? m_pCache->wasChanged() : false;
+}
+
 void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */

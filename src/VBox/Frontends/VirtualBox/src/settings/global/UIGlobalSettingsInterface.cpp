@@ -76,6 +76,11 @@ UIGlobalSettingsInterface::~UIGlobalSettingsInterface()
     cleanup();
 }
 
+bool UIGlobalSettingsInterface::changed() const
+{
+    return m_pCache ? m_pCache->wasChanged() : false;
+}
+
 void UIGlobalSettingsInterface::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */

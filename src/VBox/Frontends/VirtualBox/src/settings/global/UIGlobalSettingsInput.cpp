@@ -84,6 +84,11 @@ UIGlobalSettingsInput::~UIGlobalSettingsInput()
     cleanup();
 }
 
+bool UIGlobalSettingsInput::changed() const
+{
+    return m_pCache ? m_pCache->wasChanged() : false;
+}
+
 void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */

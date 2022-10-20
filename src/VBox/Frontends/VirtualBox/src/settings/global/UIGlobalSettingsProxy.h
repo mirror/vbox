@@ -54,6 +54,9 @@ public:
 
 protected:
 
+    /** Returns whether the page content was changed. */
+    virtual bool changed() const RT_OVERRIDE;
+
     /** Loads settings from external object(s) packed inside @a data to cache.
       * @note  This task WILL be performed in other than the GUI thread, no widget interactions! */
     virtual void loadToCacheFrom(QVariant &data) RT_OVERRIDE;

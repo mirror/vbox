@@ -83,6 +83,11 @@ UIGlobalSettingsProxy::~UIGlobalSettingsProxy()
     cleanup();
 }
 
+bool UIGlobalSettingsProxy::changed() const
+{
+    return m_pCache ? m_pCache->wasChanged() : false;
+}
+
 void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */
