@@ -1334,7 +1334,7 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
     /*
      * If we get here it is because something failed above => guru meditation time.
      */
-    LogRelFunc(("GCPhysNestedFault=%#RGp (%#RGp) uErr=%#RX32 cs:rip=%04x:%08RX64\n", rc, GCPhysNestedFault, GCPhysPage,
+    LogRelFunc(("rc=%Rrc GCPhysNestedFault=%#RGp (%#RGp) uErr=%#RX32 cs:rip=%04x:%08RX64\n", rc, GCPhysNestedFault, GCPhysPage,
                 (uint32_t)uErr, pCtx->cs.Sel, pCtx->rip));
     return VERR_PGM_MAPPING_IPE;
 
