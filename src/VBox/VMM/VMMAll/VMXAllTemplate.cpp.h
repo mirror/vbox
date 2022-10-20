@@ -10752,7 +10752,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
             Assert(rcStrict != VINF_HM_DOUBLE_FAULT);
             return rcStrict;
         }
-        bool const fClearEventOnForward = VCPU_2_VMXSTATE(pVCpu).Event.fPending; /* paranoia. should not inject events below.  */
+        uint32_t const fClearEventOnForward = VCPU_2_VMXSTATE(pVCpu).Event.fPending; /* paranoia. should not inject events below.  */
 
         RTGCPHYS const GCPhysNestedFault = pVmxTransient->uGuestPhysicalAddr;
         uint64_t const uExitQual         = pVmxTransient->uExitQual;
