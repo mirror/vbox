@@ -29,6 +29,13 @@
 # error "Unsupported SLAT type."
 #endif
 
+/**
+ * Checks if the EPT PTE permissions are valid.
+ *
+ * @returns @c true if valid, @c false otherwise.
+ * @param   uEntry      The EPT page table entry to check.
+ * @param   uLevel      The page table walk level.
+ */
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_t uEntry)
 {
     if (!(uEntry & EPT_E_READ))
@@ -43,6 +50,13 @@ DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_
 }
 
 
+/**
+ * Checks if the EPT memory type is valid.
+ *
+ * @returns @c true if valid, @c false otherwise.
+ * @param   uEntry      The EPT page table entry to check.
+ * @param   uLevel      The page table walk level.
+ */
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(uint64_t uEntry, uint8_t uLevel)
 {
     Assert(uLevel <= 3 && uLevel >= 1); NOREF(uLevel);
@@ -60,6 +74,15 @@ DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(uint64_t uEntry, uint
 }
 
 
+/**
+ * Updates page walk result info when a not-present page is encountered.
+ *
+ * @returns VERR_PAGE_TABLE_NOT_PRESENT.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pWalk   The page walk info to update.
+ * @param   uEntry  The EPT PTE that is not present.
+ * @param   uLevel  The page table walk level.
+ */
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
 {
     static PGMWALKFAIL const s_afEptViolations[] = { PGM_WALKFAIL_EPT_VIOLATION, PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE };
@@ -74,6 +97,15 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPG
 }
 
 
+/**
+ * Updates page walk result info when a bad physical address is encountered.
+ *
+ * @returns VERR_PAGE_TABLE_NOT_PRESENT .
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pWalk   The page walk info to update.
+ * @param   uLevel  The page table walk level.
+ * @param   rc      The error code that caused this bad physical address situation.
+ */
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel, int rc)
 {
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
@@ -84,6 +116,14 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PP
 }
 
 
+/**
+ * Updates page walk result info when reserved bits are encountered.
+ *
+ * @returns VERR_PAGE_TABLE_NOT_PRESENT.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pWalk   The page walk info to update.
+ * @param   uLevel  The page table walk level.
+ */
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel)
 {
     NOREF(pVCpu);
@@ -106,7 +146,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMP
  * @param   fIsLinearAddrValid  Whether the linear-address in @c GCPtrNested caused
  *                              this page walk.
  * @param   GCPtrNested         The nested-guest linear address that caused this
- *                              page walk. If @c fIsLinearAddrValid is false, pass
+ *                              translation. If @c fIsLinearAddrValid is false, pass
  *                              0.
  * @param   pWalk               The page walk info.
  * @param   pSlatWalk           The SLAT mode specific page walk info.
