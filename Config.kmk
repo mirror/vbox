@@ -509,7 +509,7 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
   endif
  endif
  # Enables guest EPT support for VMX nested hardware virtualization.
- #VBOX_WITH_NESTED_HWVIRT_VMX_EPT = 1
+ VBOX_WITH_NESTED_HWVIRT_VMX_EPT = 1
  if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) && !defined(VBOX_WITH_NESTED_HWVIRT_VMX)
   $(error VBOX_WITH_NESTED_HWVIRT_VMX_EPT requires VBOX_WITH_NESTED_HWVIRT_VMX)
  endif
