@@ -1574,6 +1574,22 @@ IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
 FNIEMAIMPLBINU16 iemAImpl_arpl;
 /** @} */
 
+/** @name RDRAND and RDSEED
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLRDRANDSEEDU16,(uint16_t *puDst, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLRDRANDSEEDU32,(uint32_t *puDst, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLRDRANDSEEDU64,(uint64_t *puDst, uint32_t *pEFlags));
+typedef FNIEMAIMPLRDRANDSEEDU16  *FNIEMAIMPLPRDRANDSEEDU16;
+typedef FNIEMAIMPLRDRANDSEEDU32  *FNIEMAIMPLPRDRANDSEEDU32;
+typedef FNIEMAIMPLRDRANDSEEDU64  *FNIEMAIMPLPRDRANDSEEDU64;
+
+FNIEMAIMPLRDRANDSEEDU16 iemAImpl_rdrand_u16, iemAImpl_rdrand_u16_fallback;
+FNIEMAIMPLRDRANDSEEDU32 iemAImpl_rdrand_u32, iemAImpl_rdrand_u32_fallback;
+FNIEMAIMPLRDRANDSEEDU64 iemAImpl_rdrand_u64, iemAImpl_rdrand_u64_fallback;
+FNIEMAIMPLRDRANDSEEDU16 iemAImpl_rdseed_u16, iemAImpl_rdseed_u16_fallback;
+FNIEMAIMPLRDRANDSEEDU32 iemAImpl_rdseed_u32, iemAImpl_rdseed_u32_fallback;
+FNIEMAIMPLRDRANDSEEDU64 iemAImpl_rdseed_u64, iemAImpl_rdseed_u64_fallback;
+/** @} */
 
 /** @name FPU operations taking a 32-bit float argument
  * @{ */

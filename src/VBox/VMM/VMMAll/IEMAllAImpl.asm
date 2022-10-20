@@ -6157,3 +6157,29 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 
 IEMIMPL_MEDIA_SSE_MXCSR_U64_U64 cvtps2pi
 IEMIMPL_MEDIA_SSE_MXCSR_U64_U64 cvttps2pi
+
+;
+; All forms of RDRAND and RDSEED
+;
+; @param    A0      Pointer to the destination operand.
+; @param    A1      Pointer to the EFLAGS value (input/output).
+;
+%macro IEMIMPL_RDRAND_RDSEED 3
+BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u %+ %3, 8
+        PROLOGUE_2_ARGS
+
+        %1      %2
+        mov     [A0], %2
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+
+        EPILOGUE_2_ARGS
+ENDPROC             iemAImpl_ %+ %1 %+ _u %+ %3
+%endmacro
+
+IEMIMPL_RDRAND_RDSEED rdrand, ax,  16
+IEMIMPL_RDRAND_RDSEED rdrand, eax, 32
+IEMIMPL_RDRAND_RDSEED rdrand, rax, 64
+IEMIMPL_RDRAND_RDSEED rdseed, ax,  16
+IEMIMPL_RDRAND_RDSEED rdseed, eax, 32
+IEMIMPL_RDRAND_RDSEED rdseed, rax, 64
+
