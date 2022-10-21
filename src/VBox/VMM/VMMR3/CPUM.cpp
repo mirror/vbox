@@ -1727,27 +1727,55 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
  * Initializes VMX guest features and MSRs.
  *
  * @param   pVM             The cross context VM structure.
+ * @param   pCpumCfg        The CPUM CFGM configuration node.
  * @param   pHostVmxMsrs    The host VMX MSRs. Pass NULL when fully emulating VMX
  *                          and no hardware-assisted nested-guest execution is
  *                          possible for this VM.
  * @param   pGuestVmxMsrs   Where to store the initialized guest VMX MSRs.
  */
-void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS pGuestVmxMsrs)
+void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pHostVmxMsrs, PVMXMSRS pGuestVmxMsrs)
 {
     Assert(pVM);
+    Assert(pCpumCfg);
     Assert(pGuestVmxMsrs);
 
     /*
-     * While it would be nice to check this earlier while initializing
-     * fNestedVmxEpt but we would not have enumearted host features then, so do
-     * it at least now.
+     * Query VMX features from CFGM.
      */
-    /** @todo r=bird: Why don't we just ditch the fNestedVmxEpt and
-     *        fNestedVmxUnrestrictedGuest state members and read the CFGM stuff
-     *        here?  Neither of them have any purpose beyond keeping the two value
-     *        read in cpumR3CpuIdReadConfig for use here.  They aren't even
-     *        necessarily correct after the feature merging has taken place.  */
-    if (pVM->cpum.s.fNestedVmxEpt)
+    bool fVmxPreemptTimer;
+    bool fVmxEpt;
+    bool fVmxUnrestrictedGuest;
+    {
+        /** @cfgm{/CPUM/NestedVmxPreemptTimer, bool, true}
+         * Whether to expose the VMX-preemption timer feature to the guest (if also
+         * supported by the host hardware). When disabled will prevent exposing the
+         * VMX-preemption timer feature to the guest even if the host supports it.
+         *
+         * @todo Currently disabled, see @bugref{9180#c108}.
+         */
+        int rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxPreemptTimer", &fVmxPreemptTimer, false);
+        AssertLogRelRCReturnVoid(rc);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        /** @cfgm{/CPUM/NestedVmxEpt, bool, true}
+         * Whether to expose the EPT feature to the guest. The default is true.
+         * When disabled will automatically prevent exposing features that rely
+         * on it.  This is dependent upon nested paging being enabled for the VM.
+         */
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxEpt", &fVmxEpt, true);
+        AssertLogRelRCReturnVoid(rc);
+
+        /** @cfgm{/CPUM/NestedVmxUnrestrictedGuest, bool, true}
+         * Whether to expose the Unrestricted Guest feature to the guest. The
+         * default is the same a /CPUM/Nested/VmxEpt. When disabled will
+         * automatically prevent exposing features that rely on it.
+         */
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxUnrestrictedGuest", &fVmxUnrestrictedGuest, fVmxEpt);
+        AssertLogRelRCReturnVoid(rc);
+#endif
+    }
+
+    if (fVmxEpt)
     {
         const char *pszWhy = NULL;
         if (!VM_IS_HM_ENABLED(pVM) && !VM_IS_EXEC_ENGINE_IEM(pVM))
@@ -1758,15 +1786,14 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
             pszWhy = "NX is not available on the host";
         if (pszWhy)
         {
-            LogRel(("CPUM: Warning! EPT not exposed to the guest because %s.\n", pszWhy));
-            pVM->cpum.s.fNestedVmxEpt = false;
+            LogRel(("CPUM: Warning! EPT not exposed to the guest because %s\n", pszWhy));
+            fVmxEpt = false;
         }
     }
-    if (    pVM->cpum.s.fNestedVmxUnrestrictedGuest
-        && !pVM->cpum.s.fNestedVmxEpt)
+    else if (fVmxUnrestrictedGuest)
     {
         LogRel(("CPUM: Warning! Can't expose \"Unrestricted Guest\" to the guest when EPT is not exposed!\n"));
-        pVM->cpum.s.fNestedVmxUnrestrictedGuest = false;
+        fVmxUnrestrictedGuest = false;
     }
 
     /*
@@ -1782,7 +1809,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExtIntExit            = 1;
     EmuFeat.fVmxNmiExit               = 1;
     EmuFeat.fVmxVirtNmi               = 1;
-    EmuFeat.fVmxPreemptTimer          = pVM->cpum.s.fNestedVmxPreemptTimer;
+    EmuFeat.fVmxPreemptTimer          = fVmxPreemptTimer;
     EmuFeat.fVmxPostedInt             = 0;
     EmuFeat.fVmxIntWindowExit         = 1;
     EmuFeat.fVmxTscOffsetting         = 1;
@@ -1807,13 +1834,13 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxPauseExit             = 1;
     EmuFeat.fVmxSecondaryExecCtls     = 1;
     EmuFeat.fVmxVirtApicAccess        = 1;
-    EmuFeat.fVmxEpt                   = pVM->cpum.s.fNestedVmxEpt;
+    EmuFeat.fVmxEpt                   = fVmxEpt;
     EmuFeat.fVmxDescTableExit         = 1;
     EmuFeat.fVmxRdtscp                = 1;
     EmuFeat.fVmxVirtX2ApicMode        = 0;
     EmuFeat.fVmxVpid                  = 0;  /** @todo Consider enabling this when EPT works. */
     EmuFeat.fVmxWbinvdExit            = 1;
-    EmuFeat.fVmxUnrestrictedGuest     = pVM->cpum.s.fNestedVmxUnrestrictedGuest;
+    EmuFeat.fVmxUnrestrictedGuest     = fVmxUnrestrictedGuest;
     EmuFeat.fVmxApicRegVirt           = 0;
     EmuFeat.fVmxVirtIntDelivery       = 0;
     EmuFeat.fVmxPauseLoopExit         = 0;
@@ -1938,7 +1965,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     if (   pGuestFeat->fVmxPreemptTimer
         && HMIsSubjectToVmxPreemptTimerErratum())
     {
-        LogRel(("CPUM: Warning! VMX-preemption timer not exposed to guest due to host CPU erratum.\n"));
+        LogRel(("CPUM: Warning! VMX-preemption timer not exposed to guest due to host CPU erratum\n"));
         pGuestFeat->fVmxPreemptTimer     = 0;
         pGuestFeat->fVmxSavePreemptTimer = 0;
     }
@@ -2026,6 +2053,7 @@ static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
         LogRel(("CPUM: Querying hardware-virtualization capability succeeded but did not find VT-x or AMD-V\n"));
         return VERR_INTERNAL_ERROR_5;
     }
+
     LogRel(("CPUM: No hardware-virtualization capability detected\n"));
     return VINF_SUCCESS;
 }
@@ -3953,7 +3981,6 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sS_CET                      = %#RX64\n",   pszPrefix, pVmcs->u64HostSCetMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sSSP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostSsp.u);
         pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TABLE_ADDR   = %#RX64\n",   pszPrefix, pVmcs->u64HostIntrSspTableAddrMsr.u);
-
     }
 
     /* Read-only fields. */

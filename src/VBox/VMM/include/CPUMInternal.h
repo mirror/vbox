@@ -376,14 +376,7 @@ typedef struct CPUM
 #else
     uint32_t                u32UnusedOnNonX86;
 #endif
-    /** Nested VMX: Whether to expose VMX-preemption timer to the guest. */
-    bool                    fNestedVmxPreemptTimer;
-    /** Nested VMX: Whether to expose EPT to the guest. If this is disabled make sure
-     *  to also disable fNestedVmxUnrestrictedGuest. */
-    bool                    fNestedVmxEpt;
-    /** Nested VMX: Whether to expose "unrestricted guest" to the guest. */
-    bool                    fNestedVmxUnrestrictedGuest;
-    uint8_t                 abPadding1[1];
+    uint8_t                 abPadding1[4];
 
     /** Random value we store in the reserved RFLAGS bits we don't use ourselves so
      *  we can detect corruption. */
@@ -499,7 +492,8 @@ int                 cpumCpuIdExplodeFeaturesX86(PCCPUMCPUIDLEAF paLeaves, uint32
 # ifdef IN_RING3
 int                 cpumR3DbgInit(PVM pVM);
 int                 cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs);
-void                cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS pGuestVmxMsrs);
+void                cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pHostVmxMsrs,
+                                                      PVMXMSRS pGuestVmxMsrs);
 void                cpumR3CpuIdRing3InitDone(PVM pVM);
 void                cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM);
 int                 cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCCPUMMSRS pGuestMsrs);

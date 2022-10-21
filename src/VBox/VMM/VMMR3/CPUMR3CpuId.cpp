@@ -2715,43 +2715,12 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             /** @todo Think about enabling this later with NEM/KVM. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
-                LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used! (later)\n"));
+                LogRel(("CPUM: Warning! Can't turn on nested VT-x/AMD-V when NEM is used! (later)\n"));
                 pConfig->fNestedHWVirt = false;
             }
             else if (!fNestedPagingAndFullGuestExec)
                 return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
                                   "Cannot enable nested VT-x/AMD-V without nested-paging and unrestricted guest execution!\n");
-        }
-
-        if (pConfig->fNestedHWVirt)
-        {
-            /** @cfgm{/CPUM/NestedVmxPreemptTimer, bool, true}
-             * Whether to expose the VMX-preemption timer feature to the guest (if also
-             * supported by the host hardware). When disabled will prevent exposing the
-             * VMX-preemption timer feature to the guest even if the host supports it.
-             *
-             * @todo Currently disabled, see @bugref{9180#c108}.
-             */
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxPreemptTimer", &pVM->cpum.s.fNestedVmxPreemptTimer, false);
-            AssertLogRelRCReturn(rc, rc);
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-            /** @cfgm{/CPUM/NestedVmxEpt, bool, true}
-             * Whether to expose the EPT feature to the guest. The default is true.
-             * When disabled will automatically prevent exposing features that rely
-             * on it.  This is dependent upon nested paging being enabled for the. */
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxEpt", &pVM->cpum.s.fNestedVmxEpt, true);
-            AssertLogRelRCReturn(rc, rc);
-
-            /** @cfgm{/CPUM/NestedVmxUnrestrictedGuest, bool, true}
-             * Whether to expose the Unrestricted Guest feature to the guest. The
-             * default is the same a /CPUM/Nested/VmxEpt. When disabled will
-             * automatically prevent exposing features that rely on it.
-             */
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxUnrestrictedGuest", &pVM->cpum.s.fNestedVmxUnrestrictedGuest,
-                                    pVM->cpum.s.fNestedVmxEpt);
-            AssertLogRelRCReturn(rc, rc);
-#endif
         }
     }
 
@@ -3158,7 +3127,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         if (pVM->cpum.s.GuestFeatures.fVmx)
         {
             Assert(Config.fNestedHWVirt);
-            cpumR3InitVmxGuestFeaturesAndMsrs(pVM, &pHostMsrs->hwvirt.vmx, &GuestMsrs.hwvirt.vmx);
+            cpumR3InitVmxGuestFeaturesAndMsrs(pVM, pCpumCfg, &pHostMsrs->hwvirt.vmx, &GuestMsrs.hwvirt.vmx);
 
             /* Copy MSRs to all VCPUs */
             PCVMXMSRS pVmxMsrs = &GuestMsrs.hwvirt.vmx;
