@@ -385,6 +385,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u16Vpid),
     SSMFIELD_ENTRY(       VMXVVMCS, u16PostIntNotifyVector),
     SSMFIELD_ENTRY(       VMXVVMCS, u16EptpIndex),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u16HlatPrefixSize,           CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au16Reserved0),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u32PinCtls),
@@ -435,6 +436,9 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64TscMultiplier),
     SSMFIELD_ENTRY_VER(   VMXVVMCS, u64ProcCtls3,                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_VER(   VMXVVMCS, u64EnclvExitBitmap,          CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64PconfigExitBitmap,        CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HlatPtr,                  CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64ExitCtls2,                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved0),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64Cr0Mask),
@@ -1452,7 +1456,8 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                  | (pGuestFeatures->fVmxExitLoadPatMsr    << VMX_BF_EXIT_CTLS_LOAD_PAT_MSR_SHIFT        )
                                  | (pGuestFeatures->fVmxExitSaveEferMsr   << VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxExitLoadEferMsr   << VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT       )
-                                 | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  );
+                                 | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  )
+                                 | (pGuestFeatures->fVmxExitCtls2         << VMX_BF_EXIT_CTLS_USE_SECONDARY_CTLS_SHIFT  );
         /* Set the default1 class bits. See Intel spec. A.4 "VM-exit Controls". */
         uint32_t const fAllowed0 = VMX_EXIT_CTLS_DEFAULT1;
         uint32_t const fAllowed1 = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
@@ -1840,6 +1845,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExitSaveEferMsr       = 1;
     EmuFeat.fVmxExitLoadEferMsr       = 1;
     EmuFeat.fVmxSavePreemptTimer      = 0;  /* Cannot be enabled if VMX-preemption timer is disabled. */
+    EmuFeat.fVmxExitCtls2             = 0;
     EmuFeat.fVmxExitSaveEferLma       = 1;  /* Cannot be disabled if unrestricted guest is enabled. */
     EmuFeat.fVmxPt                    = 0;
     EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this when nested VMCS shadowing is enabled. */
@@ -1921,6 +1927,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxExitSaveEferMsr       = (pBaseFeat->fVmxExitSaveEferMsr       & EmuFeat.fVmxExitSaveEferMsr      );
     pGuestFeat->fVmxExitLoadEferMsr       = (pBaseFeat->fVmxExitLoadEferMsr       & EmuFeat.fVmxExitLoadEferMsr      );
     pGuestFeat->fVmxSavePreemptTimer      = (pBaseFeat->fVmxSavePreemptTimer      & EmuFeat.fVmxSavePreemptTimer     );
+    pGuestFeat->fVmxExitCtls2             = (pBaseFeat->fVmxExitCtls2             & EmuFeat.fVmxExitCtls2            );
     pGuestFeat->fVmxExitSaveEferLma       = (pBaseFeat->fVmxExitSaveEferLma       & EmuFeat.fVmxExitSaveEferLma      );
     pGuestFeat->fVmxPt                    = (pBaseFeat->fVmxPt                    & EmuFeat.fVmxPt                   );
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
@@ -2610,6 +2617,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64VmFunc);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64EptVpidCaps);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64ProcCtls3);
+            SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64ExitCtls2);
         }
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
@@ -2643,7 +2651,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Validate version.
      */
-    if (    uVersion != CPUM_SAVED_STATE_VERSION_PAE_PDPES
+    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_PAE_PDPES
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_SVM
@@ -2907,6 +2916,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64EptVpidCaps);
                         if (uVersion >= CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2)
                             SSMR3GetU64(pSSM,  &pGstCtx->hwvirt.vmx.Msrs.u64ProcCtls3);
+                        if (uVersion >= CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3)
+                            SSMR3GetU64(pSSM,  &pGstCtx->hwvirt.vmx.Msrs.u64ExitCtls2);
                     }
                 }
             }
@@ -3775,6 +3786,7 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sVPID                       = %#RX16\n",   pszPrefix, pVmcs->u16Vpid);
         pHlp->pfnPrintf(pHlp, "  %sPosted intr notify vector  = %#RX16\n",   pszPrefix, pVmcs->u16PostIntNotifyVector);
         pHlp->pfnPrintf(pHlp, "  %sEPTP index                 = %#RX16\n",   pszPrefix, pVmcs->u16EptpIndex);
+        pHlp->pfnPrintf(pHlp, "  %sHLAT prefix size           = %#RX16\n",   pszPrefix, pVmcs->u16HlatPrefixSize);
 
         /* 32-bit. */
         pHlp->pfnPrintf(pHlp, "  %sPin ctls                   = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls);
@@ -3834,6 +3846,9 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sTSC multiplier             = %#RX64\n",   pszPrefix, pVmcs->u64TscMultiplier.u);
         pHlp->pfnPrintf(pHlp, "  %sTertiary processor ctls    = %#RX64\n",   pszPrefix, pVmcs->u64ProcCtls3.u);
         pHlp->pfnPrintf(pHlp, "  %sENCLV-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclvExitBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sPCONFIG-exiting bitmap     = %#RX64\n",   pszPrefix, pVmcs->u64PconfigExitBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sHLAT ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64HlatPtr.u);
+        pHlp->pfnPrintf(pHlp, "  %sSecondary VM-exit controls = %#RX64\n",   pszPrefix, pVmcs->u64ExitCtls2.u);
 
         /* Natural width. */
         pHlp->pfnPrintf(pHlp, "  %sCR0 guest/host mask        = %#RX64\n",   pszPrefix, pVmcs->u64Cr0Mask.u);

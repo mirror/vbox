@@ -177,7 +177,8 @@ typedef struct SUPHWVIRTMSRS
             uint64_t        u64VmFunc;
             uint64_t        u64EptVpidCaps;
             uint64_t        u64ProcCtls3;
-            uint64_t        au64Reserved[8];
+            uint64_t        u64ExitCtls2;
+            uint64_t        au64Reserved[7];
         } vmx;
         struct
         {

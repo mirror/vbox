@@ -1400,6 +1400,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxExitLoadEferMsr : 1;
     /** VMX: Supports save VMX preemption timer on VM-exit. */
     uint32_t        fVmxSavePreemptTimer : 1;
+    /** VMX: Supports secondary VM-exit controls. */
+    uint32_t        fVmxExitCtls2 : 1;
     /** @} */
 
     /** @name VMX Miscellaneous data.
@@ -1417,7 +1419,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding0 : 17;
+    uint32_t        fVmxPadding0 : 16;
     /** VMX: Padding / reserved for future, making it a total of 128 bits.  */
     uint32_t        fVmxPadding1;
 } CPUMFEATURES;

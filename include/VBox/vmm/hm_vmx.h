@@ -1359,8 +1359,10 @@ typedef struct VMXMSRS
     uint64_t        u64EptVpidCaps;
     /** Tertiary processor-based VM-execution controls. */
     uint64_t        u64ProcCtls3;
+    /** Secondary VM-exit controls. */
+    uint64_t        u64ExitCtls2;
     /** Reserved for future. */
-    uint64_t        a_u64Reserved[9];
+    uint64_t        a_u64Reserved[8];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
 AssertCompileSize(VMXMSRS, 224);
@@ -1926,6 +1928,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS16_VPID                                         0x0000
 #define VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR                     0x0002
 #define VMX_VMCS16_EPTP_INDEX                                   0x0004
+#define VMX_VMCS16_HLAT_PREFIX_SIZE                             0x0006
 
 /** 16-bit guest-state fields.  */
 #define VMX_VMCS16_GUEST_ES_SEL                                 0x0800
@@ -2005,6 +2008,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS64_CTRL_PROC_EXEC3_HIGH                         0x2035
 #define VMX_VMCS64_CTRL_ENCLV_EXITING_BITMAP_FULL               0x2036
 #define VMX_VMCS64_CTRL_ENCLV_EXITING_BITMAP_HIGH               0x2037
+#define VMX_VMCS64_CTRL_PCONFIG_EXITING_BITMAP_FULL             0x203e
+#define VMX_VMCS64_CTRL_PCONFIG_EXITING_BITMAP_HIGH             0x203f
+#define VMX_VMCS64_CTRL_HLAT_PTR_FULL                           0x2040
+#define VMX_VMCS64_CTRL_HLAT_PTR_HIGH                           0x2041
+#define VMX_VMCS64_CTRL_EXIT2_FULL                              0x2044
+#define VMX_VMCS64_CTRL_EXIT2_HIGH                              0x2045
 
 /** 64-bit read-only data fields.  */
 #define VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL                      0x2400
@@ -2724,6 +2733,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_LOAD_CET_STATE                            RT_BIT(28)
 /** Whether the host IA32_PKRS MSR is loaded on VM-exit. */
 #define VMX_EXIT_CTLS_LOAD_PKRS_MSR                             RT_BIT(29)
+/** Whether the host IA32_PERF_GLOBAL_CTRL MSR is saved on VM-exit. */
+#define VMX_EXIT_CTLS_SAVE_PERF_MSR                             RT_BIT(30)
+/** Whether secondary VM-exit controls are used. */
+#define VMX_EXIT_CTLS_USE_SECONDARY_CTLS                        RT_BIT(31)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
 
@@ -2769,13 +2782,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_EXIT_CTLS_LOAD_CET_MASK                          UINT32_C(0x10000000)
 #define VMX_BF_EXIT_CTLS_LOAD_PKRS_MSR_SHIFT                    29
 #define VMX_BF_EXIT_CTLS_LOAD_PKRS_MSR_MASK                     UINT32_C(0x20000000)
-#define VMX_BF_EXIT_CTLS_RSVD_30_31_SHIFT                       30
-#define VMX_BF_EXIT_CTLS_RSVD_30_31_MASK                        UINT32_C(0xc0000000)
+#define VMX_BF_EXIT_CTLS_SAVE_PERF_MSR_SHIFT                    30
+#define VMX_BF_EXIT_CTLS_SAVE_PERF_MSR_MASK                     UINT32_C(0x40000000)
+#define VMX_BF_EXIT_CTLS_USE_SECONDARY_CTLS_SHIFT               31
+#define VMX_BF_EXIT_CTLS_USE_SECONDARY_CTLS_MASK                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
                             (RSVD_0_1, SAVE_DEBUG, RSVD_3_8, HOST_ADDR_SPACE_SIZE, RSVD_10_11, LOAD_PERF_MSR, RSVD_13_14,
                              ACK_EXT_INT, RSVD_16_17, SAVE_PAT_MSR, LOAD_PAT_MSR, SAVE_EFER_MSR, LOAD_EFER_MSR,
                              SAVE_PREEMPT_TIMER, CLEAR_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT, CLEAR_RTIT_CTL_MSR, RSVD_26_27,
-                             LOAD_CET, LOAD_PKRS_MSR, RSVD_30_31));
+                             LOAD_CET, LOAD_PKRS_MSR, SAVE_PERF_MSR, USE_SECONDARY_CTLS));
 /** @} */
 
 
@@ -3807,7 +3822,7 @@ AssertCompile(RT_ALIGN_Z(VMX_V_AUTOMSR_AREA_SIZE, X86_PAGE_4K_SIZE) == VMX_V_AUT
 #define VMX_V_AUTOMSR_AREA_PAGES                                ((VMX_V_AUTOMSR_AREA_SIZE) >> X86_PAGE_4K_SHIFT)
 
 /** The highest index value used for supported virtual VMCS field encoding. */
-#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_ENCLV_EXITING_BITMAP_HIGH, VMX_BF_VMCSFIELD_INDEX)
+#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_EXIT2_HIGH, VMX_BF_VMCSFIELD_INDEX)
 
 /**
  * Virtual VM-exit information.
@@ -4034,7 +4049,8 @@ typedef struct
     uint16_t        u16Vpid;                     /**< 0x1b0 - Virtual processor ID. */
     uint16_t        u16PostIntNotifyVector;      /**< 0x1b2 - Posted interrupt notify vector. */
     uint16_t        u16EptpIndex;                /**< 0x1b4 - EPTP index. */
-    uint16_t        au16Reserved0[13];           /**< 0x1b6 - Reserved for future. */
+    uint16_t        u16HlatPrefixSize;           /**< 0x1b6 - HLAT prefix size. */
+    uint16_t        au16Reserved0[12];           /**< 0x1b8 - Reserved for future. */
 
     /** 32-bit fields. */
     uint32_t        u32PinCtls;                  /**< 0x1d0 - Pin-based VM-execution controls. */
@@ -4086,7 +4102,10 @@ typedef struct
     RTUINT64U       u64TscMultiplier;            /**< 0x320 - TSC multiplier. */
     RTUINT64U       u64ProcCtls3;                /**< 0x328 - Tertiary-Processor based VM-execution controls. */
     RTUINT64U       u64EnclvExitBitmap;          /**< 0x330 - ENCLV-exiting bitmap. */
-    RTUINT64U       au64Reserved0[13];           /**< 0x338 - Reserved for future. */
+    RTUINT64U       u64PconfigExitBitmap;        /**< 0x338 - PCONFIG-exiting bitmap. */
+    RTUINT64U       u64HlatPtr;                  /**< 0x340 - HLAT pointer. */
+    RTUINT64U       u64ExitCtls2;                /**< 0x348 - Secondary VM-exit controls. */
+    RTUINT64U       au64Reserved0[10];           /**< 0x350 - Reserved for future. */
 
     /** Natural-width fields. */
     RTUINT64U       u64Cr0Mask;                  /**< 0x3a0 - CR0 guest/host Mask. */
