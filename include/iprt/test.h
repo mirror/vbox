@@ -489,6 +489,7 @@ RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va) RT
  *                a constant (strip RTTESTUNIT_) and as a name (same as what
  *                rtTestUnitName returns) for mapping.  Testmanager must be
  *                updated.
+ *              - Add it to Value.kdBestByUnit in ValidationKit/analysis/reader.py.
  */
 typedef enum RTTESTUNIT
 {

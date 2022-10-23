@@ -39,9 +39,31 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision$"
-__all__     = ['HtmlReport', 'RstReport', 'TextReport'];
 
+__version__ = "$Revision$"
+
+# Standard python imports.
+import os;
+import sys;
+
+# Only the main script needs to modify the path.
+try:    __file__;
+except: __file__ = sys.argv[0];
+g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)));
+sys.path.append(g_ksValidationKitDir);
+
+# ValidationKit imports.
+from common import utils;
+
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
+
+
+
+##################################################################################################################################
+#   Old Carp                                                                                                                     #
+##################################################################################################################################
 
 def tryAddThousandSeparators(sPotentialInterger):
     """ Apparently, python 3.0(/3.1) has(/will have) support for this..."""
@@ -71,9 +93,9 @@ def tryAddThousandSeparators(sPotentialInterger):
     return chSign + sNewVal;
 
 
-class Table(object):
+class OldTable(object):
     """
-    A table as a header as well as data rows, thus this class.
+    A table has a header as well as data rows, thus this class.
     """
     def __init__(self, oTest, fSplitDiff):
         self.aasRows  = [];
@@ -133,8 +155,8 @@ class Table(object):
         """ Checks if the other table has the same heading."""
         if len(oTable.asHeader) != len(self.asHeader):
             return False;
-        for i in range(len(self.asHeader)):
-            if self.asHeader[i] != oTable.asHeader[i]:
+        for i, sHdr in enumerate(self.asHeader):
+            if sHdr != oTable.asHeader[i]:
                 return False;
             if self.asUnits[i]  != oTable.asUnits[i]:
                 return False;
@@ -147,28 +169,29 @@ class Table(object):
 
     # manipulation and stuff
 
-    def optimizeUnit(self):
+    def optimizeUnits(self):
         """ Turns bytes into KB, MB or GB. """
         ## @todo
-        pass;
+        return None;
 
     def addThousandSeparators(self):
         """ Adds thousand separators to make numbers more readable. """
-        for iRow in range(len(self.aasRows)):
-            for iColumn in range(1, len(self.aasRows[iRow])):
-                asValues = self.aasRows[iRow][iColumn].split('|');
-                for i in range(len(asValues)):
-                    asValues[i] = tryAddThousandSeparators(asValues[i]);
-                self.aasRows[iRow][iColumn] = '|'.join(asValues);
+        for asRow in self.aasRows:
+            for iColumn in range(1, len(asRow)):
+                asValues = asRow[iColumn].split('|');
+                for i, sValue in enumerate(asValues):
+                    asValues[i] = tryAddThousandSeparators(sValue);
+                asRow[iColumn] = '|'.join(asValues);
         return True;
 
     def getRowWidths(self):
         """Figure out the column withs."""
         # Header is first.
         acchColumns = [];
-        for i in range(len(self.asHeader)):
+        for i, sHdr in enumerate(self.asHeader):
             cch = 1;
-            asWords = self.asHeader[i].split();
+            if not isinstance(sHdr, str): print("dbg: %s" % (sHdr,));
+            asWords = sHdr.split();
             for s in asWords:
                 if len(s) > cch:
                     cch = len(s);
@@ -178,11 +201,10 @@ class Table(object):
 
         # Check out all cells.
         for asColumns in self.aasRows:
-            for i in range(len(asColumns)):
-                if len(asColumns[i]) > acchColumns[i]:
-                    acchColumns[i] = len(asColumns[i]);
+            for i, sCol in enumerate(asColumns):
+                if len(sCol) > acchColumns[i]:
+                    acchColumns[i] = len(sCol);
         return acchColumns;
-
 
 def tabelizeTestResults(oTest, fSplitDiff):
     """
@@ -208,20 +230,21 @@ def tabelizeTestResults(oTest, fSplitDiff):
             if len(aoTables) > 0 and aoTables[len(aoTables) - 1].hasTheSameHeadingAsTest(oCurTest):
                 aoTables[len(aoTables) - 1].addRow(oCurTest, fSplitDiff);
             else:
-                aoTables.append(Table(oCurTest, fSplitDiff));
+                aoTables.append(OldTable(oCurTest, fSplitDiff));
 
     # Pass 2 - Combine tables with the same heading.
     aoTables2 = [];
     for oTable in aoTables:
-        for i in range(len(aoTables2)):
-            if aoTables2[i].hasTheSameHeadingAsTable(oTable):
-                aoTables2[i].appendTable(oTable);
+        for oTable2 in aoTables2:
+            if oTable2.hasTheSameHeadingAsTable(oTable):
+                oTable2.appendTable(oTable);
                 oTable = None;
                 break;
         if oTable is not None:
             aoTables2.append(oTable);
 
     return aoTables2;
+
 
 def produceHtmlReport(oTest):
     """
@@ -230,12 +253,14 @@ def produceHtmlReport(oTest):
     print('not implemented: %s' % (oTest));
     return False;
 
+
 def produceReStructuredTextReport(oTest):
     """
     Produce a ReStructured text report on stdout (via print).
     """
     print('not implemented: %s' % (oTest));
     return False;
+
 
 def produceTextReport(oTest):
     """
@@ -264,7 +289,7 @@ def produceTextReport(oTest):
         for i in range(len(oTable.asHeader)):
             aasHeader[0].append('');
 
-        for iColumn in range(len(oTable.asHeader)):
+        for iColumn, _ in enumerate(oTable.asHeader):
             asWords = oTable.asHeader[iColumn].split();
             iLine   = 0;
             for s in asWords:
@@ -282,14 +307,14 @@ def produceTextReport(oTest):
 
         for asLine in aasHeader:
             sLine = '';
-            for i in range(len(asLine)):
+            for i,_ in enumerate(asLine):
                 if i > 0: sLine += '  ';
                 sLine += asLine[i].center(acchColumns[i]);
             print(sLine);
 
         # Units.
         sLine = '';
-        for i in range(len(oTable.asUnits)):
+        for i,_ in enumerate(oTable.asUnits):
             if i > 0: sLine += '  ';
             sLine += oTable.asUnits[i].center(acchColumns[i]);
         print(sLine);
@@ -309,4 +334,529 @@ def produceTextReport(oTest):
             print(sText);
 
     return None;
+
+
+
+##################################################################################################################################
+#   Run Table                                                                                                                    #
+##################################################################################################################################
+
+def alignTextLeft(sText, cchWidth):
+    """ Left aligns text and pads it to cchWidth characters length. """
+    return sText + ' ' * (cchWidth - min(len(sText), cchWidth));
+
+
+def alignTextRight(sText, cchWidth):
+    """ Right aligns text and pads it to cchWidth characters length. """
+    return ' ' * (cchWidth - min(len(sText), cchWidth)) + sText;
+
+
+def alignTextCenter(sText, cchWidth):
+    """ Pads the text equally on both sides to cchWidth characters length. """
+    return alignTextLeft(' ' * ((cchWidth - min(len(sText), cchWidth)) // 2) + sText, cchWidth);
+
+
+g_kiAlignLeft   = -1;
+g_kiAlignRight  = 1;
+g_kiAlignCenter = 0;
+def alignText(sText, cchWidth, iAlignType):
+    """
+    General alignment method.
+
+    Negative iAlignType for left aligning, zero for entered, and positive for
+    right aligning the text.
+    """
+    if iAlignType < 0:
+        return alignTextLeft(sText, cchWidth);
+    if iAlignType > 0:
+        return alignTextRight(sText, cchWidth);
+    return alignTextCenter(sText, cchWidth);
+
+
+class TextColumnWidth(object):
+    """
+    Tracking the width of a column, dealing with sub-columns and such.
+    """
+
+    def __init__(self):
+        self.cch      = 0;
+        self.dacchSub = {};
+
+    def update(self, oWidth, cchSubColSpacing = 1):
+        """
+        Updates the column width tracking with oWidth, which is either
+        an int or an array of ints (sub columns).
+        """
+        if isinstance(oWidth, int):
+            self.cch = max(self.cch, oWidth);
+        else:
+            cSubCols = len(oWidth);
+            if cSubCols not in self.dacchSub:
+                self.dacchSub[cSubCols] = list(oWidth);
+                self.cch = max(self.cch, sum(oWidth) + cchSubColSpacing * (cSubCols - 1));
+            else:
+                acchSubCols = self.dacchSub[cSubCols];
+                for iSub in range(cSubCols):
+                    acchSubCols[iSub] = max(acchSubCols[iSub], oWidth[iSub]);
+                self.cch = max(self.cch, sum(acchSubCols) + cchSubColSpacing * (cSubCols - 1));
+
+    def finalize(self):
+        """ Finalizes sub-column sizes. """
+        ## @todo maybe do something here, maybe not...
+        return self;
+
+    def hasSubColumns(self):
+        """ Checks if there are sub-columns for this column. """
+        return not self.dacchSub;
+
+class TextWidths(object):
+    """
+    Tracks the column widths for text rending of the table.
+    """
+    def __init__(self, cchSubColSpacing = 1, ):
+        self.cchName          = 1;
+        self.aoColumns        = [] # type: TextColumnWidth
+        self.cchSubColSpacing = cchSubColSpacing;
+        self.fFinalized       = False;
+
+    def update(self, aoWidths):
+        """ Updates the tracker with the returns of calcColumnWidthsForText. """
+        if not aoWidths[0]:
+            self.cchName = max(self.cchName, aoWidths[1]);
+
+            for iCol, oWidth in enumerate(aoWidths[2]):
+                if iCol >= len(self.aoColumns):
+                    self.aoColumns.append(TextColumnWidth());
+                self.aoColumns[iCol].update(oWidth, self.cchSubColSpacing);
+
+        return self;
+
+    def finalize(self):
+        """ Finalizes sub-column sizes. """
+        for oColumnWidth in self.aoColumns:
+            oColumnWidth.finalize();
+        self.fFinalized = True;
+        return self;
+
+    def getColumnWidth(self, iColumn, cSubs = None, iSub = None):
+        """ Returns the width of the specified column. """
+        if not self.fFinalized:
+            return 0;
+        assert iColumn < len(self.aoColumns), "iColumn=%s vs %s" % (iColumn, len(self.aoColumns),);
+        oColumn = self.aoColumns[iColumn];
+        if cSubs is not None:
+            assert iSub < cSubs;
+            if cSubs != 1:
+                assert cSubs in oColumn.dacchSub, \
+                       "iColumn=%s cSubs=%s iSub=%s; dacchSub=%s" % (iColumn, cSubs, iSub, oColumn.dacchSub);
+                return oColumn.dacchSub[cSubs][iSub];
+        return oColumn.cch;
+
+
+class TextElement(object):
+    """
+    A text element (cell/sub-cell in a table).
+    """
+
+    def __init__(self, sText = '', iAlign = g_kiAlignRight): # type: (str, int) -> None
+        self.sText  = sText;
+        self.iAlign = iAlign;
+
+
+class RunRow(object):
+    """
+    Run table row.
+    """
+
+    def __init__(self, iLevel, sName, iRun = 0): # type: (int, str, int) -> None
+        self.iLevel     = iLevel;
+        self.sName      = sName;
+        self.iFirstRun  = iRun;
+
+        # Fields used while formatting (set during construction or calcColumnWidthsForText/Html).
+        self.cColumns   = 0;                    ##< Number of columns.
+        self.fSkip      = False                 ##< Whether or not to skip this row in the output.
+
+    # Format as Text:
+
+    def formatNameAsText(self, cchWidth): # (int) -> str
+        """ Format the row as text. """
+        _ = cchWidth;
+        return  ' ' * (self.iLevel * 2) + self.sName;
+
+    def getColumnCountAsText(self, oTable):
+        """
+        Called by calcColumnWidthsForText for getting an up-to-date self.cColumns value.
+        Override this to update cColumns after construction.
+        """
+        _ = oTable;
+        return self.cColumns;
+
+    def formatColumnAsText(self, iColumn, oTable): # type: (int, RunTable) -> [TextElement]
+        """ Returns an array of TextElements for the given column in this row. """
+        _ = iColumn; _ = oTable;
+        return [ TextElement(),];
+
+    def calcColumnWidthsForText(self, oTable):
+        """
+        Calculates the column widths for text rendering.
+
+        Returns a tuple consisting of the fSkip, the formatted name width, and an
+        array of column widths.  The entries in the latter are either integer
+        widths or arrays of subcolumn integer widths.
+        """
+        aoRetCols  = [];
+        cColumns   = self.getColumnCountAsText(oTable);
+        for iColumn in range(cColumns):
+            aoSubColumns = self.formatColumnAsText(iColumn, oTable);
+            if len(aoSubColumns) == 1:
+                aoRetCols.append(len(aoSubColumns[0].sText));
+            else:
+                aoRetCols.append([len(oSubColumn.sText) for oSubColumn in aoSubColumns]);
+        return (False, len(self.formatNameAsText(0)) + self.iLevel * 2, aoRetCols);
+
+    @staticmethod
+    def formatDiffAsText(lNumber, lBaseline):
+        """ Formats the difference between lNumber and lBaseline as text. """
+        if lNumber is not None:
+            if lBaseline is not None:
+                if lNumber < lBaseline:
+                    return '-' + utils.formatNumber(lBaseline - lNumber); ## @todo formatter is busted for negative nums.
+                if lNumber > lBaseline:
+                    return '+' + utils.formatNumber(lNumber - lBaseline);
+                return '0';
+        return '';
+
+    @staticmethod
+    def formatDiffInPctAsText(lNumber, lBaseline, cPctPrecision):
+        """ Formats the difference between lNumber and lBaseline in precent as text. """
+        if lNumber is not None:
+            if lBaseline is not None:
+                ## @todo implement cPctPrecision
+                if lNumber == lBaseline:
+                    return '0.' + '0'*cPctPrecision + '%';
+
+                lDiff  = lNumber - lBaseline;
+                chSign = '+';
+                if lDiff < 0:
+                    lDiff  = -lDiff;
+                    chSign = '-';
+
+                rdPct = lDiff / float(lBaseline);
+                #if rdPct * 100 >= 5:
+                #    return '%s%s%%' % (chSign, utils.formatNumber(int(rdPct * 100 + 0.5)),);
+                #if rdPct * 1000 >= 5:
+                #    return u'%s%s\u2030'  % (chSign, int(rdPct * 1000 + 0.5),);
+                #if rdPct * 10000 >= 5:
+                #    return u'%s%s\u2031' % (chSign, int(rdPct * 10000 + 0.5),);
+                #if rdPct * 1000000 >= 0.5:
+                #    return u'%s%sppm'   % (chSign, int(rdPct * 1000000 + 0.5),);
+
+                if rdPct * 100 >= 100:
+                    return '%s%s%%' % (chSign, utils.formatNumber(int(rdPct * 100 + 0.5)),);
+                if rdPct * 10000 + 0.5 >= 1:
+                    return '%s%.*f%%' % (chSign, cPctPrecision, rdPct * 100 + 0.005,);
+
+                return '~' + chSign + '0.' + '0' * cPctPrecision + '%';
+        return '';
+
+
+class RunTestRow(RunRow):
+    """
+    Run table test row.
+    """
+
+    def __init__(self, iLevel, oTest, iRun, aoTests = None): # type: (int, reader.Test, int, [reader.Test]) -> None
+        RunRow.__init__(self, iLevel, oTest.sName, iRun);
+        assert oTest;
+        self.oTest = oTest;
+        if aoTests is None:
+            aoTests = [None for i in range(iRun)];
+            aoTests.append(oTest);
+        else:
+            aoTests= list(aoTests);
+        self.aoTests = aoTests
+
+    def isSameTest(self, oTest):
+        """ Checks if oTest belongs to this row or not. """
+        return oTest.sName == self.oTest.sName;
+
+    def getBaseTest(self, oTable):
+        """ Returns the baseline test. """
+        oBaseTest = self.aoTests[oTable.iBaseline];
+        if not oBaseTest:
+            oBaseTest = self.aoTests[self.iFirstRun];
+        return oBaseTest;
+
+
+class RunTestStartRow(RunTestRow):
+    """
+    Run table start of test row.
+    """
+
+    def __init__(self, iLevel, oTest, iRun): # type: (int, reader.Test, int) -> None
+        RunTestRow.__init__(self, iLevel, oTest, iRun);
+
+class RunTestEndRow(RunTestRow):
+    """
+    Run table end of test row.
+    """
+
+    def __init__(self, oStartRow): # type: (RunTestStartRow) -> None
+        RunTestRow.__init__(self, oStartRow.iLevel, oStartRow.oTest, oStartRow.iFirstRun, oStartRow.aoTests);
+        self.oStartRow = oStartRow # type: RunTestStartRow
+
+    def getColumnCountAsText(self, oTable):
+        self.cColumns = len(self.aoTests);
+        return self.cColumns;
+
+    def formatColumnAsText(self, iColumn, oTable):
+        oTest = self.aoTests[iColumn];
+        if oTest and oTest.sStatus:
+            if oTest.cErrors > 0:
+                return [ TextElement(oTest.sStatus, g_kiAlignCenter),
+                         TextElement(utils.formatNumber(oTest.cErrors) + 'errors') ];
+            return [ TextElement(oTest.sStatus, g_kiAlignCenter) ];
+        return [ TextElement(), ];
+
+
+class RunTestEndRow2(RunTestRow):
+    """
+    Run table 2nd end of test row, this shows the times.
+    """
+
+    def __init__(self, oStartRow): # type: (RunTestStartRow) -> None
+        RunTestRow.__init__(self, oStartRow.iLevel, oStartRow.oTest, oStartRow.iFirstRun, oStartRow.aoTests);
+        self.oStartRow = oStartRow # type: RunTestStartRow
+
+    def formatNameAsText(self, cchWidth):
+        _ = cchWidth;
+        return '';
+
+    def getColumnCountAsText(self, oTable):
+        self.cColumns = len(self.aoTests);
+        return self.cColumns;
+
+    def formatColumnAsText(self, iColumn, oTable):
+        oTest = self.aoTests[iColumn];
+        if oTest:
+            cUsElapsed = oTest.calcDurationAsMicroseconds();
+            if cUsElapsed:
+                oBaseTest = self.getBaseTest(oTable);
+                if oTest is oBaseTest:
+                    return [ TextElement(utils.formatNumber(cUsElapsed)), TextElement('us', g_kiAlignLeft), ];
+                cUsElapsedBase = oBaseTest.calcDurationAsMicroseconds();
+                aoRet = [
+                    TextElement(utils.formatNumber(cUsElapsed)),
+                    TextElement(self.formatDiffAsText(cUsElapsed, cUsElapsedBase)),
+                    TextElement(self.formatDiffInPctAsText(cUsElapsed, cUsElapsedBase, oTable.cPctPrecision)),
+                ];
+                return aoRet[1:] if oTable.fBrief else aoRet;
+        return [ TextElement(), ];
+
+class RunValueRow(RunRow):
+    """
+    Run table value row.
+    """
+
+    def __init__(self, iLevel, oValue, iRun): # type: (int, reader.Value, int) -> None
+        RunRow.__init__(self, iLevel, oValue.sName, iRun);
+        self.oValue   = oValue;
+        self.aoValues = [None for i in range(iRun)];
+        self.aoValues.append(oValue);
+
+    def isSameValue(self, oValue):
+        """ Checks if oValue belongs to this row or not. """
+        return oValue.sName == self.oValue.sName and oValue.sUnit == self.oValue.sUnit;
+
+    # Formatting as Text.
+
+    @staticmethod
+    def formatOneValueAsText(oValue): # type: (reader.Value) -> str
+        """ Formats a value. """
+        if not oValue:
+            return "N/A";
+        return utils.formatNumber(oValue.lValue);
+
+    def getBaseValue(self, oTable):
+        """ Returns the base value instance. """
+        oBaseValue = self.aoValues[oTable.iBaseline];
+        if not oBaseValue:
+            oBaseValue = self.aoValues[self.iFirstRun];
+        return oBaseValue;
+
+    def getColumnCountAsText(self, oTable):
+        self.cColumns = len(self.aoValues);
+        return self.cColumns;
+
+    def formatColumnAsText(self, iColumn, oTable):
+        oValue     = self.aoValues[iColumn];
+        oBaseValue = self.getBaseValue(oTable);
+        if oValue is oBaseValue:
+            return [ TextElement(self.formatOneValueAsText(oValue)),
+                     TextElement(oValue.sUnit, g_kiAlignLeft), ];
+        aoRet = [
+            TextElement(self.formatOneValueAsText(oValue)),
+            TextElement(self.formatDiffAsText(oValue.lValue if oValue else None, oBaseValue.lValue)),
+            TextElement(self.formatDiffInPctAsText(oValue.lValue if oValue else None, oBaseValue.lValue, oTable.cPctPrecision))
+        ];
+        return aoRet[1:] if oTable.fBrief else aoRet;
+
+
+class RunTable(object):
+    """
+    Result table.
+
+    This contains one or more test runs as columns.
+    """
+
+    def __init__(self, iBaseline = 0, fBrief = True, cPctPrecision = 2): # (int, bool, int) -> None
+        self.asColumns      = []            # type: [str]       ## Column names.
+        self.aoRows         = []            # type: [RunRow]    ## The table rows.
+        self.iBaseline      = iBaseline     # type: int         ## Which column is the baseline when diffing things.
+        self.fBrief         = fBrief        # type: bool        ## Whether to exclude the numerical values of non-baseline runs.
+        self.cPctPrecision  = cPctPrecision # type: int         ## Number of decimal points in diff percentage value.
+
+    def __populateFromValues(self, aaoValueRuns, iLevel): # type: ([reader.Value]) -> None
+        """
+        Internal worker for __populateFromRuns()
+
+        This will modify the sub-lists inside aaoValueRuns, returning with the all empty.
+        """
+        # Same as for __populateFromRuns, only no recursion.
+        for iValueRun, aoValuesForRun in enumerate(aaoValueRuns):
+            while aoValuesForRun:
+                oRow = RunValueRow(iLevel, aoValuesForRun.pop(0), iValueRun);
+                self.aoRows.append(oRow);
+
+                # Pop matching values from the other runs of this test.
+                for iOtherRun in range(iValueRun + 1, len(aaoValueRuns)):
+                    aoValuesForOtherRun = aaoValueRuns[iOtherRun];
+                    for iValueToPop, oOtherValue in enumerate(aoValuesForOtherRun):
+                        if oRow.isSameValue(oOtherValue):
+                            oRow.aoValues.append(aoValuesForOtherRun.pop(iValueToPop));
+                            break;
+                    if len(oRow.aoValues) <= iOtherRun:
+                        oRow.aoValues.append(None);
+        return self;
+
+    def __populateFromRuns(self, aaoTestRuns, iLevel): # type: ([reader.Test]) -> None
+        """
+        Internal worker for populateFromRuns()
+
+        This will modify the sub-lists inside aaoTestRuns, returning with the all empty.
+        """
+
+        #
+        # Currently doing depth first, so values are always at the end.
+        # Nominally, we should inject values according to the timestamp.
+        # However, that's too much work right now and can be done later if needed.
+        #
+        for iRun, aoTestForRun in enumerate(aaoTestRuns):
+            while aoTestForRun:
+                # Pop the next test and create a start-test row for it.
+                oStartRow = RunTestStartRow(iLevel, aoTestForRun.pop(0), iRun);
+                self.aoRows.append(oStartRow);
+
+                # Pop matching tests from the other runs.
+                for iOtherRun in range(iRun + 1, len(aaoTestRuns)):
+                    aoOtherTestRun = aaoTestRuns[iOtherRun];
+                    for iTestToPop, oOtherTest in enumerate(aoOtherTestRun):
+                        if oStartRow.isSameTest(oOtherTest):
+                            oStartRow.aoTests.append(aoOtherTestRun.pop(iTestToPop));
+                            break;
+                    if len(oStartRow.aoTests) <= iOtherRun:
+                        oStartRow.aoTests.append(None);
+
+                # Now recrusively do the subtests for it and then do the values.
+                self.__populateFromRuns(  [list(oTest.aoChildren) if oTest else list() for oTest in oStartRow.aoTests], iLevel+1);
+                self.__populateFromValues([list(oTest.aoValues)   if oTest else list() for oTest in oStartRow.aoTests], iLevel+1);
+
+                # Add the end-test row for it.
+                self.aoRows.append(RunTestEndRow(oStartRow));
+                self.aoRows.append(RunTestEndRow2(oStartRow));
+
+        return self;
+
+    def populateFromRuns(self, aoTestRuns, asRunNames = None): # type: ([reader.Test], [str]) -> RunTable
+        """
+        Populates the table from the series of runs.
+
+        The aoTestRuns and asRunNames run in parallel.  If the latter isn't
+        given, the names will just be ordinals starting with #0 for the
+        first column.
+
+        Returns self.
+        """
+        #
+        # Deal with the column names first.
+        #
+        if asRunNames:
+            self.asColumns = list(asRunNames);
+        else:
+            self.asColumns = [];
+        iCol = len(self.asColumns);
+        while iCol < len(aoTestRuns):
+            self.asColumns.append('#%u%s' % (iCol, ' (baseline)' if iCol == self.iBaseline else '',));
+
+        #
+        # Now flatten the test trees into a table.
+        #
+        self.__populateFromRuns([[oTestRun,] for oTestRun in aoTestRuns], 0);
+        return self;
+
+    #
+    # Text formatting.
+    #
+
+    def formatAsText(self):
+        """
+        Formats the table as text.
+
+        Returns a string array of the output lines.
+        """
+
+        #
+        # Pass 1: Calculate column widths.
+        #
+        oWidths = TextWidths(1);
+        for oRow in self.aoRows:
+            oWidths.update(oRow.calcColumnWidthsForText(self));
+        oWidths.finalize();
+
+        #
+        # Pass 2: Generate the output strings.
+        #
+        # Header
+        asRet = [
+            alignTextCenter('Test / Value', oWidths.cchName) + ':  '
+            + ' | '.join([alignTextCenter(sText, oWidths.getColumnWidth(iCol)) for iCol, sText in enumerate(self.asColumns)]),
+        ];
+        asRet.append('=' * len(asRet[0]));
+
+        # The table
+        for oRow in self.aoRows:
+            if not oRow.fSkip:
+                sRow = oRow.formatNameAsText(oWidths.cchName);
+                sRow = sRow + ' ' * (oWidths.cchName - min(len(sRow), oWidths.cchName)) + ': ';
+
+                for iColumn in range(oRow.cColumns):
+                    aoSubCols = oRow.formatColumnAsText(iColumn, self);
+                    sCell = '';
+                    for iSub, oText in enumerate(aoSubCols):
+                        cchWidth = oWidths.getColumnWidth(iColumn, len(aoSubCols), iSub);
+                        if iSub > 0:
+                            sCell += ' ' * oWidths.cchSubColSpacing;
+                        sCell += alignText(oText.sText, cchWidth, oText.iAlign);
+                    cchWidth = oWidths.getColumnWidth(iColumn);
+                    sRow  += (' | ' if iColumn > 0 else ' ') + ' ' * (cchWidth - min(cchWidth, len(sCell))) + sCell;
+
+            asRet.append(sRow);
+
+        # Footer?
+        if len(asRet) > 40:
+            asRet.append(asRet[1]);
+            asRet.append(asRet[0]);
+
+        return asRet;
 

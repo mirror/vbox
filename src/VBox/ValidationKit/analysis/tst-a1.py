@@ -50,9 +50,9 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
-from testanalysis import reader    ## @todo fix testanalysis/__init__.py.
-from testanalysis import reporting
-from testanalysis import diff
+from analysis import reader    ## @todo fix testanalysis/__init__.py.
+from analysis import reporting
+from analysis import diff
 
 
 def usage():
