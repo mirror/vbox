@@ -930,7 +930,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                             m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
                         else if (   isSingleCloudProviderGroupSelected()
                                  || isSingleCloudProfileGroupSelected())
-                            m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate));
+                            m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Terminate));
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
                     }
                     else
@@ -942,7 +942,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                         if (isLocalMachineItemSelected())
                             m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
                         else if (isCloudMachineItemSelected())
-                            m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate));
+                            m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Terminate));
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
                     }
                     break;

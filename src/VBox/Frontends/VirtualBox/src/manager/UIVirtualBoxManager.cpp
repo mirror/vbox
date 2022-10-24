@@ -1706,7 +1706,7 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
         AssertPtrReturnVoid(pItem->toLocal());
 
         /* Check if current item could be saved: */
-        if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Saving VM state: */
@@ -1726,7 +1726,7 @@ void UIVirtualBoxManager::sltPerformTerminateMachine()
     QList<UIVirtualMachineItem*> itemsToTerminate;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Terminate, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Group_M_Stop_S_Terminate, QList<UIVirtualMachineItem*>() << pItem))
         {
             machinesToTerminate << pItem->name();
             itemsToTerminate << pItem;
@@ -1763,7 +1763,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     QList<UIVirtualMachineItem*> itemsToShutdown;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToShutdown << pItem;
@@ -1821,7 +1821,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     QList<UIVirtualMachineItem*> itemsToPowerOff;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_PowerOff, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_PowerOff, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToPowerOff << pItem;
@@ -2113,10 +2113,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_menuUpdateHandlers[UIActionIndexMN_M_Machine] = &UIVirtualBoxManager::updateMenuMachine;
     m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuGroupMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Console] = &UIVirtualBoxManager::updateMenuGroupConsole;
-    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Stop] = &UIVirtualBoxManager::updateMenuGroupClose;
     m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Console] = &UIVirtualBoxManager::updateMenuMachineConsole;
-    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Stop] = &UIVirtualBoxManager::updateMenuMachineClose;
 
     /* Build menu-bar: */
     foreach (QMenu *pMenu, actionPool()->menus())
@@ -2333,24 +2333,24 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ShowLog), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShowLog);
 
-    /* 'Group/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState), &UIAction::triggered,
+    /* 'Group/Stop' menu connections: */
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
-    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Terminate), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformTerminateMachine);
-    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Shutdown), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShutdownMachine);
-    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_PowerOff), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
-    /* 'Machine/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
+    /* 'Machine/Stop' menu connections: */
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Terminate), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformTerminateMachine);
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShutdownMachine);
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_PowerOff), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Group/Tools' menu connections: */
@@ -2789,7 +2789,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Stop)->menu());
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenu->addSeparator();
@@ -2811,7 +2811,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Pause));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Reset));
         // pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Detach));
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Stop)->menu());
         pMenu->addSeparator();
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Tools)->menu());
         pMenu->addSeparator();
@@ -2846,7 +2846,7 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop)->menu());
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenu->addSeparator();
@@ -2871,7 +2871,7 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Pause));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset));
         // pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Detach));
-        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop)->menu());
         pMenu->addSeparator();
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Tools)->menu());
         pMenu->addSeparator();
@@ -2925,19 +2925,19 @@ void UIVirtualBoxManager::updateMenuGroupClose(QMenu *pMenu)
     /* For local machine: */
     if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_SaveState));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_PowerOff));
     }
     else
     {
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Terminate));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_PowerOff));
     }
 
-    /* Configure 'Group' / 'Close' menu: */
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
+    /* Configure 'Group' / 'Stop' menu: */
+    actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Stop_S_Shutdown, items));
 }
 
 void UIVirtualBoxManager::updateMenuMachineMoveToGroup(QMenu *pMenu)
@@ -3070,19 +3070,19 @@ void UIVirtualBoxManager::updateMenuMachineClose(QMenu *pMenu)
     /* For local machine: */
     if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_SaveState));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_PowerOff));
     }
     else
     {
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Terminate));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_PowerOff));
     }
 
-    /* Configure 'Machine' / 'Close' menu: */
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
+    /* Configure 'Machine' / 'Stop' menu: */
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown, items));
 }
 
 void UIVirtualBoxManager::updateActionsVisibility()
@@ -3224,19 +3224,19 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ShowLog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_ShowLog, items));
 
-    /* Enable/disable group-close actions: */
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close, items));
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_SaveState, items));
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Terminate, items));
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_PowerOff, items));
+    /* Enable/disable group-stop actions: */
+    actionPool()->action(UIActionIndexMN_M_Group_M_Stop)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Stop, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Stop_S_SaveState, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Stop_S_Terminate, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Stop_S_Shutdown, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Stop_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Stop_S_PowerOff, items));
 
-    /* Enable/disable machine-close actions: */
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items));
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, items));
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Terminate, items));
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_PowerOff, items));
+    /* Enable/disable machine-stop actions: */
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Stop)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Stop, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_SaveState, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_Terminate, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_Shutdown, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Stop_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Stop_S_PowerOff, items));
 
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -3503,34 +3503,34 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return isAtLeastOneItemStarted(items);
         }
-        case UIActionIndexMN_M_Group_M_Close:
-        case UIActionIndexMN_M_Machine_M_Close:
+        case UIActionIndexMN_M_Group_M_Stop:
+        case UIActionIndexMN_M_Machine_M_Stop:
         {
             return    (isItemsLocal(items) && isAtLeastOneItemStarted(items))
                    || (isItemsCloud(items) && isAtLeastOneItemDiscardable(items));
         }
-        case UIActionIndexMN_M_Group_M_Close_S_SaveState:
-        case UIActionIndexMN_M_Machine_M_Close_S_SaveState:
+        case UIActionIndexMN_M_Group_M_Stop_S_SaveState:
+        case UIActionIndexMN_M_Machine_M_Stop_S_SaveState:
         {
-            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Stop, items)
                    && isItemsLocal(items);
         }
-        case UIActionIndexMN_M_Group_M_Close_S_Terminate:
-        case UIActionIndexMN_M_Machine_M_Close_S_Terminate:
+        case UIActionIndexMN_M_Group_M_Stop_S_Terminate:
+        case UIActionIndexMN_M_Machine_M_Stop_S_Terminate:
         {
-            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Stop, items)
                    && isAtLeastOneItemDiscardable(items);
         }
-        case UIActionIndexMN_M_Group_M_Close_S_Shutdown:
-        case UIActionIndexMN_M_Machine_M_Close_S_Shutdown:
+        case UIActionIndexMN_M_Group_M_Stop_S_Shutdown:
+        case UIActionIndexMN_M_Machine_M_Stop_S_Shutdown:
         {
-            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Stop, items)
                    && isAtLeastOneItemAbleToShutdown(items);
         }
-        case UIActionIndexMN_M_Group_M_Close_S_PowerOff:
-        case UIActionIndexMN_M_Machine_M_Close_S_PowerOff:
+        case UIActionIndexMN_M_Group_M_Stop_S_PowerOff:
+        case UIActionIndexMN_M_Machine_M_Stop_S_PowerOff:
         {
-            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Stop, items)
                    && isAtLeastOneItemStarted(items);
         }
         default:
