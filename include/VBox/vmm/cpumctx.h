@@ -230,16 +230,38 @@ AssertCompileSize(CPUMHWVIRT, 4);
 /** Number of EFLAGS bits we put aside for the hardware EFLAGS, with the bits
  * above this we use for storing internal state not visible to the guest.
  *
- * The initial plan was to use 24 or 22 here and keep bits that needs clearing
- * on instruction boundrary in the top of the first 32 bits, allowing us to use
- * a AND with a 32-bit immediate for clearing both RF and the interrupt shadow
- * bits.  However, when using anything less than 32, there is a significant code
- * size increase: VMMR0.ro is 2475709 bytes with 32 bits, 2482069 bytes with 24
- * bits, and 2482261 bytes with 22 bits.
+ * Using a value less than 32 here means some code bloat when loading and
+ * fetching the hardware EFLAGS value.  Comparing VMMR0.r0 text size when
+ * compiling release build using gcc 11.3.1 on linux:
+ *      - 32 bits: 2475709 bytes
+ *      - 24 bits: 2482069 bytes; +6360 bytes.
+ *      - 22 bits: 2482261 bytes; +6552 bytes.
+ * Same for windows (virtual size of .text):
+ *      - 32 bits: 1498502 bytes
+ *      - 24 bits: 1502278 bytes; +3776 bytes.
+ *      - 22 bits: 1502198 bytes; +3696 bytes.
  *
- * So, for now we're best off setting this to 32.
+ * In addition we pass pointer the 32-bit EFLAGS to a number of IEM assembly
+ * functions, so it would be safer to not store anything in the lower 32 bits.
+ * OTOH, we'd sooner discover buggy assembly code by doing so, as we've had one
+ * example of accidental EFLAGS trashing by these functions already.
+ *
+ * It would be more efficient for IEM to store the interrupt shadow bit (and
+ * anything else that needs to be cleared at the same time) in the 30:22 bit
+ * range, because that would allow using a simple AND imm32 instruction on x86
+ * and a MOVN imm16,16 instruction to load the constant on ARM64 (assuming the
+ * other flag needing clearing is RF (bit 16)).  Putting it in the 63:32 range
+ * means we that on x86 we'll either use a memory variant of AND or require a
+ * separate load instruction for the immediate, whereas on ARM we'll need more
+ * instructions to construct the immediate value.
+ *
+ * Comparing the instruction exit thruput via the bs2-test-1 testcase, there
+ * seems to be little difference between 32 and 24 here (best results out of 9
+ * runs on Linux/VT-x).  So, unless the results are really wrong and there is
+ * clear drop in thruput, it would on the whole make the most sense to use 24
+ * here.
  */
-#define CPUMX86EFLAGS_HW_BITS       32
+#define CPUMX86EFLAGS_HW_BITS       24
 /** Mask for the hardware EFLAGS bits, 64-bit version. */
 #define CPUMX86EFLAGS_HW_MASK_64    (RT_BIT_64(CPUMX86EFLAGS_HW_BITS) - UINT64_C(1))
 /** Mask for the hardware EFLAGS bits, 32-bit version. */

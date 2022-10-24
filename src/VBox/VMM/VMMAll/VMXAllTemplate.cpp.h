@@ -4809,7 +4809,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
 
             /* Construct the stack frame for the interrupt/exception handler. */
             VBOXSTRICTRC rcStrict;
-            rcStrict = hmR0VmxRealModeGuestStackPush(pVCpu, pCtx->eflags.u);
+            rcStrict = hmR0VmxRealModeGuestStackPush(pVCpu, (uint16_t)pCtx->eflags.u);
             if (rcStrict == VINF_SUCCESS)
             {
                 rcStrict = hmR0VmxRealModeGuestStackPush(pVCpu, pCtx->cs.Sel);
