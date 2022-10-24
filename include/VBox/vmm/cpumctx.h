@@ -416,7 +416,9 @@ typedef struct CPUMCTX
         CPUMX86RFLAGS   rflags;
     } CPUM_UNION_NM(rflags);
 
-    uint8_t             abPadding[8];
+    /** 0x150 - Externalized state tracker, CPUMCTX_EXTRN_XXX. */
+    uint64_t            fExtrn;
+
     /** The RIP value an interrupt shadow is/was valid for. */
     uint64_t            uRipInhibitInt;
 
@@ -463,14 +465,7 @@ typedef struct CPUMCTX
     uint64_t            msrKERNELGSBASE;    /**< swapgs exchange value. */
     /** @} */
 
-    /** 0x230 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
-     * @todo Move up after uRipInhibitInt after fInhibit moves into RFLAGS.
-     *       That will put this in the same cacheline as RIP, RFLAGS and CR0
-     *       which are typically always imported and exported again during an
-     *       VM exit. */
-    uint64_t            fExtrn;
-
-    uint64_t            u64Unused;
+    uint64_t            au64Unused[2];
 
     /** 0x240 - PAE PDPTEs. */
     X86PDPE             aPaePdpes[4];
@@ -674,6 +669,7 @@ AssertCompileMemberOffset(CPUMCTX,                                      ldtr, 0x
 AssertCompileMemberOffset(CPUMCTX,                                        tr, 0x0128);
 AssertCompileMemberOffset(CPUMCTX,                                       rip, 0x0140);
 AssertCompileMemberOffset(CPUMCTX,                                    rflags, 0x0148);
+AssertCompileMemberOffset(CPUMCTX,                                    fExtrn, 0x0150);
 AssertCompileMemberOffset(CPUMCTX,                            uRipInhibitInt, 0x0158);
 AssertCompileMemberOffset(CPUMCTX,                                       cr0, 0x0160);
 AssertCompileMemberOffset(CPUMCTX,                                       cr2, 0x0168);

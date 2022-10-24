@@ -162,10 +162,10 @@ struc CPUMCTX
     .tr.u64Base         resq    1
     .tr.u32Limit        resd    1
     .tr.Attr            resd    1
+    alignb 8
     .eip                resq    1
     .eflags             resq    1
-    .abPadding          resb    8
-    alignb 8
+    .fExtrn             resq    1
     .uRipInhibitInt     resq    1
     .cr0                resq    1
     .cr2                resq    1
@@ -190,9 +190,6 @@ struc CPUMCTX
     .msrCSTAR           resb    8
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
-
-    alignb 8
-    .fExtrn             resq    1
 
     alignb 32
     .aPaePdpes          resq    4

@@ -187,10 +187,10 @@ struc CPUMCPU
     .Guest.tr.u64Base           resq    1
     .Guest.tr.u32Limit          resd    1
     .Guest.tr.Attr              resd    1
+    alignb 8
     .Guest.eip                  resq    1
     .Guest.eflags               resq    1
-    .Guest.abPadding            resb    8
-    alignb 8
+    .Guest.fExtrn               resq    1
     .Guest.uRipInhibitInt       resq    1
     .Guest.cr0                  resq    1
     .Guest.cr2                  resq    1
@@ -215,9 +215,6 @@ struc CPUMCPU
     .Guest.msrCSTAR             resb    8
     .Guest.msrSFMASK            resb    8
     .Guest.msrKERNELGSBASE      resb    8
-
-    alignb 8
-    .Guest.fExtrn               resq    1
 
     alignb 32
     .Guest.aPaePdpes            resq    4
