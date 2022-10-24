@@ -70,13 +70,15 @@
 #include <iprt/thread.h>
 #include <iprt/types.h>
 
+
 #include <VBox/GuestHost/HGCMMock.h>
+#include <VBox/VBoxGuestLib.h>
 
 
-/** Prototype for HGCM Mock utils context. */
-struct TSTHGCMUTILSCTX;
+#if defined(IN_RING3) /* Only R3 parts implemented so far. */
+
 /** Pointer to a HGCM Mock utils context. */
-typedef TSTHGCMUTILSCTX *PTSTHGCMUTILSCTX;
+typedef struct TSTHGCMUTILSCTX *PTSTHGCMUTILSCTX;
 
 /**
  * Structure for keeping a HGCM Mock utils host service callback table.
@@ -126,7 +128,6 @@ typedef struct TSTHGCMUTILSCTX
     struct
     {
         RTTHREAD                  hThread;
-        VBGLR3SHCLCMDCTX          CmdCtx;
         volatile bool             fShutdown;
         PFNTSTHGCMUTILSTHREAD     pfnThread;
         void                     *pvUser;
@@ -139,6 +140,34 @@ typedef struct TSTHGCMUTILSCTX
         void                     *pvUser;
     } Host;
 } TSTHGCMUTILSCTX;
+
+
+/*********************************************************************************************************************************
+*  Prototypes.                                                                                                                   *
+*********************************************************************************************************************************/
+/** @name Context handling.
+ * @{ */
+void TstHGCMUtilsCtxInit(PTSTHGCMUTILSCTX pCtx, PTSTHGCMMOCKSVC pSvc);
+/** @} */
+
+/** @name Task handling.
+ * @{ */
+PTSTHGCMUTILSTASK TstHGCMUtilsTaskGetCurrent(PTSTHGCMUTILSCTX pCtx);
+int TstHGCMUtilsTaskInit(PTSTHGCMUTILSTASK pTask);
+void TstHGCMUtilsTaskDestroy(PTSTHGCMUTILSTASK pTask);
+int TstHGCMUtilsTaskWait(PTSTHGCMUTILSTASK pTask, RTMSINTERVAL msTimeout);
+bool TstHGCMUtilsTaskOk(PTSTHGCMUTILSTASK pTask);
+bool TstHGCMUtilsTaskCompleted(PTSTHGCMUTILSTASK pTask);
+void TstHGCMUtilsTaskSignal(PTSTHGCMUTILSTASK pTask, int rc);
+/** @} */
+
+/** @name Threading.
+ * @{ */
+int TstHGCMUtilsGuestThreadStart(PTSTHGCMUTILSCTX pCtx, PFNTSTHGCMUTILSTHREAD pFnThread, void *pvUser);
+int TstHGCMUtilsGuestThreadStop(PTSTHGCMUTILSCTX pCtx);
+int TstHGCMUtilsHostThreadStart(PTSTHGCMUTILSCTX pCtx, PTSTHGCMUTILSHOSTCALLBACKS pCallbacks, void *pvUser);
+int TstHGCMUtilsHostThreadStop(PTSTHGCMUTILSCTX pCtx);
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -323,7 +352,7 @@ int TstHGCMUtilsGuestThreadStop(PTSTHGCMUTILSCTX pCtx)
  *
  * @note    Runs in the host service thread.
  */
-DECLCALLBACK(int) tstHGCMUtilsHostThreadWorker(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) tstHGCMUtilsHostThreadWorker(RTTHREAD hThread, void *pvUser)
 {
     RT_NOREF(hThread);
     PTSTHGCMUTILSCTX pCtx = (PTSTHGCMUTILSCTX)pvUser;
@@ -392,5 +421,8 @@ int TstHGCMUtilsHostThreadStop(PTSTHGCMUTILSCTX pCtx)
 
     return rc;
 }
+
+#endif /* IN_RING3 */
+
 #endif /* !VBOX_INCLUDED_GuestHost_HGCMMockUtils_h */
 

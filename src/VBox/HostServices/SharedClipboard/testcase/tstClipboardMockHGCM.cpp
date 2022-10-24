@@ -107,6 +107,11 @@ typedef struct CLIPBOARDTESTCTX
     TSTHGCMUTILSCTX   HGCM;
     /** Clipboard-specific task data. */
     CLIPBOARDTESTTASK Task;
+    struct
+    {
+        /** The VbglR3 Shared Clipboard context to work on. */
+        VBGLR3SHCLCMDCTX CmdCtx;
+    } Guest;
 } CLIPBOARDTESTCTX;
 
 /** The one and only clipboard test context. One at a time. */
@@ -459,7 +464,7 @@ static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK p
             break;
     }
 
-    PVBGLR3SHCLCMDCTX pCmdCtx = &pCtx->HGCM.Guest.CmdCtx;
+    PVBGLR3SHCLCMDCTX pCmdCtx = &pCtx->Guest.CmdCtx;
 
     /* Do random chunked reads. */
     uint32_t const cChunkedReads = RTRandU32Ex(1, 16);
@@ -512,13 +517,14 @@ static DECLCALLBACK(int) tstTestReadFromHost_ThreadGuest(PTSTHGCMUTILSCTX pCtx, 
 {
     RTThreadSleep(1000); /* Fudge; wait until the host has prepared the data for the clipboard. */
 
-    RT_ZERO(pCtx->Guest.CmdCtx);
-    RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardConnectEx(&pCtx->Guest.CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID));
+    PCLIPBOARDTESTCTX  pTstCtx  = (PCLIPBOARDTESTCTX)pvCtx;
+    AssertPtr(pTstCtx);
+
+    RT_ZERO(pTstCtx->Guest.CmdCtx);
+    RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardConnectEx(&pTstCtx->Guest.CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID));
 
     RTThreadSleep(1000); /* Fudge; wait until the host has prepared the data for the clipboard. */
 
-    PCLIPBOARDTESTCTX  pTstCtx  = (PCLIPBOARDTESTCTX)pvCtx;
-    AssertPtr(pTstCtx);
     PCLIPBOARDTESTTASK pTstTask = (PCLIPBOARDTESTTASK)pCtx->Task.pvUser;
     AssertPtr(pTstTask);
     tstTestReadFromHost_DoIt(pTstCtx, pTstTask);
@@ -526,7 +532,7 @@ static DECLCALLBACK(int) tstTestReadFromHost_ThreadGuest(PTSTHGCMUTILSCTX pCtx, 
     /* Signal that the task ended. */
     TstHGCMUtilsTaskSignal(&pCtx->Task, VINF_SUCCESS);
 
-    RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardDisconnectEx(&pCtx->Guest.CmdCtx));
+    RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardDisconnectEx(&pTstCtx->Guest.CmdCtx));
 
     return VINF_SUCCESS;
 }
