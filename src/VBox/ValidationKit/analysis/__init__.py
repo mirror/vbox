@@ -37,5 +37,4 @@ terms and conditions of either the GPL or the CDDL or both.
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
 __version__ = "$Revision$"
-__all__     = ["reader", "diff", "reporting"]
 
