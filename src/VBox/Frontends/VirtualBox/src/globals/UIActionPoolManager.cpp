@@ -1214,6 +1214,34 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform Detach' action class. */
+class UIActionSimpleManagerCommonPerformDetach : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerCommonPerformDetach(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("DetachUIVM");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "&Detach GUI"));
+        setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
+    }
+};
+
 /** Simple menu action extension, used as 'Perform Discard' action class. */
 class UIActionSimpleManagerCommonPerformDiscard : public UIActionSimple
 {
@@ -1642,34 +1670,6 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Close"));
-    }
-};
-
-/** Simple action extension, used as 'Perform Detach' action class. */
-class UIActionSimpleManagerClosePerformDetach : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerClosePerformDetach(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("DetachUIVM");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE
-    {
-        setName(QApplication::translate("UIActionPool", "&Detach GUI"));
-        setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
     }
 };
 
@@ -3644,12 +3644,12 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable] = new UIActionSimpleManagerCommonPerformStartDetachable(this);
     m_pool[UIActionIndexMN_M_Group_T_Pause] = new UIActionToggleManagerCommonPauseAndResume(this);
     m_pool[UIActionIndexMN_M_Group_S_Reset] = new UIActionSimpleManagerCommonPerformReset(this);
+    m_pool[UIActionIndexMN_M_Group_S_Detach] = new UIActionSimpleManagerCommonPerformDetach(this);
     m_pool[UIActionIndexMN_M_Group_M_Console] = new UIActionMenuManagerConsole(this);
     m_pool[UIActionIndexMN_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleManagerConsolePerformCreateConnection(this);
     m_pool[UIActionIndexMN_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleManagerConsolePerformDeleteConnection(this);
     m_pool[UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications] = new UIActionSimpleManagerConsolePerformConfigureApplications(this);
     m_pool[UIActionIndexMN_M_Group_M_Close] = new UIActionMenuManagerClose(this);
-    m_pool[UIActionIndexMN_M_Group_M_Close_S_Detach] = new UIActionSimpleManagerClosePerformDetach(this);
     m_pool[UIActionIndexMN_M_Group_M_Close_S_SaveState] = new UIActionSimpleManagerClosePerformSave(this);
     m_pool[UIActionIndexMN_M_Group_M_Close_S_Terminate] = new UIActionSimpleManagerClosePerformTerminate(this);
     m_pool[UIActionIndexMN_M_Group_M_Close_S_Shutdown] = new UIActionSimpleManagerClosePerformShutdown(this);
@@ -3686,6 +3686,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable] = new UIActionSimpleManagerCommonPerformStartDetachable(this);
     m_pool[UIActionIndexMN_M_Machine_T_Pause] = new UIActionToggleManagerCommonPauseAndResume(this);
     m_pool[UIActionIndexMN_M_Machine_S_Reset] = new UIActionSimpleManagerCommonPerformReset(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Detach] = new UIActionSimpleManagerCommonPerformDetach(this);
     m_pool[UIActionIndexMN_M_Machine_M_Console] = new UIActionMenuManagerConsole(this);
     m_pool[UIActionIndexMN_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleManagerConsolePerformCreateConnection(this);
     m_pool[UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleManagerConsolePerformDeleteConnection(this);
@@ -3696,7 +3697,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleManagerConsolePerformConfigureApplications(this);
     m_pool[UIActionIndexMN_M_Machine_M_Console_S_ShowLog] = new UIActionSimpleManagerConsolePerformShowLog(this);
     m_pool[UIActionIndexMN_M_Machine_M_Close] = new UIActionMenuManagerClose(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Detach] = new UIActionSimpleManagerClosePerformDetach(this);
     m_pool[UIActionIndexMN_M_Machine_M_Close_S_SaveState] = new UIActionSimpleManagerClosePerformSave(this);
     m_pool[UIActionIndexMN_M_Machine_M_Close_S_Terminate] = new UIActionSimpleManagerClosePerformTerminate(this);
     m_pool[UIActionIndexMN_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleManagerClosePerformShutdown(this);
@@ -3958,6 +3958,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexMN_M_Group_M_StartOrShow)
                     << action(UIActionIndexMN_M_Group_T_Pause)
                     << action(UIActionIndexMN_M_Group_S_Reset)
+                    // << action(UIActionIndexMN_M_Group_S_Detach)
                     << action(UIActionIndexMN_M_Group_S_Discard)
                     << action(UIActionIndexMN_M_Group_S_ShowLogDialog)
                     << action(UIActionIndexMN_M_Group_S_Refresh)
@@ -3970,7 +3971,6 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection)
                     << action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection)
                     << action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)
-                    // << action(UIActionIndexMN_M_Group_M_Close_S_Detach)
                     << action(UIActionIndexMN_M_Group_M_Close_S_SaveState)
                     << action(UIActionIndexMN_M_Group_M_Close_S_Terminate)
                     << action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)
@@ -3994,6 +3994,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexMN_M_Machine_M_StartOrShow)
                     << action(UIActionIndexMN_M_Machine_T_Pause)
                     << action(UIActionIndexMN_M_Machine_S_Reset)
+                    // << action(UIActionIndexMN_M_Machine_S_Detach)
                     << action(UIActionIndexMN_M_Machine_S_Discard)
                     << action(UIActionIndexMN_M_Machine_S_ShowLogDialog)
                     << action(UIActionIndexMN_M_Machine_S_Refresh)
@@ -4012,7 +4013,6 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows)
                     << action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)
                     << action(UIActionIndexMN_M_Machine_M_Console_S_ShowLog)
-                    // << action(UIActionIndexMN_M_Machine_M_Close_S_Detach)
                     << action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)
                     << action(UIActionIndexMN_M_Machine_M_Close_S_Terminate)
                     << action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)

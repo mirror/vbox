@@ -1684,7 +1684,7 @@ void UIVirtualBoxManager::sltPerformDetachMachineUI()
     foreach (UIVirtualMachineItem *pItem, items)
     {
         /* Check if current item could be detached: */
-        if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Detach, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Machine_S_Detach, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /// @todo Detach separate UI process..
@@ -2230,6 +2230,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformPauseOrResumeMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Reset), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformResetMachine);
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Detach), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog), &UIAction::triggered,
@@ -2270,6 +2272,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformPauseOrResumeMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformResetMachine);
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Detach), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog), &UIAction::triggered,
@@ -2330,8 +2334,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformShowLog);
 
     /* 'Group/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate), &UIAction::triggered,
@@ -2342,8 +2344,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Machine/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Detach), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate), &UIAction::triggered,
@@ -2810,6 +2810,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Pause));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Reset));
+        // pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Detach));
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenu->addSeparator();
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Tools)->menu());
@@ -2869,6 +2870,7 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Pause));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset));
+        // pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Detach));
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenu->addSeparator();
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Tools)->menu());
@@ -2923,7 +2925,6 @@ void UIVirtualBoxManager::updateMenuGroupClose(QMenu *pMenu)
     /* For local machine: */
     if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
-        // pMenu->addAction(action(UIActionIndexMN_M_Group_M_Close_S_Detach));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff));
@@ -3069,7 +3070,6 @@ void UIVirtualBoxManager::updateMenuMachineClose(QMenu *pMenu)
     /* For local machine: */
     if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
-        // pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Close_S_Detach));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff));
@@ -3167,6 +3167,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Group_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_MoveToGroup, items));
     actionPool()->action(UIActionIndexMN_M_Group_T_Pause)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_T_Pause, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Reset)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Reset, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Discard, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Refresh, items));
@@ -3186,6 +3187,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New, items));
     actionPool()->action(UIActionIndexMN_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_T_Pause, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Reset)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Reset, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Discard, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_ShowLogDialog, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Refresh, items));
@@ -3224,7 +3226,6 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexMN_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close, items));
-    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_SaveState, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Terminate, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
@@ -3232,7 +3233,6 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
     /* Enable/disable machine-close actions: */
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items));
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Terminate, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
@@ -3459,6 +3459,13 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
             return isItemsLocal(items) &&
                    isAtLeastOneItemRunning(items);
         }
+        case UIActionIndexMN_M_Group_S_Detach:
+        case UIActionIndexMN_M_Machine_S_Detach:
+        {
+            return isItemsLocal(items) &&
+                   isAtLeastOneItemRunning(items) &&
+                   isAtLeastOneItemDetachable(items);
+        }
         case UIActionIndexMN_M_Group_S_Refresh:
         case UIActionIndexMN_M_Machine_S_Refresh:
         {
@@ -3502,8 +3509,6 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
             return    (isItemsLocal(items) && isAtLeastOneItemStarted(items))
                    || (isItemsCloud(items) && isAtLeastOneItemDiscardable(items));
         }
-        case UIActionIndexMN_M_Group_M_Close_S_Detach:
-        case UIActionIndexMN_M_Machine_M_Close_S_Detach:
         case UIActionIndexMN_M_Group_M_Close_S_SaveState:
         case UIActionIndexMN_M_Machine_M_Close_S_SaveState:
         {
@@ -3712,6 +3717,15 @@ bool UIVirtualBoxManager::isAtLeastOneItemRunning(const QList<UIVirtualMachineIt
 {
     foreach (UIVirtualMachineItem *pItem, items)
         if (pItem->isItemRunning())
+            return true;
+    return false;
+}
+
+/* static */
+bool UIVirtualBoxManager::isAtLeastOneItemDetachable(const QList<UIVirtualMachineItem*> &items)
+{
+    foreach (UIVirtualMachineItem *pItem, items)
+        if (pItem->isItemRunningHeadless())
             return true;
     return false;
 }
