@@ -112,9 +112,8 @@ class TestBoxScriptWrapper(object): # pylint: disable=too-few-public-methods
             if asArgs[i] == '--':
                 break;
         if sPidFile:
-            oPidFile = open(sPidFile, 'w');
-            oPidFile.write(str(os.getpid()));
-            oPidFile.close();
+            with open(sPidFile, 'w') as oPidFile:
+                oPidFile.write(str(os.getpid()));
 
         # Execute the testbox script almost forever in a relaxed loop.
         rcExit = TBS_EXITCODE_FAILURE;
@@ -122,7 +121,8 @@ class TestBoxScriptWrapper(object): # pylint: disable=too-few-public-methods
             fCreationFlags = 0;
             if platform.system() == 'Windows':
                 fCreationFlags = getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0x00000200); # for Ctrl-C isolation (python 2.7)
-            self.oTask = subprocess.Popen(asArgs, shell = False, creationflags = fCreationFlags);
+            self.oTask = subprocess.Popen(asArgs, shell = False,           # pylint: disable=consider-using-with
+                                          creationflags = fCreationFlags);
             rcExit = self.oTask.wait();
             self.oTask = None;
             if rcExit == TBS_EXITCODE_SYNTAX:
