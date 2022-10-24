@@ -181,9 +181,8 @@ typedef struct TSTHGCMMOCKSVC
     /** Event semaphore for signalling a message
      *  queue change. */
     RTSEMEVENT         hEventQueue;
-    /** Event semaphore for waiting on events, such
-     *  as clients connecting. */
-    RTSEMEVENT         hEventWait;
+    /** Event semaphore for clients connecting to the server. */
+    RTSEMEVENT         hEventConnect;
     /** Number of current host calls being served.
      *  Currently limited to one call at a time. */
     uint8_t            cHostCallers;
@@ -297,6 +296,9 @@ static DECLCALLBACK(int) tstHgcmMockSvcConnect(PTSTHGCMMOCKSVC pSvc, void *pvSer
     AssertRCReturn(rc2, rc2);
 
     ASMAtomicIncU32(&pSvc->uNextClientId);
+
+    rc2 = RTSemEventSignal(pSvc->hEventConnect);
+    AssertRCReturn(rc2, rc2);
 
     *pidClient = pClient->idClient;
 
@@ -553,7 +555,7 @@ PTSTHGCMMOCKSVC TstHgcmMockSvcInst(void)
  */
 PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnectEx(PTSTHGCMMOCKSVC pSvc, RTMSINTERVAL msTimeout)
 {
-    int rc = RTSemEventWait(pSvc->hEventWait, msTimeout);
+    int rc = RTSemEventWait(pSvc->hEventConnect, msTimeout);
     if (RT_SUCCESS(rc))
     {
         Assert(pSvc->uNextClientId);
@@ -593,7 +595,7 @@ int TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient)
         rc = RTSemEventCreate(&pSvc->hEventHostCall);
         if (RT_SUCCESS(rc))
         {
-            rc = RTSemEventCreate(&pSvc->hEventWait);
+            rc = RTSemEventCreate(&pSvc->hEventConnect);
             if (RT_SUCCESS(rc))
             {
                 RTListInit(&pSvc->lstCall);
@@ -619,7 +621,7 @@ int TstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc)
     {
         rc = RTSemEventDestroy(pSvc->hEventHostCall);
         if (RT_SUCCESS(rc))
-            RTSemEventDestroy(pSvc->hEventWait);
+            RTSemEventDestroy(pSvc->hEventConnect);
     }
     return rc;
 }
