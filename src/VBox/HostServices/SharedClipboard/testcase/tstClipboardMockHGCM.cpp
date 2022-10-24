@@ -32,6 +32,9 @@
 #ifdef RT_OS_LINUX
 # include <VBox/GuestHost/SharedClipboard-x11.h>
 #endif
+#ifdef RT_OS_WINDOWS
+# include <VBox/GuestHost/SharedClipboard-win.h>
+#endif
 
 #include <VBox/GuestHost/HGCMMock.h>
 #include <VBox/GuestHost/HGCMMockUtils.h>
@@ -457,7 +460,9 @@ static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK p
     switch (pTask->enmFmtGst)
     {
         case VBOX_SHCL_FMT_UNICODETEXT:
+#ifndef RT_OS_WINDOWS /** @todo Not sure about OS/2. */
             cbToRead *= sizeof(RTUTF16);
+#endif
             break;
 
         default:
@@ -500,10 +505,14 @@ static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK p
         RTTEST_CHECK_MSG(g_hTest, RTUtf16ValidateEncoding((PRTUTF16)pabDst) == VINF_SUCCESS, (g_hTest, "Read data is not valid UTF-16\n"));
     if (cbRead == cbToRead)
     {
-        PRTUTF16 pwszSrc;
+#ifndef RT_OS_WINDOWS /** @todo Not sure about OS/2. */
+        PRTUTF16 pwszSrc = NULL;
         RTTEST_CHECK(g_hTest, RT_SUCCESS(RTStrToUtf16((const char *)pTask->pvData, &pwszSrc)));
         RTTEST_CHECK_MSG(g_hTest, memcmp(pwszSrc, pabDst, cbRead) == 0, (g_hTest, "Read data does not match host data\n"));
         RTUtf16Free(pwszSrc);
+#else
+        RTTEST_CHECK_MSG(g_hTest, memcmp(pTask->pvData, pabDst, cbRead) == 0, (g_hTest, "Read data does not match host data\n"));
+#endif
     }
 
     RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Read data from host:\n%.*Rhxd\n", cbRead, pabDst);
@@ -553,17 +562,6 @@ static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, voi
 {
     RT_NOREF(ppvCtx);
 
-#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
-    /* Initialize the Shared Clipboard backend callbacks. */
-    PSHCLBACKEND pBackend = ShClSvcGetBackend();
-
-    SHCLCALLBACKS ShClCallbacks;
-    RT_ZERO(ShClCallbacks);
-    ShClCallbacks.pfnReportFormats   = tstTestReadFromHost_ReportFormatsCallback;
-    ShClCallbacks.pfnOnClipboardRead = tstTestReadFromHost_OnClipboardReadCallback;
-    ShClBackendSetCallbacks(pBackend, &ShClCallbacks);
-#endif /* defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS) */
-
     /* Set the right clipboard mode, so that the guest can read from the host. */
     tstClipboardSetMode(TstHgcmMockSvcInst(), VBOX_SHCL_MODE_BIDIRECTIONAL);
 
@@ -584,13 +582,34 @@ static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, voi
     pTask->pvData      = tstGenerateUtf8StringA(pTask->cbData);
     pTask->cbData++; /* Add terminating zero. */
 #else
-    pTask->pvData      = tstGenerateUtf16StringA((uint32_t)(pTask->cbData / sizeof(RTUTF16)));
+    pTask->pvData      = tstGenerateUtf16StringA((uint32_t)(pTask->cbData /* We use bytes == chars here */));
+    pTask->cbData     *= sizeof(RTUTF16);
     pTask->cbData     += sizeof(RTUTF16); /* Add terminating zero. */
 #endif
     pTask->cbProcessed = 0;
 
+    int rc = VINF_SUCCESS;
+
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+    /* Initialize the Shared Clipboard backend callbacks. */
+    PSHCLBACKEND pBackend = ShClSvcGetBackend();
+
+    SHCLCALLBACKS ShClCallbacks;
+    RT_ZERO(ShClCallbacks);
+    ShClCallbacks.pfnReportFormats   = tstTestReadFromHost_ReportFormatsCallback;
+    ShClCallbacks.pfnOnClipboardRead = tstTestReadFromHost_OnClipboardReadCallback;
+    ShClBackendSetCallbacks(pBackend, &ShClCallbacks);
+#elif defined (RT_OS_WINDOWS)
+    rc = SharedClipboardWinOpen(GetDesktopWindow());
+    if (RT_SUCCESS(rc))
+    {
+        rc = SharedClipboardWinDataWrite(CF_UNICODETEXT, pTask->pvData, (uint32_t)pTask->cbData);
+        SharedClipboardWinClose();
+    }
+#endif /* defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS) */
+
     RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Host data (%RU32):\n%.*Rhxd\n", pTask->cbData, pTask->cbData, pTask->pvData);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(int) tstTestReadFromHostExec(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx)
