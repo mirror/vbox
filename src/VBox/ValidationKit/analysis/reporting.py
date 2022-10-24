@@ -281,8 +281,8 @@ class RunRow(object):
         """ Formats percentage value as text. """
         if rdPct >= 100:
             return '%s%s%%' % (chSign, utils.formatNumber(int(rdPct + 0.5)),);
-        if rdPct * 100 + 0.5 >= 1:
-            return '%s%.*f%%' % (chSign, cPctPrecision, rdPct + 0.005,);
+        if round(rdPct, cPctPrecision) != 0:
+            return '%s%.*f%%' % (chSign, cPctPrecision, rdPct,); # %.*f rounds.
         return '~' + chSign + '0.' + '0' * cPctPrecision + '%';
 
     @staticmethod
