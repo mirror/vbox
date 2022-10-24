@@ -164,7 +164,7 @@ struc CPUMCTX
     .tr.Attr            resd    1
     .eip                resq    1
     .eflags             resq    1
-    .fInhibit           resb    1
+    .abPadding          resb    8
     alignb 8
     .uRipInhibitInt     resq    1
     .cr0                resq    1

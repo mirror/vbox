@@ -520,8 +520,8 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /* 21 used to be VMCPU_FF_SELM_SYNC_TSS (raw-mode only). */
 /* 22 used to be VMCPU_FF_SELM_SYNC_GDT (raw-mode only). */
 /* 23 used to be VMCPU_FF_SELM_SYNC_LDT (raw-mode only). */
-/* 24 used to be VMCPU_FF_INHIBIT_INTERRUPTS, which moved to CPUMCTX::fInhibit in v7.0.4. */
-/* 25 used to be VMCPU_FF_BLOCK_NMIS, which moved to CPUMCTX::fInhibit in v7.0.4. */
+/* 24 used to be VMCPU_FF_INHIBIT_INTERRUPTS, which moved to CPUMCTX::eflags.uBoth in v7.0.4. */
+/* 25 used to be VMCPU_FF_BLOCK_NMIS, which moved to CPUMCTX::eflags.uBoth in v7.0.4. */
 /** Force return to Ring-3. */
 #define VMCPU_FF_TO_R3                      RT_BIT_64(VMCPU_FF_TO_R3_BIT)
 #define VMCPU_FF_TO_R3_BIT                  28

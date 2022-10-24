@@ -1242,7 +1242,7 @@ static void iemVmxVmentrySaveNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
      * we will be able to generate interrupts that may cause VM-exits for
      * the nested-guest.
      */
-    pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = pVCpu->cpum.GstCtx.fInhibit & CPUMCTX_INHIBIT_NMI;
+    pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_INHIBIT_NMI;
 }
 
 
@@ -1256,7 +1256,7 @@ static void iemVmxVmexitRestoreNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
     /** @todo r=bird: why aren't we clearing the nested guest flags first here?
      *        If there is some other code doing that already, it would be great
      *        to point to it here... */
-    pVCpu->cpum.GstCtx.fInhibit |= pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit;
+    pVCpu->cpum.GstCtx.eflags.uBoth        |= pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit;
     pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = 0;
 }
 

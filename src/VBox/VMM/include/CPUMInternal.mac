@@ -189,7 +189,7 @@ struc CPUMCPU
     .Guest.tr.Attr              resd    1
     .Guest.eip                  resq    1
     .Guest.eflags               resq    1
-    .Guest.fInhibit             resb    1
+    .Guest.abPadding            resb    8
     alignb 8
     .Guest.uRipInhibitInt       resq    1
     .Guest.cr0                  resq    1

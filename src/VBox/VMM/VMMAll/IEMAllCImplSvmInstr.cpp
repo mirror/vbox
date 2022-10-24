@@ -323,7 +323,7 @@ VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo
         /*
          * Restore the subset of the inhibit flags that were preserved.
          */
-        pVCpu->cpum.GstCtx.fInhibit |= pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit;
+        pVCpu->cpum.GstCtx.eflags.uBoth |= pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit;
 
         if (rcStrict == VINF_SUCCESS)
         {
@@ -728,8 +728,8 @@ static VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhys
          * VMRUN has implicit GIF (Global Interrupt Flag) handling, we don't need to
          * preserve VMCPU_FF_INHIBIT_INTERRUPTS.
          */
-        pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = pVCpu->cpum.GstCtx.fInhibit & CPUMCTX_INHIBIT_NMI;
-        pVCpu->cpum.GstCtx.fInhibit            &=                              ~CPUMCTX_INHIBIT_NMI;
+        pVCpu->cpum.GstCtx.hwvirt.fSavedInhibit = pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_INHIBIT_NMI;
+        pVCpu->cpum.GstCtx.eflags.uBoth        &=                                  ~CPUMCTX_INHIBIT_NMI;
 
         /*
          * Pause filter.

@@ -273,10 +273,13 @@ AssertCompileSize(CPUMHWVIRT, 4);
 # error "Misconfigured CPUMX86EFLAGS_HW_BITS value!"
 #endif
 
-/** Mask of internal flags kept with EFLAGS, 64-bit version.   */
-#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x0000000000000000)
-/** Mask of internal flags kept with EFLAGS, 32-bit version.   */
-#define CPUMX86EFLAGS_INT_MASK_32   UINT64_C(0x0000000000000000)
+/** Mask of internal flags kept with EFLAGS, 64-bit version.
+ * The first 3 available bits are taken by CPUMCTX_INHIBIT_SHADOW_SS,
+ * CPUMCTX_INHIBIT_SHADOW_STI and CPUMCTX_INHIBIT_NMI.
+ */
+#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x0000000007000000)
+/** Mask of internal flags kept with EFLAGS, 32-bit version. */
+#define CPUMX86EFLAGS_INT_MASK_32           UINT32_C(0x07000000)
 
 
 /**
@@ -413,10 +416,8 @@ typedef struct CPUMCTX
         CPUMX86RFLAGS   rflags;
     } CPUM_UNION_NM(rflags);
 
-    /** Interrupt & exception inhibiting (CPUMCTX_INHIBIT_XXX). */
-    uint8_t             fInhibit;
-    uint8_t             abPadding[7];
-    /** The RIP value fInhibit is/was valid for. */
+    uint8_t             abPadding[8];
+    /** The RIP value an interrupt shadow is/was valid for. */
     uint64_t            uRipInhibitInt;
 
     /** @name Control registers.
@@ -673,7 +674,6 @@ AssertCompileMemberOffset(CPUMCTX,                                      ldtr, 0x
 AssertCompileMemberOffset(CPUMCTX,                                        tr, 0x0128);
 AssertCompileMemberOffset(CPUMCTX,                                       rip, 0x0140);
 AssertCompileMemberOffset(CPUMCTX,                                    rflags, 0x0148);
-AssertCompileMemberOffset(CPUMCTX,                                  fInhibit, 0x0150);
 AssertCompileMemberOffset(CPUMCTX,                            uRipInhibitInt, 0x0158);
 AssertCompileMemberOffset(CPUMCTX,                                       cr0, 0x0160);
 AssertCompileMemberOffset(CPUMCTX,                                       cr2, 0x0168);
@@ -1015,12 +1015,12 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
  * It is implementation specific whether a sequence of two or more of these
  * instructions will have any effect on the instruction following the last one
  * of them. */
-#define CPUMCTX_INHIBIT_SHADOW_SS   UINT8_C(0x01)
+#define CPUMCTX_INHIBIT_SHADOW_SS       RT_BIT_32(0 + CPUMX86EFLAGS_HW_BITS)
 /** Interrupt shadow following STI.
  * Same as CPUMCTX_INHIBIT_SHADOW_SS but without blocking any debug exceptions. */
-#define CPUMCTX_INHIBIT_SHADOW_STI  UINT8_C(0x02)
+#define CPUMCTX_INHIBIT_SHADOW_STI      RT_BIT_32(1 + CPUMX86EFLAGS_HW_BITS)
 /** Mask combining STI and SS shadowing. */
-#define CPUMCTX_INHIBIT_SHADOW      (CPUMCTX_INHIBIT_SHADOW_SS | CPUMCTX_INHIBIT_SHADOW_STI)
+#define CPUMCTX_INHIBIT_SHADOW          (CPUMCTX_INHIBIT_SHADOW_SS | CPUMCTX_INHIBIT_SHADOW_STI)
 
 /** Interrupts blocked by NMI delivery.  This condition is cleared by IRET.
  *
@@ -1029,7 +1029,11 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
  * other interrupts, including NMI interrupts, are received until the NMI
  * handler has completed executing."  This flag indicates that these
  * conditions are currently active.  */
-#define CPUMCTX_INHIBIT_NMI         UINT8_C(0x04)
+#define CPUMCTX_INHIBIT_NMI             RT_BIT_32(2 + CPUMX86EFLAGS_HW_BITS)
+
+/** Mask containing all the interrupt inhibit bits. */
+#define CPUMCTX_INHIBIT_ALL_MASK        (CPUMCTX_INHIBIT_SHADOW_SS | CPUMCTX_INHIBIT_SHADOW_STI | CPUMCTX_INHIBIT_NMI)
+AssertCompile(CPUMCTX_INHIBIT_ALL_MASK < UINT32_MAX);
 /** @} */
 
 

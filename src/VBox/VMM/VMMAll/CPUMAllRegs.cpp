@@ -196,9 +196,11 @@ VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVMCPU pVCpu)
  */
 VMM_INT_DECL(bool) CPUMAssertGuestRFlagsCookie(PVM pVM, PVMCPU pVCpu)
 {
-    AssertLogRelMsgReturn(      (pVCpu->cpum.s.Guest.rflags.uBoth & ~(uint64_t)(X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK))
+    AssertLogRelMsgReturn(      (  pVCpu->cpum.s.Guest.rflags.uBoth
+                                 & ~(uint64_t)(CPUMX86EFLAGS_HW_MASK_64 | CPUMX86EFLAGS_INT_MASK_64))
                              == pVM->cpum.s.fReservedRFlagsCookie
-                          && (pVCpu->cpum.s.Guest.rflags.uBoth & X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK,
+                          && (pVCpu->cpum.s.Guest.rflags.uBoth & X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK
+                          && (pVCpu->cpum.s.Guest.rflags.uBoth & X86_EFL_RAZ_MASK & CPUMX86EFLAGS_HW_MASK_64) == 0,
                           ("rflags=%#RX64 vs fReservedRFlagsCookie=%#RX64\n",
                            pVCpu->cpum.s.Guest.rflags.uBoth, pVM->cpum.s.fReservedRFlagsCookie),
                           false);
@@ -1950,8 +1952,8 @@ VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
          * it directly here. If and how EFLAGS are used depends on the context (nested-guest
          * or raw-mode). Hence we use the function below which handles the details.
          */
-        if (   pVCpu->cpum.s.Guest.fInhibit == 0
-            || (   !(pVCpu->cpum.s.Guest.fInhibit & CPUMCTX_INHIBIT_NMI)
+        if (   !(pVCpu->cpum.s.Guest.eflags.uBoth & CPUMCTX_INHIBIT_ALL_MASK)
+            || (   !(pVCpu->cpum.s.Guest.eflags.uBoth & CPUMCTX_INHIBIT_NMI)
                 && pVCpu->cpum.s.Guest.uRipInhibitInt != pVCpu->cpum.s.Guest.rip))
         {
             /** @todo OPT: this next call should be inlined! */
@@ -1982,7 +1984,7 @@ VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
          *        NMIs are not blocked when in an interrupt shadow. Section "6.7
          *        NONMASKABLE INTERRUPT (NMI)" in SDM 3A seems pretty clear to me.
          */
-        if (!(pVCpu->cpum.s.Guest.fInhibit & CPUMCTX_INHIBIT_NMI))
+        if (!(pVCpu->cpum.s.Guest.eflags.uBoth & CPUMCTX_INHIBIT_NMI))
             return CPUMINTERRUPTIBILITY_INT_INHIBITED;
         return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
     }

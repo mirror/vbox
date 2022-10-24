@@ -1930,12 +1930,12 @@ DECLINLINE(void) CPUMSetGuestGif(PCPUMCTX pCtx, bool fGif)
  * @returns true if interrupts are inhibited by interrupt shadow, false if not.
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
- * @note    Does not clear fInhibit when CPUMCTX::uRipInhibitInt differs
- *          from CPUMCTX::rip.
+ * @note    Does NOT clear CPUMCTX_INHIBIT_SHADOW when CPUMCTX::uRipInhibitInt
+ *          differs from CPUMCTX::rip.
  */
 DECLINLINE(bool) CPUMIsInInterruptShadow(PCCPUMCTX pCtx)
 {
-    if (!(pCtx->fInhibit & CPUMCTX_INHIBIT_SHADOW))
+    if (!(pCtx->eflags.uBoth & CPUMCTX_INHIBIT_SHADOW))
         return false;
 
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
@@ -1955,14 +1955,14 @@ DECLINLINE(bool) CPUMIsInInterruptShadow(PCCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMIsInInterruptShadowWithUpdate(PCPUMCTX pCtx)
 {
-    if (!(pCtx->fInhibit & CPUMCTX_INHIBIT_SHADOW))
+    if (!(pCtx->eflags.uBoth & CPUMCTX_INHIBIT_SHADOW))
         return false;
 
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
     if (pCtx->uRipInhibitInt == pCtx->rip)
         return true;
 
-    pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
+    pCtx->eflags.uBoth &= ~CPUMCTX_INHIBIT_SHADOW;
     return false;
 }
 
@@ -1976,14 +1976,14 @@ DECLINLINE(bool) CPUMIsInInterruptShadowWithUpdate(PCPUMCTX pCtx)
  * @retval  false if not.
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
- * @note    Does not clear fInhibit when CPUMCTX::uRipInhibitInt differs
- *          from CPUMCTX::rip.
+ * @note    Does NOT clear CPUMCTX_INHIBIT_SHADOW when CPUMCTX::uRipInhibitInt
+ *          differs from CPUMCTX::rip.
  * @note    Both CPUMIsInInterruptShadowAfterSti() and this function may return
  *          true depending on the execution engine being used.
  */
 DECLINLINE(bool) CPUMIsInInterruptShadowAfterSs(PCCPUMCTX pCtx)
 {
-    if (!(pCtx->fInhibit & CPUMCTX_INHIBIT_SHADOW_SS))
+    if (!(pCtx->eflags.uBoth & CPUMCTX_INHIBIT_SHADOW_SS))
         return false;
 
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
@@ -1999,14 +1999,14 @@ DECLINLINE(bool) CPUMIsInInterruptShadowAfterSs(PCCPUMCTX pCtx)
  * @retval  false if not.
  * @param   pCtx    Current guest CPU context.
  * @note    Requires pCtx->rip to be up to date.
- * @note    Does not clear fInhibit when CPUMCTX::uRipInhibitInt differs
- *          from CPUMCTX::rip.
+ * @note    Does NOT clear CPUMCTX_INHIBIT_SHADOW when CPUMCTX::uRipInhibitInt
+ *          differs from CPUMCTX::rip.
  * @note    Both CPUMIsInInterruptShadowAfterSs() and this function may return
  *          true depending on the execution engine being used.
  */
 DECLINLINE(bool) CPUMIsInInterruptShadowAfterSti(PCCPUMCTX pCtx)
 {
-    if (!(pCtx->fInhibit & CPUMCTX_INHIBIT_SHADOW_STI))
+    if (!(pCtx->eflags.uBoth & CPUMCTX_INHIBIT_SHADOW_STI))
         return false;
 
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
@@ -2022,7 +2022,7 @@ DECLINLINE(bool) CPUMIsInInterruptShadowAfterSti(PCCPUMCTX pCtx)
 DECLINLINE(void) CPUMSetInInterruptShadow(PCPUMCTX pCtx)
 {
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
-    pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
+    pCtx->eflags.uBoth |= CPUMCTX_INHIBIT_SHADOW;
     pCtx->uRipInhibitInt = pCtx->rip;
 }
 
@@ -2035,7 +2035,7 @@ DECLINLINE(void) CPUMSetInInterruptShadow(PCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMSetInInterruptShadowEx(PCPUMCTX pCtx, uint64_t rip)
 {
-    pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
+    pCtx->eflags.uBoth  |= CPUMCTX_INHIBIT_SHADOW;
     pCtx->uRipInhibitInt = rip;
 }
 
@@ -2048,7 +2048,7 @@ DECLINLINE(void) CPUMSetInInterruptShadowEx(PCPUMCTX pCtx, uint64_t rip)
 DECLINLINE(void) CPUMSetInInterruptShadowSs(PCPUMCTX pCtx)
 {
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
-    pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW_SS;
+    pCtx->eflags.uBoth  |= CPUMCTX_INHIBIT_SHADOW_SS;
     pCtx->uRipInhibitInt = pCtx->rip;
 }
 
@@ -2061,7 +2061,7 @@ DECLINLINE(void) CPUMSetInInterruptShadowSs(PCPUMCTX pCtx)
 DECLINLINE(void) CPUMSetInInterruptShadowSti(PCPUMCTX pCtx)
 {
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
-    pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW_STI;
+    pCtx->eflags.uBoth  |= CPUMCTX_INHIBIT_SHADOW_STI;
     pCtx->uRipInhibitInt = pCtx->rip;
 }
 
@@ -2072,7 +2072,7 @@ DECLINLINE(void) CPUMSetInInterruptShadowSti(PCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMClearInterruptShadow(PCPUMCTX pCtx)
 {
-    pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
+    pCtx->eflags.uBoth &= ~CPUMCTX_INHIBIT_SHADOW;
 }
 
 /**
@@ -2086,10 +2086,10 @@ DECLINLINE(void) CPUMUpdateInterruptShadow(PCPUMCTX pCtx, bool fInhibited)
 {
     CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RIP);
     if (!fInhibited)
-        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
+        pCtx->eflags.uBoth  &= ~CPUMCTX_INHIBIT_SHADOW;
     else
     {
-        pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
+        pCtx->eflags.uBoth  |= CPUMCTX_INHIBIT_SHADOW;
         pCtx->uRipInhibitInt = pCtx->rip;
     }
 }
@@ -2105,10 +2105,10 @@ DECLINLINE(void) CPUMUpdateInterruptShadow(PCPUMCTX pCtx, bool fInhibited)
 DECLINLINE(bool) CPUMUpdateInterruptShadowEx(PCPUMCTX pCtx, bool fInhibited, uint64_t rip)
 {
     if (!fInhibited)
-        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
+        pCtx->eflags.uBoth  &= ~CPUMCTX_INHIBIT_SHADOW;
     else
     {
-        pCtx->fInhibit |= CPUMCTX_INHIBIT_SHADOW;
+        pCtx->eflags.uBoth  |= CPUMCTX_INHIBIT_SHADOW;
         pCtx->uRipInhibitInt = rip;
     }
     return fInhibited;
@@ -2125,11 +2125,11 @@ DECLINLINE(bool) CPUMUpdateInterruptShadowEx(PCPUMCTX pCtx, bool fInhibited, uin
 DECLINLINE(void) CPUMUpdateInterruptShadowSsStiEx(PCPUMCTX pCtx, bool fInhibitedBySs, bool fInhibitedBySti, uint64_t rip)
 {
     if (!(fInhibitedBySs | fInhibitedBySti))
-        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_SHADOW;
+        pCtx->eflags.uBoth &= ~CPUMCTX_INHIBIT_SHADOW;
     else
     {
-        pCtx->fInhibit |= (fInhibitedBySs  ? (uint8_t)CPUMCTX_INHIBIT_SHADOW_SS  : (uint8_t)0)
-                       |  (fInhibitedBySti ? (uint8_t)CPUMCTX_INHIBIT_SHADOW_STI : (uint8_t)0);
+        pCtx->eflags.uBoth |= (fInhibitedBySs  ? CPUMCTX_INHIBIT_SHADOW_SS  : UINT32_C(0))
+                           |  (fInhibitedBySti ? CPUMCTX_INHIBIT_SHADOW_STI : UINT32_C(0));
         pCtx->uRipInhibitInt = rip;
     }
 }
@@ -2152,7 +2152,7 @@ DECLINLINE(void) CPUMSetGuestVmxVirtNmiBlocking(PCPUMCTX pCtx, bool fBlocking);
  */
 DECLINLINE(bool) CPUMAreInterruptsInhibitedByNmi(PCCPUMCTX pCtx)
 {
-    return (pCtx->fInhibit & CPUMCTX_INHIBIT_NMI) != 0;
+    return (pCtx->eflags.uBoth & CPUMCTX_INHIBIT_NMI) != 0;
 }
 
 /**
@@ -2179,7 +2179,7 @@ DECLINLINE(bool) CPUMAreInterruptsInhibitedByNmiEx(PCCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMSetInterruptInhibitingByNmi(PCPUMCTX pCtx)
 {
-    pCtx->fInhibit |= CPUMCTX_INHIBIT_NMI;
+    pCtx->eflags.uBoth |= CPUMCTX_INHIBIT_NMI;
 }
 
 /**
@@ -2206,7 +2206,7 @@ DECLINLINE(void) CPUMSetInterruptInhibitingByNmiEx(PCPUMCTX pCtx)
  */
 DECLINLINE(void) CPUMClearInterruptInhibitingByNmi(PCPUMCTX pCtx)
 {
-    pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_NMI;
+    pCtx->eflags.uBoth &= ~CPUMCTX_INHIBIT_NMI;
 }
 
 /**
@@ -2235,9 +2235,9 @@ DECLINLINE(void) CPUMClearInterruptInhibitingByNmiEx(PCPUMCTX pCtx)
 DECLINLINE(void) CPUMUpdateInterruptInhibitingByNmi(PCPUMCTX pCtx, bool fInhibited)
 {
     if (!fInhibited)
-        pCtx->fInhibit &= (uint8_t)~CPUMCTX_INHIBIT_NMI;
+        pCtx->eflags.uBoth &= ~CPUMCTX_INHIBIT_NMI;
     else
-        pCtx->fInhibit |= CPUMCTX_INHIBIT_NMI;
+        pCtx->eflags.uBoth |= CPUMCTX_INHIBIT_NMI;
 }
 
 /**
