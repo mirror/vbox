@@ -45,6 +45,7 @@ __all__     = [ 'parseTestResult', ]
 # Standard python imports.
 import datetime;
 import os;
+import re;
 import sys;
 import traceback;
 
@@ -133,6 +134,20 @@ class Value(object):
         Clones the value.
         """
         return Value(oParentTest, self.sName, self.sUnit, self.sTimestamp, self.lValue);
+
+    def matchFilters(self, sPrefix, aoFilters):
+        """
+        Checks for any substring match between aoFilters (str or re.Pattern)
+        and the value name prefixed by sPrefix.
+
+        Returns True if any of the filters matches.
+        Returns False if none of the filters matches.
+        """
+        sFullName = sPrefix + self.sName;
+        for oFilter in aoFilters:
+            if oFilter.search(sFullName) is not None if isinstance(oFilter, re.Pattern) else sFullName.find(oFilter) >= 0:
+                return True;
+        return False;
 
 
     @staticmethod
@@ -305,24 +320,27 @@ class Test(object):
     def getFullName(self, cSkipUpper = 2):
         return self.getFullNameWorker(cSkipUpper)[0];
 
-    def matchFilters(self, asFilters):
+    def matchFilters(self, aoFilters):
         """
-        Checks if the all of the specified filter strings are substrings
-        of the full test name.  Returns True / False.
+        Checks for any substring match between aoFilters (str or re.Pattern)
+        and the full test name.
+
+        Returns True if any of the filters matches.
+        Returns False if none of the filters matches.
         """
-        sName = self.getFullName();
-        for sFilter in asFilters:
-            if sName.find(sFilter) < 0:
-                return False;
-        return True;
+        sFullName = self.getFullName();
+        for oFilter in aoFilters:
+            if oFilter.search(sFullName) is not None if isinstance(oFilter, re.Pattern) else sFullName.find(oFilter) >= 0:
+                return True;
+        return False;
 
     # manipulation
 
-    def filterTestsWorker(self, asFilters):
+    def filterTestsWorker(self, asFilters, fReturnOnMatch):
         # depth first
         i = 0;
         while i < len(self.aoChildren):
-            if self.aoChildren[i].filterTestsWorker(asFilters):
+            if self.aoChildren[i].filterTestsWorker(asFilters, fReturnOnMatch):
                 i += 1;
             else:
                 self.aoChildren[i].oParent = None;
@@ -331,12 +349,60 @@ class Test(object):
         # If we have children, they must've matched up.
         if self.aoChildren:
             return True;
-        return self.matchFilters(asFilters);
+        if self.matchFilters(asFilters):
+            return fReturnOnMatch;
+        return not fReturnOnMatch;
 
     def filterTests(self, asFilters):
+        """ Keep tests matching asFilters. """
         if asFilters:
-            self.filterTestsWorker(asFilters)
+            self.filterTestsWorker(asFilters, True);
         return self;
+
+    def filterOutTests(self, asFilters):
+        """ Removes tests matching asFilters. """
+        if asFilters:
+            self.filterTestsWorker(asFilters, False);
+        return self;
+
+    def filterValuesWorker(self, asFilters, fKeepWhen):
+        # Process children recursively.
+        for oChild in self.aoChildren:
+            oChild.filterValuesWorker(asFilters, fKeepWhen);
+
+        # Filter our values.
+        iValue = len(self.aoValues);
+        if iValue > 0:
+            sFullname = self.getFullName() + ': ';
+            while iValue > 0:
+                iValue -= 1;
+                if self.aoValues[iValue].matchFilters(sFullname, asFilters) != fKeepWhen:
+                    del self.aoValues[iValue];
+        return None;
+
+    def filterValues(self, asFilters):
+        """ Keep values matching asFilters. """
+        if asFilters:
+            self.filterValuesWorker(asFilters, True);
+        return self;
+
+    def filterOutValues(self, asFilters):
+        """ Removes values matching asFilters. """
+        if asFilters:
+            self.filterValuesWorker(asFilters, False);
+        return self;
+
+    def filterOutEmptyLeafTests(self):
+        """
+        Removes any child tests that has neither values nor sub-tests.
+        Returns True if leaf, False if not.
+        """
+        iChild = len(self.aoChildren);
+        while iChild > 0:
+            iChild -= 1;
+            if self.aoChildren[iChild].filterOutEmptyLeafTests():
+                del self.aoChildren[iChild];
+        return not self.aoChildren and not self.aoValues;
 
     @staticmethod
     def calcDurationStatic(sStartTS, sEndTS):

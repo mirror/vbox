@@ -39,9 +39,11 @@ SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
 __version__ = "$Revision$"
 
-
-import os.path
-import sys
+# Standard python imports.
+import re;
+import os;
+import textwrap;
+import sys;
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -50,19 +52,111 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
-from analysis import reader    ## @todo fix testanalysis/__init__.py.
+from analysis import reader
 from analysis import reporting
-#from analysis import diff
 
 
 def usage():
-    """ Display usage """
-    print('usage: %s [options] <test1.xml/txt> <test2.xml/txt> [..] [-- <baseline1.file> [baseline2.file] [..]]'
-          % (sys.argv[0]));
-    print('')
-    print('options:')
-    print('  --filter <test-sub-string>')
+    """
+    Display usage.
+    """
+    # Set up the output wrapper.
+    try:    cCols = os.get_terminal_size()[0] # since 3.3
+    except: cCols = 79;
+    oWrapper = textwrap.TextWrapper(width = cCols);
+
+    # Do the outputting.
+    print('Tool for comparing test results.');
+    print('');
+    oWrapper.subsequent_indent = ' ' * (len('usage: ') + 4);
+    print(oWrapper.fill('usage: analyze.py [options] [collection-1] -- [collection-2] [-- [collection3] [..]])'))
+    oWrapper.subsequent_indent = '';
+    print('');
+    print(oWrapper.fill('This tool compares two or more result collections, using one as a baseline (first by default) '
+                        'and showing how the results in others differs from it.'));
+    print('');
+    print(oWrapper.fill('The results (XML file) from one or more test runs makes up a collection.  A collection can be '
+                        'named using the --name <name> option, or will get a sequential name automatically.  The baseline '
+                        'collection will have "(baseline)" appended to its name.'));
+    print('');
+    print(oWrapper.fill('A test run produces one XML file, either via the testdriver/reporter.py machinery or via the IPRT '
+                        'test.cpp code. In the latter case it can be enabled and controlled via IPRT_TEST_FILE.  A collection '
+                        'consists of one or more of test runs (i.e. XML result files).  These are combined (aka distilled) '
+                        'into a single set of results before comparing them with the others.  The --best and --avg options '
+                        'controls how this combining is done.  The need for this is mainly to try counteract some of the '
+                        'instability typically found in the restuls.  Just because one test run produces a better result '
+                        'after a change does not necessarily mean this will always be the case and that the change was to '
+                        'the better, it might just have been regular fluctuations in the test results.'));
+
+    oWrapper.initial_indent    = '      ';
+    oWrapper.subsequent_indent = '      ';
+    print('');
+    print('Options governing combining (distillation):');
+    print('  --avg, --average');
+    print(oWrapper.fill('Picks the best result by calculating the average values across all the runs.'));
+    print('');
+    print('  --best');
+    print(oWrapper.fill('Picks the best result from all the runs.  For values, this means making guessing what result is '
+                        'better based on the unit.  This may not always lead to the right choices.'));
+    print(oWrapper.initial_indent + 'Default: --best');
+
+    print('');
+    print('Options relating to collections:');
+    print('  --name <name>');
+    print(oWrapper.fill('Sets the name of the current collection.  By default a collection gets a sequential number.'));
+    print('');
+    print('  --baseline <num>');
+    print(oWrapper.fill('Sets collection given by <num> (0-based) as the baseline collection.'));
+    print(oWrapper.initial_indent + 'Default: --baseline 0')
+
+    print('');
+    print('Filtering options:');
+    print('  --filter-test <substring>');
+    print(oWrapper.fill('Exclude tests not containing any of the substrings given via the --filter-test option.  The '
+                        'matching is done with full test name, i.e. all parent names are prepended with ", " as separator '
+                        '(for example "tstIOInstr, CPUID EAX=1").'));
+    print('');
+    print('  --filter-test-out <substring>');
+    print(oWrapper.fill('Exclude tests containing the given substring.  As with --filter-test, the matching is done against '
+                        'the full test name.'));
+    print('');
+    print('  --filter-value <substring>');
+    print(oWrapper.fill('Exclude values not containing any of the substrings given via the --filter-value option.  The '
+                        'matching is done against the value name prefixed by the full test name and ": " '
+                        '(for example "tstIOInstr, CPUID EAX=1: real mode, CPUID").'));
+    print('');
+    print('  --filter-value-out <substring>');
+    print(oWrapper.fill('Exclude value containing the given substring.  As with --filter-value, the matching is done against '
+                        'the value name prefixed by the full test name.'));
+
+    print('');
+    print('  --regex-test <expr>');
+    print(oWrapper.fill('Same as --filter-test except the substring matching is done via a regular expression.'));
+    print('');
+    print('  --regex-test-out <expr>');
+    print(oWrapper.fill('Same as --filter-test-out except the substring matching is done via a regular expression.'));
+    print('');
+    print('  --regex-value <expr>');
+    print(oWrapper.fill('Same as --filter-value except the substring matching is done via a regular expression.'));
+    print('');
+    print('  --regex-value-out <expr>');
+    print(oWrapper.fill('Same as --filter-value-out except the substring matching is done via a regular expression.'));
+    print('');
+    print('  --filter-out-empty-leaf-tests');
+    print(oWrapper.fill('Removes any leaf tests that are without any values or sub-tests.  This is useful when '
+                        'only considering values, especially when doing additional value filtering.'));
+
+    print('');
+    print('Output options:');
+    print('  --brief, --verbose');
+    print(oWrapper.fill('Whether to omit (--brief) the value for non-baseline runs and just get along with the difference.'));
+    print(oWrapper.initial_indent + 'Default: --brief');
+    print('');
+    print('  --pct <num>, --pct-precision <num>');
+    print(oWrapper.fill('Specifies the number of decimal place to use when formatting the difference as percent.'));
+    print(oWrapper.initial_indent + 'Default: --pct 2');
     return 1;
+
 
 class ResultCollection(object):
     """
@@ -93,10 +187,42 @@ class ResultCollection(object):
 
     def filterTests(self, asFilters):
         """
-        Filters all the test trees using asFilters.
+        Keeps all the tests in the test trees sub-string matching asFilters (str or re).
         """
         for oTestTree in self.aoTestTrees:
             oTestTree.filterTests(asFilters);
+        return self;
+
+    def filterOutTests(self, asFilters):
+        """
+        Removes all the tests in the test trees sub-string matching asFilters (str or re).
+        """
+        for oTestTree in self.aoTestTrees:
+            oTestTree.filterOutTests(asFilters);
+        return self;
+
+    def filterValues(self, asFilters):
+        """
+        Keeps all the tests in the test trees sub-string matching asFilters (str or re).
+        """
+        for oTestTree in self.aoTestTrees:
+            oTestTree.filterValues(asFilters);
+        return self;
+
+    def filterOutValues(self, asFilters):
+        """
+        Removes all the tests in the test trees sub-string matching asFilters (str or re).
+        """
+        for oTestTree in self.aoTestTrees:
+            oTestTree.filterOutValues(asFilters);
+        return self;
+
+    def filterOutEmptyLeafTests(self):
+        """
+        Removes all the tests in the test trees that have neither child tests nor values.
+        """
+        for oTestTree in self.aoTestTrees:
+            oTestTree.filterOutEmptyLeafTests();
         return self;
 
     def distill(self, sMethod, fDropLoners = False):
@@ -144,6 +270,29 @@ class ResultCollection(object):
 
 
 
+# matchWithValue hacks.
+g_asOptions = [];
+g_iOptInd   = 1;
+g_sOptArg   = '';
+
+def matchWithValue(sOption):
+    """ Matches an option with a value, placing the value in g_sOptArg if it matches. """
+    global g_asOptions, g_iOptInd, g_sOptArg;
+    sArg = g_asOptions[g_iOptInd];
+    if sArg.startswith(sOption):
+        if len(sArg) == len(sOption):
+            if g_iOptInd + 1 < len(g_asOptions):
+                g_iOptInd += 1;
+                g_sOptArg  = g_asOptions[g_iOptInd];
+                return True;
+
+            print('syntax error: Option %s takes a value!' % (sOption,));
+            raise Exception('syntax error: Option %s takes a value!' % (sOption,));
+
+        if sArg[len(sOption)] in ('=', ':'):
+            g_sOptArg = sArg[len(sOption) + 1:];
+            return True;
+    return False;
 
 
 def main(asArgs):
@@ -151,52 +300,84 @@ def main(asArgs):
     #
     # Parse arguments
     #
-    oCurCollection      = ResultCollection('#0');
-    aoCollections       = [ oCurCollection, ];
-    iBaseline           = 0;
-    sDistillationMethod = 'best';
-    fBrief              = True;
-    cPctPrecision       = 2;
-    asFilters           = [];
+    oCurCollection          = ResultCollection('#0');
+    aoCollections           = [ oCurCollection, ];
+    iBaseline               = 0;
+    sDistillationMethod     = 'best';
+    fBrief                  = True;
+    cPctPrecision           = 2;
+    asTestFilters           = [];
+    asTestOutFilters        = [];
+    asValueFilters          = [];
+    asValueOutFilters       = [];
+    fFilterOutEmptyLeafTest = True;
 
-    iArg = 1;
-    while iArg < len(asArgs):
-        #print("dbg: iArg=%s '%s'" % (iArg, asArgs[iArg],));
-        if asArgs[iArg].startswith('--help'):
+    global g_asOptions, g_iOptInd, g_sOptArg;
+    g_asOptions = asArgs;
+    g_iOptInd   = 1;
+    while g_iOptInd < len(asArgs):
+        sArg      = asArgs[g_iOptInd];
+        g_sOptArg = '';
+        #print("dbg: g_iOptInd=%s '%s'" % (g_iOptInd, sArg,));
+
+        if sArg.startswith('--help'):
             return usage();
-        if asArgs[iArg] == '--filter':
-            iArg += 1;
-            asFilters.append(asArgs[iArg]);
-        elif asArgs[iArg] == '--best':
+
+        if matchWithValue('--filter-test'):
+            asTestFilters.append(g_sOptArg);
+        elif matchWithValue('--filter-test-out'):
+            asTestOutFilters.append(g_sOptArg);
+        elif matchWithValue('--filter-value'):
+            asValueFilters.append(g_sOptArg);
+        elif matchWithValue('--filter-value-out'):
+            asValueOutFilters.append(g_sOptArg);
+
+        elif matchWithValue('--regex-test'):
+            asTestFilters.append(re.compile(g_sOptArg));
+        elif matchWithValue('--regex-test-out'):
+            asTestOutFilters.append(re.compile(g_sOptArg));
+        elif matchWithValue('--regex-value'):
+            asValueFilters.append(re.compile(g_sOptArg));
+        elif matchWithValue('--regex-value-out'):
+            asValueOutFilters.append(re.compile(g_sOptArg));
+
+        elif sArg == '--filter-out-empty-leaf-tests':
+            fFilterOutEmptyLeafTest = True;
+        elif sArg == '--no-filter-out-empty-leaf-tests':
+            fFilterOutEmptyLeafTest = False;
+
+        elif sArg == '--best':
             sDistillationMethod = 'best';
-        elif asArgs[iArg] in ('--avg', '--average'):
+        elif sArg in ('--avg', '--average'):
             sDistillationMethod = 'avg';
-        elif asArgs[iArg] == '--brief':
+
+        elif sArg == '--brief':
             fBrief = True;
-        elif asArgs[iArg] == '--verbose':
+        elif sArg == '--verbose':
             fBrief = False;
-        elif asArgs[iArg] in ('--pct', '--pct-precision'):
-            iArg += 1;
-            cPctPrecision = int(asArgs[iArg]);
-        elif asArgs[iArg] in ('--base', '--baseline'):
-            iArg += 1;
-            iBaseline = int(asArgs[iArg]);
+
+        elif matchWithValue('--pct') or matchWithValue('--pct-precision'):
+            cPctPrecision = int(g_sOptArg);
+        elif matchWithValue('--base') or matchWithValue('--baseline'):
+            iBaseline = int(g_sOptArg);
+
         # '--' starts a new collection.  If current one is empty, drop it.
-        elif asArgs[iArg] == '--':
+        elif sArg == '--':
             print("dbg: new collection");
             #if oCurCollection.isEmpty():
             #    del aoCollections[-1];
             oCurCollection = ResultCollection("#%s" % (len(aoCollections),));
             aoCollections.append(oCurCollection);
+
         # Name the current result collection.
-        elif asArgs[iArg] == '--name':
-            iArg += 1;
-            oCurCollection.sName = asArgs[iArg];
+        elif matchWithValue('--name'):
+            oCurCollection.sName = g_sOptArg;
+
         # Read in a file and add it to the current data set.
         else:
-            if not oCurCollection.append(asArgs[iArg]):
+            if not oCurCollection.append(sArg):
                 return 1;
-        iArg += 1;
+        g_iOptInd += 1;
 
     #
     # Post argument parsing processing.
@@ -217,13 +398,27 @@ def main(asArgs):
     aoCollections[iBaseline].sName += ' (baseline)';
 
     #
-    # Apply filtering before distilling each collection into a single result
-    # tree and comparing them to the first one.
+    # Apply filtering before distilling each collection into a single result tree.
     #
-    if asFilters:
+    if asTestFilters:
         for oCollection in aoCollections:
-            oCollection.filterTests(asFilters);
+            oCollection.filterTests(asTestFilters);
+    if asTestOutFilters:
+        for oCollection in aoCollections:
+            oCollection.filterOutTests(asTestOutFilters);
 
+    if asValueFilters:
+        for oCollection in aoCollections:
+            oCollection.filterValues(asValueFilters);
+    if asValueOutFilters:
+        for oCollection in aoCollections:
+            oCollection.filterOutValues(asValueOutFilters);
+
+    if fFilterOutEmptyLeafTest:
+        for oCollection in aoCollections:
+            oCollection.filterOutEmptyLeafTests();
+
+    # Distillation.
     for oCollection in aoCollections:
         oCollection.distill(sDistillationMethod);
 
