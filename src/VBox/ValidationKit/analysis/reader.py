@@ -96,7 +96,7 @@ class Value(object):
         "ns/packet":        -2,
         "ns/roundtrip":     -2,
         "ins":              +2,
-        "ins/sec":          -1,
+        "ins/sec":          +2,
         "":                 +1, # Difficult to say what's best really.
         "pp1k":             -2,
         "pp10k":            -2,
@@ -126,9 +126,6 @@ class Value(object):
         self.lValue     = self.valueToInteger(lValue);
         assert self.lValue is None or isinstance(self.lValue, (int, long)), "lValue=%s %s" % (self.lValue, type(self.lValue),);
 
-        # Members set by processing.
-        self.sDiff      = None;
-
     def clone(self, oParentTest):
         """
         Clones the value.
@@ -149,6 +146,23 @@ class Value(object):
                 return True;
         return False;
 
+    def canDoBetterCompare(self):
+        """
+        Checks whether we can do a confident better-than comparsion of the value.
+        """
+        return self.sUnit is not None  and  self.kdBestByUnit[self.sUnit] not in (-1, 0, 1);
+
+    def getBetterRelation(self):
+        """
+        Returns +2 if larger values are definintely better.
+        Returns +1 if larger values are likely to be better.
+        Returns 0 if we have no clue.
+        Returns -1 if smaller values are likey to better.
+        Returns -2 if smaller values are definitely better.
+        """
+        if self.sUnit is None:
+            return 0;
+        return self.kdBestByUnit[self.sUnit];
 
     @staticmethod
     def valueToInteger(sValue):
@@ -226,10 +240,6 @@ class Test(object):
         self.sEndTS         = None;
         self.sStatus        = None;
         self.cErrors        = -1;
-
-        # Members set by processing.
-        self.sStatusDiff    = None;
-        self.cErrorsDiff    = None;
 
     def clone(self, oParent = None):
         """

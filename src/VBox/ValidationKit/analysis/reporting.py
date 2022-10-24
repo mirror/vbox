@@ -185,6 +185,10 @@ class TextElement(object):
         self.sText  = sText;
         self.iAlign = iAlign;
 
+    def asText(self, cchWidth): # type: (int) -> str
+        """ Pads the text to width of cchWidth characters. """
+        return alignText(self.sText, cchWidth, self.iAlign);
+
 
 class RunRow(object):
     """
@@ -202,10 +206,10 @@ class RunRow(object):
 
     # Format as Text:
 
-    def formatNameAsText(self, cchWidth): # (int) -> str
+    def formatNameAsText(self, cchWidth): # (int) -> TextElement
         """ Format the row as text. """
         _ = cchWidth;
-        return  ' ' * (self.iLevel * 2) + self.sName;
+        return TextElement(' ' * (self.iLevel * 2) + self.sName, g_kiAlignLeft);
 
     def getColumnCountAsText(self, oTable):
         """
@@ -220,7 +224,7 @@ class RunRow(object):
         _ = iColumn; _ = oTable;
         return [ TextElement(),];
 
-    def calcColumnWidthsForText(self, oTable):
+    def calcColumnWidthsForText(self, oTable): # type: (RunTable) -> (bool, int, [])
         """
         Calculates the column widths for text rendering.
 
@@ -236,7 +240,29 @@ class RunRow(object):
                 aoRetCols.append(len(aoSubColumns[0].sText));
             else:
                 aoRetCols.append([len(oSubColumn.sText) for oSubColumn in aoSubColumns]);
-        return (False, len(self.formatNameAsText(0)) + self.iLevel * 2, aoRetCols);
+        return (False, len(self.formatNameAsText(0).sText), aoRetCols);
+
+    def renderAsText(self, oWidths, oTable): # type: (TextWidths, RunTable) -> str
+        """
+        Renders the row as text.
+
+        Returns string.
+        """
+        sRow = self.formatNameAsText(oWidths.cchName).asText(oWidths.cchName);
+        sRow = sRow + ' ' * (oWidths.cchName - min(len(sRow), oWidths.cchName)) + ' : ';
+
+        for iColumn in range(self.cColumns):
+            aoSubCols = self.formatColumnAsText(iColumn, oTable);
+            sCell = '';
+            for iSub, oText in enumerate(aoSubCols):
+                cchWidth = oWidths.getColumnWidth(iColumn, len(aoSubCols), iSub);
+                if iSub > 0:
+                    sCell += ' ' * oWidths.cchSubColSpacing;
+                sCell += oText.asText(cchWidth);
+            cchWidth = oWidths.getColumnWidth(iColumn);
+            sRow  += (' | ' if iColumn > 0 else '') + ' ' * (cchWidth - min(cchWidth, len(sCell))) + sCell;
+
+        return sRow;
 
     @staticmethod
     def formatDiffAsText(lNumber, lBaseline):
@@ -249,6 +275,15 @@ class RunRow(object):
                     return '+' + utils.formatNumber(lNumber - lBaseline);
                 return '0';
         return '';
+
+    @staticmethod
+    def formatPctAsText(chSign, rdPct, cPctPrecision):
+        """ Formats percentage value as text. """
+        if rdPct >= 100:
+            return '%s%s%%' % (chSign, utils.formatNumber(int(rdPct + 0.5)),);
+        if rdPct * 100 + 0.5 >= 1:
+            return '%s%.*f%%' % (chSign, cPctPrecision, rdPct + 0.005,);
+        return '~' + chSign + '0.' + '0' * cPctPrecision + '%';
 
     @staticmethod
     def formatDiffInPctAsText(lNumber, lBaseline, cPctPrecision):
@@ -264,24 +299,64 @@ class RunRow(object):
                 if lDiff < 0:
                     lDiff  = -lDiff;
                     chSign = '-';
-
-                rdPct = lDiff / float(lBaseline);
-                #if rdPct * 100 >= 5:
-                #    return '%s%s%%' % (chSign, utils.formatNumber(int(rdPct * 100 + 0.5)),);
-                #if rdPct * 1000 >= 5:
-                #    return u'%s%s\u2030'  % (chSign, int(rdPct * 1000 + 0.5),);
-                #if rdPct * 10000 >= 5:
-                #    return u'%s%s\u2031' % (chSign, int(rdPct * 10000 + 0.5),);
-                #if rdPct * 1000000 >= 0.5:
-                #    return u'%s%sppm'   % (chSign, int(rdPct * 1000000 + 0.5),);
-
-                if rdPct * 100 >= 100:
-                    return '%s%s%%' % (chSign, utils.formatNumber(int(rdPct * 100 + 0.5)),);
-                if rdPct * 10000 + 0.5 >= 1:
-                    return '%s%.*f%%' % (chSign, cPctPrecision, rdPct * 100 + 0.005,);
-
-                return '~' + chSign + '0.' + '0' * cPctPrecision + '%';
+                return RunRow.formatPctAsText(chSign, lDiff / float(lBaseline) * 100, cPctPrecision);
         return '';
+
+
+class RunHeaderRow(RunRow):
+    """
+    Run table header row.
+    """
+    def __init__(self, sName, asColumns): # type: (str, [str]) -> None
+        RunRow.__init__(self, 0, sName);
+        self.asColumns = asColumns
+        self.cColumns  = len(asColumns);
+
+    def formatColumnAsText(self, iColumn, oTable): # type: (int, RunTable) -> [TextElement]
+        return [TextElement(self.asColumns[iColumn], g_kiAlignCenter),];
+
+
+class RunFooterRow(RunHeaderRow):
+    """
+    Run table footer row.
+    """
+    def __init__(self, sName, asColumns):
+        RunHeaderRow.__init__(self, sName, asColumns);
+
+
+class RunSeparatorRow(RunRow):
+    """
+    Base class for separator rows.
+    """
+    def __init__(self):
+        RunRow.__init__(self, 0, '');
+
+    def calcTableWidthAsText(self, oWidths):
+        """ Returns the table width for when rendered as text. """
+        cchWidth = oWidths.cchName;
+        for oCol in oWidths.aoColumns:
+            cchWidth += 3 + oCol.cch;
+        return cchWidth;
+
+
+class RunHeaderSeparatorRow(RunSeparatorRow):
+    """
+    Run table header separator row.
+    """
+    def __init__(self):
+        RunSeparatorRow.__init__(self);
+
+    def renderAsText(self, oWidths, oTable):
+        _ = oTable;
+        return '=' * self.calcTableWidthAsText(oWidths);
+
+
+class RunFooterSeparatorRow(RunHeaderSeparatorRow):
+    """
+    Run table footer separator row.
+    """
+    def __init__(self):
+        RunHeaderSeparatorRow.__init__(self);
 
 
 class RunTestRow(RunRow):
@@ -320,6 +395,14 @@ class RunTestStartRow(RunTestRow):
     def __init__(self, iLevel, oTest, iRun): # type: (int, reader.Test, int) -> None
         RunTestRow.__init__(self, iLevel, oTest, iRun);
 
+    def renderAsText(self, oWidths, oTable):
+        _ = oTable;
+        sRet  = self.formatNameAsText(oWidths.cchName).asText(oWidths.cchName);
+        sRet += ' : ';
+        sRet += ' | '.join(['-' * oCol.cch for oCol in oWidths.aoColumns]);
+        return sRet;
+
+
 class RunTestEndRow(RunTestRow):
     """
     Run table end of test row.
@@ -354,7 +437,7 @@ class RunTestEndRow2(RunTestRow):
 
     def formatNameAsText(self, cchWidth):
         _ = cchWidth;
-        return '';
+        return TextElement('runtime', g_kiAlignRight);
 
     def getColumnCountAsText(self, oTable):
         self.cColumns = len(self.aoTests);
@@ -376,6 +459,88 @@ class RunTestEndRow2(RunTestRow):
                 ];
                 return aoRet[1:] if oTable.fBrief else aoRet;
         return [ TextElement(), ];
+
+
+class RunTestValueAnalysisRow(RunTestRow):
+    """
+    Run table row with value analysis for a test, see if we have an improvement or not.
+    """
+    def __init__(self, oStartRow): # type: (RunTestStartRow) -> None
+        RunTestRow.__init__(self, oStartRow.iLevel, oStartRow.oTest, oStartRow.iFirstRun, oStartRow.aoTests);
+        self.oStartRow = oStartRow # type: RunTestStartRow
+        self.cColumns  = len(self.aoTests);
+
+    def formatNameAsText(self, cchWidth):
+        _ = cchWidth;
+        return TextElement('value analysis', g_kiAlignRight);
+
+    def formatColumnAsText(self, iColumn, oTable):
+        oBaseline = self.getBaseTest(oTable);
+        oTest     = self.aoTests[iColumn];
+        if not oTest or oTest is oBaseline:
+            return [TextElement(),];
+
+        #
+        # This is a bit ugly, but it means we don't have to re-merge the values.
+        #
+        cTotal     = 0;
+        cBetter    = 0;
+        cWorse     = 0;
+        cSame      = 0;
+        cUncertain = 0;
+        rdPctTotal = 0.0;
+
+        iRow = oTable.aoRows.index(self.oStartRow); # ugly
+        while iRow < len(oTable.aoRows):
+            oRow = oTable.aoRows[iRow];
+            if oRow is self:
+                break;
+            if isinstance(oRow, RunValueRow):
+                oValue     = oRow.aoValues[iColumn];
+                oBaseValue = oRow.getBaseValue(oTable);
+                if oValue is not None and oValue is not oBaseValue:
+                    iBetter = oValue.getBetterRelation();
+                    if iBetter != 0:
+                        lDiff   = oValue.lValue - oBaseValue.lValue;
+                        rdPct   = abs(lDiff / float(oBaseValue.lValue) * 100);
+                        if rdPct < oTable.rdPctSameValue:
+                            cSame      += 1;
+                        else:
+                            if lDiff > 0 if iBetter > 0 else lDiff < 0:
+                                cBetter    += 1;
+                                rdPctTotal += rdPct;
+                            else:
+                                cWorse     += 1;
+                                rdPctTotal += -rdPct;
+                            cUncertain += 1 if iBetter in (1, -1) else 0;
+                        cTotal     += 1;
+            iRow += 1;
+
+        #
+        # Format the result.
+        #
+        aoRet = [];
+        if not oTable.fBrief:
+            sText = u' \u2193%u' % (cWorse,);
+            sText = u' \u2248%u' % (cSame,)   + alignTextRight(sText, 4);
+            sText =  u'\u2191%u' % (cBetter,) + alignTextRight(sText, 8);
+            aoRet = [TextElement(sText),];
+
+        if cSame >= cWorse and cSame >= cBetter:
+            sVerdict = 'same';
+        elif cWorse >= cSame and cWorse >= cBetter:
+            sVerdict = 'worse';
+        else:
+            sVerdict = 'better';
+        if cUncertain > 0:
+            sVerdict = 'probably ' + sVerdict;
+        aoRet.append(TextElement(sVerdict));
+
+        rdPctAvg = abs(rdPctTotal / cTotal); # Yes, average of the percentages!
+        aoRet.append(TextElement(self.formatPctAsText('+' if rdPctTotal >= 0 else '-', rdPctAvg, oTable.cPctPrecision)));
+
+        return aoRet;
+
 
 class RunValueRow(RunRow):
     """
@@ -433,20 +598,24 @@ class RunTable(object):
     This contains one or more test runs as columns.
     """
 
-    def __init__(self, iBaseline = 0, fBrief = True, cPctPrecision = 2): # (int, bool, int) -> None
-        self.asColumns      = []            # type: [str]       ## Column names.
-        self.aoRows         = []            # type: [RunRow]    ## The table rows.
-        self.iBaseline      = iBaseline     # type: int         ## Which column is the baseline when diffing things.
-        self.fBrief         = fBrief        # type: bool        ## Whether to exclude the numerical values of non-baseline runs.
-        self.cPctPrecision  = cPctPrecision # type: int         ## Number of decimal points in diff percentage value.
-
+    def __init__(self, iBaseline = 0, fBrief = True, cPctPrecision = 2, rdPctSameValue = 0.10): # (int, bool, int, float) -> None
+        self.asColumns      = []            # type: [str]       ##< Column names.
+        self.aoRows         = []            # type: [RunRow]    ##< The table rows.
+        self.iBaseline      = iBaseline     # type: int         ##< Which column is the baseline when diffing things.
+        self.fBrief         = fBrief        # type: bool        ##< Whether to exclude the numerical values of non-baseline runs.
+        self.cPctPrecision  = cPctPrecision # type: int         ##< Number of decimal points in diff percentage value.
+        self.rdPctSameValue = rdPctSameValue # type: float      ##< The percent value at which a value difference is considered
+                                                                ##  to be the same during value analysis.
     def __populateFromValues(self, aaoValueRuns, iLevel): # type: ([reader.Value]) -> None
         """
         Internal worker for __populateFromRuns()
 
-        This will modify the sub-lists inside aaoValueRuns, returning with the all empty.
+        This will modify the sub-lists inside aaoValueRuns, returning with them all empty.
+
+        Returns True if an value analysis row should be added, False if not.
         """
         # Same as for __populateFromRuns, only no recursion.
+        fAnalysisRow = False;
         for iValueRun, aoValuesForRun in enumerate(aaoValueRuns):
             while aoValuesForRun:
                 oRow = RunValueRow(iLevel, aoValuesForRun.pop(0), iValueRun);
@@ -461,13 +630,15 @@ class RunTable(object):
                             break;
                     if len(oRow.aoValues) <= iOtherRun:
                         oRow.aoValues.append(None);
-        return self;
+
+                fAnalysisRow = fAnalysisRow or oRow.oValue.canDoBetterCompare();
+        return fAnalysisRow;
 
     def __populateFromRuns(self, aaoTestRuns, iLevel): # type: ([reader.Test]) -> None
         """
         Internal worker for populateFromRuns()
 
-        This will modify the sub-lists inside aaoTestRuns, returning with the all empty.
+        This will modify the sub-lists inside aaoTestRuns, returning with them all empty.
         """
 
         #
@@ -491,13 +662,16 @@ class RunTable(object):
                     if len(oStartRow.aoTests) <= iOtherRun:
                         oStartRow.aoTests.append(None);
 
-                # Now recrusively do the subtests for it and then do the values.
+                # Now recursively do the subtests for it and then do the values.
                 self.__populateFromRuns(  [list(oTest.aoChildren) if oTest else list() for oTest in oStartRow.aoTests], iLevel+1);
-                self.__populateFromValues([list(oTest.aoValues)   if oTest else list() for oTest in oStartRow.aoTests], iLevel+1);
+                fValueAnalysisRow = self.__populateFromValues([list(oTest.aoValues)
+                                                                  if oTest else list() for oTest in oStartRow.aoTests], iLevel+1);
 
                 # Add the end-test row for it.
                 self.aoRows.append(RunTestEndRow(oStartRow));
                 self.aoRows.append(RunTestEndRow2(oStartRow));
+                if fValueAnalysisRow:
+                    self.aoRows.append(RunTestValueAnalysisRow(oStartRow));
 
         return self;
 
@@ -522,10 +696,23 @@ class RunTable(object):
         while iCol < len(aoTestRuns):
             self.asColumns.append('#%u%s' % (iCol, ' (baseline)' if iCol == self.iBaseline else '',));
 
+        self.aoRows = [
+            RunHeaderSeparatorRow(),
+            RunHeaderRow('Test / Value', self.asColumns),
+            RunHeaderSeparatorRow(),
+        ];
+
         #
         # Now flatten the test trees into a table.
         #
         self.__populateFromRuns([[oTestRun,] for oTestRun in aoTestRuns], 0);
+
+        #
+        # Add a footer if there are a lot of rows.
+        #
+        if len(self.aoRows) - 2 > 40:
+            self.aoRows.extend([RunFooterSeparatorRow(), RunFooterRow('', self.asColumns),]);
+
         return self;
 
     #
@@ -550,36 +737,10 @@ class RunTable(object):
         #
         # Pass 2: Generate the output strings.
         #
-        # Header
-        asRet = [
-            alignTextCenter('Test / Value', oWidths.cchName) + ':  '
-            + ' | '.join([alignTextCenter(sText, oWidths.getColumnWidth(iCol)) for iCol, sText in enumerate(self.asColumns)]),
-        ];
-        asRet.append('=' * len(asRet[0]));
-
-        # The table
+        asRet = [];
         for oRow in self.aoRows:
             if not oRow.fSkip:
-                sRow = oRow.formatNameAsText(oWidths.cchName);
-                sRow = sRow + ' ' * (oWidths.cchName - min(len(sRow), oWidths.cchName)) + ': ';
-
-                for iColumn in range(oRow.cColumns):
-                    aoSubCols = oRow.formatColumnAsText(iColumn, self);
-                    sCell = '';
-                    for iSub, oText in enumerate(aoSubCols):
-                        cchWidth = oWidths.getColumnWidth(iColumn, len(aoSubCols), iSub);
-                        if iSub > 0:
-                            sCell += ' ' * oWidths.cchSubColSpacing;
-                        sCell += alignText(oText.sText, cchWidth, oText.iAlign);
-                    cchWidth = oWidths.getColumnWidth(iColumn);
-                    sRow  += (' | ' if iColumn > 0 else ' ') + ' ' * (cchWidth - min(cchWidth, len(sCell))) + sCell;
-
-            asRet.append(sRow);
-
-        # Footer?
-        if len(asRet) > 40:
-            asRet.append(asRet[1]);
-            asRet.append(asRet[0]);
+                asRet.append(oRow.renderAsText(oWidths, self));
 
         return asRet;
 

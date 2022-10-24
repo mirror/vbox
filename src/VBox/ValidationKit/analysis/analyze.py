@@ -147,6 +147,13 @@ def usage():
                         'only considering values, especially when doing additional value filtering.'));
 
     print('');
+    print('Analysis options:');
+    print('  --pct-same-value <float>');
+    print(oWrapper.fill('The threshold at which the percent difference between two values are considered the same '
+                        'during analysis.'));
+    print(oWrapper.initial_indent + 'Default: --pct-same-value 0.10');
+
+    print('');
     print('Output options:');
     print('  --brief, --verbose');
     print(oWrapper.fill('Whether to omit (--brief) the value for non-baseline runs and just get along with the difference.'));
@@ -306,6 +313,7 @@ def main(asArgs):
     sDistillationMethod     = 'best';
     fBrief                  = True;
     cPctPrecision           = 2;
+    rdPctSameValue          = 0.1;
     asTestFilters           = [];
     asTestOutFilters        = [];
     asValueFilters          = [];
@@ -360,6 +368,9 @@ def main(asArgs):
             cPctPrecision = int(g_sOptArg);
         elif matchWithValue('--base') or matchWithValue('--baseline'):
             iBaseline = int(g_sOptArg);
+
+        elif matchWithValue('--pct-same-value'):
+            rdPctSameValue = float(g_sOptArg);
 
         # '--' starts a new collection.  If current one is empty, drop it.
         elif sArg == '--':
@@ -425,7 +436,7 @@ def main(asArgs):
     #
     # Produce the report.
     #
-    oTable = reporting.RunTable(iBaseline, fBrief, cPctPrecision);
+    oTable = reporting.RunTable(iBaseline, fBrief, cPctPrecision, rdPctSameValue);
     oTable.populateFromRuns([oCollection.oDistilled for oCollection in aoCollections],
                             [oCollection.sName      for oCollection in aoCollections]);
     print('\n'.join(oTable.formatAsText()));
