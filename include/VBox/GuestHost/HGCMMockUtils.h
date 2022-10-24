@@ -65,6 +65,14 @@
 # pragma once
 #endif
 
+#include <iprt/err.h>
+#include <iprt/semaphore.h>
+#include <iprt/thread.h>
+#include <iprt/types.h>
+
+#include <VBox/GuestHost/HGCMMock.h>
+
+
 /** Prototype for HGCM Mock utils context. */
 struct TSTHGCMUTILSCTX;
 /** Pointer to a HGCM Mock utils context. */
