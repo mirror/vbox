@@ -151,72 +151,6 @@ static int vboxClipboardSvcWinDataGet(uint32_t u32Format, const void *pvSrc, uin
     return VINF_SUCCESS;
 }
 
-/**
- * Sets (places) clipboard data into the Windows clipboard.
- *
- * @returns VBox status code.
- * @param   pCtx                Shared Clipboard context to use.
- * @param   cfFormat            Windows clipboard format to set data for.
- * @param   pvData              Pointer to actual clipboard data to set.
- * @param   cbData              Size (in bytes) of actual clipboard data to set.
- * @note
- */
-static int vboxClipboardSvcWinDataSet(PSHCLCONTEXT pCtx, UINT cfFormat, void *pvData, uint32_t cbData)
-{
-    AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn   (cbData, VERR_INVALID_PARAMETER);
-
-    int rc = VINF_SUCCESS;
-
-    HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbData);
-
-    LogFlowFunc(("hMem=%p\n", hMem));
-
-    if (hMem)
-    {
-        void *pMem = GlobalLock(hMem);
-
-        LogFlowFunc(("pMem=%p, GlobalSize=%zu\n", pMem, GlobalSize(hMem)));
-
-        if (pMem)
-        {
-            LogFlowFunc(("Setting data\n"));
-
-            memcpy(pMem, pvData, cbData);
-
-            /* The memory must be unlocked before inserting to the Clipboard. */
-            GlobalUnlock(hMem);
-
-            /* 'hMem' contains the host clipboard data.
-             * size is 'cb' and format is 'format'.
-             */
-            HANDLE hClip = SetClipboardData(cfFormat, hMem);
-
-            LogFlowFunc(("hClip=%p\n", hClip));
-
-            if (hClip)
-            {
-                /* The hMem ownership has gone to the system. Nothing to do. */
-            }
-            else
-                rc = RTErrConvertFromWin32(GetLastError());
-        }
-        else
-            rc = VERR_ACCESS_DENIED;
-
-        GlobalFree(hMem);
-    }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
-
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Setting clipboard data for Windows host failed with %Rrc\n", rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
 static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **ppvData, uint32_t *pcbData)
 {
     SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(uFormat);
@@ -383,7 +317,9 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                             LogRel(("Shared Clipboard: cannot convert HTML clipboard into CF_HTML format, rc=%Rrc\n", rc));
                     }
 
-                    rc = vboxClipboardSvcWinDataSet(pCtx, uFormat, pvData, cbData);
+                    rc = SharedClipboardWinDataWrite(uFormat, pvData, cbData);
+                    if (RT_FAILURE(rc))
+                        LogRel(("Shared Clipboard: Setting clipboard data for Windows host failed with %Rrc\n", rc));
 
                     RTMemFree(pvData);
                     cbData = 0;

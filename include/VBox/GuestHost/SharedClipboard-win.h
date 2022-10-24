@@ -142,6 +142,8 @@ void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx);
 int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
 bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);
 
+int SharedClipboardWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData);
+
 int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx);
 int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx);
 VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF;
