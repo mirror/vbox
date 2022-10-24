@@ -34,6 +34,7 @@
 #endif
 
 #include <VBox/GuestHost/HGCMMock.h>
+#include <VBox/GuestHost/HGCMMockUtils.h>
 
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
@@ -49,92 +50,72 @@
 *   Static globals                                                                                                               *
 *********************************************************************************************************************************/
 static RTTEST     g_hTest;
-static SHCLCLIENT g_Client;
 
 
 /*********************************************************************************************************************************
 *   Shared Clipboard testing                                                                                                     *
 *********************************************************************************************************************************/
-struct TESTDESC;
+struct CLIPBOARDTESTDESC;
 /** Pointer to a test description. */
-typedef TESTDESC *PTESTDESC;
+typedef CLIPBOARDTESTDESC *PTESTDESC;
 
-struct TESTPARMS;
-/** Pointer to a test parameter structure. */
-typedef TESTPARMS *PTESTPARMS;
-
-struct TESTCTX;
+struct CLIPBOARDTESTCTX;
 /** Pointer to a test context. */
-typedef TESTCTX *PTESTCTX;
+typedef CLIPBOARDTESTCTX *PCLIPBOARDTESTCTX;
 
 /** Pointer a test descriptor. */
-typedef TESTDESC *PTESTDESC;
+typedef CLIPBOARDTESTDESC *PTESTDESC;
 
-typedef DECLCALLBACKTYPE(int, FNTESTSETUP,(PTESTPARMS pTstParms, void **ppvCtx));
-/** Pointer to an test setup callback. */
+typedef DECLCALLBACKTYPE(int, FNTESTSETUP,(PCLIPBOARDTESTCTX pTstCtx, void **ppvCtx));
+/** Pointer to a test setup callback. */
 typedef FNTESTSETUP *PFNTESTSETUP;
 
-typedef DECLCALLBACKTYPE(int, FNTESTEXEC,(PTESTPARMS pTstParms, void *pvCtx));
-/** Pointer to an test exec callback. */
+typedef DECLCALLBACKTYPE(int, FNTESTEXEC,(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx));
+/** Pointer to a test exec callback. */
 typedef FNTESTEXEC *PFNTESTEXEC;
 
-typedef DECLCALLBACKTYPE(int, FNTESTGSTTHREAD,(PTESTCTX pCtx, void *pvCtx));
-/** Pointer to an test guest thread callback. */
-typedef FNTESTGSTTHREAD *PFNTESTGSTTHREAD;
-
-typedef DECLCALLBACKTYPE(int, FNTESTDESTROY,(PTESTPARMS pTstParms, void *pvCtx));
-/** Pointer to an test destroy callback. */
+typedef DECLCALLBACKTYPE(int, FNTESTDESTROY,(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx));
+/** Pointer to a test destroy callback. */
 typedef FNTESTDESTROY *PFNTESTDESTROY;
 
-typedef struct TESTTASK
+
+/**
+ * Structure for keeping a clipboard test task.
+ */
+typedef struct CLIPBOARDTESTTASK
 {
-    RTSEMEVENT  hEvent;
-    int         rcCompleted;
-    int         rcExpected;
     SHCLFORMATS enmFmtHst;
     SHCLFORMATS enmFmtGst;
-    /** For chunked reads / writes. */
+    /** For testing chunked reads / writes. */
     size_t      cbChunk;
-    size_t      cbData;
+    /** Data buffer to read / write for this task.
+     *  Can be NULL if not needed. */
     void       *pvData;
-} TESTTASK;
-typedef TESTTASK *PTESTTASK;
+    /** Size (in bytes) of \a pvData. */
+    size_t      cbData;
+    /** Number of bytes read / written from / to \a pvData. */
+    size_t      cbProcessed;
+} CLIPBOARDTESTTASK;
+typedef CLIPBOARDTESTTASK *PCLIPBOARDTESTTASK;
 
 /**
- * Structure for keeping a test context.
+ * Structure for keeping a clipboard test context.
  */
-typedef struct TESTCTX
+typedef struct CLIPBOARDTESTCTX
 {
-    PTSTHGCMMOCKSVC      pSvc;
-    /** Currently we only support one task at a time. */
-    TESTTASK             Task;
-    struct
-    {
-        RTTHREAD         hThread;
-        VBGLR3SHCLCMDCTX CmdCtx;
-        volatile bool    fShutdown;
-        PFNTESTGSTTHREAD pfnThread;
-    } Guest;
-    struct
-    {
-        RTTHREAD         hThread;
-        volatile bool    fShutdown;
-    } Host;
-} TESTCTX;
+    /** The HGCM Mock utils context. */
+    TSTHGCMUTILSCTX   HGCM;
+    /** Clipboard-specific task data. */
+    CLIPBOARDTESTTASK Task;
+} CLIPBOARDTESTCTX;
 
-/** The one and only test context. */
-TESTCTX  g_TstCtx;
+/** The one and only clipboard test context. One at a time. */
+CLIPBOARDTESTCTX g_TstCtx;
 
 /**
- * Test parameters.
+ * Structure for keeping a clipboard test description.
  */
-typedef struct TESTPARMS
-{
-    /** Pointer to test context to use. */
-    PTESTCTX             pTstCtx;
-} TESTPARMS;
-
-typedef struct TESTDESC
+typedef struct CLIPBOARDTESTDESC
 {
     /** The setup callback. */
     PFNTESTSETUP         pfnSetup;
@@ -142,48 +123,33 @@ typedef struct TESTDESC
     PFNTESTEXEC          pfnExec;
     /** The destruction callback. */
     PFNTESTDESTROY       pfnDestroy;
-} TESTDESC;
+} CLIPBOARDTESTDESC;
 
 typedef struct SHCLCONTEXT
 {
 } SHCLCONTEXT;
 
 
-#if 0
-static void tstBackendWriteData(HGCMCLIENTID idClient, SHCLFORMAT uFormat, void *pvData, size_t cbData)
-{
-    ShClBackendSetClipboardData(&s_tstHgcmClient[idClient].Client, uFormat, pvData, cbData);
-}
-
-/** Adds a host data read request message to the client's message queue. */
-static int tstSvcMockRequestDataFromGuest(uint32_t idClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent)
-{
-    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
-
-    int rc = ShClSvcGuestDataRequest(&s_tstHgcmClient[idClient].Client, fFormats, ppEvent);
-    RTTESTI_CHECK_RC_OK_RET(rc, rc);
-
-    return rc;
-}
-#endif
-
-static int tstSetModeRc(PTSTHGCMMOCKSVC pSvc, uint32_t uMode, int rc)
+static int tstSetModeRc(PTSTHGCMMOCKSVC pSvc, uint32_t uMode, int rcExpected)
 {
     VBOXHGCMSVCPARM aParms[2];
     HGCMSvcSetU32(&aParms[0], uMode);
     int rc2 = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, aParms);
-    RTTESTI_CHECK_MSG_RET(rc == rc2, ("Expected %Rrc, got %Rrc\n", rc, rc2), rc2);
-    uint32_t const uModeRet = ShClSvcGetMode();
-    RTTESTI_CHECK_MSG_RET(uMode == uModeRet, ("Expected mode %RU32, got %RU32\n", uMode, uModeRet), VERR_WRONG_TYPE);
+    RTTESTI_CHECK_MSG_RET(rcExpected == rc2, ("Expected %Rrc, got %Rrc\n", rcExpected, rc2), rc2);
+    if (RT_SUCCESS(rcExpected))
+    {
+        uint32_t const uModeRet = ShClSvcGetMode();
+        RTTESTI_CHECK_MSG_RET(uMode == uModeRet, ("Expected mode %RU32, got %RU32\n", uMode, uModeRet), VERR_WRONG_TYPE);
+    }
     return rc2;
 }
 
-static int tstSetMode(PTSTHGCMMOCKSVC pSvc, uint32_t uMode)
+static int tstClipboardSetMode(PTSTHGCMMOCKSVC pSvc, uint32_t uMode)
 {
     return tstSetModeRc(pSvc, uMode, VINF_SUCCESS);
 }
 
-static bool tstGetMode(PTSTHGCMMOCKSVC pSvc, uint32_t uModeExpected)
+static bool tstClipboardGetMode(PTSTHGCMMOCKSVC pSvc, uint32_t uModeExpected)
 {
     RT_NOREF(pSvc);
     RTTESTI_CHECK_RET(ShClSvcGetMode() == uModeExpected, false);
@@ -217,9 +183,9 @@ static void tstOperationModes(void)
     rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
 
-    tstSetMode(pSvc, VBOX_SHCL_MODE_HOST_TO_GUEST);
+    tstClipboardSetMode(pSvc, VBOX_SHCL_MODE_HOST_TO_GUEST);
     tstSetModeRc(pSvc, 99, VERR_NOT_SUPPORTED);
-    tstGetMode(pSvc, VBOX_SHCL_MODE_OFF);
+    tstClipboardGetMode(pSvc, VBOX_SHCL_MODE_OFF);
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -251,103 +217,6 @@ static void testSetTransferMode(void)
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
-/* Does testing of VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, needed for providing compatibility to older Guest Additions clients. */
-static void testHostGetMsgOld(void)
-{
-    RTTestISub("Setting up VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT test");
-
-    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
-
-    VBOXHGCMSVCPARM parms[2];
-    RT_ZERO(parms);
-
-    /* Unless we are bidirectional the host message requests will be dropped. */
-    HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_BIDIRECTIONAL);
-    int rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
-    RTTESTI_CHECK_RC_OK(rc);
-
-    RTTestISub("Testing one format, waiting guest u.Call.");
-    RT_ZERO(g_Client);
-    VBOXHGCMCALLHANDLE_TYPEDEF call;
-    rc = VERR_IPE_UNINITIALIZED_STATUS;
-    pSvc->fnTable.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
-
-    HGCMSvcSetU32(&parms[0], 0);
-    HGCMSvcSetU32(&parms[1], 0);
-    pSvc->fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC_OK(rc);
-
-    //testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
-#if 0
-    RTTESTI_CHECK_RC_OK(u.Call.rc);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(u.Call.rc, VINF_SUCCESS);
-    s_tstHgcmSrv.fnTable.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
-
-    RTTestISub("Testing one format, no waiting guest calls.");
-    RT_ZERO(g_Client);
-    s_tstHgcmSrv.fnTable.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
-    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_HTML);
-    HGCMSvcSetU32(&parms[0], 0);
-    HGCMSvcSetU32(&parms[1], 0);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
-    RTTESTI_CHECK_RC_OK(u.Call.rc);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(u.Call.rc, VINF_SUCCESS);
-    s_tstHgcmSrv.fnTable.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
-
-    RTTestISub("Testing two formats, waiting guest u.Call.");
-    RT_ZERO(g_Client);
-    s_tstHgcmSrv.fnTable.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
-    HGCMSvcSetU32(&parms[0], 0);
-    HGCMSvcSetU32(&parms[1], 0);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(u.Call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This should get updated only when the guest call completes. */
-    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
-    RTTESTI_CHECK_RC_OK(u.Call.rc);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
-    RTTESTI_CHECK_RC_OK(u.Call.rc);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(u.Call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
-    s_tstHgcmSrv.fnTable.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
-
-    RTTestISub("Testing two formats, no waiting guest calls.");
-    RT_ZERO(g_Client);
-    s_tstHgcmSrv.fnTable.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
-    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
-    HGCMSvcSetU32(&parms[0], 0);
-    HGCMSvcSetU32(&parms[1], 0);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
-    RTTESTI_CHECK_RC_OK(u.Call.rc);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
-    RTTESTI_CHECK_RC_OK(u.Call.rc);
-    u.Call.rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(u.Call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
-#endif
-    pSvc->fnTable.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
-}
 
 static void testGuestSimple(void)
 {
@@ -399,7 +268,7 @@ static void testGuestSimple(void)
     /*
      * Access allowed tests.
      */
-    tstSetMode(pSvc, VBOX_SHCL_MODE_BIDIRECTIONAL);
+    tstClipboardSetMode(pSvc, VBOX_SHCL_MODE_BIDIRECTIONAL);
 
     /* Try writing data without reporting formats before. */
     RTTESTI_CHECK_RC_OK(VbglR3ClipboardWriteDataEx(&Ctx, 0xdeadb33f, abData, sizeof(abData)));
@@ -415,15 +284,21 @@ static void testGuestSimple(void)
     RTTESTI_CHECK_RC_OK(VbglR3ClipboardDisconnectEx(&Ctx));
 }
 
-static void testGuestWrite(void)
+static RTUTF16 tstGetRandUtf8(void)
 {
-    RTTestISub("Testing client (guest) API - Writing");
+    return RTRandU32Ex(0x20, 0x7A);
 }
 
-#if 0
-/**
- * Generate a random codepoint for simple UTF-16 encoding.
- */
+static char *tstGenerateUtf8StringA(uint32_t uCch)
+{
+    char * pszRand = (char *)RTMemAlloc(uCch + 1);
+    for (uint32_t i = 0; i < uCch; i++)
+        pszRand[i] = tstGetRandUtf8();
+    pszRand[uCch] = 0;
+    return pszRand;
+}
+
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 static RTUTF16 tstGetRandUtf16(void)
 {
     RTUTF16 wc;
@@ -442,90 +317,7 @@ static PRTUTF16 tstGenerateUtf16StringA(uint32_t uCch)
     pwszRand[uCch] = 0;
     return pwszRand;
 }
-#endif
-
-#if 0
-static void testGuestRead(void)
-{
-    RTTestISub("Testing client (guest) API - Reading");
-
-    /* Preparations. */
-    tstSetMode(VBOX_SHCL_MODE_BIDIRECTIONAL);
-
-    VBGLR3SHCLCMDCTX Ctx;
-    RTTESTI_CHECK_RC_OK(VbglR3ClipboardConnectEx(&Ctx, VBOX_SHCL_GF_0_CONTEXT_ID));
-    RTThreadSleep(500); /** @todo BUGBUG -- Seems to be a startup race when querying the initial clipboard formats. */
-
-    uint8_t abData[_4K]; uint32_t cbData; uint32_t cbRead;
-
-    /* Issue a host request that we want to read clipboard data from the guest. */
-    PSHCLEVENT pEvent;
-    tstSvcMockRequestDataFromGuest(Ctx.idClient, VBOX_SHCL_FMT_UNICODETEXT, &pEvent);
-
-    /* Write guest clipboard data to the host side. */
-    RTTESTI_CHECK_RC_OK(VbglR3ClipboardReportFormats(Ctx.idClient, VBOX_SHCL_FMT_UNICODETEXT));
-    cbData = RTRandU32Ex(1, sizeof(abData));
-    PRTUTF16 pwszStr = tstGenerateUtf16String(cbData);
-    RTTESTI_CHECK_RC_OK(VbglR3ClipboardWriteDataEx(&Ctx, VBOX_SHCL_FMT_UNICODETEXT, pwszStr, cbData));
-    RTMemFree(pwszStr);
-
-    PSHCLEVENTPAYLOAD pPayload;
-    int rc = ShClEventWait(pEvent, RT_MS_30SEC, &pPayload);
-    if (RT_SUCCESS(rc))
-    {
-
-    }
-    ShClEventRelease(pEvent);
-    pEvent = NULL;
-
-
-    /* Read clipboard data from the host back to the guest side. */
-    /* Note: Also could return VINF_BUFFER_OVERFLOW, so check for VINF_SUCCESS explicitly here. */
-    RTTESTI_CHECK_RC(VbglR3ClipboardReadDataEx(&Ctx, VBOX_SHCL_FMT_UNICODETEXT,
-                                               abData, sizeof(abData), &cbRead), VINF_SUCCESS);
-    RTTESTI_CHECK(cbRead == cbData);
-
-    RTPrintf("Data (%RU32): %ls\n", cbRead, (PCRTUTF16)abData);
-
-    /* Tear down. */
-    RTTESTI_CHECK_RC_OK(VbglR3ClipboardDisconnectEx(&Ctx));
-}
-#endif
-
-static DECLCALLBACK(int) tstGuestThread(RTTHREAD hThread, void *pvUser)
-{
-    RT_NOREF(hThread);
-    PTESTCTX pCtx = (PTESTCTX)pvUser;
-    AssertPtr(pCtx);
-
-    RTThreadUserSignal(hThread);
-
-    if (pCtx->Guest.pfnThread)
-        return pCtx->Guest.pfnThread(pCtx, NULL);
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) tstHostThread(RTTHREAD hThread, void *pvUser)
-{
-    RT_NOREF(hThread);
-    PTESTCTX pCtx = (PTESTCTX)pvUser;
-    AssertPtr(pCtx);
-
-    int rc = VINF_SUCCESS;
-
-    RTThreadUserSignal(hThread);
-
-    for (;;)
-    {
-        RTThreadSleep(100);
-
-        if (ASMAtomicReadBool(&pCtx->Host.fShutdown))
-            break;
-    }
-
-    return rc;
-}
+#endif /* RT_OS_WINDOWS) || RT_OS_OS2 */
 
 static void testSetHeadless(void)
 {
@@ -567,106 +359,37 @@ static void testHostCall(void)
     testSetHeadless();
 }
 
-static int tstGuestStart(PTESTCTX pTstCtx, PFNTESTGSTTHREAD pFnThread)
-{
-    pTstCtx->Guest.pfnThread = pFnThread;
 
-    int rc = RTThreadCreate(&pTstCtx->Guest.hThread, tstGuestThread, pTstCtx, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "tstShClGst");
-    if (RT_SUCCESS(rc))
-        rc = RTThreadUserWait(pTstCtx->Guest.hThread, RT_MS_30SEC);
-
-    return rc;
-}
-
-static int tstGuestStop(PTESTCTX pTstCtx)
-{
-    ASMAtomicWriteBool(&pTstCtx->Guest.fShutdown, true);
-
-    int rcThread;
-    int rc = RTThreadWait(pTstCtx->Guest.hThread, RT_MS_30SEC, &rcThread);
-    if (RT_SUCCESS(rc))
-        rc = rcThread;
-    if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Shutting down guest thread failed with %Rrc\n", rc);
-
-    pTstCtx->Guest.hThread = NIL_RTTHREAD;
-
-    return rc;
-}
-
-static int tstHostStart(PTESTCTX pTstCtx)
-{
-    int rc = RTThreadCreate(&pTstCtx->Host.hThread, tstHostThread, pTstCtx, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "tstShClHst");
-    if (RT_SUCCESS(rc))
-        rc = RTThreadUserWait(pTstCtx->Host.hThread, RT_MS_30SEC);
-
-    return rc;
-}
-
-static int tstHostStop(PTESTCTX pTstCtx)
-{
-    ASMAtomicWriteBool(&pTstCtx->Host.fShutdown, true);
-
-    int rcThread;
-    int rc = RTThreadWait(pTstCtx->Host.hThread, RT_MS_30SEC, &rcThread);
-    if (RT_SUCCESS(rc))
-        rc = rcThread;
-    if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Shutting down host thread failed with %Rrc\n", rc);
-
-    pTstCtx->Host.hThread = NIL_RTTHREAD;
-
-    return rc;
-}
-
+/*********************************************************************************************************************************
+ * Test: Guest reading from host                                                                                                 *
+ ********************************************************************************************************************************/
 #if defined(RT_OS_LINUX)
-static DECLCALLBACK(int) tstShClUserMockReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
+/* Called from SHCLX11 thread. */
+static DECLCALLBACK(int) tstTestReadFromHost_ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
     RT_NOREF(pCtx, fFormats, pvUser);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "tstShClUserMockReportFormatsCallback: fFormats=%#x\n", fFormats);
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "tstTestReadFromHost_SvcReportFormatsCallback: fFormats=%#x\n", fFormats);
     return VINF_SUCCESS;
 }
 
-/*
-static DECLCALLBACK(int) tstTestReadFromHost_RequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
-{
-    RT_NOREF(pCtx, uFmt, ppv, pvUser);
-
-    PTESTTASK pTask = &TaskRead;
-
-    uint8_t *pvData = (uint8_t *)RTMemDup(pTask->pvData, pTask->cbData);
-
-    *ppv = pvData;
-    *pcb = pTask->cbData;
-
-    return VINF_SUCCESS;
-}
-*/
-
-#if 0
-static DECLCALLBACK(int) tstShClUserMockSendDataCallback(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)
-{
-    RT_NOREF(pCtx, pv, cb, pvUser);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "tstShClUserMockSendDataCallback\n");
-
-    PTESTTASK pTask = &TaskRead;
-
-    memcpy(pv, pTask->pvData, RT_MIN(pTask->cbData, cb));
-
-    return VINF_SUCCESS;
-}
-#endif
-
-static DECLCALLBACK(int) tstShClUserMockOnGetDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, size_t *pcb, void *pvUser)
+/* Called by the backend, e.g. for X11 in the SHCLX11 thread. */
+static DECLCALLBACK(int) tstTestReadFromHost_OnClipboardReadCallback(PSHCLCONTEXT pCtx,
+                                                                     SHCLFORMAT uFmt, void **ppv, size_t *pcb, void *pvUser)
 {
     RT_NOREF(pCtx, uFmt, pvUser);
 
-    PTESTTASK pTask = &g_TstCtx.Task;
+    PCLIPBOARDTESTTASK pTask = (PCLIPBOARDTESTTASK)TstHGCMUtilsTaskGetCurrent(&g_TstCtx.HGCM)->pvUser;
 
-    uint8_t *pvData = pTask->cbData ? (uint8_t *)RTMemDup(pTask->pvData, pTask->cbData) : NULL;
-    size_t   cbData = pTask->cbData;
+    void   *pvData = NULL;
+    size_t  cbData = pTask->cbData - pTask->cbProcessed;
+    if (cbData)
+    {
+        pvData = RTMemDup((uint8_t *)pTask->pvData + pTask->cbProcessed, cbData);
+        AssertPtr(pvData);
+    }
+
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Host reporting back %RU32 bytes of data\n", cbData);
 
     *ppv = pvData;
     *pcb = cbData;
@@ -684,13 +407,13 @@ typedef struct TSTUSERMOCK
 } TSTUSERMOCK;
 typedef TSTUSERMOCK *PTSTUSERMOCK;
 
-static void tstShClUserMockInit(PTSTUSERMOCK pUsrMock, const char *pszName)
+static void tstTestReadFromHost_MockInit(PTSTUSERMOCK pUsrMock, const char *pszName)
 {
 #if defined(RT_OS_LINUX)
     SHCLCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
-    Callbacks.pfnReportFormats   = tstShClUserMockReportFormatsCallback;
-    Callbacks.pfnOnClipboardRead = tstShClUserMockOnGetDataCallback;
+    Callbacks.pfnReportFormats   = tstTestReadFromHost_ReportFormatsCallback;
+    Callbacks.pfnOnClipboardRead = tstTestReadFromHost_OnClipboardReadCallback;
 
     pUsrMock->pCtx = (PSHCLCONTEXT)RTMemAllocZ(sizeof(SHCLCONTEXT));
     AssertPtrReturnVoid(pUsrMock->pCtx);
@@ -700,11 +423,11 @@ static void tstShClUserMockInit(PTSTUSERMOCK pUsrMock, const char *pszName)
     /* Give the clipboard time to synchronise. */
     RTThreadSleep(500);
 #else
-    RT_NOREF(pUsrMock);
+    RT_NOREF(pUsrMock, pszName);
 #endif /* RT_OS_LINUX */
 }
 
-static void tstShClUserMockDestroy(PTSTUSERMOCK pUsrMock)
+static void tstTestReadFromHost_MockDestroy(PTSTUSERMOCK pUsrMock)
 {
 #if defined(RT_OS_LINUX)
     ShClX11ThreadStop(&pUsrMock->X11Ctx);
@@ -715,11 +438,17 @@ static void tstShClUserMockDestroy(PTSTUSERMOCK pUsrMock)
 #endif
 }
 
-static int tstTaskGuestRead(PTESTCTX pCtx, PTESTTASK pTask)
+static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK pTask)
 {
-    size_t   cbReadTotal = 0;
-    size_t   cbToRead    = pTask->cbData;
+    size_t   cbDst       = RT_MAX(_64K, pTask->cbData);
+    uint8_t *pabDst      = (uint8_t *)RTMemAllocZ(cbDst);
+    AssertPtrReturn(pabDst, VERR_NO_MEMORY);
 
+    AssertPtr(pTask->pvData);                /* Racing condition with host thread? */
+    Assert(pTask->cbChunk);                  /* Buggy test? */
+    Assert(pTask->cbChunk <= pTask->cbData); /* Ditto. */
+
+    size_t   cbToRead = pTask->cbData;
     switch (pTask->enmFmtGst)
     {
         case VBOX_SHCL_FMT_UNICODETEXT:
@@ -730,223 +459,191 @@ static int tstTaskGuestRead(PTESTCTX pCtx, PTESTTASK pTask)
             break;
     }
 
-    size_t   cbDst       = _64K;
-    uint8_t *pabDst      = (uint8_t *)RTMemAllocZ(cbDst);
-    AssertPtrReturn(pabDst, VERR_NO_MEMORY);
+    PVBGLR3SHCLCMDCTX pCmdCtx = &pCtx->HGCM.Guest.CmdCtx;
 
-    Assert(pTask->cbChunk);                  /* Buggy test? */
-    Assert(pTask->cbChunk <= pTask->cbData); /* Ditto. */
-
-    uint8_t *pabSrc = (uint8_t *)pTask->pvData;
-
-    do
+    /* Do random chunked reads. */
+    uint32_t const cChunkedReads = RTRandU32Ex(1, 16);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "%RU32 chunked reads\n", cChunkedReads);
+    for (uint32_t i = 0; i < cChunkedReads; i++)
     {
         /* Note! VbglR3ClipboardReadData() currently does not support chunked reads!
           *      It in turn returns VINF_BUFFER_OVERFLOW when the supplied buffer was too small. */
-        uint32_t const cbChunk    = cbDst;
-        uint32_t const cbExpected = cbToRead;
 
-        uint32_t cbRead = 0;
-        RTTEST_CHECK_RC(g_hTest, VbglR3ClipboardReadData(pCtx->Guest.CmdCtx.idClient,
-                                                         pTask->enmFmtGst, pabDst, cbChunk, &cbRead), pTask->rcExpected);
-        RTTEST_CHECK_MSG(g_hTest, cbRead == cbExpected, (g_hTest, "Read %RU32 bytes, expected %RU32\n", cbRead, cbExpected));
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Guest side received %RU32 bytes\n", cbRead);
-        cbReadTotal += cbRead;
-        Assert(cbReadTotal <= cbToRead);
+        uint32_t cbChunk    = RTRandU32Ex(1, pTask->cbData / cChunkedReads);
+        uint32_t cbRead     = 0;
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Guest trying to read %RU32 bytes\n", cbChunk);
+        int vrc2 = VbglR3ClipboardReadData(pCmdCtx->idClient, pTask->enmFmtGst, pabDst, cbChunk, &cbRead);
+        if (   vrc2   == VINF_SUCCESS
+            && cbRead == 0) /* No data there yet? */
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "No data (yet) from host\n");
+            RTThreadSleep(10);
+            continue;
+        }
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Trying reading host clipboard data with a %RU32 buffer -> %Rrc (%RU32)\n", cbChunk, vrc2, cbRead);
+        RTTEST_CHECK_MSG(g_hTest, vrc2 == VINF_BUFFER_OVERFLOW, (g_hTest, "Got %Rrc, expected VINF_BUFFER_OVERFLOW\n", vrc2));
+    }
 
-    } while (cbReadTotal < cbToRead);
+    /* Last read: Read the data with a buffer big enough. This must succeed. */
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Reading full data (%zu)\n", pTask->cbData);
+    uint32_t cbRead = 0;
+    int vrc2 = VbglR3ClipboardReadData(pCmdCtx->idClient, pTask->enmFmtGst, pabDst, cbDst, &cbRead);
+    RTTEST_CHECK_MSG(g_hTest, vrc2 == VINF_SUCCESS, (g_hTest, "Got %Rrc, expected VINF_SUCCESS\n", vrc2));
+    RTTEST_CHECK_MSG(g_hTest, cbRead == cbToRead, (g_hTest, "Read %RU32 bytes, expected %zu\n", cbRead, cbToRead));
 
     if (pTask->enmFmtGst == VBOX_SHCL_FMT_UNICODETEXT)
+        RTTEST_CHECK_MSG(g_hTest, RTUtf16ValidateEncoding((PRTUTF16)pabDst) == VINF_SUCCESS, (g_hTest, "Read data is not valid UTF-16\n"));
+    if (cbRead == cbToRead)
     {
-        RTTEST_CHECK_RC_OK(g_hTest, RTUtf16ValidateEncoding((PRTUTF16)pabDst));
+        PRTUTF16 pwszSrc;
+        RTTEST_CHECK(g_hTest, RT_SUCCESS(RTStrToUtf16((const char *)pTask->pvData, &pwszSrc)));
+        RTTEST_CHECK_MSG(g_hTest, memcmp(pwszSrc, pabDst, cbRead) == 0, (g_hTest, "Read data does not match host data\n"));
+        RTUtf16Free(pwszSrc);
     }
-    else
-        RTTEST_CHECK(g_hTest, memcmp(pabSrc, pabDst, RT_MIN(pTask->cbData, cbDst) == 0));
+
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Read data from host:\n%.*Rhxd\n", cbRead, pabDst);
 
     RTMemFree(pabDst);
 
     return VINF_SUCCESS;
 }
 
-static void tstTaskInit(PTESTTASK pTask)
+static DECLCALLBACK(int) tstTestReadFromHost_ThreadGuest(PTSTHGCMUTILSCTX pCtx, void *pvCtx)
 {
-    RTSemEventCreate(&pTask->hEvent);
-}
-
-static void tstTaskDestroy(PTESTTASK pTask)
-{
-    RTSemEventDestroy(pTask->hEvent);
-}
-
-static void tstTaskWait(PTESTTASK pTask, RTMSINTERVAL msTimeout)
-{
-    RTTEST_CHECK_RC_OK(g_hTest, RTSemEventWait(pTask->hEvent, msTimeout));
-    RTTEST_CHECK_RC(g_hTest, pTask->rcCompleted, pTask->rcExpected);
-}
-
-static void tstTaskSignal(PTESTTASK pTask, int rc)
-{
-    pTask->rcCompleted = rc;
-    RTTEST_CHECK_RC_OK(g_hTest, RTSemEventSignal(pTask->hEvent));
-}
-
-static DECLCALLBACK(int) tstTestReadFromHostThreadGuest(PTESTCTX pCtx, void *pvCtx)
-{
-    RT_NOREF(pvCtx);
-
-    RTThreadSleep(5000);
-RT_BREAKPOINT();
+    RTThreadSleep(1000); /* Fudge; wait until the host has prepared the data for the clipboard. */
 
     RT_ZERO(pCtx->Guest.CmdCtx);
     RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardConnectEx(&pCtx->Guest.CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID));
 
-#if 1
-    PTESTTASK pTask = &pCtx->Task;
-    tstTaskGuestRead(pCtx, pTask);
-    tstTaskSignal(pTask, VINF_SUCCESS);
-#endif
+    RTThreadSleep(1000); /* Fudge; wait until the host has prepared the data for the clipboard. */
 
-#if 0
-    for (;;)
-    {
-        PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
-        AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
+    PCLIPBOARDTESTCTX  pTstCtx  = (PCLIPBOARDTESTCTX)pvCtx;
+    AssertPtr(pTstCtx);
+    PCLIPBOARDTESTTASK pTstTask = (PCLIPBOARDTESTTASK)pCtx->Task.pvUser;
+    AssertPtr(pTstTask);
+    tstTestReadFromHost_DoIt(pTstCtx, pTstTask);
 
-        uint32_t idMsg  = 0;
-        uint32_t cParms = 0;
-        RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardMsgPeekWait(&pCtx->Guest.CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */));
-        RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardEventGetNext(idMsg, cParms, &pCtx->Guest.CmdCtx, pEvent));
-
-        if (pEvent)
-        {
-            VbglR3ClipboardEventFree(pEvent);
-            pEvent = NULL;
-        }
-
-        if (ASMAtomicReadBool(&pCtx->Guest.fShutdown))
-            break;
-
-        RTThreadSleep(100);
-    }
-#endif
+    /* Signal that the task ended. */
+    TstHGCMUtilsTaskSignal(&pCtx->Task, VINF_SUCCESS);
 
     RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardDisconnectEx(&pCtx->Guest.CmdCtx));
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) tstTestReadFromHostExec(PTESTPARMS pTstParms, void *pvCtx)
+static DECLCALLBACK(int) tstTestReadFromHost_ClientConnectedCallback(PTSTHGCMUTILSCTX pCtx, PTSTHGCMMOCKCLIENT pClient,
+                                                                     void *pvUser)
 {
-    RT_NOREF(pvCtx, pTstParms);
+    RT_NOREF(pCtx, pClient);
 
-    PTESTTASK pTask = &pTstParms->pTstCtx->Task;
+    PCLIPBOARDTESTCTX pTstCtx = (PCLIPBOARDTESTCTX)pvUser;
+    AssertPtr(pTstCtx); RT_NOREF(pTstCtx);
 
-    pTask->enmFmtGst = VBOX_SHCL_FMT_UNICODETEXT;
-    pTask->enmFmtHst = pTask->enmFmtGst;
-    pTask->pvData    = RTStrAPrintf2("foo!");
-    pTask->cbData    = strlen((char *)pTask->pvData) + 1;
-    pTask->cbChunk   = pTask->cbData;
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Client %RU32 connected\n", pClient->idClient);
+    return VINF_SUCCESS;
+}
 
-    PTSTHGCMMOCKSVC    pSvc        = TstHgcmMockSvcInst();
-    PTSTHGCMMOCKCLIENT pMockClient = TstHgcmMockSvcWaitForConnect(pSvc);
+static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, void **ppvCtx)
+{
+    RT_NOREF(ppvCtx);
 
-    AssertPtrReturn(pMockClient, VERR_INVALID_POINTER);
+    /* Initialize the Shared Clipboard backend callbacks. */
+    PSHCLBACKEND pBackend = ShClSvcGetBackend();
+
+    SHCLCALLBACKS ShClCallbacks;
+    RT_ZERO(ShClCallbacks);
+    ShClCallbacks.pfnReportFormats   = tstTestReadFromHost_ReportFormatsCallback;
+    ShClCallbacks.pfnOnClipboardRead = tstTestReadFromHost_OnClipboardReadCallback;
+    ShClBackendSetCallbacks(pBackend, &ShClCallbacks);
+
+    /* Set the right clipboard mode, so that the guest can read from the host. */
+    tstClipboardSetMode(TstHgcmMockSvcInst(), VBOX_SHCL_MODE_BIDIRECTIONAL);
+
+    /* Start the host thread first, so that the guest thread can connect to it later. */
+    TSTHGCMUTILSHOSTCALLBACKS HostCallbacks;
+    RT_ZERO(HostCallbacks);
+    HostCallbacks.pfnOnClientConnected = tstTestReadFromHost_ClientConnectedCallback;
+    TstHGCMUtilsHostThreadStart(&pTstCtx->HGCM, &HostCallbacks, pTstCtx /* pvUser */);
+
+    PCLIPBOARDTESTTASK pTask  = &pTstCtx->Task;
+    AssertPtr(pTask);
+    pTask->enmFmtGst   = VBOX_SHCL_FMT_UNICODETEXT;
+    pTask->enmFmtHst   = pTask->enmFmtGst;
+    pTask->cbChunk     = RTRandU32Ex(1, 512);
+    pTask->cbData      = RT_ALIGN_32(pTask->cbChunk * RTRandU32Ex(1, 16), 2);
+    Assert(pTask->cbData % sizeof(RTUTF16) == 0);
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+    pTask->pvData      = tstGenerateUtf8StringA(pTask->cbData);
+    pTask->cbData++; /* Add terminating zero. */
+#else
+    pTask->pvData      = tstGenerateUtf16StringA(pTask->cbData / sizeof(RTUTF16));
+    pTask->cbData     += sizeof(RTUTF16); /* Add terminating zero. */
+#endif
+    pTask->cbProcessed = 0;
+
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Host data (%RU32):\n%.*Rhxd\n", pTask->cbData, pTask->cbData, pTask->pvData);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) tstTestReadFromHostExec(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx)
+{
+    RT_NOREF(pvCtx);
+
+    TstHGCMUtilsGuestThreadStart(&pTstCtx->HGCM, tstTestReadFromHost_ThreadGuest, pTstCtx);
+
+    PTSTHGCMUTILSTASK pTask = (PTSTHGCMUTILSTASK)TstHGCMUtilsTaskGetCurrent(&pTstCtx->HGCM);
 
     bool fUseMock = false;
     TSTUSERMOCK UsrMock;
     if (fUseMock)
-        tstShClUserMockInit(&UsrMock, "tstX11Hst");
+        tstTestReadFromHost_MockInit(&UsrMock, "tstX11Hst");
 
-    RTThreadSleep(RT_MS_1SEC * 4);
-
-#if 1
-    PSHCLBACKEND pBackend = ShClSvcGetBackend();
-
-    ShClBackendReportFormats(pBackend, (PSHCLCLIENT)pMockClient->pvClient, pTask->enmFmtHst);
-    tstTaskWait(pTask, RT_MS_30SEC);
-#endif
-
-RTThreadSleep(RT_MS_30SEC);
-
-    //PSHCLCLIENT pClient = &pMockClient->Client;
-
-#if 1
-    if (1)
-    {
-        //RTTEST_CHECK_RC_OK(g_hTest, ShClBackendMockSetData(pBackend, pTask->enmFmt, pwszStr, cbData));
-        //RTMemFree(pwszStr);
-    }
-#endif
+    /* Wait until the task has been finished. */
+    TstHGCMUtilsTaskWait(pTask, RT_MS_30SEC);
 
     if (fUseMock)
-        tstShClUserMockDestroy(&UsrMock);
+        tstTestReadFromHost_MockDestroy(&UsrMock);
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) tstTestReadFromHostSetup(PTESTPARMS pTstParms, void **ppvCtx)
-{
-    RT_NOREF(ppvCtx);
-
-    PTESTCTX pCtx = pTstParms->pTstCtx;
-
-    tstHostStart(pCtx);
-
-    PSHCLBACKEND pBackend = ShClSvcGetBackend();
-
-    SHCLCALLBACKS Callbacks;
-    RT_ZERO(Callbacks);
-    Callbacks.pfnReportFormats = tstShClUserMockReportFormatsCallback;
-    //Callbacks.pfnOnRequestDataFromSource = tstTestReadFromHost_RequestDataFromSourceCallback;
-    Callbacks.pfnOnClipboardRead     = tstShClUserMockOnGetDataCallback;
-    ShClBackendSetCallbacks(pBackend, &Callbacks);
-
-    tstGuestStart(pCtx, tstTestReadFromHostThreadGuest);
-
-    RTThreadSleep(1000);
-
-    tstSetMode(pCtx->pSvc, VBOX_SHCL_MODE_BIDIRECTIONAL);
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) tstTestReadFromHostDestroy(PTESTPARMS pTstParms, void *pvCtx)
+static DECLCALLBACK(int) tstTestReadFromHostDestroy(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx)
 {
     RT_NOREF(pvCtx);
 
-    int rc = VINF_SUCCESS;
+    int vrc = TstHGCMUtilsGuestThreadStop(&pTstCtx->HGCM);
+    AssertRC(vrc);
+    vrc = TstHGCMUtilsHostThreadStop(&pTstCtx->HGCM);
+    AssertRC(vrc);
 
-    tstGuestStop(pTstParms->pTstCtx);
-    tstHostStop(pTstParms->pTstCtx);
-
-    return rc;
+    return vrc;
 }
 
+
+/*********************************************************************************************************************************
+ * Main                                                                                                                          *
+ ********************************************************************************************************************************/
+
 /** Test definition table. */
-TESTDESC g_aTests[] =
+CLIPBOARDTESTDESC g_aTests[] =
 {
+    /* Tests guest reading clipboard data from the host.  */
     { tstTestReadFromHostSetup,       tstTestReadFromHostExec,      tstTestReadFromHostDestroy }
 };
 /** Number of tests defined. */
 unsigned g_cTests = RT_ELEMENTS(g_aTests);
 
-static int tstOne(PTSTHGCMMOCKSVC pSvc, PTESTDESC pTstDesc)
+static int tstOne(PTESTDESC pTstDesc)
 {
-    PTESTCTX pTstCtx = &g_TstCtx;
-
-    TESTPARMS TstParms;
-    RT_ZERO(TstParms);
-
-    pTstCtx->pSvc    = pSvc;
-    TstParms.pTstCtx = pTstCtx;
+    PCLIPBOARDTESTCTX pTstCtx = &g_TstCtx;
 
     void *pvCtx;
-    int rc = pTstDesc->pfnSetup(&TstParms, &pvCtx);
+    int rc = pTstDesc->pfnSetup(pTstCtx, &pvCtx);
     if (RT_SUCCESS(rc))
     {
-        rc = pTstDesc->pfnExec(&TstParms, pvCtx);
+        rc = pTstDesc->pfnExec(pTstCtx, pvCtx);
 
-        int rc2 = pTstDesc->pfnDestroy(&TstParms, pvCtx);
+        int rc2 = pTstDesc->pfnDestroy(pTstCtx, pvCtx);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -968,30 +665,37 @@ int main(int argc, char *argv[])
         return rcExit;
     RTTestBanner(g_hTest);
 
+#ifndef DEBUG_andy
     /* Don't let assertions in the host service panic (core dump) the test cases. */
     RTAssertSetMayPanic(false);
+#endif
 
-    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
-
+    PTSTHGCMMOCKSVC const pSvc = TstHgcmMockSvcInst();
     TstHgcmMockSvcCreate(pSvc, sizeof(SHCLCLIENT));
     TstHgcmMockSvcStart(pSvc);
 
     /*
      * Run the tests.
      */
-    if (1)
+    if (0)
     {
         testGuestSimple();
-        testGuestWrite();
         testHostCall();
-        testHostGetMsgOld();
     }
 
     RT_ZERO(g_TstCtx);
-    tstTaskInit(&g_TstCtx.Task);
+
+    PTSTHGCMUTILSCTX pCtx = &g_TstCtx.HGCM;
+    TstHGCMUtilsCtxInit(pCtx, pSvc);
+
+    PTSTHGCMUTILSTASK pTask = (PTSTHGCMUTILSTASK)TstHGCMUtilsTaskGetCurrent(pCtx);
+    TstHGCMUtilsTaskInit(pTask);
+    pTask->pvUser = &g_TstCtx.Task;
+
     for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
-        tstOne(pSvc, &g_aTests[i]);
-    tstTaskDestroy(&g_TstCtx.Task);
+        tstOne(&g_aTests[i]);
+
+    TstHGCMUtilsTaskDestroy(pTask);
 
     TstHgcmMockSvcStop(pSvc);
     TstHgcmMockSvcDestroy(pSvc);
@@ -1001,3 +705,4 @@ int main(int argc, char *argv[])
      */
     return RTTestSummaryAndDestroy(g_hTest);
 }
+
