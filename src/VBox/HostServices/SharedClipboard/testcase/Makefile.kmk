@@ -39,7 +39,6 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 # Note: No #ifdef TESTCASE hacks or similar allowed, has to run
 #       without #ifdef modifications to the core code!
 #
-PROGRAMS.linux += tstClipboardMockHGCM
 tstClipboardMockHGCM_TEMPLATE = VBOXR3TSTEXE
 tstClipboardMockHGCM_DEFS     = VBOX_WITH_HGCM VBOX_WITH_SHARED_CLIPBOARD
 tstClipboardMockHGCM_SOURCES  = \
@@ -50,21 +49,25 @@ tstClipboardMockHGCM_SOURCES  = \
 	tstClipboardMockHGCM.cpp
 tstClipboardMockHGCM_LIBS     = $(LIB_RUNTIME)
 
-if1of ($(KBUILD_TARGET), linux)
- tstClipboardMockHGCM_SOURCES.linux  += \
+if1of ($(KBUILD_TARGET), linux solaris)
+ PROGRAMS += tstClipboardMockHGCM
+ tstClipboardMockHGCM_SOURCES += \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
 	../VBoxSharedClipboardSvc-x11.cpp
- tstClipboardMockHGCM_LIBPATH = \
+ tstClipboardMockHGCM_LIBPATH  = \
 	$(VBOX_LIBPATH_X11)
- tstClipboardMockHGCM_LIBS   += \
+ tstClipboardMockHGCM_LIBS    += \
 	Xt \
 	X11
 endif
+if1of ($(KBUILD_TARGET), win)
+ PROGRAMS += tstClipboardMockHGCM
+ tstClipboardMockHGCM_SOURCES += \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp \
+	../VBoxSharedClipboardSvc-win.cpp
+endif
 
-tstClipboardMockHGCM_SOURCES.darwin += ../VBoxSharedClipboardSvc-darwin.cpp
-tstClipboardMockHGCM_SOURCES.win    += ../VBoxSharedClipboardSvc-win.cpp
-
-tstClipboardMockHGCM_CLEAN           = $(tstClipboardMockHGCM_0_OUTDIR)/tstClipboardMockHGCM.run
+tstClipboardMockHGCM_CLEAN = $(tstClipboardMockHGCM_0_OUTDIR)/tstClipboardMockHGCM.run
 
 if defined(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS)
  tstClipboardMockHGCM_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS

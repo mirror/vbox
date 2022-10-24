@@ -368,7 +368,7 @@ static void testHostCall(void)
 /*********************************************************************************************************************************
  * Test: Guest reading from host                                                                                                 *
  ********************************************************************************************************************************/
-#if defined(RT_OS_LINUX)
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
 /* Called from SHCLX11 thread. */
 static DECLCALLBACK(int) tstTestReadFromHost_ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
@@ -401,7 +401,7 @@ static DECLCALLBACK(int) tstTestReadFromHost_OnClipboardReadCallback(PSHCLCONTEX
 
     return VINF_SUCCESS;
 }
-#endif /* RT_OS_LINUX */
+#endif /* (RT_OS_LINUX) || defined (RT_OS_SOLARIS) */
 
 typedef struct TSTUSERMOCK
 {
@@ -474,7 +474,7 @@ static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK p
         /* Note! VbglR3ClipboardReadData() currently does not support chunked reads!
           *      It in turn returns VINF_BUFFER_OVERFLOW when the supplied buffer was too small. */
 
-        uint32_t cbChunk    = RTRandU32Ex(1, pTask->cbData / cChunkedReads);
+        uint32_t cbChunk    = RTRandU32Ex(1, (uint32_t)(pTask->cbData / cChunkedReads));
         uint32_t cbRead     = 0;
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Guest trying to read %RU32 bytes\n", cbChunk);
         int vrc2 = VbglR3ClipboardReadData(pCmdCtx->idClient, pTask->enmFmtGst, pabDst, cbChunk, &cbRead);
@@ -492,7 +492,7 @@ static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK p
     /* Last read: Read the data with a buffer big enough. This must succeed. */
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Reading full data (%zu)\n", pTask->cbData);
     uint32_t cbRead = 0;
-    int vrc2 = VbglR3ClipboardReadData(pCmdCtx->idClient, pTask->enmFmtGst, pabDst, cbDst, &cbRead);
+    int vrc2 = VbglR3ClipboardReadData(pCmdCtx->idClient, pTask->enmFmtGst, pabDst, (uint32_t)cbDst, &cbRead);
     RTTEST_CHECK_MSG(g_hTest, vrc2 == VINF_SUCCESS, (g_hTest, "Got %Rrc, expected VINF_SUCCESS\n", vrc2));
     RTTEST_CHECK_MSG(g_hTest, cbRead == cbToRead, (g_hTest, "Read %RU32 bytes, expected %zu\n", cbRead, cbToRead));
 
@@ -553,6 +553,7 @@ static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, voi
 {
     RT_NOREF(ppvCtx);
 
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
     /* Initialize the Shared Clipboard backend callbacks. */
     PSHCLBACKEND pBackend = ShClSvcGetBackend();
 
@@ -561,6 +562,7 @@ static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, voi
     ShClCallbacks.pfnReportFormats   = tstTestReadFromHost_ReportFormatsCallback;
     ShClCallbacks.pfnOnClipboardRead = tstTestReadFromHost_OnClipboardReadCallback;
     ShClBackendSetCallbacks(pBackend, &ShClCallbacks);
+#endif /* defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS) */
 
     /* Set the right clipboard mode, so that the guest can read from the host. */
     tstClipboardSetMode(TstHgcmMockSvcInst(), VBOX_SHCL_MODE_BIDIRECTIONAL);
@@ -582,7 +584,7 @@ static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, voi
     pTask->pvData      = tstGenerateUtf8StringA(pTask->cbData);
     pTask->cbData++; /* Add terminating zero. */
 #else
-    pTask->pvData      = tstGenerateUtf16StringA(pTask->cbData / sizeof(RTUTF16));
+    pTask->pvData      = tstGenerateUtf16StringA((uint32_t)(pTask->cbData / sizeof(RTUTF16)));
     pTask->cbData     += sizeof(RTUTF16); /* Add terminating zero. */
 #endif
     pTask->cbProcessed = 0;
