@@ -734,7 +734,7 @@ does not provide tools for automatic generation of keys needed for
 modules signing. Please consider to generate and enroll them manually:
 
     sudo mkdir -p /var/lib/shim-signed/mok
-    sudo openssl req -nodes -new -x509 -newkey rsa:2048 -outform DER -keyout $DEB_PRIV_KEY -out $DEB_PUB_KEY
+    sudo openssl req -nodes -new -x509 -newkey rsa:2048 -outform DER -addext \"extendedKeyUsage=codeSigning\" -keyout $DEB_PRIV_KEY -out $DEB_PUB_KEY
     sudo mokutil --import $DEB_PUB_KEY
     sudo reboot
 
