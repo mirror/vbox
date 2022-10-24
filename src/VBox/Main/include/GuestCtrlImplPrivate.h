@@ -1384,5 +1384,27 @@ protected:
     uint32_t                 mObjectID;
     /** @} */
 };
+
+/**
+ * Class for handling guest / host path functions.
+ */
+class GuestPath
+{
+private:
+
+    /**
+     * Default constructor.
+     *
+     * Not directly instantiable (yet).
+     */
+    GuestPath(void) { }
+
+public:
+
+    /** @name Static helper functions.
+     * @{ */
+    static int Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle);
+    /** @}  */
+};
 #endif /* !MAIN_INCLUDED_GuestCtrlImplPrivate_h */
 

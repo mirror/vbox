@@ -46,6 +46,7 @@
 # include <iprt/file.h>
 #endif
 #include <iprt/fs.h>
+#include <iprt/path.h>
 #include <iprt/rand.h>
 #include <iprt/time.h>
 #include <VBox/AssertGuest.h>
@@ -1660,5 +1661,130 @@ int GuestWaitEvent::SignalExternal(IEvent *pEvent)
         mEvent = pEvent;
 
     return RTSemEventSignal(mEventSem);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GuestPath
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Translates a path from a specific path style into another.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if a conversion is not supported.
+ * @retval  VERR_NOT_IMPLEMENTED if path style conversion is not implemented yet.
+ * @param   strPath             Path to translate. Will contain the translated path on success. UTF-8 only.
+ * @param   enmSrcPathStyle     Source path style \a strPath is expected in.
+ * @param   enmDstPathStyle     Destination path style to convert to.
+ *
+ * @note    This does NOT remove any trailing slashes and/or perform file system lookups!
+ */
+/* static */
+int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle)
+{
+    if (strPath.isEmpty())
+        return VINF_SUCCESS;
+
+    AssertReturn(RTStrIsValidEncoding(strPath.c_str()), VERR_INVALID_PARAMETER);
+
+#ifdef DEBUG
+    Utf8Str const strPathOrg = strPath; /* Make a backup so that we later can log stuff properly. */
+#endif
+
+    int vrc = VINF_SUCCESS;
+
+    Utf8Str strTranslated;
+
+    if (   enmSrcPathStyle == PathStyle_DOS
+        && enmDstPathStyle == PathStyle_UNIX)
+    {
+        strTranslated = RTPathChangeToUnixSlashes(strPath.mutableRaw(), true /* fForce */);
+    }
+    else if (   enmSrcPathStyle == PathStyle_UNIX
+             && enmDstPathStyle == PathStyle_DOS)
+    {
+        /** @todo Check for quoted (sub) strings, e.g. '/foo/bar/\ baz' vs . '/foo/bar/"\ baz"'? */
+
+        const char  *psz = strPath.c_str();
+        size_t const cch = strPath.length();
+        size_t       off = 0;
+        while (off < cch)
+        {
+            /* Most likely cases first. */
+            if (psz[off] == '/') /* Just transform slashes. */
+                strTranslated += '\\';
+            /*
+             * Do a mapping of "\", which marks an escape sequence for paths on UNIX-y OSes to DOS-based OSes (like Windows),
+             * however, on DOS "\" is a path separator.
+             *
+             * See @bugref{21095}.
+             */
+            else if (psz[off] == '\\')
+            {
+                /* "\ " is valid on UNIX-system and mark a space in a path component. */
+                if (   off + 1      <= cch
+                    && psz[off + 1] == ' ')
+                {
+                    strTranslated += ' ';
+                    off++; /* Skip actual escape sequence char (space in this case). */
+                }
+                else
+                {
+                    /* Every other escape sequence is not supported and would lead to different paths anyway, so bail out here. */
+                    vrc = VERR_NOT_SUPPORTED;
+                    break;
+                }
+            }
+            else /* Just add it unmodified. */
+                strTranslated += psz[off];
+            off++;
+        }
+    }
+    else if (enmSrcPathStyle == enmDstPathStyle)
+    {
+        strTranslated = strPath;
+    }
+    else
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Cleanup. */
+    const char  *psz = strTranslated.mutableRaw();
+    size_t const cch = strTranslated.length();
+    size_t       off = 0;
+    while (off < cch)
+    {
+        if (off + 1 > cch)
+            break;
+        /* Remove double slashes. */
+        if (   psz[off]     == '\\'
+            && psz[off + 1] == '\\')
+        {
+            strTranslated.erase(off + 1, 1);
+            off++;
+        }
+        if (   psz[off]     == '/'
+            && psz[off + 1] == '/')
+        {
+            strTranslated.erase(off + 1, 1);
+            off++;
+        }
+        off++;
+    }
+
+    /* Note: Do not trim() paths here, as technically it's possible to create paths with trailing spaces. */
+
+    strTranslated.jolt();
+
+    if (RT_SUCCESS(vrc))
+        strPath = strTranslated;
+
+#ifdef DEBUG
+    LogRel2(("Guest Control: Mapping '%s' -> '%s', vrc=%Rrc\n", strPathOrg.c_str(), strPath.c_str(), vrc));
+#endif
+    return vrc;
 }
 

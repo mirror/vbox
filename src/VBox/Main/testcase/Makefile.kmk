@@ -42,8 +42,9 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_OSE),,tstOVF) \
   	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin msiDarwinDescriptorDecoder) \
   	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
-  	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
+  	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
+  	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlPaths,) \
   	tstMediumLock \
 	tstBstr \
   	tstGuid \
@@ -206,6 +207,19 @@ tstCollector_LDFLAGS.win     = psapi.lib powrprof.lib
 
 
 #
+# tstGuestCtrlContextID
+#
+tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlContextID_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
+tstGuestCtrlContextID_SOURCES  = \
+	tstGuestCtrlContextID.cpp \
+	../src-client/GuestCtrlPrivate.cpp
+tstGuestCtrlContextID_INCS     = ../include \
+     $(VBOX_MAIN_APIWRAPPER_INCS)
+
+
+#
 # tstGuestCtrlParseBuffer
 #
 tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTTSTEXE
@@ -219,16 +233,23 @@ tstGuestCtrlParseBuffer_INCS     = ../include \
 
 
 #
-# tstGuestCtrlContextID
+# tstGuestCtrlPaths
 #
-tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTTSTEXE
-tstGuestCtrlContextID_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
-tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
-tstGuestCtrlContextID_SOURCES  = \
-	tstGuestCtrlContextID.cpp \
+tstGuestCtrlPaths_TEMPLATE       = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlPaths_INTERMEDIATES  = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+tstGuestCtrlPaths_DEFS          += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
+tstGuestCtrlPaths_SOURCES        = \
+	tstGuestCtrlPaths.cpp \
 	../src-client/GuestCtrlPrivate.cpp
-tstGuestCtrlContextID_INCS     = ../include \
-     $(VBOX_MAIN_APIWRAPPER_INCS)
+tstGuestCtrlPaths_INCS           = ../include \
+    $(VBOX_MAIN_APIWRAPPER_INCS)
+
+if 0 # Enable this if you want automatic runs after compilation.
+ $$(tstGuestCtrlPaths_0_OUTDIR)/tstGuestCtrlPaths.run: $$(tstGuestCtrlPaths_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstGuestCtrlPaths_1_STAGE_TARGET) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+ OTHERS += $(tstGuestCtrlPaths_0_OUTDIR)/tstGuestCtrlPaths.run
+endif
 
 
 #
