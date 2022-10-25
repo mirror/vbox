@@ -79,7 +79,7 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>TBD</para>
+        <para>VirtioSCSI: Fixed recognition of the virtio SCSI controller by the EFI firmware (bug #21200)</para>
       </listitem>
 
     </itemizedlist>

@@ -3542,7 +3542,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     VirtioPciParams.uClassBase                     = PCI_CLASS_BASE_NETWORK_CONTROLLER;
     VirtioPciParams.uClassSub                      = PCI_CLASS_SUB_NET_ETHERNET_CONTROLLER;
     VirtioPciParams.uClassProg                     = PCI_CLASS_PROG_UNSPECIFIED;
-    VirtioPciParams.uSubsystemId                   = PCI_DEVICE_ID_VIRTIONET_HOST;  /* VirtIO 1.0 allows PCI Device ID here */
+    VirtioPciParams.uSubsystemId                   = DEVICE_PCI_NETWORK_SUBSYSTEM;  /* VirtIO 1.0 allows PCI Device ID here */
     VirtioPciParams.uInterruptLine                 = 0x00;
     VirtioPciParams.uInterruptPin                  = 0x01;
 
