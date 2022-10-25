@@ -6199,7 +6199,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPUR
     uint16_t const fFcw = pFpuState->FCW;
     uint16_t fFsw       = (pFpuState->FSW & (X86_FSW_C0 | /*X86_FSW_C2 |*/ X86_FSW_C3)) | (6 << X86_FSW_TOP_SHIFT);
 
-    if (RTFLOAT80U_IS_NORMAL(pr80Val))
+    if (RTFLOAT80U_IS_ZERO(pr80Val))
+    {
+        pFpuResTwo->r80Result1 = *pr80Val;
+        pFpuResTwo->r80Result2 = g_ar80One[0];
+    }
+    else if (RTFLOAT80U_IS_NORMAL(pr80Val))
     {
         if (pr80Val->s.uExponent >= RTFLOAT80U_EXP_BIAS + 63)
         {
@@ -6228,7 +6233,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPUR
     {
         fFsw |= X86_FSW_IE;
         if (!(fFcw & X86_FCW_IM))
-            fFsw |= X86_FSW_ES | X86_FSW_B;
+            fFsw |= X86_FSW_ES | X86_FSW_B | (7 << X86_FSW_TOP_SHIFT);
     }
 
     pFpuResTwo->FSW = fFsw;
