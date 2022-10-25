@@ -721,13 +721,13 @@ static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
      */
     if (!RTTestIErrorCount())
     {
-        RTTestISubF("bi-directional benchmark, cbSend=%u, cbRecv=%u, cbTransfer=%u",
+        RTTestISubF("bi-dir benchmark, xbuf=%u rbuf=%u xfer=%u",
                     pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer);
         tstBidirectionalTransfer(pThis, 256);
 
         for (uint32_t cbFrame = 64; cbFrame < cbSend - 64; cbFrame += 8)
         {
-            RTTestISubF("bi-directional benchmark, cbSend=%u, cbRecv=%u, cbTransfer=%u, cbFrame=%u",
+            RTTestISubF("bi-dir benchmark, xbuf=%u rbuf=%u xmit=%u frame=%u",
                         pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer, cbFrame);
             tstBidirectionalTransfer(pThis, cbFrame);
         }
