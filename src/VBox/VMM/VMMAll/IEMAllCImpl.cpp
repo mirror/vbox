@@ -3692,7 +3692,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
             Log(("iret %04x:%016RX64/%04x:%016RX64 -> invalid SS selector, #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
-        DescSS.Legacy.u = 0;
+        /* Make sure SS is sensible, marked as accessed etc. */
+        iemMemFakeStackSelDesc(&DescSS, (uNewSs & X86_SEL_RPL));
     }
     else
     {
