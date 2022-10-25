@@ -220,6 +220,8 @@ typedef struct MYARGS
     uint32_t        cbFrame;
     uint64_t        u64Start;
     uint64_t        u64End;
+    uint32_t        cbSent;
+    uint32_t        cFramesSent;
 } MYARGS, *PMYARGS;
 
 
@@ -253,6 +255,7 @@ static DECLCALLBACK(int) SendThread(RTTHREAD hThreadSelf, void *pvArg)
     MYFRAMEHDR     *pHdr    = (MYFRAMEHDR *)&abBuf[0];
     uint32_t        iFrame  = 0;
     uint32_t        cbSent  = 0;
+    uint32_t        cErrors = 0;
 
     pHdr->SrcMac            = pArgs->Mac;
     pHdr->DstMac            = pArgs->Mac;
@@ -271,8 +274,16 @@ static DECLCALLBACK(int) SendThread(RTTHREAD hThreadSelf, void *pvArg)
         RTTEST_CHECK_RC_OK(g_hTest, rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL));
         if (RT_SUCCESS(rc))
             RTTEST_CHECK_RC_OK(g_hTest, rc = IntNetR0IfSend(pArgs->hIf, g_pSession));
+        if (RT_FAILURE(rc) && ++cErrors > 64)
+        {
+            RTTestFailed(g_hTest, "Aborting xmit after >64 errors");
+            break;
+        }
+
         cbSent += cb;
     }
+    pArgs->cbSent      = cbSent;
+    pArgs->cFramesSent = iFrame;
 
     /*
      * Termination frames.
@@ -400,6 +411,19 @@ static DECLCALLBACK(int) ReceiveThread(RTTHREAD hThreadSelf, void *pvArg)
 
 
 /**
+ * Drains the interface buffer before starting a new bi-directional run.
+ *
+ * We may have termination frames from previous runs pending in the buffer.
+ */
+static void tstDrainInterfaceBuffer(PMYARGS pArgs)
+{
+    uint8_t abBuf[16384 + 1024];
+    while (IntNetRingHasMoreToRead(&pArgs->pBuf->Recv))
+        IntNetRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
+}
+
+
+/**
  * Test state.
  */
 typedef struct TSTSTATE
@@ -470,6 +494,35 @@ static void tstCloseInterfaces(PTSTSTATE pThis)
  */
 static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
 {
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "-------------------------------------------------------------\n");
+
+    /*
+     * Reset statistics.
+     */
+    pThis->pBuf0->cStatYieldsOk.c       = 0;
+    pThis->pBuf0->cStatYieldsNok.c      = 0;
+    pThis->pBuf0->cStatLost.c           = 0;
+    pThis->pBuf0->cStatBadFrames.c      = 0;
+    pThis->pBuf0->Recv.cStatFrames.c    = 0;
+    pThis->pBuf0->Recv.cbStatWritten.c  = 0;
+    pThis->pBuf0->Recv.cOverflows.c     = 0;
+    pThis->pBuf0->Send.cStatFrames.c    = 0;
+    pThis->pBuf0->Send.cbStatWritten.c  = 0;
+    pThis->pBuf0->Send.cOverflows.c     = 0;
+    pThis->pBuf1->cStatYieldsOk.c       = 0;
+    pThis->pBuf1->cStatYieldsNok.c      = 0;
+    pThis->pBuf1->cStatLost.c           = 0;
+    pThis->pBuf1->cStatBadFrames.c      = 0;
+    pThis->pBuf1->Recv.cStatFrames.c    = 0;
+    pThis->pBuf1->Recv.cbStatWritten.c  = 0;
+    pThis->pBuf1->Recv.cOverflows.c     = 0;
+    pThis->pBuf1->Send.cStatFrames.c    = 0;
+    pThis->pBuf1->Send.cbStatWritten.c  = 0;
+    pThis->pBuf1->Send.cOverflows.c     = 0;
+
+    /*
+     * Do the benchmarking.
+     */
     MYARGS Args0;
     RT_ZERO(Args0);
     Args0.hIf         = pThis->hIf0;
@@ -478,6 +531,8 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
     Args0.Mac.au16[1] = 0;
     Args0.Mac.au16[2] = 0;
     Args0.cbFrame     = cbFrame;
+    tstDrainInterfaceBuffer(&Args0);
+    //RTTESTI_CHECK_RC_OK(IntNetR0IfSetMacAddress(pThis->hIf0, g_pSession, &Args0.Mac));
 
     MYARGS Args1;
     RT_ZERO(Args1);
@@ -487,6 +542,8 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
     Args1.Mac.au16[1] = 0;
     Args1.Mac.au16[2] = 1;
     Args1.cbFrame     = cbFrame;
+    tstDrainInterfaceBuffer(&Args1);
+    //RTTESTI_CHECK_RC_OK(IntNetR0IfSetMacAddress(pThis->hIf1, g_pSession, &Args1.Mac));
 
     RTTHREAD ThreadRecv0 = NIL_RTTHREAD;
     RTTHREAD ThreadRecv1 = NIL_RTTHREAD;
@@ -499,12 +556,12 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
 
     int rc2 = VINF_SUCCESS;
     int rc;
-    RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2));
+    RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadSend0, RT_MS_5MIN, &rc2));
     if (RT_SUCCESS(rc))
     {
         RTTESTI_CHECK_RC_OK(rc2);
         ThreadSend0 = NIL_RTTHREAD;
-        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL));
+        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadSend1, RT_MS_5MIN, RT_SUCCESS(rc2) ? &rc2 : NULL));
         if (RT_SUCCESS(rc))
         {
             ThreadSend1 = NIL_RTTHREAD;
@@ -522,37 +579,49 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
                &&   cYields-- > 0)
             RTThreadYield();
 
-        uint64_t u64Elapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
-        uint64_t u64Speed = (uint64_t)((double)(2 * g_cbTransfer / 1024) / ((double)u64Elapsed / 1000000000.0));
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                     "transferred %u bytes in %'RU64 ns (%'RU64 KB/s)\n",
-                     2 * g_cbTransfer, u64Elapsed, u64Speed);
-
         /*
          * Wait for the threads to finish up...
          */
-        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadRecv0, 5000, &rc2));
+        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadRecv0, RT_MS_5SEC, &rc2));
         if (RT_SUCCESS(rc))
         {
             RTTESTI_CHECK_RC_OK(rc2);
             ThreadRecv0 = NIL_RTTHREAD;
         }
 
-        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadRecv1, 5000, &rc2));
+        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadRecv1, RT_MS_5MIN, &rc2));
         if (RT_SUCCESS(rc))
         {
             RTTESTI_CHECK_RC_OK(rc2);
             ThreadRecv1 = NIL_RTTHREAD;
         }
+
+        /*
+         * Report the results.
+         */
+        uint64_t cNsElapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
+        uint64_t cbSent     = (uint64_t)Args0.cbSent      + Args1.cbSent;
+        uint64_t cKbps      = (uint64_t)((double)(cbSent / 1024) / ((double)cNsElapsed / 1000000000.0));
+        uint64_t cFrames    = (uint64_t)Args0.cFramesSent + Args1.cFramesSent;
+        uint64_t cFps       = (uint64_t)(cFrames / ((double)cNsElapsed / 1000000000.0));
+        RTTestValue(g_hTest, "frame size",  cbFrame,    RTTESTUNIT_BYTES);
+        RTTestValue(g_hTest, "xmit time",   cNsElapsed, RTTESTUNIT_NS);
+        RTTestValue(g_hTest, "bytes sent",  cbSent,     RTTESTUNIT_BYTES);
+        RTTestValue(g_hTest, "speed",       cKbps,      RTTESTUNIT_KILOBYTES_PER_SEC);
+        RTTestValue(g_hTest, "frames sent", cFrames,    RTTESTUNIT_FRAMES);
+        RTTestValue(g_hTest, "fps",         cFps,       RTTESTUNIT_FRAMES_PER_SEC);
+        RTTestValue(g_hTest, "overflows",
+                    pThis->pBuf0->Send.cOverflows.c + pThis->pBuf1->Send.cOverflows.c, RTTESTUNIT_OCCURRENCES);
+
     }
 
     /*
      * Give them a chance to complete...
      */
-    RTThreadWait(ThreadRecv0, 5000, NULL);
-    RTThreadWait(ThreadRecv1, 5000, NULL);
-    RTThreadWait(ThreadSend0, 5000, NULL);
-    RTThreadWait(ThreadSend1, 5000, NULL);
+    RTThreadWait(ThreadRecv0, RT_MS_5MIN, NULL);
+    RTThreadWait(ThreadRecv1, RT_MS_5MIN, NULL);
+    RTThreadWait(ThreadSend0, RT_MS_5MIN, NULL);
+    RTThreadWait(ThreadSend1, RT_MS_5MIN, NULL);
 
 
     /*
@@ -725,9 +794,12 @@ static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
                     pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer);
         tstBidirectionalTransfer(pThis, 256);
 
-        for (uint32_t cbFrame = 64; cbFrame < cbSend - 64; cbFrame += 8)
+        /* Only doing up to half the xmit buffer size as it is easy to get into a
+           bad frame position from a previous run and run into overflow issues. */
+        /** @todo fix the code so it skips to a more optimal buffer position? */
+        for (uint32_t cbFrame = 64; cbFrame < cbSend / 2 - 64; cbFrame += 16)
         {
-            RTTestISubF("bi-dir benchmark, xbuf=%u rbuf=%u xmit=%u frame=%u",
+            RTTestISubF("bi-dir benchmark, xbuf=%u rbuf=%u xmit=%u frm=%u",
                         pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer, cbFrame);
             tstBidirectionalTransfer(pThis, cbFrame);
         }
