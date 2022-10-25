@@ -603,7 +603,7 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
         uint64_t cbSent     = (uint64_t)Args0.cbSent      + Args1.cbSent;
         uint64_t cKbps      = (uint64_t)((double)(cbSent / 1024) / ((double)cNsElapsed / 1000000000.0));
         uint64_t cFrames    = (uint64_t)Args0.cFramesSent + Args1.cFramesSent;
-        uint64_t cFps       = (uint64_t)(cFrames / ((double)cNsElapsed / 1000000000.0));
+        uint64_t cFps       = (uint64_t)((double)cFrames / ((double)cNsElapsed / 1000000000.0));
         RTTestValue(g_hTest, "frame size",  cbFrame,    RTTESTUNIT_BYTES);
         RTTestValue(g_hTest, "xmit time",   cNsElapsed, RTTESTUNIT_NS);
         RTTestValue(g_hTest, "bytes sent",  cbSent,     RTTESTUNIT_BYTES);
