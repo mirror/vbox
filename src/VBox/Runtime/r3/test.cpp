@@ -1378,7 +1378,8 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
     pTest->cSubTestAtErrors = ASMAtomicUoReadU32(&pTest->cErrors);
     pTest->pszSubTest = RTStrDup(pszSubTest);
     pTest->cchSubTest = strlen(pszSubTest);
-    Assert(pTest->cchSubTest < 64 /* See g_kcchMaxTestResultName in testmanager/config.py. */);
+    AssertMsg(pTest->cchSubTest < 64 /* See g_kcchMaxTestResultName in testmanager/config.py. */,
+              ("cchSubTest=%u: '%s'\n", pTest->cchSubTest, pTest->pszSubTest));
     pTest->fSubTestSkipped  = false;
     pTest->fSubTestReported = false;
 
