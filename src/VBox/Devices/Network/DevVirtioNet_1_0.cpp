@@ -1990,6 +1990,10 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
     RT_NOREF(pThisCC);
 #ifdef VIRTIO_VBUF_ON_STACK
     VIRTQBUF_T VirtqBuf;
+
+    VirtqBuf.u32Magic  = VIRTQBUF_MAGIC;
+    VirtqBuf.cRefs     = 1;
+
     PVIRTQBUF pVirtqBuf = &VirtqBuf;
     int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, pRxVirtq->uIdx, pVirtqBuf, true);
 #else /* !VIRTIO_VBUF_ON_STACK */
@@ -2726,6 +2730,10 @@ static int virtioNetR3TransmitPkts(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO
     int rc;
 #ifdef VIRTIO_VBUF_ON_STACK
     VIRTQBUF_T VirtqBuf;
+
+    VirtqBuf.u32Magic  = VIRTQBUF_MAGIC;
+    VirtqBuf.cRefs     = 1;
+
     PVIRTQBUF pVirtqBuf = &VirtqBuf;
     while ((rc = virtioCoreR3VirtqAvailBufPeek(pVirtio->pDevInsR3, pVirtio, pTxVirtq->uIdx, pVirtqBuf)) == VINF_SUCCESS)
 #else /* !VIRTIO_VBUF_ON_STACK */
