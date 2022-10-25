@@ -134,4 +134,14 @@ endif
  endif
 endif
 
+#
+# List of above testcases that will be included in the ValKit.
+#
+ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+ if1of ($(KBUILD_TARGET), linux solaris win)
+  VALKIT_UNITTESTS_WHITELIST_GUEST_ADDITIONS += \
+ 	tstClipboardMockHGCM
+ endif
+endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+
 include $(FILE_KBUILD_SUB_FOOTER)
