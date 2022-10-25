@@ -132,6 +132,7 @@ class tdUnitTest1(vbox.TestDriver):
     kdTestCasesBlackList = {
         'testcase/tstClipboardX11Smoke': '',            # (Old naming, deprecated) Needs X, not available on all test boxes.
         'testcase/tstClipboardGH-X11Smoke': '',         # (New name) Ditto.
+        'testcase/tstClipboardMockHGCM': '',            # Ditto.
         'tstClipboardQt': '',                           # Is interactive and needs Qt, needed for Qt clipboard bugfixing.
         'testcase/tstClipboardQt': '',                  # In case it moves here.
         'testcase/tstFileLock': '',
@@ -257,9 +258,12 @@ class tdUnitTest1(vbox.TestDriver):
 
     # White list, which contains tests considered to be safe to execute,
     # even on remote targets (guests).
+    #
+    # When --only-whitelist is specified, this is the only list being checked for.
     kdTestCasesWhiteList = {
         'testcase/tstFile': '',
         'testcase/tstFileLock': '',
+        'testcase/tstClipboardMockHGCM': '',            # Requires X on Linux OSes. Execute on remote targets only (guests).
         'testcase/tstRTLocalIpc': '',
         'testcase/tstRTPathQueryInfo': '',
         'testcase/tstRTPipe': '',
@@ -1191,6 +1195,7 @@ class tdUnitTest1(vbox.TestDriver):
             # Process white list first, if set.
             if  self.fOnlyWhiteList \
             and not self._isExcluded(sName, self.kdTestCasesWhiteList):
+                # (No testStart/Done or accounting here!)
                 reporter.log('%s: SKIPPED (not in white list)' % (sName,));
                 continue;
 
@@ -1200,34 +1205,40 @@ class tdUnitTest1(vbox.TestDriver):
                 reporter.log2('"%s" is not a test case.' % (sName,));
                 continue;
 
-            # Check if the testcase is black listed or buggy before executing it.
-            if self._isExcluded(sName, self.kdTestCasesBlackList):
-                # (No testStart/Done or accounting here!)
-                reporter.log('%s: SKIPPED (blacklisted)' % (sName,));
+            # When not only processing the white list, do some more checking first.
+            if not self.fOnlyWhiteList:
+                # Check if the testcase is black listed or buggy before executing it.
+                if self._isExcluded(sName, self.kdTestCasesBlackList):
+                    # (No testStart/Done or accounting here!)
+                    reporter.log('%s: SKIPPED (blacklisted)' % (sName,));
+                    continue;
 
-            elif self._isExcluded(sName, self.kdTestCasesBuggy):
-                reporter.testStart(sName);
-                reporter.log('%s: Skipping, buggy in general.' % (sName,));
-                reporter.testDone(fSkipped = True);
-                self.cSkipped += 1;
+                elif self._isExcluded(sName, self.kdTestCasesBuggy):
+                    reporter.testStart(sName);
+                    reporter.log('%s: Skipping, buggy in general.' % (sName,));
+                    reporter.testDone(fSkipped = True);
+                    self.cSkipped += 1;
+                    continue;
 
-            elif self._isExcluded(sName, dTestCasesBuggyForHostOs):
-                reporter.testStart(sName);
-                reporter.log('%s: Skipping, buggy on %s.' % (sName, utils.getHostOs(),));
-                reporter.testDone(fSkipped = True);
-                self.cSkipped += 1;
-
+                elif self._isExcluded(sName, dTestCasesBuggyForHostOs):
+                    reporter.testStart(sName);
+                    reporter.log('%s: Skipping, buggy on %s.' % (sName, utils.getHostOs(),));
+                    reporter.testDone(fSkipped = True);
+                    self.cSkipped += 1;
+                    continue;
             else:
-                sFullPath = os.path.normpath(os.path.join(self.sUnitTestsPathSrc, os.path.join(sTestCaseSubDir, sFilename)));
-                reporter.testStart(sName);
-                try:
-                    fSkipped = self._executeTestCase(oTestVm, sName, sFullPath, sTestCaseSubDir, oDevNull);
-                except:
-                    reporter.errorXcpt('!*!');
-                    self.cFailed += 1;
-                    fSkipped = False;
-                reporter.testDone(fSkipped);
+                # Passed the white list check already above.
+                pass;
 
+            sFullPath = os.path.normpath(os.path.join(self.sUnitTestsPathSrc, os.path.join(sTestCaseSubDir, sFilename)));
+            reporter.testStart(sName);
+            try:
+                fSkipped = self._executeTestCase(oTestVm, sName, sFullPath, sTestCaseSubDir, oDevNull);
+            except:
+                reporter.errorXcpt('!*!');
+                self.cFailed += 1;
+                fSkipped = False;
+            reporter.testDone(fSkipped);
 
 
 if __name__ == '__main__':
