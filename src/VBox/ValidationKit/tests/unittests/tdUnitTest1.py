@@ -1213,14 +1213,14 @@ class tdUnitTest1(vbox.TestDriver):
                     reporter.log('%s: SKIPPED (blacklisted)' % (sName,));
                     continue;
 
-                elif self._isExcluded(sName, self.kdTestCasesBuggy):
+                if self._isExcluded(sName, self.kdTestCasesBuggy):
                     reporter.testStart(sName);
                     reporter.log('%s: Skipping, buggy in general.' % (sName,));
                     reporter.testDone(fSkipped = True);
                     self.cSkipped += 1;
                     continue;
 
-                elif self._isExcluded(sName, dTestCasesBuggyForHostOs):
+                if self._isExcluded(sName, dTestCasesBuggyForHostOs):
                     reporter.testStart(sName);
                     reporter.log('%s: Skipping, buggy on %s.' % (sName, utils.getHostOs(),));
                     reporter.testDone(fSkipped = True);
