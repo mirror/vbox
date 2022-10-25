@@ -4701,8 +4701,11 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
  */
 IEM_CIMPL_DEF_2(iemCImpl_load_SReg, uint8_t, iSegReg, uint16_t, uSel)
 {
+    if (iSegReg != X86_SREG_SS)
+        return IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+    /** @todo only set it the shadow flag if it was clear before? */
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
-    if (iSegReg == X86_SREG_SS && rcStrict == VINF_SUCCESS)
+    if (rcStrict == VINF_SUCCESS)
         CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
     return rcStrict;
 }
@@ -4755,13 +4758,17 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
     }
 
     /*
-     * Commit the stack on success.
+     * Commit the stack on success and set interrupt shadow flag if appropriate
+     * (the latter must be done after updating RIP).
      */
     if (rcStrict == VINF_SUCCESS)
     {
         pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
         if (iSegReg == X86_SREG_SS)
+        {
+            /** @todo only set it the shadow flag if it was clear before? */
             CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
+        }
     }
     return rcStrict;
 }
@@ -7507,11 +7514,18 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
     else
         fEfl |= X86_EFL_IF;
 
-    /* Commit. */
+    /*
+     * Commit.
+     *
+     * Note! Setting the shadow interrupt flag must be done after RIP updating.
+     */
     IEMMISC_SET_EFL(pVCpu, fEfl);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     if (!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF))
+    {
+        /** @todo only set it the shadow flag if it was clear before? */
         CPUMSetInInterruptShadowSti(&pVCpu->cpum.GstCtx);
+    }
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return VINF_SUCCESS;
 }

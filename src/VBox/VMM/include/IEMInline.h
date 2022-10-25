@@ -1609,17 +1609,21 @@ DECLINLINE(void) iemRegUpdateRipKeepRF(PVMCPUCC pVCpu)
 
 
 /**
- * Updates the RIP/EIP/IP to point to the next instruction and clears EFLAGS.RF.
+ * Updates the RIP/EIP/IP to point to the next instruction and clears EFLAGS.RF
+ * and CPUMCTX_INHIBIT_SHADOW.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
  */
 DECLINLINE(void) iemRegAddToRipAndClearRF(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
+    /* Clear RF and interrupt shadowing: */
+    AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
+    pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
 
-    AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
+    /* Update RIP: */
 #if ARCH_BITS >= 64
+    AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
     static uint64_t const s_aRipMasks[] = { UINT64_C(0xffffffff), UINT64_C(0xffffffff), UINT64_MAX };
     Assert(pVCpu->cpum.GstCtx.rip <= s_aRipMasks[(unsigned)pVCpu->iem.s.enmCpuMode]);
     pVCpu->cpum.GstCtx.rip = (pVCpu->cpum.GstCtx.rip + cbInstr) & s_aRipMasks[(unsigned)pVCpu->iem.s.enmCpuMode];
