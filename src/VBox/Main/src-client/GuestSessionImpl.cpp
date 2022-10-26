@@ -527,7 +527,7 @@ HRESULT GuestSession::getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcess
 
 HRESULT GuestSession::getPathStyle(PathStyle_T *aPathStyle)
 {
-    *aPathStyle = i_getPathStyle();
+    *aPathStyle = i_getGuestPathStyle();
     return S_OK;
 }
 
@@ -765,6 +765,14 @@ HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
     if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
+    GuestSessionFsSourceSet::const_iterator itSrc = SourceSet.begin();
+    while (itSrc != SourceSet.end())
+    {
+        LogRel2(("Guest Control: Copying '%s' from guest to '%s' on the host (type: %s, filter: %s)\n",
+                 itSrc->strSource.c_str(), strDestination.c_str(), GuestBase::fsObjTypeToStr(itSrc->enmType), itSrc->strFilter.c_str()));
+        ++itSrc;
+    }
+
     /* Create a task and return the progress obejct for it. */
     GuestSessionTaskCopyFrom *pTask = NULL;
     try
@@ -823,6 +831,14 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
         return hrc;
 
     LogFlowThisFuncEnter();
+
+    GuestSessionFsSourceSet::const_iterator itSrc = SourceSet.begin();
+    while (itSrc != SourceSet.end())
+    {
+        LogRel2(("Guest Control: Copying '%s' from host to '%s' on the guest (type: %s, filter: %s)\n",
+                 itSrc->strSource.c_str(), strDestination.c_str(), GuestBase::fsObjTypeToStr(itSrc->enmType), itSrc->strFilter.c_str()));
+        ++itSrc;
+    }
 
     /* Create a task and return the progress object for it. */
     GuestSessionTaskCopyTo *pTask = NULL;
@@ -2126,7 +2142,7 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
  *
  * @returns Separation style used on the guest.
  */
-PathStyle_T GuestSession::i_getPathStyle(void)
+PathStyle_T GuestSession::i_getGuestPathStyle(void)
 {
     PathStyle_T enmPathStyle;
 
@@ -2148,6 +2164,21 @@ PathStyle_T GuestSession::i_getPathStyle(void)
     }
 
     return enmPathStyle;
+}
+
+/**
+ * Returns the path separation style used on the host.
+ *
+ * @returns Separation style used on the host.
+ */
+/* static */
+PathStyle_T GuestSession::i_getHostPathStyle(void)
+{
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+    return PathStyle_DOS;
+#else
+    return PathStyle_UNIX;
+#endif
 }
 
 /**
@@ -3431,7 +3462,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     GuestSessionFsSourceSpec source;
     source.strSource            = aSource;
     source.enmType              = FsObjType_File;
-    source.enmPathStyle         = i_getPathStyle();
+    source.enmPathStyle         = i_getGuestPathStyle();
     source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
 
@@ -3459,7 +3490,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     GuestSessionFsSourceSpec source;
     source.strSource            = aSource;
     source.enmType              = FsObjType_File;
-    source.enmPathStyle         = i_getPathStyle();
+    source.enmPathStyle         = GuestSession::i_getHostPathStyle();
     source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
 
@@ -3523,7 +3554,7 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
         source.strSource    = *itSource;
         source.strFilter    = strFilter;
         source.enmType      = objData.mType;
-        source.enmPathStyle = i_getPathStyle();
+        source.enmPathStyle = i_getGuestPathStyle();
         source.fDryRun      = false; /** @todo Implement support for a dry run. */
 
         HRESULT hrc;
@@ -3593,7 +3624,7 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
         source.strSource    = *itSource;
         source.strFilter    = strFilter;
         source.enmType      = GuestBase::fileModeToFsObjType(objInfo.Attr.fMode);
-        source.enmPathStyle = i_getPathStyle();
+        source.enmPathStyle = GuestSession::i_getHostPathStyle();
         source.fDryRun      = false; /** @todo Implement support for a dry run. */
 
         HRESULT hrc;
@@ -3649,7 +3680,7 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
     GuestSessionFsSourceSpec source;
     source.strSource            = aSource;
     source.enmType              = FsObjType_Directory;
-    source.enmPathStyle         = i_getPathStyle();
+    source.enmPathStyle         = i_getGuestPathStyle();
     source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.Dir.fCopyFlags  = (DirectoryCopyFlag_T)fFlags;
 
@@ -3678,7 +3709,7 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     GuestSessionFsSourceSpec source;
     source.strSource           = aSource;
     source.enmType             = FsObjType_Directory;
-    source.enmPathStyle        = i_getPathStyle();
+    source.enmPathStyle        = GuestSession::i_getHostPathStyle();
     source.fDryRun             = false; /** @todo Implement support for a dry run. */
     source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
 

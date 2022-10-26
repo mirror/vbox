@@ -325,7 +325,8 @@ public:
     bool                    i_isTerminated(void) const;
     int                     i_onRemove(void);
     int                     i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    PathStyle_T             i_getPathStyle(void);
+    PathStyle_T             i_getGuestPathStyle(void);
+    static PathStyle_T      i_getHostPathStyle(void);
     int                     i_startSession(int *pGuestRc);
     int                     i_startSessionAsync(void);
     Guest                  *i_getParent(void) { return mParent; }
