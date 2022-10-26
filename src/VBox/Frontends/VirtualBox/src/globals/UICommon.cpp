@@ -62,6 +62,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIFDCreationDialog.h"
 #include "UIIconPool.h"
@@ -320,6 +321,8 @@ void UICommon::prepare()
 
     connect(gEDataManager, &UIExtraDataManager::sigLanguageChange,
             this, &UICommon::sltGUILanguageChange);
+    connect(gEDataManager, &UIExtraDataManager::sigFontScaleFactorChanged,
+            this, &UICommon::sltHandleFontScaleFactorChanged);
 
     qApp->installEventFilter(this);
 
@@ -730,17 +733,10 @@ void UICommon::prepare()
     m_recentMediaExcludeList << "ad-hoc.viso";
 #endif
 
-    scaleApplicationFont(gEDataManager->fontScaleFactor());
-}
 
-void UICommon::scaleApplicationFont(int iFontScaleFactor)
-{
-    QFont appFont = qApp->font();
-    if (appFont.pixelSize() != -1)
-        appFont.setPixelSize(iFontScaleFactor / 100 * appFont.pixelSize());
-    else
-        appFont.setPointSize(iFontScaleFactor / 100 * appFont.pointSize());
-    qApp->setFont(appFont);
+    iOriginalFontPixelSize = qApp->font().pixelSize();
+    iOriginalFontPointSize = qApp->font().pointSize();
+    sltHandleFontScaleFactorChanged(gEDataManager->fontScaleFactor());
 }
 
 void UICommon::cleanup()
@@ -2719,6 +2715,18 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
 
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
+}
+
+
+void UICommon::sltHandleFontScaleFactorChanged(int iFontScaleFactor)
+{
+    QFont appFont = qApp->font();
+
+    if (iOriginalFontPixelSize != -1)
+        appFont.setPixelSize(iFontScaleFactor / 100.f * iOriginalFontPixelSize);
+    else
+        appFont.setPointSize(iFontScaleFactor / 100.f * iOriginalFontPointSize);
+    qApp->setFont(appFont);
 }
 
 void UICommon::retranslateUi()

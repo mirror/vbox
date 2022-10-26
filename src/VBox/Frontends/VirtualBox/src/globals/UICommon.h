@@ -526,9 +526,6 @@ public:
         static QString helpKeyword(const QObject *pWidget);
     /** @} */
 
-    /* Scales the qApp's font. iFontScaleFactor is percentage thus 100% is for no scaling. */
-    void scaleApplicationFont(int iFontScaleFactor);
-
 public slots:
 
     /** @name Process arguments stuff.
@@ -589,6 +586,9 @@ protected slots:
         /** Handles the VBoxSVC availability change. */
         void sltHandleVBoxSVCAvailabilityChange(bool fAvailable);
     /** @} */
+
+    /* Handle font scale factor change. */
+    void sltHandleFontScaleFactorChanged(int iFontScaleFactor);
 
 private:
 
@@ -781,6 +781,11 @@ private:
         ATL::CComModule  _Module;
     /** @} */
 #endif
+    /** @name Font scaling related variables.
+     * @{ */
+       int iOriginalFontPixelSize;
+       int iOriginalFontPointSize;
+    /** @} */
 
     /** Allows for shortcut access. */
     friend UICommon &uiCommon();

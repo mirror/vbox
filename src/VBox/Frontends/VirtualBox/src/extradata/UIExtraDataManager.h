@@ -120,6 +120,9 @@ signals:
     /** Notifies about the scaling optimization type change. */
     void sigScalingOptimizationTypeChange(const QUuid &uMachineID);
 
+    /** Notifies about font scale factor. */
+    void sigFontScaleFactorChanged(int iFontScaleFactor);
+
 #ifdef VBOX_WS_MAC
     /** Notifies about the HiDPI optimization type change. */
     void sigHiDPIOptimizationTypeChange(const QUuid &uMachineID);

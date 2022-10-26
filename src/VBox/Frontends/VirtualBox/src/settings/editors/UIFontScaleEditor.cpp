@@ -35,6 +35,7 @@
 /* GUI includes: */
 #include "QIAdvancedSlider.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataDefs.h"
 #include "UIFontScaleEditor.h"
 
 /* External includes: */
@@ -175,16 +176,15 @@ void UIFontScaleEditor::prepareScaleFactorMinMax()
 {
     m_pScaleSlider->blockSignals(true);
     m_pScaleSpinBox->blockSignals(true);
-    const int iMinimum = 40;
-    const int iMaximum = 200;
-
-    const int iStep = 25;
+    const int iMinimum = UIExtraDataDefs::iFontScaleMin;
+    const int iMaximum = UIExtraDataDefs::iFontScaleMax;
 
     m_pScaleSlider->setMinimum(iMinimum);
     m_pScaleSlider->setMaximum(iMaximum);
-    m_pScaleSlider->setPageStep(iStep);
-    m_pScaleSlider->setSingleStep(1);
-    m_pScaleSlider->setTickInterval(iStep);
+    m_pScaleSlider->setPageStep(20);
+    m_pScaleSlider->setSingleStep(10);
+    m_pScaleSlider->setTickInterval(20);
+    m_pScaleSpinBox->setSingleStep(10);
     m_pScaleSpinBox->setMinimum(iMinimum);
     m_pScaleSpinBox->setMaximum(iMaximum);
     m_pScaleSlider->blockSignals(false);

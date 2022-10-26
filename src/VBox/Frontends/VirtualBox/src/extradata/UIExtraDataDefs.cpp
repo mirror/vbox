@@ -267,6 +267,9 @@ const char *UIExtraDataDefs::GUI_VMActivityOverview_ShowAllMachines = "GUI/VMAct
 
 const char *UIExtraDataDefs::GUI_MediumSelector_DialogGeometry = "GUI/MediumSelector/DialogGeometry";
 
+const int UIExtraDataDefs::iFontScaleMin = 50;
+const int UIExtraDataDefs::iFontScaleMax = 150;
+
 /* Obsolete keys: */
 QMultiMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()
 {

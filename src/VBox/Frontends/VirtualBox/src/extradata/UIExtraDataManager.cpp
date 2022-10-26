@@ -2611,9 +2611,7 @@ QString UIExtraDataManager::hostKeyCombination()
 
 void UIExtraDataManager::setFontScaleFactor(int iFontScaleFactor)
 {
-    int iMax = 200;
-    int iMin = 40;
-    if (iFontScaleFactor < iMin || iFontScaleFactor > iMax)
+    if (iFontScaleFactor < UIExtraDataDefs::iFontScaleMin || iFontScaleFactor > UIExtraDataDefs::iFontScaleMax)
         return;
     setExtraDataString(GUI_FontScaleFactor, QString::number(iFontScaleFactor));
 }
@@ -2623,9 +2621,7 @@ int UIExtraDataManager::fontScaleFactor()
     QString strFontScaleFactor = extraDataString(GUI_FontScaleFactor);
     bool fConversion = false;
     int iScaleFactor = strFontScaleFactor.toInt(&fConversion);
-    int iMax = 200;
-    int iMin = 40;
-    if (!fConversion || iScaleFactor < iMin || iScaleFactor > iMax)
+    if (!fConversion || iScaleFactor < UIExtraDataDefs::iFontScaleMin || iScaleFactor > UIExtraDataDefs::iFontScaleMax)
         return 100;
     return iScaleFactor;
 }
@@ -4846,6 +4842,9 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
                 if (enmType != DetailsElementType_Invalid)
                     emit sigDetailsOptionsChange(enmType);
             }
+            /* Font scaling factor has changed: */
+            else if (strKey == GUI_FontScaleFactor)
+                emit sigFontScaleFactorChanged(fontScaleFactor());
         }
     }
     /* Machine extra-data 'change' event: */

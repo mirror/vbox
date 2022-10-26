@@ -488,6 +488,12 @@ namespace UIExtraDataDefs
         /** Holds the obsolete keys map. */
         SHARED_LIBRARY_STUFF extern QMultiMap<QString, QString> g_mapOfObsoleteKeys;
     /** @} */
+
+    /** @name Font scaling factor min-max.
+      * @{ */
+        extern const int iFontScaleMin;
+        extern const int iFontScaleMax;
+    /** @} */
 }
 
 
