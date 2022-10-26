@@ -1010,6 +1010,12 @@ pxping_pcb_for_request(struct pxping *pxping,
 }
 
 
+/* GCC 12.2.1 complains that array subscript is partly outside
+ * of array bounds in expansion of ipX_addr_cmp. */
+#if RT_GNUC_PREREQ(12, 0)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 /**
  * Called on pollmgr thread.  Caller must do the locking since caller
  * is going to use the returned pcb, which needs to be protected from
@@ -1033,6 +1039,9 @@ pxping_pcb_for_reply(struct pxping *pxping,
 
     return NULL;
 }
+#if RT_GNUC_PREREQ(12, 0)
+# pragma GCC diagnostic pop
+#endif
 
 
 static void
