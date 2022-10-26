@@ -82,7 +82,7 @@ GuestSessionTask::GuestSessionTask(GuestSession *pSession)
 {
     mSession = pSession;
 
-    switch (mSession->i_getPathStyle())
+    switch (mSession->i_getGuestPathStyle())
     {
         case PathStyle_DOS:
             mfPathStyle = RTPATH_STR_F_STYLE_DOS;
