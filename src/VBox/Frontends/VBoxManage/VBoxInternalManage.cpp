@@ -1281,22 +1281,6 @@ static RTEXITCODE CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> a
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static PVDISKRAWPARTDESC appendPartDesc(uint32_t *pcPartDescs, PVDISKRAWPARTDESC *ppPartDescs)
-{
-    (*pcPartDescs)++;
-    PVDISKRAWPARTDESC p;
-    p = (PVDISKRAWPARTDESC)RTMemRealloc(*ppPartDescs,
-                                          *pcPartDescs * sizeof(VDISKRAWPARTDESC));
-    *ppPartDescs = p;
-    if (p)
-    {
-        p = p + *pcPartDescs - 1;
-        memset(p, '\0', sizeof(VDISKRAWPARTDESC));
-    }
-
-    return p;
-}
-
 static const RTGETOPTDEF g_aCreateRawVMDKOptions[] =
 {
     { "--filename",     'f', RTGETOPT_REQ_STRING },
@@ -1367,13 +1351,13 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, HandlerArg *a)
     char **papszNewArgv = (char **)RTMemAllocZ(sizeof(papszNewArgv[0]) * cMaxArgs);
     if (!papszNewArgv)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Failed to allocate memory for argument array"));
-    size_t cArgs = 0;
+    int cArgs = 0;
 
     papszNewArgv[cArgs++] = RTStrDup("disk");
     papszNewArgv[cArgs++] = RTStrDup("--variant=RawDisk");
     papszNewArgv[cArgs++] = RTStrDup("--format=VMDK");
 
-    for (size_t i = 0; i < cArgs; i++)
+    for (int i = 0; i < cArgs; i++)
         if (!papszNewArgv[i])
             return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Failed to allocate memory for argument array"));
 
@@ -1395,7 +1379,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, HandlerArg *a)
     a->argv = papszNewArgv;
     RTEXITCODE rcExit = handleCreateMedium(a);
 
-    for (size_t i = 0; i < cArgs; i++)
+    for (int i = 0; i < cArgs; i++)
         RTStrFree(papszNewArgv[i]);
     RTMemFree(papszNewArgv);
 
