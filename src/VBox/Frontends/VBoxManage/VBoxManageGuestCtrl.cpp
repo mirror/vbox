@@ -1691,9 +1691,13 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     {
         RTFSOBJINFO ObjInfo;
         vrc = RTPathQueryInfo(szAbsDst, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_FAILURE(vrc))
-            return RTMsgErrorExitFailure(GuestCtrl::tr("RTPathQueryInfo failed on '%s': %Rrc"), szAbsDst, vrc);
-        fDstIsDir = RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode);
+        if (RT_SUCCESS(vrc))
+        {
+            fDstIsDir = RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode);
+        }
+        else if (   RT_FAILURE(vrc)
+                 && vrc != VERR_FILE_NOT_FOUND) /* Destination file on the host might not exist yet, which is fine. */
+                return RTMsgErrorExitFailure(GuestCtrl::tr("RTPathQueryInfo failed on '%s': %Rrc"), szAbsDst, vrc);
     }
     else
     {
