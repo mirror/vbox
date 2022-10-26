@@ -1290,6 +1290,7 @@ public:
 public:
 
     static FsObjType_T fileModeToFsObjType(RTFMODE fMode);
+    static const char *fsObjTypeToStr(FsObjType_T enmType);
     static Utf8Str getErrorAsString(const Utf8Str &strAction, const GuestErrorInfo& guestErrorInfo);
     static Utf8Str getErrorAsString(const GuestErrorInfo &guestErrorInfo);
 

@@ -1397,6 +1397,26 @@ FsObjType_T GuestBase::fileModeToFsObjType(RTFMODE fMode)
     return FsObjType_Unknown;
 }
 
+/**
+ * Converts a FsObjType_T to a human-readable string.
+ *
+ * @returns Human-readable string of FsObjType_T.
+ * @param   enmType             FsObjType_T to convert.
+ */
+/* static */
+const char *GuestBase::fsObjTypeToStr(FsObjType_T enmType)
+{
+    switch (enmType)
+    {
+        case FsObjType_Directory: return "directory";
+        case FsObjType_Symlink:   return "symbolic link";
+        case FsObjType_File:      return "file";
+        default:                  break;
+    }
+
+    return "unknown";
+}
+
 GuestObject::GuestObject(void)
     : mSession(NULL),
       mObjectID(0)
