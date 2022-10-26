@@ -59,11 +59,6 @@ public:
 
     /** Returns the VM OS type ID. */
     CGuestOSType guestOSType() const;
-    /** Returns whether 64bit OS type ID is selected. */
-    bool is64BitOSTypeSelected() const;
-
-    /** Defines whether HW virtualization extension is enabled. */
-    void setHWVirtExEnabled(bool fEnabled);
 
 protected:
 
@@ -132,9 +127,6 @@ private:
     bool saveDescriptionData();
     /** Saves existing 'Encryption' data from cache. */
     bool saveEncryptionData();
-
-    /** Holds whether HW virtualization extension is enabled. */
-    bool  m_fHWVirtExEnabled;
 
     /** Holds whether the encryption cipher was changed.
       * We are holding that argument here because we do not know

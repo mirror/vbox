@@ -461,19 +461,12 @@ void UISettingsDialogMachine::saveOwnData()
     /* If machine is OK => perform final operations: */
     if (m_machine.isOk())
     {
-        UIMachineSettingsGeneral *pGeneralPage =
-            qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(MachineSettingsPageType_General));
         UIMachineSettingsSystem *pSystemPage =
             qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(MachineSettingsPageType_System));
 #ifdef VBOX_WITH_3D_ACCELERATION
         UIMachineSettingsDisplay *pDisplayPage =
             qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(MachineSettingsPageType_Display));
 #endif /* VBOX_WITH_3D_ACCELERATION */
-
-        /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
-        if (pGeneralPage && pSystemPage &&
-            pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
 
 #ifdef VBOX_WITH_3D_ACCELERATION
         /* Adjust graphics controller type if necessary: */
@@ -537,15 +530,9 @@ void UISettingsDialogMachine::recorrelate(UISettingsPage *pSettingsPage)
         {
             /* Make changes on 'system' page influent 'general' and 'storage' page: */
             UIMachineSettingsSystem *pSystemPage = qobject_cast<UIMachineSettingsSystem*>(pSettingsPage);
-            UIMachineSettingsGeneral *pGeneralPage = qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(MachineSettingsPageType_General));
             UIMachineSettingsStorage *pStoragePage = qobject_cast<UIMachineSettingsStorage*>(m_pSelector->idToPage(MachineSettingsPageType_Storage));
-            if (pSystemPage)
-            {
-                if (pGeneralPage)
-                    pGeneralPage->setHWVirtExEnabled(pSystemPage->isHWVirtExEnabled());
-                if (pStoragePage)
-                    pStoragePage->setChipsetType(pSystemPage->chipsetType());
-            }
+            if (pSystemPage && pStoragePage)
+                pStoragePage->setChipsetType(pSystemPage->chipsetType());
             break;
         }
         /* USB page correlations: */

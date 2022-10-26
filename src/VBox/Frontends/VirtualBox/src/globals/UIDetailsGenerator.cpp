@@ -362,14 +362,9 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
         QStringList acceleration;
         if (uiCommon().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
         {
-            /* VT-x/AMD-V: */
-            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
-            {
-                acceleration << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
-                /* Nested Paging (only when hw virt is enabled): */
-                if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                    acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
-            }
+            /* Nested Paging: */
+            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
         }
         /* PAE/NX: */
         if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))

@@ -129,8 +129,7 @@ struct UIDataSettingsMachineGeneral
 
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
-    : m_fHWVirtExEnabled(false)
-    , m_fEncryptionCipherChanged(false)
+    : m_fEncryptionCipherChanged(false)
     , m_fEncryptionPasswordChanged(false)
     , m_pCache(0)
     , m_pTabWidget(0)
@@ -157,27 +156,6 @@ CGuestOSType UIMachineSettingsGeneral::guestOSType() const
 {
     AssertPtrReturn(m_pEditorNameAndSystem, CGuestOSType());
     return m_pEditorNameAndSystem->type();
-}
-
-bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
-{
-    AssertPtrReturn(m_pEditorNameAndSystem, false);
-    return   m_pEditorNameAndSystem->type().isNotNull()
-           ? m_pEditorNameAndSystem->type().GetIs64Bit()
-           : false;
-}
-
-void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
-{
-    /* Make sure hardware virtualization extension has changed: */
-    if (m_fHWVirtExEnabled == fEnabled)
-        return;
-
-    /* Update hardware virtualization extension value: */
-    m_fHWVirtExEnabled = fEnabled;
-
-    /* Revalidate: */
-    revalidate();
 }
 
 bool UIMachineSettingsGeneral::changed() const
@@ -400,14 +378,6 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     {
         message.second << tr("No name specified for the virtual machine.");
         fPass = false;
-    }
-
-    /* OS type & VT-x/AMD-v correlation: */
-    if (is64BitOSTypeSelected() && !m_fHWVirtExEnabled)
-    {
-        message.second << tr("The virtual machine operating system hint is set to a 64-bit type. "
-                             "64-bit guest systems require hardware virtualization, "
-                             "so this will be enabled automatically if you confirm the changes.");
     }
 
     /* Serialize message: */

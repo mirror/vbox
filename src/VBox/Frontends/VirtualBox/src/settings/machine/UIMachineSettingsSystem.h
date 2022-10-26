@@ -64,8 +64,6 @@ public:
 
     /** Returns whether the HW Virt Ex is supported. */
     bool isHWVirtExSupported() const;
-    /** Returns whether the HW Virt Ex is enabled. */
-    bool isHWVirtExEnabled() const;
 
     /** Returns whether the Nested Paging is supported. */
     bool isNestedPagingSupported() const;
@@ -116,11 +114,6 @@ protected:
 
     /** Performs final page polishing. */
     virtual void polishPage() RT_OVERRIDE;
-
-private slots:
-
-    /** Handles HW Virt Ex check-box toggling. */
-    void sltHandleHwVirtExToggle();
 
 private:
 

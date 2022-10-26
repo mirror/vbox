@@ -82,7 +82,6 @@ struct UIDataSettingsMachineSystem
         , m_fEnabledNestedHwVirtEx(false)
         /* Acceleration data: */
         , m_paravirtProvider(KParavirtProvider_None)
-        , m_fEnabledHwVirtEx(false)
         , m_fEnabledNestedPaging(false)
     {}
 
@@ -114,7 +113,6 @@ struct UIDataSettingsMachineSystem
                && (m_fEnabledNestedHwVirtEx == other.m_fEnabledNestedHwVirtEx)
                /* Acceleration data: */
                && (m_paravirtProvider == other.m_paravirtProvider)
-               && (m_fEnabledHwVirtEx == other.m_fEnabledHwVirtEx)
                && (m_fEnabledNestedPaging == other.m_fEnabledNestedPaging)
                ;
     }
@@ -167,8 +165,6 @@ struct UIDataSettingsMachineSystem
 
     /** Holds the paravirtualization provider. */
     KParavirtProvider  m_paravirtProvider;
-    /** Holds whether the HW Virt Ex is enabled. */
-    bool               m_fEnabledHwVirtEx;
     /** Holds whether the Nested Paging is enabled. */
     bool               m_fEnabledNestedPaging;
 };
@@ -205,11 +201,6 @@ bool UIMachineSettingsSystem::isHWVirtExSupported() const
 {
     AssertPtrReturn(m_pCache, false);
     return m_pCache->base().m_fSupportedHwVirtEx;
-}
-
-bool UIMachineSettingsSystem::isHWVirtExEnabled() const
-{
-    return m_pEditorAccelerationFeatures->isEnabledVirtualization();
 }
 
 bool UIMachineSettingsSystem::isNestedPagingSupported() const
@@ -308,7 +299,6 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 
     /* Gather old 'Acceleration' data: */
     oldSystemData.m_paravirtProvider = m_machine.GetParavirtProvider();
-    oldSystemData.m_fEnabledHwVirtEx = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
     oldSystemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
     /* Cache old data: */
@@ -361,10 +351,7 @@ void UIMachineSettingsSystem::getFromCache()
     if (m_pEditorParavirtProvider)
         m_pEditorParavirtProvider->setValue(oldSystemData.m_paravirtProvider);
     if (m_pEditorAccelerationFeatures)
-    {
-        m_pEditorAccelerationFeatures->setEnableVirtualization(oldSystemData.m_fEnabledHwVirtEx);
         m_pEditorAccelerationFeatures->setEnableNestedPaging(oldSystemData.m_fEnabledNestedPaging);
-    }
 
     /* Polish page finally: */
     polishPage();
@@ -428,14 +415,6 @@ void UIMachineSettingsSystem::putToCache()
     /* Gather 'Acceleration' data: */
     if (m_pEditorParavirtProvider)
         newSystemData.m_paravirtProvider = m_pEditorParavirtProvider->value();
-    /* Enable HW Virt Ex automatically if it's supported and
-     * 1. multiple CPUs, 2. Nested Paging or 3. Nested HW Virt Ex is requested. */
-    if (m_pEditorVCPU)
-        newSystemData.m_fEnabledHwVirtEx =    isHWVirtExEnabled()
-                                           || (   isHWVirtExSupported()
-                                               && (   m_pEditorVCPU->value() > 1
-                                                   || isNestedPagingEnabled()
-                                                   || isNestedHWVirtExEnabled()));
     /* Enable Nested Paging automatically if it's supported and
      * Nested HW Virt Ex is requested. */
     newSystemData.m_fEnabledNestedPaging =    isNestedPagingEnabled()
@@ -545,19 +524,6 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
                 "It will be enabled automatically if you confirm your changes.");
         }
 
-        /* VCPU: */
-        if (m_pEditorVCPU->value() > 1)
-        {
-            /* HW Virt Ex test: */
-            if (isHWVirtExSupported() && !isHWVirtExEnabled())
-            {
-                message.second << tr(
-                    "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-                    "This is needed to support more than one virtual processor. "
-                    "It will be enabled automatically if you confirm your changes.");
-            }
-        }
-
         /* CPU execution cap test: */
         if (m_pEditorExecCap->value() < m_pEditorExecCap->medExecCap())
         {
@@ -581,15 +547,6 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         /* Nested HW Virt Ex: */
         if (isNestedHWVirtExEnabled())
         {
-            /* HW Virt Ex test: */
-            if (isHWVirtExSupported() && !isHWVirtExEnabled())
-            {
-                message.second << tr(
-                    "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-                    "This is needed to support nested hardware virtualization. "
-                    "It will be enabled automatically if you confirm your changes.");
-            }
-
             /* Nested Paging test: */
             if (isHWVirtExSupported() && isNestedPagingSupported() && !isNestedPagingEnabled())
             {
@@ -603,31 +560,6 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         /* Serialize message: */
         if (!message.second.isEmpty())
             messages << message;
-    }
-
-    /* Acceleration tab: */
-    {
-        /* Prepare message: */
-        UIValidationMessage message;
-        message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(2));
-
-        /* Nested Paging: */
-        if (isNestedPagingEnabled())
-        {
-            /* HW Virt Ex test: */
-            if (isHWVirtExSupported() && !isHWVirtExEnabled())
-            {
-                message.second << tr(
-                    "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-                    "This is needed for nested paging support. "
-                    "It will be enabled automatically if you confirm your changes.");
-            }
-        }
-
-        /* Serialize message: */
-        if (!message.second.isEmpty())
-            messages << message;
-
     }
 
     /* Return result: */
@@ -713,23 +645,8 @@ void UIMachineSettingsSystem::polishPage()
     /* Polish 'Acceleration' availability: */
     m_pEditorParavirtProvider->setEnabled(isMachineOffline());
     m_pEditorAccelerationFeatures->setEnabled(isMachineOffline());
-    m_pEditorAccelerationFeatures->setEnableVirtualizationAvailable(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
-                                                                    || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
-    m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   m_pEditorAccelerationFeatures->isEnabledVirtualization()
-                                                                  && (   (systemData.m_fSupportedNestedPaging && isMachineOffline())
-                                                                      || (systemData.m_fEnabledNestedPaging && isMachineOffline())));
-}
-
-void UIMachineSettingsSystem::sltHandleHwVirtExToggle()
-{
-    /* Update Nested Paging checkbox: */
-    AssertPtrReturnVoid(m_pCache);
-    m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   m_pEditorAccelerationFeatures->isEnabledVirtualization()
-                                                                  && (   (m_pCache->base().m_fSupportedNestedPaging && isMachineOffline())
-                                                                      || (m_pCache->base().m_fEnabledNestedPaging && isMachineOffline())));
-
-    /* Revalidate: */
-    revalidate();
+    m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   (systemData.m_fSupportedNestedPaging && isMachineOffline())
+                                                                  || (systemData.m_fEnabledNestedPaging && isMachineOffline()));
 }
 
 void UIMachineSettingsSystem::prepare()
@@ -898,8 +815,6 @@ void UIMachineSettingsSystem::prepareConnections()
             this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Acceleration' connections: */
-    connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedVirtualization,
-            this, &UIMachineSettingsSystem::sltHandleHwVirtExToggle);
     connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedNestedPaging,
             this, &UIMachineSettingsSystem::revalidate);
 }
@@ -1117,12 +1032,6 @@ bool UIMachineSettingsSystem::saveAccelerationData()
         if (fSuccess && isMachineOffline() && newSystemData.m_paravirtProvider != oldSystemData.m_paravirtProvider)
         {
             m_machine.SetParavirtProvider(newSystemData.m_paravirtProvider);
-            fSuccess = m_machine.isOk();
-        }
-        /* Save whether the hardware virtualization extension is enabled: */
-        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledHwVirtEx != oldSystemData.m_fEnabledHwVirtEx)
-        {
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, newSystemData.m_fEnabledHwVirtEx);
             fSuccess = m_machine.isOk();
         }
         /* Save whether the nested paging is enabled: */
