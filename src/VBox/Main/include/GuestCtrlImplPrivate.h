@@ -1404,7 +1404,7 @@ public:
 
     /** @name Static helper functions.
      * @{ */
-    static int Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle);
+    static int Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle, bool fForce = false);
     /** @}  */
 };
 #endif /* !MAIN_INCLUDED_GuestCtrlImplPrivate_h */

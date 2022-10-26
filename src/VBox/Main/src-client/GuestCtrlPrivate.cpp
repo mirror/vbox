@@ -1697,11 +1697,12 @@ int GuestWaitEvent::SignalExternal(IEvent *pEvent)
  * @param   strPath             Path to translate. Will contain the translated path on success. UTF-8 only.
  * @param   enmSrcPathStyle     Source path style \a strPath is expected in.
  * @param   enmDstPathStyle     Destination path style to convert to.
+ * @param   fForce              Whether to force the translation to the destination path style or not.
  *
  * @note    This does NOT remove any trailing slashes and/or perform file system lookups!
  */
 /* static */
-int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle)
+int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle, bool fForce /* = false */)
 {
     if (strPath.isEmpty())
         return VINF_SUCCESS;
@@ -1716,57 +1717,64 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
 
     Utf8Str strTranslated;
 
-    if (   enmSrcPathStyle == PathStyle_DOS
-        && enmDstPathStyle == PathStyle_UNIX)
+    if (   (   enmSrcPathStyle == PathStyle_DOS
+            && enmDstPathStyle == PathStyle_UNIX)
+        || (fForce && enmDstPathStyle == PathStyle_UNIX))
     {
         strTranslated = RTPathChangeToUnixSlashes(strPath.mutableRaw(), true /* fForce */);
     }
-    else if (   enmSrcPathStyle == PathStyle_UNIX
-             && enmDstPathStyle == PathStyle_DOS)
+    else if (enmDstPathStyle == PathStyle_DOS)
     {
-        /** @todo Check for quoted (sub) strings, e.g. '/foo/bar/\ baz' vs . '/foo/bar/"\ baz"'? */
-
-        const char  *psz = strPath.c_str();
-        size_t const cch = strPath.length();
-        size_t       off = 0;
-        while (off < cch)
+        if (   enmSrcPathStyle == PathStyle_DOS
+            && fForce)
         {
-            /* Most likely cases first. */
-            if (psz[off] == '/') /* Just transform slashes. */
-                strTranslated += '\\';
-            /*
-             * Do a mapping of "\", which marks an escape sequence for paths on UNIX-y OSes to DOS-based OSes (like Windows),
-             * however, on DOS "\" is a path separator.
-             *
-             * See @bugref{21095}.
-             */
-            else if (psz[off] == '\\')
+            strTranslated = RTPathChangeToDosSlashes(strPath.mutableRaw(), true /* fForce */);
+        }
+        else if (enmSrcPathStyle == PathStyle_UNIX)
+        {
+            /** @todo Check for quoted (sub) strings, e.g. '/foo/bar/\ baz' vs . '/foo/bar/"\ baz"'? */
+            const char  *psz = strPath.c_str();
+            size_t const cch = strPath.length();
+            size_t       off = 0;
+            while (off < cch)
             {
-                /* "\ " is valid on UNIX-system and mark a space in a path component. */
-                if (   off + 1      <= cch
-                    && psz[off + 1] == ' ')
+                /* Most likely cases first. */
+                if (psz[off] == '/') /* Just transform slashes. */
+                    strTranslated += '\\';
+                /*
+                 * Do a mapping of "\", which marks an escape sequence for paths on UNIX-y OSes to DOS-based OSes (like Windows),
+                 * however, on DOS "\" is a path separator.
+                 *
+                 * See @bugref{21095}.
+                 */
+                else if (psz[off] == '\\')
                 {
-                    strTranslated += ' ';
-                    off++; /* Skip actual escape sequence char (space in this case). */
+                    /* "\ " is valid on UNIX-system and mark a space in a path component. */
+                    if (   off + 1      <= cch
+                        && psz[off + 1] == ' ')
+                    {
+                        strTranslated += ' ';
+                        off++; /* Skip actual escape sequence char (space in this case). */
+                    }
+                    else
+                    {
+                        /* Every other escape sequence is not supported and would lead to different paths anyway, so bail out here. */
+                        vrc = VERR_NOT_SUPPORTED;
+                        break;
+                    }
                 }
-                else
-                {
-                    /* Every other escape sequence is not supported and would lead to different paths anyway, so bail out here. */
-                    vrc = VERR_NOT_SUPPORTED;
-                    break;
-                }
+                else /* Just add it unmodified. */
+                    strTranslated += psz[off];
+                off++;
             }
-            else /* Just add it unmodified. */
-                strTranslated += psz[off];
-            off++;
         }
     }
-    else if (enmSrcPathStyle == enmDstPathStyle)
+
+    if (   strTranslated.isEmpty() /* Not forced. */
+        && enmSrcPathStyle == enmDstPathStyle)
     {
         strTranslated = strPath;
     }
-    else
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
     if (RT_FAILURE(vrc))
         return vrc;

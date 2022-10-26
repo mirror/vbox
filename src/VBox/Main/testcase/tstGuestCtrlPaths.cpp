@@ -88,11 +88,12 @@ int main()
     tstPathTranslate("foo\\bar\\dir with space\\", PathStyle_DOS,  PathStyle_UNIX, VINF_SUCCESS, "foo/bar/dir with space/");
     tstPathTranslate("foo/bar/dir with space/",    PathStyle_UNIX, PathStyle_UNIX, VINF_SUCCESS, "foo/bar/dir with space/");
 
-    tstPathTranslate("foo/bar/dir_with_escape_sequence\\ space", PathStyle_UNIX, PathStyle_UNIX, VINF_SUCCESS, "foo/bar/dir_with_escape_sequence\\ space");
     /** Do a mapping of "\", which marks an escape sequence for paths on UNIX-y OSes to DOS-based OSes (like Windows),
       * however, on DOS "\" is a path separator.  See @bugref{21095} */
-    tstPathTranslate("foo/bar/dir_with_escape_sequence/the\\ space", PathStyle_UNIX,    PathStyle_DOS,  VINF_SUCCESS, "foo\\bar\\dir_with_escape_sequence\\the space");
-    tstPathTranslate("foo/bar/dir_with_escape_sequence/the\\ \\ space", PathStyle_UNIX, PathStyle_DOS,  VINF_SUCCESS, "foo\\bar\\dir_with_escape_sequence\\the  space");
+    tstPathTranslate("foo/bar/dir_with_escape_sequence\\ space", PathStyle_UNIX, PathStyle_UNIX, VINF_SUCCESS, "foo/bar/dir_with_escape_sequence\\ space");
+    tstPathTranslate("foo/bar/dir_with_escape_sequence\\ space", PathStyle_UNIX, PathStyle_DOS, VINF_SUCCESS, "foo\\bar\\dir_with_escape_sequence space");
+    tstPathTranslate("foo/bar/1_dir_with_escape_sequence/the\\ space", PathStyle_UNIX,    PathStyle_DOS,  VINF_SUCCESS, "foo\\bar\\1_dir_with_escape_sequence\\the space");
+    tstPathTranslate("foo/bar/2_dir_with_escape_sequence/the\\ \\ space", PathStyle_UNIX, PathStyle_DOS,  VINF_SUCCESS, "foo\\bar\\2_dir_with_escape_sequence\\the  space");
     tstPathTranslate("foo/bar/dir_with_escape_sequence/spaces at end\\  \\ ", PathStyle_UNIX, PathStyle_DOS,  VINF_SUCCESS, "foo\\bar\\dir_with_escape_sequence\\spaces at end   ");
 
     /* Filter out double slashes (cosmetic only). */
