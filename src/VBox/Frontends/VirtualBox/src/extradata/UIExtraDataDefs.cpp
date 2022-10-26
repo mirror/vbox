@@ -206,6 +206,7 @@ const char *UIExtraDataDefs::GUI_GuruMeditationHandler = "GUI/GuruMeditationHand
 const char *UIExtraDataDefs::GUI_HidLedsSync = "GUI/HidLedsSync";
 const char *UIExtraDataDefs::GUI_ScaleFactor = "GUI/ScaleFactor";
 const char *UIExtraDataDefs::GUI_Scaling_Optimization = "GUI/Scaling/Optimization";
+const char *UIExtraDataDefs::GUI_FontScaleFactor = "GUI/FontScaleFactor";
 
 /* Virtual Machine: Session Information Dialog: */
 const char *UIExtraDataDefs::GUI_SessionInformationDialogGeometry = "GUI/SessionInformationDialogGeometry";

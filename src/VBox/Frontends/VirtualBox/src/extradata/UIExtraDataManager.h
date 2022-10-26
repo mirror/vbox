@@ -283,6 +283,9 @@ public:
         bool disableHostScreenSaver();
         /* Sets whether host screen saver is disabled when a vm is running. */
         void setDisableHostScreenSaver(bool fActivate);
+        /* Set global font scale factor as percentage. 100% is for no scaling. */
+        void setFontScaleFactor(int iFontScaleFactor);
+        int  fontScaleFactor();
     /** @} */
 
     /** @name Settings: Keyboard

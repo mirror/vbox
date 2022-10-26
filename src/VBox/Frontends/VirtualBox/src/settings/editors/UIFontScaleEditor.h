@@ -62,6 +62,9 @@ public:
     /** Defines minimum layout @a iIndent. */
     void setMinimumLayoutIndent(int iIndent);
 
+    void setFontScaleFactor(int iFontScaleFactor);
+    int fontScaleFactor() const;
+
 protected:
 
     /** Handles translation event. */
@@ -81,8 +84,7 @@ private:
     /** Prepares all. */
     void prepare();
     /** Prepare min/max values of related widgets wrt. device pixel ratio(s). */
-    void prepareScaleFactorMinMaxValues();
-
+    void prepareScaleFactorMinMax();
 
     /** Defines slider's @a iValue. */
     void setSliderValue(int iValue);

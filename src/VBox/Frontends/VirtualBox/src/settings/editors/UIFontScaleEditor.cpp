@@ -100,6 +100,18 @@ void UIFontScaleEditor::sltScaleSpinBoxValueChanged(int value)
 void UIFontScaleEditor::sltScaleSliderValueChanged(int value)
 {
     setSpinBoxValue(value);
+    setFontScaleFactor(value);
+}
+
+void UIFontScaleEditor::setFontScaleFactor(int iFontScaleFactor)
+{
+    setSliderValue(iFontScaleFactor);
+    setSpinBoxValue(iFontScaleFactor);
+}
+
+int UIFontScaleEditor::fontScaleFactor() const
+{
+    return m_pScaleSlider->value();
 }
 
 void UIFontScaleEditor::sltMonitorComboIndexChanged(int)
@@ -155,22 +167,16 @@ void UIFontScaleEditor::prepare()
             m_pLayout->addWidget(m_pMaxScaleLabel, 1, 4);
     }
 
-    prepareScaleFactorMinMaxValues();
+    prepareScaleFactorMinMax();
     retranslateUi();
 }
 
-void UIFontScaleEditor::prepareScaleFactorMinMaxValues()
+void UIFontScaleEditor::prepareScaleFactorMinMax()
 {
-    const int iHostScreenCount = gpDesktop->screenCount();
-    if (iHostScreenCount == 0)
-        return;
-    double dMaxDevicePixelRatio = gpDesktop->devicePixelRatio(0);
-    for (int i = 1; i < iHostScreenCount; ++i)
-        if (dMaxDevicePixelRatio < gpDesktop->devicePixelRatio(i))
-            dMaxDevicePixelRatio = gpDesktop->devicePixelRatio(i);
-
-    const int iMinimum = 100;
-    const int iMaximum = ceil(iMinimum + 100 * dMaxDevicePixelRatio);
+    m_pScaleSlider->blockSignals(true);
+    m_pScaleSpinBox->blockSignals(true);
+    const int iMinimum = 40;
+    const int iMaximum = 200;
 
     const int iStep = 25;
 
@@ -181,6 +187,8 @@ void UIFontScaleEditor::prepareScaleFactorMinMaxValues()
     m_pScaleSlider->setTickInterval(iStep);
     m_pScaleSpinBox->setMinimum(iMinimum);
     m_pScaleSpinBox->setMaximum(iMaximum);
+    m_pScaleSlider->blockSignals(false);
+    m_pScaleSpinBox->blockSignals(false);
 }
 
 void UIFontScaleEditor::setSliderValue(int iValue)

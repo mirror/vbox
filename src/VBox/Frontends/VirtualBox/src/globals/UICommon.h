@@ -526,6 +526,9 @@ public:
         static QString helpKeyword(const QObject *pWidget);
     /** @} */
 
+    /* Scales the qApp's font. iFontScaleFactor is percentage thus 100% is for no scaling. */
+    void scaleApplicationFont(int iFontScaleFactor);
+
 public slots:
 
     /** @name Process arguments stuff.

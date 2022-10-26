@@ -2609,6 +2609,27 @@ QString UIExtraDataManager::hostKeyCombination()
     return strHostCombo;
 }
 
+void UIExtraDataManager::setFontScaleFactor(int iFontScaleFactor)
+{
+    int iMax = 200;
+    int iMin = 40;
+    if (iFontScaleFactor < iMin || iFontScaleFactor > iMax)
+        return;
+    setExtraDataString(GUI_FontScaleFactor, QString::number(iFontScaleFactor));
+}
+
+int UIExtraDataManager::fontScaleFactor()
+{
+    QString strFontScaleFactor = extraDataString(GUI_FontScaleFactor);
+    bool fConversion = false;
+    int iScaleFactor = strFontScaleFactor.toInt(&fConversion);
+    int iMax = 200;
+    int iMin = 40;
+    if (!fConversion || iScaleFactor < iMin || iScaleFactor > iMax)
+        return 100;
+    return iScaleFactor;
+}
+
 void UIExtraDataManager::setHostKeyCombination(const QString &strHostCombo)
 {
     /* Do not save anything if it's absolutely wrong or invalid: */

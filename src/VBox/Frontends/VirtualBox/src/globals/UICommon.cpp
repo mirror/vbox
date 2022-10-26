@@ -729,6 +729,18 @@ void UICommon::prepare()
                The guest caches ISOs aggressively and files sizes may change. */
     m_recentMediaExcludeList << "ad-hoc.viso";
 #endif
+
+    scaleApplicationFont(gEDataManager->fontScaleFactor());
+}
+
+void UICommon::scaleApplicationFont(int iFontScaleFactor)
+{
+    QFont appFont = qApp->font();
+    if (appFont.pixelSize() != -1)
+        appFont.setPixelSize(iFontScaleFactor / 100 * appFont.pixelSize());
+    else
+        appFont.setPointSize(iFontScaleFactor / 100 * appFont.pointSize());
+    qApp->setFont(appFont);
 }
 
 void UICommon::cleanup()

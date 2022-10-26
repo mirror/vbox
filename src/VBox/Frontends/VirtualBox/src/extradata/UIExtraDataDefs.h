@@ -383,6 +383,8 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_ScaleFactor;
         /** Holds the scaling optimization type. */
         SHARED_LIBRARY_STUFF extern const char *GUI_Scaling_Optimization;
+        /** Holds the font scale factor. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_FontScaleFactor;
     /** @} */
 
     /** @name Virtual Machine: Information dialog

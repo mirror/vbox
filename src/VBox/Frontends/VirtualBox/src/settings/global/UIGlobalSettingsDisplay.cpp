@@ -55,6 +55,7 @@ struct UIDataSettingsGlobalDisplay
                && (m_scaleFactors == other.m_scaleFactors)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
                && (m_fDisableHostScreenSaver == other.m_fDisableHostScreenSaver)
+               && (m_iFontScalingFactor == other.m_iFontScalingFactor)
                   ;
     }
 
@@ -71,6 +72,8 @@ struct UIDataSettingsGlobalDisplay
     bool                           m_fActivateHoveredMachineWindow;
     /** Holds whether we should disable host sceen saver on a vm is running. */
     bool                           m_fDisableHostScreenSaver;
+    /** Holds font scaling factor. */
+    int                            m_iFontScalingFactor;
 };
 
 
@@ -119,6 +122,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     oldData.m_fDisableHostScreenSaver = gEDataManager->disableHostScreenSaver();
 #endif
+    oldData.m_iFontScalingFactor = gEDataManager->fontScaleFactor();
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties to data: */
@@ -145,6 +149,8 @@ void UIGlobalSettingsDisplay::getFromCache()
         m_pEditorGlobalDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
         m_pEditorGlobalDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
     }
+    if (m_pFontScaleEditor)
+        m_pFontScaleEditor->setFontScaleFactor(oldData.m_iFontScalingFactor);
 }
 
 void UIGlobalSettingsDisplay::putToCache()
@@ -166,6 +172,8 @@ void UIGlobalSettingsDisplay::putToCache()
         newData.m_fActivateHoveredMachineWindow = m_pEditorGlobalDisplayFeatures->activateOnMouseHover();
         newData.m_fDisableHostScreenSaver = m_pEditorGlobalDisplayFeatures->disableHostScreenSaver();
     }
+    if (m_pFontScaleEditor)
+        newData.m_iFontScalingFactor = m_pFontScaleEditor->fontScaleFactor();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -282,6 +290,10 @@ bool UIGlobalSettingsDisplay::saveData()
             && newData.m_fDisableHostScreenSaver != oldData.m_fDisableHostScreenSaver)
             /* fSuccess = */ gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver);
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+        /* Save font scale factor: */
+        if (   fSuccess
+            && newData.m_iFontScalingFactor != oldData.m_iFontScalingFactor)
+            /* fSuccess = */ gEDataManager->setFontScaleFactor(newData.m_iFontScalingFactor);
     }
     /* Return result: */
     return fSuccess;
