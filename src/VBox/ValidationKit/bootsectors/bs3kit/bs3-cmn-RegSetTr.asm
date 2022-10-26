@@ -79,8 +79,10 @@ BS3_PROC_BEGIN_CMN Bs3RegSetTr, BS3_PBC_HYBRID_SAFE
         push    ds
         mov     ax, BS3_SEL_SYSTEM16
         mov     ds, ax
+        mov     di, dx
         add     xDI, Bs3Gdt wrt BS3SYSTEM16
 %else
+        movzx   edi, dx
         add     xDI, Bs3Gdt wrt FLAT
 %endif
         add     xDI, X86DESCGENERIC_BIT_OFF_TYPE / 8
