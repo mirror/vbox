@@ -470,9 +470,9 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     if (fBase)
     {
         if (!filename || !*filename)
-            return errorSyntax(Disk::tr("Parameters --filename is required"));
+            return errorSyntax(Disk::tr("Parameter --filename is required"));
         if ((enmMediumVariant & MediumVariant_VmdkRawDisk) == 0 && size == 0)
-            return errorSyntax(Disk::tr("Parameters --size is required"));
+            return errorSyntax(Disk::tr("Parameter --size is required"));
         if (!format || !*format)
         {
             if (cmd == CMD_DISK)

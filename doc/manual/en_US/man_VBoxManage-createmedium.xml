@@ -166,10 +166,8 @@
                 This value is valid for VMDK disk images only.
               </para></listitem>
             <listitem><para>
-                <literal>Formatted</literal>
-              </para><para>
-                For floppy images only. Formats the medium
-                automatically.
+                <literal>Formatted</literal> formats the medium automatically.
+                This value is valid for floppy images only.
               </para></listitem>
             <listitem><para>
                 <literal>RawDisk</literal> is used for creating a VMDK
@@ -208,14 +206,19 @@
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
-      The following command creates a new disk image file called
+      The following command creates a new disk image file named
       <filename>disk01.vdi</filename>. The file size is 1024 megabytes.
     </para>
 <screen>$ VBoxManage createmedium --filename disk01.vdi --size 1024</screen>
     <para>
-      The following command creates a new floppy disk image file called
+      The following command creates a new floppy disk image file named
       <filename>floppy01.vdi</filename>. The file size is 1 megabyte.
     </para>
 <screen>$ VBoxManage createmedium floppy --filename floppy01.img --size 1</screen>
+    <para>
+        The following command creates a raw disk image of an entire physical disk
+        on a Linux host.
+    </para>
+    <screen>$ VBoxManage createmedium disk --filename=/path/to/rawdisk.vmdk --variant=RawDisk --format=VMDK --property RawDrive=/dev/sda</screen>
   </refsect1>
 </refentry>

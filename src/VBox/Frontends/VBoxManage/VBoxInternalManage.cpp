@@ -182,7 +182,7 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
          "Commands:\n"
          "\n"
          "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
-         "WARNING: This is a development tool and shall only be used to analyse\n"
+         "WARNING: This is a development tool and should only be used to analyse\n"
          "         problems. It is completely unsupported and will change in\n"
          "         incompatible ways without warning.\n"),
 
@@ -227,21 +227,29 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
         : "",
         (enmCommand == USAGE_I_CREATERAWVMDK || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
-           "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
-           "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
-           "                [-relative]\n"
-           "       Creates a new VMDK image which gives access to an entire host disk (if\n"
-           "       the parameter -partitions is not specified) or some partitions of a\n"
-           "       host disk. If access to individual partitions is granted, then the\n"
-           "       parameter -mbr can be used to specify an alternative MBR to be used\n"
-           "       (the partitioning information in the MBR file is ignored).\n"
-           "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
-           "       \\\\.\\PhysicalDrive0).\n"
-           "       On Linux or FreeBSD host the parameter -relative causes a VMDK file to\n"
-           "       be created which refers to individual partitions instead to the entire\n"
-           "       disk.\n"
-           "       The necessary partition numbers can be queried with\n"
-           "         VBoxManage internalcommands listpartitions\n"
+           "  createrawvmdk --filename <filename> --rawdisk <diskname>\n"
+           "                [--partitions <list of partition numbers> [--mbr <filename>] ]\n"
+           "                [--relative]\n"
+           "       Creates a new VMDK image which gives direct access to a physical hard\n"
+           "       disk on the host. The entire disk can be presented to the guest or\n"
+           "       just specific partitions specified using the --partitions parameter.\n"
+           "       If access to individual partitions is granted, then the --mbr parameter\n"
+           "       can be used to specify an alternative Master Boot Record (MBR) (note\n"
+           "       that the partitioning information in the MBR file is ignored). The\n"
+           "       format of the diskname argument for the --rawdisk parameter varies by\n"
+           "       platform but can be determined using the command:\n"
+           "         VBoxManage list hostdrives\n"
+           "       The output lists the available drives and their partitions along with\n"
+           "       their partition types and sizes.\n"
+           "       On Linux, FreeBSD, and Windows hosts the --relative parameter creates a\n"
+           "       VMDK image file which references the specified individual partitions\n"
+           "       directly instead of referencing the partitions by their offset from\n"
+           "       the start of the physical disk.\n"
+           "\n"
+           "       Nota Bene: The 'createrawvdk' subcommand is deprecated. The equivalent\n"
+           "       functionality is available using the 'VBoxManage createmedium' command\n"
+           "       and should be used instead. See 'VBoxManage help createmedium' for\n"
+           "       details.\n"
            "\n")
         : "",
         (enmCommand == USAGE_I_RENAMEVMDK || enmCommand == USAGE_I_ALL)
@@ -1289,728 +1297,109 @@ static PVDISKRAWPARTDESC appendPartDesc(uint32_t *pcPartDescs, PVDISKRAWPARTDESC
     return p;
 }
 
-static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static const RTGETOPTDEF g_aCreateRawVMDKOptions[] =
 {
-    RT_NOREF(aVirtualBox, aSession);
-    HRESULT hrc = S_OK;
-    Utf8Str filename;
-    const char *pszMBRFilename = NULL;
-    Utf8Str rawdisk;
-    const char *pszPartitions = NULL;
-    bool fRelative = false;
-
-    uint64_t cbSize = 0;
-    PVDISK pDisk = NULL;
-    VDISKRAW RawDescriptor;
-    PVDINTERFACE pVDIfs = NULL;
-
-    /* let's have a closer look at the arguments */
-    for (int i = 0; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-filename") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument(Internal::tr("Missing argument to '%s'"), argv[i]);
-            }
-            i++;
-            filename = argv[i];
-        }
-        else if (strcmp(argv[i], "-mbr") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument(Internal::tr("Missing argument to '%s'"), argv[i]);
-            }
-            i++;
-            pszMBRFilename = argv[i];
-        }
-        else if (strcmp(argv[i], "-rawdisk") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument(Internal::tr("Missing argument to '%s'"), argv[i]);
-            }
-            i++;
-            rawdisk = argv[i];
-        }
-        else if (strcmp(argv[i], "-partitions") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument(Internal::tr("Missing argument to '%s'"), argv[i]);
-            }
-            i++;
-            pszPartitions = argv[i];
-        }
+    { "--filename",     'f', RTGETOPT_REQ_STRING },
+    { "-filename",      'f', RTGETOPT_REQ_STRING },
+    { "--rawdisk",      'd', RTGETOPT_REQ_STRING },
+    { "-rawdisk",       'd', RTGETOPT_REQ_STRING },
+    { "--partitions",   'p', RTGETOPT_REQ_STRING },
+    { "-partitions",    'p', RTGETOPT_REQ_STRING },
+    { "--mbr",          'm', RTGETOPT_REQ_STRING },
+    { "-mbr",           'm', RTGETOPT_REQ_STRING },
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_WINDOWS)
-        else if (strcmp(argv[i], "-relative") == 0)
+    { "--relative",     'r', RTGETOPT_REQ_NOTHING },
+    { "-relative",      'r', RTGETOPT_REQ_NOTHING },
+#endif /* RT_OS_LINUX || RT_OS_FREEBSD || RT_OS_WINDOWS */
+};
+
+static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, HandlerArg *a)
+{
+    const char *pszFilename = NULL;
+    const char *pszRawdisk = NULL;
+    const char *pszPartitions = NULL;
+    const char *pszMbr = NULL;
+    bool fRelative = false;
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, g_aCreateRawVMDKOptions, RT_ELEMENTS(g_aCreateRawVMDKOptions), 0, 0);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
         {
-            fRelative = true;
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+
+            case 'd':   // --rawdisk
+                pszRawdisk = ValueUnion.psz;
+                break;
+
+            case 'p':   // --partitions
+                pszPartitions = ValueUnion.psz;
+                break;
+
+            case 'm':   // --mbr
+                pszMbr = ValueUnion.psz;
+                break;
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_WINDOWS)
+            case 'r':   // --relative
+                fRelative = true;
+                break;
+#endif /* RT_OS_LINUX || RT_OS_FREEBSD || RT_OS_WINDOWS */
+
+            default:
+                return errorGetOptInternal(USAGE_I_CREATERAWVMDK, c, &ValueUnion);
         }
-#endif /* RT_OS_LINUX || RT_OS_FREEBSD */
-        else
-            return errorSyntaxInternal(USAGE_I_CREATERAWVMDK, Internal::tr("Invalid parameter '%s'"), argv[i]);
     }
 
-    if (filename.isEmpty())
-        return errorSyntaxInternal(USAGE_I_CREATERAWVMDK, Internal::tr("Mandatory parameter -filename missing"));
-    if (rawdisk.isEmpty())
-        return errorSyntaxInternal(USAGE_I_CREATERAWVMDK, Internal::tr("Mandatory parameter -rawdisk missing"));
-    if (!pszPartitions && pszMBRFilename)
+    if (!pszFilename || !*pszFilename)
+        return errorSyntaxInternal(USAGE_I_CREATERAWVMDK, Internal::tr("Mandatory parameter --filename missing"));
+    if (!pszRawdisk || !*pszRawdisk)
+        return errorSyntaxInternal(USAGE_I_CREATERAWVMDK, Internal::tr("Mandatory parameter --rawdisk missing"));
+    if (!pszPartitions && pszMbr)
         return errorSyntaxInternal(USAGE_I_CREATERAWVMDK,
-                           Internal::tr("The parameter -mbr is only valid when the parameter -partitions is also present"));
+                           Internal::tr("The parameter --mbr is only valid when the parameter -partitions is also present"));
 
-#ifdef RT_OS_DARWIN
-    fRelative = true;
-#endif /* RT_OS_DARWIN */
-    RTFILE hRawFile;
-    int vrc = RTFileOpen(&hRawFile, rawdisk.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(vrc))
-    {
-        RTMsgError(Internal::tr("Cannot open the raw disk '%s': %Rrc"), rawdisk.c_str(), vrc);
-        goto out;
-    }
+    /* Construct the equivalent 'VBoxManage createmedium disk --variant RawDisk ...' command line. */
+    size_t cMaxArgs = 9; /* all possible 'createmedium' args based on the 'createrawvmdk' options + 1 for NULL */
+    char **papszNewArgv = (char **)RTMemAllocZ(sizeof(papszNewArgv[0]) * cMaxArgs);
+    if (!papszNewArgv)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Failed to allocate memory for argument array"));
+    size_t cArgs = 0;
 
-#ifdef RT_OS_WINDOWS
-    /* Windows NT has no IOCTL_DISK_GET_LENGTH_INFORMATION ioctl. This was
-     * added to Windows XP, so we have to use the available info from DriveGeo.
-     * Note that we cannot simply use IOCTL_DISK_GET_DRIVE_GEOMETRY as it
-     * yields a slightly different result than IOCTL_DISK_GET_LENGTH_INFO.
-     * We call IOCTL_DISK_GET_DRIVE_GEOMETRY first as we need to check the media
-     * type anyway, and if IOCTL_DISK_GET_LENGTH_INFORMATION is supported
-     * we will later override cbSize.
-     */
-    DISK_GEOMETRY DriveGeo;
-    DWORD cbDriveGeo;
-    if (DeviceIoControl((HANDLE)RTFileToNative(hRawFile),
-                        IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
-                        &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
-    {
-        if (   DriveGeo.MediaType == FixedMedia
-            || DriveGeo.MediaType == RemovableMedia)
-        {
-            cbSize =     DriveGeo.Cylinders.QuadPart
-                     *   DriveGeo.TracksPerCylinder
-                     *   DriveGeo.SectorsPerTrack
-                     *   DriveGeo.BytesPerSector;
-        }
-        else
-        {
-            RTMsgError(Internal::tr("File '%s' is no fixed/removable medium device"), rawdisk.c_str());
-            vrc = VERR_INVALID_PARAMETER;
-            goto out;
-        }
+    papszNewArgv[cArgs++] = RTStrDup("disk");
+    papszNewArgv[cArgs++] = RTStrDup("--variant=RawDisk");
+    papszNewArgv[cArgs++] = RTStrDup("--format=VMDK");
 
-        GET_LENGTH_INFORMATION DiskLenInfo;
-        DWORD junk;
-        if (DeviceIoControl((HANDLE)RTFileToNative(hRawFile),
-                            IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
-                            &DiskLenInfo, sizeof(DiskLenInfo), &junk, (LPOVERLAPPED)NULL))
-        {
-            /* IOCTL_DISK_GET_LENGTH_INFO is supported -- override cbSize. */
-            cbSize = DiskLenInfo.Length.QuadPart;
-        }
-        if (   fRelative
-            && !rawdisk.startsWith("\\\\.\\PhysicalDrive", Utf8Str::CaseInsensitive))
-        {
-            RTMsgError(Internal::tr("The -relative parameter is invalid for raw disk %s"), rawdisk.c_str());
-            vrc = VERR_INVALID_PARAMETER;
-            goto out;
-        }
-    }
-    else
-    {
-        /*
-         * Could be raw image, remember error code and try to get the size first
-         * before failing.
-         */
-        vrc = RTErrConvertFromWin32(GetLastError());
-        if (RT_FAILURE(RTFileQuerySize(hRawFile, &cbSize)))
-        {
-            RTMsgError(Internal::tr("Cannot get the geometry of the raw disk '%s': %Rrc"), rawdisk.c_str(), vrc);
-            goto out;
-        }
-        else
-        {
-            if (fRelative)
-            {
-                RTMsgError(Internal::tr("The -relative parameter is invalid for raw images"));
-                vrc = VERR_INVALID_PARAMETER;
-                goto out;
-            }
-            vrc = VINF_SUCCESS;
-        }
-    }
-#elif defined(RT_OS_LINUX)
-    struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat))
-    {
-        if (S_ISBLK(DevStat.st_mode))
-        {
-#ifdef BLKGETSIZE64
-            /* BLKGETSIZE64 is broken up to 2.4.17 and in many 2.5.x. In 2.6.0
-             * it works without problems. */
-            struct utsname utsname;
-            if (    uname(&utsname) == 0
-                &&  (   (strncmp(utsname.release, "2.5.", 4) == 0 && atoi(&utsname.release[4]) >= 18)
-                     || (strncmp(utsname.release, "2.", 2) == 0 && atoi(&utsname.release[2]) >= 6)))
-            {
-                uint64_t cbBlk;
-                if (!ioctl(RTFileToNative(hRawFile), BLKGETSIZE64, &cbBlk))
-                    cbSize = cbBlk;
-            }
-#endif /* BLKGETSIZE64 */
-            if (!cbSize)
-            {
-                long cBlocks;
-                if (!ioctl(RTFileToNative(hRawFile), BLKGETSIZE, &cBlocks))
-                    cbSize = (uint64_t)cBlocks << 9;
-                else
-                {
-                    vrc = RTErrConvertFromErrno(errno);
-                    RTMsgError(Internal::tr("Cannot get the size of the raw disk '%s': %Rrc"), rawdisk.c_str(), vrc);
-                    goto out;
-                }
-            }
-        }
-        else if (S_ISREG(DevStat.st_mode))
-        {
-            vrc = RTFileQuerySize(hRawFile, &cbSize);
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError(Internal::tr("Failed to get size of file '%s': %Rrc"), rawdisk.c_str(), vrc);
-                goto out;
-            }
-            else if (fRelative)
-            {
-                RTMsgError(Internal::tr("The -relative parameter is invalid for raw images"));
-                vrc = VERR_INVALID_PARAMETER;
-                goto out;
-            }
-        }
-        else
-        {
-            RTMsgError(Internal::tr("File '%s' is no block device"), rawdisk.c_str());
-            vrc = VERR_INVALID_PARAMETER;
-            goto out;
-        }
-    }
-    else
-    {
-        vrc = RTErrConvertFromErrno(errno);
-        RTMsgError(Internal::tr("Failed to get file informtation for raw disk '%s': %Rrc"),
-                   rawdisk.c_str(), vrc);
-    }
-#elif defined(RT_OS_DARWIN)
-    struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat))
-    {
-        if (S_ISBLK(DevStat.st_mode))
-        {
-            uint64_t cBlocks;
-            uint32_t cbBlock;
-            if (!ioctl(RTFileToNative(hRawFile), DKIOCGETBLOCKCOUNT, &cBlocks))
-            {
-                if (!ioctl(RTFileToNative(hRawFile), DKIOCGETBLOCKSIZE, &cbBlock))
-                    cbSize = cBlocks * cbBlock;
-                else
-                {
-                    RTMsgError(Internal::tr("Cannot get the block size for file '%s': %Rrc", rawdisk.c_str()), vrc);
-                    vrc = RTErrConvertFromErrno(errno);
-                    goto out;
-                }
-            }
-            else
-            {
-                vrc = RTErrConvertFromErrno(errno);
-                RTMsgError(Internal::tr("Cannot get the block count for file '%s': %Rrc"), rawdisk.c_str(), vrc);
-                goto out;
-            }
-        }
-        else if (S_ISREG(DevStat.st_mode))
-        {
-            fRelative = false; /* Must be false for raw image files. */
-            vrc = RTFileQuerySize(hRawFile, &cbSize);
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError(Internal::tr("Failed to get size of file '%s': %Rrc"), rawdisk.c_str(), vrc);
-                goto out;
-            }
-        }
-        else
-        {
-            RTMsgError(Internal::tr("File '%s' is neither block device nor regular file"), rawdisk.c_str());
-            vrc = VERR_INVALID_PARAMETER;
-            goto out;
-        }
-    }
-    else
-    {
-        vrc = RTErrConvertFromErrno(errno);
-        RTMsgError(Internal::tr("Failed to get file informtation for raw disk '%s': %Rrc"),
-                   rawdisk.c_str(), vrc);
-    }
-#elif defined(RT_OS_SOLARIS)
-    struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat))
-    {
-        if (S_ISBLK(DevStat.st_mode) || S_ISCHR(DevStat.st_mode))
-        {
-            struct dk_minfo mediainfo;
-            if (!ioctl(RTFileToNative(hRawFile), DKIOCGMEDIAINFO, &mediainfo))
-                cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
-            else
-            {
-                vrc = RTErrConvertFromErrno(errno);
-                RTMsgError(Internal::tr("Cannot get the size of the raw disk '%s': %Rrc"), rawdisk.c_str(), vrc);
-                goto out;
-            }
-        }
-        else if (S_ISREG(DevStat.st_mode))
-        {
-            vrc = RTFileQuerySize(hRawFile, &cbSize);
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError(Internal::tr("Failed to get size of file '%s': %Rrc"), rawdisk.c_str(), vrc);
-                goto out;
-            }
-        }
-        else
-        {
-            RTMsgError(Internal::tr("File '%s' is no block or char device"), rawdisk.c_str());
-            vrc = VERR_INVALID_PARAMETER;
-            goto out;
-        }
-    }
-    else
-    {
-        vrc = RTErrConvertFromErrno(errno);
-        RTMsgError(Internal::tr("Failed to get file informtation for raw disk '%s': %Rrc"),
-                   rawdisk.c_str(), vrc);
-    }
-#elif defined(RT_OS_FREEBSD)
-    struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat))
-    {
-        if (S_ISCHR(DevStat.st_mode))
-        {
-            off_t cbMedia = 0;
-            if (!ioctl(RTFileToNative(hRawFile), DIOCGMEDIASIZE, &cbMedia))
-                cbSize = cbMedia;
-            else
-            {
-                vrc = RTErrConvertFromErrno(errno);
-                RTMsgError(Internal::tr("Cannot get the block count for file '%s': %Rrc"), rawdisk.c_str(), vrc);
-                goto out;
-            }
-        }
-        else if (S_ISREG(DevStat.st_mode))
-        {
-            if (fRelative)
-            {
-                RTMsgError(Internal::tr("The -relative parameter is invalid for raw images"));
-                vrc = VERR_INVALID_PARAMETER;
-                goto out;
-            }
-            cbSize = DevStat.st_size;
-        }
-        else
-        {
-            RTMsgError(Internal::tr("File '%s' is neither character device nor regular file"), rawdisk.c_str());
-            vrc = VERR_INVALID_PARAMETER;
-            goto out;
-        }
-    }
-    else
-    {
-        vrc = RTErrConvertFromErrno(errno);
-        RTMsgError(Internal::tr("Failed to get file informtation for raw disk '%s': %Rrc"),
-                   rawdisk.c_str(), vrc);
-    }
-#else /* all unrecognized OSes */
-    /* Hopefully this works on all other hosts. If it doesn't, it'll just fail
-     * creating the VMDK, so no real harm done. */
-    vrc = RTFileQuerySize(hRawFile, &cbSize);
-    if (RT_FAILURE(vrc))
-    {
-        RTMsgError(Internal::tr("Cannot get the size of the raw disk '%s': %Rrc"), rawdisk.c_str(), vrc);
-        goto out;
-    }
-#endif
+    for (size_t i = 0; i < cArgs; i++)
+        if (!papszNewArgv[i])
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Failed to allocate memory for argument array"));
 
-    /* Check whether cbSize is actually sensible. */
-    if (!cbSize || cbSize % 512)
-    {
-        RTMsgError(Internal::tr("Detected size of raw disk '%s' is %RU64, an invalid value"), rawdisk.c_str(), cbSize);
-        vrc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
+    if (   RTStrAPrintf(&papszNewArgv[cArgs++], "--filename=%s", pszFilename) == -1
+        || RTStrAPrintf(&papszNewArgv[cArgs++], "--property=RawDrive=%s", pszRawdisk) == -1
+        || (pszPartitions && (RTStrAPrintf(&papszNewArgv[cArgs++], "--property=Partitions=%s", pszPartitions) == -1))
+        || (pszMbr && (RTStrAPrintf(&papszNewArgv[cArgs++], "--property-filename=%s", pszMbr) == -1))
+        || (fRelative && (RTStrAPrintf(&papszNewArgv[cArgs++], "--property=Relative=%d", fRelative) == -1)))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Failed to allocate memory for argument array"));
 
-    RawDescriptor.szSignature[0] = 'R';
-    RawDescriptor.szSignature[1] = 'A';
-    RawDescriptor.szSignature[2] = 'W';
-    RawDescriptor.szSignature[3] = '\0';
-    if (!pszPartitions)
-    {
-        RawDescriptor.uFlags = VDISKRAW_DISK;
-        RawDescriptor.pszRawDisk = (char *)rawdisk.c_str();
-    }
-    else
-    {
-        RawDescriptor.uFlags = VDISKRAW_NORMAL;
-        RawDescriptor.pszRawDisk = NULL;
-        RawDescriptor.cPartDescs = 0;
-        RawDescriptor.pPartDescs = NULL;
+    papszNewArgv[cArgs] = NULL;
 
-        uint32_t uPartitions = 0;
-        uint32_t uPartitionsRO = 0;
+    RTStrmPrintf(g_pStdErr,
+                 Internal::tr("\nThe 'createrawvdk' subcommand is deprecated.  The equivalent functionality is\n"
+                              "available using the 'VBoxManage createmedium' command and should be used\n"
+                              "instead.  See 'VBoxManage help createmedium' for details.\n\n"));
 
-        const char *p = pszPartitions;
-        char *pszNext;
-        uint32_t u32;
-        while (*p != '\0')
-        {
-            vrc = RTStrToUInt32Ex(p, &pszNext, 0, &u32);
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError(Internal::tr("Incorrect value in partitions parameter"));
-                goto out;
-            }
-            uPartitions |= RT_BIT(u32);
-            p = pszNext;
-            if (*p == 'r')
-            {
-                uPartitionsRO |= RT_BIT(u32);
-                p++;
-            }
-            if (*p == ',')
-                p++;
-            else if (*p != '\0')
-            {
-                RTMsgError(Internal::tr("Incorrect separator in partitions parameter"));
-                vrc = VERR_INVALID_PARAMETER;
-                goto out;
-            }
-        }
+    a->argc = cArgs;
+    a->argv = papszNewArgv;
+    RTEXITCODE rcExit = handleCreateMedium(a);
 
-        HOSTPARTITIONS partitions;
-        vrc = partRead(hRawFile, &partitions);
-        if (RT_FAILURE(vrc))
-        {
-            RTMsgError(Internal::tr("Cannot read the partition information from '%s'"), rawdisk.c_str());
-            goto out;
-        }
+    for (size_t i = 0; i < cArgs; i++)
+        RTStrFree(papszNewArgv[i]);
+    RTMemFree(papszNewArgv);
 
-        RawDescriptor.enmPartitioningType = partitions.uPartitioningType;
-
-        for (unsigned i = 0; i < partitions.cPartitions; i++)
-        {
-            if (    uPartitions & RT_BIT(partitions.aPartitions[i].uIndex)
-                &&  PARTTYPE_IS_EXTENDED(partitions.aPartitions[i].uType))
-            {
-                /* Some ignorant user specified an extended partition.
-                 * Bad idea, as this would trigger an overlapping
-                 * partitions error later during VMDK creation. So warn
-                 * here and ignore what the user requested. */
-                RTMsgWarning(Internal::tr(
-                                "It is not possible (and necessary) to explicitly give access to the "
-                                "extended partition %u. If required, enable access to all logical "
-                                "partitions inside this extended partition."),
-                             partitions.aPartitions[i].uIndex);
-                uPartitions &= ~RT_BIT(partitions.aPartitions[i].uIndex);
-            }
-        }
-
-        for (unsigned i = 0; i < partitions.cPartitions; i++)
-        {
-            PVDISKRAWPARTDESC pPartDesc = NULL;
-
-            /* first dump the MBR/EPT data area */
-            if (partitions.aPartitions[i].cPartDataSectors)
-            {
-                pPartDesc = appendPartDesc(&RawDescriptor.cPartDescs,
-                                           &RawDescriptor.pPartDescs);
-                if (!pPartDesc)
-                {
-                    RTMsgError(Internal::tr("Out of memory allocating the partition list for '%s'"), rawdisk.c_str());
-                    vrc = VERR_NO_MEMORY;
-                    goto out;
-                }
-
-                /** @todo the clipping below isn't 100% accurate, as it should
-                 * actually clip to the track size. However, that's easier said
-                 * than done as figuring out the track size is heuristics. In
-                 * any case the clipping is adjusted later after sorting, to
-                 * prevent overlapping data areas on the resulting image. */
-                pPartDesc->cbData = RT_MIN(partitions.aPartitions[i].cPartDataSectors, 63) * 512;
-                pPartDesc->offStartInVDisk = partitions.aPartitions[i].uPartDataStart * 512;
-                Assert(pPartDesc->cbData - (size_t)pPartDesc->cbData == 0);
-                void *pPartData = RTMemAlloc((size_t)pPartDesc->cbData);
-                if (!pPartData)
-                {
-                    RTMsgError(Internal::tr("Out of memory allocating the partition descriptor for '%s'"),
-                               rawdisk.c_str());
-                    vrc = VERR_NO_MEMORY;
-                    goto out;
-                }
-                vrc = RTFileReadAt(hRawFile, partitions.aPartitions[i].uPartDataStart * 512,
-                                   pPartData, (size_t)pPartDesc->cbData, NULL);
-                if (RT_FAILURE(vrc))
-                {
-                    RTMsgError(Internal::tr("Cannot read partition data from raw device '%s': %Rrc"),
-                               rawdisk.c_str(), vrc);
-                    goto out;
-                }
-                /* Splice in the replacement MBR code if specified. */
-                if (    partitions.aPartitions[i].uPartDataStart == 0
-                    &&  pszMBRFilename)
-                {
-                    RTFILE MBRFile;
-                    vrc = RTFileOpen(&MBRFile, pszMBRFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-                    if (RT_FAILURE(vrc))
-                    {
-                        RTMsgError(Internal::tr("Cannot open replacement MBR file '%s' specified with -mbr: %Rrc"),
-                                   pszMBRFilename, vrc);
-                        goto out;
-                    }
-                    vrc = RTFileReadAt(MBRFile, 0, pPartData, 0x1be, NULL);
-                    RTFileClose(MBRFile);
-                    if (RT_FAILURE(vrc))
-                    {
-                        RTMsgError(Internal::tr("Cannot read replacement MBR file '%s': %Rrc"), pszMBRFilename, vrc);
-                        goto out;
-                    }
-                }
-                pPartDesc->pvPartitionData = pPartData;
-            }
-
-            if (PARTTYPE_IS_EXTENDED(partitions.aPartitions[i].uType))
-            {
-                /* Suppress exporting the actual extended partition. Only
-                 * logical partitions should be processed. However completely
-                 * ignoring it leads to leaving out the EBR data. */
-                continue;
-            }
-
-            /* set up values for non-relative device names */
-            const char *pszRawName = rawdisk.c_str();
-            uint64_t uStartOffset = partitions.aPartitions[i].uStart * 512;
-
-            pPartDesc = appendPartDesc(&RawDescriptor.cPartDescs,
-                                       &RawDescriptor.pPartDescs);
-            if (!pPartDesc)
-            {
-                RTMsgError(Internal::tr("Out of memory allocating the partition list for '%s'"), rawdisk.c_str());
-                vrc = VERR_NO_MEMORY;
-                goto out;
-            }
-
-            if (uPartitions & RT_BIT(partitions.aPartitions[i].uIndex))
-            {
-                if (uPartitionsRO & RT_BIT(partitions.aPartitions[i].uIndex))
-                    pPartDesc->uFlags |= VDISKRAW_READONLY;
-
-                if (fRelative)
-                {
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-                    /* Refer to the correct partition and use offset 0. */
-                    char *psz;
-#if defined(RT_OS_LINUX)
-                    /*
-                     * Check whether raw disk ends with a digit. In that case
-                     * insert a p before adding the partition number.
-                     * This is used for nvme devices only currently which look like
-                     * /dev/nvme0n1p1 but might be extended to other devices in the
-                     * future.
-                     */
-                    size_t cchRawDisk = rawdisk.length();
-                    if (RT_C_IS_DIGIT(pszRawName[cchRawDisk - 1]))
-                        RTStrAPrintf(&psz,
-                                     "%sp%u",
-                                     rawdisk.c_str(),
-                                     partitions.aPartitions[i].uIndex);
-                    else
-                        RTStrAPrintf(&psz,
-                                     "%s%u",
-                                     rawdisk.c_str(),
-                                     partitions.aPartitions[i].uIndex);
-#elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-                    RTStrAPrintf(&psz,
-                                 "%ss%u",
-                                 rawdisk.c_str(),
-                                 partitions.aPartitions[i].uIndex);
-#endif
-                    if (!psz)
-                    {
-                        vrc = VERR_NO_STR_MEMORY;
-                        RTMsgError(Internal::tr("Cannot create reference to individual partition %u, rc=%Rrc"),
-                                   partitions.aPartitions[i].uIndex, vrc);
-                        goto out;
-                    }
-                    pszRawName = psz;
-                    uStartOffset = 0;
-#elif defined(RT_OS_WINDOWS)
-                    /* Refer to the correct partition and use offset 0. */
-                    char *psz;
-                    RTStrAPrintf(&psz, "\\\\.\\Harddisk%sPartition%u",
-                                 rawdisk.c_str() + 17,
-                                 partitions.aPartitions[i].uIndexWin);
-                    if (!psz)
-                    {
-                        vrc = VERR_NO_STR_MEMORY;
-                        RTMsgError(Internal::tr("Cannot create reference to individual partition %u (numbered %u), rc=%Rrc"),
-                                   partitions.aPartitions[i].uIndex, partitions.aPartitions[i].uIndexWin, vrc);
-                        goto out;
-                    }
-                    pszRawName = psz;
-                    uStartOffset = 0;
-#else
-                    /** @todo not implemented for other hosts. Treat just like
-                     * not specified (this code is actually never reached). */
-#endif
-                }
-
-                pPartDesc->pszRawDevice = (char *)pszRawName;
-                pPartDesc->offStartInDevice = uStartOffset;
-            }
-            else
-            {
-                pPartDesc->pszRawDevice = NULL;
-                pPartDesc->offStartInDevice = 0;
-            }
-
-            pPartDesc->offStartInVDisk = partitions.aPartitions[i].uStart * 512;
-            pPartDesc->cbData = partitions.aPartitions[i].uSize * 512;
-        }
-
-        /* Sort data areas in ascending order of start. */
-        for (unsigned i = 0; i < RawDescriptor.cPartDescs-1; i++)
-        {
-            unsigned uMinIdx = i;
-            uint64_t uMinVal = RawDescriptor.pPartDescs[i].offStartInVDisk;
-            for (unsigned j = i + 1; j < RawDescriptor.cPartDescs; j++)
-            {
-                if (RawDescriptor.pPartDescs[j].offStartInVDisk < uMinVal)
-                {
-                    uMinIdx = j;
-                    uMinVal = RawDescriptor.pPartDescs[j].offStartInVDisk;
-                }
-            }
-            if (uMinIdx != i)
-            {
-                /* Swap entries at index i and uMinIdx. */
-                VDISKRAWPARTDESC tmp;
-                memcpy(&tmp, &RawDescriptor.pPartDescs[i], sizeof(tmp));
-                memcpy(&RawDescriptor.pPartDescs[i], &RawDescriptor.pPartDescs[uMinIdx], sizeof(tmp));
-                memcpy(&RawDescriptor.pPartDescs[uMinIdx], &tmp, sizeof(tmp));
-            }
-        }
-
-        /* Have a second go at MBR/EPT, GPT area clipping. Now that the data areas
-         * are sorted this is much easier to get 100% right. */
-        //for (unsigned i = 0; i < RawDescriptor.cPartDescs-1; i++)
-        for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
-        {
-            if (RawDescriptor.pPartDescs[i].pvPartitionData)
-            {
-                RawDescriptor.pPartDescs[i].cbData = RT_MIN(  RawDescriptor.pPartDescs[i+1].offStartInVDisk
-                                                            - RawDescriptor.pPartDescs[i].offStartInVDisk,
-                                                            RawDescriptor.pPartDescs[i].cbData);
-                if (!RawDescriptor.pPartDescs[i].cbData)
-                {
-                    if (RawDescriptor.enmPartitioningType == VDISKPARTTYPE_MBR)
-                    {
-                        RTMsgError(Internal::tr("MBR/EPT overlaps with data area"));
-                        vrc = VERR_INVALID_PARAMETER;
-                        goto out;
-                    }
-                    if (RawDescriptor.cPartDescs != i+1)
-                    {
-                        RTMsgError(Internal::tr("GPT overlaps with data area"));
-                        vrc = VERR_INVALID_PARAMETER;
-                        goto out;
-                    }
-                }
-            }
-        }
-    }
-
-    RTFileClose(hRawFile);
-
-#ifdef DEBUG_klaus
-    if (!(RawDescriptor.uFlags & VDISKRAW_DISK))
-    {
-        RTPrintf("#            start         length    startoffset  partdataptr  device\n");
-        for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
-        {
-            RTPrintf("%2u  %14RU64 %14RU64 %14RU64 %#18p %s\n", i,
-                     RawDescriptor.pPartDescs[i].offStartInVDisk,
-                     RawDescriptor.pPartDescs[i].cbData,
-                     RawDescriptor.pPartDescs[i].offStartInDevice,
-                     RawDescriptor.pPartDescs[i].pvPartitionData,
-                     RawDescriptor.pPartDescs[i].pszRawDevice);
-        }
-    }
-#endif
-
-    VDINTERFACEERROR vdInterfaceError;
-    vdInterfaceError.pfnError     = handleVDError;
-    vdInterfaceError.pfnMessage   = handleVDMessage;
-
-    hrc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
-    AssertRC(vrc);
-
-    vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk); /* Raw VMDK's are harddisk only. */
-    if (RT_FAILURE(vrc))
-    {
-        RTMsgError(Internal::tr("Cannot create the virtual disk container: %Rrc"), vrc);
-        goto out;
-    }
-
-    Assert(RT_MIN(cbSize / 512 / 16 / 63, 16383) -
-           (unsigned int)RT_MIN(cbSize / 512 / 16 / 63, 16383) == 0);
-    VDGEOMETRY PCHS, LCHS;
-    PCHS.cCylinders = (unsigned int)RT_MIN(cbSize / 512 / 16 / 63, 16383);
-    PCHS.cHeads = 16;
-    PCHS.cSectors = 63;
-    LCHS.cCylinders = 0;
-    LCHS.cHeads = 0;
-    LCHS.cSectors = 0;
-    vrc = VDCreateBase(pDisk, "VMDK", filename.c_str(), cbSize,
-                       VD_IMAGE_FLAGS_FIXED | VD_VMDK_IMAGE_FLAGS_RAWDISK,
-                       (char *)&RawDescriptor, &PCHS, &LCHS, NULL,
-                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
-    if (RT_FAILURE(vrc))
-    {
-        RTMsgError(Internal::tr("Cannot create the raw disk VMDK: %Rrc"), vrc);
-        goto out;
-    }
-    RTPrintf(Internal::tr("RAW host disk access VMDK file %s created successfully.\n"), filename.c_str());
-
-    VDCloseAll(pDisk);
-
-    /* Clean up allocated memory etc. */
-    if (pszPartitions)
-    {
-        for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
-        {
-            /* Free memory allocated for relative device name. */
-            if (fRelative && RawDescriptor.pPartDescs[i].pszRawDevice)
-                RTStrFree((char *)(void *)RawDescriptor.pPartDescs[i].pszRawDevice);
-            if (RawDescriptor.pPartDescs[i].pvPartitionData)
-                RTMemFree((void *)RawDescriptor.pPartDescs[i].pvPartitionData);
-        }
-        if (RawDescriptor.pPartDescs)
-            RTMemFree(RawDescriptor.pPartDescs);
-    }
-
-    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
-
-out:
-    RTMsgError(Internal::tr("The raw disk vmdk file was not created"));
-    return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return rcExit;
 }
 
 static RTEXITCODE CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
@@ -2720,7 +2109,7 @@ RTEXITCODE handleInternalCommands(HandlerArg *a)
     if (!strcmp(pszCmd, "listpartitions"))
         return CmdListPartitions(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "createrawvmdk"))
-        return CmdCreateRawVMDK(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+        return CmdCreateRawVMDK(a->argc - 1, &a->argv[1], a);
     if (!strcmp(pszCmd, "renamevmdk"))
         return CmdRenameVMDK(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "converttoraw"))
