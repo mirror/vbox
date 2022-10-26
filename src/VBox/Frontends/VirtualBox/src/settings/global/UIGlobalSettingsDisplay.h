@@ -36,6 +36,7 @@
 
 /* Forward declarations: */
 class UIDisplayFeaturesEditor;
+class UIFontScaleEditor;
 class UIMaximumGuestScreenSizeEditor;
 class UIScaleFactorEditor;
 struct UIDataSettingsGlobalDisplay;
@@ -98,6 +99,8 @@ private:
         UIScaleFactorEditor            *m_pEditorScaleFactor;
         /** Holds the global display features editor instance. */
         UIDisplayFeaturesEditor        *m_pEditorGlobalDisplayFeatures;
+        /** Holds the font scale editor instance. */
+        UIFontScaleEditor              *m_pFontScaleEditor;
     /** @} */
 };
 

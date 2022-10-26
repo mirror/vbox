@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIFontScaleEditor.h"
 #include "UIDisplayFeaturesEditor.h"
 #include "UIGlobalSettingsDisplay.h"
 #include "UIMaximumGuestScreenSizeEditor.h"
@@ -82,6 +83,7 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     , m_pEditorMaximumGuestScreenSize(0)
     , m_pEditorScaleFactor(0)
     , m_pEditorGlobalDisplayFeatures(0)
+    , m_pFontScaleEditor(0)
 {
     prepare();
 }
@@ -186,9 +188,11 @@ void UIGlobalSettingsDisplay::retranslateUi()
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMaximumGuestScreenSize->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGlobalDisplayFeatures->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pFontScaleEditor->minimumLabelHorizontalHint());
     m_pEditorMaximumGuestScreenSize->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorGlobalDisplayFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pFontScaleEditor->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -224,6 +228,11 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         m_pEditorGlobalDisplayFeatures = new UIDisplayFeaturesEditor(this);
         if (m_pEditorGlobalDisplayFeatures)
             pLayout->addWidget(m_pEditorGlobalDisplayFeatures);
+
+        /* Prepare 'font scale' editor: */
+        m_pFontScaleEditor = new UIFontScaleEditor(this);
+        if (m_pFontScaleEditor)
+            pLayout->addWidget(m_pFontScaleEditor);
 
         /* Add stretch to the end: */
         pLayout->addStretch();
