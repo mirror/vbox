@@ -115,6 +115,50 @@ AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedBp_int3) == 1)
 BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedBp
 
 
+;
+; PC (IP/EIP) wrapper templates.
+; These will potentially trigger VM exits, except for the benign one.
+;
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapBenign1, BS3_PBC_NEAR
+        nop
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapBenign1
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapBenign2, BS3_PBC_NEAR
+        xor     xDX, xAX
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapBenign2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapCpuId, BS3_PBC_NEAR
+        xor     eax, eax
+        cpuid
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapCpuId
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapIn80, BS3_PBC_NEAR
+        in      al, 80h
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapIn80
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapOut80, BS3_PBC_NEAR
+        out     80h, al
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapOut80
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapSmsw, BS3_PBC_NEAR
+        smsw       si
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapSmsw
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapRdCr0, BS3_PBC_NEAR
+        mov     sAX, cr0
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapRdCr0
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapRdDr0, BS3_PBC_NEAR
+        mov     sAX, dr0
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapRdDr0
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapWrDr0, BS3_PBC_NEAR
+        xor     sAX, sAX
+        mov     dr0, sAX
+BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapWrDr0
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
