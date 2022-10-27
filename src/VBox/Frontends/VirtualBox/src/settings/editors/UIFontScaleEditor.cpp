@@ -67,6 +67,7 @@ UIFontScaleEditor::UIFontScaleEditor(QWidget *pParent)
     , m_pScaleSpinBox(0)
     , m_pMinScaleLabel(0)
     , m_pMaxScaleLabel(0)
+    , m_iSliderRangeDivisor(10)
 {
     /* Prepare: */
     prepare();
@@ -112,24 +113,24 @@ void UIFontScaleEditor::retranslateUi()
 
 void UIFontScaleEditor::sltScaleSpinBoxValueChanged(int value)
 {
-    setSliderValue(0.1 * value);
+    setSliderValue(value / m_iSliderRangeDivisor);
 }
 
 void UIFontScaleEditor::sltScaleSliderValueChanged(int value)
 {
-    setSpinBoxValue(10 * value);
-    setFontScaleFactor(10 * value);
+    setSpinBoxValue(m_iSliderRangeDivisor * value);
+    setFontScaleFactor(m_iSliderRangeDivisor * value);
 }
 
 void UIFontScaleEditor::setFontScaleFactor(int iFontScaleFactor)
 {
-    setSliderValue(0.1 * iFontScaleFactor);
+    setSliderValue(iFontScaleFactor / m_iSliderRangeDivisor);
     setSpinBoxValue(iFontScaleFactor);
 }
 
 int UIFontScaleEditor::fontScaleFactor() const
 {
-    return m_pScaleSlider->value();
+    return m_pScaleSpinBox->value();
 }
 
 void UIFontScaleEditor::sltMonitorComboIndexChanged(int)
@@ -156,9 +157,6 @@ void UIFontScaleEditor::prepare()
         {
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pScaleSlider);
-            m_pScaleSlider->setPageStep(10);
-            m_pScaleSlider->setSingleStep(1);
-            m_pScaleSlider->setTickInterval(10);
             m_pScaleSlider->setSnappingEnabled(true);
             connect(m_pScaleSlider, static_cast<void(QIAdvancedSlider::*)(int)>(&QIAdvancedSlider::valueChanged),
                     this, &UIFontScaleEditor::sltScaleSliderValueChanged);
@@ -196,9 +194,9 @@ void UIFontScaleEditor::prepareScaleFactorMinMax()
     const int iMinimum = UIExtraDataDefs::iFontScaleMin;
     const int iMaximum = UIExtraDataDefs::iFontScaleMax;
 
-    /* Set slider to 1/10 of the range to make sure mouse drag stops only on ticks: */
-    m_pScaleSlider->setMinimum(0.1 * iMinimum);
-    m_pScaleSlider->setMaximum(0.1 * iMaximum);
+    /* Set slider min, max, and intervals so to make sure mouse drag stops only on ticks: */
+    m_pScaleSlider->setMinimum(iMinimum / m_iSliderRangeDivisor);
+    m_pScaleSlider->setMaximum(iMaximum / m_iSliderRangeDivisor);
 
     m_pScaleSlider->setPageStep(2);
     m_pScaleSlider->setSingleStep(1);
