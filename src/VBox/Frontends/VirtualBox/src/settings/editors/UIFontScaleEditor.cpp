@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QGridLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QWidget>
@@ -41,6 +42,22 @@
 /* External includes: */
 #include <math.h>
 
+class UIFontScaleFactorSpinBox : public QSpinBox
+{
+public:
+    UIFontScaleFactorSpinBox(QWidget *parent = 0);
+};
+
+UIFontScaleFactorSpinBox::UIFontScaleFactorSpinBox(QWidget *pParent /* = 0*/)
+    :QSpinBox(pParent)
+{
+    QLineEdit *pLineEdit = new QLineEdit;
+    if (pLineEdit)
+    {
+        pLineEdit->setReadOnly(true);
+        setLineEdit(pLineEdit);
+    }
+}
 
 UIFontScaleEditor::UIFontScaleEditor(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -83,30 +100,30 @@ void UIFontScaleEditor::retranslateUi()
 
     if (m_pMinScaleLabel)
     {
-        m_pMinScaleLabel->setText(QString("%1%").arg(m_pScaleSlider->minimum()));
+        m_pMinScaleLabel->setText(QString("%1%").arg(m_pScaleSpinBox->minimum()));
         m_pMinScaleLabel->setToolTip(tr("Minimum possible scale factor."));
     }
     if (m_pMaxScaleLabel)
     {
-        m_pMaxScaleLabel->setText(QString("%1%").arg(m_pScaleSlider->maximum()));
+        m_pMaxScaleLabel->setText(QString("%1%").arg(m_pScaleSpinBox->maximum()));
         m_pMaxScaleLabel->setToolTip(tr("Maximum possible scale factor."));
     }
 }
 
 void UIFontScaleEditor::sltScaleSpinBoxValueChanged(int value)
 {
-    setSliderValue(value);
+    setSliderValue(0.1 * value);
 }
 
 void UIFontScaleEditor::sltScaleSliderValueChanged(int value)
 {
-    setSpinBoxValue(value);
-    setFontScaleFactor(value);
+    setSpinBoxValue(10 * value);
+    setFontScaleFactor(10 * value);
 }
 
 void UIFontScaleEditor::setFontScaleFactor(int iFontScaleFactor)
 {
-    setSliderValue(iFontScaleFactor);
+    setSliderValue(0.1 * iFontScaleFactor);
     setSpinBoxValue(iFontScaleFactor);
 }
 
@@ -149,7 +166,7 @@ void UIFontScaleEditor::prepare()
             m_pLayout->addWidget(m_pScaleSlider, 0, 1, 1, 4);
         }
 
-        m_pScaleSpinBox = new QSpinBox(this);
+        m_pScaleSpinBox = new UIFontScaleFactorSpinBox(this);
         if (m_pScaleSpinBox)
         {
             setFocusProxy(m_pScaleSpinBox);
@@ -179,14 +196,21 @@ void UIFontScaleEditor::prepareScaleFactorMinMax()
     const int iMinimum = UIExtraDataDefs::iFontScaleMin;
     const int iMaximum = UIExtraDataDefs::iFontScaleMax;
 
-    m_pScaleSlider->setMinimum(iMinimum);
-    m_pScaleSlider->setMaximum(iMaximum);
-    m_pScaleSlider->setPageStep(20);
-    m_pScaleSlider->setSingleStep(10);
-    m_pScaleSlider->setTickInterval(10);
+    /* Set slider to 1/10 of the range to make sure mouse drag stops only on ticks: */
+    m_pScaleSlider->setMinimum(0.1 * iMinimum);
+    m_pScaleSlider->setMaximum(0.1 * iMaximum);
+
+    m_pScaleSlider->setPageStep(2);
+    m_pScaleSlider->setSingleStep(1);
+    m_pScaleSlider->setTickInterval(1);
     m_pScaleSpinBox->setSingleStep(10);
+
     m_pScaleSpinBox->setMinimum(iMinimum);
     m_pScaleSpinBox->setMaximum(iMaximum);
+
+    QLineEdit *pLineEdit = new QLineEdit;
+    pLineEdit->setReadOnly(true);
+
     m_pScaleSlider->blockSignals(false);
     m_pScaleSpinBox->blockSignals(false);
 }
