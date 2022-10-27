@@ -395,7 +395,7 @@ module_signed()
     [ -n "$printf_tool"     ] || return
 
     # Make sure openssl can handle hash algorithm.
-    sig_hashalgo=$(modinfo -F sig_hashalgo vboxdrv 2>/dev/null)
+    sig_hashalgo=$(modinfo -F sig_hashalgo "$mod" 2>/dev/null)
     [ "$(module_sig_hash_supported $sig_hashalgo)" = "1" ] || return
 
     # Generate file names for temporary stuff.
