@@ -1974,6 +1974,18 @@ BS3_CMN_PROTO_STUB(void, Bs3SelSetup16BitData,(X86DESC BS3_FAR *pDesc, uint32_t 
  */
 BS3_CMN_PROTO_STUB(void, Bs3SelSetup16BitCode,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr, uint8_t bDpl));
 
+/**
+ * Sets up a 32-bit execute-read selector with a user specified limit.
+ *
+ * @param   pDesc       Pointer to the descriptor table entry.
+ * @param   uBaseAddr   The base address of the descriptor.
+ * @param   uLimit      The limit. (This is included here and not in the 16-bit
+ *                      functions because we're more likely to want to set it
+ *                      than for 16-bit selectors.)
+ * @param   bDpl        The descriptor privilege level.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3SelSetup32BitCode,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr, uint32_t uLimit, uint8_t bDpl));
+
 
 /**
  * Slab control structure list head.
