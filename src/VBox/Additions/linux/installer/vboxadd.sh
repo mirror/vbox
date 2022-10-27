@@ -453,7 +453,7 @@ setup_modules()
 
     # Detect if kernel was built with clang.
     unset LLVM
-    vbox_cc_is_clang=$(kernel_get_config_opt "CONFIG_MODULE_SIG_HASH")
+    vbox_cc_is_clang=$(kernel_get_config_opt "CONFIG_CC_IS_CLANG")
     if test "${vbox_cc_is_clang}" = "y"; then
         info "Using clang compiler."
         export LLVM=1
