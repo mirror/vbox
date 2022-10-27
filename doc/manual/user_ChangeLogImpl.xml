@@ -86,6 +86,9 @@ Rules for adding a changelog entry to make them look more uniform:
         <para>VirtioSCSI: Fixed recognition of the virtio SCSI controller by the EFI firmware (bug #21200)</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: Added an option to global settings (the display page) scale application fonts.</para>
+      </listitem>
     </itemizedlist>
   </sect1>
 
