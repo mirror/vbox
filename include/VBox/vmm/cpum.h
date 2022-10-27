@@ -1401,7 +1401,7 @@ typedef struct CPUMFEATURES
     /** VMX: Supports save VMX preemption timer on VM-exit. */
     uint32_t        fVmxSavePreemptTimer : 1;
     /** VMX: Supports secondary VM-exit controls. */
-    uint32_t        fVmxExitCtls2 : 1;
+    uint32_t        fVmxSecondaryExitCtls : 1;
     /** @} */
 
     /** @name VMX Miscellaneous data.

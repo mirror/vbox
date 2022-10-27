@@ -1277,7 +1277,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("ExitSaveEferMsr - Save IA32_EFER MSR on VM-exit        ", fVmxExitSaveEferMsr);
         VMXFEATDUMP("ExitLoadEferMsr - Load IA32_EFER MSR on VM-exit        ", fVmxExitLoadEferMsr);
         VMXFEATDUMP("SavePreemptTimer - Save VMX-preemption timer           ", fVmxSavePreemptTimer);
-        VMXFEATDUMP("ExitCtls2 - Secondary VM-exit controls                 ", fVmxExitCtls2);
+        VMXFEATDUMP("SecondaryExitCtls - Secondary VM-exit controls         ", fVmxSecondaryExitCtls);
 
         /* Miscellaneous data. */
         VMXFEATDUMP("ExitSaveEferLma - Save IA32_EFER.LMA on VM-exit        ", fVmxExitSaveEferLma);
@@ -1458,7 +1458,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                  | (pGuestFeatures->fVmxExitSaveEferMsr   << VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxExitLoadEferMsr   << VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  )
-                                 | (pGuestFeatures->fVmxExitCtls2         << VMX_BF_EXIT_CTLS_USE_SECONDARY_CTLS_SHIFT  );
+                                 | (pGuestFeatures->fVmxSecondaryExitCtls << VMX_BF_EXIT_CTLS_USE_SECONDARY_CTLS_SHIFT  );
         /* Set the default1 class bits. See Intel spec. A.4 "VM-exit Controls". */
         uint32_t const fAllowed0 = VMX_EXIT_CTLS_DEFAULT1;
         uint32_t const fAllowed1 = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
@@ -1875,7 +1875,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     EmuFeat.fVmxExitSaveEferMsr       = 1;
     EmuFeat.fVmxExitLoadEferMsr       = 1;
     EmuFeat.fVmxSavePreemptTimer      = 0;  /* Cannot be enabled if VMX-preemption timer is disabled. */
-    EmuFeat.fVmxExitCtls2             = 0;
+    EmuFeat.fVmxSecondaryExitCtls     = 0;
     EmuFeat.fVmxExitSaveEferLma       = 1;  /* Cannot be disabled if unrestricted guest is enabled. */
     EmuFeat.fVmxPt                    = 0;
     EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this when nested VMCS shadowing is enabled. */
@@ -1957,7 +1957,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     pGuestFeat->fVmxExitSaveEferMsr       = (pBaseFeat->fVmxExitSaveEferMsr       & EmuFeat.fVmxExitSaveEferMsr      );
     pGuestFeat->fVmxExitLoadEferMsr       = (pBaseFeat->fVmxExitLoadEferMsr       & EmuFeat.fVmxExitLoadEferMsr      );
     pGuestFeat->fVmxSavePreemptTimer      = (pBaseFeat->fVmxSavePreemptTimer      & EmuFeat.fVmxSavePreemptTimer     );
-    pGuestFeat->fVmxExitCtls2             = (pBaseFeat->fVmxExitCtls2             & EmuFeat.fVmxExitCtls2            );
+    pGuestFeat->fVmxSecondaryExitCtls     = (pBaseFeat->fVmxSecondaryExitCtls     & EmuFeat.fVmxSecondaryExitCtls    );
     pGuestFeat->fVmxExitSaveEferLma       = (pBaseFeat->fVmxExitSaveEferLma       & EmuFeat.fVmxExitSaveEferLma      );
     pGuestFeat->fVmxPt                    = (pBaseFeat->fVmxPt                    & EmuFeat.fVmxPt                   );
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
