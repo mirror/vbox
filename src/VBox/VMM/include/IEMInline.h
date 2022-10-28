@@ -1562,7 +1562,7 @@ DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu)
     return pVCpu->cpum.GstCtx.sp;
 }
 
-
+#if 0 /* unused and buggy */
 /**
  * Updates the RIP/EIP/IP to point to the next instruction.
  *
@@ -1592,7 +1592,7 @@ DECLINLINE(void) iemRegAddToRipKeepRF(PVMCPUCC pVCpu, uint8_t cbInstr)
         default: AssertFailed();
     }
 }
-
+#endif
 
 #if 0
 /**
@@ -1606,8 +1606,6 @@ DECLINLINE(void) iemRegUpdateRipKeepRF(PVMCPUCC pVCpu)
 }
 #endif
 
-
-
 /**
  * Updates the RIP/EIP/IP to point to the next instruction and clears EFLAGS.RF
  * and CPUMCTX_INHIBIT_SHADOW.
@@ -1617,22 +1615,31 @@ DECLINLINE(void) iemRegUpdateRipKeepRF(PVMCPUCC pVCpu)
  */
 DECLINLINE(void) iemRegAddToRipAndClearRF(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
-    /* Clear RF and interrupt shadowing: */
+    /*
+     * Advance RIP.
+     *
+     * When we're targetting 8086/8, 80186/8 or 80286 mode the updates are 16-bit,
+     * while in all other modes except LM64 the updates are 32-bit.  This means
+     * we need to watch for both 32-bit and 16-bit "carry" situations, i.e.
+     * 4GB and 64KB rollovers, and decide whether anything needs masking.
+     *
+     * See PC wrap around tests in bs3-cpu-weird-1.
+     */
+    uint64_t const uRipPrev = pVCpu->cpum.GstCtx.rip;
+    uint64_t const uRipNext = uRipPrev + cbInstr;
+    if (RT_LIKELY(   !((uRipNext ^ uRipPrev) & (RT_BIT_64(32) | RT_BIT_64(16)))
+                  || CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx)))
+        pVCpu->cpum.GstCtx.rip = uRipNext;
+    else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
+        pVCpu->cpum.GstCtx.rip = (uint32_t)uRipNext;
+    else
+        pVCpu->cpum.GstCtx.rip = (uint16_t)uRipNext;
+
+    /*
+     * Clear RF and interrupt shadowing.
+     */
     AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
     pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
-
-    /* Update RIP: */
-#if ARCH_BITS >= 64
-    AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
-    static uint64_t const s_aRipMasks[] = { UINT64_C(0xffffffff), UINT64_C(0xffffffff), UINT64_MAX };
-    Assert(pVCpu->cpum.GstCtx.rip <= s_aRipMasks[(unsigned)pVCpu->iem.s.enmCpuMode]);
-    pVCpu->cpum.GstCtx.rip = (pVCpu->cpum.GstCtx.rip + cbInstr) & s_aRipMasks[(unsigned)pVCpu->iem.s.enmCpuMode];
-#else
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
-        pVCpu->cpum.GstCtx.rip += cbInstr;
-    else
-        pVCpu->cpum.GstCtx.eip += cbInstr;
-#endif
 }
 
 
