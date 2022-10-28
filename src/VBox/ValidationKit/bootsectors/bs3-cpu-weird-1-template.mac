@@ -119,6 +119,10 @@ BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedBp
 ; PC (IP/EIP) wrapper templates.
 ; These will potentially trigger VM exits, except for the benign one.
 ;
+; Note! Single instructions as the testcase will shift multibyte variations
+;       across the wrap-around boundary and that would cause unpredictable
+;       results for the 16-bit if there is more than one instruction.
+;
 
 BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapBenign1, BS3_PBC_NEAR
         nop
@@ -129,7 +133,6 @@ BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapBenign2, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapBenign2
 
 BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapCpuId, BS3_PBC_NEAR
-        xor     eax, eax
         cpuid
 BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapCpuId
 
@@ -154,7 +157,6 @@ BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapRdDr0, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapRdDr0
 
 BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapWrDr0, BS3_PBC_NEAR
-        xor     sAX, sAX
         mov     dr0, sAX
 BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapWrDr0
 
