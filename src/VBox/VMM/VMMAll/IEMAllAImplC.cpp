@@ -6287,7 +6287,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT
             if (pr80Val->s.uExponent <= RTFLOAT80U_EXP_BIAS - 63)
             {
                 pFpuRes->r80Result = *pr80Val;
-
             }
             else
             {
@@ -6313,20 +6312,44 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT
     }
     else if (RTFLOAT80U_IS_DENORMAL(pr80Val))
     {
-        pFpuRes->r80Result = *pr80Val;
         fFsw |= X86_FSW_DE;
 
         if (fFcw & X86_FCW_DM)
         {
+            if (fFcw & X86_FCW_UM)
+            {
+                pFpuRes->r80Result = *pr80Val;
+            }
+            else
+            {
+                /* Underflow signalling as described at 7.4 section of 1985 IEEE 754*/
+                uint64_t uMantissa = pr80Val->s.uMantissa;
+                uint32_t uExponent = ASMBitLastSetU64(uMantissa);
+
+                uExponent = 64 - uExponent;
+                uMantissa <<= uExponent;
+                uExponent = RTFLOAT128U_EXP_BIAS_ADJUST - uExponent + 1;
+
+                pFpuRes->r80Result.s.fSign = pr80Val->s.fSign;
+                pFpuRes->r80Result.s.uMantissa = uMantissa;
+                pFpuRes->r80Result.s.uExponent = uExponent;
+            }
+
             fFsw |= X86_FSW_UE | X86_FSW_PE;
 
-            if (!(fFcw & X86_FCW_UM) || !(fFcw & X86_FCW_PM))
+            if ((fFcw & X86_FCW_UM) && (fFcw & X86_FCW_PM))
+            {
+                /* All the exceptions are masked. */
+            }
+            else
             {
                 fFsw |= X86_FSW_ES | X86_FSW_B;
             }
         }
         else
         {
+            pFpuRes->r80Result = *pr80Val;
+
             fFsw |= X86_FSW_ES | X86_FSW_B;
         }
     }
