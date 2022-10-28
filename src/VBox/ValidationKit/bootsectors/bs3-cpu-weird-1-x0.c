@@ -791,15 +791,16 @@ static uint8_t bs3CpuWeird1_PcWrapping_Worker32(uint8_t bMode, RTSEL SelCode, ui
 }
 
 
-static uint8_t bs3CpuWeird1_PcWrapping_Worker64(uint8_t bMode, uint8_t BS3_FAR *pbPage1,
-                                                uint8_t BS3_FAR *pbPage2, uint32_t uFlatPage1,
+static uint8_t bs3CpuWeird1_PcWrapping_Worker64(uint8_t bMode, uint8_t BS3_FAR *pbBuf, uint32_t uFlatBuf,
                                                 void const BS3_FAR *pvTemplate, size_t cbTemplate, PCWRAPSETUP enmSetup)
 {
+    uint8_t BS3_FAR * const pbPage1 = pbBuf;                 /* mapped at 0, 4G and 8G */
+    uint8_t BS3_FAR * const pbPage2 = &pbBuf[X86_PAGE_SIZE]; /* mapped at -4K, 4G-4K and 8G-4K. */
     BS3TRAPFRAME            TrapCtx;
     BS3TRAPFRAME            TrapExpect;
     BS3REGCTX               Ctx;
-    unsigned                cbPage1;
-    unsigned                cbPage2;
+    unsigned                cbStart;
+    unsigned                cbEnd;
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
@@ -810,13 +811,13 @@ static uint8_t bs3CpuWeird1_PcWrapping_Worker64(uint8_t bMode, uint8_t BS3_FAR *
      * Create the expected result by first placing the code template
      * at the start of the buffer and giving it a quick run.
      */
-    Bs3MemCpy(&pbPage1[X86_PAGE_SIZE - cbTemplate], pvTemplate, cbTemplate);
-    pbPage2[0] = 0x0f;      /* ud2 */
-    pbPage2[1] = 0x0b;
+    Bs3MemCpy(pbPage1, pvTemplate, cbTemplate);
+    pbPage1[cbTemplate]     = 0x0f; /* ud2 */
+    pbPage1[cbTemplate + 1] = 0x0b;
 
     Bs3RegCtxSaveEx(&Ctx, bMode, 1024);
 
-    Ctx.rip.u = uFlatPage1 + X86_PAGE_SIZE - cbTemplate;
+    Ctx.rip.u = uFlatBuf;
     switch (enmSetup)
     {
         case kPcWrapSetup_None:
@@ -838,21 +839,41 @@ static uint8_t bs3CpuWeird1_PcWrapping_Worker64(uint8_t bMode, uint8_t BS3_FAR *
     /*
      * Unlike 16-bit mode, the instruction may cross the wraparound boundary,
      * so we test by advancing the template across byte-by-byte.
+     *
+     * Page #1 is mapped at address zero and Page #2 as the last one.
      */
-    for (cbPage1 = cbTemplate, cbPage2 = 0; cbPage1 > 0; cbPage1--, cbPage2++, g_usBs3TestStep++)
+    Bs3MemSet(pbBuf, 0xf1, X86_PAGE_SIZE * 2);
+    for (cbStart = cbTemplate, cbEnd = 0; cbStart > 0; cbStart--, cbEnd++)
     {
-        pbPage1[X86_PAGE_SIZE - cbPage1 - 1] = 0xcc;
-        Bs3MemCpy(&pbPage1[X86_PAGE_SIZE - cbPage1], pvTemplate, cbPage1);
-        Bs3MemCpy(pbPage2, &((uint8_t const *)pvTemplate)[cbPage1], cbPage2);
-        pbPage2[cbPage2]     = 0x0f;    /* ud2 */
-        pbPage2[cbPage2 + 1] = 0x0b;
+        pbPage2[X86_PAGE_SIZE - cbStart - 1] = 0xf1;
+        Bs3MemCpy(&pbPage2[X86_PAGE_SIZE - cbStart], pvTemplate, cbStart);
+        Bs3MemCpy(pbPage1, &((uint8_t const *)pvTemplate)[cbStart], cbEnd);
+        pbPage1[cbEnd]     = 0x0f;    /* ud2 */
+        pbPage1[cbEnd + 1] = 0x0b;
 
-        Ctx.rip.u = UINT64_MAX - cbPage1 + 1;
-        TrapExpect.Ctx.rip.u = cbPage2;
+        Ctx.rip.u            = UINT64_MAX - cbStart + 1;
+        TrapExpect.Ctx.rip.u = cbEnd;
 
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
         if (bs3CpuWeird1_ComparePcWrap(&TrapCtx, &TrapExpect))
             return 1;
+        g_usBs3TestStep++;
+
+        /* Also check that crossing 4G isn't buggered up in our code by
+           32-bit and 16-bit mode support.*/
+        Ctx.rip.u            = _4G - cbStart;
+        TrapExpect.Ctx.rip.u = _4G + cbEnd;
+        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+        if (bs3CpuWeird1_ComparePcWrap(&TrapCtx, &TrapExpect))
+            return 1;
+        g_usBs3TestStep++;
+
+        Ctx.rip.u            = _4G*2 - cbStart;
+        TrapExpect.Ctx.rip.u = _4G*2 + cbEnd;
+        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+        if (bs3CpuWeird1_ComparePcWrap(&TrapCtx, &TrapExpect))
+            return 1;
+        g_usBs3TestStep += 2;
     }
     return 0;
 }
@@ -927,7 +948,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping)(uint8_t bMode)
                     bs3CpuWeird1_PcWrapping_Worker16(bMode, SelCode, pbBuf, pbTail, pbAfter, s_aTemplates16[i].pfnStart,
                                                      (uintptr_t)s_aTemplates16[i].pfnEnd - (uintptr_t)s_aTemplates16[i].pfnStart,
                                                      s_aTemplates16[i].enmSetup);
-                g_usBs3TestStep = (g_usBs3TestStep + 16) & ~16;
+                g_usBs3TestStep = i * 256;
             }
 
             if (BS3_MODE_IS_V86(bMode))
@@ -943,14 +964,14 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping)(uint8_t bMode)
     else
     {
         /*
-         * For both 32-bit and 64-bit mode tests we only need a buffer with
-         * two pages.
+         * For 32-bit and 64-bit mode we just need two pages.
          */
-        uint8_t BS3_FAR *pbBuf = (uint8_t BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, X86_PAGE_SIZE * 2);
+        size_t const     cbBuf = X86_PAGE_SIZE * 2;
+        uint8_t BS3_FAR *pbBuf = (uint8_t BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, cbBuf);
         if (pbBuf)
         {
             uint32_t const uFlatBuf = Bs3SelPtrToFlat(pbBuf);
-            Bs3MemSet(pbBuf, 0xf1, X86_PAGE_SIZE * 2);
+            Bs3MemSet(pbBuf, 0xf1, cbBuf);
 
             /*
              * For 32-bit we set up a CS that starts with the 2nd page and
@@ -982,66 +1003,82 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping)(uint8_t bMode)
                                                      uFlatBuf + X86_PAGE_SIZE, Bs3SelLnkPtrToCurPtr(s_aTemplates32[i].pfnStart),
                                                      (uintptr_t)s_aTemplates32[i].pfnEnd - (uintptr_t)s_aTemplates32[i].pfnStart,
                                                      s_aTemplates32[i].enmSetup);
-                    g_usBs3TestStep = (g_usBs3TestStep + 16) & ~16;
+                    g_usBs3TestStep = i * 256;
                 }
 
                 bRet = 0;
             }
             /*
-             * For 64-bit we have to alias the two pages so they straddle address 0.
+             * For 64-bit we have to alias the two buffer pages to the first and
+             * last page in the address space. To test that the 32-bit 4G rollover
+             * isn't incorrectly applied to LM64, we repeat this mappingfor the 4G
+             * and 8G boundaries too.
+             *
              * This ASSUMES there is nothing important in page 0 when in LM64.
              */
             else
             {
-                int rc = Bs3PagingAlias(UINT64_MAX - X86_PAGE_SIZE + 1, uFlatBuf, X86_PAGE_SIZE,
-                                        X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
+                static const struct { uint64_t uDst; uint16_t off; } s_aMappings[] =
+                {
+                    { UINT64_MAX - X86_PAGE_SIZE + 1, X86_PAGE_SIZE * 1 },
+                    { UINT64_C(0),                    X86_PAGE_SIZE * 0 },
+#if 1 /* technically not required as we just repeat the same 4G address space in long mode: */
+                    { _4G - X86_PAGE_SIZE,            X86_PAGE_SIZE * 1 },
+                    { _4G,                            X86_PAGE_SIZE * 0 },
+                    { _4G*2 - X86_PAGE_SIZE,          X86_PAGE_SIZE * 1 },
+                    { _4G*2,                          X86_PAGE_SIZE * 0 },
+#endif
+                };
+                int      rc = VINF_SUCCESS;
+                unsigned iMap;
                 BS3_ASSERT(bMode == BS3_MODE_LM64);
+                for (iMap = 0; iMap < RT_ELEMENTS(s_aMappings) && RT_SUCCESS(rc); iMap++)
+                {
+                    rc = Bs3PagingAlias(s_aMappings[iMap].uDst, uFlatBuf + s_aMappings[iMap].off, X86_PAGE_SIZE,
+                                        X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
+                    if (RT_FAILURE(rc))
+                        Bs3TestFailedF("Bs3PagingAlias(%#RX64,...) failed: %d", s_aMappings[iMap].uDst, rc);
+                }
+
                 if (RT_SUCCESS(rc))
                 {
-                    rc = Bs3PagingAlias(UINT64_C(0), uFlatBuf + X86_PAGE_SIZE, X86_PAGE_SIZE,
-                                        X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-                    if (RT_SUCCESS(rc))
+                    static struct { FPFNBS3FAR pfnStart, pfnEnd; PCWRAPSETUP enmSetup; } const s_aTemplates64[] =
                     {
-                        static struct { FPFNBS3FAR pfnStart, pfnEnd; PCWRAPSETUP enmSetup; } const s_aTemplates64[] =
-                        {
-#define ENTRY64(a_Template, a_enmSetup)     { a_Template ## _c64, a_Template ## _c64_EndProc, a_enmSetup }
-                            ENTRY64(bs3CpuWeird1_PcWrapBenign1, kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapBenign2, kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapCpuId,   kPcWrapSetup_ZeroRax),
-                            ENTRY64(bs3CpuWeird1_PcWrapIn80,    kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapOut80,   kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapSmsw,    kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapRdCr0,   kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapRdDr0,   kPcWrapSetup_None),
-                            ENTRY64(bs3CpuWeird1_PcWrapWrDr0,   kPcWrapSetup_ZeroRax),
+#define ENTRY64(a_Template, a_enmSetup) { a_Template ## _c64, a_Template ## _c64_EndProc, a_enmSetup }
+                        ENTRY64(bs3CpuWeird1_PcWrapBenign1, kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapBenign2, kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapCpuId,   kPcWrapSetup_ZeroRax),
+                        ENTRY64(bs3CpuWeird1_PcWrapIn80,    kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapOut80,   kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapSmsw,    kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapRdCr0,   kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapRdDr0,   kPcWrapSetup_None),
+                        ENTRY64(bs3CpuWeird1_PcWrapWrDr0,   kPcWrapSetup_ZeroRax),
 #undef ENTRY64
-                        };
+                    };
 
-                        for (i = 0; i < RT_ELEMENTS(s_aTemplates64); i++)
-                        {
-                            bs3CpuWeird1_PcWrapping_Worker64(bMode, pbBuf, &pbBuf[X86_PAGE_SIZE], uFlatBuf,
-                                                             Bs3SelLnkPtrToCurPtr(s_aTemplates64[i].pfnStart),
-                                                                (uintptr_t)s_aTemplates64[i].pfnEnd
-                                                              - (uintptr_t)s_aTemplates64[i].pfnStart,
-                                                             s_aTemplates64[i].enmSetup);
-                            g_usBs3TestStep = (g_usBs3TestStep + 16) & ~16;
-                        }
-
-                        bRet = 0;
-
-                        Bs3PagingUnalias(UINT64_C(0), X86_PAGE_SIZE);
+                    for (i = 0; i < RT_ELEMENTS(s_aTemplates64); i++)
+                    {
+                        bs3CpuWeird1_PcWrapping_Worker64(bMode, pbBuf, uFlatBuf,
+                                                         Bs3SelLnkPtrToCurPtr(s_aTemplates64[i].pfnStart),
+                                                            (uintptr_t)s_aTemplates64[i].pfnEnd
+                                                          - (uintptr_t)s_aTemplates64[i].pfnStart,
+                                                         s_aTemplates64[i].enmSetup);
+                        g_usBs3TestStep = i * 256;
                     }
-                    else
-                        Bs3TestFailedF("Bs3PagingAlias(0...) failed: %d", rc);
-                    Bs3PagingUnalias(UINT64_MAX - X86_PAGE_SIZE + 1, X86_PAGE_SIZE);
+
+                    bRet = 0;
+
+                    Bs3PagingUnalias(UINT64_C(0), X86_PAGE_SIZE);
                 }
-                else
-                    Bs3TestFailedF("Bs3PagingAlias(0xfff...) failed: %d", rc);
+
+                while (iMap-- > 0)
+                    Bs3PagingUnalias(s_aMappings[iMap].uDst, X86_PAGE_SIZE);
             }
+            Bs3MemFree(pbBuf, cbBuf);
         }
         else
-            Bs3TestFailed("Failed to allocate 2 pages for tests.");
-        Bs3MemFree(pbBuf, X86_PAGE_SIZE * 2);
+            Bs3TestFailed("Failed to allocate 2-3 pages for tests.");
     }
 
     return bRet;
