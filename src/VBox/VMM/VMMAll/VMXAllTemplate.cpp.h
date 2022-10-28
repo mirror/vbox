@@ -2587,7 +2587,7 @@ static void vmxHCValidateSegmentRegs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         /* CS */
         AssertMsg((pCtx->cs.u64Base == (uint64_t)pCtx->cs.Sel << 4), ("CS base %#x %#x\n", pCtx->cs.u64Base, pCtx->cs.Sel));
         Assert(pCtx->cs.u32Limit == 0xffff);
-        Assert(u32CSAttr == 0xf3);
+        AssertMsg(u32CSAttr == 0xf3, ("cs=%#x %#x ", pCtx->cs.Sel, u32CSAttr));
         /* SS */
         Assert(pCtx->ss.u64Base == (uint64_t)pCtx->ss.Sel << 4);
         Assert(pCtx->ss.u32Limit == 0xffff);
@@ -6163,11 +6163,44 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
  */
 DECLINLINE(void) vmxHCAdvanceGuestRipBy(PVMCPUCC pVCpu, uint32_t cbInstr)
 {
-    /* Advance the RIP. */
-    pVCpu->cpum.GstCtx.rip += cbInstr;
-    ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP);
-    CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
-    /** @todo clear RF? */
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI);
+
+    /*
+     * Advance RIP.
+     *
+     * The upper 32 bits are only set when in 64-bit mode, so we have to detect
+     * when the addition causes a "carry" into the upper half and check whether
+     * we're in 64-bit and can go on with it or wether we should zap the top
+     * half. (Note! The 8086, 80186 and 80286 emulation is done exclusively in
+     * IEM, so we don't need to bother with pre-386 16-bit wraparound.)
+     *
+     * See PC wrap around tests in bs3-cpu-weird-1.
+     */
+    uint64_t const uRipPrev = pVCpu->cpum.GstCtx.rip;
+    uint64_t const uRipNext = uRipPrev + cbInstr;
+    if (RT_LIKELY(   !((uRipNext ^ uRipPrev) & RT_BIT_64(32))
+                  || CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx)))
+        pVCpu->cpum.GstCtx.rip = uRipNext;
+    else
+        pVCpu->cpum.GstCtx.rip = (uint32_t)uRipNext;
+
+    /*
+     * Clear RF and interrupt shadowing.
+     */
+    if (RT_LIKELY(!(pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_RF | X86_EFL_TF))))
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~CPUMCTX_INHIBIT_SHADOW;
+    else
+    {
+        if ((pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_RF | X86_EFL_TF)) == X86_EFL_TF)
+        {
+            /** @todo \#DB - single step. */
+        }
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
+    }
+    AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
+
+    /* Mark both RIP and RFLAGS as updated. */
+    ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
 }
 
 
