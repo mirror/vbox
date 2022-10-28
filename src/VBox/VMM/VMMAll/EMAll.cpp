@@ -821,7 +821,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndType(PVMCPUCC pVCpu, uint32_t u
 VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPUCC pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    Assert(uFlatPC != UINT64_MAX);
+    //Assert(uFlatPC != UINT64_MAX); - disable to make the pc wrapping tests in bs3-cpu-weird-1 work.
 
     /*
      * Do the updating.
