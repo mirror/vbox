@@ -246,6 +246,7 @@ static BOOL CALLBACK rtDbgModDbgHelpCopyLineNumberCallback(PSRCCODEINFOW pLineIn
     /** @todo we could combine RTUtf16Len and memcmp... */
     size_t cbLen  = (RTUtf16Len(pLineInfo->FileName) + 1) * sizeof(RTUTF16);
     if (   !pArgs->pwszPrev
+        || pArgs->cbPrevUtf16Alloc < cbLen
         || memcmp(pArgs->pwszPrev, pLineInfo->FileName, cbLen) )
     {
         if (pArgs->cbPrevUtf16Alloc >= cbLen)
