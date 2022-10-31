@@ -126,6 +126,9 @@ public:
     /** Inserts a passed @a strKey into action @a strText. */
     static QString insertKeyToActionText(const QString &strText, const QString &strKey);
 
+    /** Returns whether we are performing translation currently. */
+    static bool isTranslationInProgress();
+
 private:
 
     /** Constructs translator passing @a pParent to the base-class. */
@@ -150,6 +153,9 @@ private:
 
     /** Holds the singleton instance. */
     static UITranslator *s_pTranslator;
+
+    /** Holds whether we are performing translation currently. */
+    static bool  s_fTranslationInProgress;
 
     /** Holds the currently loaded language ID. */
     static QString  s_strLoadedLanguageId;

@@ -76,6 +76,7 @@ static const PortConfig kComKnownPorts[] =
 
 /* static */
 UITranslator *UITranslator::s_pTranslator = 0;
+bool UITranslator::s_fTranslationInProgress = false;
 QString UITranslator::s_strLoadedLanguageId = UITranslator::vboxBuiltInLanguageName();
 
 /* static */
@@ -142,6 +143,11 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
         }
     }
 
+    /* Lock listener: */
+    s_fTranslationInProgress = true;
+    /* A list of translators to install: */
+    QList<QTranslator*> translators;
+
     /* Delete the old translator if there is one: */
     if (s_pTranslator)
     {
@@ -164,7 +170,7 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
         }
         /* We install the translator in any case: on failure, this will
          * activate an empty translator that will give us English (built-in): */
-        qApp->installTranslator(s_pTranslator);
+        translators << s_pTranslator;
     }
     else
         fLoadOk = false;
@@ -188,7 +194,7 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
         QTranslator *pQtSysTr = new QTranslator(s_pTranslator);
         Assert(pQtSysTr);
         if (pQtSysTr && pQtSysTr->load(strLanguageFileName))
-            qApp->installTranslator(pQtSysTr);
+            translators << pQtSysTr;
         // Note that the Qt translation supplied by Oracle is always loaded
         // afterwards to make sure it will take precedence over the system
         // translation (it may contain more decent variants of translation
@@ -204,7 +210,7 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
         QTranslator *pQtTr = new QTranslator(s_pTranslator);
         Assert(pQtTr);
         if (pQtTr && (fLoadOk = pQtTr->load(strLanguageFileName)))
-            qApp->installTranslator(pQtTr);
+            translators << pQtTr;
         /* The below message doesn't fit 100% (because it's an additional
          * language and the main one won't be reset to built-in on failure)
          * but the load failure is so rare here that it's not worth a separate
@@ -219,6 +225,23 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
     // Manually trigger an update.
     ::darwinRetranslateAppMenu();
 #endif
+
+    /* Iterate through all the translators: */
+    for (int i = 0; i < translators.size(); ++i)
+    {
+        /* Unlock listener before the last one translator: */
+        if (i == translators.size() - 1)
+        {
+            QCoreApplication::sendPostedEvents(0, QEvent::LanguageChange);
+            s_fTranslationInProgress = false;
+        }
+
+        /* Install current one: */
+        qApp->installTranslator(translators.at(i));
+    }
+
+    /* Unlock listener in case if it's still locked: */
+    s_fTranslationInProgress = false;
 }
 
 /* static */
@@ -759,6 +782,12 @@ QString UITranslator::insertKeyToActionText(const QString &strText, const QStrin
         return strText;
     else
         return strPattern.arg(strText).arg(QKeySequence(strKey).toString(QKeySequence::NativeText));
+}
+
+/* static */
+bool UITranslator::isTranslationInProgress()
+{
+    return s_fTranslationInProgress;
 }
 
 UITranslator::UITranslator(QObject *pParent /* = 0 */)
