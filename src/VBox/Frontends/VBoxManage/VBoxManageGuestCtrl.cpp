@@ -1685,104 +1685,34 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
 
     HRESULT hrc = S_OK;
 
-    bool fDstIsDir = false;
+    com::SafeArray<IN_BSTR> aSources;
+    com::SafeArray<IN_BSTR> aFilters; /** @todo Populate those? For now we use caller-based globbing. */
+    com::SafeArray<IN_BSTR> aCopyFlags;
 
-    if (!fHostToGuest)
+    size_t iSrc = 0;
+    for (; iSrc < cSources; iSrc++)
     {
-        RTFSOBJINFO ObjInfo;
-        vrc = RTPathQueryInfo(szAbsDst, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(vrc))
-        {
-            fDstIsDir = RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode);
-        }
-        else if (   RT_FAILURE(vrc)
-                 && vrc != VERR_FILE_NOT_FOUND) /* Destination file on the host might not exist yet, which is fine. */
-                return RTMsgErrorExitFailure(GuestCtrl::tr("RTPathQueryInfo failed on '%s': %Rrc"), szAbsDst, vrc);
-    }
-    else
-    {
-        BOOL fDirExists = FALSE;
-        hrc = pCtx->pGuestSession->DirectoryExists(Bstr(pszDst).raw(), TRUE /* fFollowSymlinks */, &fDirExists);
-        if (SUCCEEDED(hrc))
-            fDstIsDir = RT_BOOL(fDirExists);
-    }
+        aSources.push_back(Bstr(papszSources[iSrc]).raw());
+        aFilters.push_back(Bstr("").raw()); /* Empty for now. See @todo above. */
 
-    /* If multiple sources are specified, the destination must be a directory. */
-    fDstMustBeDir = cSources > 1;
-
-    /* If destination must be a directory, check this first before everything else. */
-    if (    fDstMustBeDir
-        && !fDstIsDir)
-    {
-        return RTMsgErrorExitFailure(GuestCtrl::tr("Destination must be a directory!"));
-    }
-
-    for (size_t iSrc = 0; iSrc < cSources; iSrc++)
-    {
-        /*
-         * Note: Having a dedicated progress object on every single source being copied can be very slow.
-         *       We implement IGuestSession::Copy[From|To]Guest() since quite a while which does most of the below
-         *       under the hood in Main using a multi-staged progress object. However, leave this like it is for now
-         *       to (also) have a different method of API testing.
-         */
-        ComPtr<IProgress> pProgress;
-        const char       *pszSource = papszSources[iSrc];
-
-        /* Note: Wildcards have to be processed by the calling process (i.e. via globbing, if available). */
-
+        /* Compile the comma-separated list of flags.
+         * Certain flags are only available for specific file system objects, e.g. directories. */
+        bool fIsDir = false;
         if (fHostToGuest)
         {
-            /*
-             * Source is host, destination guest.
-             */
-            char szAbsSrc[RTPATH_MAX];
-            vrc = RTPathAbs(pszSource, szAbsSrc, sizeof(szAbsSrc));
+            RTFSOBJINFO ObjInfo;
+            vrc = RTPathQueryInfo(papszSources[iSrc], &ObjInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_SUCCESS(vrc))
-            {
-                RTFSOBJINFO ObjInfo;
-                vrc = RTPathQueryInfo(szAbsSrc, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-                if (RT_SUCCESS(vrc))
-                {
-                    if (RTFS_IS_FILE(ObjInfo.Attr.fMode))
-                    {
-                        if (pCtx->cVerbose)
-                            RTPrintf(GuestCtrl::tr("File '%s' -> '%s'\n"), szAbsSrc, pszDst);
+                fIsDir = RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode);
 
-                        SafeArray<FileCopyFlag_T> aCopyFlags;
-                        hrc = pCtx->pGuestSession->FileCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
-                                                                   ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
-                    }
-                    else if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
-                    {
-                        if (pCtx->cVerbose)
-                            RTPrintf(GuestCtrl::tr("Directory '%s' -> '%s'\n"), szAbsSrc, pszDst);
-
-                        SafeArray<DirectoryCopyFlag_T> aCopyFlags;
-                        aCopyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
-                        if (fRecursive)
-                            aCopyFlags.push_back(DirectoryCopyFlag_Recursive);
-                        if (fFollow)
-                            aCopyFlags.push_back(DirectoryCopyFlag_FollowLinks);
-                        hrc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
-                                                                        ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
-                    }
-                    else
-                        rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("Not a file or directory: %s\n"), szAbsSrc);
-                }
-                else
-                    rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("RTPathQueryInfo failed on '%s': %Rrc"), szAbsSrc, vrc);
-            }
-            else
-                rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("RTPathAbs failed on '%s': %Rrc"), pszSource, vrc);
+            if (RT_FAILURE(vrc))
+                break;
         }
-        else
+        else /* Guest to host. */
         {
-            /*
-             * Source guest, destination host.
-             */
-            /* We need to query the source type on the guest first in order to know which copy flavor we need. */
             ComPtr<IGuestFsObjInfo> pFsObjInfo;
-            hrc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszSource).raw(), TRUE  /* fFollowSymlinks */, pFsObjInfo.asOutParam());
+            hrc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(papszSources[iSrc]).raw(), RT_BOOL(fFollow) /* fFollowSymlinks */,
+                                                      pFsObjInfo.asOutParam());
             if (SUCCEEDED(hrc))
             {
                 FsObjType_T enmObjType;
@@ -1790,57 +1720,61 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 if (SUCCEEDED(hrc))
                 {
                     /* Take action according to source file. */
-                    if (enmObjType == FsObjType_Directory)
-                    {
-                        if (pCtx->cVerbose)
-                            RTPrintf(GuestCtrl::tr("Directory '%s' -> '%s'\n"), pszSource, pszDst);
-
-                        SafeArray<DirectoryCopyFlag_T> aCopyFlags;
-                        aCopyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
-                        if (fRecursive)
-                            aCopyFlags.push_back(DirectoryCopyFlag_Recursive);
-                        if (fFollow)
-                            aCopyFlags.push_back(DirectoryCopyFlag_FollowLinks);
-                        hrc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
-                                                                          ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
-                    }
-                    else if (enmObjType == FsObjType_File)
-                    {
-                        if (pCtx->cVerbose)
-                            RTPrintf(GuestCtrl::tr("File '%s' -> '%s'\n"), pszSource, pszDst);
-
-                        SafeArray<FileCopyFlag_T> aCopyFlags;
-                        if (fFollow)
-                            aCopyFlags.push_back(FileCopyFlag_FollowLinks);
-                        hrc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
-                                                                     ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
-                    }
-                    else
-                        rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("Not a file or directory: %s\n"), pszSource);
+                    fIsDir = enmObjType == FsObjType_Directory;
                 }
-                else
-                    rcExit = RTEXITCODE_FAILURE;
             }
-            else
-                rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("FsObjQueryInfo failed on '%s': %Rhrc"), pszSource, hrc);
+
+            if (FAILED(hrc))
+            {
+                vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
+                break;
+            }
         }
 
-        if (FAILED(hrc))
-        {
-            vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
-        }
-        else if (pProgress.isNotNull())
-        {
-            if (pCtx->cVerbose)
-                hrc = showProgress(pProgress);
-            else
-                hrc = pProgress->WaitForCompletion(-1 /* No timeout */);
-            if (SUCCEEDED(hrc))
-                CHECK_PROGRESS_ERROR(pProgress, (GuestCtrl::tr("File copy failed")));
-            vrc = gctlPrintProgressError(pProgress);
-        }
+        if (pCtx->cVerbose)
+            RTPrintf(GuestCtrl::tr("Source '%s' is a %s\n"), papszSources[iSrc], fIsDir ? "directory" : "file");
 
-        /* Keep going. */
+        Utf8Str strCopyFlags;
+        if (fRecursive && fIsDir) /* Only available for directories. Just ignore otherwise. */
+            strCopyFlags += "Recursive,";
+        if (fIsDir)
+            strCopyFlags += "CopyIntoExisting,"; /* Implicit. */
+        if (fFollow)
+            strCopyFlags += "FollowLinks,";
+       aCopyFlags.push_back(Bstr(strCopyFlags).raw());
+    }
+
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExitFailure(GuestCtrl::tr("Error looking file system information for source '%s', rc=%Rrc"),
+                                     papszSources[iSrc], vrc);
+
+    ComPtr<IProgress> pProgress;
+    if (fHostToGuest)
+    {
+        hrc = pCtx->pGuestSession->CopyToGuest(ComSafeArrayAsInParam(aSources),
+                                               ComSafeArrayAsInParam(aFilters), ComSafeArrayAsInParam(aCopyFlags),
+                                               Bstr(pszDst).raw(), pProgress.asOutParam());
+    }
+    else /* Guest to host. */
+    {
+        hrc = pCtx->pGuestSession->CopyFromGuest(ComSafeArrayAsInParam(aSources),
+                                                 ComSafeArrayAsInParam(aFilters), ComSafeArrayAsInParam(aCopyFlags),
+                                                 Bstr(pszDst).raw(), pProgress.asOutParam());
+    }
+
+    if (FAILED(hrc))
+    {
+        vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
+    }
+    else if (pProgress.isNotNull())
+    {
+        if (pCtx->cVerbose)
+            hrc = showProgress(pProgress);
+        else
+            hrc = pProgress->WaitForCompletion(-1 /* No timeout */);
+        if (SUCCEEDED(hrc))
+            CHECK_PROGRESS_ERROR(pProgress, (GuestCtrl::tr("File copy failed")));
+        vrc = gctlPrintProgressError(pProgress);
     }
 
     if (RT_FAILURE(vrc))
