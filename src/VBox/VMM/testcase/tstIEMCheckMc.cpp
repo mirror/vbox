@@ -574,8 +574,6 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_END() \
     }
 
-#define IEM_MC_PAUSE()                                  do { (void)fMcBegin; } while (0)
-#define IEM_MC_CONTINUE()                               do { (void)fMcBegin; } while (0)
 #define IEM_MC_ADVANCE_RIP()                            do { (void)fMcBegin; } while (0)
 #define IEM_MC_REL_JMP_S8(a_i8)                         do { (void)fMcBegin; CHK_TYPE(int8_t, a_i8); } while (0)
 #define IEM_MC_REL_JMP_S16(a_i16)                       do { (void)fMcBegin; CHK_TYPE(int16_t, a_i16); } while (0)
