@@ -244,11 +244,18 @@ typedef struct INTNETIF
     PINTNETBUF              pIntBufDefault;
     /** Pointer to ring-3 mapping of the default exchange buffer. */
     R3PTRTYPE(PINTNETBUF)   pIntBufDefaultR3;
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
     /** Event semaphore which a receiver/consumer thread will sleep on while
      * waiting for data to arrive. */
     RTSEMEVENT volatile     hRecvEvent;
     /** Number of threads sleeping on the event semaphore. */
     uint32_t volatile       cSleepers;
+#else
+    /** The callback to call when there is something to receive/consume. */
+    PFNINTNETIFRECVAVAIL    pfnRecvAvail;
+    /** Opaque user data to pass to the receive avail callback (pfnRecvAvail). */
+    void                   *pvUserRecvAvail;
+#endif
     /** The interface handle.
      * When this is INTNET_HANDLE_INVALID a sleeper which is waking up
      * should return with the appropriate error condition. */
@@ -2832,6 +2839,19 @@ static int intnetR0RingWriteFrame(PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTM
 }
 
 
+/** 
+ * Notifies consumers of incoming data from @a pIf that data is available.
+ */ 
+DECL_FORCE_INLINE(void) intnetR0IfNotifyRecv(PINTNETIF pIf)
+{
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
+    RTSemEventSignal(pIf->hRecvEvent);
+#else
+    pIf->pfnRecvAvail(pIf->hIf, pIf->pvUserRecvAvail);
+#endif
+}
+
+
 /**
  * Sends a frame to a specific interface.
  *
@@ -2851,7 +2871,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
     if (RT_SUCCESS(rc))
     {
         pIf->cYields = 0;
-        RTSemEventSignal(pIf->hRecvEvent);
+        intnetR0IfNotifyRecv(pIf);
         return;
     }
 
@@ -2869,7 +2889,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
         unsigned cYields = 2;
         while (--cYields > 0)
         {
-            RTSemEventSignal(pIf->hRecvEvent);
+            intnetR0IfNotifyRecv(pIf);
             RTThreadYield();
 
             RTSpinlockAcquire(pIf->hRecvInSpinlock);
@@ -2878,7 +2898,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
             if (RT_SUCCESS(rc))
             {
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsOk);
-                RTSemEventSignal(pIf->hRecvEvent);
+                intnetR0IfNotifyRecv(pIf);
                 return;
             }
             pIf->cYields++;
@@ -2888,7 +2908,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
 
     /* ok, the frame is lost. */
     STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatLost);
-    RTSemEventSignal(pIf->hRecvEvent);
+    intnetR0IfNotifyRecv(pIf);
 }
 
 
@@ -4666,7 +4686,11 @@ INTNETR0DECL(int) IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, ui
         return VERR_INVALID_HANDLE;
     }
 
-    const RTSEMEVENT hRecvEvent   = pIf->hRecvEvent;
+#if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
+    AssertReleaseFailed(); /* Should never be called. */
+    return VERR_NOT_SUPPORTED;
+#else
+    const RTSEMEVENT hRecvEvent  = pIf->hRecvEvent;
     const bool       fNoMoreWaits = ASMAtomicUoReadBool(&pIf->fNoMoreWaits);
     RTNATIVETHREAD   hDtorThrd;
     ASMAtomicReadHandle(&pIf->hDestructorThread, &hDtorThrd);
@@ -4720,6 +4744,7 @@ INTNETR0DECL(int) IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, ui
 
     Log4(("IntNetR0IfWait: returns %Rrc\n", rc));
     return rc;
+#endif
 }
 
 
@@ -4764,6 +4789,10 @@ INTNETR0DECL(int) IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSessio
         return VERR_INVALID_HANDLE;
     }
 
+#if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
+    AssertReleaseFailed();
+    return VERR_NOT_SUPPORTED;
+#else
     const RTSEMEVENT hRecvEvent  = pIf->hRecvEvent;
     RTNATIVETHREAD   hDtorThrd;
     ASMAtomicReadHandle(&pIf->hDestructorThread, &hDtorThrd);
@@ -4806,6 +4835,7 @@ INTNETR0DECL(int) IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSessio
 
     Log4(("IntNetR0IfWait: returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
+#endif
 }
 
 
@@ -4850,6 +4880,7 @@ INTNETR0DECL(int) IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
     /* Mark the handle as freed so intnetR0IfDestruct won't free it again. */
     ASMAtomicWriteU32(&pIf->hIf, INTNET_HANDLE_INVALID);
 
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
     /*
      * Signal the event semaphore to wake up any threads in IntNetR0IfWait
      * and give them a moment to get out and release the interface.
@@ -4861,6 +4892,7 @@ INTNETR0DECL(int) IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
         RTThreadYield();
     }
     RTSemEventSignal(pIf->hRecvEvent);
+#endif
 
     /*
      * Release the references to the interface object (handle + free lookup).
@@ -4999,6 +5031,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
 
     RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
     /*
      * Wakeup anyone waiting on this interface. (Kind of unlikely, but perhaps
      * not quite impossible.)
@@ -5030,6 +5063,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
         RTSemEventDestroy(hRecvEvent);
         pIf->hRecvEvent = NIL_RTSEMEVENT;
     }
+#endif
 
     /*
      * Unmap user buffer.
@@ -5079,17 +5113,19 @@ static DECLCALLBACK(int) intnetR0TrunkReconnectThread(RTTHREAD hThread, void *pv
  * opened so the interface destructor can close it.
  *
  * @returns VBox status code.
- * @param   pNetwork    The network, referenced.  The reference is consumed on
- *                      success.
- * @param   pSession    The session handle.
- * @param   cbSend      The size of the send buffer.
- * @param   cbRecv      The size of the receive buffer.
- * @param   fFlags      The open network flags.
- * @param   phIf        Where to store the interface handle.
+ * @param   pNetwork        The network, referenced.  The reference is consumed
+ *                          on success.
+ * @param   pSession        The session handle.
+ * @param   cbSend          The size of the send buffer.
+ * @param   cbRecv          The size of the receive buffer.
+ * @param   fFlags          The open network flags.
+ * @param   pfnRecvAvail    The receive available callback to call instead of
+ *                          signalling the semaphore (R3 service only).
+ * @param   pvUser          The opaque user data to pass to the callback.
+ * @param   phIf            Where to store the interface handle.
  */
-static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession,
-                                   unsigned cbSend, unsigned cbRecv, uint32_t fFlags,
-                                   PINTNETIFHANDLE phIf)
+static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession, unsigned cbSend, unsigned cbRecv,
+                                   uint32_t fFlags, PFNINTNETIFRECVAVAIL pfnRecvAvail, void *pvUser, PINTNETIFHANDLE phIf)
 {
     LogFlow(("intnetR0NetworkCreateIf: pNetwork=%p pSession=%p cbSend=%u cbRecv=%u fFlags=%#x phIf=%p\n",
              pNetwork, pSession, cbSend, cbRecv, fFlags, phIf));
@@ -5099,6 +5135,11 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
      */
     AssertPtr(pNetwork);
     AssertPtr(phIf);
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
+    Assert(pfnRecvAvail == NULL);
+    Assert(pvUser == NULL);
+    RT_NOREF(pfnRecvAvail, pvUser);
+#endif
 
     /*
      * Adjust the flags with defaults for the interface policies.
@@ -5135,7 +5176,12 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     //pIf->pIntBufR3        = NIL_RTR3PTR;
     //pIf->pIntBufDefault   = 0;
     //pIf->pIntBufDefaultR3 = NIL_RTR3PTR;
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
     pIf->hRecvEvent         = NIL_RTSEMEVENT;
+#else
+    pIf->pfnRecvAvail       = pfnRecvAvail;
+    pIf->pvUserRecvAvail    = pvUser;
+#endif
     //pIf->cSleepers        = 0;
     pIf->hIf                = INTNET_HANDLE_INVALID;
     pIf->hDestructorThread  = NIL_RTNATIVETHREAD;
@@ -5153,8 +5199,10 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                                      !!(pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE));
     if (RT_SUCCESS(rc))
         rc = intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, (PINTNETDSTTAB *)&pIf->pDstTab);
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
     if (RT_SUCCESS(rc))
         rc = RTSemEventCreate((PRTSEMEVENT)&pIf->hRecvEvent);
+#endif
     if (RT_SUCCESS(rc))
         rc = RTSpinlockCreate(&pIf->hRecvInSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "hRecvInSpinlock");
     if (RT_SUCCESS(rc))
@@ -5247,8 +5295,13 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 
     RTSpinlockDestroy(pIf->hRecvInSpinlock);
     pIf->hRecvInSpinlock = NIL_RTSPINLOCK;
+#if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
     RTSemEventDestroy(pIf->hRecvEvent);
     pIf->hRecvEvent = NIL_RTSEMEVENT;
+#else
+    pIf->pfnRecvAvail    = NULL;
+    pIf->pvUserRecvAvail = NULL;
+#endif
     RTMemFree(pIf->pDstTab);
     for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End; i++)
         intnetR0IfAddrCacheDestroy(&pIf->aAddrCache[i]);
@@ -6593,14 +6646,19 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
  * @param   enmTrunkType    The trunk type.
  * @param   pszTrunk        The trunk name. Its meaning is specific to the type.
  * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
- * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
+ * @param   fRestrictAccess Whether new participants should be subjected to
+ *                          access check or not.
  * @param   cbSend          The send buffer size.
  * @param   cbRecv          The receive buffer size.
+ * @param   pfnRecvAvail    The receive available callback to call instead of 
+ *                          signalling the semaphore (R3 service only).
+ * @param   pvUser          The opaque user data to pass to the callback.
  * @param   phIf            Where to store the handle to the network interface.
  */
 INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
                                INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
-                               uint32_t cbSend, uint32_t cbRecv, PINTNETIFHANDLE phIf)
+                               uint32_t cbSend, uint32_t cbRecv, PFNINTNETIFRECVAVAIL pfnRecvAvail, void *pvUser, 
+                               PINTNETIFHANDLE phIf)
 {
     LogFlow(("IntNetR0Open: pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x cbSend=%u cbRecv=%u phIf=%p\n",
              pSession, pszNetwork, pszNetwork, enmTrunkType, pszTrunk, pszTrunk, fFlags, cbSend, cbRecv, phIf));
@@ -6674,7 +6732,7 @@ INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
     rc = intnetR0OpenNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
     if (RT_SUCCESS(rc))
     {
-        rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, fFlags, phIf);
+        rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, fFlags, pfnRecvAvail, pvUser, phIf);
         if (RT_SUCCESS(rc))
         {
             intnetR0AdaptOpenNetworkFlags(pNetwork, fFlags);
@@ -6688,7 +6746,7 @@ INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
         rc = intnetR0CreateNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
         if (RT_SUCCESS(rc))
         {
-            rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, fFlags, phIf);
+            rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, fFlags, pfnRecvAvail, pvUser, phIf);
             if (RT_FAILURE(rc))
                 SUPR0ObjRelease(pNetwork->pvObj, pSession);
         }
@@ -6712,8 +6770,19 @@ INTNETR0DECL(int) IntNetR0OpenReq(PSUPDRVSESSION pSession, PINTNETOPENREQ pReq)
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
     return IntNetR0Open(pSession, &pReq->szNetwork[0], pReq->enmTrunkType, pReq->szTrunk,
-                        pReq->fFlags, pReq->cbSend, pReq->cbRecv, &pReq->hIf);
+                        pReq->fFlags, pReq->cbSend, pReq->cbRecv, NULL /*pfnRecvAvail*/, NULL /*pvUser*/, &pReq->hIf);
 }
+
+
+#if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
+INTNETR3DECL(int) IntNetR3Open(PSUPDRVSESSION pSession, const char *pszNetwork,
+                               INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
+                               uint32_t cbSend, uint32_t cbRecv, PFNINTNETIFRECVAVAIL pfnRecvAvail, void *pvUser, 
+                               PINTNETIFHANDLE phIf)
+{
+    return IntNetR0Open(pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, cbSend, cbRecv, pfnRecvAvail, pvUser, phIf);
+}
+#endif
 
 
 /**

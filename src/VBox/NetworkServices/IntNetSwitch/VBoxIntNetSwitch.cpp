@@ -52,6 +52,11 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
@@ -115,14 +120,12 @@ typedef struct SUPDRVSESSION
     PSUPDRVUSAGE volatile           pUsage;
     /** The XPC connection handle for this session. */
     xpc_connection_t                hXpcCon;
-    /** The receive wait thread. */
-    RTTHREAD                        hThrdRecv;
     /** The intnet interface handle to wait on. */
     INTNETIFHANDLE                  hIfWait;
-    /** The event semaphore for the receive thread. */
-    RTSEMEVENT                      hEvtRecv;
-    /** Flag whether to terminate the receive thread. */
-    bool volatile                   fTerminate;
+    /** Flag whether a receive wait was initiated. */
+    bool volatile                   fRecvWait;
+    /** Flag whether there is something to receive. */
+    bool volatile                   fRecvAvail;
 } SUPDRVSESSION;
 
 
@@ -356,24 +359,12 @@ static uint32_t intnetR3SessionDestroy(PSUPDRVSESSION pSession)
 {
     PSUPDRVDEVEXT pDevExt = pSession->pDevExt;
     uint32_t cRefs = ASMAtomicDecU32(&pDevExt->cRefs);
+    xpc_transaction_end();
     xpc_connection_set_context(pSession->hXpcCon, NULL);
     xpc_connection_cancel(pSession->hXpcCon);
     pSession->hXpcCon = NULL;
-    xpc_transaction_end();
 
-    /* Tear down the receive wait thread. */
-    ASMAtomicXchgBool(&pSession->fTerminate, true);
-    RTSemEventSignal(pSession->hEvtRecv);
-
-    if (pSession->hThrdRecv != NIL_RTTHREAD)
-    {
-        int rc = RTThreadWait(pSession->hThrdRecv, 5000, NULL);
-        AssertRC(rc);
-        pSession->hThrdRecv = NIL_RTTHREAD;
-    }
-
-    RTSemEventDestroy(pSession->hEvtRecv);
-    pSession->hEvtRecv = NIL_RTSEMEVENT;
+    ASMAtomicXchgBool(&pSession->fRecvAvail, true);
 
     if (pSession->pUsage)
     {
@@ -421,7 +412,7 @@ static uint32_t intnetR3SessionDestroy(PSUPDRVSESSION pSession)
         }
 
         RTCritSectLeave(&pDevExt->CritSect);
-        AssertMsg(!pSession->pUsage, ("Some buster reregistered an object during desturction!\n"));
+        AssertMsg(!pSession->pUsage, ("Some buster reregistered an object during destruction!\n"));
     }
 
     RTMemFree(pSession);
@@ -430,42 +421,21 @@ static uint32_t intnetR3SessionDestroy(PSUPDRVSESSION pSession)
 
 
 /**
- * Asynchronous I/O thread for handling receive.
- *
- * @returns VINF_SUCCESS (ignored).
- * @param   hThreadSelf     Thread handle.
- * @param   pvUser          Pointer to a DRVINTNET structure.
+ * Data available in th receive buffer callback.
  */
-static DECLCALLBACK(int) intnetR3RecvThread(RTTHREAD hThreadSelf, void *pvUser)
+static DECLCALLBACK(void) intnetR3RecvAvail(INTNETIFHANDLE hIf, void *pvUser)
 {
-    RT_NOREF(hThreadSelf);
+    RT_NOREF(hIf);
     PSUPDRVSESSION pSession = (PSUPDRVSESSION)pvUser;
 
-    for (;;)
+    if (ASMAtomicXchgBool(&pSession->fRecvWait, false))
     {
-        if (pSession->fTerminate)
-            break;
-
-        RTSemEventWait(pSession->hEvtRecv, RT_INDEFINITE_WAIT);
-        if (pSession->fTerminate)
-            break;
-
-        int rc = IntNetR0IfWait(pSession->hIfWait, pSession, 30000); /* 30s - don't wait forever, timeout now and then. */
-        if (RT_SUCCESS(rc))
-        {
-            /* Send an empty message. */
-            xpc_object_t hObjPoke = xpc_dictionary_create(NULL, NULL, 0);
-            xpc_connection_send_message(pSession->hXpcCon, hObjPoke);
-        }
-        else if (   rc != VERR_TIMEOUT
-                 && rc != VERR_INTERRUPTED)
-        {
-            LogFlow(("intnetR3RecvThread: returns %Rrc\n", rc));
-            return rc;
-        }
+        /* Send an empty message. */
+        xpc_object_t hObjPoke = xpc_dictionary_create(NULL, NULL, 0);
+        xpc_connection_send_message(pSession->hXpcCon, hObjPoke);
     }
-
-    return VINF_SUCCESS;
+    else
+        ASMAtomicXchgBool(&pSession->fRecvAvail, true);
 }
 
 
@@ -499,7 +469,9 @@ static void intnetR3RequestProcess(xpc_connection_t hCon, xpc_object_t hObj, PSU
             {
                 if (cbReq == sizeof(INTNETOPENREQ))
                 {
-                    rc = IntNetR0OpenReq(pSession, &ReqReply.OpenReq);
+                    rc = IntNetR3Open(pSession, &ReqReply.OpenReq.szNetwork[0], ReqReply.OpenReq.enmTrunkType, ReqReply.OpenReq.szTrunk,
+                                      ReqReply.OpenReq.fFlags, ReqReply.OpenReq.cbSend, ReqReply.OpenReq.cbRecv,
+                                      intnetR3RecvAvail, pSession, &ReqReply.OpenReq.hIf);
                     cbReply = sizeof(INTNETOPENREQ);
                 }
                 else
@@ -524,10 +496,16 @@ static void intnetR3RequestProcess(xpc_connection_t hCon, xpc_object_t hObj, PSU
                     rc = IntNetR0IfGetBufferPtrsReq(pSession, &ReqReply.IfGetBufferPtrsReq);
                     /* This is special as we need to return a shared memory segment. */
                     xpc_object_t hObjReply = xpc_dictionary_create_reply(hObj);
-                    xpc_dictionary_set_int64(hObjReply, "rc", rc);
                     xpc_object_t hObjShMem = xpc_shmem_create(ReqReply.IfGetBufferPtrsReq.pRing3Buf, ReqReply.IfGetBufferPtrsReq.pRing3Buf->cbBuf);
-                    xpc_dictionary_set_value(hObjReply, "buf-ptr", hObjShMem);
-                    xpc_release(hObjShMem);
+                    if (hObjShMem)
+                    {
+                        xpc_dictionary_set_value(hObjReply, "buf-ptr", hObjShMem);
+                        xpc_release(hObjShMem);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+
+                    xpc_dictionary_set_uint64(hObjReply, "rc", INTNET_R3_SVC_SET_RC(rc));
                     xpc_connection_send_message(hCon, hObjReply);
                     return;
                 }
@@ -583,8 +561,15 @@ static void intnetR3RequestProcess(xpc_connection_t hCon, xpc_object_t hObj, PSU
             {
                 if (cbReq == sizeof(INTNETIFWAITREQ))
                 {
-                    pSession->hIfWait = ReqReply.IfWaitReq.hIf; /* Asynchronous. */
-                    rc = RTSemEventSignal(pSession->hEvtRecv);
+                    ASMAtomicXchgBool(&pSession->fRecvWait, true);
+                    if (ASMAtomicXchgBool(&pSession->fRecvAvail, false))
+                    {
+                        ASMAtomicXchgBool(&pSession->fRecvWait, false);
+
+                        /* Send an empty message. */
+                        xpc_object_t hObjPoke = xpc_dictionary_create(NULL, NULL, 0);
+                        xpc_connection_send_message(pSession->hXpcCon, hObjPoke);
+                    }
                     return;
                 }
                 else
@@ -595,7 +580,13 @@ static void intnetR3RequestProcess(xpc_connection_t hCon, xpc_object_t hObj, PSU
             {
                 if (cbReq == sizeof(INTNETIFABORTWAITREQ))
                 {
-                    rc = IntNetR0IfAbortWaitReq(pSession, &ReqReply.IfAbortWaitReq);
+                    ASMAtomicXchgBool(&pSession->fRecvWait, false);
+                    if (ASMAtomicXchgBool(&pSession->fRecvAvail, false))
+                    {
+                        /* Send an empty message. */
+                        xpc_object_t hObjPoke = xpc_dictionary_create(NULL, NULL, 0);
+                        xpc_connection_send_message(pSession->hXpcCon, hObjPoke);
+                    }
                     cbReply = sizeof(INTNETIFABORTWAITREQ);
                 }
                 else
@@ -608,7 +599,7 @@ static void intnetR3RequestProcess(xpc_connection_t hCon, xpc_object_t hObj, PSU
     }
 
     xpc_object_t hObjReply = xpc_dictionary_create_reply(hObj);
-    xpc_dictionary_set_int64(hObjReply, "rc", rc);
+    xpc_dictionary_set_uint64(hObjReply, "rc", INTNET_R3_SVC_SET_RC(rc));
     xpc_dictionary_set_data(hObjReply, "reply", &ReqReply, cbReply);
     xpc_connection_send_message(hCon, hObjReply);
 }
@@ -645,24 +636,10 @@ DECLCALLBACK(void) xpcConnHandler(xpc_connection_t hXpcCon)
         pSession->pDevExt = &g_DevExt;
         pSession->hXpcCon = hXpcCon;
 
-        int rc = RTSemEventCreate(&pSession->hEvtRecv);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTThreadCreate(&pSession->hThrdRecv, intnetR3RecvThread, pSession, 0,
-                                RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "INTNET-RECV");
-            if (RT_SUCCESS(rc))
-            {
-                xpc_connection_set_context(hXpcCon, pSession);
-                xpc_connection_resume(hXpcCon);
-                xpc_transaction_begin();
-                ASMAtomicIncU32(&g_DevExt.cRefs);
-                return;
-            }
-
-            RTSemEventDestroy(pSession->hEvtRecv);
-        }
-
-        RTMemFree(pSession);
+        xpc_connection_set_context(hXpcCon, pSession);
+        xpc_connection_activate(hXpcCon);
+        xpc_transaction_begin();
+        ASMAtomicIncU32(&g_DevExt.cRefs);
     }
 }
 

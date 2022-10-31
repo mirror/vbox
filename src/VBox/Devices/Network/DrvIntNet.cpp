@@ -248,15 +248,20 @@ static int drvR3IntNetCallSvc(PDRVINTNET pThis, uint32_t uOperation, void *pvArg
         xpc_dictionary_set_uint64(hObj, "req-id", uOperation);
         xpc_dictionary_set_data(hObj, "req", pvArg, cbArg);
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
-        int rc = (int)xpc_dictionary_get_int64(hObjReply, "rc");
+        uint64_t u64Rc = xpc_dictionary_get_uint64(hObjReply, "rc");
+        if (INTNET_R3_SVC_IS_VALID_RC(u64Rc))
+        {
+            size_t cbReply = 0;
+            const void *pvData = xpc_dictionary_get_data(hObjReply, "reply", &cbReply);
+            AssertRelease(cbReply == cbArg);
+            memcpy(pvArg, pvData, cbArg);
+            xpc_release(hObjReply);
 
-        size_t cbReply = 0;
-        const void *pvData = xpc_dictionary_get_data(hObjReply, "reply", &cbReply);
-        AssertRelease(cbReply == cbArg);
-        memcpy(pvArg, pvData, cbArg);
+            return INTNET_R3_SVC_GET_RC(u64Rc);
+        }
+
         xpc_release(hObjReply);
-
-        return rc;
+        return VERR_INVALID_STATE;
     }
     else
 #endif
@@ -315,7 +320,12 @@ static int drvR3IntNetMapBufferPointers(PDRVINTNET pThis)
         xpc_dictionary_set_uint64(hObj, "req-id", VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS);
         xpc_dictionary_set_data(hObj, "req", &GetBufferPtrsReq, sizeof(GetBufferPtrsReq));
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
-        rc = (int)xpc_dictionary_get_int64(hObjReply, "rc");
+        uint64_t u64Rc = xpc_dictionary_get_uint64(hObjReply, "rc");
+        if (INTNET_R3_SVC_IS_VALID_RC(u64Rc))
+            rc = INTNET_R3_SVC_GET_RC(u64Rc);
+        else
+            rc = VERR_INVALID_STATE;
+
         if (RT_SUCCESS(rc))
         {
             /* Get the shared memory object. */
@@ -326,6 +336,7 @@ static int drvR3IntNetMapBufferPointers(PDRVINTNET pThis)
             else
                 pThis->cbBuf = cbMem;
         }
+
         xpc_release(hObjReply);
     }
     else

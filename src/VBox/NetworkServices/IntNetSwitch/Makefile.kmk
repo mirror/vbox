@@ -39,9 +39,10 @@ VBoxIntNetSwitch_DEFS      = KBUILD_TYPE="$(KBUILD_TYPE)"
 else
 VBoxIntNetSwitch_DEFS      = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
 endif
+VBoxIntNetSwitch_DEFS     += VBOX_WITH_INTNET_SERVICE_IN_R3
 VBoxIntNetSwitch_INST.darwin = $(VBoxIntNetSwitch.xpc_INST)/MacOS/
 VBoxIntNetSwitch_SOURCES = \
-	main.cpp \
+	VBoxIntNetSwitch.cpp \
 	SrvIntNetWrapper.cpp
 VBoxIntNetSwitch_LIBS = $(LIB_RUNTIME)
 VBoxIntNetSwitch_LDFLAGS.darwin = \

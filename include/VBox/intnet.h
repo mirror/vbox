@@ -50,7 +50,17 @@ RT_C_DECLS_BEGIN
 
 /** The userspace internal network service identifier. */
 #if defined(RT_OS_DARWIN) && defined(VBOX_WITH_INTNET_SERVICE_IN_R3)
-# define INTNET_R3_SVC_NAME "org.virtualbox.intnet"
+/** The XPC service identififer. */
+# define INTNET_R3_SVC_NAME                 "org.virtualbox.intnet"
+/** The high 32 bits pattern for the "rc" status code field to recognize errors
+ * where xpc_dictionary_get_int64() might return 0 which could be confused with VINF_SUCCESS. */
+# define INTNET_R3_SVC_RC_PATTERN           ((uint64_t)RT_MAKE_U32_FROM_U8('V', 'B', 'O', 'X'))
+/** Constructs a signd 64bit value for the given 32-bit status code. */
+# define INTNET_R3_SVC_SET_RC(a_rc)         ((INTNET_R3_SVC_RC_PATTERN << 32) | (uint64_t)(a_rc))
+/** Gets the status code from the given 64-bit signed status code value. */
+# define INTNET_R3_SVC_GET_RC(a_RcVal)      ((int32_t)(a_RcVal))
+/** Checks whether the given 64-bit signed status code value encodes a valid IPRT/VBOX status code. */
+# define INTNET_R3_SVC_IS_VALID_RC(a_RcVal) (((a_RcVal) >> 32) == INTNET_R3_SVC_RC_PATTERN)
 #endif
 
 
@@ -1315,6 +1325,23 @@ INTNETR0DECL(int)       IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION p
 
 /** @} */
 #endif /* IN_RING0 */
+
+/** 
+ * Callback function for use with IntNetR3Open to signalling incoming data. 
+ *  
+ * @param   hIf     Interface handle.
+ * @param   pvUser  User parameter.
+ */
+typedef DECLCALLBACKTYPE(void, FNINTNETIFRECVAVAIL,(INTNETIFHANDLE hIf, void *pvUser));
+/** Pointer to a FNINTNETIFRECVAVAIL callback. */
+typedef FNINTNETIFRECVAVAIL *PFNINTNETIFRECVAVAIL;
+
+#if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
+INTNETR3DECL(int)       IntNetR3Open(PSUPDRVSESSION pSession, const char *pszNetwork,
+                                     INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
+                                     uint32_t cbSend, uint32_t cbRecv, PFNINTNETIFRECVAVAIL pfnRecvAvail,
+                                     void *pvUserRecvAvail, PINTNETIFHANDLE phIf);
+#endif
 
 RT_C_DECLS_END
 
