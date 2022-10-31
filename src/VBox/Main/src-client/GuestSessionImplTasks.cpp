@@ -74,6 +74,14 @@
 #define ISOFILE_FLAG_OPTIONAL            RT_BIT(8)
 
 
+/** Returns the path separator based on \a a_enmPathStyle as a C-string. */
+#define PATH_STYLE_SEP_STR(a_enmPathStyle) a_enmPathStyle == PathStyle_DOS ? "\\" : "/"
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+# define PATH_STYLE_NATIVE               PathStyle_DOS
+#else
+# define PATH_STYLE_NATIVE               PathStyle_UNIX
+#endif
+
 // session task classes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -85,13 +93,11 @@ GuestSessionTask::GuestSessionTask(GuestSession *pSession)
     switch (mSession->i_getGuestPathStyle())
     {
         case PathStyle_DOS:
-            mfPathStyle = RTPATH_STR_F_STYLE_DOS;
-            mPathStyle  = "\\";
+            mstrGuestPathStyle = "\\";
             break;
 
         default:
-            mfPathStyle = RTPATH_STR_F_STYLE_UNIX;
-            mPathStyle  = "/";
+            mstrGuestPathStyle = "/";
             break;
     }
 }
@@ -597,10 +603,11 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         }
         else
         {
-            if (vrc != VERR_FILE_NOT_FOUND) /* Destination file does not exist (yet)? */
+            if (vrc == VERR_PATH_NOT_FOUND)       /* Destination file does not exist (yet)? */
+                vrc = VERR_FILE_NOT_FOUND;        /* Needed in next block further down. */
+            else if (vrc != VERR_FILE_NOT_FOUND)  /* Ditto. */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Host file lookup for \"%s\" failed: %Rrc"),
-                                               strDst.c_str(), vrc));
+                                    Utf8StrFmt(tr("Host destination file lookup for \"%s\" failed: %Rrc"), strDst.c_str(), vrc));
         }
     }
 
@@ -633,7 +640,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
             vrc = RTStrCopy(szDstPath, sizeof(szDstPath), strDst.c_str());
             if (RT_SUCCESS(vrc))
             {
-                vrc = RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
+                vrc = RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilename(strSrc.c_str()));
                 if (RT_SUCCESS(vrc))
                     pszDstFile = RTStrDup(szDstPath);
             }
@@ -909,7 +916,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
             else
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Host file lookup for \"%s\" failed: %Rrc"),
+                                    Utf8StrFmt(tr("Host source file lookup for \"%s\" failed: %Rrc"),
                                                szSrcReal, vrc));
             }
         }
@@ -1076,15 +1083,13 @@ void FsList::Destroy(void)
 int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* = "" */)
 {
     Utf8Str strPathAbs = strPath;
-    if (   !strPathAbs.endsWith("/")
-        && !strPathAbs.endsWith("\\"))
-        strPathAbs += "/";
+    if (!strPathAbs.endsWith(PATH_STYLE_SEP_STR(mSourceSpec.enmPathStyle)))
+        strPathAbs += PATH_STYLE_SEP_STR(mSourceSpec.enmPathStyle);
 
     Utf8Str strPathSub = strSubDir;
     if (   strPathSub.isNotEmpty()
-        && !strPathSub.endsWith("/")
-        && !strPathSub.endsWith("\\"))
-        strPathSub += "/";
+        && !strPathSub.endsWith(PATH_STYLE_SEP_STR(mSourceSpec.enmPathStyle)))
+        strPathSub += PATH_STYLE_SEP_STR(mSourceSpec.enmPathStyle);
 
     strPathAbs += strPathSub;
 
@@ -1216,15 +1221,13 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                            char *pszPathReal, size_t cbPathReal, PRTDIRENTRYEX pDirEntry)
 {
     Utf8Str strPathAbs = strPath;
-    if (   !strPathAbs.endsWith("/")
-        && !strPathAbs.endsWith("\\"))
-        strPathAbs += "/";
+    if (!strPathAbs.endsWith(RTPATH_SLASH_STR))
+        strPathAbs += RTPATH_SLASH_STR;
 
     Utf8Str strPathSub = strSubDir;
     if (   strPathSub.isNotEmpty()
-        && !strPathSub.endsWith("/")
-        && !strPathSub.endsWith("\\"))
-        strPathSub += "/";
+        && !strPathSub.endsWith(RTPATH_SLASH_STR))
+        strPathSub += RTPATH_SLASH_STR;
 
     strPathAbs += strPathSub;
 
@@ -1473,14 +1476,12 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 /* If the source does not end with a slash, copy over the entire directory
                  * (and not just its contents). */
-                /** @todo r=bird: Try get the path style stuff right and stop assuming all guest are windows guests.  */
-                if (   !strSrc.endsWith("/")
-                    && !strSrc.endsWith("\\"))
+                if (!strSrc.endsWith(mstrGuestPathStyle))
                 {
                     if (!RTPATH_IS_SLASH(strDst[strDst.length() - 1]))
-                        strDst += "/";
+                        strDst += RTPATH_SLASH_STR;
 
-                    strDst += Utf8Str(RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
+                    strDst += Utf8Str(RTPathFilename(strSrc.c_str()));
                 }
 
                 fFollowSymlinks = itSrc->Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks;
@@ -1601,6 +1602,11 @@ int GuestSessionTaskCopyFrom::Run(void)
         FsList *pList = *itList;
         AssertPtr(pList);
 
+        LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
+
+        Utf8Str strSrcRootAbs = pList->mSrcRootAbs;
+        Utf8Str strDstRootAbs = pList->mDstRootAbs;
+
         const bool     fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
         const bool     fFollowSymlinks   = true; /** @todo */
         const uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
@@ -1609,13 +1615,42 @@ int GuestSessionTaskCopyFrom::Run(void)
         if (!fFollowSymlinks)
             fDirCreate |= RTDIRCREATE_FLAGS_NO_SYMLINKS;
 
-        LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
+        RTFSOBJINFO ObjInfo;
+        RT_ZERO(ObjInfo);
+        vrc = RTPathQueryInfo(strDstRootAbs.c_str(), &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (   RT_FAILURE(vrc)
+            && vrc != VERR_FILE_NOT_FOUND
+            && vrc != VERR_PATH_NOT_FOUND)
+        {
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                Utf8StrFmt(tr("Host path lookup for \"%s\" failed: %Rrc"), strDstRootAbs.c_str(), vrc));
+            break;
+        }
+        else
+            vrc = VINF_SUCCESS; /* Reset rc. */
 
-        /* Create the root directory. */
+        bool const fDstIsDir        = RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode);
+        bool const fDstDirMustExist = strDstRootAbs.endsWith(PATH_STYLE_SEP_STR(PATH_STYLE_NATIVE)); /* Copy into existing dir? */
+
+        /* Copy source(s) into an existing directory on the host (path ends with a slash)? */
+        if (fDstDirMustExist)
+        {
+            if (   !RTDirExists(strDstRootAbs.c_str())
+                || !fDstIsDir)
+            {
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(tr("Host directory \"%s\" does not exist"), strDstRootAbs.c_str()));
+                vrc = VERR_PATH_NOT_FOUND;
+                break;
+            }
+        }
+        /* else Copy source(s) into a file on the host. */
+
+        /* Create the destination directory if required. */
         if (   pList->mSourceSpec.enmType == FsObjType_Directory
             && pList->mSourceSpec.fDryRun == false)
         {
-            vrc = directoryCreateOnHost(pList->mDstRootAbs, fDirCreate, fDirMode, fCopyIntoExisting);
+            vrc = directoryCreateOnHost(strDstRootAbs, fDirCreate, fDirMode, fCopyIntoExisting);
             if (RT_FAILURE(vrc))
                 break;
         }
@@ -1626,36 +1661,31 @@ int GuestSessionTaskCopyFrom::Run(void)
             FsEntry *pEntry = *itEntry;
             AssertPtr(pEntry);
 
-            Utf8Str strSrcAbs = pList->mSrcRootAbs;
-            Utf8Str strDstAbs = pList->mDstRootAbs;
-
-            LogFlowFunc(("Entry: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
+            Utf8Str strSrcAbs = strSrcRootAbs;
+            Utf8Str strDstAbs = strDstRootAbs;
 
             if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
-                char szPath[RTPATH_MAX];
-
-                /* Build the source path on the guest. */
-                vrc = RTStrCopy(szPath, sizeof(szPath), pList->mSrcRootAbs.c_str());
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(vrc))
-                        strSrcAbs = szPath;
-                }
-
-                /* Build the destination path on the host. */
-                vrc = RTStrCopy(szPath, sizeof(szPath), pList->mDstRootAbs.c_str());
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(vrc))
-                        strDstAbs = szPath;
-                }
+                strSrcAbs += PATH_STYLE_SEP_STR(pList->mSourceSpec.enmPathStyle);
+                strSrcAbs += pEntry->strPath;
             }
 
-            if (pList->mSourceSpec.enmPathStyle == PathStyle_DOS)
-                strDstAbs.findReplace('\\', '/');
+            if (fDstIsDir)
+            {
+                strDstAbs += PATH_STYLE_SEP_STR(PATH_STYLE_NATIVE);
+                strDstAbs += pEntry->strPath;
+            }
+
+            /* Translate the final guest source path (for cleaning up mixed path separators). */
+            vrc = GuestPath::Translate(strSrcAbs, pList->mSourceSpec.enmPathStyle /* Source */, pList->mSourceSpec.enmPathStyle /* Dest */,
+                                       true /* fForce */);
+            if (RT_FAILURE(vrc))
+                break;
+
+            /* Translate the final host destination path (for cleaning up mixed path separators). */
+            vrc = GuestPath::Translate(strDstAbs, PATH_STYLE_NATIVE, PATH_STYLE_NATIVE /* Dest */, true /* fForce */);
+            if (RT_FAILURE(vrc))
+                break;
 
             mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
 
@@ -1664,7 +1694,7 @@ int GuestSessionTaskCopyFrom::Run(void)
             switch (pEntry->fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
-                    LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
+                    LogRel2(("Guest Control: Copying directory '%s' from guest to '%s' on host ...\n", strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         vrc = directoryCreateOnHost(strDstAbs, fDirCreate, fDirMode, fCopyIntoExisting);
                     break;
@@ -1672,9 +1702,8 @@ int GuestSessionTaskCopyFrom::Run(void)
                 case RTFS_TYPE_FILE:
                     RT_FALL_THROUGH();
                 case RTFS_TYPE_SYMLINK:
-                    LogFlowFunc(("%s '%s': %s -> %s\n", pEntry->strPath.c_str(),
-                                 (pEntry->fMode & RTFS_TYPE_MASK) == RTFS_TYPE_SYMLINK ? "Symlink" : "File",
-                                  strSrcAbs.c_str(), strDstAbs.c_str()));
+                    LogRel2(("Guest Control: Copying %s '%s' from guest to '%s' on host ...\n",
+                             (pEntry->fMode & RTFS_TYPE_MASK) == RTFS_TYPE_SYMLINK ? "symlink" : "file", strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         vrc = fileCopyFromGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
                     break;
@@ -1880,8 +1909,15 @@ int GuestSessionTaskCopyTo::Run(void)
         FsList *pList = *itList;
         AssertPtr(pList);
 
+        LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
+
         Utf8Str strSrcRootAbs = pList->mSrcRootAbs;
         Utf8Str strDstRootAbs = pList->mDstRootAbs;
+
+        /* Translate the destination path from the host to a path compatible with the guest. */
+        vrc = GuestPath::Translate(strDstRootAbs, PATH_STYLE_NATIVE /* Source */, mSession->i_getGuestPathStyle() /* Dest */);
+        if (RT_FAILURE(vrc))
+            break;
 
         bool     fCopyIntoExisting = false;
         bool     fFollowSymlinks   = false;
@@ -1919,8 +1955,6 @@ int GuestSessionTaskCopyTo::Run(void)
             }
         }
 
-        char szPath[RTPATH_MAX];
-
         LogFlowFunc(("List inital: rc=%Rrc, srcRootAbs=%s, dstRootAbs=%s\n",
                      vrc, strSrcRootAbs.c_str(), strDstRootAbs.c_str()));
 
@@ -1944,13 +1978,7 @@ int GuestSessionTaskCopyTo::Run(void)
                     if (fCopyIntoExisting)
                     {
                         /* Build the destination path on the guest. */
-                        vrc = RTStrCopy(szPath, sizeof(szPath), strDstRootAbs.c_str());
-                        if (RT_SUCCESS(vrc))
-                        {
-                            vrc = RTPathAppend(szPath, sizeof(szPath), RTPathFilenameEx(strSrcRootAbs.c_str(), mfPathStyle));
-                            if (RT_SUCCESS(vrc))
-                                strDstRootAbs = szPath;
-                        }
+                        strDstRootAbs += PATH_STYLE_SEP_STR(mSession->i_getGuestPathStyle()) + Utf8Str(RTPathFilename(strSrcRootAbs.c_str()));
                     }
                     else
                     {
@@ -2019,47 +2047,34 @@ int GuestSessionTaskCopyTo::Run(void)
 
             if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
-                /* Build the final (absolute) source path (on the host). */
-                vrc = RTStrCopy(szPath, sizeof(szPath), strSrcAbs.c_str());
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(vrc))
-                        strSrcAbs = szPath;
-                }
-
-                if (RT_FAILURE(vrc))
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Building source host path for entry \"%s\" failed (%Rrc)"),
-                                                   pEntry->strPath.c_str(), vrc));
+                strSrcAbs += PATH_STYLE_SEP_STR(PATH_STYLE_NATIVE);
+                strSrcAbs += pEntry->strPath;
             }
 
             /** @todo Handle stuff like "C:" for destination, where the destination will be the CWD for drive C. */
             if (dstObjData.mType == FsObjType_Directory)
             {
-                /* Build the final (absolute) destination path (on the guest). */
-                vrc = RTStrCopy(szPath, sizeof(szPath), strDstAbs.c_str());
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = RTPathAppend(szPath, sizeof(szPath), pEntry->strPath.c_str());
-                    if (RT_SUCCESS(vrc))
-                        strDstAbs = szPath;
-                }
-
-                if (RT_FAILURE(vrc))
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Building destination guest path for entry \"%s\" failed (%Rrc)"),
-                                                   pEntry->strPath.c_str(), vrc));
+                strDstAbs += PATH_STYLE_SEP_STR(mSession->i_getGuestPathStyle());
+                strDstAbs += pEntry->strPath;
             }
 
-            mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
+            /* Translate the final source host path (for cleaning up mixed path separators). */
+            vrc = GuestPath::Translate(strSrcAbs, PATH_STYLE_NATIVE /* Source */, PATH_STYLE_NATIVE /* Dest */, true /* fForce */);
+            if (RT_FAILURE(vrc))
+                break;
 
-            LogRel2(("Guest Control: Copying '%s' from host to '%s' on guest ...\n", strSrcAbs.c_str(), strDstAbs.c_str()));
+            /* Translate the final destination path from the host to a path compatible with the guest. */
+            vrc = GuestPath::Translate(strDstAbs, PATH_STYLE_NATIVE /* Source */, mSession->i_getGuestPathStyle() /* Dest */);
+            if (RT_FAILURE(vrc))
+                break;
+
+            mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
 
             switch (pEntry->fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
                 {
+                    LogRel2(("Guest Control: Copying directory '%s' from host to '%s' on guest ...\n", strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         vrc = directoryCreateOnGuest(strDstAbs, DirectoryCreateFlag_None, fDirMode,
                                                      fFollowSymlinks, fCopyIntoExisting);
@@ -2068,6 +2083,7 @@ int GuestSessionTaskCopyTo::Run(void)
 
                 case RTFS_TYPE_FILE:
                 {
+                    LogRel2(("Guest Control: Copying file '%s' from host to '%s' on guest ...\n", strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         vrc = fileCopyToGuest(strSrcAbs, strDstAbs, fFileCopyFlags);
                     break;

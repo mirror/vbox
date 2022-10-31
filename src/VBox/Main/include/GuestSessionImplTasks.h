@@ -138,11 +138,13 @@ public:
     const GuestSessionTask  &mTask;
     /** File system filter / options to use for this task. */
     GuestSessionFsSourceSpec mSourceSpec;
-    /** The source' root path.
+    /** The source' root path. Always in the source's path style!
+     *
      *  For a single file list this is the full (absolute) path to a file,
      *  for a directory list this is the source root directory. */
     Utf8Str                 mSrcRootAbs;
-    /** The destinations's root path.
+    /** The destinations's root path. Always in the destination's path style!
+     *
      *  For a single file list this is the full (absolute) path to a file,
      *  for a directory list this is the destination root directory. */
     Utf8Str                 mDstRootAbs;
@@ -255,10 +257,8 @@ protected:
     /** Progress object for getting updated when running
      *  asynchronously. Optional. */
     ComObjPtr<Progress>     mProgress;
-    /** The guest's path style (depending on the guest OS type set). */
-    uint32_t                mfPathStyle;
-    /** The guest's path style as string representation (depending on the guest OS type set). */
-    Utf8Str                 mPathStyle;
+    /** The guest's path style as char representation (depending on the guest OS type set). */
+    Utf8Str                 mstrGuestPathStyle;
 };
 
 /**
