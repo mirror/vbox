@@ -105,7 +105,7 @@
       <arg choice="req">-- <replaceable>программа/аргумент0</replaceable> <arg rep="repeat"><replaceable>аргумент</replaceable></arg></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom-hostdest">
+    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -119,37 +119,17 @@
         <arg choice="plain">--password=<replaceable>пароль</replaceable></arg>
       </group>
       <arg>--quiet</arg>
-      <arg>--recursive</arg>
-      <arg>--username=<replaceable>имя-пользователя</replaceable></arg>
-      <arg>--verbose</arg>
-      <arg choice="req"><replaceable>гостевой-источник0</replaceable></arg>
-      <arg choice="plain"><replaceable>гостевой-источник1</replaceable> [...]</arg>
-      <arg choice="req"><replaceable>хост-назначение</replaceable></arg>
-    </cmdsynopsis>
-
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom-hostdestdir">
-      <command>VBoxManage guestcontrol</command>
-      <group choice="req">
-        <arg choice="plain"><replaceable>uuid</replaceable></arg>
-        <arg choice="plain"><replaceable>имя-ВМ</replaceable></arg>
-      </group>
-      <arg choice="plain">copyfrom</arg>
-      <arg>--domain=<replaceable>имя-домена</replaceable></arg>
-      <arg>--follow</arg>
-      <group>
-        <arg choice="plain">--passwordfile=<replaceable>файл-с-паролем</replaceable></arg>
-        <arg choice="plain">--password=<replaceable>пароль</replaceable></arg>
-      </group>
-      <arg>--quiet</arg>
+      <arg>--no-replace</arg>
       <arg>--recursive</arg>
       <arg>--target-directory=<replaceable>хост-директория-назначения</replaceable></arg>
+      <arg>--update</arg>
       <arg>--username=<replaceable>имя-пользователя</replaceable></arg>
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>гостевой-источник0</replaceable></arg>
       <arg choice="plain"><replaceable>гостевой-источник1</replaceable> [...]</arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto-hostdest">
+    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -163,30 +143,10 @@
         <arg choice="plain">--password=<replaceable>пароль</replaceable></arg>
       </group>
       <arg>--quiet</arg>
-      <arg>--recursive</arg>
-      <arg>--username=<replaceable>имя-пользователя</replaceable></arg>
-      <arg>--verbose</arg>
-      <arg choice="req"><replaceable>хост-источник0</replaceable></arg>
-      <arg choice="plain"><replaceable>хост-источник1</replaceable> [...]</arg>
-      <arg choice="req"><replaceable>гостевое-назначение</replaceable></arg>
-    </cmdsynopsis>
-
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto-hostdestdir">
-      <command>VBoxManage guestcontrol</command>
-      <group choice="req">
-        <arg choice="plain"><replaceable>uuid</replaceable></arg>
-        <arg choice="plain"><replaceable>имя-ВМ</replaceable></arg>
-      </group>
-      <arg choice="plain">copyto</arg>
-      <arg>--domain=<replaceable>имя-домена</replaceable></arg>
-      <arg>--follow</arg>
-      <group>
-        <arg choice="plain">--passwordfile=<replaceable>файл-с-паролем</replaceable></arg>
-        <arg choice="plain">--password=<replaceable>пароль</replaceable></arg>
-      </group>
-      <arg>--quiet</arg>
+      <arg>--no-replace</arg>
       <arg>--recursive</arg>
       <arg>--target-directory=<replaceable>гостевая-директория-назначения</replaceable></arg>
+      <arg>--update</arg>
       <arg>--username=<replaceable>имя-пользователя</replaceable></arg>
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>хост-источник0</replaceable></arg>
@@ -676,44 +636,7 @@
         </para>
       </note>
     </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyfrom-hostdest">
-      <title>Копирование файла из гостевой виртуальной машины в хост-систему</title>
-      <remark role="help-copy-synopsis"/>
-      <para>
-        Команда <command>VBoxManage guestcontrol
-        <replaceable>имя-ВМ</replaceable> copyfrom</command> позволяет
-        скопировать файл из гостевой ВМ в хост-систему.
-      </para>
-      <variablelist>
-        <varlistentry>
-          <term><option>--follow</option></term>
-          <listitem><para>
-              Включает следование по символическим ссылкам в гостевой
-              файловой системе.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--recursive</option></term>
-          <listitem><para>
-              Рекурсивно копирует файлы и директории из указанной
-              директории в гостевой ВМ.
-            </para><para>
-              Краткая форма этой опции <option>-R</option>.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><literal><replaceable>гостевой-источник0</replaceable> [<replaceable>гостевой-источник1</replaceable> [...]]</literal></term>
-          <listitem><para>
-              Задает абсолютный путь к одному или нескольким файлам для
-              копирования из гостевой ВМ. Например
-              <filename>C:\Windows\System32\calc.exe</filename>. Можно
-              использовать подстановочные значки для указания нескольких
-              файлов. Например <filename>C:\Windows\System*\*.dll</filename>.
-            </para></listitem>
-        </varlistentry>
-      </variablelist>
-    </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyfrom-hostdestdir">
+    <refsect2 id="vboxmanage-guestcontrol-copyfrom">
       <title>Копирование файла из гостевой виртуальной машины в директорию в хост-системы</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -723,10 +646,18 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--follow</option></term>
+          <term><option>--dereference</option></term>
           <listitem><para>
               Включает следование по символическим ссылкам в гостевой
               файловой системе.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--no-replace</option></term>
+          <listitem><para>
+              Only copies a file if it does not exist on the host yet.
+            </para><para>
+              The short form of this option is <option>-n</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -746,6 +677,14 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><option>--update</option></term>
+          <listitem><para>
+              Only copies a file if the guest file is newer than on the host.
+            </para><para>
+              The short form of this option is <option>-u</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><literal><replaceable>гостевой-источник0</replaceable> [<replaceable>гостевой-источник1</replaceable> [...]]</literal></term>
           <listitem><para>
               Задает абсолютный путь одного или нескольких файлов
@@ -757,43 +696,7 @@
         </varlistentry>
       </variablelist>
     </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyto-hostdest">
-      <title>Копирует файл в гостевую виртуальную машину из хост-системы</title>
-      <remark role="help-copy-synopsis"/>
-      <para>
-        Команда <command>VBoxManage guestcontrol
-        <replaceable>имя-ВМ</replaceable> copyto</command> позволяет
-        скопировать файл из хост-системы в гостевую ВМ.
-      </para>
-      <variablelist>
-        <varlistentry>
-          <term><option>--follow</option></term>
-          <listitem><para>
-              Включает следование по символическим ссылкам в хост-системе.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--recursive</option></term>
-          <listitem><para>
-              Рекурсивно копирует файлы и директории из указанной
-              директории в хост-системе.
-            </para><para>
-              Краткая форма этой опции <option>-R</option>.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><literal><replaceable>хост-источник0</replaceable> [<replaceable>хост-источник1</replaceable> [...]]</literal></term>
-          <listitem><para>
-              Задает абсолютный путь к одному или нескольким файлам
-              для копирования из хост-системы. Например
-              <filename>C:\Windows\System32\calc.exe</filename>. Можно
-              использовать подстановочные знаки для указания нескольких
-              файлов. Например <filename>C:\Windows\System*\*.dll</filename>.
-            </para></listitem>
-        </varlistentry>
-      </variablelist>
-    </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyto-hostdestdir">
+    <refsect2 id="vboxmanage-guestcontrol-copyto">
       <title>Копирует файл в директорию на гостевой виртуальной машине из хост-системы</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -803,9 +706,17 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--follow</option></term>
+          <term><option>--dereference</option></term>
           <listitem><para>
               Включает следование по символическим ссылкам в хост-системе.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--no-replace</option></term>
+          <listitem><para>
+              Only copies a file if it does not exist on the guest yet.
+            </para><para>
+              The short form of this option is <option>-n</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -822,6 +733,14 @@
           <listitem><para>
               Задает абсолютный путь директории назначения в гостевой
               ВМ. Например <filename>C:\Temp</filename>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--update</option></term>
+          <listitem><para>
+              Only copies a file if the host file is newer than on the guest.
+            </para><para>
+              The short form of this option is <option>-u</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>

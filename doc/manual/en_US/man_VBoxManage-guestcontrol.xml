@@ -105,21 +105,24 @@
       <arg choice="req">-- <replaceable>program/arg0</replaceable> <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom-hostdest">
+    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">copyfrom</arg>
+      <arg>--dereference</arg>
       <arg>--domain=<replaceable>domainname</replaceable></arg>
-      <arg>--follow</arg>
       <group>
         <arg choice="plain">--passwordfile=<replaceable>password-file</replaceable></arg>
         <arg choice="plain">--password=<replaceable>password</replaceable></arg>
       </group>
       <arg>--quiet</arg>
+      <arg>--no-replace</arg>
       <arg>--recursive</arg>
+      <arg>--target-directory=<replaceable>host-destination-dir</replaceable></arg>
+      <arg>--update</arg>
       <arg>--username=<replaceable>username</replaceable></arg>
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>guest-source0</replaceable></arg>
@@ -127,66 +130,24 @@
       <arg choice="req"><replaceable>host-destination</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom-hostdestdir">
-      <command>VBoxManage guestcontrol</command>
-      <group choice="req">
-        <arg choice="plain"><replaceable>uuid</replaceable></arg>
-        <arg choice="plain"><replaceable>vmname</replaceable></arg>
-      </group>
-      <arg choice="plain">copyfrom</arg>
-      <arg>--domain=<replaceable>domainname</replaceable></arg>
-      <arg>--follow</arg>
-      <group>
-        <arg choice="plain">--passwordfile=<replaceable>password-file</replaceable></arg>
-        <arg choice="plain">--password=<replaceable>password</replaceable></arg>
-      </group>
-      <arg>--quiet</arg>
-      <arg>--recursive</arg>
-      <arg>--target-directory=<replaceable>host-destination-dir</replaceable></arg>
-      <arg>--username=<replaceable>username</replaceable></arg>
-      <arg>--verbose</arg>
-      <arg choice="req"><replaceable>guest-source0</replaceable></arg>
-      <arg choice="plain"><replaceable>guest-source1</replaceable> [...]</arg>
-    </cmdsynopsis>
-
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto-hostdest">
+    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">copyto</arg>
+      <arg>--dereference</arg>
       <arg>--domain=<replaceable>domainname</replaceable></arg>
-      <arg>--follow</arg>
       <group>
         <arg choice="plain">--passwordfile=<replaceable>password-file</replaceable></arg>
         <arg choice="plain">--password=<replaceable>password</replaceable></arg>
       </group>
       <arg>--quiet</arg>
-      <arg>--recursive</arg>
-      <arg>--username=<replaceable>username</replaceable></arg>
-      <arg>--verbose</arg>
-      <arg choice="req"><replaceable>host-source0</replaceable></arg>
-      <arg choice="plain"><replaceable>host-source1</replaceable> [...]</arg>
-      <arg choice="req"><replaceable>guest-destination</replaceable></arg>
-    </cmdsynopsis>
-
-    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto-hostdestdir">
-      <command>VBoxManage guestcontrol</command>
-      <group choice="req">
-        <arg choice="plain"><replaceable>uuid</replaceable></arg>
-        <arg choice="plain"><replaceable>vmname</replaceable></arg>
-      </group>
-      <arg choice="plain">copyto</arg>
-      <arg>--domain=<replaceable>domainname</replaceable></arg>
-      <arg>--follow</arg>
-      <group>
-        <arg choice="plain">--passwordfile=<replaceable>password-file</replaceable></arg>
-        <arg choice="plain">--password=<replaceable>password</replaceable></arg>
-      </group>
-      <arg>--quiet</arg>
+      <arg>--no-replace</arg>
       <arg>--recursive</arg>
       <arg>--target-directory=<replaceable>guest-destination-dir</replaceable></arg>
+      <arg>--update</arg>
       <arg>--username=<replaceable>username</replaceable></arg>
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>host-source0</replaceable></arg>
@@ -388,7 +349,7 @@
     <title>Description</title>
     <para>
       The <command>VBoxManage guestcontrol</command> command enables you
-      to control a guest virtual machine (VM) from the host system. See
+      to control a guest (VM) from the host system. See
       <xref linkend="guestadd-guestcontrol" />.
     </para>
     <refsect2>
@@ -517,7 +478,7 @@
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-run">
-      <title>Run a Command on the Guest Virtual Machine</title>
+      <title>Run a Command on the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -666,7 +627,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-start">
-      <title>Start a Command on the Guest Virtual Machine</title>
+      <title>Start a Command on the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -680,8 +641,8 @@
         </para>
       </note>
     </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyfrom-hostdest">
-      <title>Copy a File From the Guest Virtual Machine to the Host System</title>
+    <refsect2 id="vboxmanage-guestcontrol-copyfrom">
+      <title>Copy a file from the guest to the host.</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -690,19 +651,43 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--follow</option></term>
+          <term><option>--dereference</option></term>
           <listitem><para>
               Enables following of symbolic links on the guest file
               system.
             </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><option>--no-replace</option></term>
+          <listitem><para>
+              Only copies a file if it does not exist on the host yet.
+            </para><para>
+              The short form of this option is <option>-n</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><option>--recursive</option></term>
           <listitem><para>
               Recursively copies files and directories from the
-              specified directory on the guest VM.
+              specified guest directory to the host.
             </para><para>
               The short form of this option is <option>-R</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--target-directory=<replaceable>host-dst-dir</replaceable></option></term>
+          <listitem><para>
+              Specifies the absolute path of the destination directory
+              on the host system. For example,
+              <filename>C:\Temp</filename>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--update</option></term>
+          <listitem><para>
+              Only copies a file if the guest file is newer than on the host.
+            </para><para>
+              The short form of this option is <option>-u</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -717,54 +702,8 @@
         </varlistentry>
       </variablelist>
     </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyfrom-hostdestdir">
-      <title>Copy a File From the Guest Virtual Machine to a Directory on the Host
-        System</title>
-      <remark role="help-copy-synopsis"/>
-      <para>
-        The <command>VBoxManage guestcontrol
-        <replaceable>vmname</replaceable> copyfrom</command> command
-        enables you to copy a file from the guest VM to the host system.
-      </para>
-      <variablelist>
-        <varlistentry>
-          <term><option>--follow</option></term>
-          <listitem><para>
-              Enables following of symbolic links on the guest file
-              system.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--recursive</option></term>
-          <listitem><para>
-              Recursively copies files and directories from the
-              specified directory on the guest VM.
-            </para><para>
-              The short form of this option is <option>-R</option>.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--target-directory=<replaceable>host-dst-dir</replaceable></option></term>
-          <listitem><para>
-              Specifies the absolute path of the destination directory
-              on the host system. For example,
-              <filename>C:\Temp</filename>.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><literal><replaceable>guest-source0</replaceable> [<replaceable>guest-source1</replaceable> [...]]</literal></term>
-          <listitem><para>
-              Specifies the absolute path of one or more the files to
-              copy from the guest VM. For example,
-              <filename>C:\Windows\System32\calc.exe</filename>. You can
-              use wildcards to specify multiple files. For example,
-              <filename>C:\Windows\System*\*.dll</filename>.
-            </para></listitem>
-        </varlistentry>
-      </variablelist>
-    </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyto-hostdest">
-      <title>Copy a File to the Guest Virtual Machine From the Host System</title>
+    <refsect2 id="vboxmanage-guestcontrol-copyto">
+      <title>Copy a file from the host to the guest.</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -773,53 +712,24 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--follow</option></term>
+          <term><option>--dereference</option></term>
           <listitem><para>
               Enables following of symbolic links on the host system.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recursive</option></term>
+          <term><option>--no-replace</option></term>
           <listitem><para>
-              Recursively copies files and directories from the
-              specified directory on the host system.
+              Only copies a file if it does not exist on the guest yet.
             </para><para>
-              The short form of this option is <option>-R</option>.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><literal><replaceable>host-source0</replaceable> [<replaceable>host-source1</replaceable> [...]]</literal></term>
-          <listitem><para>
-              Specifies the absolute path of one or more the files to
-              copy from the host system. For example,
-              <filename>C:\Windows\System32\calc.exe</filename>. You can
-              use wildcards to specify multiple files. For example,
-              <filename>C:\Windows\System*\*.dll</filename>.
-            </para></listitem>
-        </varlistentry>
-      </variablelist>
-    </refsect2>
-    <refsect2 id="vboxmanage-guestcontrol-copyto-hostdestdir">
-      <title>Copy a File to a Directory on the Guest Virtual Machine From the Host
-        System</title>
-      <remark role="help-copy-synopsis"/>
-      <para>
-        The <command>VBoxManage guestcontrol
-        <replaceable>vmname</replaceable> copyto</command> command
-        enables you to copy a file from the host system to the guest VM.
-      </para>
-      <variablelist>
-        <varlistentry>
-          <term><option>--follow</option></term>
-          <listitem><para>
-              Enables following of symbolic links on the host system.
+              The short form of this option is <option>-n</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--recursive</option></term>
           <listitem><para>
               Recursively copies files and directories from the
-              specified directory on the host system.
+              specified host directory to the guest.
             </para><para>
               The short form of this option is <option>-R</option>.
             </para></listitem>
@@ -828,14 +738,22 @@
           <term><option>--target-directory=<replaceable>guest-dst-dir</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path of the destination directory
-              on the guest VM. For example,
-              <filename>C:\Temp</filename>.
+              on the guest. For example,
+              <filename>/home/myuser/fromhost</filename>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--update</option></term>
+          <listitem><para>
+              Only copies a file if the host file is newer than on the guest.
+            </para><para>
+              The short form of this option is <option>-u</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><literal><replaceable>host-source0</replaceable> [<replaceable>host-source1</replaceable> [...]]</literal></term>
           <listitem><para>
-              Specifies the absolute path of one or more the files to
+              Specifies the absolute path of a file to
               copy from the host system. For example,
               <filename>C:\Windows\System32\calc.exe</filename>. You can
               use wildcards to specify multiple files. For example,
@@ -845,7 +763,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-mkdir">
-      <title>Create a Directory on the Guest Virtual Machine</title>
+      <title>Create a directory on the guest.</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -902,7 +820,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-rmdir">
-      <title>Remove a Directory From the Guest Virtual Machine</title>
+      <title>Remove a directory from the guest.</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -939,7 +857,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-rm">
-      <title>Remove a File From the Guest Virtual Machine</title>
+      <title>Remove a file from the guest.</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -975,7 +893,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-mv">
-      <title>Rename a File or Directory on the Guest Virtual Machine</title>
+      <title>Rename a file or Directory on the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -1015,7 +933,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-mktemp">
-      <title>Create a Temporary File or Directory on the Guest Virtual Machine</title>
+      <title>Create a Temporary File or Directory on the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -1077,7 +995,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-stat">
-      <title>Show a File or File System Status on the Guest Virtual Machine</title>
+      <title>Show a file or File System Status on the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -1123,7 +1041,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-closeprocess">
-      <title>Terminate a Process in a Guest Virtual Machine Session</title>
+      <title>Terminate a Process in a guest Session</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -1156,7 +1074,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-closesession">
-      <title>Close a Guest Virtual Machine Session</title>
+      <title>Close a guest Session</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
@@ -1187,7 +1105,7 @@
       </variablelist>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-updatega">
-      <title>Update the Guest Additions Software on the Guest Virtual Machine</title>
+      <title>Update the Guest Additions Software on the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
