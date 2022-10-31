@@ -7778,7 +7778,7 @@ FNIEMOP_DEF(iemOp_jo_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -7791,7 +7791,7 @@ FNIEMOP_DEF(iemOp_jo_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -7816,7 +7816,7 @@ FNIEMOP_DEF(iemOp_jno_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -7829,7 +7829,7 @@ FNIEMOP_DEF(iemOp_jno_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -7850,7 +7850,7 @@ FNIEMOP_DEF(iemOp_jc_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -7863,7 +7863,7 @@ FNIEMOP_DEF(iemOp_jc_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -7888,7 +7888,7 @@ FNIEMOP_DEF(iemOp_jnc_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -7901,7 +7901,7 @@ FNIEMOP_DEF(iemOp_jnc_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -7922,7 +7922,7 @@ FNIEMOP_DEF(iemOp_je_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -7935,7 +7935,7 @@ FNIEMOP_DEF(iemOp_je_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -7960,7 +7960,7 @@ FNIEMOP_DEF(iemOp_jne_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -7973,7 +7973,7 @@ FNIEMOP_DEF(iemOp_jne_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -7994,7 +7994,7 @@ FNIEMOP_DEF(iemOp_jbe_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8007,7 +8007,7 @@ FNIEMOP_DEF(iemOp_jbe_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8032,7 +8032,7 @@ FNIEMOP_DEF(iemOp_jnbe_Jv)
         IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8045,7 +8045,7 @@ FNIEMOP_DEF(iemOp_jnbe_Jv)
         IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8066,7 +8066,7 @@ FNIEMOP_DEF(iemOp_js_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8079,7 +8079,7 @@ FNIEMOP_DEF(iemOp_js_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8104,7 +8104,7 @@ FNIEMOP_DEF(iemOp_jns_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8117,7 +8117,7 @@ FNIEMOP_DEF(iemOp_jns_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8138,7 +8138,7 @@ FNIEMOP_DEF(iemOp_jp_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8151,7 +8151,7 @@ FNIEMOP_DEF(iemOp_jp_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8176,7 +8176,7 @@ FNIEMOP_DEF(iemOp_jnp_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8189,7 +8189,7 @@ FNIEMOP_DEF(iemOp_jnp_Jv)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8210,7 +8210,7 @@ FNIEMOP_DEF(iemOp_jl_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8223,7 +8223,7 @@ FNIEMOP_DEF(iemOp_jl_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8248,7 +8248,7 @@ FNIEMOP_DEF(iemOp_jnl_Jv)
         IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8261,7 +8261,7 @@ FNIEMOP_DEF(iemOp_jnl_Jv)
         IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8282,7 +8282,7 @@ FNIEMOP_DEF(iemOp_jle_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8295,7 +8295,7 @@ FNIEMOP_DEF(iemOp_jle_Jv)
 
         IEM_MC_BEGIN(0, 0);
         IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ELSE() {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ENDIF();
@@ -8320,7 +8320,7 @@ FNIEMOP_DEF(iemOp_jnle_Jv)
         IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S16(i16Imm);
+            IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }
@@ -8333,7 +8333,7 @@ FNIEMOP_DEF(iemOp_jnle_Jv)
         IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
             IEM_MC_ADVANCE_RIP_AND_FINISH();
         } IEM_MC_ELSE() {
-            IEM_MC_REL_JMP_S32(i32Imm);
+            IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
         } IEM_MC_ENDIF();
         IEM_MC_END();
     }

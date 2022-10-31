@@ -57,12 +57,19 @@
  * @todo Make this be the return point, so we can get unreachable code erros
  *       if not the last MC statement. */
 #define IEM_MC_ADVANCE_RIP_AND_FINISH()                 iemRegUpdateRipAndClearRF(pVCpu)
-#define IEM_MC_REL_JMP_S8(a_i8)                         IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS8(pVCpu, a_i8))
-#define IEM_MC_REL_JMP_S16(a_i16)                       IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS16(pVCpu, a_i16))
-#define IEM_MC_REL_JMP_S32(a_i32)                       IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS32(pVCpu, a_i32))
-#define IEM_MC_SET_RIP_U16(a_u16NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pVCpu), (a_u16NewIP)))
-#define IEM_MC_SET_RIP_U32(a_u32NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pVCpu), (a_u32NewIP)))
-#define IEM_MC_SET_RIP_U64(a_u64NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pVCpu), (a_u64NewIP)))
+/** Tries to set RIP (may trigger \#GP) and finishes the instruction. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH(a_i8)              IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS8(pVCpu, a_i8))
+/** Tries to set RIP (may trigger \#GP) and finishes the instruction. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH(a_i16)            IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS16(pVCpu, a_i16))
+/** Tries to set RIP (may trigger \#GP) and finishes the instruction. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH(a_i32)            IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS32(pVCpu, a_i32))
+/** Tries to set RIP (may trigger \#GP) and finishes the instruction. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH(a_u16NewIP)       IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pVCpu), (a_u16NewIP)))
+/** Tries to set RIP (may trigger \#GP) and finishes the instruction. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH(a_u32NewIP)       IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pVCpu), (a_u32NewIP)))
+/** Tries to set RIP (may trigger \#GP) and finishes the instruction. */
+#define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP)       IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pVCpu), (a_u64NewIP)))
+
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \

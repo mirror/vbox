@@ -575,12 +575,12 @@ IEMOPUNARYSIZES g_iemAImpl_not;
     }
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH()                 do { (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_REL_JMP_S8(a_i8)                         do { (void)fMcBegin; CHK_TYPE(int8_t, a_i8); } while (0)
-#define IEM_MC_REL_JMP_S16(a_i16)                       do { (void)fMcBegin; CHK_TYPE(int16_t, a_i16); } while (0)
-#define IEM_MC_REL_JMP_S32(a_i32)                       do { (void)fMcBegin; CHK_TYPE(int32_t, a_i32); } while (0)
-#define IEM_MC_SET_RIP_U16(a_u16NewIP)                  do { (void)fMcBegin; CHK_TYPE(uint16_t, a_u16NewIP); } while (0)
-#define IEM_MC_SET_RIP_U32(a_u32NewIP)                  do { (void)fMcBegin; CHK_TYPE(uint32_t, a_u32NewIP); } while (0)
-#define IEM_MC_SET_RIP_U64(a_u64NewIP)                  do { (void)fMcBegin; CHK_TYPE(uint64_t, a_u64NewIP); } while (0)
+#define IEM_MC_REL_JMP_S8_AND_FINISH(a_i8)              do { (void)fMcBegin; CHK_TYPE(int8_t, a_i8); return VINF_SUCCESS; } while (0)
+#define IEM_MC_REL_JMP_S16_AND_FINISH(a_i16)            do { (void)fMcBegin; CHK_TYPE(int16_t, a_i16); return VINF_SUCCESS; } while (0)
+#define IEM_MC_REL_JMP_S32_AND_FINISH(a_i32)            do { (void)fMcBegin; CHK_TYPE(int32_t, a_i32); return VINF_SUCCESS; } while (0)
+#define IEM_MC_SET_RIP_U16_AND_FINISH(a_u16NewIP)       do { (void)fMcBegin; CHK_TYPE(uint16_t, a_u16NewIP); return VINF_SUCCESS; } while (0)
+#define IEM_MC_SET_RIP_U32_AND_FINISH(a_u32NewIP)       do { (void)fMcBegin; CHK_TYPE(uint32_t, a_u32NewIP); return VINF_SUCCESS; } while (0)
+#define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP)       do { (void)fMcBegin; CHK_TYPE(uint64_t, a_u64NewIP); return VINF_SUCCESS; } while (0)
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     do { (void)fMcBegin; return VERR_TRPM_ACTIVE_TRAP; } while (0)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  do { (void)fMcBegin; } while (0)
