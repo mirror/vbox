@@ -52,7 +52,11 @@
     } while (0)
 
 
-#define IEM_MC_ADVANCE_RIP()                            iemRegUpdateRipAndClearRF(pVCpu)
+/** Advances RIP and finishes the instruction.
+ * This may include raising debug exceptions and such.
+ * @todo Make this be the return point, so we can get unreachable code erros
+ *       if not the last MC statement. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH()                 iemRegUpdateRipAndClearRF(pVCpu)
 #define IEM_MC_REL_JMP_S8(a_i8)                         IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS8(pVCpu, a_i8))
 #define IEM_MC_REL_JMP_S16(a_i16)                       IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS16(pVCpu, a_i16))
 #define IEM_MC_REL_JMP_S32(a_i32)                       IEM_MC_RETURN_ON_FAILURE(iemRegRipRelativeJumpS32(pVCpu, a_i32))

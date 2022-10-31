@@ -951,7 +951,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_r8, PCIEMOPBINSIZES, pImpl)
         IEM_MC_REF_EFLAGS(pEFlags);
         IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU8, pu8Dst, u8Src, pEFlags);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -981,7 +981,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_r8, PCIEMOPBINSIZES, pImpl)
 
         IEM_MC_MEM_COMMIT_AND_UNMAP(pu8Dst, fAccess);
         IEM_MC_COMMIT_EFLAGS(EFlags);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -1018,7 +1018,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1035,7 +1035,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
 
                 if ((pImpl != &g_iemAImpl_test) && (pImpl != &g_iemAImpl_cmp))
                     IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1050,7 +1050,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
         }
@@ -1085,7 +1085,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
 
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Dst, fAccess);
                 IEM_MC_COMMIT_EFLAGS(EFlags);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1109,7 +1109,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
 
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, fAccess);
                 IEM_MC_COMMIT_EFLAGS(EFlags);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1133,7 +1133,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
 
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Dst, fAccess);
                 IEM_MC_COMMIT_EFLAGS(EFlags);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
         }
@@ -1168,7 +1168,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_r8_rm, PCIEMOPBINSIZES, pImpl)
         IEM_MC_REF_EFLAGS(pEFlags);
         IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU8, pu8Dst, u8Src, pEFlags);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -1189,7 +1189,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_r8_rm, PCIEMOPBINSIZES, pImpl)
         IEM_MC_REF_EFLAGS(pEFlags);
         IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU8, pu8Dst, u8Src, pEFlags);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -1225,7 +1225,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1242,7 +1242,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
 
                 if (pImpl != &g_iemAImpl_cmp)   /* Not used with TEST. */
                     IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1257,7 +1257,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
         }
@@ -1283,7 +1283,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1303,7 +1303,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
 
                 if (pImpl != &g_iemAImpl_cmp)
                     IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
 
@@ -1321,7 +1321,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
         }
@@ -1350,7 +1350,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_AL_Ib, PCIEMOPBINSIZES, pImpl)
     IEM_MC_REF_EFLAGS(pEFlags);
     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU8, pu8Dst, u8Src, pEFlags);
 
-    IEM_MC_ADVANCE_RIP();
+    IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
     return VINF_SUCCESS;
 }
@@ -1380,7 +1380,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rAX_Iz, PCIEMOPBINSIZES, pImpl)
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
 
-            IEM_MC_ADVANCE_RIP();
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             return VINF_SUCCESS;
         }
@@ -1401,7 +1401,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rAX_Iz, PCIEMOPBINSIZES, pImpl)
 
             if ((pImpl != &g_iemAImpl_test) && (pImpl != &g_iemAImpl_cmp))
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-            IEM_MC_ADVANCE_RIP();
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             return VINF_SUCCESS;
         }
@@ -1420,7 +1420,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rAX_Iz, PCIEMOPBINSIZES, pImpl)
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
 
-            IEM_MC_ADVANCE_RIP();
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             return VINF_SUCCESS;
         }

@@ -61,7 +61,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -86,7 +86,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -121,7 +121,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -146,7 +146,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -182,7 +182,7 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -207,7 +207,7 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -285,7 +285,7 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
                                  pDst, uSrc, bImmArg);
         IEM_MC_MODIFIED_MREG_BY_REF(pDst);
         IEM_MC_FPU_TO_MMX_MODE();
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -312,7 +312,7 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         IEM_MC_MODIFIED_MREG_BY_REF(pDst);
         IEM_MC_FPU_TO_MMX_MODE();
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -423,7 +423,7 @@ FNIEMOP_DEF(iemOp_pclmulqdq_Vdq_Wdq_Ib)
                                                              iemAImpl_pclmulqdq_u128,
                                                              iemAImpl_pclmulqdq_u128_fallback),
                                  puDst, puSrc, bImmArg);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -451,7 +451,7 @@ FNIEMOP_DEF(iemOp_pclmulqdq_Vdq_Wdq_Ib)
                                                              iemAImpl_pclmulqdq_u128_fallback),
                                  puDst, puSrc, bImmArg);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -525,7 +525,7 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
                                                              iemAImpl_pcmpistri_u128_fallback),
                                  pu32Ecx, pEFlags, pSrc, bImmArg);
         /** @todo testcase: High dword of RCX cleared? */
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -556,7 +556,7 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
                                                              iemAImpl_pcmpistri_u128_fallback),
                                  pu32Ecx, pEFlags, pSrc, bImmArg);
         /** @todo testcase: High dword of RCX cleared? */
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;

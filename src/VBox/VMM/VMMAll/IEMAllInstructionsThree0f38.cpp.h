@@ -62,7 +62,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -85,7 +85,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -119,7 +119,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -142,7 +142,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -179,7 +179,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, p
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -202,7 +202,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, p
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -236,7 +236,7 @@ FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -259,7 +259,7 @@ FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_2(pfnU128, puDst, puSrc);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -296,7 +296,7 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -319,7 +319,7 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU
         IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -602,7 +602,7 @@ FNIEMOP_DEF(iemOp_pmulhrsw_Vx_Wx)
                                                              iemAImpl_ ## a_Instr ## _u128, \
                                                              iemAImpl_ ## a_Instr ## _u128_fallback), \
                                  puDst, puSrc, puMask); \
-        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
         IEM_MC_END(); \
     } \
     else \
@@ -627,7 +627,7 @@ FNIEMOP_DEF(iemOp_pmulhrsw_Vx_Wx)
                                                              iemAImpl_ ## a_Instr ## _u128, \
                                                              iemAImpl_ ## a_Instr ## _u128_fallback), \
                                  puDst, puSrc, puMask); \
-        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
         IEM_MC_END(); \
     } \
     return VINF_SUCCESS
@@ -694,7 +694,7 @@ FNIEMOP_DEF(iemOp_ptest_Vx_Wx)
         IEM_MC_REF_XREG_U128_CONST(puSrc2,      IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_REF_EFLAGS(pEFlags);
         IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_ptest_u128, puSrc1, puSrc2, pEFlags);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -719,7 +719,7 @@ FNIEMOP_DEF(iemOp_ptest_Vx_Wx)
         IEM_MC_REF_EFLAGS(pEFlags);
         IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_ptest_u128, puSrc1, puSrc2, pEFlags);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -820,7 +820,7 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
                                                              iemAImpl_ ## a_Instr ## _u128, \
                                                              iemAImpl_v ## a_Instr ## _u128_fallback), \
                                  puDst, uSrc); \
-        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
         IEM_MC_END(); \
     } \
     else \
@@ -842,7 +842,7 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
                                                              iemAImpl_ ## a_Instr ## _u128, \
                                                              iemAImpl_v ## a_Instr ## _u128_fallback), \
                                  puDst, uSrc); \
-        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
         IEM_MC_END(); \
     } \
     return VINF_SUCCESS
@@ -953,7 +953,7 @@ FNIEMOP_DEF(iemOp_movntdqa_Vdq_Mdq)
         IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_STORE_XREG_U128(IEM_GET_MODRM_REG(pVCpu, bRm), uSrc);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
         return VINF_SUCCESS;
     }
@@ -1542,7 +1542,7 @@ FNIEMOP_DEF(iemOp_crc32_Gd_Eb)
         IEM_MC_FETCH_GREG_U8(uSrc,  IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse42, iemAImpl_crc32_u8, iemAImpl_crc32_u8_fallback), puDst, uSrc);
         IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     else
@@ -1563,7 +1563,7 @@ FNIEMOP_DEF(iemOp_crc32_Gd_Eb)
         IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse42, iemAImpl_crc32_u8, iemAImpl_crc32_u8_fallback), puDst, uSrc);
         IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
 
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -1602,7 +1602,7 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
                 IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse42, iemAImpl_crc32_u16, iemAImpl_crc32_u16_fallback),
                                          puDst, uSrc);
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 return VINF_SUCCESS;
 
@@ -1615,7 +1615,7 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
                 IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse42, iemAImpl_crc32_u32, iemAImpl_crc32_u32_fallback),
                                          puDst, uSrc);
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 return VINF_SUCCESS;
 
@@ -1628,7 +1628,7 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
                 IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse42, iemAImpl_crc32_u64, iemAImpl_crc32_u64_fallback),
                                          puDst, uSrc);
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 return VINF_SUCCESS;
 
@@ -1657,7 +1657,7 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
                                          puDst, uSrc);
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 return VINF_SUCCESS;
 
@@ -1676,7 +1676,7 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
                                          puDst, uSrc);
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 return VINF_SUCCESS;
 
@@ -1695,7 +1695,7 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
                                          puDst, uSrc);
                 IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(puDst);
 
-                IEM_MC_ADVANCE_RIP();
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 return VINF_SUCCESS;
 
