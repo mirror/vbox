@@ -379,6 +379,7 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
 		$$(VBOX_PATH_MANUAL_SRC)/$(1)/docbook-refentry-link-replacement-xsl-gen.xsl \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-link-replacement-xsl-gen.xsl \
 		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/en_US/,$$(VBOX_MANUAL_XML_FILES)) \
+		$$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
 		$$(VBOX_MANUAL_XML_FILES_COMMON) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $$(VBOX_XML_ENTITIES) \
                | $$$$(dir $$$$@)
