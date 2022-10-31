@@ -80,7 +80,7 @@ endif
 # libtpms for supporting the in process TPM emulation.
 if defined(VBOX_WITH_LIBTPMS) \
  && !defined(VBOX_ONLY_BUILD) \
- && ("$(SDK_VBOX_LIBTPMS_INCS)" == "$(SDK_VBOX_LIBTPMS_DEFAULT_INCS)")
+ && ("$(SDK_VBOX_TPMS_INCS)" == "$(SDK_VBOX_TPMS_DEFAULT_INCS)")
   include $(PATH_SUB_CURRENT)/libtpms-0.9.0/Makefile.kmk
 endif
 
