@@ -446,7 +446,7 @@ typedef TSTSTATE *PTSTSTATE;
 static int tstOpenInterfaces(PTSTSTATE pThis, const char *pszNetwork, uint32_t cbSend, uint32_t cbRecv)
 {
     pThis->hIf0 = INTNET_HANDLE_INVALID;
-    RTTESTI_CHECK_RC_OK_RET(IntNetR0Open(g_pSession, pszNetwork, kIntNetTrunkType_None, "", 0/*fFlags*/, cbSend, cbRecv, 
+    RTTESTI_CHECK_RC_OK_RET(IntNetR0Open(g_pSession, pszNetwork, kIntNetTrunkType_None, "", 0/*fFlags*/, cbSend, cbRecv,
                                          NULL /*pfnRecvAvail*/, NULL /*pvUser*/, &pThis->hIf0), rcCheck);
     RTTESTI_CHECK_RET(pThis->hIf0 != INTNET_HANDLE_INVALID, VERR_INTERNAL_ERROR);
     RTTESTI_CHECK_RC_RET(IntNetR0IfGetBufferPtrs(pThis->hIf0, g_pSession, &pThis->pBuf0, NULL), VINF_SUCCESS, rcCheck);
@@ -454,7 +454,7 @@ static int tstOpenInterfaces(PTSTSTATE pThis, const char *pszNetwork, uint32_t c
 
 
     pThis->hIf1 = INTNET_HANDLE_INVALID;
-    RTTESTI_CHECK_RC_OK_RET(IntNetR0Open(g_pSession, pszNetwork, kIntNetTrunkType_None, "", 0/*fFlags*/, cbSend, cbRecv, 
+    RTTESTI_CHECK_RC_OK_RET(IntNetR0Open(g_pSession, pszNetwork, kIntNetTrunkType_None, "", 0/*fFlags*/, cbSend, cbRecv,
                                          NULL /*pfnRecvAvail*/, NULL /*pvUser*/, &pThis->hIf1), rcCheck);
     RTTESTI_CHECK_RET(pThis->hIf1 != INTNET_HANDLE_INVALID, VERR_INTERNAL_ERROR);
     RTTESTI_CHECK_RC_RET(IntNetR0IfGetBufferPtrs(pThis->hIf1, g_pSession, &pThis->pBuf1, NULL), VINF_SUCCESS, rcCheck);

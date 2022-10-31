@@ -2841,7 +2841,7 @@ static int intnetR0RingWriteFrame(PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTM
 
 /** 
  * Notifies consumers of incoming data from @a pIf that data is available.
- */ 
+ */
 DECL_FORCE_INLINE(void) intnetR0IfNotifyRecv(PINTNETIF pIf)
 {
 #if !defined(VBOX_WITH_INTNET_SERVICE_IN_R3) || !defined(IN_RING3)
@@ -4688,6 +4688,7 @@ INTNETR0DECL(int) IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, ui
 
 #if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
     AssertReleaseFailed(); /* Should never be called. */
+    RT_NOREF(cMillies);
     return VERR_NOT_SUPPORTED;
 #else
     const RTSEMEVENT hRecvEvent  = pIf->hRecvEvent;
@@ -4791,6 +4792,7 @@ INTNETR0DECL(int) IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSessio
 
 #if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
     AssertReleaseFailed();
+    RT_NOREF(fNoMoreWaits);
     return VERR_NOT_SUPPORTED;
 #else
     const RTSEMEVENT hRecvEvent  = pIf->hRecvEvent;
@@ -6650,14 +6652,14 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
  *                          access check or not.
  * @param   cbSend          The send buffer size.
  * @param   cbRecv          The receive buffer size.
- * @param   pfnRecvAvail    The receive available callback to call instead of 
+ * @param   pfnRecvAvail    The receive available callback to call instead of
  *                          signalling the semaphore (R3 service only).
  * @param   pvUser          The opaque user data to pass to the callback.
  * @param   phIf            Where to store the handle to the network interface.
  */
 INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
                                INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
-                               uint32_t cbSend, uint32_t cbRecv, PFNINTNETIFRECVAVAIL pfnRecvAvail, void *pvUser, 
+                               uint32_t cbSend, uint32_t cbRecv, PFNINTNETIFRECVAVAIL pfnRecvAvail, void *pvUser,
                                PINTNETIFHANDLE phIf)
 {
     LogFlow(("IntNetR0Open: pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x cbSend=%u cbRecv=%u phIf=%p\n",
