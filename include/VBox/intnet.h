@@ -1326,9 +1326,9 @@ INTNETR0DECL(int)       IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION p
 /** @} */
 #endif /* IN_RING0 */
 
-/** 
- * Callback function for use with IntNetR3Open to signalling incoming data. 
- *  
+/**
+ * Callback function for use with IntNetR3Open to signalling incoming data.
+ *
  * @param   hIf     Interface handle.
  * @param   pvUser  User parameter.
  */
