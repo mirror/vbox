@@ -2133,7 +2133,7 @@ FNIEMOP_DEF(iemOp_movups_Vps_Wps)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 0);
@@ -2147,7 +2147,7 @@ FNIEMOP_DEF(iemOp_movups_Vps_Wps)
     else
     {
         /*
-         * Memory, register.
+         * XMM128, [mem128].
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc); /** @todo optimize this one day... */
@@ -2185,7 +2185,7 @@ FNIEMOP_DEF(iemOp_movupd_Vpd_Wpd)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 0);
@@ -2199,7 +2199,7 @@ FNIEMOP_DEF(iemOp_movupd_Vpd_Wpd)
     else
     {
         /*
-         * Memory, register.
+         * XMM128, [mem128].
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc); /** @todo optimize this one day... */
@@ -2236,7 +2236,7 @@ FNIEMOP_DEF(iemOp_movss_Vss_Wss)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM32, XMM32.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
@@ -2253,7 +2253,7 @@ FNIEMOP_DEF(iemOp_movss_Vss_Wss)
     else
     {
         /*
-         * Memory, register.
+         * XMM128, [mem32].
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint32_t,                  uSrc);
@@ -2290,7 +2290,7 @@ FNIEMOP_DEF(iemOp_movsd_Vsd_Wsd)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM64, XMM64.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
@@ -2307,7 +2307,7 @@ FNIEMOP_DEF(iemOp_movsd_Vsd_Wsd)
     else
     {
         /*
-         * Memory, register.
+         * XMM128, [mem64].
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -2344,7 +2344,7 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 0);
@@ -2358,7 +2358,7 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps)
     else
     {
         /*
-         * Memory, register.
+         * [mem128], XMM128.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc); /** @todo optimize this one day... */
@@ -2395,7 +2395,7 @@ FNIEMOP_DEF(iemOp_movupd_Wpd_Vpd)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 0);
@@ -2409,7 +2409,7 @@ FNIEMOP_DEF(iemOp_movupd_Wpd_Vpd)
     else
     {
         /*
-         * Memory, register.
+         * [mem128], XMM128.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc); /** @todo optimize this one day... */
@@ -2446,7 +2446,7 @@ FNIEMOP_DEF(iemOp_movss_Wss_Vss)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM32, XMM32.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
@@ -2463,7 +2463,7 @@ FNIEMOP_DEF(iemOp_movss_Wss_Vss)
     else
     {
         /*
-         * Memory, register.
+         * [mem32], XMM32.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint32_t,                  uSrc);
@@ -2500,7 +2500,7 @@ FNIEMOP_DEF(iemOp_movsd_Wsd_Vsd)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM64, XMM64.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
@@ -2517,7 +2517,7 @@ FNIEMOP_DEF(iemOp_movsd_Wsd_Vsd)
     else
     {
         /*
-         * Memory, register.
+         * [mem64], XMM64.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -3088,7 +3088,7 @@ FNIEMOP_DEF(iemOp_movshdup_Vdq_Wdq)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
-         * Register, register.
+         * XMM128, XMM128.
          */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(2, 0);
@@ -3108,7 +3108,7 @@ FNIEMOP_DEF(iemOp_movshdup_Vdq_Wdq)
     else
     {
         /*
-         * Register, memory.
+         * XMM128, [mem128].
          */
         IEM_MC_BEGIN(2, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
