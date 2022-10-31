@@ -1601,8 +1601,10 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         GCTLCMD_COMMON_OPTION_DEFS()
         { "--follow",              'L',     RTGETOPT_REQ_NOTHING }, /* Kept for backwards-compatibility (VBox < 7.0). */
         { "--dereference",         'L',     RTGETOPT_REQ_NOTHING },
+        { "--no-replace",          'n',     RTGETOPT_REQ_NOTHING }, /* like "-n" via cp. */
         { "--recursive",           'R',     RTGETOPT_REQ_NOTHING },
-        { "--target-directory",    't',     RTGETOPT_REQ_STRING  }
+        { "--target-directory",    't',     RTGETOPT_REQ_STRING  },
+        { "--update",              'u',     RTGETOPT_REQ_NOTHING }  /* like "-u" via cp. */
     };
 
     int ch;
@@ -1614,6 +1616,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     const char *pszDst = NULL;
     bool fFollow = false;
     bool fRecursive = false;
+    bool fUpdate = false; /* Whether to copy the file only if it's newer than the target. */
+    bool fNoReplace = false; /* Only copy the file if it does not exist yet. */
 
     int vrc = VINF_SUCCESS;
     while (  (ch = RTGetOpt(&GetState, &ValueUnion)) != 0
@@ -1630,6 +1634,10 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 fFollow = true;
                 break;
 
+            case 'n':
+                fNoReplace = true;
+                break;
+
             case 'R':
                 fRecursive = true;
                 break;
@@ -1637,6 +1645,10 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             case 't':
                 pszDst = ValueUnion.psz;
                 fDstMustBeDir = true;
+                break;
+
+            case 'u':
+                fUpdate = true;
                 break;
 
             default:
@@ -1741,6 +1753,10 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             strCopyFlags += "CopyIntoExisting,"; /* Implicit. */
         if (fFollow)
             strCopyFlags += "FollowLinks,";
+        if (fUpdate && !fIsDir)    /* Only affects files. */
+            strCopyFlags += "Update,";
+        if (fNoReplace && !fIsDir) /* Ditto. */
+            strCopyFlags += "NoReplace,";
        aCopyFlags.push_back(Bstr(strCopyFlags).raw());
     }
 
