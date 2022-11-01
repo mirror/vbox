@@ -306,8 +306,6 @@ FNIEMOP_DEF(iemOp_vptest_Vx_Wx)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
-
 }
 
 
@@ -449,7 +447,7 @@ FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
             IEM_MC_END(); \
         } \
     } \
-    return VINF_SUCCESS \
+    (void)0
 
 /** Opcode VEX.66.0F38 0x20. */
 FNIEMOP_DEF(iemOp_vpmovsxbw_Vx_UxMq)
@@ -594,7 +592,6 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
-        return VINF_SUCCESS;
     }
 
     /**
@@ -607,7 +604,8 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -827,8 +825,6 @@ FNIEMOP_DEF(iemOp_vphminposuw_Vdq_Wdq)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -1192,7 +1188,6 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 /*  Opcode VEX.66.0F38 0xf2 - invalid. */
@@ -1287,7 +1282,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_END(); \
         } \
     } \
-    return VINF_SUCCESS
+    (void)0
 
 
 /*  Opcode VEX.F3.0F38 0xf3 /1. */
@@ -1451,7 +1446,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_END(); \
         } \
     } \
-    return VINF_SUCCESS
+    (void)0
 
 /** Body for SARX, SHLX, SHRX; assumes VEX.L must be 0. */
 #define IEMOP_BODY_Gy_Ey_By_NoEflags(a_Instr, a_fFeatureMember, a_fUndefFlags) \
@@ -1536,7 +1531,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_END(); \
         } \
     } \
-    return VINF_SUCCESS
+    (void)0
 
 /** Opcode VEX.0F38 0xf5 (vex only). */
 FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
@@ -1633,7 +1628,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
             IEM_MC_END(); \
         } \
     } \
-    return VINF_SUCCESS;
+    (void)0
 
 
 /** Opcode VEX.F3.0F38 0xf5 (vex only). */
@@ -1751,7 +1746,6 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 

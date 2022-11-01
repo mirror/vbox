@@ -89,7 +89,6 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -149,7 +148,6 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -210,7 +208,6 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -315,7 +312,6 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -454,7 +450,6 @@ FNIEMOP_DEF(iemOp_pclmulqdq_Vdq_Wdq_Ib)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -559,7 +554,6 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 

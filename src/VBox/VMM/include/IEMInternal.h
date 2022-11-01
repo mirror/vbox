@@ -3240,10 +3240,18 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 
 /** Used to shut up GCC warnings about variables that 'may be used uninitialized'
  * due to GCC lacking knowledge about the value range of a switch. */
-#define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE)
+#if RT_CPLUSPLUS_PREREQ(202000)
+# define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: [[unlikely]] AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE)
+#else
+# define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE)
+#endif
 
 /** Variant of IEM_NOT_REACHED_DEFAULT_CASE_RET that returns a custom value. */
-#define IEM_NOT_REACHED_DEFAULT_CASE_RET2(a_RetValue) default: AssertFailedReturn(a_RetValue)
+#if RT_CPLUSPLUS_PREREQ(202000)
+# define IEM_NOT_REACHED_DEFAULT_CASE_RET2(a_RetValue) default: [[unlikely]] AssertFailedReturn(a_RetValue)
+#else
+# define IEM_NOT_REACHED_DEFAULT_CASE_RET2(a_RetValue) default: AssertFailedReturn(a_RetValue)
+#endif
 
 /**
  * Returns IEM_RETURN_ASPECT_NOT_IMPLEMENTED, and in debug builds logs the

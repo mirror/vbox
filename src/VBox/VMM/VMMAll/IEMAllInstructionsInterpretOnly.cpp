@@ -984,7 +984,6 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_r8, PCIEMOPBINSIZES, pImpl)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1053,6 +1052,8 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
     else
@@ -1136,9 +1137,10 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1192,7 +1194,6 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_r8_rm, PCIEMOPBINSIZES, pImpl)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1260,6 +1261,8 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
     else
@@ -1324,9 +1327,10 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1352,7 +1356,6 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_AL_Ib, PCIEMOPBINSIZES, pImpl)
 
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
-    return VINF_SUCCESS;
 }
 
 

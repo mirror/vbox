@@ -148,7 +148,6 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Ib_Opt, PCIEMOPMEDIAOPTF3IMM8, pImpl)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -348,7 +347,6 @@ FNIEMOP_DEF(iemOp_vpclmulqdq_Vdq_Hdq_Wdq_Ib)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -486,7 +484,6 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -718,7 +715,6 @@ FNIEMOP_DEF(iemOp_rorx_Gy_Ey_Ib)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 

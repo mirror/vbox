@@ -142,7 +142,6 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, PCIEMOPMEDIAF3, pImpl)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -253,7 +252,6 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, PCIEMOPMEDIAOPTF3, pImpl)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -386,7 +384,6 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Wx_Opt, PCIEMOPMEDIAOPTF2, pImpl)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -487,7 +484,6 @@ FNIEMOP_DEF(iemOp_vmovups_Vps_Wps)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -563,7 +559,6 @@ FNIEMOP_DEF(iemOp_vmovupd_Vpd_Wpd)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -628,8 +623,6 @@ FNIEMOP_DEF(iemOp_vmovss_Vss_Hss_Wss)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -694,8 +687,6 @@ FNIEMOP_DEF(iemOp_vmovsd_Vsd_Hsd_Wsd)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -771,7 +762,6 @@ FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -847,7 +837,6 @@ FNIEMOP_DEF(iemOp_vmovupd_Wpd_Vpd)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -911,8 +900,6 @@ FNIEMOP_DEF(iemOp_vmovss_Wss_Hss_Vss)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -977,8 +964,6 @@ FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hsd_Vsd)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -1049,7 +1034,6 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1088,7 +1072,6 @@ FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
 
     /**
@@ -1101,7 +1084,8 @@ FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -1207,7 +1191,6 @@ FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1310,7 +1293,6 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1345,7 +1327,6 @@ FNIEMOP_DEF(iemOp_vmovlps_Mq_Vq)
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
 
     /**
@@ -1358,7 +1339,8 @@ FNIEMOP_DEF(iemOp_vmovlps_Mq_Vq)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -1392,7 +1374,6 @@ FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
 
     /**
@@ -1405,7 +1386,8 @@ FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 /*  Opcode VEX.F3.0F 0x13 - invalid */
@@ -1513,7 +1495,6 @@ FNIEMOP_DEF(iemOp_vmovhps_Vdq_Hq_Mq__vmovlhps_Vdq_Hq_Uq)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1548,7 +1529,6 @@ FNIEMOP_DEF(iemOp_vmovhpd_Vdq_Hq_Mq)
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
 
     /**
@@ -1561,7 +1541,8 @@ FNIEMOP_DEF(iemOp_vmovhpd_Vdq_Hq_Mq)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -1663,7 +1644,6 @@ FNIEMOP_DEF(iemOp_vmovshdup_Vx_Wx)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1699,7 +1679,6 @@ FNIEMOP_DEF(iemOp_vmovhps_Mq_Vq)
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
 
     /**
@@ -1712,7 +1691,8 @@ FNIEMOP_DEF(iemOp_vmovhps_Mq_Vq)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -1744,7 +1724,6 @@ FNIEMOP_DEF(iemOp_vmovhpd_Mq_Vq)
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
 
     /**
@@ -1757,7 +1736,8 @@ FNIEMOP_DEF(iemOp_vmovhpd_Mq_Vq)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -1857,7 +1837,6 @@ FNIEMOP_DEF(iemOp_vmovaps_Vps_Wps)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -1935,7 +1914,6 @@ FNIEMOP_DEF(iemOp_vmovapd_Vpd_Wpd)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 /**
@@ -2032,7 +2010,6 @@ FNIEMOP_DEF(iemOp_vmovaps_Wps_Vps)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 /**
@@ -2109,7 +2086,6 @@ FNIEMOP_DEF(iemOp_vmovapd_Wpd_Vpd)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -2201,7 +2177,6 @@ FNIEMOP_DEF(iemOp_vmovntps_Mps_Vps)
     /* The register, register encoding is invalid. */
     else
         return IEMOP_RAISE_INVALID_OPCODE();
-    return VINF_SUCCESS;
 }
 
 /**
@@ -2263,7 +2238,6 @@ FNIEMOP_DEF(iemOp_vmovntpd_Mpd_Vpd)
     /* The register, register encoding is invalid. */
     else
         return IEMOP_RAISE_INVALID_OPCODE();
-    return VINF_SUCCESS;
 }
 
 /**
@@ -2370,7 +2344,6 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -2442,7 +2415,6 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -2517,7 +2489,6 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -2589,7 +2560,6 @@ FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -2674,17 +2644,15 @@ FNIEMOP_DEF(iemOp_vmovmskps_Gy_Ups)
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
-        return VINF_SUCCESS;
     }
-
     /* No memory operand. */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
 /** Opcode VEX.66.0F 0x50 - vmovmskpd Gy,Upd */
 FNIEMOP_DEF(iemOp_vmovmskpd_Gy_Upd)
-{
 {
     IEMOP_MNEMONIC2(VEX_RM_REG, VMOVMSKPD, vmovmskpd, Gd, Ux, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2727,12 +2695,10 @@ FNIEMOP_DEF(iemOp_vmovmskpd_Gy_Upd)
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
-        return VINF_SUCCESS;
     }
-
     /* No memory operand. */
-    return IEMOP_RAISE_INVALID_OPCODE();
-}
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -3287,7 +3253,6 @@ FNIEMOP_DEF(iemOp_vmovd_q_Vy_Ey)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -3369,7 +3334,6 @@ FNIEMOP_DEF(iemOp_vmovdqa_Vx_Wx)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 /**
@@ -3445,7 +3409,6 @@ FNIEMOP_DEF(iemOp_vmovdqu_Vx_Wx)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -3554,7 +3517,6 @@ FNIEMOP_DEF_2(iemOpCommonAvxAvx2_vpshufXX_Vx_Wx_Ib, PFNIEMAIMPLMEDIAPSHUFU128, p
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -3838,7 +3800,6 @@ FNIEMOP_DEF(iemOp_vzeroupperv__vzeroallv)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -3984,8 +3945,8 @@ FNIEMOP_DEF(iemOp_vmovd_q_Ey_Vy)
             IEM_MC_END();
         }
     }
-    return VINF_SUCCESS;
 }
+
 
 /**
  * @opcode      0x7e
@@ -4036,7 +3997,6 @@ FNIEMOP_DEF(iemOp_vmovq_Vq_Wq)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 
 }
 /*  Opcode VEX.F2.0F 0x7e - invalid */
@@ -4117,8 +4077,8 @@ FNIEMOP_DEF(iemOp_vmovdqa_Wx_Vx)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
+
 
 /**
  * @opcode      0x7f
@@ -4193,7 +4153,6 @@ FNIEMOP_DEF(iemOp_vmovdqu_Wx_Vx)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 /*  Opcode VEX.F2.0F 0x7f - invalid */
@@ -4490,8 +4449,6 @@ FNIEMOP_DEF(iemOp_vpinsrw_Vdq_Hdq_RyMw_Ib)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -4526,11 +4483,10 @@ FNIEMOP_DEF(iemOp_vpextrw_Gd_Udq_Ib)
         IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u16Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
-        return VINF_SUCCESS;
     }
-
     /* No memory operand. */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -4641,7 +4597,7 @@ FNIEMOP_DEF(iemOp_vpextrw_Gd_Udq_Ib)
             IEM_MC_END(); \
         } \
     } \
-    return VINF_SUCCESS;
+    (void)0
 
 /** Opcode VEX.0F 0xc6 - vshufps Vps,Hps,Wps,Ib */
 FNIEMOP_DEF(iemOp_vshufps_Vps_Hps_Wps_Ib)
@@ -4784,7 +4740,6 @@ FNIEMOP_DEF(iemOp_vmovq_Wq_Vq)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 /*  Opcode VEX.F3.0F 0xd6 - invalid */
@@ -4831,9 +4786,9 @@ FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
-        return VINF_SUCCESS;
     }
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -5065,7 +5020,6 @@ FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
-        return VINF_SUCCESS;
     }
     /**
      * @opdone
@@ -5077,7 +5031,8 @@ FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
      * @opcpuid     avx
      * @optest      ->
      */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 /*  Opcode VEX.F3.0F 0xe7 - invalid */
@@ -5227,7 +5182,6 @@ FNIEMOP_DEF(iemOp_vlddqu_Vx_Mx)
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
-    return VINF_SUCCESS;
 }
 
 
