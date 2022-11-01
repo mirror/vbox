@@ -54,7 +54,6 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg>--delete</arg>
-      <arg>--delete-all</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -94,14 +93,6 @@
                 The empty directory associated with the unregistered VM.
               </para></listitem>
           </itemizedlist></listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--delete-all</option></term>
-        <listitem><para>
-            Deletes the files described in the <option>--delete</option> option,
-            as well as all DVDs and Floppy disks located in the VM folder and
-            attached only to this VM.
-          </para></listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
