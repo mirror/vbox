@@ -210,7 +210,7 @@ void UINetworkFeaturesEditor::setCableOptionsAvailable(bool fAvailable)
 
 void UINetworkFeaturesEditor::setForwardingOptionsAvailable(bool fAvailable)
 {
-    m_pButtonPortForwarding->setEnabled(fAvailable);
+    m_pButtonPortForwarding->setVisible(fAvailable);
 }
 
 int UINetworkFeaturesEditor::minimumLabelHorizontalHint() const
