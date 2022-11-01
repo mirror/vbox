@@ -67,7 +67,7 @@
 #include "MachineDebuggerImpl.h"
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"
-#include "SharedFolderImpl.h"
+#include "ConsoleSharedFolderImpl.h"
 #ifdef VBOX_WITH_AUDIO_VRDE
 # include "DrvAudioVRDE.h"
 #endif
