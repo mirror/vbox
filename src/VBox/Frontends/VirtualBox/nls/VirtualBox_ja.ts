@@ -405,11 +405,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">VT-x/AMD-Vを有効化(&amp;V)</translation>
+        <translation type="obsolete">VT-x/AMD-Vを有効化(&amp;V)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">仮想マシンでホストCPUの仮想化支援機能(Intel VT-xまたはAMD-V)を有効にします。</translation>
+        <translation type="obsolete">仮想マシンでホストCPUの仮想化支援機能(Intel VT-xまたはAMD-V)を有効にします。</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -1171,7 +1171,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>閉じる(&amp;C)</translation>
+        <translation type="vanished">閉じる(&amp;C)</translation>
     </message>
     <message>
         <source>Popup Menu</source>
@@ -3227,6 +3227,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9040,6 +9044,25 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -13904,7 +13927,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>この仮想マシンのOSタイプは64bitです。64bitゲストシステムにはハードウェア仮想化が必須であり、設定を確認すると自動的に有効化されます。</translation>
+        <translation type="vanished">この仮想マシンのOSタイプは64bitです。64bitゲストシステムにはハードウェア仮想化が必須であり、設定を確認すると自動的に有効化されます。</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
@@ -16269,7 +16292,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>ハードウェア仮想化がシステムページのアクセラレーションセクションで有効になっていません。仮想プロセッサーを1つ以上にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
+        <translation type="vanished">ハードウェア仮想化がシステムページのアクセラレーションセクションで有効になっていません。仮想プロセッサーを1つ以上にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -16293,7 +16316,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>ハードウェア仮想化がシステムページのアクセラレーションセクションで有効になっていません。ネステッドハードウェア仮想化を有効にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
+        <translation type="vanished">ハードウェア仮想化がシステムページのアクセラレーションセクションで有効になっていません。ネステッドハードウェア仮想化を有効にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -16301,7 +16324,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>システムページのアクセラレーションセクションで、ハードウェア仮想化が有効になっていません。ネステッドページングを有効にするのなら必須です。この変更を適用すると自動的に有効になります。</translation>
+        <translation type="vanished">システムページのアクセラレーションセクションで、ハードウェア仮想化が有効になっていません。ネステッドページングを有効にするのなら必須です。この変更を適用すると自動的に有効になります。</translation>
     </message>
 </context>
 <context>

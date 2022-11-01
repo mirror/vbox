@@ -197,11 +197,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">啟用 VT-x/AMD-V (&amp;V)</translation>
+        <translation type="obsolete">啟用 VT-x/AMD-V (&amp;V)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">勾選時，虛擬機器將嘗試使用主機 CPU 的硬體虛擬化擴充比如 Intel VT-x 和 AMD-V。</translation>
+        <translation type="obsolete">勾選時，虛擬機器將嘗試使用主機 CPU 的硬體虛擬化擴充比如 Intel VT-x 和 AMD-V。</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -854,7 +854,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>關閉(&amp;C)</translation>
+        <translation type="vanished">關閉(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Detach GUI</source>
@@ -2242,6 +2242,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6737,6 +6741,25 @@
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -8860,7 +8883,7 @@
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>虛擬機器作業系統提示設定為 64 位元類型。 64 位元客體系統需要硬體虛擬化，因此，如果您確認所做的變更，將自動啟用這個功能。</translation>
+        <translation type="vanished">虛擬機器作業系統提示設定為 64 位元類型。 64 位元客體系統需要硬體虛擬化，因此，如果您確認所做的變更，將自動啟用這個功能。</translation>
     </message>
     <message>
         <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
@@ -9761,7 +9784,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>在「系統」頁的「加速」部分中硬體虛擬化目前未啟用。 這是支援多個虛擬處理器所必需。 如果您確認所做的變更，它將自動啟用。</translation>
+        <translation type="vanished">在「系統」頁的「加速」部分中硬體虛擬化目前未啟用。 這是支援多個虛擬處理器所必需。 如果您確認所做的變更，它將自動啟用。</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
@@ -9803,7 +9826,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>在「系統」頁的「加速」部分中目前未啟用硬體虛擬化。 這是支援巢式硬體虛擬化所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
+        <translation type="vanished">在「系統」頁的「加速」部分中目前未啟用硬體虛擬化。 這是支援巢式硬體虛擬化所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -9811,7 +9834,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>在「系統」頁的「加速」部分中目前未啟用硬體虛擬化。 這是支援 Nested Paging 所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
+        <translation type="vanished">在「系統」頁的「加速」部分中目前未啟用硬體虛擬化。 這是支援 Nested Paging 所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
     </message>
 </context>
 <context>

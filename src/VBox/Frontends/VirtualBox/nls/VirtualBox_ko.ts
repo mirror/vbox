@@ -197,11 +197,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">VT-x/AMD-V 사용하기(&amp;V)</translation>
+        <translation type="obsolete">VT-x/AMD-V 사용하기(&amp;V)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">선택하면 인텔의 VT-x나 AMD-V 같은 호스트 CPU의 하드웨어 가상화 확장을 사용합니다.</translation>
+        <translation type="obsolete">선택하면 인텔의 VT-x나 AMD-V 같은 호스트 CPU의 하드웨어 가상화 확장을 사용합니다.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -463,7 +463,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>닫기(&amp;C)</translation>
+        <translation type="vanished">닫기(&amp;C)</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -2242,6 +2242,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6717,6 +6721,25 @@
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -8796,7 +8819,7 @@
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>가상 머신 운영 체제 종류가 64비트로 지정되었습니다. 64비트 게스트 운영 체제는 하드웨어 가상화 기능을 필요로 하므로 변경 사항을 저장하면 자동적으로 활성화될 것입니다.</translation>
+        <translation type="vanished">가상 머신 운영 체제 종류가 64비트로 지정되었습니다. 64비트 게스트 운영 체제는 하드웨어 가상화 기능을 필요로 하므로 변경 사항을 저장하면 자동적으로 활성화될 것입니다.</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
@@ -9751,7 +9774,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>시스템 페이지의 가속 영역에서 하드웨어 가속을 활성화하지 않았습니다. 하나 이상의 가상 프로세서를 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
+        <translation type="vanished">시스템 페이지의 가속 영역에서 하드웨어 가속을 활성화하지 않았습니다. 하나 이상의 가상 프로세서를 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -9775,7 +9798,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>시스템 페이지의 가속 영역에서 하드웨어 가속을 활성화하지 않았습니다. 네스티드 하드웨어 가상화를 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
+        <translation type="vanished">시스템 페이지의 가속 영역에서 하드웨어 가속을 활성화하지 않았습니다. 네스티드 하드웨어 가상화를 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -9783,7 +9806,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>시스템 페이지의 가속 영역에서 하드웨어 가속을 활성화하지 않았습니다. 네스티드 페이징을 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
+        <translation type="vanished">시스템 페이지의 가속 영역에서 하드웨어 가속을 활성화하지 않았습니다. 네스티드 페이징을 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
 </context>
 <context>

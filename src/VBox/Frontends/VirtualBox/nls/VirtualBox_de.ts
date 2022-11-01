@@ -244,11 +244,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>&amp;VT-x/AMD-V aktivieren</translation>
+        <translation type="vanished">&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Durch Aktivieren dieser Option wird die virtuelle Maschine einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) verwenden, falls dieser Modus verfügbar ist.</translation>
+        <translation type="vanished">Durch Aktivieren dieser Option wird die virtuelle Maschine einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) verwenden, falls dieser Modus verfügbar ist.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -502,7 +502,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Schließen</translation>
+        <translation type="vanished">&amp;Schließen</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -2579,6 +2579,10 @@
     <message>
         <source>Display the log viewer window</source>
         <translation>Zeigt das Fenster der Loganzeige an</translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7204,6 +7208,25 @@ a guest session</source>
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished">Minimal möglicher Skalierungsfaktor.</translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished">Maximal möglicher Skalierungsfaktor.</translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -10955,7 +10978,7 @@ a guest session</source>
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Der Typ des Gastsystems erlaubt 64-Bit-Gäste. Dafür wird Hardware-Virtualisierung benötigt. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
+        <translation type="vanished">Der Typ des Gastsystems erlaubt 64-Bit-Gäste. Dafür wird Hardware-Virtualisierung benötigt. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
@@ -12162,7 +12185,7 @@ a guest session</source>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für Multi-CPU-Gäste muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
+        <translation type="vanished">Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für Multi-CPU-Gäste muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -12200,7 +12223,7 @@ a guest session</source>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für verschachtelte Hardware-Virtualisierung muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
+        <translation type="vanished">Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für verschachtelte Hardware-Virtualisierung muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -12208,7 +12231,7 @@ a guest session</source>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für Nested Paging muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
+        <translation type="vanished">Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für Nested Paging muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
 </context>
 <context>

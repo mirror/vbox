@@ -210,11 +210,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Aktivér &amp;VT-x/AMD-V</translation>
+        <translation type="obsolete">Aktivér &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Hvis markeret, vil den virtuelle maskine forsøge at bruge værts-CPU&apos;ens funktioner til hardwarevirtualisering, såsom Intel VT-x og AMD-V.</translation>
+        <translation type="obsolete">Hvis markeret, vil den virtuelle maskine forsøge at bruge værts-CPU&apos;ens funktioner til hardwarevirtualisering, såsom Intel VT-x og AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -476,7 +476,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Luk</translation>
+        <translation type="vanished">&amp;Luk</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -2360,6 +2360,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6738,6 +6742,25 @@
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -9977,7 +10000,7 @@
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Den virtuelle maskines styresystem-type er sat til en 64-bit type. 64-bit gæstestyresystemer kræver hardwarevirtualisering, så det aktiveres automatisk hvis du bekræfter ændringerne.</translation>
+        <translation type="vanished">Den virtuelle maskines styresystem-type er sat til en 64-bit type. 64-bit gæstestyresystemer kræver hardwarevirtualisering, så det aktiveres automatisk hvis du bekræfter ændringerne.</translation>
     </message>
     <message>
         <source>Basi&amp;c</source>
@@ -10991,7 +11014,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Hardwareacceleration er i øjeblikket ikke aktiveret under System-&gt;Acceleration. Dette kræves for at understøtte mere end én virtuel processor. Aktivering sker automatisk, hvis du bekræfter dine ændringer.</translation>
+        <translation type="vanished">Hardwareacceleration er i øjeblikket ikke aktiveret under System-&gt;Acceleration. Dette kræves for at understøtte mere end én virtuel processor. Aktivering sker automatisk, hvis du bekræfter dine ændringer.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -11002,15 +11025,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

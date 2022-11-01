@@ -389,12 +389,8 @@
         <translation type="unfinished">Donanım Sanallaştırma:</translation>
     </message>
     <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">İşaretlendiğinde, sanal makine Intel VT-x ve AMD-V. gibi anamakine işlemcisinin donanım sanallaştırma uzantılarından yararlanmaya çalışacak.</translation>
+        <translation type="obsolete">İşaretlendiğinde, sanal makine Intel VT-x ve AMD-V. gibi anamakine işlemcisinin donanım sanallaştırma uzantılarından yararlanmaya çalışacak.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -895,7 +891,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Kapat</translation>
+        <translation type="vanished">&amp;Kapat</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -3215,6 +3211,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8680,6 +8680,25 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -13904,7 +13923,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Sanal makine işletim sistemi ipucu 64-bit türüne ayarlı. 64-bit misafir sistemleri donanım sanallaştırması gerektirir, bu yüzden eğer değişiklikleri onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
+        <translation type="vanished">Sanal makine işletim sistemi ipucu 64-bit türüne ayarlı. 64-bit misafir sistemleri donanım sanallaştırması gerektirir, bu yüzden eğer değişiklikleri onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
@@ -15783,7 +15802,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Donanım sanallaştırma şu anda Sistem sayfasının Hızlandırma bölümünde etkinleştirilmedi. Bu, birden fazla sanal işlemciyi desteklemek için gereklidir. Eğer değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
+        <translation type="vanished">Donanım sanallaştırma şu anda Sistem sayfasının Hızlandırma bölümünde etkinleştirilmedi. Bu, birden fazla sanal işlemciyi desteklemek için gereklidir. Eğer değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -15807,7 +15826,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Donanım sanallaştırma şu anda Sistem sayfasının Hızlandırma bölümünde etkinleştirilmedi. Bu, birden fazla iç içe donanım sanallaştırmayı desteklemek için gereklidir. Eğer değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
+        <translation type="vanished">Donanım sanallaştırma şu anda Sistem sayfasının Hızlandırma bölümünde etkinleştirilmedi. Bu, birden fazla iç içe donanım sanallaştırmayı desteklemek için gereklidir. Eğer değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -15815,7 +15834,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Donanım sanallaştırma şu anda Sistem sayfasının Hızlandırma bölümünde etkinleştirilmedi. Bu, birden fazla iç içe disk belleğini desteklemek için gereklidir. Eğer değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
+        <translation type="vanished">Donanım sanallaştırma şu anda Sistem sayfasının Hızlandırma bölümünde etkinleştirilmedi. Bu, birden fazla iç içe disk belleğini desteklemek için gereklidir. Eğer değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
     </message>
 </context>
 <context>

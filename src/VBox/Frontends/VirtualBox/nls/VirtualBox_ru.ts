@@ -352,11 +352,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Вк&amp;лючить VT-x/AMD-V</translation>
+        <translation type="vanished">Вк&amp;лючить VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Если стоит галочка, виртуальная машина будет пытаться задействовать расширенные функции аппаратной виртуализации процессора основного ПК, такие как Intel VT-x или AMD-V.</translation>
+        <translation type="vanished">Если стоит галочка, виртуальная машина будет пытаться задействовать расширенные функции аппаратной виртуализации процессора основного ПК, такие как Intel VT-x или AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -938,7 +938,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Закрыть</translation>
+        <translation type="vanished">&amp;Закрыть</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -3154,6 +3154,10 @@
     <message>
         <source>Display the log viewer window</source>
         <translation>Открыть диалог просмотра логов</translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8995,6 +8999,25 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished">Минимально возможный коэффициент масштабирования.</translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished">Минимально возможный коэффициент масштабирования.</translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -13900,7 +13923,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Для этой машины выбран 64х-битный тип гостевой ОС. В связи с тем, что такие ОС требуют средств аппаратной виртуализации (VT-x/AMD-V), эти функции будут включены автоматически.</translation>
+        <translation type="vanished">Для этой машины выбран 64х-битный тип гостевой ОС. В связи с тем, что такие ОС требуют средств аппаратной виртуализации (VT-x/AMD-V), эти функции будут включены автоматически.</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
@@ -15921,7 +15944,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Данная машина настроена на использование более одного виртуального процессора, для работы которых требуется функция аппаратной виртуализации (с вкладки &quot;Ускорение&quot; страницы настроек &quot;Система&quot;), отключенная в данный момент. Она будет включена автоматически при сохранении настроек.</translation>
+        <translation type="vanished">Данная машина настроена на использование более одного виртуального процессора, для работы которых требуется функция аппаратной виртуализации (с вкладки &quot;Ускорение&quot; страницы настроек &quot;Система&quot;), отключенная в данный момент. Она будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -15945,7 +15968,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Данная машина настроена на использование вложенной аппаратной виртуализации, что в свою очередь требует средств аппаратной виртуализации, которые будет включены автоматически при сохранении настроек.</translation>
+        <translation type="vanished">Данная машина настроена на использование вложенной аппаратной виртуализации, что в свою очередь требует средств аппаратной виртуализации, которые будет включены автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -15953,7 +15976,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Данная машина настроена на использование функции Nested Paging, что в свою очередь требует средств аппаратной виртуализации, которые будет включены автоматически при сохранении настроек.</translation>
+        <translation type="vanished">Данная машина настроена на использование функции Nested Paging, что в свою очередь требует средств аппаратной виртуализации, которые будет включены автоматически при сохранении настроек.</translation>
     </message>
 </context>
 <context>

@@ -274,11 +274,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Ενεργοποίηση VT-x/AMD-V</translation>
+        <translation type="obsolete">Ενεργοποίηση VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Όταν επιλεγεί, η εικονική μηχανή θα προσπαθήσει να χρησιμοποιήσει τις επεκτάσεις εικονοποίησης του επεξεργαστή του οικοδεσπότη, όπως Intel VT-x και AMD-V.</translation>
+        <translation type="obsolete">Όταν επιλεγεί, η εικονική μηχανή θα προσπαθήσει να χρησιμοποιήσει τις επεκτάσεις εικονοποίησης του επεξεργαστή του οικοδεσπότη, όπως Intel VT-x και AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -532,7 +532,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -2592,6 +2592,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7127,6 +7131,25 @@
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -10919,7 +10942,7 @@
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Η υπόδειξη για το λειτουργικό σύστημα της εικονικής μηχανής είναι για τύπο 64-bit. Τα συστήματα 64-bit απαιτούνε εικονοποίηση του υλικού, οπότε αυτό θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές.</translation>
+        <translation type="vanished">Η υπόδειξη για το λειτουργικό σύστημα της εικονικής μηχανής είναι για τύπο 64-bit. Τα συστήματα 64-bit απαιτούνε εικονοποίηση του υλικού, οπότε αυτό θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές.</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
@@ -12074,7 +12097,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Η εικονοποίηση του εξοπλισμού δεν είναι ενεργοποιημένη στην κατηγορία Επιτάχυνση της σελίδας Συστήματος. Αυτό είναι απαραίτητο για να υποστηρίξει πάνω από έναν επεξεργαστή. Θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές σας.</translation>
+        <translation type="vanished">Η εικονοποίηση του εξοπλισμού δεν είναι ενεργοποιημένη στην κατηγορία Επιτάχυνση της σελίδας Συστήματος. Αυτό είναι απαραίτητο για να υποστηρίξει πάνω από έναν επεξεργαστή. Θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές σας.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -12098,7 +12121,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Η εικονοποίηση του εξοπλισμού δεν είναι ενεργοποιημένη στην κατηγορία Επιτάχυνση της σελίδας Συστήματος. Αυτό είναι απαραίτητο για να υποστηρίξει ένθετη εικονοποίηση του εξοπλισμού. Θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές σας.</translation>
+        <translation type="vanished">Η εικονοποίηση του εξοπλισμού δεν είναι ενεργοποιημένη στην κατηγορία Επιτάχυνση της σελίδας Συστήματος. Αυτό είναι απαραίτητο για να υποστηρίξει ένθετη εικονοποίηση του εξοπλισμού. Θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές σας.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -12106,7 +12129,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Η εικονοποίηση του εξοπλισμού δεν είναι ενεργοποιημένη στην κατηγορία Επιτάχυνση της σελίδας Συστήματος. Αυτό είναι απαραίτητο για την υποστήριξη ένθετης σελιδοποίησης. Θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές σας.</translation>
+        <translation type="vanished">Η εικονοποίηση του εξοπλισμού δεν είναι ενεργοποιημένη στην κατηγορία Επιτάχυνση της σελίδας Συστήματος. Αυτό είναι απαραίτητο για την υποστήριξη ένθετης σελιδοποίησης. Θα ενεργοποιηθεί αυτόματα αν επιβεβαιώσετε τις αλλαγές σας.</translation>
     </message>
 </context>
 <context>

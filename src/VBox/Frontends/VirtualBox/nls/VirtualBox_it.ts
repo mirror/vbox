@@ -405,11 +405,7 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Abilita &amp;VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Abilita &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -961,7 +957,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Chiudi</translation>
+        <translation type="vanished">&amp;Chiudi</translation>
     </message>
     <message>
         <source>Po&amp;wer Off</source>
@@ -3407,6 +3403,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9135,6 +9135,25 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -14517,7 +14536,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Il sistema operativo della macchina virtuale è impostato a 64 bit. I sistemi guest a 64 bit richiedono la virtualizzazione hardware, che sarà abilitata se confermi le modifiche.</translation>
+        <translation type="vanished">Il sistema operativo della macchina virtuale è impostato a 64 bit. I sistemi guest a 64 bit richiedono la virtualizzazione hardware, che sarà abilitata se confermi le modifiche.</translation>
     </message>
     <message>
         <source>Basi&amp;c</source>
@@ -16658,7 +16677,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare più di un processore virtuale. Sarà abilitata automaticamente se confermi le modifiche.</translation>
+        <translation type="vanished">La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare più di un processore virtuale. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -16682,7 +16701,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare la virtualizzazione hardware nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
+        <translation type="vanished">La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare la virtualizzazione hardware nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -16690,7 +16709,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare la paginazione nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
+        <translation type="vanished">La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare la paginazione nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
 </context>
 <context>

@@ -326,11 +326,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Activer &amp;VT-x/AMD-V</translation>
+        <translation type="obsolete">Activer &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Si cette case est cochée la machine virtuelle essaiera d&apos;utiliser les extensions de virtualisation matérielle du processeur hôte comme Intel VT-x et AMD-V.</translation>
+        <translation type="obsolete">Si cette case est cochée la machine virtuelle essaiera d&apos;utiliser les extensions de virtualisation matérielle du processeur hôte comme Intel VT-x et AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -912,7 +912,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Fermer</translation>
+        <translation type="vanished">&amp;Fermer</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -3068,6 +3068,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8550,6 +8554,25 @@
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -13220,7 +13243,7 @@
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>L&apos;indicateur de système d&apos;exploitation virtuel est définit sur le type 64 bits. Les systèmes invités 64 bits nécessitent la virtualisation matérielle, elle sera donc automatiquement activée si vous confirmez les modifications.</translation>
+        <translation type="vanished">L&apos;indicateur de système d&apos;exploitation virtuel est définit sur le type 64 bits. Les systèmes invités 64 bits nécessitent la virtualisation matérielle, elle sera donc automatiquement activée si vous confirmez les modifications.</translation>
     </message>
     <message>
         <source>Basi&amp;c</source>
@@ -14880,7 +14903,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>La virtualisation matérielle n&apos;est actuellement pas activée dans la section Accélération de la page de réglages Système. Cela est nécessaire afin de pouvoir supporter plus d&apos;un processeur virtuel. Cela sera fait automatiquement si vous confirmez vos changements.</translation>
+        <translation type="vanished">La virtualisation matérielle n&apos;est actuellement pas activée dans la section Accélération de la page de réglages Système. Cela est nécessaire afin de pouvoir supporter plus d&apos;un processeur virtuel. Cela sera fait automatiquement si vous confirmez vos changements.</translation>
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
@@ -14900,7 +14923,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>La virtualisation matérielle n&apos;est actuellement pas activée dans la section Accélération de la page de réglages Système. Cela est nécessaire afin de pouvoir supporter plus d&apos;un processeur virtuel. Cela sera fait automatiquement si vous confirmez vos changements.</translation>
+        <translation type="vanished">La virtualisation matérielle n&apos;est actuellement pas activée dans la section Accélération de la page de réglages Système. Cela est nécessaire afin de pouvoir supporter plus d&apos;un processeur virtuel. Cela sera fait automatiquement si vous confirmez vos changements.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -14912,7 +14935,7 @@
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>La virtualisation matérielle n&apos;est actuellement pas activée dans la section Accélération de la page Système. Cela est nécessaire pour la prise en charge de la pagination imbriquée. Elle sera activée automatiquement si vous confirmez vos modifications.</translation>
+        <translation type="vanished">La virtualisation matérielle n&apos;est actuellement pas activée dans la section Accélération de la page Système. Cela est nécessaire pour la prise en charge de la pagination imbriquée. Elle sera activée automatiquement si vous confirmez vos modifications.</translation>
     </message>
 </context>
 <context>

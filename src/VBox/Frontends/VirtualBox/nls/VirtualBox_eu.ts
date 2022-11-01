@@ -4,7 +4,7 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/globals/UITranslator.cpp" line="+783"/>
+        <location filename="../src/globals/UITranslator.cpp" line="+812"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Euskara</translation>
@@ -323,22 +323,20 @@
 <context>
     <name>UIAccelerationFeaturesEditor</name>
     <message>
-        <location filename="../src/settings/editors/UIAccelerationFeaturesEditor.cpp" line="+111"/>
+        <location filename="../src/settings/editors/UIAccelerationFeaturesEditor.cpp" line="+85"/>
         <source>Hardware Virtualization:</source>
         <translation type="unfinished">Hardware Birtualizazioa:</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Gaitu &amp;VT-x/AMD-V</translation>
+        <translation type="obsolete">Gaitu &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Hautatutakoan, makina birtuala Intel VT-x eta AMD-V bezalako hostalari CPU-aren hardware birtualizazio hedapenak erabiltzen saiatuko da.</translation>
+        <translation type="obsolete">Hautatutakoan, makina birtuala Intel VT-x eta AMD-V bezalako hostalari CPU-aren hardware birtualizazio hedapenak erabiltzen saiatuko da.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+3"/>
         <source>Enable Nested Pa&amp;ging</source>
         <translation type="unfinished">Gaitu &amp;Nested Orrialdeztapena</translation>
     </message>
@@ -1975,7 +1973,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+484"/>
+        <location line="+512"/>
         <source>S&amp;earch</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1990,7 +1988,7 @@
         <translation>Baztert&amp;u Gordetako Egoera...</translation>
     </message>
     <message>
-        <location line="-1035"/>
+        <location line="-1063"/>
         <source>&amp;Welcome Screen</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2046,7 +2044,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+231"/>
+        <location line="+259"/>
         <source>Discard saved state of selected virtual machines</source>
         <translation>Baztertu hautaturiko makina birtualen gordetako egoera</translation>
     </message>
@@ -2191,7 +2189,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+105"/>
+        <location line="+22"/>
+        <source>&amp;Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+55"/>
         <source>Terminate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2480,7 +2483,7 @@
         <translation type="unfinished">Inportatu</translation>
     </message>
     <message>
-        <location line="-1437"/>
+        <location line="-1868"/>
         <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-615"/>
         <source>&amp;Detach GUI</source>
         <translation type="unfinished"></translation>
@@ -2492,7 +2495,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+174"/>
+        <location line="+605"/>
         <source>&amp;Details</source>
         <translation type="unfinished">&amp;Xehetasunak</translation>
     </message>
@@ -3054,7 +3057,7 @@
         <translation>Berrezarri hautaturiko makina birtualak</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+57"/>
         <source>Discard</source>
         <translation>Baztertu</translation>
     </message>
@@ -3063,12 +3066,11 @@
         <translation type="obsolete">Baztert&amp;u gordetako egoera...</translation>
     </message>
     <message>
-        <location line="+402"/>
         <source>&amp;Close</source>
-        <translation>It&amp;xi</translation>
+        <translation type="vanished">It&amp;xi</translation>
     </message>
     <message>
-        <location line="-362"/>
+        <location line="+40"/>
         <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+185"/>
         <source>Show &amp;Log...</source>
         <translation>Erakut&amp;si Oharra...</translation>
@@ -3093,7 +3095,7 @@
         <translation>&amp;Egiaztatu Eguneraketarik dagoen...</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPoolManager.cpp" line="-685"/>
+        <location filename="../src/globals/UIActionPoolManager.cpp" line="-713"/>
         <source>Rena&amp;me Group...</source>
         <translation>Berrizendatu &amp;Taldea...</translation>
     </message>
@@ -3272,8 +3274,8 @@
         <translation>Ez dago sostengaturiko webkamerarik hostalari PC-ra elkarturik</translation>
     </message>
     <message>
-        <location filename="../src/manager/UIVirtualBoxManager.cpp" line="+2638"/>
-        <location line="+58"/>
+        <location filename="../src/manager/UIVirtualBoxManager.cpp" line="+2640"/>
+        <location line="+57"/>
         <source>[Root]</source>
         <comment>group</comment>
         <translation type="unfinished"></translation>
@@ -6441,7 +6443,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/globals/UICommon.cpp" line="+1620"/>
+        <location filename="../src/globals/UICommon.cpp" line="+1628"/>
         <source>Please choose a virtual hard disk file</source>
         <translation type="unfinished">Mesedez hautatu diska gogor agiri birtual bat</translation>
     </message>
@@ -6559,7 +6561,7 @@
         <translation type="obsolete">Erabiltzaileak-zehaztuta</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+564"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+559"/>
         <location filename="../src/medium/UIMedium.cpp" line="+557"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
@@ -6765,7 +6767,7 @@
     <name>UIDetails</name>
     <message>
         <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1279"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-469"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-464"/>
         <source>Name</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Izena</translation>
@@ -6795,7 +6797,7 @@
         <location filename="../src/globals/UIDetailsGenerator.cpp" line="-60"/>
         <location line="+77"/>
         <location line="+89"/>
-        <location line="+152"/>
+        <location line="+147"/>
         <location line="+123"/>
         <location line="+95"/>
         <location line="+79"/>
@@ -6810,7 +6812,7 @@
     </message>
     <message>
         <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+12"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-899"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-894"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Ohinarri Oroimena</translation>
@@ -6869,14 +6871,14 @@
     </message>
     <message>
         <location line="+61"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+126"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+121"/>
         <source>Graphics Controller</source>
         <comment>details (display)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+304"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-125"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-120"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Gaituta</translation>
@@ -6890,21 +6892,20 @@
     </message>
     <message>
         <location line="+19"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+33"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+3"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+32"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Nested Orrialdeztapena</translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+5"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="+4"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
         <translation type="unfinished">PAE/NX</translation>
@@ -7275,7 +7276,7 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-873"/>
+        <location filename="../src/globals/UIDetailsGenerator.cpp" line="-868"/>
         <source>Enabled</source>
         <comment>details (cloud value)</comment>
         <translation type="unfinished">Gaituta</translation>
@@ -7288,12 +7289,12 @@
     </message>
     <message>
         <location line="+59"/>
-        <location line="+154"/>
+        <location line="+149"/>
         <source>%1 MB</source>
         <translation type="unfinished">%1 MB</translation>
     </message>
     <message>
-        <location line="-105"/>
+        <location line="-100"/>
         <source>TPM Type</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
@@ -7311,7 +7312,7 @@
         <translation type="unfinished">Gaituta</translation>
     </message>
     <message>
-        <location line="+435"/>
+        <location line="+430"/>
         <source>Host-only Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished"></translation>
@@ -8451,7 +8452,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+220"/>
+        <location line="+223"/>
         <source>Remove Selected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8892,6 +8893,30 @@
     <message>
         <source>Holds the file path.</source>
         <translation type="obsolete">Agiri helburua erakusten du.</translation>
+    </message>
+</context>
+<context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <location filename="../src/settings/editors/UIFontScaleEditor.cpp" line="+95"/>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+2"/>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12943,7 +12968,7 @@
         <translation type="obsolete">A&amp;urreratua</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="+492"/>
+        <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="+462"/>
         <source>Basi&amp;c</source>
         <translation>&amp;Ohinarrizkoa</translation>
     </message>
@@ -13067,17 +13092,16 @@
         <translation type="vanished">Gonbidatuaren eta hostalari SE-ren artean arrastatu-eta-askatuz zein datu kopiatuko diren hautatzen du. Ezaugarri honek Gonbidatu Gehigarriak ezarrita behar ditu gonbidatu SE-an.</translation>
     </message>
     <message>
-        <location line="-94"/>
+        <location line="-86"/>
         <source>No name specified for the virtual machine.</source>
         <translation>Ez da izenik adierazi makina birtualarentzat.</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Makina birtualaren sistema eragilea 64-bit motakoan ezarrita dago. 64-biteko gonbidatu sistemek hardware birtualizazioa behar dute, hortaz hau berezgaitasunez gaituko da aldaketak baieztatzen badituzu.</translation>
+        <translation type="vanished">Makina birtualaren sistema eragilea 64-bit motakoan ezarrita dago. 64-biteko gonbidatu sistemek hardware birtualizazioa behar dute, hortaz hau berezgaitasunez gaituko da aldaketak baieztatzen badituzu.</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+20"/>
         <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14329,7 +14353,7 @@
         <translation type="obsolete">CPU birtual bat baino gehiago esleitu dizkiozu MB honi. Honek ez du lan egingo hardware birtualizazioa (VT-x/AMD-V) ere gaituta ez badago. Hau berezgaitasunez egingo da MB Ezarpenak onartzen dituzunean Ongi botoia sakatuz.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+476"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+455"/>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
         <translation>Zure ordenagailuaren (&lt;b&gt;%2&lt;/b&gt;) &lt;b&gt;%1%&lt;/b&gt; baino oroimen gehigo duzu esleituta makina birtualera. Ez da nahikoa oroimen gelditzen zure hostalari sistema eragilerako. Mesedez hautatu kopuru txikiago bat.</translation>
     </message>
@@ -14398,12 +14422,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+12"/>
-        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+9"/>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
         <translation>Prozesagailuaren exekuzio muga bailo apal batean ezarri duzu. Honek makinak astiro erantzutea eragingo du.</translation>
     </message>
@@ -14419,17 +14438,7 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -14442,7 +14451,7 @@
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+39"/>
         <source>&amp;Motherboard</source>
         <translation>&amp;Ohinplaka</translation>
     </message>
@@ -20805,7 +20814,7 @@
         <translation>Erabiltzaile Interfazea</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+104"/>
         <source>Settings</source>
         <translation>Ezarpenak</translation>
     </message>
@@ -22266,7 +22275,7 @@
 <context>
     <name>UITranslator</name>
     <message numerus="yes">
-        <location filename="../src/globals/UITranslator.cpp" line="-551"/>
+        <location filename="../src/globals/UITranslator.cpp" line="-557"/>
         <source>%n year(s)</source>
         <translation type="unfinished">
             <numerusform>%n urte</numerusform>
@@ -23991,7 +24000,7 @@
 <context>
     <name>UIVirtualBoxManager</name>
     <message>
-        <location filename="../src/manager/UIVirtualBoxManager.cpp" line="-2516"/>
+        <location filename="../src/manager/UIVirtualBoxManager.cpp" line="-2517"/>
         <source>Manager</source>
         <comment>Note: main window title which is prepended by the product name.</comment>
         <translation type="unfinished">Kudeatzailea</translation>

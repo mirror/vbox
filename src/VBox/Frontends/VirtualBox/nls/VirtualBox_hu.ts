@@ -389,11 +389,11 @@
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">&amp;VT-x/AMD-V engedélyezése</translation>
+        <translation type="obsolete">&amp;VT-x/AMD-V engedélyezése</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -979,7 +979,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>Be&amp;zárás</translation>
+        <translation type="vanished">Be&amp;zárás</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -3138,6 +3138,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9043,6 +9047,25 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -13908,7 +13931,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>A virtuális gép operációs rendszere 64bitesre van állítva. A 64bites vendégrendszerhez hardveres virtualizáció szükséges, így ezt automatikusan engedélyezve lesz, ha elfogadod a változásokat.</translation>
+        <translation type="vanished">A virtuális gép operációs rendszere 64bitesre van állítva. A 64bites vendégrendszerhez hardveres virtualizáció szükséges, így ezt automatikusan engedélyezve lesz, ha elfogadod a változásokat.</translation>
     </message>
     <message>
         <source>Basi&amp;c</source>
@@ -15864,7 +15887,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
+        <translation type="vanished">A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá az egynél több virtuális processzor támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -15888,7 +15911,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá a beágyazott hardveres virtualizáció támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
+        <translation type="vanished">A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá a beágyazott hardveres virtualizáció támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -15896,7 +15919,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá a memóriavirtualizáció támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
+        <translation type="vanished">A hardveres virtualizáció jelenleg nincs bekapcsolva a Rendszer lap Gyorsítás részében. Szükség van rá a memóriavirtualizáció támogatásához. Automatikusan bekapcsolódik, ha elfogadod a változtatásokat.</translation>
     </message>
 </context>
 <context>

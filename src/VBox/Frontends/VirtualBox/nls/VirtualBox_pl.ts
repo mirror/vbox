@@ -391,12 +391,8 @@
         <translation type="unfinished">Wirtualizacja sprzętowa:</translation>
     </message>
     <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Decyduje o tym, czy maszyna wirtualna powinna próbować korzystać z rozszerzeń sprzętowej wirtualizacji (np. Intel VT-x lub AMD-V), udostępnianych przez procesor komputera.</translation>
+        <translation type="obsolete">Decyduje o tym, czy maszyna wirtualna powinna próbować korzystać z rozszerzeń sprzętowej wirtualizacji (np. Intel VT-x lub AMD-V), udostępnianych przez procesor komputera.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -870,7 +866,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>Z&amp;amknij</translation>
+        <translation type="vanished">Z&amp;amknij</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -2697,6 +2693,10 @@
     </message>
     <message>
         <source>Display the log viewer window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7931,6 +7931,25 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIFontScaleEditor</name>
+    <message>
+        <source>F&amp;ont Scaling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the scaling factor for the font size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum possible scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFormEditorWidget</name>
     <message>
         <source>Edit...</source>
@@ -12308,7 +12327,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Typ wirtualnej maszyny jest ustawiony jako 64-bitowy. Goszczone 64-bitowe systemy wymagają wirtualizacji sprzętowej, więc zostanie to włączone automatycznie, jeśli zatwierdzisz zmiany.</translation>
+        <translation type="vanished">Typ wirtualnej maszyny jest ustawiony jako 64-bitowy. Goszczone 64-bitowe systemy wymagają wirtualizacji sprzętowej, więc zostanie to włączone automatycznie, jeśli zatwierdzisz zmiany.</translation>
     </message>
     <message>
         <source>Basi&amp;c</source>
@@ -14107,7 +14126,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Wirtualizacja sprzętowa nie jest obecnie włączoną w sekcji akceleracji strony system. Ta funkcja jest potrzebna do obsługi więcej niż jednego procesora wirtualnego. Zostanie ona włączona automatycznie, jeśli potwierdzisz zmiany.</translation>
+        <translation type="vanished">Wirtualizacja sprzętowa nie jest obecnie włączoną w sekcji akceleracji strony system. Ta funkcja jest potrzebna do obsługi więcej niż jednego procesora wirtualnego. Zostanie ona włączona automatycznie, jeśli potwierdzisz zmiany.</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
@@ -14131,7 +14150,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Wirtualizacja sprzętowa nie jest obecnie włączoną w sekcji akceleracji strony system. Ta funkcja jest potrzebna do obsługi zagnieżdzonej wirtualizacji sprzętowej. Zostanie ona włączona automatycznie, jeśli potwierdzisz zmiany.</translation>
+        <translation type="vanished">Wirtualizacja sprzętowa nie jest obecnie włączoną w sekcji akceleracji strony system. Ta funkcja jest potrzebna do obsługi zagnieżdzonej wirtualizacji sprzętowej. Zostanie ona włączona automatycznie, jeśli potwierdzisz zmiany.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
@@ -14139,7 +14158,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation>Wirtualizacja sprzętowa nie jest obecnie włączoną w sekcji akceleracji strony system. Ta funkcja jest potrzebna do obsługi zagniezdzenia stronicowego. Zostanie ona włączona automatycznie, jeśli potwierdzisz zmiany.</translation>
+        <translation type="vanished">Wirtualizacja sprzętowa nie jest obecnie włączoną w sekcji akceleracji strony system. Ta funkcja jest potrzebna do obsługi zagniezdzenia stronicowego. Zostanie ona włączona automatycznie, jeśli potwierdzisz zmiany.</translation>
     </message>
 </context>
 <context>
