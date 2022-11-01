@@ -140,20 +140,22 @@ typedef struct UnattendedInstallationDisk
     LONG            iDevice;
     bool            fMountOnly;
     Utf8Str         strImagePath;
+    bool            fAuxiliary;
 
     UnattendedInstallationDisk(StorageBus_T a_enmBusType, Utf8Str const &a_rBusName, DeviceType_T a_enmDeviceType,
                                AccessMode_T a_enmAccessType, LONG a_iPort, LONG a_iDevice, bool a_fMountOnly,
-                               Utf8Str const &a_rImagePath)
+                               Utf8Str const &a_rImagePath, bool a_fAuxiliary)
         : enmBusType(a_enmBusType), strControllerName(a_rBusName), enmDeviceType(a_enmDeviceType), enmAccessType(a_enmAccessType)
-        , iPort(a_iPort), iDevice(a_iDevice), fMountOnly(a_fMountOnly), strImagePath(a_rImagePath)
+        , iPort(a_iPort), iDevice(a_iDevice), fMountOnly(a_fMountOnly), strImagePath(a_rImagePath), fAuxiliary(a_fAuxiliary)
     {
         Assert(strControllerName.length() > 0);
     }
 
-    UnattendedInstallationDisk(std::list<ControllerSlot>::const_iterator const &itDvdSlot, Utf8Str const &a_rImagePath)
+    UnattendedInstallationDisk(std::list<ControllerSlot>::const_iterator const &itDvdSlot, Utf8Str const &a_rImagePath,
+                               bool a_fAuxiliary)
         : enmBusType(itDvdSlot->enmBus), strControllerName(itDvdSlot->strControllerName), enmDeviceType(DeviceType_DVD)
         , enmAccessType(AccessMode_ReadOnly), iPort(itDvdSlot->iPort), iDevice(itDvdSlot->iDevice)
-        , fMountOnly(!itDvdSlot->fFree), strImagePath(a_rImagePath)
+        , fMountOnly(!itDvdSlot->fFree), strImagePath(a_rImagePath), fAuxiliary(a_fAuxiliary)
     {
         Assert(strControllerName.length() > 0);
     }
@@ -3051,7 +3053,7 @@ HRESULT Unattended::i_reconfigureFloppy(com::SafeIfaceArray<IStorageController> 
                                                                  DeviceType_Floppy, AccessMode_ReadWrite,
                                                                  0, 0,
                                                                  fFoundPort0Dev0 /*fMountOnly*/,
-                                                                 mpInstaller->getAuxiliaryFloppyFilePath()));
+                                                                 mpInstaller->getAuxiliaryFloppyFilePath(), false));
     return S_OK;
 }
 
@@ -3210,32 +3212,32 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
     std::list<ControllerSlot>::const_iterator itDvdSlot = lstControllerDvdSlots.begin();
     if (mpInstaller->isAuxiliaryIsoNeeded() && mpInstaller->bootFromAuxiliaryIso())
     {
-        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, mpInstaller->getAuxiliaryIsoFilePath()));
+        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, mpInstaller->getAuxiliaryIsoFilePath(), true));
         ++itDvdSlot;
     }
 
     if (mpInstaller->isOriginalIsoNeeded())
     {
-        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getIsoPath()));
+        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getIsoPath(), false));
         ++itDvdSlot;
     }
 
     if (mpInstaller->isAuxiliaryIsoNeeded() && !mpInstaller->bootFromAuxiliaryIso())
     {
-        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, mpInstaller->getAuxiliaryIsoFilePath()));
+        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, mpInstaller->getAuxiliaryIsoFilePath(), true));
         ++itDvdSlot;
     }
 
 #if 0 /* These are now in the AUX VISO. */
     if (mpInstaller->isAdditionsIsoNeeded())
     {
-        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getAdditionsIsoPath()));
+        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getAdditionsIsoPath(), false));
         ++itDvdSlot;
     }
 
     if (mpInstaller->isValidationKitIsoNeeded())
     {
-        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getValidationKitIsoPath()));
+        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getValidationKitIsoPath(), false));
         ++itDvdSlot;
     }
 #endif
@@ -4214,6 +4216,12 @@ HRESULT Unattended::i_attachImage(UnattendedInstallationDisk const *pImage, ComP
     LogRelFlowFunc(("VirtualBox::openMedium -> %Rhrc\n", rc));
     if (SUCCEEDED(rc))
     {
+        if (pImage->fAuxiliary && pImage->strImagePath.endsWith(".viso"))
+        {
+            rc = ptrMedium->SetProperty(L"UnattendedInstall", L"1");
+            LogRelFlowFunc(("Medium::SetProperty -> %Rhrc\n", rc));
+        }
+
         if (pImage->fMountOnly)
         {
             // mount the opened disk image
