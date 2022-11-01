@@ -6,7 +6,7 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation>ქართული</translation>
+        <translation>ინგლისური</translation>
     </message>
     <message>
         <source>--</source>
@@ -16,7 +16,7 @@
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation>Georgian</translation>
+        <translation>ინგლისური</translation>
     </message>
     <message>
         <source>--</source>
@@ -114,7 +114,7 @@
     <name>QIDialogContainer</name>
     <message>
         <source>Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>იტვირთება</translation>
     </message>
 </context>
 <context>
@@ -135,7 +135,7 @@
     <name>QILineEdit</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;კოპირება</translation>
+        <translation>&amp;კოპირება</translation>
     </message>
 </context>
 <context>
@@ -166,7 +166,7 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
 </context>
 <context>
@@ -178,11 +178,11 @@
     </message>
     <message>
         <source>Full</source>
-        <translation>მთლიანი</translation>
+        <translation>სრული</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>მხოლოდ წაკითხვა</translation>
+        <translation>მხოლოდ წასაკითხად</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -193,15 +193,15 @@
     <name>UIAccelerationFeaturesEditor</name>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished">აპარატურული ვირტუალიზაცია:</translation>
+        <translation>აპარატურული ვირტუალიზაცია:</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="obsolete">&amp;VT-x/AMD-V-ის ჩართვა</translation>
+        <translation type="vanished">&amp;VT-x/AMD-V-ის ჩართვა</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">მეხსიერების გვერდების ერთმანეთში ჩალაგების მხარდაჭერა</translation>
+        <translation>მეხსიერების გვერდების ერთმანეთში ჩალაგების მხარდაჭერა</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
@@ -212,11 +212,11 @@
     <name>UIAcquirePublicKeyDialog</name>
     <message>
         <source>Choose a public key file</source>
-        <translation type="unfinished"></translation>
+        <translation>აირჩიეთ საჯარო გასაღების ფაილი</translation>
     </message>
     <message>
         <source>Public key</source>
-        <translation type="unfinished"></translation>
+        <translation>საჯარო გასაღები</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable locations. If you have one, please put it under one of those folders OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using one of the following tools to generate it:&lt;br&gt;&lt;br&gt;%2</source>
@@ -228,11 +228,11 @@
     </message>
     <message>
         <source>Paste public key</source>
-        <translation type="unfinished"></translation>
+        <translation>ჩასვით საჯარო გასაღები</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation type="unfinished"></translation>
+        <translation>ნუსხა</translation>
     </message>
 </context>
 <context>
@@ -287,7 +287,7 @@
     </message>
     <message>
         <source>&amp;Minimize</source>
-        <translation>&amp;ჩაკეცვა</translation>
+        <translation>ჩაკეცვა</translation>
     </message>
     <message>
         <source>Minimize active window</source>
@@ -344,14 +344,6 @@
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
         <translation>ყველა გაჩუმებული გაფრთხილების და შეტყობინების ისევ ჩვენება</translation>
-    </message>
-    <message>
-        <source>&amp;Network Operations Manager...</source>
-        <translation type="vanished">&amp;ქსელური ოპერაციების მმართველი...</translation>
-    </message>
-    <message>
-        <source>Display the Network Operations Manager window</source>
-        <translation type="vanished">ქსელური ოპერაციების მმართველის ფანჯრის ჩვენება</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
@@ -423,10 +415,6 @@
         <translation>&amp;განახლება</translation>
     </message>
     <message>
-        <source>Refresh selected virtual machine log</source>
-        <translation type="vanished">ვირტუალური მანქანის ჟურნალის მორგება</translation>
-    </message>
-    <message>
         <source>&amp;Save...</source>
         <translation>&amp;შენახვა...</translation>
     </message>
@@ -464,7 +452,7 @@
     </message>
     <message>
         <source>Log</source>
-        <translation>ჟურნალი</translation>
+        <translation>ლოგი</translation>
     </message>
     <message>
         <source>Session</source>
@@ -480,7 +468,7 @@
     </message>
     <message>
         <source>Go to home folder</source>
-        <translation>საწყის გვერდზე გადასვლა</translation>
+        <translation>საწყის საქაღალდეზე გადასვლა</translation>
     </message>
     <message>
         <source>Go to Home Folder</source>
@@ -508,7 +496,7 @@
     </message>
     <message>
         <source>Copy</source>
-        <translation>დააკოპირე</translation>
+        <translation>კოპირება</translation>
     </message>
     <message>
         <source>Copy selected file object(s)</source>
@@ -532,7 +520,7 @@
     </message>
     <message>
         <source>Select All</source>
-        <translation>ყველაფრის მონიშვნა</translation>
+        <translation>ყველას მონიშვნა</translation>
     </message>
     <message>
         <source>Select all files objects</source>
@@ -565,30 +553,6 @@
         <translation>&amp;ფაილი</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation type="vanished">&amp;ვირტუალური მედიის მმართველი...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager window</source>
-        <translation type="vanished">ვირტუალური მედიის მმართველის ფანჯარა</translation>
-    </message>
-    <message>
-        <source>&amp;Host Network Manager...</source>
-        <translation type="vanished">&amp;ჰოსტის ქსელების მმართველი...</translation>
-    </message>
-    <message>
-        <source>Display the Host Network Manager window</source>
-        <translation type="vanished">ჰოსტის ქსელური ოპერაციების მმართველის ფანჯრის ჩვენება</translation>
-    </message>
-    <message>
-        <source>&amp;Cloud Profile Manager...</source>
-        <translation type="vanished">&amp;ღრუბლოვანი პროფილის მმართველი...</translation>
-    </message>
-    <message>
-        <source>Display the Cloud Profile Manager window</source>
-        <translation type="vanished">&amp;ღრუბლოვანი პროფილის მმართველი</translation>
-    </message>
-    <message>
         <source>Import</source>
         <translation>შემოტანა</translation>
     </message>
@@ -619,10 +583,6 @@
     <message>
         <source>Display the Extra Data Manager window</source>
         <translation>დამატებითი მონაცემების მმართველის ფანჯრის ჩვენება</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation type="vanished">გას&amp;ვლა</translation>
     </message>
     <message>
         <source>Close application</source>
@@ -685,16 +645,12 @@
         <translation>&amp;დამატება..</translation>
     </message>
     <message>
-        <source>Gro&amp;up</source>
-        <translation type="vanished">&amp;დაჯგუფება</translation>
-    </message>
-    <message>
         <source>Add new group based on selected virtual machines</source>
         <translation>მონიშნული ვირტუალური მანქანებისგან ჯგუფის შექმნა</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>&amp;გამართვა...</translation>
+        <translation>&amp;მორგება...</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
@@ -794,7 +750,7 @@
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation>&amp;ჟურნალის ჩვენება ...</translation>
+        <translation>&amp;ჩანაწერის ჩვენება ...</translation>
     </message>
     <message>
         <source>Show log files of selected virtual machines</source>
@@ -850,7 +806,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="vanished">&amp;დახურვა</translation>
+        <translation type="vanished">და&amp;კეტვა</translation>
     </message>
     <message>
         <source>&amp;Detach GUI</source>
@@ -909,24 +865,12 @@
         <translation>ვირტუალური მანქანის ჟურნალის პანელის გახსნა</translation>
     </message>
     <message>
-        <source>&amp;Global Tools Menu</source>
-        <translation type="vanished">&amp;გლობალური ხელსაწყოების მენიუ</translation>
-    </message>
-    <message>
         <source>&amp;Virtual Media Manager</source>
         <translation>&amp;ვირტუალური მედიის მმართველი</translation>
     </message>
     <message>
         <source>Open the Virtual Media Manager</source>
         <translation>ვირტუალური მედიის მმართველის გახსნა</translation>
-    </message>
-    <message>
-        <source>&amp;Host Network Manager</source>
-        <translation type="vanished">&amp;ჰოსტის ქსელების მმართველი</translation>
-    </message>
-    <message>
-        <source>Open the Host Network Manager</source>
-        <translation type="vanished">ჰოსტის ქსელური ოპერაციების მმართველის გახსნა</translation>
     </message>
     <message>
         <source>&amp;Cloud Profile Manager</source>
@@ -1134,7 +1078,7 @@
     </message>
     <message>
         <source>&amp;View</source>
-        <translation>&amp;ნახვა</translation>
+        <translation>&amp;ხედი</translation>
     </message>
     <message>
         <source>&amp;Full-screen Mode</source>
@@ -1327,7 +1271,7 @@
     </message>
     <message>
         <source>Audio Input</source>
-        <translation>აუდიო შეტანა</translation>
+        <translation>შემოტანილი აუდიოსიგნალი</translation>
     </message>
     <message>
         <source>Enable audio input</source>
@@ -1405,11 +1349,6 @@
         <translation>&amp;ჟურნალი</translation>
     </message>
     <message>
-        <source>Show &amp;Log...</source>
-        <comment>debug action</comment>
-        <translation type="vanished">&amp;ჟურნალის ჩვენება ...</translation>
-    </message>
-    <message>
         <source>Dock Icon</source>
         <translation>მიმაგრების ხატულა</translation>
     </message>
@@ -1468,15 +1407,11 @@
     </message>
     <message>
         <source>Operations</source>
-        <translation>ოპერაციები</translation>
+        <translation>მოქმედებები</translation>
     </message>
     <message>
         <source>Open panel with file manager operations</source>
         <translation>ფაილების მმართველის ოპერაციების შემცველი პანელის გახსნა</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager session</source>
-        <translation type="vanished">ფაილების მმართველის სესიების შემცველი პანელის გახსნა</translation>
     </message>
     <message>
         <source>Go Up</source>
@@ -1535,10 +1470,6 @@
         <translation>პარამეტრების პანელის ჩვენება</translation>
     </message>
     <message>
-        <source>Refresh Virtual Machine Log</source>
-        <translation type="vanished">ვირტუალური მანქანის ჟურნალის განახლება</translation>
-    </message>
-    <message>
         <source>Save Virtual Machine Log</source>
         <translation>ვირტუალური მანქანის ჟურნალის შენახვა</translation>
     </message>
@@ -1557,10 +1488,6 @@
     <message>
         <source>Open Operations Pane</source>
         <translation>ოპერაციების პანელის გახსნა</translation>
-    </message>
-    <message>
-        <source>Open Session Pane</source>
-        <translation type="vanished">სესიების პანელის გახსნა</translation>
     </message>
     <message>
         <source>Go One Level Up</source>
@@ -1605,14 +1532,6 @@
     <message>
         <source>Show Properties of Current Object(s)</source>
         <translation>მიმდინარე ობიექტების თვისებების ჩვენება</translation>
-    </message>
-    <message>
-        <source>&amp;New Cloud VM...</source>
-        <translation type="vanished">&amp;ახალი ღრუბლოვანი ვმ-ი...</translation>
-    </message>
-    <message>
-        <source>Create new cloud virtual machine</source>
-        <translation type="vanished">ახალი ღრუბლოვანი ვირტუალური მანქანის შექმნა</translation>
     </message>
     <message>
         <source>E&amp;xport Locally...</source>
@@ -1778,467 +1697,467 @@
     <message>
         <source>[Root]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation>[Root]</translation>
     </message>
     <message>
         <source>Copy Key Fingerprint (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>გასაღებს ანაბეჭდის კოპირება (%1)</translation>
     </message>
     <message>
         <source>Connect</source>
         <comment>to cloud VM</comment>
-        <translation type="unfinished"></translation>
+        <translation>დაკავშირება</translation>
     </message>
     <message>
         <source>Connect with %1 (%2)</source>
         <comment>with terminal application (profile)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1-სთან მიერთება (%2)</translation>
     </message>
     <message>
         <source>Connect with %1</source>
         <comment>with terminal application</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Online Documentation...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox user manual</source>
-        <translation type="unfinished"></translation>
+        <translation>%1- სთან დაკავშირება</translation>
     </message>
     <message>
         <source>Refresh the currently viewed log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Refresh Viewed Log</source>
-        <translation type="unfinished"></translation>
+        <translation>ამჟამად გახსნილი ჟურნალის განახლება</translation>
     </message>
     <message>
         <source>&amp;Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>თავიდან ჩატვირთვა</translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload Log Files</source>
-        <translation type="unfinished"></translation>
+        <translation>ყველა ჟურნალის ფაილის თავიდან წაკითხვა და გვერდების განახლება</translation>
     </message>
     <message>
         <source>Toggle guest session panel of the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>ფაილების მმართველის სტუმრის სესიის პანელის გადართვა</translation>
     </message>
     <message>
         <source>Toggle Guest Session Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>სტუმრის სესიის პანელის გადართვა</translation>
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO-ის შემქმნელი</translation>
+        <translation>VISO-ის შემქმნელი</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished">გამართვა</translation>
+        <translation>მორგება</translation>
     </message>
     <message>
         <source>Open panel for VISO Creator configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO Creator-ის მორგების პანელის გახსნა</translation>
     </message>
     <message>
         <source>Open Configuration Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>მორგების პანელის გახსნა</translation>
     </message>
     <message>
         <source>Open panel for VISO Creator options</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO Creator-ის მორგების პანელის გახსნა</translation>
     </message>
     <message>
         <source>Open Options Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>ფაილების მმართველის პარამეტრების შემცველი პანელის გახსნა</translation>
     </message>
     <message>
         <source>&amp;Add</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დამატება</translation>
     </message>
     <message>
         <source>Add selected item(s) to VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ობიექტების VISO-ში დამატება</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation type="unfinished">&amp;წაშლა</translation>
+        <translation>&amp;წაშლა</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ობიექტების VISO-დან წაშლა</translation>
     </message>
     <message>
         <source>&amp;New Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ახალი საქაღალდე</translation>
     </message>
     <message>
         <source>Create a new directory under the current location</source>
-        <translation type="unfinished">მიმდინარე ადგილას ახალი საქაღალდის შექმნა</translation>
+        <translation>მიმდინარე ადგილას ახალი საქაღალდის შექმნა</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გადარქმევა</translation>
     </message>
     <message>
         <source>Rename the selected object</source>
-        <translation type="unfinished">მონიშნული ობიექტის სახელის გადარქმევა</translation>
-    </message>
-    <message>
-        <source>Rename Object</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ობიექტის სახელის გადარქმევა</translation>
     </message>
     <message>
         <source>R&amp;eset</source>
-        <translation type="unfinished"></translation>
+        <translation>საწყისი მნიშვნელობებზე დაბრუნება</translation>
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO-ის შემცველობის საწყის მნიშვნელობაზე დაბრუნება.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დისკის გამოსახულების ამრჩევი</translation>
     </message>
     <message>
         <source>Medium Selector</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური დისკის არჩევა</translation>
     </message>
     <message>
         <source>Add existing disk image file</source>
-        <translation type="unfinished">დისკის არსებული გამოსახულების დამატება</translation>
-    </message>
-    <message>
-        <source>Add Disk Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის არსებული გამოსახულების დამატება</translation>
     </message>
     <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Disk Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის ახალი გამოსახულების ფაილის შექმნა</translation>
     </message>
     <message>
         <source>&amp;Refresh...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;განახლება...</translation>
     </message>
     <message>
         <source>Refresh disk images</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის გამოსახულებების განახლება</translation>
     </message>
     <message>
         <source>&amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;აქტივობა</translation>
     </message>
     <message>
         <source>&amp;Export...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გატანა...</translation>
     </message>
     <message>
         <source>VM Activity Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის აქტივობის მონიტორი</translation>
     </message>
     <message>
         <source>Export the chart data into a text file</source>
-        <translation type="unfinished"></translation>
+        <translation>გრაფიკის მონაცემების ტექსტურ ფაილში გატანა</translation>
     </message>
     <message>
         <source>Export Data to File</source>
-        <translation type="unfinished"></translation>
+        <translation>მონაცემების ფაილში გატანა</translation>
     </message>
     <message>
         <source>&amp;Activity Overview...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;აქტივობის გადახედვა...</translation>
     </message>
     <message>
         <source>Activity Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>აქტივობის მონიტორი</translation>
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate to VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის აქტივობის მონიტორზე გადასვლა</translation>
     </message>
     <message>
         <source>&amp;Welcome Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;საწყისი ეკრანი</translation>
     </message>
     <message>
         <source>Open the Welcome Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>საწყისი ეკრანის გახსნა</translation>
     </message>
     <message>
         <source>&amp;Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დამატებების პაკეტების მმართველი</translation>
     </message>
     <message>
         <source>Open the Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატებების პაკეტების მმართველში გახსნა</translation>
     </message>
     <message>
         <source>&amp;Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ქსელის მმართველი</translation>
     </message>
     <message>
         <source>Open the Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>ქსელის მმართველის გასნა</translation>
     </message>
     <message>
         <source>&amp;VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ვმ-ის აქტივობის მონიტორი</translation>
     </message>
     <message>
         <source>Open the VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის აქტივობის მონიტორის გახსნა</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გასვლა</translation>
     </message>
     <message>
         <source>[New]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation>[ახალი]</translation>
     </message>
     <message>
         <source>Move to Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ჯგუფში გადატანა</translation>
     </message>
     <message>
         <source>C&amp;onsole</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;კონსოლი</translation>
     </message>
     <message>
         <source>&amp;Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;შეერთების შექმნა</translation>
     </message>
     <message>
         <source>Create console connection to be able to use ssh/vnc clients</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH/VNC კლიენტის გამოყენებით კონსოლის შეერთების შექმნა</translation>
     </message>
     <message>
         <source>&amp;Delete Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>შეერთების &amp;წაშლა</translation>
     </message>
     <message>
         <source>Delete console connection to disconnect ssh/vnc clients</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH/VNC კლიენტის გამოყენებით კონსოლის შეერთების წაშლა</translation>
     </message>
     <message>
         <source>&amp;Configure Console Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>კონსოლის აპლიკაციების &amp;მორგება</translation>
     </message>
     <message>
         <source>Open configuration dialog to edit console application settings</source>
-        <translation type="unfinished"></translation>
+        <translation>კონსოლის აპლიკაციების მორგების პარამეტრების ფანჯრის გახსნა</translation>
     </message>
     <message>
         <source>&amp;Copy Command (serial) for Unix</source>
-        <translation type="unfinished"></translation>
+        <translation>Unix-სთვის &amp;კოპირების ბრძანება (სერიალიდან)</translation>
     </message>
     <message>
         <source>&amp;Copy Command (serial) for Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows-სთვის &amp;კოპირების ბრძანება (სერიალიდან)</translation>
     </message>
     <message>
         <source>Copy console command for serial connection</source>
-        <translation type="unfinished"></translation>
+        <translation>კონსოლის კოპირების ბრძანება სერიული შეერთებებისთვის</translation>
     </message>
     <message>
         <source>&amp;Copy Command (VNC) for Unix</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;კოპირების ბრძანება (VNC) Unix-სთვის</translation>
     </message>
     <message>
         <source>&amp;Copy Command (VNC) for Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;კოპირების ბრძანება (VNC) Windows-სთვის</translation>
     </message>
     <message>
         <source>Copy console command for VNC connection</source>
-        <translation type="unfinished"></translation>
+        <translation>კონსოლის კოპირების ბრძანება VNC შეერთებებისთვის</translation>
     </message>
     <message>
         <source>Show &amp;Log</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ჟურნალის ჩვენება</translation>
     </message>
     <message>
         <source>Show cloud console log</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის ჟურნალის ჩვენება</translation>
     </message>
     <message>
         <source>Terminate</source>
-        <translation type="unfinished"></translation>
+        <translation>შეწყვეტა</translation>
     </message>
     <message>
         <source>&amp;Terminate Cloud Instance...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი გაშვებული ასლის &amp;შეწყვეტა...</translation>
     </message>
     <message>
         <source>Terminate cloud instance of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ვირტუალური მანქანების ღრუბლოვანი გაშვებული ასლების შეწყვეტა</translation>
     </message>
     <message>
         <source>Open the machine activity monitor pane</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის აქტივობის მონიტორის პანელის გახსნა</translation>
     </message>
     <message>
         <source>&amp;File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ფაილების მმართველი</translation>
     </message>
     <message>
         <source>Open the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>ფაილთა მმართველის გახსნა</translation>
     </message>
     <message>
         <source>&amp;Extension</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გაფართოება</translation>
     </message>
     <message>
         <source>&amp;Install...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დაყენება...</translation>
     </message>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატებების პაკეტების მმართველი</translation>
     </message>
     <message>
         <source>Install extension pack</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატების პაკეტის დაყენება</translation>
     </message>
     <message>
         <source>Install Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატების პაკეტის დაყენება</translation>
     </message>
     <message>
         <source>&amp;Uninstall...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;წაშლა...</translation>
     </message>
     <message>
         <source>Uninstall selected extension pack</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატების პაკეტის წაშლა</translation>
     </message>
     <message>
         <source>Uninstall Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატების პაკეტის წაშლა</translation>
     </message>
     <message>
         <source>&amp;Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove all inaccessible media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Inaccessible Media</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გაწმენდა</translation>
     </message>
     <message>
         <source>&amp;Console</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;კონსოლი</translation>
     </message>
     <message>
         <source>&amp;Add Application...</source>
-        <translation type="unfinished"></translation>
+        <translation>აპლიკაციის &amp;დამატება…</translation>
     </message>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის მმართველი</translation>
     </message>
     <message>
         <source>Add new cloud console application</source>
-        <translation type="unfinished"></translation>
+        <translation>ახალი ღრუბლოვანი კონსოლის აპლიკაციის დამატება</translation>
     </message>
     <message>
         <source>Add Cloud Console Application</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის აპლიკაციის დამატება</translation>
     </message>
     <message>
         <source>&amp;Remove Application...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;აპლიკაციის წაშლა...</translation>
     </message>
     <message>
         <source>Remove selected cloud console application</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ღრუბლოვანი კონსოლის აპლიკაციის წაშლა</translation>
     </message>
     <message>
         <source>Remove Cloud Console Application</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის აპლიკაციის წაშლა</translation>
     </message>
     <message>
         <source>Add new cloud console profile</source>
-        <translation type="unfinished"></translation>
+        <translation>ახალი ღრუბლოვანი კონსოლის პროფილის დამატება</translation>
     </message>
     <message>
         <source>Add Cloud Console Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის პროფილის დამატება</translation>
     </message>
     <message>
         <source>Remove selected cloud console profile</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ღრუბლოვანი კონსოლის პროფილის წაშლა</translation>
     </message>
     <message>
         <source>Remove Cloud Console Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის პროფილის წაშლა</translation>
     </message>
     <message>
         <source>Console &amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>კონსოლის &amp;თვისებები</translation>
     </message>
     <message>
         <source>Open pane with selected cloud console properties</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ღრუბლოვანი კონსოლის თვისებების პანელის გახსნა</translation>
     </message>
     <message>
         <source>Open Cloud Console Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი კონსოლის პარამეტრების გახსნა</translation>
     </message>
     <message>
         <source>&amp;Resources</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;რესურსები</translation>
     </message>
     <message>
         <source>Columns</source>
-        <translation type="unfinished"></translation>
+        <translation>სვეტები</translation>
     </message>
     <message>
         <source>VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის აქტივობის მიმოხილვა</translation>
     </message>
     <message>
         <source>Show/Hide Columns</source>
-        <translation type="unfinished"></translation>
+        <translation>სვეტების ჩვენება/დამალვა</translation>
     </message>
     <message>
         <source>VM Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის აქტივობა</translation>
     </message>
     <message>
         <source>Switch to selected virtual machine&apos;s activity monitor pane</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ვირტუალური მანქანის აქტივობის მონიტორის პანელზე გადართვა</translation>
+    </message>
+    <message>
+        <source>Refresh Viewed Log</source>
+        <translation>გახსნილი ჟურნალის განახლება</translation>
+    </message>
+    <message>
+        <source>Reload Log Files</source>
+        <translation>ჟურნალის ფაილების თავიდან ჩატვირთვა</translation>
+    </message>
+    <message>
+        <source>Add Item(s) to VISO</source>
+        <translation>ობიექტების VISO-ში დამატება</translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation>ობიექტების VISO-დან წაშლა</translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation>ობიექტის გადარქმევა</translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation>დისკის გამოსახულების ფაილის დამატება</translation>
+    </message>
+    <message>
+        <source>Create Disk Image File</source>
+        <translation>დისკის გამოსახულების ფაილის შექმნა</translation>
+    </message>
+    <message>
+        <source>Navigate to VM Activity Overview</source>
+        <translation>ვმ-ის აქტივობის მონიტორზე გადასვლა</translation>
+    </message>
+    <message>
+        <source>Remove Inaccessible Media</source>
+        <translation>მიუწვდომელი დისკების მოცილება</translation>
+    </message>
+    <message>
+        <source>&amp;Online Documentation...</source>
+        <translation>&amp;ონლაინ დოკუმენტაცია...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox user manual</source>
+        <translation>ბრაუზერის გახსნა და VirtualBox-ის მომხმარებლის სახელმძღვანელოზე გადასვლა</translation>
+    </message>
+    <message>
+        <source>Remove all inaccessible media</source>
+        <translation>მიუწვდომელი დისკების მოცილება</translation>
     </message>
     <message>
         <source>Display the log viewer window</source>
-        <translation type="unfinished"></translation>
+        <translation>ჟურნალის ნახვის ფანჯრის ჩვენება</translation>
     </message>
     <message>
         <source>&amp;Stop</source>
@@ -2250,7 +2169,7 @@
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation>ID</translation>
+        <translation>აიდი</translation>
     </message>
     <message>
         <source>Password</source>
@@ -2310,7 +2229,7 @@
     </message>
     <message>
         <source>Description</source>
-        <translation>აღწერა</translation>
+        <translation>განმარტება</translation>
     </message>
     <message>
         <source>License</source>
@@ -2322,7 +2241,7 @@
     </message>
     <message>
         <source>CPU</source>
-        <translation>პროცესორი</translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
@@ -2362,7 +2281,7 @@
     </message>
     <message>
         <source>Configuration</source>
-        <translation>გამართვა</translation>
+        <translation>მორგება</translation>
     </message>
     <message>
         <source>Warnings:</source>
@@ -2402,62 +2321,7 @@
     </message>
     <message>
         <source>Storage Controller (VirtioSCSI)</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation type="vanished">შეკუმშული მანქანის შემოტანა...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation type="vanished">შეკუმშული მანქანის წაკითხვა...</translation>
-    </message>
-    <message>
-        <source>&amp;Import hard drives as VDI</source>
-        <translation type="vanished">&amp;მყარი დისკების VDI ფორმატში შემოტანა</translation>
-    </message>
-    <message>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="vanished">MAC მისამართების წესები:</translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses</source>
-        <translation type="vanished">ყველა ქსელის ბარათის MAC მისამართის დამატება</translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="vanished">მხოლოდ NAT ქსელის MAC მისამართების ჩასმა</translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="vanished">ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია</translation>
-    </message>
-    <message>
-        <source>Additional Options:</source>
-        <translation type="vanished">დამატებითი პარამეტრები:</translation>
-    </message>
-    <message>
-        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="vanished">თუ ჩართულია, ამ შეკუმშული მანქანის ყველა მყარი დისკი VDI ფორმატში იქნება შემოტანილი.</translation>
-    </message>
-    <message>
-        <source>&amp;Machine Base Folder:</source>
-        <translation type="vanished">&amp;მანქანის ნაგულისხმები საქაღალდე:</translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="vanished">შემოტანისას ყველა ქსელის ბარათის MAC მისამართის დამატება.</translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="vanished">შემოტანისას მხოლოდ NAT ქსელის MAC მისამართების ჩასმა.</translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="vanished">შემოტანისას ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია.</translation>
+        <translation>საცავის კონტროლერი (VirtioSCSI)</translation>
     </message>
 </context>
 <context>
@@ -2489,11 +2353,11 @@
     </message>
     <message>
         <source>True</source>
-        <translation>სიმართლე</translation>
+        <translation>ჭეშმარიტი</translation>
     </message>
     <message>
         <source>False</source>
-        <translation>ტყუილი</translation>
+        <translation>მცდარი</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
@@ -2506,7 +2370,7 @@
     </message>
     <message>
         <source>Subject</source>
-        <translation>სათაური</translation>
+        <translation>თემა</translation>
     </message>
     <message>
         <source>Not Valid Before</source>
@@ -2561,11 +2425,11 @@
     <name>UIAudioFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Output</source>
-        <translation type="unfinished">აუდიო &amp;გამოტანის ჩართვა</translation>
+        <translation>აუდიო &amp;გამოტანის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
@@ -2573,7 +2437,7 @@
     </message>
     <message>
         <source>Enable Audio &amp;Input</source>
-        <translation type="unfinished">აუდიო შეტანის &amp;ჩართვა</translation>
+        <translation>აუდიო შეტანის &amp;ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
@@ -2595,7 +2459,7 @@
     <name>UIAudioSettingsEditor</name>
     <message>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished">აუდიოს ჩართვა</translation>
+        <translation>აუდიოს ჩართვა</translation>
     </message>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
@@ -2606,11 +2470,11 @@
     <name>UIAutoCaptureKeyboardEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished">&amp;კლავიატურის ავტომატური გადაჭერა</translation>
+        <translation>&amp;კლავიატურის ავტომატური გადაჭერა</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
@@ -2633,22 +2497,22 @@
     </message>
     <message>
         <source>Holds the amount of base memory the virtual machine will have.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ვირტუალური მანქანის საბაზისო მეხსიერების რაოდენობას.</translation>
     </message>
     <message>
         <source>Minimum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>მინიმალური შესაძლო საბაზისო მეხსიერების ზომა.</translation>
     </message>
     <message>
         <source>Maximum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>მაქსიმალური შესაძლო საბაზისო მეხსიერების ზომა.</translation>
     </message>
 </context>
 <context>
     <name>UIBootFailureDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;გაუქმება</translation>
+        <translation>&amp;გაუქმება</translation>
     </message>
     <message>
         <source>Closes this dialog without resetting the guest or mounting a medium</source>
@@ -2656,35 +2520,35 @@
     </message>
     <message>
         <source>&amp;Mount and Retry Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;მიმაგრება და ჩატვირთვის თავიდან ცდა</translation>
     </message>
     <message>
         <source>Mounts the selected ISO if any and reboots the vm</source>
-        <translation type="unfinished"></translation>
+        <translation>მიამაგრებს მონიშნულ ISO ფაილს, თუ ის არსებობს და გადატვირთავს ვმ-ს</translation>
     </message>
     <message>
         <source>The virtual machine failed to boot. That might be caused by a missing operating system or misconfigured boot order. Mounting an operating system install DVD might solve this problem. Selecting an ISO file will attempt to mount it after the dialog is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მანქანის ჩატვირთვა შეუძლებელია. ეს, როგორც წესი, ხდება მაშინ, როცა ოპერაციული სისტემა არ დაგიყენებიათ ან ჩატვირთვის მიმდევრობაა არასწორი. ოპერაციული სისტემის ISO ფაილის მიმაგრებით თქვენ შეიძლება შეძლოთ ამ პრობლემის გადაჭრა. თუ ISO ფაილს აირჩევთ, ის მიმაგრებული იქნება ფანჯრის დახურვის შემდეგ.</translation>
     </message>
     <message>
         <source>DVD:</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD:</translation>
     </message>
     <message>
         <source>Do not show this dialog again</source>
-        <translation type="unfinished"></translation>
+        <translation>ეს ფანჯარა აღარ მაჩვენო</translation>
     </message>
     <message>
         <source>When checked this dialog will not be shown again.</source>
-        <translation type="unfinished"></translation>
+        <translation>თუ ჩართულია, ეს ფანჯარა აღარ გამოჩნდება.</translation>
     </message>
     <message>
         <source>Holds the path of the ISO to be attached to machine as boot medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ISO ფაილის ბილიკს, რომელიც ამ მანქანაზე ჩასატვირთ დისკადაა მიმაგრებული.</translation>
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>მითითებული ბილიკი არასწორია.</translation>
     </message>
 </context>
 <context>
@@ -2694,31 +2558,23 @@
         <translation>&amp;ჩატვირთვის მიმდევრობა:</translation>
     </message>
     <message>
-        <source>Move Up</source>
-        <translation type="vanished">აწევა</translation>
-    </message>
-    <message>
-        <source>Move Down</source>
-        <translation type="vanished">ჩამოწევა</translation>
-    </message>
-    <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices.Move items up and down to change the device order.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Moves selected boot item up.</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ჩასატვირთი ჩანაწერის მაღლა აწევა.</translation>
     </message>
     <message>
         <source>Moves selected boot item down.</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიშნული ჩასატვირთი ჩანაწერის დაბლა ჩამოწევა.</translation>
     </message>
 </context>
 <context>
     <name>UIChipsetEditor</name>
     <message>
         <source>&amp;Chipset:</source>
-        <translation type="unfinished">&amp;ჩიპსეტი:</translation>
+        <translation>&amp;ჩიპსეტი:</translation>
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
@@ -2795,14 +2651,7 @@
     </message>
     <message>
         <source>Item</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIChooserNodeGroup</name>
-    <message>
-        <source>Virtual Machine group</source>
-        <translation type="vanished">ვირტუალური მანქანების ჯგუფი</translation>
+        <translation>ელემენტი</translation>
     </message>
 </context>
 <context>
@@ -2841,170 +2690,111 @@
 <context>
     <name>UICloudConsoleManager</name>
     <message>
-        <source>Name:</source>
-        <translation type="unfinished">სახელი:</translation>
-    </message>
-    <message>
-        <source>Path:</source>
-        <translation type="unfinished">ბილიკი:</translation>
-    </message>
-    <message>
-        <source>Argument:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <source>Cloud Console Manager</source>
+        <translation>ღრუბლოვანი კონსოლის მმართველი</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="unfinished">ცვლილებების დაბრუნება (%1)</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">გადატარება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="unfinished">ცვლილებების გადატარება (%1)</translation>
-    </message>
-    <message>
-        <source>Add Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Profile</source>
-        <translation type="unfinished">პროფილის დამატება</translation>
-    </message>
-    <message>
-        <source>Application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>List in Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>გადატარება</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">დახურვა</translation>
+        <translation>დახურვა</translation>
     </message>
     <message>
         <source>Reset changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>მიმდინარე ღრუბლოვანი კონსოლის დეტალების ცვლილებების განულება</translation>
     </message>
     <message>
         <source>Apply changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>მიმდინარე ღრუბლოვანი კონსოლის დეტალების ცვლილებების გადატარება</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">დახურვა შენახვის გარეშე</translation>
+        <translation>დახურვა შენახვის გარეშე</translation>
+    </message>
+    <message>
+        <source>Reset Changes (%1)</source>
+        <translation>ცვლილებების დაბრუნება (%1)</translation>
+    </message>
+    <message>
+        <source>Apply Changes (%1)</source>
+        <translation>ცვლილებების გადატარება (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">ფანჯრის დახურვა (%1)</translation>
+        <translation>ფანჯრის დახურვა (%1)</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation>სახელი:</translation>
+    </message>
+    <message>
+        <source>Path:</source>
+        <translation>მისამართი:</translation>
+    </message>
+    <message>
+        <source>Argument:</source>
+        <translation>არგუმენტი:</translation>
+    </message>
+    <message>
+        <source>Enter a name for this console application...</source>
+        <translation>შეიყვანეთ ამ კონსოლის აპლიკაციის სახელი...</translation>
+    </message>
+    <message>
+        <source>Enter a path for this console application...</source>
+        <translation>შეიყვანეთ ამ კონსოლის აპლიკაციის ბილიკი...</translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console application...</source>
+        <translation>შეიყვანეთ ამ კონსოლის აპლიკაციის არგუმენტი...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this console profile...</source>
+        <translation>შეიყვანეთ ამ კონსოლის პროფილის სახელი...</translation>
+    </message>
+    <message>
+        <source>Enter an argument for this console profile...</source>
+        <translation>შეიყვანეთ ამ კონსოლის პროფილის არგუმენტი...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current console details</source>
+        <translation>მიმდინარე კონსოლის დეტალების ცვლილებების განულება</translation>
+    </message>
+    <message>
+        <source>Apply changes in current console details</source>
+        <translation>მიმდინარე კონსოლის დეტალების ცვლილებების გადატარება</translation>
+    </message>
+    <message>
+        <source>Add Application</source>
+        <translation>აპლიკაციის დამატება</translation>
+    </message>
+    <message>
+        <source>Add Profile</source>
+        <translation>პროფილის დამატება</translation>
+    </message>
+    <message>
+        <source>Application</source>
+        <translation>პროგრამა</translation>
+    </message>
+    <message>
+        <source>List in Menu</source>
+        <translation>მენუში გამოჩენა</translation>
     </message>
 </context>
 <context>
     <name>UICloudMachineSettingsDialog</name>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">მორგება</translation>
+        <translation>პარამეტრები</translation>
     </message>
     <message>
         <source>Contains a list of cloud machine settings.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UICloudProfileDetailsWidget</name>
-    <message>
-        <source>Name:</source>
-        <translation type="vanished">სახელი:</translation>
-    </message>
-    <message>
-        <source>Properties:</source>
-        <translation type="vanished">თვისებები:</translation>
-    </message>
-    <message>
-        <source>Contains cloud profile settings</source>
-        <translation type="vanished">შეიცავს ღრუბლოვანი პროფილის პარამეტრებს</translation>
-    </message>
-    <message>
-        <source>Enter a name for the new profile...</source>
-        <translation type="vanished">შეყვანეთ ახალი პროფილის სახელი...</translation>
-    </message>
-    <message>
-        <source>Enter a name for this profile...</source>
-        <translation type="vanished">შეიყვანეთ ამ პროფილის სახელი...</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">თავიდან ჩართვა</translation>
-    </message>
-    <message>
-        <source>Reset changes in current profile details</source>
-        <translation type="vanished">მიმდინარე პროფილის დეტალების ცვლილებების განულება</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="vanished">ცვლილებების დაბრუნება (%1)</translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="vanished">დამატება</translation>
-    </message>
-    <message>
-        <source>Add a new profile with following name</source>
-        <translation type="vanished">შეყვანეთ ახალი პროფილის სახელი</translation>
-    </message>
-    <message>
-        <source>Add Profile (%1)</source>
-        <translation type="vanished">პროფილის დამატება (%1)</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">გადატარება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current profile details</source>
-        <translation type="vanished">მიმდინარე პროფილის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="vanished">ცვლილებების გადატარება (%1)</translation>
+        <translation>შეიცავს ღრუბლოვანი მანქანების პარამეტრების სიას.</translation>
     </message>
 </context>
 <context>
@@ -3015,7 +2805,7 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation>თავიდან ჩართვა</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -3054,75 +2844,75 @@
         <translation>პროფილის დამატება</translation>
     </message>
     <message>
-        <source>Name:</source>
-        <translation type="unfinished">სახელი:</translation>
-    </message>
-    <message>
-        <source>Properties:</source>
-        <translation type="unfinished">თვისებები:</translation>
-    </message>
-    <message>
-        <source>Contains cloud profile settings</source>
-        <translation type="unfinished">შეიცავს ღრუბლოვანი პროფილის პარამეტრებს</translation>
-    </message>
-    <message>
-        <source>Enter a name for the new profile...</source>
-        <translation type="unfinished">შეყვანეთ ახალი პროფილის სახელი...</translation>
-    </message>
-    <message>
-        <source>Enter a name for this profile...</source>
-        <translation type="unfinished">შეიყვანეთ ამ პროფილის სახელი...</translation>
-    </message>
-    <message>
-        <source>Reset changes in current profile details</source>
-        <translation type="unfinished">მიმდინარე პროფილის დეტალების ცვლილებების განულება</translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="unfinished">დამატება</translation>
-    </message>
-    <message>
-        <source>Add a new profile with following name</source>
-        <translation type="unfinished">შეყვანეთ ახალი პროფილის სახელი</translation>
-    </message>
-    <message>
-        <source>Add Profile (%1)</source>
-        <translation type="unfinished">პროფილის დამატება (%1)</translation>
-    </message>
-    <message>
-        <source>Apply changes in current profile details</source>
-        <translation type="unfinished">მიმდინარე პროფილის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <translation type="unfinished">წყარო</translation>
-    </message>
-    <message>
-        <source>List VMs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered cloud providers and profiles</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ჩვენება (%1)</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation>სახელი:</translation>
+    </message>
+    <message>
+        <source>Properties:</source>
+        <translation>თვისებები:</translation>
+    </message>
+    <message>
+        <source>Contains cloud profile settings</source>
+        <translation>შეიცავს ღრუბლოვანი პროფილის პარამეტრებს</translation>
+    </message>
+    <message>
+        <source>Enter a name for the new profile...</source>
+        <translation>შეყვანეთ ახალი პროფილის სახელი...</translation>
+    </message>
+    <message>
+        <source>Enter a name for this profile...</source>
+        <translation>შეიყვანეთ ამ პროფილის სახელი...</translation>
+    </message>
+    <message>
+        <source>Reset changes in current profile details</source>
+        <translation>მიმდინარე პროფილის დეტალების ცვლილებების განულება</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation>დამატება</translation>
+    </message>
+    <message>
+        <source>Add a new profile with following name</source>
+        <translation>შეყვანეთ ახალი პროფილის სახელი</translation>
+    </message>
+    <message>
+        <source>Add Profile (%1)</source>
+        <translation>პროფილის დამატება (%1)</translation>
+    </message>
+    <message>
+        <source>Apply changes in current profile details</source>
+        <translation>მიმდინარე პროფილის დეტალების ცვლილებების გადატარება</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <translation>წყარო</translation>
+    </message>
+    <message>
+        <source>List VMs</source>
+        <translation>ვმ-ების სია</translation>
+    </message>
+    <message>
+        <source>Registered cloud providers and profiles</source>
+        <translation>რეგისტრირებული ღრუბლოვანი მომწოდებლები და პროფილები</translation>
     </message>
 </context>
 <context>
     <name>UIColorThemeEditor</name>
     <message>
         <source>Color &amp;Theme:</source>
-        <translation type="unfinished"></translation>
+        <translation>ფერის &amp;თემა:</translation>
     </message>
     <message>
         <source>Selects the color theme. It can be Light, Dark or automatically detected (default).</source>
@@ -3144,7 +2934,7 @@
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3154,7 +2944,7 @@
     <message>
         <source>not set</source>
         <comment>details report (execution engine)</comment>
-        <translation>დაყენებული არაა</translation>
+        <translation>არაა დაყენებული</translation>
     </message>
     <message>
         <source>Active</source>
@@ -3217,7 +3007,7 @@
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>შეწყვეტილია</translation>
+        <translation>გაუქმებულია</translation>
     </message>
     <message>
         <source>Teleported</source>
@@ -3227,12 +3017,12 @@
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>გაშვებულია</translation>
+        <translation>გაშვებული</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation>შეჩერებულია</translation>
+        <translation>დაპაუზებულია</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
@@ -3267,12 +3057,12 @@
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation>შეჩერება</translation>
+        <translation>გაჩერება</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation>შენახვა</translation>
+        <translation>Შენახვა</translation>
     </message>
     <message>
         <source>Restoring</source>
@@ -3302,12 +3092,12 @@
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation>განბლოკილი</translation>
+        <translation>გახსნილია</translation>
     </message>
     <message>
         <source>Locked</source>
         <comment>SessionState</comment>
-        <translation>დაბლოკილი</translation>
+        <translation>ჩაკეტილი</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -3327,12 +3117,12 @@
     <message>
         <source>Default</source>
         <comment>ParavirtProvider</comment>
-        <translation>ნაგულისხმევი</translation>
+        <translation>ნაგულისხმები</translation>
     </message>
     <message>
         <source>Legacy</source>
         <comment>ParavirtProvider</comment>
-        <translation>ძველი</translation>
+        <translation>მოძველებული</translation>
     </message>
     <message>
         <source>Minimal</source>
@@ -3377,7 +3167,7 @@
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>Shared Folder</source>
@@ -3387,7 +3177,7 @@
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation>გამორთულია</translation>
+        <translation>გამორთული</translation>
     </message>
     <message>
         <source>Host To Guest</source>
@@ -3472,7 +3262,7 @@
     <message>
         <source>Normal</source>
         <comment>MediumType</comment>
-        <translation>ნორმალური</translation>
+        <translation>ჩვეულებრივი</translation>
     </message>
     <message>
         <source>Immutable</source>
@@ -3590,11 +3380,6 @@
         <translation>NAT ქსელი</translation>
     </message>
     <message>
-        <source>Cloud Network</source>
-        <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">ღრუბლოვანი ქსელი</translation>
-    </message>
-    <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-PCI II (Am79C970A)</translation>
@@ -3627,7 +3412,7 @@
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation>აკრძალვა</translation>
+        <translation>უარყოფა</translation>
     </message>
     <message>
         <source>Allow VMs</source>
@@ -3642,7 +3427,7 @@
     <message>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation>განკავშირებულია</translation>
+        <translation>გამოერთებული</translation>
     </message>
     <message>
         <source>Host Pipe</source>
@@ -3682,17 +3467,17 @@
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation>მხარდაუჭერელია</translation>
+        <translation>არ არის მხარდაჭერა</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation>მიუწვდომელია</translation>
+        <translation>მიუწვდომელი</translation>
     </message>
     <message>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
-        <translation>დაკავებულია</translation>
+        <translation>დაკავებული</translation>
     </message>
     <message>
         <source>Available</source>
@@ -3712,17 +3497,12 @@
     <message>
         <source>Ignore</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation>იგნორი</translation>
+        <translation>იგნორირება</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation>შეყოვნება</translation>
-    </message>
-    <message>
-        <source>Null Audio Driver</source>
-        <comment>AudioDriverType</comment>
-        <translation type="vanished">ნულოვანი აუდიო დრაივერი</translation>
+        <translation>დაკავება</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
@@ -3730,24 +3510,9 @@
         <translation>Windows-ის მულტიმედია</translation>
     </message>
     <message>
-        <source>OSS Audio Driver</source>
-        <comment>AudioDriverType</comment>
-        <translation type="vanished">OSS აუდიო დრაივერი</translation>
-    </message>
-    <message>
-        <source>ALSA Audio Driver</source>
-        <comment>AudioDriverType</comment>
-        <translation type="vanished">ALSA აუდიო დრაივერი</translation>
-    </message>
-    <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
-    </message>
-    <message>
-        <source>CoreAudio</source>
-        <comment>AudioDriverType</comment>
-        <translation type="vanished">CoreAudio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
@@ -3777,7 +3542,7 @@
     <message>
         <source>Null</source>
         <comment>AuthType</comment>
-        <translation>არაფერი</translation>
+        <translation>Null</translation>
     </message>
     <message>
         <source>External</source>
@@ -3817,7 +3582,7 @@
     <message>
         <source>USB</source>
         <comment>StorageBus</comment>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>PCIe</source>
@@ -3872,7 +3637,7 @@
     <message>
         <source>USB</source>
         <comment>StorageControllerType</comment>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>NVMe</source>
@@ -3994,7 +3759,7 @@
     </message>
     <message>
         <source>Location</source>
-        <translation>მდებარეობა</translation>
+        <translation>დებარეობა</translation>
     </message>
     <message>
         <source>Groups</source>
@@ -4086,10 +3851,6 @@
         <translation>NAT</translation>
     </message>
     <message>
-        <source>Bridget Adapter</source>
-        <translation type="vanished">ხიდის ბარათი</translation>
-    </message>
-    <message>
         <source>Internal Network</source>
         <translation>შიდა ქსელი</translation>
     </message>
@@ -4108,7 +3869,7 @@
     <message>
         <source>Disconnected</source>
         <comment>serial port</comment>
-        <translation>განკავშირებულია</translation>
+        <translation>გამოერთებული</translation>
     </message>
     <message>
         <source>Host Pipe</source>
@@ -4155,22 +3916,22 @@
     <message>
         <source>System</source>
         <comment>DetailsElementType</comment>
-        <translation>სისტემა</translation>
+        <translation>სისტემური</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>DetailsElementType</comment>
-        <translation>ეკრანი</translation>
+        <translation>დროის ჩვენება</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>DetailsElementType</comment>
-        <translation>საცავი</translation>
+        <translation>სათავსო</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>DetailsElementType</comment>
-        <translation>აუდიო</translation>
+        <translation>&amp;აუდიო</translation>
     </message>
     <message>
         <source>Network</source>
@@ -4185,7 +3946,7 @@
     <message>
         <source>USB</source>
         <comment>DetailsElementType</comment>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>Shared folders</source>
@@ -4200,7 +3961,7 @@
     <message>
         <source>Description</source>
         <comment>DetailsElementType</comment>
-        <translation>აღწერა</translation>
+        <translation>განმარტება</translation>
     </message>
     <message>
         <source>Hard Disks</source>
@@ -4220,7 +3981,7 @@
     <message>
         <source>Audio</source>
         <comment>IndicatorType</comment>
-        <translation>აუდიო</translation>
+        <translation>&amp;აუდიო</translation>
     </message>
     <message>
         <source>Network</source>
@@ -4230,7 +3991,7 @@
     <message>
         <source>USB</source>
         <comment>IndicatorType</comment>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -4240,7 +4001,7 @@
     <message>
         <source>Display</source>
         <comment>IndicatorType</comment>
-        <translation>ეკრანი</translation>
+        <translation>დროის ჩვენება</translation>
     </message>
     <message>
         <source>Recording</source>
@@ -4250,12 +4011,12 @@
     <message>
         <source>Features</source>
         <comment>IndicatorType</comment>
-        <translation>თვისებები</translation>
+        <translation>ფუნქციები</translation>
     </message>
     <message>
         <source>Mouse</source>
         <comment>IndicatorType</comment>
-        <translation>თაგუნა</translation>
+        <translation>მაუსი</translation>
     </message>
     <message>
         <source>Keyboard</source>
@@ -4275,22 +4036,22 @@
     <message>
         <source>System</source>
         <comment>InformationElementType</comment>
-        <translation>სისტემა</translation>
+        <translation>სისტემური</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>InformationElementType</comment>
-        <translation>ეკრანი</translation>
+        <translation>დროის ჩვენება</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>InformationElementType</comment>
-        <translation>საცავი</translation>
+        <translation>სათავსო</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>InformationElementType</comment>
-        <translation>აუდიო</translation>
+        <translation>&amp;აუდიო</translation>
     </message>
     <message>
         <source>Network</source>
@@ -4305,7 +4066,7 @@
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>Shared folders</source>
@@ -4320,7 +4081,7 @@
     <message>
         <source>Description</source>
         <comment>InformationElementType</comment>
-        <translation>აღწერა</translation>
+        <translation>განმარტება</translation>
     </message>
     <message>
         <source>Runtime attributes</source>
@@ -4381,48 +4142,6 @@
         <source>Audio Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
         <translation>მხოლოდ აუდიო</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n year(s)</source>
-        <translation type="vanished">
-            <numerusform>%n წელი</numerusform>
-            <numerusform>%n წელი</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n month(s)</source>
-        <translation type="vanished">
-            <numerusform>%n თვე</numerusform>
-            <numerusform>%n თვე</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n day(s)</source>
-        <translation type="vanished">
-            <numerusform>%n დღე</numerusform>
-            <numerusform>%n დღე</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n hour(s)</source>
-        <translation type="vanished">
-            <numerusform>%n საათი</numerusform>
-            <numerusform>%n საათი</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n minute(s)</source>
-        <translation type="vanished">
-            <numerusform>%n წუთი</numerusform>
-            <numerusform>%n წუთი</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n second(s)</source>
-        <translation type="vanished">
-            <numerusform>%n წამი</numerusform>
-            <numerusform>%n წამი</numerusform>
-        </translation>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
@@ -4518,11 +4237,6 @@
         <translation>&lt;nobr&gt;მდგომარეობა: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>User-defined</source>
-        <comment>serial port</comment>
-        <translation type="vanished">მომხმარებლის მიერ განსაზღვრული</translation>
-    </message>
-    <message>
         <source>Inaccessible</source>
         <comment>medium</comment>
         <translation>მიუწვდომელი</translation>
@@ -4593,7 +4307,7 @@
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation>დაშიფრული</translation>
+        <translation>დაშიფრულია</translation>
     </message>
     <message>
         <source>Checking...</source>
@@ -4624,377 +4338,368 @@
         <translation>აირჩიეთ დისკის ახალი ფაილის მდებარეობა</translation>
     </message>
     <message>
-        <source>Paravirtualized Network (virtio-net 1.0)</source>
-        <comment>NetworkAdapterType</comment>
-        <translation type="vanished">პარავირტუალიზებული ქსელი (virtio-net 1.0)</translation>
-    </message>
-    <message>
         <source>PCnet-ISA (Am79C960)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-ISA (Am79C960)</translation>
     </message>
     <message>
-        <source>Acquire cloud instances ...</source>
-        <translation type="obsolete">ღრუბლოვანი გაშებულ ასლების მიღება ...</translation>
-    </message>
-    <message>
         <source>Cloud Network [EXPERIMENTAL]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Starting</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">გაშვება</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Timed Out (Killed)</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Timed Out (Abnormally)</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridged Adapter</source>
-        <translation type="unfinished">ხიდის ბარათი</translation>
-    </message>
-    <message>
-        <source>Cloud Network</source>
-        <translation type="unfinished">ღრუბლოვანი ქსელი</translation>
+        <translation>ღრუბლოვანი ქსელი [ექსპერიმენტალური]</translation>
     </message>
     <message>
         <source>Provisioning</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>მუშაობისთვის მომზადება</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">გაშვებულია</translation>
+        <translation>გაშვებული</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">გაშვება</translation>
+        <translation>გაშვება</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">შეჩერება</translation>
+        <translation>გაჩერება</translation>
     </message>
     <message>
         <source>Stopped</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>შეჩერებულია</translation>
     </message>
     <message>
         <source>Creating Image</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>ასლის შექმნა</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>შეწყვეტა</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>დასრულებულია</translation>
     </message>
     <message>
         <source>Aborted-Saved</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>შეწყვეტილია-შენახულია</translation>
     </message>
     <message>
         <source>None</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished">არცერთი</translation>
+        <translation>არცერთი</translation>
     </message>
     <message>
         <source>USB MT TouchScreen and TouchPad</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB MT სენსორული ეკრანი და თაჩპედი</translation>
     </message>
     <message>
         <source>Host-only Adapter [DEPRECATED]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ბარათი (მოძველებულია)</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელი</translation>
     </message>
     <message>
         <source>Novell NE2000 (NE2000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Novell NE2000 (NE2000)</translation>
     </message>
     <message>
         <source>Novell NE1000 (NE1000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Novell NE1000 (NE1000)</translation>
     </message>
     <message>
         <source>WD EtherCard Plus 16 (WD8013EBT)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WD EtherCard Plus 16 (WD8013EBT)</translation>
     </message>
     <message>
         <source>WD EtherCard Plus (WD8013E)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WD EtherCard Plus (WD8013E)</translation>
     </message>
     <message>
         <source>3Com EtherLink II (3C503)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>3Com EtherLink II (3C503)</translation>
     </message>
     <message>
         <source>3Com EtherLink (3C501)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>3Com EtherLink (3C501)</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished">ნაგულისხმევი</translation>
+        <translation>ნაგულისხმები</translation>
     </message>
     <message>
         <source>Null Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Null Audio</translation>
     </message>
     <message>
         <source>OSS Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>OSS Audio</translation>
     </message>
     <message>
         <source>ALSA Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ALSA აუდიო</translation>
     </message>
     <message>
         <source>Windows Audio Session</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Windows Audio Session</translation>
     </message>
     <message>
         <source>Core Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Core Audio</translation>
+    </message>
+    <message>
+        <source>Undefined</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>გაურკვეველი</translation>
+    </message>
+    <message>
+        <source>Starting</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>გაშვება</translation>
+    </message>
+    <message>
+        <source>Started</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>დაწყებულია</translation>
+    </message>
+    <message>
+        <source>Terminating</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>შეწყვეტა</translation>
+    </message>
+    <message>
+        <source>Terminated</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>დასრულებულია</translation>
+    </message>
+    <message>
+        <source>Timed Out (Killed)</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>დრო გავიდა (მოკვდა)</translation>
+    </message>
+    <message>
+        <source>Timed Out (Abnormally)</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>დრო გავიდა (არანორმალურად)</translation>
+    </message>
+    <message>
+        <source>Down</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>დაბლა</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <comment>GuestSessionStatus</comment>
+        <translation>შეცდომა</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>გაურკვეველი</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">გაშვება</translation>
+        <translation>გაშვება</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დაწყებულია</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დაპაუზებულია</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>შეწყვეტა</translation>
     </message>
     <message>
         <source>Terminated (Normally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დასრულებულია (ნორმალურად)</translation>
     </message>
     <message>
         <source>Terminated (Signal)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დასრულებულია (სიგნალით)</translation>
     </message>
     <message>
         <source>Terminated (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დასრულებულია (არანორმალურად)</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დრო გავიდა (მოკვდა)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დრო გავიდა (არანორმალურად)</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>დაბლა</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>შეცდომა</translation>
+    </message>
+    <message>
+        <source>Cloud Network</source>
+        <translation>ღრუბლოვანი ქსელი</translation>
     </message>
     <message>
         <source>Host Only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელი</translation>
     </message>
     <message>
         <source>Visual State</source>
-        <translation type="unfinished"></translation>
+        <translation>ვიზუალური მდგომარეობა</translation>
     </message>
     <message>
         <source>Follow System Settings</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>სისტემური პარამეტრების მიყოლა</translation>
     </message>
     <message>
         <source>Light</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>ღია</translation>
     </message>
     <message>
         <source>Dark</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>ბნელი</translation>
     </message>
     <message>
         <source>Normal (window)</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>ნორმალური (ფანჯარა)</translation>
     </message>
     <message>
         <source>Full-screen</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>სრულეკრანიანი</translation>
     </message>
     <message>
         <source>Seamless</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>გამჭვირვალე</translation>
     </message>
     <message>
         <source>Scaled</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>გადიდებული</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished">შეუცვლელად დატოვება</translation>
+        <translation>შეუცვლელად დატოვება</translation>
     </message>
     <message>
         <source>Any</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">ნებისმიერი</translation>
+        <translation>ნებისმიერი</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">დიახ</translation>
+        <translation>დიახ</translation>
     </message>
     <message>
         <source>No</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">არა</translation>
+        <translation>არა</translation>
     </message>
     <message>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">არცერთი</translation>
+        <translation>არცერთი</translation>
     </message>
     <message>
         <source>Hint</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">მინიშნება</translation>
+        <translation>მინიშნება</translation>
     </message>
     <message>
         <source>Automatic</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">ავტომატური</translation>
+        <translation>ავტომატური</translation>
     </message>
     <message>
         <source>None</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished">არცერთი</translation>
+        <translation>არცერთი</translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <translation>ხიდის ბარათი</translation>
     </message>
     <message>
         <source>None</source>
         <comment>TpmType</comment>
-        <translation type="unfinished">არცერთი</translation>
+        <translation>არცერთი</translation>
     </message>
     <message>
         <source>v1.2</source>
         <comment>TpmType</comment>
-        <translation type="unfinished"></translation>
+        <translation>v1.2</translation>
     </message>
     <message>
         <source>v2.0</source>
         <comment>TpmType</comment>
-        <translation type="unfinished"></translation>
+        <translation>v2.0</translation>
     </message>
     <message>
         <source>Host</source>
         <comment>TpmType</comment>
-        <translation type="unfinished">ჰოსტი</translation>
+        <translation>ჰოსტი</translation>
     </message>
     <message>
         <source>SWTPM</source>
         <comment>TpmType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SWTPM</translation>
     </message>
     <message>
         <source>TPM Type</source>
-        <translation type="unfinished"></translation>
+        <translation>TPM -ის ტიპი</translation>
     </message>
     <message>
         <source>Secure Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>უსაფრთხო ჩატვირთვა</translation>
     </message>
 </context>
 <context>
@@ -5013,15 +4718,15 @@
     </message>
     <message>
         <source>Owner</source>
-        <translation>მფლობელი</translation>
+        <translation>მეპატრონე</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation>წვდომები</translation>
+        <translation>ნებართვები</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation>ბილიკი</translation>
+        <translation>მისამართი</translation>
     </message>
     <message>
         <source>New Directory</source>
@@ -5036,7 +4741,7 @@
     <name>UIDefaultMachineFolderEditor</name>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished">მანქანების &amp;ნაგულისხმები საქაღალდე:</translation>
+        <translation>მანქანების &amp;ნაგულისხმები საქაღალდე:</translation>
     </message>
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
@@ -5090,7 +4795,7 @@
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>პროცესორი</translation>
+        <translation>პროცესორები</translation>
     </message>
     <message>
         <source>Execution Cap</source>
@@ -5120,7 +4825,7 @@
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5176,11 +4881,6 @@
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation>გადიდების ფაქტორი</translation>
-    </message>
-    <message>
-        <source>2D Video</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">2D ვიდეო</translation>
     </message>
     <message>
         <source>3D</source>
@@ -5239,7 +4939,7 @@
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation>ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5249,12 +4949,12 @@
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation>აუდიო შეტანა</translation>
+        <translation>შემოტანილი აუდიოსიგნალი</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation>ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5359,7 +5059,7 @@
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation>ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5374,7 +5074,7 @@
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation>ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5389,12 +5089,12 @@
     <message>
         <source>Top</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation>თავში</translation>
+        <translation>ზედა</translation>
     </message>
     <message>
         <source>Bottom</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation>ბოლოში</translation>
+        <translation>ქვემოთ</translation>
     </message>
     <message>
         <source>Mini-toolbar</source>
@@ -5458,37 +5158,37 @@
     <message>
         <source>Enabled</source>
         <comment>details (cloud value)</comment>
-        <translation type="unfinished">ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (cloud value)</comment>
-        <translation type="unfinished"></translation>
+        <translation>გამორთული</translation>
     </message>
     <message>
         <source>Host-only Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელი, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Visual State</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>ვიზუალური მდგომარეობა</translation>
     </message>
     <message>
         <source>TPM Type</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>TPM -ის ტიპი</translation>
     </message>
     <message>
         <source>Secure Boot</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>უსაფრთხო ჩატვირთვა</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/secure boot)</comment>
-        <translation type="unfinished">ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
 </context>
 <context>
@@ -5500,11 +5200,11 @@
     </message>
     <message>
         <source>Copy value (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>მნიშვნელობის კოპირება (%1)</translation>
     </message>
     <message>
         <source>Edit value...</source>
-        <translation type="unfinished"></translation>
+        <translation>მნიშვნელობის ჩასწორება...</translation>
     </message>
 </context>
 <context>
@@ -5517,26 +5217,22 @@
 <context>
     <name>UIDetailsView</name>
     <message>
-        <source>Contains a list of Virtual Machine details</source>
-        <translation type="vanished">შეიცავს ვირტუალური მანქანის დეტალების სიას</translation>
-    </message>
-    <message>
         <source>Contains a list of Virtual Machine details.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ვირტუალური მანქანის დეტალების სიას.</translation>
     </message>
 </context>
 <context>
     <name>UIDialogPanel</name>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">პანელის დახურვა</translation>
+        <translation>პანელის დახურვა</translation>
     </message>
 </context>
 <context>
     <name>UIDiskEncryptionSettingsEditor</name>
     <message>
         <source>En&amp;able Disk Encryption</source>
-        <translation type="unfinished">&amp;დისკის დაშიფვრის ჩართვა</translation>
+        <translation>&amp;დისკის დაშიფვრის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, disks attached to this virtual machine will be encrypted.</source>
@@ -5544,7 +5240,7 @@
     </message>
     <message>
         <source>Disk Encryption C&amp;ipher:</source>
-        <translation type="unfinished">&amp;დისკის დაშიფვრის მექანიზმი:</translation>
+        <translation>&amp;დისკის დაშიფვრის მექანიზმი:</translation>
     </message>
     <message>
         <source>Holds the cipher to be used for encrypting the virtual machine disks.</source>
@@ -5552,7 +5248,7 @@
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
-        <translation type="unfinished">&amp;შეყვანეთ ახალი პაროლი:</translation>
+        <translation>&amp;შეყვანეთ ახალი პაროლი:</translation>
     </message>
     <message>
         <source>Holds the encryption password for disks attached to this virtual machine.</source>
@@ -5560,23 +5256,23 @@
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished">&amp;დაადასტურეთ ახალი პაროლი:</translation>
+        <translation>&amp;დაადასტურეთ ახალი პაროლი:</translation>
     </message>
     <message>
         <source>Confirms the disk encryption password.</source>
-        <translation type="unfinished">დაადასტურეთ დისკის დაშიფვრის პაროლი.</translation>
+        <translation>დაადასტურეთ დისკის დაშიფვრის პაროლი.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished">შეუცვლელად დატოვება</translation>
+        <translation>შეუცვლელად დატოვება</translation>
     </message>
 </context>
 <context>
     <name>UIDiskVariantWidget</name>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;სრული ზომის წინასწარი გამოთხოვა</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
@@ -5584,7 +5280,7 @@
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation type="unfinished"></translation>
+        <translation>2გბ-იანი ფაილებად &amp;დახლეჩა</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
@@ -5595,11 +5291,11 @@
     <name>UIDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ფანჯრის ამოწევა თაგუნას ქვეშ</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
@@ -5607,7 +5303,7 @@
     </message>
     <message>
         <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსის ეკრანის დაცვის &amp;გამორთვა</translation>
     </message>
     <message>
         <source>When checked, screen saver of the host OS is disabled.</source>
@@ -5618,11 +5314,11 @@
     <name>UIDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">&amp;3D აჩქარების ჩართვა</translation>
+        <translation>&amp;3D აჩქარების ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
@@ -5653,17 +5349,6 @@
     <message>
         <source>Verifying %1...</source>
         <translation>%1-ის შემოწმება...</translation>
-    </message>
-</context>
-<context>
-    <name>UIDownloaderAdditions</name>
-    <message>
-        <source>VirtualBox Guest Additions</source>
-        <translation type="obsolete">VirtualBox-ის სტუმრის დამატებები</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">აირჩიეთ სტუმრის დამატებების ჩასაწერი საქაღალდე</translation>
     </message>
 </context>
 <context>
@@ -5703,7 +5388,7 @@
     <name>UIDragAndDropEditor</name>
     <message>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="unfinished">წაღება და დაგდება:</translation>
+        <translation>წაღება და დაგდება:</translation>
     </message>
     <message>
         <source>Holds which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
@@ -5714,67 +5399,42 @@
     <name>UIEmptyFilePathSelector</name>
     <message>
         <source>Choose...</source>
-        <translation>არჩევა...</translation>
+        <translation>აირჩიეთ...</translation>
     </message>
 </context>
 <context>
     <name>UIErrorString</name>
     <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation type="vanished">შედეგის&amp;nbsp;კოდი: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation type="vanished">კომპონენტი: </translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation type="vanished">ინტერფეისი: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation type="vanished">მრეკავი: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation type="vanished">მრეკავის&amp;nbsp;RC: </translation>
-    </message>
-    <message>
         <source>Result&amp;nbsp;Code:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>შედეგის&amp;nbsp;კოდი:</translation>
     </message>
     <message>
         <source>Component:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>კომპონენტი:</translation>
     </message>
     <message>
         <source>Interface:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>ინტერფეისი:</translation>
     </message>
     <message>
         <source>Callee:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>მრეკავი:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>მრეკავის&amp;nbsp;RC:</translation>
     </message>
 </context>
 <context>
     <name>UIExecutionCapEditor</name>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished">&amp;შესრულების პიკი:</translation>
+        <translation>&amp;შესრულების პიკი:</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU.</source>
@@ -5782,96 +5442,71 @@
     </message>
     <message>
         <source>Minimum possible execution cap.</source>
-        <translation type="unfinished"></translation>
+        <translation>შესრულების მინიმალური შესაძლო შეზღუდვა.</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>მაქსიმალური შესაძლო ვირტუალური CPU-ების რაოდენობა.</translation>
     </message>
 </context>
 <context>
     <name>UIExtensionPackManager</name>
     <message>
-        <source>Active</source>
-        <comment>ext pack</comment>
-        <translation type="unfinished">აქტიური</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished">სახელი</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="unfinished">ვერსია</translation>
-    </message>
-    <message>
-        <source>Registered extension packs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select an extension package file</source>
-        <translation type="unfinished">აირჩიეთ გაფართოების პაკეტის ფაილი</translation>
-    </message>
-    <message>
-        <source>Extension package files (%1)</source>
-        <translation type="unfinished">გაფართოების პაკეტის ფაილები (%1)</translation>
-    </message>
-    <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატებების პაკეტების მმართველი</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">დახურვა</translation>
+        <translation>დახურვა</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახურვა</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">ფანჯრის დახურვა (%1)</translation>
+        <translation>ფანჯრის დახურვა (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIExtensionPackageItem</name>
-    <message>
-        <source>%1, %2: %3, %4</source>
-        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
-        <translation type="vanished">%1, %2: %3, %4</translation>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
     <message>
-        <source>%1, %2: %3</source>
-        <comment>col.2 text, col.3 name: col.3 text</comment>
-        <translation type="vanished">%1, %2: %3</translation>
+        <source>Name</source>
+        <translation>სახელი</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>ვერსია</translation>
+    </message>
+    <message>
+        <source>Registered extension packs</source>
+        <translation>რეგისტრირებული დამატების პაკეტები</translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation>აირჩიეთ გაფართოების პაკეტის ფაილი</translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation>გაფართოების პაკეტის ფაილები (%1)</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>ext pack</comment>
+        <translation>აქტიური</translation>
     </message>
 </context>
 <context>
     <name>UIFDCreationDialog</name>
-    <message>
-        <source>File Path:</source>
-        <translation type="vanished">ფაილის ბილიკი:</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation type="vanished">ზომა:</translation>
-    </message>
-    <message>
-        <source>Format disk as FAT12</source>
-        <translation type="vanished">დისკის FAT12-ად დაფორმატება</translation>
-    </message>
     <message>
         <source>1.44M</source>
         <translation>1.44მ</translation>
@@ -5894,39 +5529,39 @@
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished">ფაილის &amp;ბილიკი:</translation>
+        <translation>ფაილის &amp;ბილიკი:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished">&amp;ზომა:</translation>
+        <translation>&amp;ზომა:</translation>
     </message>
     <message>
         <source>Sets the size of the floppy disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკეტის ზომის დაყენება.</translation>
     </message>
     <message>
         <source>&amp;Format disk as FAT12</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის FAT12-ად &amp;დაფორმატება</translation>
     </message>
     <message>
         <source>Formats the floppy disk as FAT12.</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის FAT12-ად დაფორმატება.</translation>
     </message>
     <message>
         <source>2.88M</source>
-        <translation type="unfinished">360კ {2.88M?}</translation>
+        <translation>2.88მ</translation>
     </message>
     <message>
         <source>Create the disk and close this dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის ექმნა და ფანჯრის დახურვა.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">გაუქმება</translation>
+        <translation>გაუქმება</translation>
     </message>
     <message>
         <source>File already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>ფაილი უკვე არსებობს</translation>
     </message>
 </context>
 <context>
@@ -5941,7 +5576,7 @@
     </message>
     <message>
         <source>Clear</source>
-        <translation>გასუფთავება</translation>
+        <translation>სუფთა ცა</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -5953,11 +5588,11 @@
     </message>
     <message>
         <source>Working</source>
-        <translation>მუშაობს</translation>
+        <translation>ვმუშაობ</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation>შეჩერებული</translation>
+        <translation>დაპაუზებულია</translation>
     </message>
     <message>
         <source>Canceled</source>
@@ -5969,7 +5604,7 @@
     </message>
     <message>
         <source>Failed</source>
-        <translation>წარუმატებელი</translation>
+        <translation>წარუმატებელია</translation>
     </message>
     <message>
         <source>Invalid</source>
@@ -5981,11 +5616,11 @@
     </message>
     <message>
         <source>Remove Finished</source>
-        <translation>დასრულებულის წაშლა</translation>
+        <translation>დასრულებულების მოცილება</translation>
     </message>
     <message>
         <source>Remove All</source>
-        <translation>ყველას წაშლა</translation>
+        <translation>ყველას გამოერთება</translation>
     </message>
     <message>
         <source>List directories on top</source>
@@ -6016,10 +5651,6 @@
         <translation>პაროლი</translation>
     </message>
     <message>
-        <source>Show Password</source>
-        <translation type="vanished">პაროლის ჩვენება</translation>
-    </message>
-    <message>
         <source>User name to authenticate session creation</source>
         <translation>სესიის შექმნისთვის საჭირო ავთენტიკაციის მომხმარებლის სახელი</translation>
     </message>
@@ -6030,10 +5661,6 @@
     <message>
         <source>Password to authenticate session creation</source>
         <translation>სესიის შექმნისთვის საჭირო ავთენტიკაციის პაროლი</translation>
-    </message>
-    <message>
-        <source>Create Session</source>
-        <translation type="vanished">სესიის შექნა</translation>
     </message>
     <message>
         <source>Close Session</source>
@@ -6077,7 +5704,7 @@
     </message>
     <message>
         <source>Symbolic Link</source>
-        <translation>სიმბმული</translation>
+        <translation>სიმბოლური ბმა</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
@@ -6097,7 +5724,7 @@
     </message>
     <message>
         <source>symbolic link</source>
-        <translation>სიმბმული</translation>
+        <translation>სიმბოლური ბმული</translation>
     </message>
     <message>
         <source>character device</source>
@@ -6212,48 +5839,68 @@
         <translation>დამალული ფაილების/საქაღალდეების ჩვენება</translation>
     </message>
     <message>
-        <source>Guest File System</source>
-        <translation type="vanished">სტუმრის ფაილური სისტემა</translation>
-    </message>
-    <message>
-        <source>Host File System</source>
-        <translation type="vanished">ჰოსტის ფაილური სისტემა</translation>
+        <source>File Manager</source>
+        <translation>ფაილების მმართველი</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">დახურვა შენახვის გარეშე</translation>
+        <translation>დახურვა შენახვის გარეშე</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">ცვლილებების დაბრუნება (%1)</translation>
-    </message>
-    <message>
-        <source>File Manager</source>
-        <translation type="unfinished">ფაილების მმართველი</translation>
+        <translation>ცვლილებების დაბრუნება (%1)</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
     <message>
         <source>Open Session</source>
-        <translation type="unfinished"></translation>
+        <translation>სესიის გახსნა</translation>
     </message>
     <message>
         <source>Guest File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>სტუმრის ფაილური სისტემა:</translation>
+    </message>
+    <message>
+        <source>Host File System:</source>
+        <translation>ჰოსტის ფაილური სისტემა:</translation>
+    </message>
+    <message>
+        <source>Host</source>
+        <translation>ჰოსტი</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>სახელი</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>ზომა</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation>დროის შეცვლა</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation>მეპატრონე</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation>ნებართვები</translation>
     </message>
     <message>
         <source>Machine reference is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის მიმართვა არასწორია.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest is not currently running.</source>
@@ -6273,39 +5920,11 @@
     </message>
     <message>
         <source>Guest control session is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>სტუმრის კონტროლის სესია გაშვებულია.</translation>
     </message>
     <message>
         <source>Some error has occurred. Please check the log panel.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host File System:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host</source>
-        <translation type="unfinished">ჰოსტი</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished">სახელი</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="unfinished">ზომა</translation>
-    </message>
-    <message>
-        <source>Change Time</source>
-        <translation type="unfinished">დროის შეცვლა</translation>
-    </message>
-    <message>
-        <source>Owner</source>
-        <translation type="unfinished">მფლობელი</translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation type="unfinished">წვდომები</translation>
     </message>
 </context>
 <context>
@@ -6320,7 +5939,7 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation>თავიდან ჩართვა</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
@@ -6353,14 +5972,6 @@
     <message>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the folder path.</source>
-        <translation type="vanished">შეიცავს საქაღალდის ბილიკს.</translation>
-    </message>
-    <message>
-        <source>Holds the file path.</source>
-        <translation type="vanished">შეიცავს ფაილის ბილიკს.</translation>
     </message>
 </context>
 <context>
@@ -6396,133 +6007,9 @@
         <source>Value</source>
         <translation>მნიშვნელობა</translation>
     </message>
-    <message>
-        <source>Assign value ...</source>
-        <translation type="vanished">მიანიჭეთ მნიშვნელობა...</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsDisplay</name>
-    <message>
-        <source>Maximum Guest Screen &amp;Size:</source>
-        <translation type="vanished">სტუმრის ეკრანის მაქსიმალური &amp;ზომა:</translation>
-    </message>
-    <message>
-        <source>&amp;Width:</source>
-        <translation type="vanished">&amp;სიგანე:</translation>
-    </message>
-    <message>
-        <source>&amp;Height:</source>
-        <translation type="vanished">&amp;სიმაღლე:</translation>
-    </message>
-    <message>
-        <source>Machine Windows:</source>
-        <translation type="vanished">მანქანების ფანჯრები:</translation>
-    </message>
-    <message>
-        <source>&amp;Raise Window Under Mouse</source>
-        <translation type="vanished">&amp;ფანჯრის ამოწევა თაგუნას ქვეშ</translation>
-    </message>
-    <message>
-        <source>Scale Factor:</source>
-        <translation type="vanished">გადიდების ფაქტორი:</translation>
-    </message>
-    <message>
-        <source>Controls the guest screen scale factor.</source>
-        <translation type="vanished">სტუმრის ეკრანის გადიდების კოეფიციენტი.</translation>
-    </message>
-    <message>
-        <source>Automatic</source>
-        <comment>Maximum Guest Screen Size</comment>
-        <translation type="vanished">ავტომატური</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <comment>Maximum Guest Screen Size</comment>
-        <translation type="vanished">არცერთი</translation>
-    </message>
-    <message>
-        <source>Hint</source>
-        <comment>Maximum Guest Screen Size</comment>
-        <translation type="vanished">მინიშნება</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsExtension</name>
-    <message>
-        <source>Lists all installed packages.</source>
-        <translation type="vanished">ყველა დაყენებული პაკეტის სია.</translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <translation type="vanished">აქტიური</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">სახელი</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">ვერსია</translation>
-    </message>
-    <message>
-        <source>&amp;Extension Packages</source>
-        <translation type="vanished">&amp;გაფართოების პაკეტები</translation>
-    </message>
-    <message>
-        <source>Extensions</source>
-        <translation type="vanished">გაფართოებები</translation>
-    </message>
-    <message>
-        <source>Add Package</source>
-        <translation type="vanished">პაკეტის დამატება</translation>
-    </message>
-    <message>
-        <source>Remove Package</source>
-        <translation type="vanished">პაკეტის წაშლა</translation>
-    </message>
-    <message>
-        <source>Adds new package.</source>
-        <translation type="vanished">ახალი პაკეტის დამატება.</translation>
-    </message>
-    <message>
-        <source>Removes selected package.</source>
-        <translation type="vanished">მონიშნული პაკეტის წაშლა.</translation>
-    </message>
-    <message>
-        <source>Select an extension package file</source>
-        <translation type="vanished">აირჩიეთ გაფართოების პაკეტის ფაილი</translation>
-    </message>
-    <message>
-        <source>Extension package files (%1)</source>
-        <translation type="vanished">გაფართოების პაკეტის ფაილები (%1)</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsGeneral</name>
-    <message>
-        <source>Default &amp;Machine Folder:</source>
-        <translation type="vanished">მანქანების &amp;ნაგულისხმები საქაღალდე:</translation>
-    </message>
-    <message>
-        <source>V&amp;RDP Authentication Library:</source>
-        <translation type="vanished">V&amp;RDP-ის ავთენტიკაციის ბიბლიოთეკა:</translation>
-    </message>
-    <message>
-        <source>Host Screensaver:</source>
-        <translation type="vanished">ჰოსტის ეკრანის დამცველი:</translation>
-    </message>
-    <message>
-        <source>&amp;Disable When Running Virtual Machines</source>
-        <translation type="vanished">&amp;გამორთვა, როცა ვირტუალური მანქანები გაშვებულია</translation>
-    </message>
 </context>
 <context>
     <name>UIGlobalSettingsInput</name>
-    <message>
-        <source>&amp;Auto Capture Keyboard</source>
-        <translation type="vanished">&amp;კლავიატურის ავტომატური გადაჭერა</translation>
-    </message>
     <message>
         <source>Host Key Combination</source>
         <translation>ჰოსტის კლავიშების მიმდევრობა</translation>
@@ -6531,198 +6018,9 @@
         <source>Some items have the same shortcuts assigned.</source>
         <translation>ზოგიერთ ჩანაწერს იგივე მალსახმობები აქვს მინიჭებული.</translation>
     </message>
-    <message>
-        <source>&amp;VirtualBox Manager</source>
-        <translation type="vanished">&amp;VirtualBox-ის მმართველი</translation>
-    </message>
-    <message>
-        <source>Virtual &amp;Machine</source>
-        <translation type="vanished">ვირტუალური &amp;მანქანა</translation>
-    </message>
-    <message>
-        <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="vanished">ყველა კონფიგურირებადი მალსახმობის სია.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsLanguage</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">სახელი</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation type="vanished">ID</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation type="vanished">ენა</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation type="vanished">ავტორი</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Languages</source>
-        <translation type="vanished">&amp;მომხმარებლის ინტერფეისის ენები</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation type="vanished">ენა:</translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation type="vanished">ავტორები:</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetwork</name>
-    <message>
-        <source>&amp;NAT Networks</source>
-        <translation type="vanished">&amp;NAT ქსელები</translation>
-    </message>
-    <message>
-        <source>Lists all available NAT networks.</source>
-        <translation type="vanished">ხელმისაწვდომი NAT ქსელების სია.</translation>
-    </message>
-    <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
-        <translation type="vanished">სახელი&lt;b&gt;%1&lt;/b&gt; რამდენიმე NAT ქსელის მიერ გამოიყენება.</translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <comment>NAT network</comment>
-        <translation type="vanished">აქტიური</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">სახელი</translation>
-    </message>
-    <message>
-        <source>Add NAT Network</source>
-        <translation type="vanished">NAT ქსელის დამატება</translation>
-    </message>
-    <message>
-        <source>Remove NAT Network</source>
-        <translation type="vanished">NAT ქსელის წაშლა</translation>
-    </message>
-    <message>
-        <source>Edit NAT Network</source>
-        <translation type="vanished">NAT ქსელის ჩასწორება</translation>
-    </message>
-    <message>
-        <source>Adds new NAT network.</source>
-        <translation type="vanished">ახალი NAT ქსელის დამატება.</translation>
-    </message>
-    <message>
-        <source>Removes selected NAT network.</source>
-        <translation type="vanished">მონიშნული NAT ქსელის წაშლა.</translation>
-    </message>
-    <message>
-        <source>Edits selected NAT network.</source>
-        <translation type="vanished">მონიშნული NAT ქსელის ჩასწორება.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetworkDetailsNAT</name>
-    <message>
-        <source>NAT Network Details</source>
-        <translation type="vanished">NAT ქსელის დეტალები</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network</source>
-        <translation type="vanished">&amp;ქსელის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Network &amp;Name:</source>
-        <translation type="vanished">&amp;ქსელის სახელი:</translation>
-    </message>
-    <message>
-        <source>Holds the name for this network.</source>
-        <translation type="vanished">შეიცავს ამ ქსელის სახელს.</translation>
-    </message>
-    <message>
-        <source>Network &amp;CIDR:</source>
-        <translation type="vanished">&amp;ქსელის CIDR:</translation>
-    </message>
-    <message>
-        <source>Holds the CIDR for this network.</source>
-        <translation type="vanished">შეიცავს ამ ქსელის CIDR-ს.</translation>
-    </message>
-    <message>
-        <source>Network Options:</source>
-        <translation type="vanished">ქსელის პარამეტრები:</translation>
-    </message>
-    <message>
-        <source>Supports &amp;DHCP</source>
-        <translation type="vanished">&amp;DHCP-ის მხრდაჭერა</translation>
-    </message>
-    <message>
-        <source>Supports &amp;IPv6</source>
-        <translation type="vanished">&amp;IPv6-ის მხარდაჭერა</translation>
-    </message>
-    <message>
-        <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="vanished">IPv6-ის ნაგულისხმები რაუტის გამოცხადება</translation>
-    </message>
-    <message>
-        <source>&amp;Port Forwarding</source>
-        <translation type="vanished">&amp;პორტის გადამისამართება</translation>
-    </message>
-    <message>
-        <source>When checked, this network will be enabled.</source>
-        <translation type="vanished">თუ ჩართულია, ეს ქსელი ჩართულია.</translation>
-    </message>
-    <message>
-        <source>When checked, this network will support DHCP.</source>
-        <translation type="vanished">თუ ჩართულია, ამ ქსელს DHCP-ის მხარდაჭერა ექნება.</translation>
-    </message>
-    <message>
-        <source>When checked, this network will support IPv6.</source>
-        <translation type="vanished">თუ ჩართულია, ამ ქსელს IPv6-ის მხარდაჭერა ექნება.</translation>
-    </message>
-    <message>
-        <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="vanished">როცა ჩართულია, ეს ქსელი გამოცხადებული იქნება, როგორც IPv6-ის ნაგულისხმები რაუტი.</translation>
-    </message>
-    <message>
-        <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="vanished">პორტის გადამისამართების მორგების ფანჯრის ჩვენება.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsPortForwardingDlg</name>
-    <message>
-        <source>Port Forwarding Rules</source>
-        <translation type="vanished">პორტის გადამისამართების წესები</translation>
-    </message>
-    <message>
-        <source>IPv4</source>
-        <translation type="vanished">IPv4</translation>
-    </message>
-    <message>
-        <source>IPv6</source>
-        <translation type="vanished">IPv6</translation>
-    </message>
 </context>
 <context>
     <name>UIGlobalSettingsProxy</name>
-    <message>
-        <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="vanished">ჰოსტის &amp;პროქსის პარამეტრების ავტომატური გამოცნობა</translation>
-    </message>
-    <message>
-        <source>&amp;Direct Connection to the Internet</source>
-        <translation type="vanished">&amp;პირდაპირი კავშირი ინტერნეტთან</translation>
-    </message>
-    <message>
-        <source>&amp;Manual Proxy Configuration</source>
-        <translation type="vanished">&amp;პროქსის პარამეტრების ხელით შეყვანა</translation>
-    </message>
-    <message>
-        <source>&amp;URL:</source>
-        <translation type="vanished">&amp;URL:</translation>
-    </message>
     <message>
         <source>No proxy URL is currently specified.</source>
         <translation>პროქსის ბმული მითითებული არაა.</translation>
@@ -6737,37 +6035,6 @@
     </message>
 </context>
 <context>
-    <name>UIGlobalSettingsUpdate</name>
-    <message>
-        <source>&amp;Check for Updates</source>
-        <translation type="vanished">განახ&amp;ლების შემოწმება</translation>
-    </message>
-    <message>
-        <source>&amp;Once per:</source>
-        <translation type="vanished">&amp;შემოწმების პერიოდი:</translation>
-    </message>
-    <message>
-        <source>Next Check:</source>
-        <translation type="vanished">შემდეგი შემოწმება:</translation>
-    </message>
-    <message>
-        <source>Check for:</source>
-        <translation type="vanished">შემოწმება:</translation>
-    </message>
-    <message>
-        <source>&amp;Stable Release Versions</source>
-        <translation type="vanished">&amp;სტაბილური რელიზები</translation>
-    </message>
-    <message>
-        <source>&amp;All New Releases</source>
-        <translation type="vanished">&amp;ყველა რელიზი</translation>
-    </message>
-    <message>
-        <source>All New Releases and &amp;Pre-Releases</source>
-        <translation type="vanished">ყველა ახალი რელიზი და &amp;პრე-რელიზი</translation>
-    </message>
-</context>
-<context>
     <name>UIGraphicsControllerEditor</name>
     <message>
         <source>&amp;Graphics Controller:</source>
@@ -6775,7 +6042,7 @@
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
-        <translation type="unfinished">აირჩიეთ ვირტუალური მანქანის გრაფიკული ადაპტერის ტიპი.</translation>
+        <translation>აირჩიეთ ვირტუალური მანქანის გრაფიკული ადაპტერის ტიპი.</translation>
     </message>
 </context>
 <context>
@@ -6881,203 +6148,203 @@
     <name>UIHelpBrowserWidget</name>
     <message>
         <source>Oracle VM VirtualBox User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>Oracle VM VirtualBox -ის მომხმარებლის სახელმძღვანელო</translation>
+    </message>
+    <message>
+        <source>Copy Selected Text</source>
+        <translation>მონიშნული ტექსტის კოპირება</translation>
+    </message>
+    <message>
+        <source>Open Link</source>
+        <translation>ბმულის გახსნა</translation>
+    </message>
+    <message>
+        <source>Open Link in New Tab</source>
+        <translation>ბმულის ახალ ფანჯარაში გახსნა</translation>
+    </message>
+    <message>
+        <source>Copy Link</source>
+        <translation>ბმულის კოპირება</translation>
+    </message>
+    <message>
+        <source>Find in Page</source>
+        <translation>გვერდში ძებნა</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation>დაახლოება</translation>
+    </message>
+    <message>
+        <source>Close Other Tabs</source>
+        <translation>სხვა ჩანართების დახურვა</translation>
+    </message>
+    <message>
+        <source>Close Tab</source>
+        <translation>ჩანართის დახურვა</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <translation>&amp;ფაილი</translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>&amp;რედაქტირება</translation>
+    </message>
+    <message>
+        <source>&amp;Navigation</source>
+        <translation>&amp;ნავიგაცია</translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation>&amp;ხედი</translation>
+    </message>
+    <message>
+        <source>&amp;Tabs</source>
+        <translation>&amp;ჩანართები</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation>შიგთავსი</translation>
+    </message>
+    <message>
+        <source>Index</source>
+        <translation>ინდექსი</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ძებნა</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation>სანიშნები</translation>
+    </message>
+    <message>
+        <source>Show &amp;Side Bar</source>
+        <translation>&amp;გვერდითი პანელის ჩვენება</translation>
+    </message>
+    <message>
+        <source>Show &amp;Tool Bar</source>
+        <translation>&amp;ხელსაწყოების პანელის ჩვენება</translation>
+    </message>
+    <message>
+        <source>Show St&amp;atus Bar</source>
+        <translation>&amp;სტატუსის პანელის ჩვენება</translation>
+    </message>
+    <message>
+        <source>&amp;Print...</source>
+        <translation>&amp;ამობეჭდვა...</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp;გასვლა</translation>
+    </message>
+    <message>
+        <source>&amp;Copy Selected Text</source>
+        <translation>მონიშნული ტექსტის &amp;კოპირება</translation>
+    </message>
+    <message>
+        <source>&amp;Find in Page</source>
+        <translation>გვერდში &amp;ძებნა</translation>
+    </message>
+    <message>
+        <source>Find Ne&amp;xt</source>
+        <translation>&amp;შემდეგის პოვნა</translation>
+    </message>
+    <message>
+        <source>Find &amp;Previous</source>
+        <translation>წინას &amp;პოვნა</translation>
+    </message>
+    <message>
+        <source>Go Backward</source>
+        <translation>უკან გადასვლა</translation>
+    </message>
+    <message>
+        <source>Go Forward</source>
+        <translation>წინ გადასვლა</translation>
+    </message>
+    <message>
+        <source>Go to Start Page</source>
+        <translation>გვერდის დასაწყისზე გადასვლა</translation>
+    </message>
+    <message>
+        <source>Reload Page</source>
+        <translation>გვერდის გადატვირთვა</translation>
+    </message>
+    <message>
+        <source>Add Bookmark</source>
+        <translation>სანიშნის დამატება</translation>
+    </message>
+    <message>
+        <source>Click to open this link in an external browser</source>
+        <translation>ბმულის გარე ბრაუზერში გასახსნელად დააწკაპუნეთ</translation>
+    </message>
+    <message>
+        <source>Click to enlarge the image</source>
+        <translation>გამოსახულების გასადიდებლად დააწკაპუნეთ</translation>
+    </message>
+    <message>
+        <source>Delete Bookmark</source>
+        <translation>სანიშნის წაშლა</translation>
+    </message>
+    <message>
+        <source>Delete All Bookmarks</source>
+        <translation>ყველა სანიშნის წაშლა</translation>
+    </message>
+    <message>
+        <source>Close T&amp;ab</source>
+        <translation>&amp;ჩანართის დახურვა</translation>
+    </message>
+    <message>
+        <source>Close &amp;Other Tabs</source>
+        <translation>&amp;სხვა ჩანართების დახურვა</translation>
     </message>
     <message>
         <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>საწყისი გვერდზე დაბრუნება</translation>
     </message>
     <message>
         <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>მიმდინარე გვერდის გადატვირთვა</translation>
     </message>
     <message>
         <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>შემდეგ გვერდზე გადასვლა</translation>
     </message>
     <message>
         <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>წინა გვერდზე დაბრუნება</translation>
     </message>
     <message>
         <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>ახალი სანიშნის დამატება</translation>
     </message>
     <message>
         <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy Selected Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Link in New Tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zoom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation>მთავარი</translation>
     </message>
     <message>
         <source>Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>უკან</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>წინ</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>თავიდან ჩატვირთვა</translation>
     </message>
     <message>
         <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close Other Tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close Tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <translation type="unfinished">&amp;ფაილი</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="unfinished">რ&amp;ედაქტირება</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;View</source>
-        <translation type="unfinished">&amp;ნახვა</translation>
-    </message>
-    <message>
-        <source>&amp;Tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Contents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Index</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show &amp;Side Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show &amp;Tool Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show St&amp;atus Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Print...</source>
-        <translation type="unfinished">&amp;ამობეჭდვა...</translation>
-    </message>
-    <message>
-        <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Copy Selected Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Find in Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find Ne&amp;xt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find &amp;Previous</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Backward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go Forward</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go to Start Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Click to open this link in an external browser</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Click to enlarge the image</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete All Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>სტრიქონის მიმდინარე გვერდში პოვნა</translation>
     </message>
     <message>
         <source>Bookmark added:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close T&amp;ab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close &amp;Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>სანიშნე დამატებულია:</translation>
     </message>
 </context>
 <context>
@@ -7159,196 +6426,6 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
-    <message>
-        <source>&amp;Adapter</source>
-        <translation type="obsolete">&amp;ქსელის ბარათი</translation>
-    </message>
-    <message>
-        <source>&amp;DHCP Server</source>
-        <translation type="obsolete">&amp;DHCP სერვერი</translation>
-    </message>
-    <message>
-        <source>Configure Adapter &amp;Automatically</source>
-        <translation type="obsolete">&amp;ადაპტერის ავტომატური მორგება</translation>
-    </message>
-    <message>
-        <source>Configure Adapter &amp;Manually</source>
-        <translation type="obsolete">ა&amp;დაპტერის ხელით მორგება</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation type="obsolete">&amp;IPv4 მისამართი:</translation>
-    </message>
-    <message>
-        <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="obsolete">შეიცავს ქსელის ამ ბარათის IPv4 მისამართს.</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation type="obsolete">IPv4 ქსელის ნიღბის მისამართი:</translation>
-    </message>
-    <message>
-        <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="obsolete">შეიცავს ქსელის ამ ბარათის IPv4 ნიღაბს.</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation type="obsolete">IPv6 მისამართი:</translation>
-    </message>
-    <message>
-        <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="obsolete">IPv6 პრეფიქსის სიგრძე:</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="obsolete">გადატარება</translation>
-    </message>
-    <message>
-        <source>Reset changes in current interface details</source>
-        <translation type="obsolete">ქსელის მიმდინარე ინტერფეისის დეტალების საწყის მნიშვნელობებზე დაბრუნება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current interface details</source>
-        <translation type="obsolete">ქსელის მიმდინარე ინტერფეისის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="obsolete">ცვლილებების დაბრუნება (%1)</translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="obsolete">ცვლილებების გადატარება (%1)</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation type="obsolete">&amp;სერვერის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation type="obsolete">სერვერის &amp;მისამართი:</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation type="obsolete">სერვერის &amp;ნიღაბი:</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation type="obsolete">მისამართების &amp;ქვედა ზღვარი:</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation type="obsolete">მისამართების &amp;ზედა ზღვარი:</translation>
-    </message>
-    <message>
-        <source>Reset changes in current DHCP server details</source>
-        <translation type="obsolete">მიმდინარე DHCP სერვერის დეტალების ცვლილებების საწყის მნიშვნელობებზე დაბრუნება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current DHCP server details</source>
-        <translation type="obsolete">მიმდინარე DHCP სერვერის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; is set to obtain the address automatically but the corresponding DHCP server is not enabled.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისი &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; დაყენებულია მისამართის ავტომატურად ასაღებად, მაგრამ შესაბამისი DHCP სერვერი ჩართული არაა.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად სწორი IPv4 მისამართი არ აქვს მინიჭებული.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 network mask.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად სწორი IPv4 ქსელის ნიღაბი მინიჭებული არ აქვს.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად არ გააჩნია სწორი IPv6 მისამართი.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 prefix length.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად IPv6 პრეფიქსის სიგრძე მინიჭებული არ აქვს.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად DHCP სერვერის სწორი მისამართი არ გააჩნია.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად DHCP სერვერის ნიღაბი არ გააჩნია.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; DHCP სერვერის ქვედა ზღვარი მინიჭებული არ აქვს.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="obsolete">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; DHCP სერვერის ზედა ზღვარი მინიჭებული არ აქვს.</translation>
-    </message>
-</context>
-<context>
-    <name>UIHostNetworkManager</name>
-    <message>
-        <source>Name</source>
-        <translation type="obsolete">სახელი</translation>
-    </message>
-    <message>
-        <source>IPv4 Address/Mask</source>
-        <translation type="obsolete">IPv4 მისამართი/ნიღაბი</translation>
-    </message>
-    <message>
-        <source>IPv6 Address/Mask</source>
-        <translation type="obsolete">IPv6 მისამართი/ნიღაბი</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation type="obsolete">DHCP სერვერი</translation>
-    </message>
-    <message>
-        <source>Adding network ...</source>
-        <translation type="obsolete">ქსელის დამატება...</translation>
-    </message>
-    <message>
-        <source>Removing network ...</source>
-        <translation type="obsolete">ქსელის წაშლა...</translation>
-    </message>
-    <message>
-        <source>Host Network Manager</source>
-        <translation type="obsolete">ჰოსტის ქსელების მმართველი</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="obsolete">გადატარება</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="obsolete">დახურვა</translation>
-    </message>
-    <message>
-        <source>Reset changes in current host network details</source>
-        <translation type="obsolete">ქსელის მიმდინარე ქსელის დეტალების საწყის მნიშვნელობებზე დაბრუნება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current host network details</source>
-        <translation type="obsolete">ქსელის მიმდინარე ქსელის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Close dialog without saving</source>
-        <translation type="obsolete">დახურვა შენახვის გარეშე</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="obsolete">ცვლილებების დაბრუნება (%1)</translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="obsolete">ცვლილებების გადატარება (%1)</translation>
-    </message>
-    <message>
-        <source>Close Window (%1)</source>
-        <translation type="obsolete">ფანჯრის დახურვა (%1)</translation>
-    </message>
-</context>
-<context>
     <name>UIHostnameDomainNameEditor</name>
     <message>
         <source>Hostname should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
@@ -7360,19 +6437,19 @@
     </message>
     <message>
         <source>Hostna&amp;me:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ჰოსტის სახელი:</translation>
     </message>
     <message>
         <source>Holds the hostname.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ჰოსტის სახელს.</translation>
     </message>
     <message>
         <source>&amp;Domain Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დომენის სახელი:</translation>
     </message>
     <message>
         <source>Holds the domain name.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს დომენის სახელს.</translation>
     </message>
 </context>
 <context>
@@ -7384,22 +6461,6 @@
     <message>
         <source>Reset shortcut to default</source>
         <translation>მალსახმობების საწყის მნიშვნელობებზე დაბრუნება</translation>
-    </message>
-</context>
-<context>
-    <name>UIHotKeyTableModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">სახელი</translation>
-    </message>
-    <message>
-        <source>Shortcut</source>
-        <translation type="vanished">მალსახმობი</translation>
-    </message>
-    <message>
-        <source>%1: %2</source>
-        <comment>scope: description</comment>
-        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -7462,7 +6523,7 @@
     <message>
         <source>Disconnected</source>
         <comment>cable (Network tooltip)</comment>
-        <translation>განკავშირებულია</translation>
+        <translation>გამოერთებული</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
@@ -7561,151 +6622,6 @@
     </message>
 </context>
 <context>
-    <name>UIItemHostNetwork</name>
-    <message>
-        <source>Enable</source>
-        <comment>DHCP Server</comment>
-        <translation type="vanished">ჩართვა</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation type="vanished">ადაპტერი</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation type="vanished">ავტომატურად მორგებული</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation type="vanished">ხელით მორგებული</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation type="vanished">IPv4 მისამართი</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation type="vanished">დაყენებული არაა</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation type="vanished">IPv4 ქსელის ნიღბის მისამართი</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation type="vanished">დაყენებული არაა</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation type="vanished">IPv6 მისამართი</translation>
-    </message>
-    <message>
-        <source>IPv6 Prefix Length</source>
-        <translation type="vanished">IPv6 პრექფიქსის სიგრძე</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation type="vanished">დაყენებული არაა</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation type="vanished">DHCP სერვერი</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation type="vanished">ჩართულია</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation type="vanished">გამორთულია</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation type="vanished">მისამართი</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation type="vanished">ქსელის ნიღაბი</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation type="vanished">ქვედა ზღვარი</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation type="vanished">დაყენებული არაა</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation type="vanished">ზედა ზღვარი</translation>
-    </message>
-</context>
-<context>
-    <name>UIItemNetworkNAT</name>
-    <message>
-        <source>%1, %2</source>
-        <comment>col.2 text, col.1 name</comment>
-        <translation type="vanished">%1, %2</translation>
-    </message>
-    <message>
-        <source>%1</source>
-        <comment>col.2 text</comment>
-        <translation type="vanished">%1%</translation>
-    </message>
-    <message>
-        <source>Network Name</source>
-        <translation type="vanished">ქსელის სახელი</translation>
-    </message>
-    <message>
-        <source>[empty]</source>
-        <translation type="vanished">[ცარიელი]</translation>
-    </message>
-    <message>
-        <source>%1 (renamed from %2)</source>
-        <translation type="vanished">%1 (გადარქმებული %2-დან)</translation>
-    </message>
-    <message>
-        <source>Old Network Name</source>
-        <translation type="vanished">ქსელის ძველი სახელი</translation>
-    </message>
-    <message>
-        <source>New Network Name</source>
-        <translation type="vanished">ქსელის ახალი სახელი</translation>
-    </message>
-    <message>
-        <source>Network CIDR</source>
-        <translation type="vanished">ქსელის CIDR</translation>
-    </message>
-    <message>
-        <source>Supports DHCP</source>
-        <translation type="vanished">DHCP-ის მხრდაჭერა</translation>
-    </message>
-    <message>
-        <source>yes</source>
-        <translation type="vanished">დიახ</translation>
-    </message>
-    <message>
-        <source>no</source>
-        <translation type="vanished">არა</translation>
-    </message>
-    <message>
-        <source>Supports IPv6</source>
-        <translation type="vanished">IPv6-ის მხარდაჭერა</translation>
-    </message>
-    <message>
-        <source>Default IPv6 route</source>
-        <translation type="vanished">IPv6-ის ნაგულისხმები რაუტი</translation>
-    </message>
-</context>
-<context>
     <name>UILanguageItem</name>
     <message>
         <source> (built-in)</source>
@@ -7725,14 +6641,14 @@
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>ნაგულისხმევი</translation>
+        <translation>ნაგულისხმები</translation>
     </message>
 </context>
 <context>
     <name>UILanguageSettingsEditor</name>
     <message>
         <source>&amp;Interface Languages</source>
-        <translation type="unfinished">&amp;მომხმარებლის ინტერფეისის ენები</translation>
+        <translation>&amp;მომხმარებლის ინტერფეისის ენები</translation>
     </message>
     <message>
         <source>Lists all available user interface languages. The effective language is written in bold. Select Default to reset to the system default language.</source>
@@ -7740,41 +6656,41 @@
     </message>
     <message>
         <source>Author</source>
-        <translation type="unfinished">ავტორი</translation>
+        <translation>ავტორი</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished">ენა</translation>
+        <translation>ენა</translation>
     </message>
     <message>
         <source>Id</source>
-        <translation type="unfinished">ID</translation>
+        <translation>Id</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">სახელი</translation>
+        <translation>სახელი</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished">ენა:</translation>
+        <translation>ენა:</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished">ავტორები:</translation>
+        <translation>ავტორები:</translation>
     </message>
 </context>
 <context>
     <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation>რ&amp;ედაქტირება</translation>
+        <translation>&amp;რედაქტირება</translation>
     </message>
 </context>
 <context>
     <name>UIMachineLogic</name>
     <message>
         <source>Select a filename for the screenshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>აირჩიეთ ეკრანის ანაბეჭდის ფაილის სახელი...</translation>
     </message>
 </context>
 <context>
@@ -7809,121 +6725,18 @@
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">მიუწვდომელი</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsAudio</name>
-    <message>
-        <source>Enable &amp;Audio</source>
-        <translation type="vanished">აუდიოს ჩართვა</translation>
-    </message>
-    <message>
-        <source>Host Audio &amp;Driver:</source>
-        <translation type="vanished">ჰოსტის აუდიო &amp;დრაივერი:</translation>
-    </message>
-    <message>
-        <source>Audio &amp;Controller:</source>
-        <translation type="vanished">აუდიო &amp;კონტროლერი:</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="vanished">გაფართოებული თვისებები:</translation>
-    </message>
-    <message>
-        <source>Enable Audio &amp;Output</source>
-        <translation type="vanished">აუდიო &amp;გამოტანის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Enable Audio &amp;Input</source>
-        <translation type="vanished">აუდიო შეტანის &amp;ჩართვა</translation>
+        <translation>მიუწვდომელი</translation>
     </message>
 </context>
 <context>
     <name>UIMachineSettingsDisplay</name>
     <message>
-        <source>Video &amp;Memory:</source>
-        <translation type="vanished">ვიდეო &amp;მეხსიერება:</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="vanished">გაფართოებული თვისებები:</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation type="vanished">&amp;3D აჩქარების ჩართვა</translation>
-    </message>
-    <message>
         <source>&amp;Remote Display</source>
         <translation>&amp;დაშორებული ეკრანი</translation>
     </message>
     <message>
-        <source>&amp;Enable Server</source>
-        <translation type="vanished">&amp;სერვერის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation type="vanished">სერვერის &amp;პორტი:</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation type="vanished">ავთენტიკაციის &amp;მეთოდი:</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation type="vanished">ავთენტიკაციის &amp;ვადა:</translation>
-    </message>
-    <message>
-        <source>Enable &amp;2D Video Acceleration</source>
-        <translation type="vanished">&amp;2D ვიდეო აჩქარების ჩართვა</translation>
-    </message>
-    <message>
-        <source>Mo&amp;nitor Count:</source>
-        <translation type="vanished">&amp;ეკრანების რაოდენობა:</translation>
-    </message>
-    <message>
-        <source>&amp;Allow Multiple Connections</source>
-        <translation type="vanished">ბევრი &amp;კავშირის დაშვება</translation>
-    </message>
-    <message>
-        <source>File &amp;Path:</source>
-        <translation type="vanished">ფაილის &amp;ბილიკი:</translation>
-    </message>
-    <message>
-        <source>Frame &amp;Size:</source>
-        <translation type="vanished">კადრის &amp;ზომა:</translation>
-    </message>
-    <message>
-        <source>&amp;Frame Rate:</source>
-        <translation type="vanished">&amp;კადრების სიხშირე:</translation>
-    </message>
-    <message>
-        <source>&amp;Screens:</source>
-        <translation type="vanished">&amp;ეკრანები:</translation>
-    </message>
-    <message>
         <source>&amp;Screen</source>
         <translation>&amp;ეკრანი</translation>
-    </message>
-    <message>
-        <source>Scale Factor:</source>
-        <translation type="vanished">გადიდების ფაქტორი:</translation>
-    </message>
-    <message>
-        <source>Controls the guest screen scale factor.</source>
-        <translation type="vanished">სტუმრის ეკრანის გადიდების კოეფიციენტი.</translation>
-    </message>
-    <message>
-        <source>Acceleration:</source>
-        <translation type="vanished">აპარატურული აჩქარება:</translation>
-    </message>
-    <message>
-        <source>Selects the VRDP authentication method.</source>
-        <translation type="vanished">აირჩევს VRDP-ის ავთენტიკაციის მეთოდს.</translation>
-    </message>
-    <message>
-        <source>&amp;Audio Quality:</source>
-        <translation type="vanished">&amp;აუდიოს ხარისხი:</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
@@ -7946,41 +6759,6 @@
         <translation>VRDE-ის ავთენტიკაციის ვადის მნიშვნელობა ამჟამად მითითებული არაა.</translation>
     </message>
     <message>
-        <source>fps</source>
-        <translation type="vanished">კადრი/წმ</translation>
-    </message>
-    <message>
-        <source>kbps</source>
-        <translation type="vanished">კბ/წმ</translation>
-    </message>
-    <message>
-        <source>User Defined</source>
-        <translation type="vanished">მომხმარებლის მიერ განსაზღვრული</translation>
-    </message>
-    <message>
-        <source>%1 fps</source>
-        <translation type="vanished">%1 კადრი/წმ</translation>
-    </message>
-    <message>
-        <source>low</source>
-        <comment>quality</comment>
-        <translation type="vanished">დაბალი</translation>
-    </message>
-    <message>
-        <source>medium</source>
-        <comment>quality</comment>
-        <translation type="vanished">საშუალო</translation>
-    </message>
-    <message>
-        <source>high</source>
-        <comment>quality</comment>
-        <translation type="vanished">მაღალი</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="vanished">&lt;i&gt;დაახლოებით %1მბ ვიდეოს ყოველ 5 წუთში&lt;/i&gt;</translation>
-    </message>
-    <message>
         <source>Screen %1</source>
         <translation>%1-ე ეკრანი</translation>
     </message>
@@ -7989,32 +6767,8 @@
         <translation>თუ ჩართულია, ჩართავს %1-ე ეკრანის ვიდეოს ჩაწერას.</translation>
     </message>
     <message>
-        <source>&amp;Graphics Controller:</source>
-        <translation type="vanished">&amp;გრაფიკული კონტროლერი:</translation>
-    </message>
-    <message>
-        <source>Selects the graphics adapter type the virtual machine will use.</source>
-        <translation type="vanished">აირჩიეთ ვირტუალური მანქანის გრაფიკული ადაპტერის ტიპი.</translation>
-    </message>
-    <message>
         <source>Re&amp;cording</source>
         <translation>&amp;ჩაწერა</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Recording</source>
-        <translation type="vanished">&amp;ჩაწერის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Recording &amp;Mode:</source>
-        <translation type="vanished">&amp;ჩაწერის რეჟიმი:</translation>
-    </message>
-    <message>
-        <source>Selects the recording mode.</source>
-        <translation type="vanished">ჩაწერის რეჟიმის არჩევა.</translation>
-    </message>
-    <message>
-        <source>&amp;Video Quality:</source>
-        <translation type="vanished">&amp;ვიდეოს ხარისხი:</translation>
     </message>
     <message>
         <source>The virtual machine is configured to use 3D acceleration. This will work only if you pick a different graphics controller (%1). Either disable 3D acceleration or switch to required graphics controller type. The latter will be done automatically if you confirm your changes.</source>
@@ -8036,44 +6790,12 @@
         <translation>&amp;დამატებითი</translation>
     </message>
     <message>
-        <source>&amp;Shared Clipboard:</source>
-        <translation type="vanished">&amp;გაზიარებული ბუფერი:</translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder:</source>
-        <translation type="vanished">&amp;სწრაფი ასლის საქაღალდე:</translation>
-    </message>
-    <message>
         <source>D&amp;escription</source>
         <translation>&amp;აღწერა</translation>
     </message>
     <message>
-        <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="vanished">წაღება და დაგდება:</translation>
-    </message>
-    <message>
-        <source>E&amp;nter New Password:</source>
-        <translation type="vanished">&amp;შეყვანეთ ახალი პაროლი:</translation>
-    </message>
-    <message>
-        <source>C&amp;onfirm New Password:</source>
-        <translation type="vanished">&amp;დაადასტურეთ ახალი პაროლი:</translation>
-    </message>
-    <message>
         <source>Disk Enc&amp;ryption</source>
         <translation>&amp;დისკის დაშიფვრა</translation>
-    </message>
-    <message>
-        <source>En&amp;able Disk Encryption</source>
-        <translation type="vanished">&amp;დისკის დაშიფვრის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Disk Encryption C&amp;ipher:</source>
-        <translation type="vanished">&amp;დისკის დაშიფვრის მექანიზმი:</translation>
-    </message>
-    <message>
-        <source>Confirms the disk encryption password.</source>
-        <translation type="vanished">დაადასტურეთ დისკის დაშიფვრის პაროლი.</translation>
     </message>
     <message>
         <source>No name specified for the virtual machine.</source>
@@ -8095,89 +6817,9 @@
         <source>Disk encryption passwords do not match.</source>
         <translation>დისკის დაშიფვრის პაროლები არ ემთხვევა.</translation>
     </message>
-    <message>
-        <source>Leave Unchanged</source>
-        <comment>cipher type</comment>
-        <translation type="vanished">შეუცვლელად დატოვება</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsInterface</name>
-    <message>
-        <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="vanished">ვმ-ის მენიუს ზოლის ჩასწორების ნების დართვა.</translation>
-    </message>
-    <message>
-        <source>Mini ToolBar:</source>
-        <translation type="vanished">მინი ზოლი:</translation>
-    </message>
-    <message>
-        <source>Show at &amp;Top of Screen</source>
-        <translation type="vanished">&amp;ეკრანის თავზე ჩვენება</translation>
-    </message>
-    <message>
-        <source>Allows to modify VM status-bar contents.</source>
-        <translation type="vanished">ვმ-ის სტატუსის ზოლის ჩასწორების ნების დართვა.</translation>
-    </message>
-    <message>
-        <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="vanished">&amp;მთელ ეკრანზე/გამჭვირვალე რეჟიმში ჩვენება</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetwork</name>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation type="vanished">&amp;ქსელის ადაპტერის ჩართვა</translation>
-    </message>
-    <message>
-        <source>&amp;Attached to:</source>
-        <translation type="vanished">&amp;რაზეა მიბმული:</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation type="vanished">ადაპტერი და ტიპი:</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation type="vanished">&amp;სახელი:</translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation type="vanished">&amp;დამატებითი</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="vanished">ახალი MAC მისამართის გენერაცია.</translation>
-    </message>
-    <message>
-        <source>&amp;Cable Connected</source>
-        <translation type="vanished">&amp;კაბელი მიერთებულია</translation>
-    </message>
-    <message>
-        <source>&amp;Port Forwarding</source>
-        <translation type="vanished">&amp;პორტის გადამისამართება</translation>
-    </message>
-    <message>
-        <source>Generic Properties:</source>
-        <translation type="vanished">ზოგადი პარამეტრები:</translation>
-    </message>
-    <message>
-        <source>&amp;MAC Address:</source>
-        <translation type="vanished">&amp;MAC მისამართი:</translation>
-    </message>
-    <message>
-        <source>Shows additional network adapter options.</source>
-        <translation type="vanished">ქსელის ბარათის დამატებითი პარამეტრების ჩვენება.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="vanished">როცა ჩართულია, ვირტუალური ქსელის კაბელი შეერთებულია.</translation>
-    </message>
-    <message>
-        <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="vanished">პორტის გადამისამართების მორგების ფანჯრის ჩვენება.</translation>
-    </message>
     <message>
         <source>No bridged network adapter is currently selected.</source>
         <translation>ხიდის ტიპის ქსელის ბარათები ამჟამად მონიშნული არაა.</translation>
@@ -8227,100 +6869,6 @@
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsSF</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">სახელი</translation>
-    </message>
-    <message>
-        <source>Path</source>
-        <translation type="vanished">ბილიკი</translation>
-    </message>
-    <message>
-        <source>Access</source>
-        <translation type="vanished">წვდომა</translation>
-    </message>
-    <message>
-        <source>Shared &amp;Folders</source>
-        <translation type="vanished">გაზიარებული &amp;საქაღალდე</translation>
-    </message>
-    <message>
-        <source>Auto Mount</source>
-        <translation type="vanished">ავტომატური მიმაგრება</translation>
-    </message>
-    <message>
-        <source>At</source>
-        <translation type="vanished">წერტილი</translation>
-    </message>
-    <message>
-        <source>Add Shared Folder</source>
-        <translation type="vanished">გაზიარებული საქაღალდის დამატება</translation>
-    </message>
-    <message>
-        <source>Edit Shared Folder</source>
-        <translation type="vanished">გაზიარებული საქაღალდის ჩასწორება</translation>
-    </message>
-    <message>
-        <source>Remove Shared Folder</source>
-        <translation type="vanished">გაზიარებული საქაღალდის წაშლა</translation>
-    </message>
-    <message>
-        <source>Adds new shared folder.</source>
-        <translation type="vanished">ახალი გაზიარებული საქაღალდის დამატება.</translation>
-    </message>
-    <message>
-        <source>Edits selected shared folder.</source>
-        <translation type="vanished">გაზიარებული საქაღალდის ჩასწორება.</translation>
-    </message>
-    <message>
-        <source>Removes selected shared folder.</source>
-        <translation type="vanished">მონიშნული გაზიარებული საქაღალდის წაშლა.</translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation type="vanished"> მანქანის საქაღალდეები</translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation type="vanished"> დროებითი საქაღალდეები</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSFDetails</name>
-    <message>
-        <source>Folder Path:</source>
-        <translation type="vanished">საქაღალდის ბილიკი:</translation>
-    </message>
-    <message>
-        <source>Folder Name:</source>
-        <translation type="vanished">საქაღალდის სახელი:</translation>
-    </message>
-    <message>
-        <source>&amp;Read-only</source>
-        <translation type="vanished">მხოლოდ წაკითხვა</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation type="vanished">&amp;მუდმივად გარდაქმნა</translation>
-    </message>
-    <message>
-        <source>&amp;Auto-mount</source>
-        <translation type="vanished">&amp;ავტომატური მიმაგრება</translation>
-    </message>
-    <message>
-        <source>Mount point:</source>
-        <translation type="vanished">&amp;მიმაგრების წერტილი:</translation>
-    </message>
-    <message>
-        <source>Add Share</source>
-        <translation type="vanished">გაზიარების დამატება</translation>
-    </message>
-    <message>
-        <source>Edit Share</source>
-        <translation type="vanished">გაზიარების ჩასწორება</translation>
-    </message>
-</context>
-<context>
     <name>UIMachineSettingsSerial</name>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
@@ -8333,10 +6881,6 @@
     <message>
         <source>Port &amp;Number:</source>
         <translation>პორტის &amp;ნომერი:</translation>
-    </message>
-    <message>
-        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="vanished">აირჩიეთ პორტის ნომერი. შეგიძლიათ აირჩიეთ ერთ-ერთი სტანდარტული სერიული პორტი ან აირჩიოთ &lt;b&gt;ხელით მითითებული&lt;/b&gt; და ხელით შეიყვანოთ მნიშვნელობები.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
@@ -8411,121 +6955,12 @@
 <context>
     <name>UIMachineSettingsStorage</name>
     <message>
-        <source>Information</source>
-        <translation type="vanished">ინფორმაცია</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">ატრიბუტები</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation type="vanished">&amp;სახელი:</translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation type="vanished">&amp;ტიპი:</translation>
-    </message>
-    <message>
-        <source>&amp;Passthrough</source>
-        <translation type="vanished">&amp;გამჭოლი</translation>
-    </message>
-    <message>
-        <source>Virtual Size:</source>
-        <translation type="vanished">ვირტუალური ზომა:</translation>
-    </message>
-    <message>
-        <source>Actual Size:</source>
-        <translation type="vanished">რეალური ზომა:</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation type="vanished">ზომა:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="vanished">მდებარეობა:</translation>
-    </message>
-    <message>
-        <source>Type (Format):</source>
-        <translation type="vanished">ტიპი (ფორმატი)</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation type="vanished">მიბმულია:</translation>
-    </message>
-    <message>
-        <source>Use Host I/O Cache</source>
-        <translation type="vanished">ჰოსტის I/O ქეშის გამოყენება</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="vanished">ტიპი:</translation>
-    </message>
-    <message>
-        <source>&amp;Live CD/DVD</source>
-        <translation type="vanished">ცოცხალი &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>&amp;Solid-state Drive</source>
-        <translation type="vanished">&amp;SSD</translation>
-    </message>
-    <message>
-        <source>Details:</source>
-        <translation type="vanished">დეტალები:</translation>
-    </message>
-    <message>
-        <source>&amp;Port Count:</source>
-        <translation type="vanished">&amp;პორტების რიცხვი:</translation>
-    </message>
-    <message>
         <source>Controller: %1</source>
         <translation>კონტროლერი: %1</translation>
     </message>
     <message>
-        <source>&amp;Hot-pluggable</source>
-        <translation type="vanished">&amp;ცხლად-შეერთებადი</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="vanished">დაშიფვრის გასაღები:</translation>
-    </message>
-    <message>
-        <source>&amp;Storage Devices</source>
-        <translation type="vanished">&amp;საცავი მოწყობილობები</translation>
-    </message>
-    <message>
         <source>Remove disk from virtual drive</source>
         <translation>დისკის ვირტუალური მატარებლიდან გამოღება</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;მატარებელი:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ტიპი:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Host Drive</source>
-        <translation type="vanished">ჰოსტის დისკი</translation>
-    </message>
-    <message>
-        <source>Image</source>
-        <comment>storage image</comment>
-        <translation type="vanished">გამოსახულება</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;ჩანაწერის&amp;nbsp;ჩაკეცვა/ამოკეცვა.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;მყარი&amp;nbsp;დისკის&amp;nbsp;დამატება.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;ოპტიკური&amp;nbsp;დისკის&amp;nbsp;დამატება.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;დისკეტის&amp;nbsp;დამატება&amp;nbsp;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>No name is currently specified for the controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -8537,7 +6972,7 @@
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt;-სთვის დისკი არ აგირჩევიათ.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; is using a disk that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -8558,124 +6993,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Controller</source>
-        <translation type="vanished">კონტროლერის დაატება</translation>
-    </message>
-    <message>
-        <source>Remove Controller</source>
-        <translation type="vanished">კონტროლერის წაშლა</translation>
-    </message>
-    <message>
-        <source>Add Attachment</source>
-        <translation type="vanished">მიმაგრების დამატება</translation>
-    </message>
-    <message>
-        <source>Remove Attachment</source>
-        <translation type="vanished">მიმაგრების მოხსნა</translation>
-    </message>
-    <message>
-        <source>Adds new storage controller.</source>
-        <translation type="vanished">საცავის ახალი კონტროლერის დამატება.</translation>
-    </message>
-    <message>
-        <source>Removes selected storage controller.</source>
-        <translation type="vanished">საცავის მონიშნული კონტროლერის წაშლა.</translation>
-    </message>
-    <message>
-        <source>Adds new storage attachment.</source>
-        <translation type="vanished">ახალი საცავის მიბმა.</translation>
-    </message>
-    <message>
-        <source>Removes selected storage attachment.</source>
-        <translation type="vanished">მონიშნული მიბმული საცავის მოხსნა.</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disk:</source>
-        <translation type="vanished">მყარი &amp;დისკი:</translation>
-    </message>
-    <message>
-        <source>Optical &amp;Drive:</source>
-        <translation type="vanished">ოპტიკური &amp;დისკი:</translation>
-    </message>
-    <message>
-        <source>Floppy &amp;Drive:</source>
-        <translation type="vanished">&amp;დისკეტა:</translation>
-    </message>
-    <message>
-        <source>Remove Disk from Virtual Drive</source>
-        <translation type="vanished">დისკის ვირტუალური მატარებლიდან გამოღება</translation>
-    </message>
-    <message>
-        <source>PIIX3 (IDE)</source>
-        <translation type="vanished">PIIX3 (IDE)</translation>
-    </message>
-    <message>
-        <source>PIIX4 (Default IDE)</source>
-        <translation type="vanished">PIIX4 (ნაგულისხმები IDE)</translation>
-    </message>
-    <message>
-        <source>ICH6 (IDE)</source>
-        <translation type="vanished">ღრუბლოვანი მანქანის შექმნა...</translation>
-    </message>
-    <message>
-        <source>AHCI (SATA)</source>
-        <translation type="vanished">ღრუბლოვანი მანქანის შექმნა...</translation>
-    </message>
-    <message>
-        <source>LsiLogic (Default SCSI)</source>
-        <translation type="vanished">LsiLogic (ნაგულისხმები SCSI)</translation>
-    </message>
-    <message>
-        <source>BusLogic (SCSI)</source>
-        <translation type="vanished">BusLogic (SCSI)</translation>
-    </message>
-    <message>
-        <source>LsiLogic SAS (SAS)</source>
-        <translation type="vanished">LsiLogic SAS (SAS)</translation>
-    </message>
-    <message>
-        <source>I82078 (Floppy)</source>
-        <translation type="vanished">I82078 (დისკეტა)</translation>
-    </message>
-    <message>
-        <source>USB</source>
-        <translation type="vanished">USB</translation>
-    </message>
-    <message>
-        <source>NVMe (PCIe)</source>
-        <translation type="vanished">NVMe (PCIe)</translation>
-    </message>
-    <message>
-        <source>virtio-scsi</source>
-        <translation type="vanished">virtio-scsi</translation>
-    </message>
-    <message>
-        <source>Hard Disk</source>
-        <translation type="vanished">მყარი დისკი</translation>
-    </message>
-    <message>
-        <source>Optical Drive</source>
-        <translation type="vanished">ოპტიკური დისკი</translation>
-    </message>
-    <message>
-        <source>Floppy Drive</source>
-        <translation type="vanished">დისკეტა</translation>
-    </message>
-    <message>
-        <source>Choose/Create a Virtual Hard Disk...</source>
-        <translation type="vanished">აირჩიეთ/შექმენით ვირტუალური მყარი დისკი...</translation>
-    </message>
-    <message>
         <source>Choose a disk file...</source>
         <translation>აირციეთ დისკის ფაილი...</translation>
-    </message>
-    <message>
-        <source>Choose/Create a Virtual Optical Disk...</source>
-        <translation type="vanished">აირჩეთ/შექმენით ვირტუალური ოპტიკური დისკი...</translation>
-    </message>
-    <message>
-        <source>Choose/Create a Virtual Floppy Disk...</source>
-        <translation type="vanished">აირჩიეთ/შექმენით ვირტუალური დისკეტა...</translation>
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
@@ -8689,88 +7008,12 @@
         <translation>&amp;მთავარი დაფა</translation>
     </message>
     <message>
-        <source>Base &amp;Memory:</source>
-        <translation type="vanished">&amp;საბაზისო მეხსიერება:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="vanished">აკონტროლებს ვირტუალური მანქანისთვის მინიშებულ მეხსიერებას. თუ მიანიჭებთ მეტისმეტად ბევრს, მანქანა შეიძლება არ ჩაირთოს.</translation>
-    </message>
-    <message>
-        <source>&amp;Boot Order:</source>
-        <translation type="vanished">&amp;ჩატვირთვის მიმდევრობა:</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="vanished">გაფართოებული თვისებები:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="vanished">თუ ჩართულია, ვირტუალურ მანქანას შეტანა გამოტანს კონტროლერის (I/O APIC) მხარდაჭერა ექნება. ამან შეიძლება წარმადობა ოდნავ დააგდოს&lt;b&gt;დაიმახსოვრეთ:&lt;/b&gt; არ გამორთოთ ეს პარამეტრი, თუ სტუმარი ოს-ი Windows-ია და უკვე დააყენეთ!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;I/O APIC</source>
-        <translation type="vanished">&amp;I/O APIC-ის ჩართვა</translation>
-    </message>
-    <message>
         <source>&amp;Processor</source>
         <translation>&amp;პროცესორი</translation>
     </message>
     <message>
-        <source>&amp;Processor(s):</source>
-        <translation type="vanished">&amp;პროცესორ(ებ)-ი:</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="vanished">თუ ჩართულია, ვირტუალური მანქანა დაინახავს CPU-ის ფიზიკური მისამართის გაფართოების (PAE) თვისებას.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation type="vanished">PA&amp;E/NX-ის ჩართვა</translation>
-    </message>
-    <message>
         <source>Acce&amp;leration</source>
         <translation>ა&amp;პარატურული აჩქარება</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization:</source>
-        <translation type="vanished">აპარატურული ვირტუალიზაცია:</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="vanished">&amp;VT-x/AMD-V-ის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation type="vanished">მეხსიერების გვერდების ერთმანეთში ჩალაგების მხარდაჭერა</translation>
-    </message>
-    <message>
-        <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="vanished">&amp;EFI-ის ჩართვა (მხოლოდ სპეციალური ოს-ებისთვის)</translation>
-    </message>
-    <message>
-        <source>Hardware Clock in &amp;UTC Time</source>
-        <translation type="vanished">აპარატურული საათი &amp;UTC-ში</translation>
-    </message>
-    <message>
-        <source>&amp;Chipset:</source>
-        <translation type="vanished">&amp;ჩიპსეტი:</translation>
-    </message>
-    <message>
-        <source>&amp;Execution Cap:</source>
-        <translation type="vanished">&amp;შესრულების პიკი:</translation>
-    </message>
-    <message>
-        <source>&amp;Pointing Device:</source>
-        <translation type="vanished">&amp;მისათითებელი მოწყობილობა:</translation>
-    </message>
-    <message>
-        <source>&amp;Paravirtualization Interface:</source>
-        <translation type="vanished">&amp;პარავირტუალიზაციის ინტერფეისი:</translation>
-    </message>
-    <message>
-        <source>%</source>
-        <translation type="vanished">%</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
@@ -8813,172 +7056,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 CPU</source>
-        <comment>%1 is 1 for now</comment>
-        <translation type="vanished">%1 CPU</translation>
-    </message>
-    <message>
-        <source>%1 CPUs</source>
-        <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="vanished">%1 CPU</translation>
-    </message>
-    <message>
-        <source>%1%</source>
-        <translation type="vanished">%1%</translation>
-    </message>
-    <message>
-        <source>Enable Nested &amp;VT-x/AMD-V</source>
-        <translation type="vanished">ჩალაგებული &amp;VT-x/AMD-V-ის ჩართვა</translation>
-    </message>
-    <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSB</name>
-    <message>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="vanished">თუ ჩართულია, ამ მანქანაზე ვირტუალური USB კონტროლერი ჩაირთვება.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;USB Controller</source>
-        <translation type="vanished">&amp;USB კონტროლერის ჩართვა</translation>
-    </message>
-    <message>
-        <source>USB Device &amp;Filters</source>
-        <translation type="vanished">&amp;USB მოწყობილობების ფილტრი</translation>
-    </message>
-    <message>
-        <source>[filter]</source>
-        <translation type="vanished">[ფილტრი]</translation>
-    </message>
-    <message>
-        <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="vanished">USB &amp;1.1 (OHCI) კონტროლერი</translation>
-    </message>
-    <message>
-        <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="vanished">USB &amp;3.0 (xHCI) კონტროლერი</translation>
-    </message>
-    <message>
-        <source>Add Empty Filter</source>
-        <translation type="vanished">ცარიელი ფილტრის დაატება</translation>
-    </message>
-    <message>
-        <source>Add Filter From Device</source>
-        <translation type="vanished">ფილტრის მოწყობილობიდან დამატება</translation>
-    </message>
-    <message>
-        <source>Edit Filter</source>
-        <translation type="vanished">ფილტრის ჩასწორება</translation>
-    </message>
-    <message>
-        <source>Remove Filter</source>
-        <translation type="vanished">ფილტრის წაშლა</translation>
-    </message>
-    <message>
-        <source>Move Filter Up</source>
-        <translation type="vanished">მონიშნული ფილტრის მაღლა აწევა</translation>
-    </message>
-    <message>
-        <source>Move Filter Down</source>
-        <translation type="vanished">მონიშნული ფილტრის დაბლა დაწევა</translation>
-    </message>
-    <message>
-        <source>Edits selected USB filter.</source>
-        <translation type="vanished">მონიშნული USB ფილტრის ჩასწორება.</translation>
-    </message>
-    <message>
-        <source>Removes selected USB filter.</source>
-        <translation type="vanished">მონიშნული USB ფილტრის წაშლა.</translation>
-    </message>
-    <message>
-        <source>Moves selected USB filter up.</source>
-        <translation type="vanished">მონიშნული USB ფილტრის მაღლა აწევა.</translation>
-    </message>
-    <message>
-        <source>Moves selected USB filter down.</source>
-        <translation type="vanished">მონიშნული USB ფილტრის დაბლა დაწევა.</translation>
-    </message>
-    <message>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation type="vanished">ახალი ფილტრი %1</translation>
-    </message>
-    <message>
-        <source>USB &amp;2.0 (OHCI + EHCI) Controller</source>
-        <translation type="vanished">USB &amp;2.0 (OHCI + EHCI) კონტროლერი</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSBFilterDetails</name>
-    <message>
-        <source>&amp;Name:</source>
-        <translation type="vanished">&amp;სახელი:</translation>
-    </message>
-    <message>
-        <source>Holds the filter name.</source>
-        <translation type="vanished">შეიცავს ფილტრის სახელს.</translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID:</source>
-        <translation type="vanished">&amp;მომწოდებლის ID:</translation>
-    </message>
-    <message>
-        <source>&amp;Product ID:</source>
-        <translation type="vanished">&amp;პროდუქტის ID:</translation>
-    </message>
-    <message>
-        <source>&amp;Revision:</source>
-        <translation type="vanished">&amp;რევიზია:</translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer:</source>
-        <translation type="vanished">&amp;მწარმოებელი:</translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct:</source>
-        <translation type="vanished">&amp;პროდუქტი:</translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.:</source>
-        <translation type="vanished">&amp;სერიული ნომერი:</translation>
-    </message>
-    <message>
-        <source>Por&amp;t:</source>
-        <translation type="vanished">&amp;პორტი:</translation>
-    </message>
-    <message>
-        <source>R&amp;emote:</source>
-        <translation type="vanished">&amp;დაშორებული:</translation>
-    </message>
-    <message>
-        <source>USB Filter Details</source>
-        <translation type="vanished">USB ფილტრის დეტალები</translation>
-    </message>
-    <message>
-        <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="vanished">შეიცავს მომწოდებლის ID-ის ფილტრს. სტრიქონის &lt;i&gt;ზუსტი დამთხვევის&lt;/i&gt;რაოდენობაა &lt;tt&gt; XXXX&lt;/tt&gt;სადაც &lt;tt&gt;X&lt;/tt&gt;თექვსმეტობით ციფრს წარმოადგენს. ცარიელი სტრიქონი ნებისმიერ მნიშვნელობას დაემთხვევა.</translation>
-    </message>
-    <message>
-        <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="vanished">შეიცავს პროდუქტის ID-ის ფილტრს. სტრიქონის &lt;i&gt;ზუსტი დამთხვევის&lt;/i&gt;რაოდენობაა &lt;tt&gt; XXXX&lt;/tt&gt;სადაც &lt;tt&gt;X&lt;/tt&gt;თექვსმეტობით ციფრს წარმოადგენს. ცარიელი სტრიქონი ნებისმიერ მნიშვნელობას დაემთხვევა.</translation>
-    </message>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation type="vanished">ნებისმიერი</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation type="vanished">დიახ</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation type="vanished">არა</translation>
     </message>
 </context>
 <context>
@@ -8999,102 +7078,27 @@
     <name>UIMaximumGuestScreenSizeEditor</name>
     <message>
         <source>Maximum Guest Screen &amp;Size:</source>
-        <translation type="unfinished">სტუმრის ეკრანის მაქსიმალური &amp;ზომა:</translation>
+        <translation>სტუმრის ეკრანის მაქსიმალური &amp;ზომა:</translation>
     </message>
     <message>
         <source>&amp;Width:</source>
-        <translation type="unfinished">&amp;სიგანე:</translation>
+        <translation>&amp;სიგანე:</translation>
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს მაქსიმალურ სიგანეს, რომელიც გვსურს, სტუმარმა გამოიყენოს.</translation>
     </message>
     <message>
         <source>&amp;Height:</source>
-        <translation type="unfinished">&amp;სიმაღლე:</translation>
+        <translation>&amp;სიმაღლე:</translation>
     </message>
     <message>
         <source>Holds the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს მაქსიმალურ სიმაღლეს, რომელიც გვსურს, სტუმარმა გამოიყენოს.</translation>
     </message>
     <message>
         <source>Selects maximum guest screen size policy.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMediumDetailsWidget</name>
-    <message>
-        <source>&amp;Attributes</source>
-        <translation type="vanished">&amp;ატრიბუტები</translation>
-    </message>
-    <message>
-        <source>&amp;Information</source>
-        <translation type="vanished">&amp;ინფორმაცია</translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation type="vanished">&amp;ტიპი:</translation>
-    </message>
-    <message>
-        <source>&amp;Location:</source>
-        <translation type="vanished">&amp;მდებარეობა:</translation>
-    </message>
-    <message>
-        <source>&amp;Description:</source>
-        <translation type="vanished">&amp;აღწერა:</translation>
-    </message>
-    <message>
-        <source>&amp;Size:</source>
-        <translation type="vanished">&amp;ზომა:</translation>
-    </message>
-    <message>
-        <source>Holds the type of this medium.</source>
-        <translation type="vanished">შეიცავს ამ დისკის ტიპს.</translation>
-    </message>
-    <message>
-        <source>Holds the location of this medium.</source>
-        <translation type="vanished">შეიცავს ამ დისკის მდებარეობას.</translation>
-    </message>
-    <message>
-        <source>Holds the description of this medium.</source>
-        <translation type="vanished">შეიცავს ამ დისკის აღწერას.</translation>
-    </message>
-    <message>
-        <source>Holds the size of this medium.</source>
-        <translation type="vanished">შეიცავს ამ დისკის ზომას.</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">თავიდან ჩართვა</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">გადატარება</translation>
-    </message>
-    <message>
-        <source>Reset changes in current medium details</source>
-        <translation type="vanished">მიმდინარე დისკის დეტალების ცვლილებების გაუქმება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current medium details</source>
-        <translation type="vanished">მიმდინარე დისკის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="vanished">ცვლილებების დაბრუნება (%1)</translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="vanished">ცვლილებების გადატარება (%1)</translation>
-    </message>
-    <message>
-        <source>Choose Medium Location</source>
-        <translation type="vanished">აირჩიეთ დისკის მდებარეობა</translation>
-    </message>
-    <message>
-        <source>Location can not be empty.</source>
-        <translation type="vanished">მდებარეობა ცარიელი ვერ იქნება.</translation>
+        <translation>ირჩევს სტუმრის ეკრანის მაქსიმალური ზომის პოლიტიკას.</translation>
     </message>
 </context>
 <context>
@@ -9145,14 +7149,6 @@
         <comment>no info</comment>
         <translation>--</translation>
     </message>
-    <message>
-        <source>Moving medium ...</source>
-        <translation type="vanished">დისკის გადატანა....</translation>
-    </message>
-    <message>
-        <source>Removing medium ...</source>
-        <translation type="vanished">დისკის წაშლა...</translation>
-    </message>
 </context>
 <context>
     <name>UIMediumManager</name>
@@ -9194,7 +7190,7 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation>თავიდან ჩართვა</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -9237,60 +7233,64 @@
         <translation>აირჩიეთ ამ დისკის მდებარეობა</translation>
     </message>
     <message>
-        <source>Moving medium ...</source>
-        <translation type="vanished">დისკის გადატანა....</translation>
+        <source>Help</source>
+        <translation>დახმარება</translation>
     </message>
     <message>
-        <source>Resizing medium ...</source>
-        <translation type="vanished">ზომის შეცვლა ...</translation>
+        <source>Show dialog help</source>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
+    </message>
+    <message>
+        <source>Show Help (%1)</source>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished">&amp;ატრიბუტები</translation>
+        <translation>&amp;ატრიბუტები</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished">&amp;ინფორმაცია</translation>
+        <translation>&amp;ინფორმაცია</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">&amp;ტიპი:</translation>
+        <translation>&amp;ტიპი:</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished">&amp;მდებარეობა:</translation>
+        <translation>&amp;მდებარეობა:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">&amp;აღწერა:</translation>
+        <translation>&amp;აღწერა:</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished">&amp;ზომა:</translation>
+        <translation>&amp;ზომა:</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation type="unfinished">შეიცავს ამ დისკის ტიპს.</translation>
+        <translation>შეიცავს ამ დისკის ტიპს.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation type="unfinished">შეიცავს ამ დისკის მდებარეობას.</translation>
+        <translation>შეიცავს ამ დისკის მდებარეობას.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished">აირჩიეთ დისკის მდებარეობა</translation>
+        <translation>აირჩიეთ დისკის მდებარეობა</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation type="unfinished">შეიცავს ამ დისკის აღწერას.</translation>
+        <translation>შეიცავს ამ დისკის აღწერას.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ამ დისკის ზომას.</translation>
     </message>
     <message>
         <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>მდებარეობა ცარიელი ვერ იქნება.</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
@@ -9322,27 +7322,15 @@
     </message>
     <message>
         <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>რეგისტრირებული მყარი დისკები</translation>
     </message>
     <message>
         <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
+        <translation>რეგისტრირებული ოპტიკური დისკები</translation>
     </message>
     <message>
         <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
-    </message>
-    <message>
-        <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>რეგისტრირებული დისკეტები</translation>
     </message>
 </context>
 <context>
@@ -9360,10 +7348,6 @@
         <translation>ძებნის ტიპით ძებნა</translation>
     </message>
     <message>
-        <source>Enter the search term and press Enter/Return</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show the previous item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9371,48 +7355,16 @@
         <source>Show the next item matching the search term</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enter the search term and press Enter/Return</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumSelector</name>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="vanished">&amp;დამატება..</translation>
-    </message>
-    <message>
-        <source>Add Disk Image</source>
-        <translation type="vanished">დისკის გამოსახულების დამატება</translation>
-    </message>
-    <message>
-        <source>Add existing disk image file</source>
-        <translation type="vanished">დისკის არსებული გამოსახულების დამატება</translation>
-    </message>
-    <message>
-        <source>&amp;Create...</source>
-        <translation type="vanished">&amp;შექმნა...</translation>
-    </message>
-    <message>
-        <source>Create Disk Image</source>
-        <translation type="vanished">დისკის ახალი გამოსახულების შექმნა</translation>
-    </message>
-    <message>
-        <source>Create new disk image file</source>
-        <translation type="vanished">დისკის ახალი გამოსახულების ფაილის შექმნა</translation>
-    </message>
-    <message>
-        <source>&amp;Refresh</source>
-        <translation type="vanished">&amp;განახლება</translation>
-    </message>
-    <message>
-        <source>Refresh Disk Image Files (%1)</source>
-        <translation type="vanished">დისკის გამოსახულების ფაილების სიის განახლება (%1)</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation type="vanished">დისკის გამოსახულების ფაილების სიის განახლება</translation>
-    </message>
-    <message>
         <source>Choose</source>
-        <translation>აირჩიეთ</translation>
+        <translation>არჩევა</translation>
     </message>
     <message>
         <source>Name</source>
@@ -9425,10 +7377,6 @@
     <message>
         <source>Actual Size</source>
         <translation>რეალური ზომა</translation>
-    </message>
-    <message>
-        <source>Medium</source>
-        <translation type="vanished">საშუალო</translation>
     </message>
     <message>
         <source>Expand All</source>
@@ -9464,34 +7412,34 @@
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;გაუქმება</translation>
+        <translation>&amp;გაუქმება</translation>
     </message>
     <message>
         <source>Leave &amp;Empty</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ცარიელი დატოვება</translation>
     </message>
     <message>
         <source>Leave the drive empty</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის ცარიელად დატოვება</translation>
     </message>
     <message>
         <source>C&amp;hoose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;აირჩეთ</translation>
     </message>
     <message>
         <source>Attach the selected medium to the drive</source>
-        <translation type="unfinished"></translation>
+        <translation>ამრავში მომიშნული დისკის ჩადება</translation>
     </message>
 </context>
 <context>
     <name>UIMediumSizeAndPathGroupBox</name>
     <message>
         <source>Disk file name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის სახელი უნიკალური არაა</translation>
     </message>
     <message>
         <source>Holds the location of the virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ვირტუალური დისკის ფაილის მდებარეობას.</translation>
     </message>
     <message>
         <source>Opens file selection dialog so that a location for the disk file can be selected.</source>
@@ -9499,7 +7447,7 @@
     </message>
     <message>
         <source>Hard Disk File Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>მყარი დისკის ფაილის მდებარეობა და ზომა</translation>
     </message>
     <message>
         <source>Specify a location for new virtual hard disk file...</source>
@@ -9518,7 +7466,7 @@
     <name>UIMediumSizeEditor</name>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation>შეიცავს დისკის ზომას.</translation>
+        <translation>შეიცავს ამ დისკის ზომას.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -9526,11 +7474,11 @@
     </message>
     <message>
         <source>Minimum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>ამ დისკის მინიმალური ზომა.</translation>
     </message>
     <message>
         <source>Maximum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>ამ დისკის მაქსიმალური ზომა.</translation>
     </message>
 </context>
 <context>
@@ -9569,7 +7517,7 @@
     </message>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished">ვმ-ის მენიუს ზოლის ჩასწორების ნების დართვა.</translation>
+        <translation>ვმ-ის მენიუს ზოლის ჩასწორების ნების დართვა.</translation>
     </message>
 </context>
 <context>
@@ -9598,10 +7546,6 @@
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - კრიტიკული შეცდომა</translation>
-    </message>
-    <message>
-        <source>Unknown option &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">უცნობი პარამეტრი &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; is an option for the VirtualBox VM runner (VirtualBoxVM) application, not the VirtualBox Manager.</source>
@@ -9662,11 +7606,11 @@
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მანქანა სახელით &lt;b&gt;%1&lt;/b&gt; არ არსებობს.</translation>
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მანქანა იდენტიფიკატორით &lt;b&gt;%1&lt;/b&gt; არ არსებობს.</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -9675,10 +7619,6 @@
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>ვირტუალური მანქანის სესიის გახსნის შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="vanished">დისკის გამოსახულების ფაილთან წვდომის შეცდომა: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
@@ -9694,7 +7634,7 @@
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; -ის გაშიფვრის პაროლი არასწორია.</translation>
     </message>
     <message>
         <source>Failed to open virtual machine located in %1.</source>
@@ -9759,7 +7699,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation>იგნორი</translation>
+        <translation>იგნორირება</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -9777,7 +7717,7 @@
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation>თავიდან ჩართვა</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -9814,16 +7754,8 @@
         <translation>ვირტუალური მანქანისთვის ACPI ღილაკის დაჭერის გაგზავნის შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ვირტუალური მანქანის გაჩერების შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;You are about to start all of the following virtual machines:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This could take some time and consume a lot of host system resources. Do you wish to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ვირტუალური მანქანის გადატანის შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -9864,10 +7796,6 @@
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t acquire snapshot attributes.</source>
-        <translation type="vanished">სწრაფი ასლის ატრიბუტების მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
@@ -9957,7 +7885,7 @@
     <message>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation>რელიზი</translation>
+        <translation>გამოცემა</translation>
     </message>
     <message>
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -9996,7 +7924,7 @@
     <message>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation>დატოვება</translation>
+        <translation>შენარჩუნება</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -10052,23 +7980,11 @@
     </message>
     <message>
         <source>Unable to find the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to create a host network interface.</source>
-        <translation type="vanished">ჰოსტის ქსელის ინტერფეისის შექმნის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ჰოსტის ქსელის ინტერფეისის წაშლის შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>ჰოსტის ქსელის ინტერფეისი &lt;b&gt;%1&lt;/b&gt; არ არსებობს.</translation>
     </message>
     <message>
         <source>Failed to acquire host network interface parameter.</source>
         <translation>ჰოსტის ქსელის ინტერფესისის პარამეტრის მიღების შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to save host network interface parameter.</source>
-        <translation type="vanished">ჰოსტის ქსელის ინტერფესის არამეტრის შენახვის შეცდომა.</translation>
     </message>
     <message>
         <source>Failed to create a DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -10083,28 +7999,12 @@
         <translation>DHCP სერვერის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
-        <source>Failed to save DHCP server parameter.</source>
-        <translation type="vanished">DHCP სერვერის პარამეტრის შენახვის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to acquire cloud provider manager.</source>
-        <translation type="vanished">ღრუბლოვანი მომწოდებლის მმართველის მიღების შეცდომა.</translation>
-    </message>
-    <message>
         <source>Failed to acquire cloud provider manager parameter.</source>
         <translation>ღრუბლოვანი მომწოდებლის მმართველის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
-        <source>Failed to find cloud provider with following uuid: &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ღრუბლოვანი მომწოდებლის პოვნა შემდეგი ID-ით &lt;b&gt;%1&lt;/b&gt; შეუძლებელია.</translation>
-    </message>
-    <message>
         <source>Failed to acquire cloud provider parameter.</source>
         <translation>ღრუბლოვანი მომწოდებლის პარამეტრის მიღების შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to find cloud profile with following name: &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ღრუბლოვანი მომწოდებლის პოვნა შემდეგი სახელით: &lt;b&gt;%1&lt;/b&gt; შეუძლებელია.</translation>
     </message>
     <message>
         <source>Failed to create cloud profile.</source>
@@ -10131,10 +8031,6 @@
         <translation>ღრუბლოვანი კლიენტის შექმნის შეცდომა.</translation>
     </message>
     <message>
-        <source>Failed to acquire cloud client parameter.</source>
-        <translation type="vanished">ღრუბლოვანი კლიენტის პარამეტრის მიღების შეცდომა.</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Do you want to remove the cloud profile &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;გნებავთ ამ ღრუბლოვანი პროფილის წაშლა?: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
@@ -10158,43 +8054,11 @@
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>უკან გადასვლა</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation type="vanished">ახალი ვირტუალური მანქანის შექმნის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ვირტუალურ მანქანის რეგისტრაციის შეცდომა &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ვირტუალურ მანქანის კლონირების შეცდომა &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="vanished">მყარი დისკის საცავის შექმნის შეცდომა: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation>უკან დაბრუნება</translation>
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
         <translation>ვირტუალური მყარი დისკის საცავის შექმნის შეცდომა: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ვირტუალური არქივის გახსნის შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">ვირტუალური არქივის სემოტანის შეცდომა: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation type="vanished">ფაილების შემოწმების შემოწმების შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation type="vanished">ფაილის წაშლის შეცდომა.</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -10226,16 +8090,6 @@
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;გაფრთხილება&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation type="vanished">&lt;nobr&gt;შეცდომის ID: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation type="vanished">სიმკაცრე: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
@@ -10350,7 +8204,7 @@
     <message>
         <source>Insert</source>
         <comment>additions</comment>
-        <translation>ჩასმა</translation>
+        <translation>Insert</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
@@ -10452,11 +8306,11 @@
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატების პაკეტის &lt;b&gt;%1&lt;/b&gt; გახსნის შეცდომა.</translation>
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტიდან სტუმრამდე გადმოტანა/დაგდების ოპერაციის შეცდომა.</translation>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
@@ -10492,7 +8346,7 @@
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტის USB პროქსი სერვისის ჩატვირთვის შეცდომა</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
@@ -10608,60 +8462,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to change graphics adapter attribute.</source>
-        <translation type="vanished">გრაფიკული ადაპტერის პარამეტრის შეცვლის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to change audio adapter attribute.</source>
-        <translation type="vanished">აუდიო ადაპტერის ატრიბუტის შეცვლის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to change network adapter attribute.</source>
-        <translation type="vanished">ქსელის ადაპტერის ატრიბუტის შეცვლის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to open the medium with following ID: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="vanished">მითითებული ID-ს მქონე დისკის გახსნა შეუძლებელია: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to acquire attachment parameter.</source>
-        <translation type="vanished">მიმაგრების პარამეტრის მიღების შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to acquire medium attribute.</source>
-        <translation type="vanished">დისკის ატრიბუტის მიღების შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to create cloud machine.</source>
-        <translation type="vanished">ღრუბლოვანი ვირტუალური მანქანის შექმნის შეცდომა.</translation>
-    </message>
-    <message>
-        <source>Failed to assign form value.</source>
-        <translation type="vanished">ფორმის მნიშვნელობის მინიჭების შეცდომა.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create a virtual appliance.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;ვირტუალური არქივის შექმნა შეუძლებელია.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create a virtual system description.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;ვირტუალური სისტემის აღწერის შექმნა შეუძლებელია.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot add a virtual system description value.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;ვირტუალური სისტემის აღწერის დამატების შეცდომა.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot acquire a virtual system description property.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;ვირტუალური სისტემის აღწერის თვისების მიღების შეცდომა.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The virtual machine execution ran into a non-fatal problem as described below. We suggest that you take appropriate action to prevent the problem from recurring.&lt;/p&gt;</source>
         <translation>&lt;p&gt;ვირტუალური მანქანის დაფიქსირდა პრობლემა, რომელიც ქვემოთაა აღწერილი. მიიღეთ ზომები, რომ პრობლემა აღარ განმეორდეს.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set global host settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>გლობალური ჰოსტის პარამეტრების დაყენების შეცდომა.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to terminate the cloud instance of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -10670,7 +8476,7 @@
     <message>
         <source>Terminate</source>
         <comment>cloud instance</comment>
-        <translation type="unfinished"></translation>
+        <translation>შეწყვეტა</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following cloud virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the instances and boot volumes of these machines as well?&lt;/p&gt;</source>
@@ -10678,7 +8484,7 @@
     </message>
     <message>
         <source>Delete everything</source>
-        <translation type="unfinished"></translation>
+        <translation>ყველაფრის წაშლა</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file cannot be deleted.&lt;/p&gt;</source>
@@ -10698,7 +8504,7 @@
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">გასუფთავება</translation>
+        <translation>სუფთა ცა</translation>
     </message>
     <message>
         <source>&lt;p&gt;This will clear the floppy disk list by releasing inaccessible disks from the virtual machines they are attached to and removing them from the list of registered media.&lt;p&gt;Are you sure?</source>
@@ -10719,12 +8525,12 @@
     <message>
         <source>Accept</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation>დასტური</translation>
     </message>
     <message>
         <source>Reject</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation>უარყოფა</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud console application &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -10735,66 +8541,48 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Severity:</source>
-        <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t find help file ...</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ფაილი ვერ ვიპოვე ...</translation>
     </message>
     <message>
         <source>Failed to find the following help file: &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ფაილი ვერ ვიპოვე: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t open URL ...</source>
-        <translation type="unfinished"></translation>
+        <translation>URL-ის გახსნის შეცდომა...</translation>
     </message>
     <message>
         <source>BETA build warning!</source>
-        <translation type="unfinished"></translation>
+        <translation>BETA აგების გაფრთხილება!</translation>
     </message>
     <message>
         <source>Experimental build warning!</source>
-        <translation type="unfinished"></translation>
+        <translation>ექსპერიმენტალური აგების გაფრთხილება!</translation>
     </message>
     <message>
         <source>Invalid Password ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი პაროლი...</translation>
     </message>
     <message>
         <source>Nothing to update ...</source>
-        <translation type="unfinished"></translation>
+        <translation>განსაახლებელი არაფერია...</translation>
     </message>
     <message>
         <source>New version found ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ნაპოვნია ახალი ვერსია ...</translation>
     </message>
     <message>
         <source>Update is required ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to validate guest additions image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>განახლება აუცილებელია...</translation>
     </message>
     <message>
         <source>User manual downloaded ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to validate extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მომხმარებლის სახელმძღვანელო გადმოწერილია ...</translation>
     </message>
     <message>
         <source>Can&apos;t create machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის საქაღალდის შექმნის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to create machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -10802,7 +8590,7 @@
     </message>
     <message>
         <source>Can&apos;t overwrite machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის საქაღალდის თავზე გადაწერის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to overwrite machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -10810,7 +8598,7 @@
     </message>
     <message>
         <source>Can&apos;t remove machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის საქაღალდის წაშლის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to remove machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -10818,18 +8606,14 @@
     </message>
     <message>
         <source>Can&apos;t add machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის დამატების შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t resolve collision ...</source>
-        <translation type="unfinished"></translation>
+        <translation>კოლიზიის გადაჭრის შეცდომა...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Please resolve this name conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cloud failure ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10838,39 +8622,39 @@
     </message>
     <message>
         <source>Can&apos;t create medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მედიის შექმნის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to create medium storage at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>საცავის შექმნა მისამართზე &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; შეუძლებელია.</translation>
     </message>
     <message>
         <source>Can&apos;t overwrite medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მედიის თავზე გადაწერა შეუძლებელია...</translation>
     </message>
     <message>
         <source>Failed to overwrite medium storage at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>საცავის &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; თავზე გადაწერის შეცდომა.</translation>
     </message>
     <message>
         <source>Can&apos;t open license file ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ლიცენზიის ფაილის გახსნის შეცდომა..</translation>
     </message>
     <message>
         <source>Public key missing ...</source>
-        <translation type="unfinished"></translation>
+        <translation>საჯარო გასაღები არ არსებობს...</translation>
     </message>
     <message>
         <source>Public key file path is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>საჯარო გასაღების ფაილის ბილიკი ცარიელია.</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. File doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>საჯარო გასაღების ფაილის &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; გახსნა შეუძლებელია. ფაილი არ არსებობს.</translation>
     </message>
     <message>
         <source>Public key too large ...</source>
-        <translation type="unfinished"></translation>
+        <translation>საჯარო გასაღები ძალიან დიდია ...</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. File is too large for the key.</source>
@@ -10878,7 +8662,7 @@
     </message>
     <message>
         <source>Public key isn&apos;t readable ...</source>
-        <translation type="unfinished"></translation>
+        <translation>საჯარო გასაღები კითხვადი არაა...</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
@@ -10886,7 +8670,7 @@
     </message>
     <message>
         <source>DHCP server isn&apos;t enabled ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP სერვერი ჩართული არაა ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; is set to obtain the address automatically but the corresponding DHCP server is not enabled.</source>
@@ -10894,7 +8678,7 @@
     </message>
     <message>
         <source>Invalid IPv4 address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი IPv4 მისამართი...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 address.</source>
@@ -10902,7 +8686,7 @@
     </message>
     <message>
         <source>Invalid IPv4 mask ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი IPv4 ნიღაბი ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 mask.</source>
@@ -10910,7 +8694,7 @@
     </message>
     <message>
         <source>Invalid IPv6 address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი IPv6 მისამართი ...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 address.</source>
@@ -10918,7 +8702,7 @@
     </message>
     <message>
         <source>Invalid IPv6 prefix length ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი IPv6 პრეფიქსის სიგრძე...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 prefix length.</source>
@@ -10926,7 +8710,7 @@
     </message>
     <message>
         <source>Invalid DHCP server address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი DHCP სერვერის მისამართი...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server address.</source>
@@ -10934,7 +8718,7 @@
     </message>
     <message>
         <source>Invalid DHCP server mask ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი DHCP სერვერის ნიღაბი...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server mask.</source>
@@ -10942,7 +8726,7 @@
     </message>
     <message>
         <source>Invalid DHCP lower address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი DHCP სერვერის ქვედა მისამართი...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server lower address bound.</source>
@@ -10950,7 +8734,7 @@
     </message>
     <message>
         <source>Invalid DHCP upper address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი DHCP სერვერის ზედა მისამართი...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server upper address bound.</source>
@@ -10958,7 +8742,7 @@
     </message>
     <message>
         <source>No name specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სახელი მითითებული არაა...</translation>
     </message>
     <message>
         <source>No new name specified for the network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -10966,15 +8750,15 @@
     </message>
     <message>
         <source>Name already busy ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სახელი უკვე გამოიყენება ...</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>სახელი &lt;b&gt;%1&lt;/b&gt; რამდენიმე ქსელის მიერ გამოიყენება.</translation>
     </message>
     <message>
         <source>No IPv4 prefix specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 პრეფიქსი მითითებული არაა...</translation>
     </message>
     <message>
         <source>No IPv4 prefix specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -10982,7 +8766,7 @@
     </message>
     <message>
         <source>No IPv6 prefix specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 პრეფიქსი მითითებული არაა...</translation>
     </message>
     <message>
         <source>No IPv6 prefix specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -10990,163 +8774,143 @@
     </message>
     <message>
         <source>Can&apos;t mount image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ასლის მიმაგრების შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t send ACPI shutdown ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ACPI-ით გამორთვის სიგნალის გაგზავნის შეცდომა</translation>
     </message>
     <message>
         <source>Auto capture keyboard ...</source>
-        <translation type="unfinished"></translation>
+        <translation>კლავიატურის ავტომატური გადაჭერა...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest additions inactive ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Mouse integration ...</source>
-        <translation type="unfinished"></translation>
+        <translation>თაგუნას ინტეგრაცია...</translation>
     </message>
     <message>
         <source>Paused VM input ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-დან შემოტანა შეჩერებულია...</translation>
     </message>
     <message>
         <source>Wrong color depth ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ფერების არასწორი სიღრმე...</translation>
     </message>
     <message>
         <source>VirtualBox failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox -ის ავარია ...</translation>
     </message>
     <message>
         <source>Failed to acquire VirtualBox parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox-ის პარამეტრების მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Appliance failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>შეკუმშული ვირტუალური მანქანს შეცდომა</translation>
     </message>
     <message>
         <source>Failed to acquire appliance parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extension Pack failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire Extension Pack Manager parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire Extension Pack parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეკუმშული ვირტუალური მანქანის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Host failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire host parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Medium failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მედიის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire medium parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>მედიის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Session failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სესიის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire session parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>სესიის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Machine failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის შეცდომა...</translation>
     </message>
     <message>
         <source>Snapshot failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სწრაფი ასლის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire snapshot parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>სწრაფი ასლის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>DHCP server failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP სერვერის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire cloud network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ქსელის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Host network interface failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტის ქსელის ინტერფეისის შეცდომა...</translation>
     </message>
     <message>
         <source>Host only network failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire host only network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>NAT network failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT ქსელის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire NAT network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT ქსელის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Display failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ეკრანის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire display parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>ეკრანის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Update failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>განახლების შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire update agent parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>განახლების აგენტის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>VSD failure ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to acquire VSD parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD-ის შეცდომა...</translation>
     </message>
     <message>
         <source>VSD form failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD-ის ფორმის შეცდომა...</translation>
     </message>
     <message>
-        <source>Failed to acquire VSD form parameter.</source>
-        <translation type="unfinished"></translation>
+        <source>Cloud failure ...</source>
+        <translation>ღრუბლის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to acquire cloud machine parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი მანქანის პარამეტრის მიღების შეცდომა.</translation>
     </message>
     <message>
         <source>Failed to change the parameter of the medium &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -11158,19 +8922,19 @@
     </message>
     <message>
         <source>Graphics adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>გრაფიკული ბარათის შეცდომა</translation>
     </message>
     <message>
         <source>Failed to change graphics adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>გრაფიკული ბარათის პარამეტრის შეცვლის შეცდომა.</translation>
     </message>
     <message>
         <source>Audio adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>აუდიო ბარათის შეცდომა...</translation>
     </message>
     <message>
         <source>Failed to change audio adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>აუდიო ბარათის პარამეტრის შეცვლის შეცდომა.</translation>
     </message>
     <message>
         <source>Network adapter failure ...</source>
@@ -11202,10 +8966,6 @@
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11273,10 +9033,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Can&apos;t get Extension Pack Manager ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to acquire Extension Pack Manager.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11302,22 +9058,6 @@
     </message>
     <message>
         <source>Can&apos;t create VSD ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to create VSD.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t open extension pack ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Can&apos;t read extension pack ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11465,14 +9205,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t change snapshot ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11486,35 +9218,35 @@
     </message>
     <message>
         <source>Can&apos;t attach USB device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB მოწყობილობის მიმაგრების შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t detach USB device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB მოწყობილობის მოხსნის შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t attach webcam ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ვებკამერის მიმაგრების შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t detach webcam ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ვებკამერის მოხსნის შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t save machine settings ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის პარამეტრების შენახვის შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle audio input ...</source>
-        <translation type="unfinished"></translation>
+        <translation>აუდიოს შეყვანის გადართვის შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle audio output ...</source>
-        <translation type="unfinished"></translation>
+        <translation>აუდიოს გამოტანის გადართვის შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle network cable ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ქსელის კაბელის გადართვის შეცდომა...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle recording ...</source>
@@ -11525,16 +9257,90 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;შეცდომის ID:&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity:</source>
+        <comment>runtime error info</comment>
+        <translation>სიმძიმე:</translation>
+    </message>
+    <message>
+        <source>Unable to validate guest additions image ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to validate extension pack ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest additions inactive ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension Pack failure ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire Extension Pack Manager parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire Extension Pack parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire VSD form parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to assign VSD parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t get Extension Pack Manager ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create VSD.</source>
+        <translation>VSD-ის შექმნის შეცდომა.</translation>
+    </message>
+    <message>
+        <source>Can&apos;t open extension pack ...</source>
+        <translation>დამატების პაკეტის გახსნის შეცდომა...</translation>
+    </message>
+    <message>
+        <source>Can&apos;t read extension pack ...</source>
+        <translation>დამატების პაკეტის წაკითხვის შეცდომა...</translation>
+    </message>
+    <message>
+        <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;The machine settings were changed.&lt;/p&gt;&lt;p&gt;Would you like to discard the changed settings or to keep editing them?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Discard changes</source>
-        <translation type="unfinished"></translation>
+        <translation>ცვლილებების მოცილება</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>ჩასწორების გაგრძელება</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
@@ -11564,11 +9370,11 @@
     <name>UIMiniToolbarSettingsEditor</name>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">მინი ზოლი:</translation>
+        <translation>მინი ზოლი:</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished">&amp;მთელ ეკრანზე/გამჭვირვალე რეჟიმში ჩვენება</translation>
+        <translation>&amp;მთელ ეკრანზე/გამჭვირვალე რეჟიმში ჩვენება</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
@@ -11576,7 +9382,7 @@
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">&amp;ეკრანის თავზე ჩვენება</translation>
+        <translation>&amp;ეკრანის თავზე ჩვენება</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
@@ -11587,30 +9393,30 @@
     <name>UIMonitorCountEditor</name>
     <message>
         <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished">&amp;ეკრანების რაოდენობა:</translation>
+        <translation>&amp;ეკრანების რაოდენობა:</translation>
     </message>
     <message>
         <source>Holds the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ვირტუალური მანქანისთვის გამოყოფილი მონიტორების რაოდენობას.</translation>
     </message>
     <message>
         <source>Minimum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიტორების მინიმალური შესაძლო რაოდენობა.</translation>
     </message>
     <message>
         <source>Maximum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>მონიტორების მაქსიმალური შესაძლო რაოდენობა.</translation>
     </message>
 </context>
 <context>
     <name>UIMotherboardFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>Enable &amp;I/O APIC</source>
-        <translation type="unfinished">&amp;I/O APIC-ის ჩართვა</translation>
+        <translation>&amp;I/O APIC-ის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. Note: don&apos;t disable this feature after having installed a Windows guest operating system!</source>
@@ -11618,15 +9424,11 @@
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="unfinished">&amp;EFI-ის ჩართვა (მხოლოდ სპეციალური ოს-ებისთვის)</translation>
+        <translation>&amp;EFI-ის ჩართვა (მხოლოდ სპეციალური ოს-ებისთვის)</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware Clock in &amp;UTC Time</source>
-        <translation type="obsolete">აპარატურული საათი &amp;UTC-ში</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
@@ -11638,7 +9440,7 @@
     </message>
     <message>
         <source>Enable &amp;Secure Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;უსაფრთხო ჩატვირთვის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the secure boot emulation will be enabled.</source>
@@ -11675,14 +9477,6 @@
         <translation>&amp;ვერსია:</translation>
     </message>
     <message>
-        <source>Name:</source>
-        <translation type="vanished">სახელი:</translation>
-    </message>
-    <message>
-        <source>Machine Folder:</source>
-        <translation type="vanished">მანქანის საქაღალდე:</translation>
-    </message>
-    <message>
         <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11692,27 +9486,27 @@
     </message>
     <message>
         <source>Invalid name</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი სახელი</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;სახელი:</translation>
+        <translation>&amp;სახელი:</translation>
     </message>
     <message>
         <source>&amp;Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;საქაღალდე:</translation>
     </message>
     <message>
         <source>&amp;ISO Image:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ISO ასლი:</translation>
     </message>
     <message>
         <source>&amp;Edition:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გამოცემა:</translation>
     </message>
     <message>
         <source>Holds the name for virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს ვირტუალური მანქანის სახელს.</translation>
     </message>
     <message>
         <source>Selects the folder hosting virtual machine.</source>
@@ -11727,7 +9521,7 @@
     <name>UINativeWizard</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;დახმარება</translation>
+        <translation>&amp;დახმარება</translation>
     </message>
     <message>
         <source>Open corresponding Help topic.</source>
@@ -11735,7 +9529,7 @@
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="unfinished">&amp;ექსპერტის რეჟიმი</translation>
+        <translation>&amp;ექსპერტის რეჟიმი</translation>
     </message>
     <message>
         <source>Switch to the Expert Mode, a one-page dialog for experienced users.</source>
@@ -11743,7 +9537,7 @@
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="unfinished">&amp;გამყოლის რეჟიმი</translation>
+        <translation>&amp;გამყოლის რეჟიმი</translation>
     </message>
     <message>
         <source>Switch to the Guided Mode, a step-by-step dialog with detailed explanations.</source>
@@ -11751,7 +9545,7 @@
     </message>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished">&amp;უკან</translation>
+        <translation>&amp;უკან</translation>
     </message>
     <message>
         <source>Go to previous wizard page.</source>
@@ -11759,7 +9553,7 @@
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">&amp;შემდეგი</translation>
+        <translation>&amp;შემდეგი</translation>
     </message>
     <message>
         <source>Go to next wizard page.</source>
@@ -11767,7 +9561,7 @@
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დასრულება</translation>
     </message>
     <message>
         <source>Commit all wizard data.</source>
@@ -11775,7 +9569,7 @@
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;გაუქმება</translation>
+        <translation>&amp;გაუქმება</translation>
     </message>
     <message>
         <source>Cancel wizard execution.</source>
@@ -11810,10 +9604,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Holds the driver to be used with this network card.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11822,158 +9612,31 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Holds the name of the host-only network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UINetworkDetailsWidget</name>
     <message>
-        <source>&amp;Adapter</source>
-        <translation type="vanished">&amp;ქსელის ბარათი</translation>
+        <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;DHCP Server</source>
-        <translation type="vanished">&amp;DHCP სერვერი</translation>
-    </message>
-    <message>
-        <source>Configure Adapter &amp;Automatically</source>
-        <translation type="vanished">&amp;ადაპტერის ავტომატური მორგება</translation>
-    </message>
-    <message>
-        <source>Configure Adapter &amp;Manually</source>
-        <translation type="vanished">ა&amp;დაპტერის ხელით მორგება</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation type="vanished">&amp;IPv4 მისამართი:</translation>
-    </message>
-    <message>
-        <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="vanished">შეიცავს ქსელის ამ ბარათის IPv4 მისამართს.</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation type="vanished">IPv4 ქსელის ნიღბის მისამართი:</translation>
-    </message>
-    <message>
-        <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="vanished">შეიცავს ქსელის ამ ბარათის IPv4 ნიღაბს.</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation type="vanished">IPv6 მისამართი:</translation>
-    </message>
-    <message>
-        <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="vanished">IPv6 პრეფიქსის სიგრძე:</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">თავიდან ჩართვა</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">გადატარება</translation>
-    </message>
-    <message>
-        <source>Reset changes in current interface details</source>
-        <translation type="vanished">ქსელის მიმდინარე ინტერფეისის დეტალების საწყის მნიშვნელობებზე დაბრუნება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current interface details</source>
-        <translation type="vanished">ქსელის მიმდინარე ინტერფეისის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Reset Changes (%1)</source>
-        <translation type="vanished">ცვლილებების დაბრუნება (%1)</translation>
-    </message>
-    <message>
-        <source>Apply Changes (%1)</source>
-        <translation type="vanished">ცვლილებების გადატარება (%1)</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation type="vanished">&amp;სერვერის ჩართვა</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation type="vanished">სერვერის &amp;მისამართი:</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation type="vanished">სერვერის &amp;ნიღაბი:</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation type="vanished">მისამართების &amp;ქვედა ზღვარი:</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation type="vanished">მისამართების &amp;ზედა ზღვარი:</translation>
-    </message>
-    <message>
-        <source>Reset changes in current DHCP server details</source>
-        <translation type="vanished">მიმდინარე DHCP სერვერის დეტალების ცვლილებების საწყის მნიშვნელობებზე დაბრუნება</translation>
-    </message>
-    <message>
-        <source>Apply changes in current DHCP server details</source>
-        <translation type="vanished">მიმდინარე DHCP სერვერის დეტალების ცვლილებების გადატარება</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; is set to obtain the address automatically but the corresponding DHCP server is not enabled.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისი &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; დაყენებულია მისამართის ავტომატურად ასაღებად, მაგრამ შესაბამისი DHCP სერვერი ჩართული არაა.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად სწორი IPv4 მისამართი არ აქვს მინიჭებული.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 network mask.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად სწორი IPv4 ქსელის ნიღაბი მინიჭებული არ აქვს.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად არ გააჩნია სწორი IPv6 მისამართი.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 prefix length.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად IPv6 პრეფიქსის სიგრძე მინიჭებული არ აქვს.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად DHCP სერვერის სწორი მისამართი არ გააჩნია.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ამჟამად DHCP სერვერის ნიღაბი არ გააჩნია.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; DHCP სერვერის ქვედა ზღვარი მინიჭებული არ აქვს.</translation>
-    </message>
-    <message>
-        <source>Host interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="vanished">ჰოსტის ინტერფეისს &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; DHCP სერვერის ზედა ზღვარი მინიჭებული არ აქვს.</translation>
+        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UINetworkFeaturesEditor</name>
     <message>
         <source>A&amp;dvanced</source>
-        <translation type="unfinished">&amp;დამატებითი</translation>
+        <translation>&amp;დამატებითი</translation>
     </message>
     <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="unfinished">ქსელის ბარათის დამატებითი პარამეტრების ჩვენება.</translation>
+        <translation>ქსელის ბარათის დამატებითი პარამეტრების ჩვენება.</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished">ადაპტერი და ტიპი:</translation>
+        <translation>ადაპტერი და ტიპი:</translation>
     </message>
     <message>
         <source>Holds the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
@@ -11989,7 +9652,7 @@
     </message>
     <message>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished">&amp;MAC მისამართი:</translation>
+        <translation>&amp;MAC მისამართი:</translation>
     </message>
     <message>
         <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
@@ -11997,11 +9660,11 @@
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">ახალი MAC მისამართის გენერაცია.</translation>
+        <translation>ახალი MAC მისამართის გენერაცია.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished">ზოგადი პარამეტრები:</translation>
+        <translation>ზოგადი პარამეტრები:</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form name=value and will depend on the driver. Use shift-enter to add a new entry.</source>
@@ -12009,46 +9672,78 @@
     </message>
     <message>
         <source>&amp;Cable Connected</source>
-        <translation type="unfinished">&amp;კაბელი მიერთებულია</translation>
+        <translation>&amp;კაბელი მიერთებულია</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished">როცა ჩართულია, ვირტუალური ქსელის კაბელი შეერთებულია.</translation>
+        <translation>როცა ჩართულია, ვირტუალური ქსელის კაბელი შეერთებულია.</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;პორტის გადამისამართება</translation>
+        <translation>&amp;პორტის გადამისამართება</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished">პორტის გადამისამართების მორგების ფანჯრის ჩვენება.</translation>
+        <translation>პორტის გადამისამართების მორგების ფანჯრის ჩვენება.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkManager</name>
     <message>
-        <source>DHCP Server</source>
-        <translation>DHCP სერვერი</translation>
+        <source>Host-only Networks</source>
+        <translation>მხოლოდ-ჰოსტის ქსელები</translation>
+    </message>
+    <message>
+        <source>NAT Networks</source>
+        <translation>NAT ქსელები</translation>
+    </message>
+    <message>
+        <source>Cloud Networks</source>
+        <translation>ღრუბლოვანი ქსელები</translation>
     </message>
     <message>
         <source>Name</source>
         <translation>სახელი</translation>
     </message>
     <message>
-        <source>IPv4 Address/Mask</source>
-        <translation type="vanished">IPv4 მისამართი/ნიღაბი</translation>
+        <source>Mask</source>
+        <translation>ნიღაბი</translation>
     </message>
     <message>
-        <source>IPv6 Address/Mask</source>
-        <translation type="vanished">IPv6 მისამართი/ნიღაბი</translation>
+        <source>Lower Bound</source>
+        <translation>ქვედა ზღვარი</translation>
     </message>
     <message>
-        <source>Host Network Manager</source>
-        <translation type="vanished">ჰოსტის ქსელების მმართველი</translation>
+        <source>Upper Bound</source>
+        <translation>ზედა ზღვარი</translation>
+    </message>
+    <message>
+        <source>IPv4 Prefix</source>
+        <translation>IPv4 პრეფიქსი</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix</source>
+        <translation>IPv6 პრეფიქსი</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation>DHCP სერვერი</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>პროვაიდერი</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>პროფილი</translation>
+    </message>
+    <message>
+        <source>Network Manager</source>
+        <translation>ქსელის მმართველი</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>განულება</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -12059,16 +9754,24 @@
         <translation>დახურვა</translation>
     </message>
     <message>
-        <source>Reset changes in current host network details</source>
-        <translation type="vanished">ქსელის მიმდინარე ქსელის დეტალების საწყის მნიშვნელობებზე დაბრუნება</translation>
+        <source>Help</source>
+        <translation>დახმარება</translation>
     </message>
     <message>
-        <source>Apply changes in current host network details</source>
-        <translation type="vanished">ქსელის მიმდინარე ქსელის დეტალების ცვლილებების გადატარება</translation>
+        <source>Reset changes in current network details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply changes in current network details</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
         <translation>დახურვა შენახვის გარეშე</translation>
+    </message>
+    <message>
+        <source>Show dialog help</source>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
@@ -12083,28 +9786,24 @@
         <translation>ფანჯრის დახურვა (%1)</translation>
     </message>
     <message>
-        <source>Adding network ...</source>
-        <translation type="vanished">ქსელის დამატება...</translation>
-    </message>
-    <message>
-        <source>Removing network ...</source>
-        <translation type="vanished">ქსელის წაშლა...</translation>
+        <source>Show Help (%1)</source>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
     <message>
         <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
+        <translation>აირჩეთ ქვექსელი</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;სახელი:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">შეიცავს ამ ქსელის სახელს.</translation>
+        <translation>შეიცავს ამ ქსელის სახელს.</translation>
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;მომწოდებელი:</translation>
     </message>
     <message>
         <source>Holds the cloud provider for this network.</source>
@@ -12112,7 +9811,7 @@
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;პროფილი:</translation>
     </message>
     <message>
         <source>Holds the cloud profile for this network.</source>
@@ -12120,7 +9819,7 @@
     </message>
     <message>
         <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Id:</translation>
     </message>
     <message>
         <source>Holds the id for this network.</source>
@@ -12132,19 +9831,19 @@
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">ქსელის მიმდინარე ინტერფეისის დეტალების საწყის მნიშვნელობებზე დაბრუნება</translation>
+        <translation>ქსელის მიმდინარე ინტერფეისის დეტალების საწყის მნიშვნელობებზე დაბრუნება</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">ქსელის მიმდინარე ინტერფეისის დეტალების ცვლილებების გადატარება</translation>
+        <translation>ქსელის მიმდინარე ინტერფეისის დეტალების ცვლილებების გადატარება</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;სახელი:</translation>
+        <translation>&amp;სახელი:</translation>
     </message>
     <message>
         <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ნიღაბი:</translation>
     </message>
     <message>
         <source>Holds the mask for this network.</source>
@@ -12152,7 +9851,7 @@
     </message>
     <message>
         <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ქვედა ზღვარი:</translation>
     </message>
     <message>
         <source>Holds the lower address bound for this network.</source>
@@ -12160,55 +9859,47 @@
     </message>
     <message>
         <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ზედა ზღვარი:</translation>
     </message>
     <message>
         <source>Holds the upper address bound for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;ქსელის ბარათი</translation>
+        <translation>&amp;ქსელის ბარათი</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">&amp;DHCP სერვერი</translation>
+        <translation>&amp;DHCP სერვერი</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">&amp;ადაპტერის ავტომატური მორგება</translation>
+        <translation>&amp;ადაპტერის ავტომატური მორგება</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">ა&amp;დაპტერის ხელით მორგება</translation>
+        <translation>ა&amp;დაპტერის ხელით მორგება</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">&amp;IPv4 მისამართი:</translation>
+        <translation>&amp;IPv4 მისამართი:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">შეიცავს ქსელის ამ ბარათის IPv4 მისამართს.</translation>
+        <translation>შეიცავს ქსელის ამ ბარათის IPv4 მისამართს.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 ქსელის ნიღბის მისამართი:</translation>
+        <translation>IPv4 ქსელის ნიღბის მისამართი:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">შეიცავს ქსელის ამ ბარათის IPv4 ნიღაბს.</translation>
+        <translation>შეიცავს ქსელის ამ ბარათის IPv4 ნიღაბს.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">IPv6 მისამართი:</translation>
+        <translation>IPv6 მისამართი:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
@@ -12216,7 +9907,7 @@
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 პრეფიქსის სიგრძე:</translation>
+        <translation>IPv6 პრეფიქსის სიგრძე:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
@@ -12224,7 +9915,7 @@
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">&amp;სერვერის ჩართვა</translation>
+        <translation>&amp;სერვერის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
@@ -12232,7 +9923,7 @@
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">სერვერის &amp;მისამართი:</translation>
+        <translation>სერვერის &amp;მისამართი:</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -12240,7 +9931,7 @@
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">სერვერის &amp;ნიღაბი:</translation>
+        <translation>სერვერის &amp;ნიღაბი:</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -12248,7 +9939,7 @@
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">მისამართების &amp;ქვედა ზღვარი:</translation>
+        <translation>მისამართების &amp;ქვედა ზღვარი:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -12256,7 +9947,7 @@
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">მისამართების &amp;ზედა ზღვარი:</translation>
+        <translation>მისამართების &amp;ზედა ზღვარი:</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -12264,23 +9955,23 @@
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">მიმდინარე DHCP სერვერის დეტალების ცვლილებების საწყის მნიშვნელობებზე დაბრუნება</translation>
+        <translation>მიმდინარე DHCP სერვერის დეტალების ცვლილებების საწყის მნიშვნელობებზე დაბრუნება</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">მიმდინარე DHCP სერვერის დეტალების ცვლილებების გადატარება</translation>
+        <translation>მიმდინარე DHCP სერვერის დეტალების ცვლილებების გადატარება</translation>
     </message>
     <message>
         <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ზოგადი პარამეტრები</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;პორტის გადამისამართება</translation>
+        <translation>&amp;პორტის გადამისამართება</translation>
     </message>
     <message>
         <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;4 პრეფიქსი:</translation>
     </message>
     <message>
         <source>Holds the IPv4 prefix for this network.</source>
@@ -12288,7 +9979,7 @@
     </message>
     <message>
         <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;6 პრეფიქსი:</translation>
     </message>
     <message>
         <source>Holds the IPv6 prefix for this network.</source>
@@ -12296,264 +9987,157 @@
     </message>
     <message>
         <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;DHCP-ის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">თუ ჩართულია, ამ ქსელს DHCP-ის მხარდაჭერა ექნება.</translation>
+        <translation>თუ ჩართულია, ამ ქსელს DHCP-ის მხარდაჭერა ექნება.</translation>
     </message>
     <message>
         <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6-ის &amp;ჩართვა</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">თუ ჩართულია, ამ ქსელს IPv6-ის მხარდაჭერა ექნება.</translation>
+        <translation>თუ ჩართულია, ამ ქსელს IPv6-ის მხარდაჭერა ექნება.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">IPv6-ის ნაგულისხმები რაუტის გამოცხადება</translation>
+        <translation>IPv6-ის ნაგულისხმები რაუტის გამოცხადება</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">როცა ჩართულია, ეს ქსელი გამოცხადებული იქნება, როგორც IPv6-ის ნაგულისხმები რაუტი.</translation>
+        <translation>როცა ჩართულია, ეს ქსელი გამოცხადებული იქნება, როგორც IPv6-ის ნაგულისხმები რაუტი.</translation>
     </message>
     <message>
         <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv&amp;4</translation>
     </message>
     <message>
         <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mask</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation type="unfinished">ქვედა ზღვარი</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation type="unfinished">ზედა ზღვარი</translation>
+        <translation>IPv&amp;6</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
+        <translation>გამორთული</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">ადაპტერი</translation>
+        <translation>ადაპტერი</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">ავტომატურად მორგებული</translation>
+        <translation>ავტომატურად მორგებული</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">ხელით მორგებული</translation>
+        <translation>ხელით მორგებული</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 მისამართი</translation>
+        <translation>IPv4 მისამართი</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">დაყენებული არაა</translation>
+        <translation>დაყენებული არაა</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 ქსელის ნიღბის მისამართი</translation>
+        <translation>IPv4 ქსელის ნიღბის მისამართი</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">დაყენებული არაა</translation>
+        <translation>დაყენებული არაა</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 მისამართი</translation>
+        <translation>IPv6 მისამართი</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">IPv6 პრექფიქსის სიგრძე</translation>
+        <translation>IPv6 პრექფიქსის სიგრძე</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">დაყენებული არაა</translation>
+        <translation>დაყენებული არაა</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">ჩართულია</translation>
+        <translation>ჩართული</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>გამორთული</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">მისამართი</translation>
+        <translation>მისამართი</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">ქსელის ნიღაბი</translation>
+        <translation>ქსელის ნიღაბი</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">დაყენებული არაა</translation>
+        <translation>დაყენებული არაა</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">ქსელის სახელი</translation>
+        <translation>ქსელის დასახელება</translation>
     </message>
     <message>
         <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>ქსელის IPv4 პრეფიქსი</translation>
     </message>
     <message>
         <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>ქსელის IPv6 პრეფიქსი</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">DHCP-ის მხრდაჭერა</translation>
+        <translation>DHCP-ის მხრდაჭერა</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">დიახ</translation>
+        <translation>yes</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">არა</translation>
+        <translation>არა</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">IPv6-ის მხარდაჭერა</translation>
+        <translation>IPv6-ის მხარდაჭერა</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">IPv6-ის ნაგულისხმები რაუტი</translation>
-    </message>
-    <message>
-        <source>Provider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Profile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only Networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>NAT Networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cloud Networks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Registered host-only networks</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6-ის ნაგულისხმები რაუტი</translation>
     </message>
     <message>
         <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
+        <translation>რეგისტრირებული NAT ქსელები</translation>
     </message>
     <message>
         <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
+        <translation>რეგისტრირებული ღრუბლოვანი ქსელები</translation>
     </message>
     <message>
-        <source>Network Manager</source>
-        <translation type="unfinished">ქსელის მმართველი</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
-    </message>
-    <message>
-        <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerDialog</name>
-    <message>
-        <source>Network Operations Manager</source>
-        <translation type="obsolete">ქსელური ოპერაციების მმართველი</translation>
-    </message>
-    <message>
-        <source>There are no active network operations.</source>
-        <translation type="obsolete">ქსელის აქტიური ოპერაცია არ არსებობს.</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel All</source>
-        <translation type="obsolete">&amp;ყველას გაუქმება</translation>
-    </message>
-    <message>
-        <source>Cancel all active network operations</source>
-        <translation type="obsolete">ქსელის ყველა ოპერაციის გაუქმება</translation>
-    </message>
-    <message>
-        <source>Network Operation</source>
-        <translation type="obsolete">ქსელური ოპერაცია</translation>
-    </message>
-    <message>
-        <source>Restart network operation</source>
-        <translation type="obsolete">ქსელური ოპერაციების რესტარტი</translation>
-    </message>
-    <message>
-        <source>Cancel network operation</source>
-        <translation type="obsolete">ქსელური ოპერაციის გაუქმება</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkManagerIndicator</name>
-    <message>
-        <source>Current network operations:</source>
-        <translation type="obsolete">ქსელის მიმდინარე ოპერაციები:</translation>
-    </message>
-    <message>
-        <source>failed</source>
-        <comment>network operation</comment>
-        <translation type="obsolete">შეცდომა</translation>
-    </message>
-    <message>
-        <source>(%1 of %2)</source>
-        <translation type="obsolete">(%1 %2-დან)</translation>
-    </message>
-    <message>
-        <source>Double-click for more information.</source>
-        <translation type="obsolete">მეტი ინფორმაციისთვის ორჯერ დააწკაპუნეთ.</translation>
+        <source>Registered host-only networks</source>
+        <translation>რეგისტრირებული მხოლოდ-ჰოსტის ქსელები</translation>
     </message>
 </context>
 <context>
@@ -12624,61 +10208,10 @@
     </message>
 </context>
 <context>
-    <name>UINetworkRequestManagerIndicator</name>
-    <message>
-        <source>Current network operations:</source>
-        <translation type="vanished">ქსელის მიმდინარე ოპერაციები:</translation>
-    </message>
-    <message>
-        <source>failed</source>
-        <comment>network operation</comment>
-        <translation type="vanished">შეცდომა</translation>
-    </message>
-    <message>
-        <source>(%1 of %2)</source>
-        <translation type="vanished">(%1 %2-დან)</translation>
-    </message>
-    <message>
-        <source>Double-click for more information.</source>
-        <translation type="vanished">მეტი ინფორმაციისთვის ორჯერ დააწკაპუნეთ.</translation>
-    </message>
-</context>
-<context>
-    <name>UINetworkRequestManagerWindow</name>
-    <message>
-        <source>Network Operations Manager</source>
-        <translation type="vanished">ქსელური ოპერაციების მმართველი</translation>
-    </message>
-    <message>
-        <source>There are no active network operations.</source>
-        <translation type="vanished">ქსელის აქტიური ოპერაცია არ არსებობს.</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel All</source>
-        <translation type="vanished">&amp;ყველას გაუქმება</translation>
-    </message>
-    <message>
-        <source>Cancel all active network operations</source>
-        <translation type="vanished">ქსელის ყველა ოპერაციის გაუქმება</translation>
-    </message>
-    <message>
-        <source>Network Operation</source>
-        <translation type="vanished">ქსელური ოპერაცია</translation>
-    </message>
-    <message>
-        <source>Restart network operation</source>
-        <translation type="vanished">ქსელური ოპერაციების რესტარტი</translation>
-    </message>
-    <message>
-        <source>Cancel network operation</source>
-        <translation type="vanished">ქსელური ოპერაციის გაუქმება</translation>
-    </message>
-</context>
-<context>
     <name>UINetworkSettingsEditor</name>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">&amp;ქსელის ადაპტერის ჩართვა</translation>
+        <translation>&amp;ქსელის ადაპტერის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -12689,125 +10222,125 @@
     <name>UINotificationCenter</name>
     <message>
         <source>Open notification center</source>
-        <translation type="unfinished"></translation>
+        <translation>გაფრთხილებების ცენტრის გახსნა</translation>
     </message>
     <message>
         <source>Toggle ascending/descending order</source>
-        <translation type="unfinished"></translation>
+        <translation>აღმავლობა/დაღმავლობით დალაგება</translation>
     </message>
     <message>
         <source>Keep finished progresses</source>
-        <translation type="unfinished"></translation>
+        <translation>დასრულებული მიმდინარეობების შენარჩუნება</translation>
     </message>
     <message>
         <source>Delete finished notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>დასრულებული მიმდინარეობების მოცილება</translation>
     </message>
     <message>
         <source>Align Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>ძირის სწორება</translation>
     </message>
     <message>
         <source>Align Top</source>
-        <translation type="unfinished"></translation>
+        <translation>ზემოთ სწორება</translation>
     </message>
 </context>
 <context>
     <name>UINotificationDownloader</name>
     <message>
         <source>Downloading Extension Pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატების პაკეტის გადმოწერა...</translation>
     </message>
     <message>
         <source>Downloading Guest Additions ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სტუმრის დამატებების გადმოწერა...</translation>
     </message>
     <message>
         <source>Downloading User Manual ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მომხმარებლის სახელმძღვანელოს გადმოწერა...</translation>
     </message>
 </context>
 <context>
     <name>UINotificationProgress</name>
     <message>
         <source>Creating medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის შექმნა...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Location:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Size:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მდებარეობა:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;ზომა:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Copying medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მედიის კოპირება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;From:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;To:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;ვისგან:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;ვის:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished">დისკის გადატანა....</translation>
+        <translation>დისკის გადატანა....</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished">ზომის შეცვლა ...</translation>
+        <translation>ზომის შეცვლა ...</translation>
     </message>
     <message>
         <source>Deleting medium storage ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მედიის საცავის წაშლა...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Location:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მდებარეობა:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Copying machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის კოპირება...</translation>
     </message>
     <message>
         <source>Powering VM up ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის გაშვება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;VM Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;VM -ის სახეი:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Moving machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის გადატანა...</translation>
     </message>
     <message>
         <source>Saving VM state ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის მდგომარეობის შენახვა...</translation>
     </message>
     <message>
         <source>Powering VM off ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის გამორთვა...</translation>
     </message>
     <message>
         <source>Removing machine media ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის დისკების მოცილება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Machine Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მანქანის სახელი:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Updating VFS explorer ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS Explorer-ის განახლება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Path:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;ბილიკი:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Removing VFS explorer files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS Explorer_ის ფაილების წაშლა...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Path:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Files:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;ბილიკი:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;ფაილები:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Creating subnet selection VSD form ...</source>
@@ -12815,7 +10348,7 @@
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მომწოდებელი:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;პროფილი:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Creating launch VSD form ...</source>
@@ -12831,59 +10364,59 @@
     </message>
     <message>
         <source>Listing cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ასლების სია...</translation>
     </message>
     <message>
         <source>Listing cloud source boot volumes ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი საწყისი ჩატვირთვის ტომების სია...</translation>
     </message>
     <message>
         <source>Listing cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი გაშვებული ასლების სია...</translation>
     </message>
     <message>
         <source>Listing cloud source instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი საწყისი გაშვებული ასლების სია...</translation>
     </message>
     <message>
         <source>Adding cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის დამატება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Instance Name:&lt;/b&gt; %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მომწოდებელი:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;პროფილი:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;გაშვებული ასლის სახელი:&lt;/b&gt; %3</translation>
     </message>
     <message>
         <source>Creating cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის შექმნა...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;VM Name:&lt;/b&gt; %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მომწოდებელი:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;პროფილი:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;ვმ-ის სახელი:&lt;/b&gt; %3</translation>
     </message>
     <message>
         <source>Deleting cloud VM files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის ფაილების წაშლა...</translation>
     </message>
     <message>
         <source>Removing cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის წაშლა...</translation>
     </message>
     <message>
         <source>Powering cloud VM up ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის ჩართვა...</translation>
     </message>
     <message>
         <source>Powering cloud VM off ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის გამორთვა...</translation>
     </message>
     <message>
         <source>Shutting cloud VM down ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-სთვის გამორთვის სიგნალის გაგზავნა...</translation>
     </message>
     <message>
         <source>Terminating cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი ვმ-ის ნაძალადევი შეწყვეტა...</translation>
     </message>
     <message>
         <source>Creating cloud VM settings form ...</source>
@@ -12911,86 +10444,86 @@
     </message>
     <message>
         <source>Taking snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სწრაფი ასლის აღება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;VM Name:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Snapshot Name:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;ვმ-ის სახელი:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;სწრაფი ასლის სახელი:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Restoring snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სწრაფი ასლის აღდგენა...</translation>
     </message>
     <message>
         <source>Deleting snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>სწრაფი ასლის წაშლა...</translation>
     </message>
     <message>
         <source>Writing appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>შეკუმშული მანქანის ჩაწერა...</translation>
     </message>
     <message>
         <source>&lt;b&gt;To:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;სად:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Reading appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>შეკუმშული მანქანის წაკითხვა...</translation>
     </message>
     <message>
         <source>&lt;b&gt;From:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;საიდან:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Importing appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>შეკუმშული მანქანის შემოტანა...</translation>
     </message>
     <message>
         <source>Installing package ...</source>
-        <translation type="unfinished"></translation>
+        <translation>პაკეტის დაყენება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;სახელი:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Uninstalling package ...</source>
-        <translation type="unfinished"></translation>
+        <translation>პაკეტის წაშლა...</translation>
     </message>
     <message>
         <source>Installing image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>გამოსახულების დაყენება...</translation>
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელური ინტერფეისის შექმნა...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>მხოლოდ-ჰოსტის ქსელური ინტერფეისის წაშლა...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD ფორმის მნიშვნელობის დაყენება...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;მნიშვნელობა:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Checking for new version of %1 ...</source>
-        <translation type="unfinished"></translation>
+        <translation>%1-ის ახალი ვერსიის შემოწმება...</translation>
     </message>
     <message>
         <source>Checking for new version ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ახალი ვერსიის შემოწმება...</translation>
     </message>
 </context>
 <context>
     <name>UIParavirtProviderEditor</name>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished">&amp;პარავირტუალიზაციის ინტერფეისი:</translation>
+        <translation>&amp;პარავირტუალიზაციის ინტერფეისი:</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
@@ -13001,7 +10534,7 @@
     <name>UIPointingHIDEditor</name>
     <message>
         <source>&amp;Pointing Device:</source>
-        <translation type="unfinished">&amp;მისათითებელი მოწყობილობა:</translation>
+        <translation>&amp;მისათითებელი მოწყობილობა:</translation>
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
@@ -13034,7 +10567,7 @@
     </message>
     <message>
         <source>Protocol</source>
-        <translation>პროტოკოლი</translation>
+        <translation>ოქმი</translation>
     </message>
     <message>
         <source>Host IP</source>
@@ -13085,19 +10618,19 @@
     <name>UIProcessorFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">PA&amp;E/NX-ის ჩართვა</translation>
+        <translation>PA&amp;E/NX-ის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">თუ ჩართულია, ვირტუალური მანქანა დაინახავს CPU-ის ფიზიკური მისამართის გაფართოების (PAE) თვისებას.</translation>
+        <translation>თუ ჩართულია, ვირტუალური მანქანა დაინახავს CPU-ის ფიზიკური მისამართის გაფართოების (PAE) თვისებას.</translation>
     </message>
     <message>
         <source>Enable Nested &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">ჩალაგებული &amp;VT-x/AMD-V-ის ჩართვა</translation>
+        <translation>ჩალაგებული &amp;VT-x/AMD-V-ის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
@@ -13137,7 +10670,7 @@
     <name>UIProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">ჰოსტის &amp;პროქსის პარამეტრების ავტომატური გამოცნობა</translation>
+        <translation>ჰოსტის &amp;პროქსის პარამეტრების ავტომატური გამოცნობა</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
@@ -13145,7 +10678,7 @@
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">&amp;პირდაპირი კავშირი ინტერნეტთან</translation>
+        <translation>&amp;პირდაპირი კავშირი ინტერნეტთან</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
@@ -13153,7 +10686,7 @@
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">&amp;პროქსის პარამეტრების ხელით შეყვანა</translation>
+        <translation>&amp;პროქსის პარამეტრების ხელით შეყვანა</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
@@ -13161,7 +10694,7 @@
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">&amp;URL:</translation>
+        <translation>&amp;URL:</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
@@ -13172,7 +10705,7 @@
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
-        <translation type="unfinished">&amp;ჩაწერის ჩართვა</translation>
+        <translation>&amp;ჩაწერის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
@@ -13180,7 +10713,7 @@
     </message>
     <message>
         <source>Recording &amp;Mode:</source>
-        <translation type="unfinished">&amp;ჩაწერის რეჟიმი:</translation>
+        <translation>&amp;ჩაწერის რეჟიმი:</translation>
     </message>
     <message>
         <source>Holds the recording mode.</source>
@@ -13188,7 +10721,7 @@
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished">ფაილის &amp;ბილიკი:</translation>
+        <translation>ფაილის &amp;ბილიკი:</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
@@ -13196,11 +10729,11 @@
     </message>
     <message>
         <source>Frame Si&amp;ze:</source>
-        <translation type="unfinished"></translation>
+        <translation>კადრის &amp;ზომა:</translation>
     </message>
     <message>
         <source>User Defined</source>
-        <translation type="unfinished">მომხმარებლის მიერ განსაზღვრული</translation>
+        <translation>საწყისი სამომხმარებლო</translation>
     </message>
     <message>
         <source>Holds the resolution (frame size) of the recorded video.</source>
@@ -13216,7 +10749,7 @@
     </message>
     <message>
         <source>Frame R&amp;ate:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;კადრების სიხშირე:</translation>
     </message>
     <message>
         <source>Holds the maximum number of frames per second. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
@@ -13224,23 +10757,23 @@
     </message>
     <message>
         <source>fps</source>
-        <translation type="unfinished">კადრი/წმ</translation>
+        <translation>კადრი/წმ</translation>
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="unfinished">%1 კადრი/წმ</translation>
+        <translation>%1 კადრი/წმ</translation>
     </message>
     <message>
         <source>Minimum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>კადრების მინიმალური შესაძლო სიჩქარე.</translation>
     </message>
     <message>
         <source>Maximum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>კადრების მაქსიმალური შესაძლო სიჩქარე.</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
-        <translation type="unfinished">&amp;ვიდეოს ხარისხი:</translation>
+        <translation>&amp;ვიდეოს ხარისხი:</translation>
     </message>
     <message>
         <source>Holds the quality. Increasing this value will make the video look better at the cost of an increased file size.</source>
@@ -13248,7 +10781,7 @@
     </message>
     <message>
         <source>kbps</source>
-        <translation type="unfinished">კბ/წმ</translation>
+        <translation>კბ/წმ</translation>
     </message>
     <message>
         <source>Holds the bitrate in kilobits per second. Increasing this value will make the video look better at the cost of an increased file size.</source>
@@ -13257,21 +10790,21 @@
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="unfinished">დაბალი</translation>
+        <translation>დაბალი</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="unfinished">საშუალო</translation>
+        <translation>საშუალო</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="unfinished">მაღალი</translation>
+        <translation>მაღალი</translation>
     </message>
     <message>
         <source>&amp;Audio Quality:</source>
-        <translation type="unfinished">&amp;აუდიოს ხარისხი:</translation>
+        <translation>&amp;აუდიოს ხარისხი:</translation>
     </message>
     <message>
         <source>Holds the quality. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
@@ -13279,23 +10812,15 @@
     </message>
     <message>
         <source>Scree&amp;ns:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ეკრანები:</translation>
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;დაახლოებით %1მბ ვიდეოს ყოველ 5 წუთში&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;დაახლოებით %1მბ ვიდეოს ყოველ 5 წუთში&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIScaleFactorEditor</name>
-    <message>
-        <source>Max</source>
-        <translation type="vanished">მაქს</translation>
-    </message>
-    <message>
-        <source>Min</source>
-        <translation type="vanished">მინ</translation>
-    </message>
     <message>
         <source>All Monitors</source>
         <translation>ყველა მონიტორი</translation>
@@ -13305,12 +10830,8 @@
         <translation>%1-ე მონიტორი</translation>
     </message>
     <message>
-        <source>Controls the guest screen scale factor.</source>
-        <translation type="vanished">სტუმრის ეკრანის გადიდების კოეფიციენტი.</translation>
-    </message>
-    <message>
         <source>Scale &amp;Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>გადიდების &amp;კოეფიციენტი:</translation>
     </message>
     <message>
         <source>Selects the index of monitor guest screen scale factor being defined for.</source>
@@ -13345,13 +10866,6 @@
     </message>
 </context>
 <context>
-    <name>UISession</name>
-    <message>
-        <source>Updating Guest Additions</source>
-        <translation type="vanished">სტუმრის დამატებების განახლება</translation>
-    </message>
-</context>
-<context>
     <name>UISessionStateStatusBarIndicator</name>
     <message>
         <source>%1 status-bar indicator</source>
@@ -13367,7 +10881,7 @@
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>აღმოჩენილია არასწორი პარამეტრები</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; page:</source>
@@ -13390,7 +10904,7 @@
     </message>
     <message>
         <source>Input</source>
-        <translation>შეყვანა</translation>
+        <translation>შეტანის ფაილი</translation>
     </message>
     <message>
         <source>Update</source>
@@ -13402,15 +10916,7 @@
     </message>
     <message>
         <source>Display</source>
-        <translation>ეკრანი</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <translation type="vanished">ქსელი</translation>
-    </message>
-    <message>
-        <source>Extensions</source>
-        <translation type="vanished">გაფართოებები</translation>
+        <translation>დროის ჩვენება</translation>
     </message>
     <message>
         <source>Proxy</source>
@@ -13418,7 +10924,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation>პარამეტრები</translation>
+        <translation>მორგება</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
@@ -13426,7 +10932,7 @@
     </message>
     <message>
         <source>Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>ინტერფეისი</translation>
     </message>
 </context>
 <context>
@@ -13441,19 +10947,19 @@
     </message>
     <message>
         <source>System</source>
-        <translation>სისტემა</translation>
+        <translation>სისტემური</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>ეკრანი</translation>
+        <translation>დროის ჩვენება</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>საცავი</translation>
+        <translation>სათავსო</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>აუდიო</translation>
+        <translation>&amp;აუდიო</translation>
     </message>
     <message>
         <source>Network</source>
@@ -13469,7 +10975,7 @@
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -13477,11 +10983,11 @@
     </message>
     <message>
         <source>User Interface</source>
-        <translation>მომხმარებლის ინტერფეისი</translation>
+        <translation>სამომხმარებლო ინტერფეისი</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>მორგება</translation>
+        <translation>პარამეტრები</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -13503,7 +11009,7 @@
     <name>UISharedClipboardEditor</name>
     <message>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished">&amp;გაზიარებული ბუფერი:</translation>
+        <translation>&amp;გაზიარებული ბუფერი:</translation>
     </message>
     <message>
         <source>Holds which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
@@ -13514,19 +11020,19 @@
     <name>UISharedFolderDetailsEditor</name>
     <message>
         <source>Add Share</source>
-        <translation type="unfinished">გაზიარების დამატება</translation>
+        <translation>გაზიარების დამატება</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation type="unfinished">გაზიარების ჩასწორება</translation>
+        <translation>გაზიარების ჩასწორება</translation>
     </message>
     <message>
         <source>Folder Path:</source>
-        <translation type="unfinished">საქაღალდის ბილიკი:</translation>
+        <translation>საქაღალდის ბილიკი:</translation>
     </message>
     <message>
         <source>Folder Name:</source>
-        <translation type="unfinished">საქაღალდის სახელი:</translation>
+        <translation>საქაღალდის სახელი:</translation>
     </message>
     <message>
         <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
@@ -13542,11 +11048,11 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">გაუქმება</translation>
+        <translation>გაუქმება</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">მხოლოდ წაკითხვა</translation>
+        <translation>მხოლოდ წაკითხვა</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
@@ -13554,7 +11060,7 @@
     </message>
     <message>
         <source>&amp;Auto-mount</source>
-        <translation type="unfinished">&amp;ავტომატური მიმაგრება</translation>
+        <translation>&amp;ავტომატური მიმაგრება</translation>
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
@@ -13562,7 +11068,7 @@
     </message>
     <message>
         <source>Mount point:</source>
-        <translation type="unfinished">&amp;მიმაგრების წერტილი:</translation>
+        <translation>მიმაგრების წერტილი:</translation>
     </message>
     <message>
         <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
@@ -13570,7 +11076,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">&amp;მუდმივად გარდაქმნა</translation>
+        <translation>&amp;მუდმივად გარდაქმნა</translation>
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
@@ -13581,7 +11087,7 @@
     <name>UISharedFoldersEditor</name>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="unfinished">გაზიარებული &amp;საქაღალდე</translation>
+        <translation>გაზიარებული &amp;საქაღალდე</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &apos;share&apos; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
@@ -13589,82 +11095,82 @@
     </message>
     <message>
         <source>At</source>
-        <translation type="unfinished">წერტილი</translation>
+        <translation>მისამართზე</translation>
     </message>
     <message>
         <source>Auto Mount</source>
-        <translation type="unfinished">ავტომატური მიმაგრება</translation>
+        <translation>ავტომატური მიმაგრება</translation>
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished">წვდომა</translation>
+        <translation>წვდომა</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation type="unfinished">ბილიკი</translation>
+        <translation>მისამართი</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">სახელი</translation>
+        <translation>სახელი</translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished">გაზიარებული საქაღალდის დამატება</translation>
+        <translation>გაზიარებული საქაღალდის დამატება</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished">ახალი გაზიარებული საქაღალდის დამატება.</translation>
+        <translation>ახალი გაზიარებული საქაღალდის დამატება.</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished">გაზიარებული საქაღალდის ჩასწორება</translation>
+        <translation>გაზიარებული საქაღალდის ჩასწორება</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished">გაზიარებული საქაღალდის ჩასწორება.</translation>
+        <translation>გაზიარებული საქაღალდის ჩასწორება.</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished">გაზიარებული საქაღალდის წაშლა</translation>
+        <translation>გაზიარებული საქაღალდის წაშლა</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished">მონიშნული გაზიარებული საქაღალდის წაშლა.</translation>
+        <translation>მონიშნული გაზიარებული საქაღალდის წაშლა.</translation>
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation type="unfinished"> მანქანის საქაღალდეები</translation>
+        <translation> მანქანის საქაღალდეები</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="unfinished"> დროებითი საქაღალდეები</translation>
+        <translation> დროებითი საქაღალდეები</translation>
     </message>
 </context>
 <context>
     <name>UIShortcutConfigurationEditor</name>
     <message>
-        <source>Name</source>
-        <translation type="unfinished">სახელი</translation>
-    </message>
-    <message>
-        <source>Shortcut</source>
-        <translation type="unfinished">მალსახმობი</translation>
-    </message>
-    <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation type="unfinished">&amp;VirtualBox-ის მმართველი</translation>
+        <translation>&amp;VirtualBox-ის მმართველი</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
-        <translation type="unfinished">ვირტუალური &amp;მანქანა</translation>
+        <translation>ვირტუალური &amp;მანქანა</translation>
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="unfinished">ყველა კონფიგურირებადი მალსახმობის სია.</translation>
+        <translation>ყველა კონფიგურირებადი მალსახმობის სია.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>სახელი</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation>მალსახმობი</translation>
     </message>
 </context>
 <context>
@@ -13687,11 +11193,11 @@
     </message>
     <message>
         <source>Holds the snapshot name.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს სწრაფი ასლის სახელს.</translation>
     </message>
     <message>
         <source>Holds the snapshot description.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს სწრაფი ასლის აღწერას.</translation>
     </message>
     <message>
         <source>Apply</source>
@@ -13699,7 +11205,7 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation>თავიდან ჩართვა</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Apply changes in current snapshot details</source>
@@ -13750,7 +11256,7 @@
     <name>UISnapshotFolderEditor</name>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished">&amp;სწრაფი ასლის საქაღალდე:</translation>
+        <translation>&amp;სწრაფი ასლის საქაღალდე:</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
@@ -13776,11 +11282,6 @@
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
         <translation>მიმდინარე მდგომარეობა ემთხვევა სწრაფ ასლსში შენახულს</translation>
-    </message>
-    <message>
-        <source>%1 (%2 ago)</source>
-        <comment>date time (how long ago)</comment>
-        <translation type="vanished">%1 (%2-ის წინ)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
@@ -13878,7 +11379,7 @@
     </message>
     <message>
         <source>Position</source>
-        <translation>მდებარეობა</translation>
+        <translation>თანამდებობა</translation>
     </message>
     <message>
         <source>The physical position of the key. Not editable</source>
@@ -13886,11 +11387,11 @@
     </message>
     <message>
         <source>Base</source>
-        <translation>საბაზისო</translation>
+        <translation>ფუძე</translation>
     </message>
     <message>
         <source>Shift</source>
-        <translation>Shift</translation>
+        <translation>წანაცვლება</translation>
     </message>
     <message>
         <source>AltGr</source>
@@ -13994,7 +11495,7 @@
     </message>
     <message>
         <source>Mute</source>
-        <translation>დადუმება</translation>
+        <translation>გაჩუმება</translation>
     </message>
     <message>
         <source>Volume up</source>
@@ -14002,7 +11503,7 @@
     </message>
     <message>
         <source>Volume down</source>
-        <translation>ხმის დაწევა</translation>
+        <translation>ხმის ჩაწევა</translation>
     </message>
     <message>
         <source>Error! Could not create folder under</source>
@@ -14029,24 +11530,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The file </source>
-        <translation type="vanished">ფაილი </translation>
-    </message>
-    <message>
-        <source> has been deleted</source>
-        <translation type="vanished"> წაშლილია</translation>
-    </message>
-    <message>
-        <source>Deleting the file </source>
-        <translation type="vanished">ფაილის წაშლა </translation>
-    </message>
-    <message>
-        <source> has failed</source>
-        <translation type="vanished"> შეცდომა</translation>
-    </message>
-    <message>
         <source>Settings</source>
-        <translation>მორგება</translation>
+        <translation>პარამეტრები</translation>
     </message>
     <message>
         <source>Reset the keyboard and release all keys</source>
@@ -14118,7 +11603,11 @@
     </message>
     <message>
         <source>Power off</source>
-        <translation type="unfinished"></translation>
+        <translation>გამორთვა</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>The file %1 has been deleted</source>
@@ -14127,10 +11616,6 @@
     <message>
         <source>Deleting the file %1 has failed</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
     </message>
 </context>
 <context>
@@ -14149,51 +11634,51 @@
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished">ვმ-ის სტატუსის ზოლის ჩასწორების ნების დართვა.</translation>
+        <translation>ვმ-ის სტატუსის ზოლის ჩასწორების ნების დართვა.</translation>
     </message>
 </context>
 <context>
     <name>UIStorageSettingsEditor</name>
     <message>
         <source>Controller: %1</source>
-        <translation type="unfinished">კონტროლერი: %1</translation>
+        <translation>კონტროლერი: %1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;მატარებელი:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ტიპი:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;მატარებელი:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ტიპი:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Host Drive</source>
-        <translation type="unfinished">ჰოსტის დისკი</translation>
+        <translation>ჰოსტის დისკი</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">გამოსახულება</translation>
+        <translation>გამოსახულება</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;ჩანაწერის&amp;nbsp;ჩაკეცვა/ამოკეცვა.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ჩანაწერის&amp;nbsp;ჩაკეცვა/ამოკეცვა.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;მყარი&amp;nbsp;დისკის&amp;nbsp;დამატება.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;მყარი&amp;nbsp;დისკის&amp;nbsp;დამატება.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;ოპტიკური&amp;nbsp;დისკის&amp;nbsp;დამატება.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ოპტიკური&amp;nbsp;დისკის&amp;nbsp;დამატება.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;დისკეტის&amp;nbsp;დამატება&amp;nbsp;.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;დისკეტის&amp;nbsp;დამატება&amp;nbsp;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Storage Devices</source>
-        <translation type="unfinished">&amp;საცავი მოწყობილობები</translation>
+        <translation>&amp;საცავი მოწყობილობები</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished">ინფორმაცია</translation>
+        <translation>ინფორმაცია</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
@@ -14201,11 +11686,11 @@
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="unfinished">ატრიბუტები</translation>
+        <translation>ატრიბუტები</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;სახელი:</translation>
+        <translation>&amp;სახელი:</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
@@ -14213,7 +11698,7 @@
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">&amp;ტიპი:</translation>
+        <translation>&amp;ტიპი:</translation>
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
@@ -14221,7 +11706,7 @@
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished">&amp;პორტების რიცხვი:</translation>
+        <translation>&amp;პორტების რიცხვი:</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
@@ -14233,7 +11718,7 @@
     </message>
     <message>
         <source>Use Host I/O Cache</source>
-        <translation type="unfinished">ჰოსტის I/O ქეშის გამოყენება</translation>
+        <translation>ჰოსტის I/O ქეშის გამოყენება</translation>
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
@@ -14245,7 +11730,7 @@
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translation type="unfinished">&amp;გამჭოლი</translation>
+        <translation>&amp;გამჭოლი</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
@@ -14253,7 +11738,7 @@
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished">ცოცხალი &amp;CD/DVD</translation>
+        <translation>ცოცხალი &amp;CD/DVD</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
@@ -14261,7 +11746,7 @@
     </message>
     <message>
         <source>&amp;Solid-state Drive</source>
-        <translation type="unfinished">&amp;SSD</translation>
+        <translation>&amp;SSD</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
@@ -14269,43 +11754,43 @@
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished">&amp;ცხლად-შეერთებადი</translation>
+        <translation>&amp;ცხლად-შეერთებადი</translation>
     </message>
     <message>
         <source>Type (Format):</source>
-        <translation type="unfinished">ტიპი (ფორმატი)</translation>
+        <translation>ტიპი (ფორმატი)</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">ტიპი:</translation>
+        <translation>ტიპი:</translation>
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation type="unfinished">ვირტუალური ზომა:</translation>
+        <translation>ვირტუალური ზომა:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation type="unfinished">რეალური ზომა:</translation>
+        <translation>რეალური ზომა:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished">ზომა:</translation>
+        <translation>ზომა:</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished">დეტალები:</translation>
+        <translation>დეტალები:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">მდებარეობა:</translation>
+        <translation>მდებარეობა:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">მიბმულია:</translation>
+        <translation>მიბმულია:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">დაშიფვრის გასაღები:</translation>
+        <translation>დაშიფვრის გასაღები:</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
@@ -14313,95 +11798,95 @@
     </message>
     <message>
         <source>Add Controller</source>
-        <translation type="unfinished">კონტროლერის დაატება</translation>
+        <translation>კონტროლერის დაატება</translation>
     </message>
     <message>
         <source>PIIX3 (IDE)</source>
-        <translation type="unfinished">PIIX3 (IDE)</translation>
+        <translation>PIIX3 (IDE)</translation>
     </message>
     <message>
         <source>PIIX4 (Default IDE)</source>
-        <translation type="unfinished">PIIX4 (ნაგულისხმები IDE)</translation>
+        <translation>PIIX4 (ნაგულისხმები IDE)</translation>
     </message>
     <message>
         <source>ICH6 (IDE)</source>
-        <translation type="unfinished">ღრუბლოვანი მანქანის შექმნა...</translation>
+        <translation>ღრუბლოვანი მანქანის შექმნა...</translation>
     </message>
     <message>
         <source>AHCI (SATA)</source>
-        <translation type="unfinished">ღრუბლოვანი მანქანის შექმნა...</translation>
+        <translation>ღრუბლოვანი მანქანის შექმნა...</translation>
     </message>
     <message>
         <source>LsiLogic (Default SCSI)</source>
-        <translation type="unfinished">LsiLogic (ნაგულისხმები SCSI)</translation>
+        <translation>LsiLogic (ნაგულისხმები SCSI)</translation>
     </message>
     <message>
         <source>BusLogic (SCSI)</source>
-        <translation type="unfinished">BusLogic (SCSI)</translation>
+        <translation>BusLogic (SCSI)</translation>
     </message>
     <message>
         <source>LsiLogic SAS (SAS)</source>
-        <translation type="unfinished">LsiLogic SAS (SAS)</translation>
+        <translation>LsiLogic SAS (SAS)</translation>
     </message>
     <message>
         <source>I82078 (Floppy)</source>
-        <translation type="unfinished">I82078 (დისკეტა)</translation>
+        <translation>I82078 (დისკეტა)</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>NVMe (PCIe)</source>
-        <translation type="unfinished">NVMe (PCIe)</translation>
+        <translation>NVMe (PCIe)</translation>
     </message>
     <message>
         <source>virtio-scsi</source>
-        <translation type="unfinished">virtio-scsi</translation>
+        <translation>virtio-scsi</translation>
     </message>
     <message>
         <source>Remove Controller</source>
-        <translation type="unfinished">კონტროლერის წაშლა</translation>
+        <translation>კონტროლერის წაშლა</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished">მიმაგრების დამატება</translation>
+        <translation>მიმაგრების დამატება</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">მყარი დისკი</translation>
+        <translation>მყარი დისკი</translation>
     </message>
     <message>
         <source>Optical Drive</source>
-        <translation type="unfinished">ოპტიკური დისკი</translation>
+        <translation>ოპტიკური დისკი</translation>
     </message>
     <message>
         <source>Floppy Drive</source>
-        <translation type="unfinished">დისკეტა</translation>
+        <translation>დისკეტა</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished">მიმაგრების მოხსნა</translation>
+        <translation>მიმაგრებულის წაშლა</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished">საცავის ახალი კონტროლერის დამატება.</translation>
+        <translation>საცავის ახალი კონტროლერის დამატება.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished">საცავის მონიშნული კონტროლერის წაშლა.</translation>
+        <translation>საცავის მონიშნული კონტროლერის წაშლა.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished">ახალი საცავის მიბმა.</translation>
+        <translation>ახალი საცავის მიბმა.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished">მონიშნული მიბმული საცავის მოხსნა.</translation>
+        <translation>მონიშნული მიბმული საცავის მოხსნა.</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
-        <translation type="unfinished">მყარი &amp;დისკი:</translation>
+        <translation>მყარი &amp;დისკი:</translation>
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
@@ -14409,7 +11894,7 @@
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished">ოპტიკური &amp;დისკი:</translation>
+        <translation>ოპტიკური &amp;დისკი:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
@@ -14417,7 +11902,7 @@
     </message>
     <message>
         <source>Floppy &amp;Drive:</source>
-        <translation type="unfinished">&amp;დისკეტა:</translation>
+        <translation>&amp;დისკეტა:</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
@@ -14425,23 +11910,23 @@
     </message>
     <message>
         <source>Choose/Create a Virtual Hard Disk...</source>
-        <translation type="unfinished">აირჩიეთ/შექმენით ვირტუალური მყარი დისკი...</translation>
+        <translation>აირჩიეთ/შექმენით ვირტუალური მყარი დისკი...</translation>
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation type="unfinished">აირციეთ დისკის ფაილი...</translation>
+        <translation>აირციეთ დისკის ფაილი...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
-        <translation type="unfinished">აირჩეთ/შექმენით ვირტუალური ოპტიკური დისკი...</translation>
+        <translation>აირჩეთ/შექმენით ვირტუალური ოპტიკური დისკი...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="unfinished">დისკის ვირტუალური მატარებლიდან გამოღება</translation>
+        <translation>დისკის ვირტუალური მატარებლიდან გამოღება</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
-        <translation type="unfinished">აირჩიეთ/შექმენით ვირტუალური დისკეტა...</translation>
+        <translation>აირჩიეთ/შექმენით ვირტუალური დისკეტა...</translation>
     </message>
 </context>
 <context>
@@ -14471,23 +11956,23 @@
     </message>
     <message>
         <source>Holds the snapshot name</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს სწრაფი ასლის სახელს</translation>
     </message>
     <message>
         <source>Holds the snapshot description</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს სწრაფი ასლის აღწერას</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">დიახ</translation>
+        <translation>დიახ</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">გაუქმება</translation>
+        <translation>გაუქმება</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>Take Snapshot and close the dialog</source>
@@ -14499,27 +11984,27 @@
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Accept</source>
-        <translation type="unfinished"></translation>
+        <translation>დასტური</translation>
     </message>
     <message>
         <source>Accept (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>მიღება (%1)</translation>
     </message>
     <message>
         <source>Cancel (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>გაუქმება (%1)</translation>
     </message>
     <message>
         <source>Show Help</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
 </context>
 <context>
@@ -14549,7 +12034,7 @@
     <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%1&quot; გვერდის გაფართოება</translation>
     </message>
 </context>
 <context>
@@ -14584,37 +12069,33 @@
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">გაფართოებები</translation>
+        <translation>გაფართოებები</translation>
     </message>
     <message>
         <source>Activities</source>
-        <translation type="unfinished"></translation>
+        <translation>ქმედებები</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>აქტივობა</translation>
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished">ფაილების მმართველი</translation>
+        <translation>ფაილების მმართველი</translation>
     </message>
 </context>
 <context>
     <name>UIToolsView</name>
     <message>
-        <source>Contains a list of VirtualBox tools</source>
-        <translation type="vanished">შეიცავს VirtualBox-ის ხელსაწყოების სიას</translation>
-    </message>
-    <message>
         <source>Contains a list of VirtualBox tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს VirtualBox-ის ხელსაწყოების სიას.</translation>
     </message>
 </context>
 <context>
     <name>UITpmEditor</name>
     <message>
         <source>&amp;TPM:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;TPM:</translation>
     </message>
     <message>
         <source>Selects the TPM type to be emulated in this virtual machine.</source>
@@ -14625,42 +12106,42 @@
     <name>UITranslator</name>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n წელი</numerusform>
             <numerusform>%n წელი</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n თვე</numerusform>
             <numerusform>%n თვე</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n დღე</numerusform>
             <numerusform>%n დღე</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n საათი</numerusform>
             <numerusform>%n საათი</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n წუთი</numerusform>
             <numerusform>%n წუთი</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n წამი</numerusform>
             <numerusform>%n წამი</numerusform>
         </translation>
@@ -14668,78 +12149,78 @@
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="unfinished">B</translation>
+        <translation>B</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="unfinished">კბ</translation>
+        <translation>კბ</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">მბ</translation>
+        <translation>მბ</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="unfinished">გბ</translation>
+        <translation>გბ</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="unfinished">ტბ</translation>
+        <translation>ტბ</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="unfinished">პბ</translation>
+        <translation>პბ</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation type="unfinished">მომხმარებლის მიერ განსაზღვრული</translation>
+        <translation>მომხმარებლის მიერ განსაზღვრული</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n წლის წინ</numerusform>
+            <numerusform>%n წლის წინ</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n თვის წინ</numerusform>
+            <numerusform>%n თვის წინ</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n დღის წინ</numerusform>
+            <numerusform>%n დღის წინ</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n საათის წინ</numerusform>
+            <numerusform>%n საათის წინ</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n წუთის წინ</numerusform>
+            <numerusform>%n წუთის წინ</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n წამის წინ</numerusform>
+            <numerusform>%n წამის წინ</numerusform>
         </translation>
     </message>
 </context>
@@ -14747,7 +12228,7 @@
     <name>UIUSBControllerEditor</name>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="unfinished">USB &amp;1.1 (OHCI) კონტროლერი</translation>
+        <translation>USB &amp;1.1 (OHCI) კონტროლერი</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
@@ -14755,7 +12236,7 @@
     </message>
     <message>
         <source>USB &amp;2.0 (OHCI + EHCI) Controller</source>
-        <translation type="unfinished">USB &amp;2.0 (OHCI + EHCI) კონტროლერი</translation>
+        <translation>USB &amp;2.0 (OHCI + EHCI) კონტროლერი</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI and EHCI controllers of this machine. Together they provide USB 2.0 support.</source>
@@ -14763,7 +12244,7 @@
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="unfinished">USB &amp;3.0 (xHCI) კონტროლერი</translation>
+        <translation>USB &amp;3.0 (xHCI) კონტროლერი</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
@@ -14774,35 +12255,35 @@
     <name>UIUSBFilterDetailsEditor</name>
     <message>
         <source>USB Filter Details</source>
-        <translation type="unfinished">USB ფილტრის დეტალები</translation>
+        <translation>USB ფილტრის დეტალები</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;სახელი:</translation>
+        <translation>&amp;სახელი:</translation>
     </message>
     <message>
         <source>Holds the filter name.</source>
-        <translation type="unfinished">შეიცავს ფილტრის სახელს.</translation>
+        <translation>შეიცავს ფილტრის სახელს.</translation>
     </message>
     <message>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished">&amp;მომწოდებლის ID:</translation>
+        <translation>&amp;მომწოდებლის ID:</translation>
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished">შეიცავს მომწოდებლის ID-ის ფილტრს. სტრიქონის &lt;i&gt;ზუსტი დამთხვევის&lt;/i&gt;რაოდენობაა &lt;tt&gt; XXXX&lt;/tt&gt;სადაც &lt;tt&gt;X&lt;/tt&gt;თექვსმეტობით ციფრს წარმოადგენს. ცარიელი სტრიქონი ნებისმიერ მნიშვნელობას დაემთხვევა.</translation>
+        <translation>შეიცავს მომწოდებლის ID-ის ფილტრს. სტრიქონის &lt;i&gt;ზუსტი დამთხვევის&lt;/i&gt;რაოდენობაა &lt;tt&gt; XXXX&lt;/tt&gt;სადაც &lt;tt&gt;X&lt;/tt&gt;თექვსმეტობით ციფრს წარმოადგენს. ცარიელი სტრიქონი ნებისმიერ მნიშვნელობას დაემთხვევა.</translation>
     </message>
     <message>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished">&amp;პროდუქტის ID:</translation>
+        <translation>&amp;პროდუქტის ID:</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished">შეიცავს პროდუქტის ID-ის ფილტრს. სტრიქონის &lt;i&gt;ზუსტი დამთხვევის&lt;/i&gt;რაოდენობაა &lt;tt&gt; XXXX&lt;/tt&gt;სადაც &lt;tt&gt;X&lt;/tt&gt;თექვსმეტობით ციფრს წარმოადგენს. ცარიელი სტრიქონი ნებისმიერ მნიშვნელობას დაემთხვევა.</translation>
+        <translation>შეიცავს პროდუქტის ID-ის ფილტრს. სტრიქონის &lt;i&gt;ზუსტი დამთხვევის&lt;/i&gt;რაოდენობაა &lt;tt&gt; XXXX&lt;/tt&gt;სადაც &lt;tt&gt;X&lt;/tt&gt;თექვსმეტობით ციფრს წარმოადგენს. ცარიელი სტრიქონი ნებისმიერ მნიშვნელობას დაემთხვევა.</translation>
     </message>
     <message>
         <source>&amp;Revision:</source>
-        <translation type="unfinished">&amp;რევიზია:</translation>
+        <translation>&amp;რევიზია:</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
@@ -14810,7 +12291,7 @@
     </message>
     <message>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished">&amp;მწარმოებელი:</translation>
+        <translation>&amp;მწარმოებელი:</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
@@ -14818,7 +12299,7 @@
     </message>
     <message>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished">&amp;პროდუქტი:</translation>
+        <translation>&amp;პროდუქტი:</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
@@ -14826,7 +12307,7 @@
     </message>
     <message>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished">&amp;სერიული ნომერი:</translation>
+        <translation>&amp;სერიული ნომერი:</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
@@ -14834,7 +12315,7 @@
     </message>
     <message>
         <source>Por&amp;t:</source>
-        <translation type="unfinished">&amp;პორტი:</translation>
+        <translation>&amp;პორტი:</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
@@ -14842,7 +12323,7 @@
     </message>
     <message>
         <source>R&amp;emote:</source>
-        <translation type="unfinished">&amp;დაშორებული:</translation>
+        <translation>&amp;დაშორებული:</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (No), to a VRDP client&apos;s computer (Yes), or both (Any).</source>
@@ -14850,73 +12331,15 @@
     </message>
 </context>
 <context>
-    <name>UIUSBFilterItem</name>
-    <message>
-        <source>%1, Active</source>
-        <comment>col.1 text, col.1 state</comment>
-        <translation type="vanished">%1 აქტიურია</translation>
-    </message>
-    <message>
-        <source>%1</source>
-        <comment>col.1 text</comment>
-        <translation type="vanished">%1%</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;მომწოდებლის ID: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;პროდუქტის ID: %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;რევიზია: %3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;პროდუქტი: %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;მწარმოებელი: %5&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;სერიული #.: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;პორტი: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;მდგომარეობა: %1&lt;/nobr&gt;</translation>
-    </message>
-</context>
-<context>
     <name>UIUSBFiltersEditor</name>
-    <message>
-        <source>%1, Active</source>
-        <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1 აქტიურია</translation>
-    </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">ახალი ფილტრი %1</translation>
+        <translation>ახალი ფილტრი %1</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">&amp;USB მოწყობილობების ფილტრი</translation>
+        <translation>&amp;USB მოწყობილობების ფილტრი</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
@@ -14924,7 +12347,7 @@
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished">ცარიელი ფილტრის დაატება</translation>
+        <translation>ცარიელი ფილტრის დაატება</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
@@ -14932,7 +12355,7 @@
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished">ფილტრის მოწყობილობიდან დამატება</translation>
+        <translation>ფილტრის მოწყობილობიდან დამატება</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
@@ -14940,35 +12363,40 @@
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished">ფილტრის ჩასწორება</translation>
+        <translation>ფილტრის ჩასწორება</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished">მონიშნული USB ფილტრის ჩასწორება.</translation>
+        <translation>მონიშნული USB ფილტრის ჩასწორება.</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished">ფილტრის წაშლა</translation>
+        <translation>ფილტრის წაშლა</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished">მონიშნული USB ფილტრის წაშლა.</translation>
+        <translation>მონიშნული USB ფილტრის წაშლა.</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished">მონიშნული ფილტრის მაღლა აწევა</translation>
+        <translation>მონიშნული ფილტრის მაღლა აწევა</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished">მონიშნული USB ფილტრის მაღლა აწევა.</translation>
+        <translation>მონიშნული USB ფილტრის მაღლა აწევა.</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished">მონიშნული ფილტრის დაბლა დაწევა</translation>
+        <translation>მონიშნული ფილტრის დაბლა დაწევა</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished">მონიშნული USB ფილტრის დაბლა დაწევა.</translation>
+        <translation>მონიშნული USB ფილტრის დაბლა დაწევა.</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation>%1 აქტიურია</translation>
     </message>
 </context>
 <context>
@@ -14976,23 +12404,23 @@
     <message>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
-        <translation type="unfinished">&lt;no devices available&gt;</translation>
+        <translation>&lt;no devices available&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">ჰოსტზე მხარდაჭერილი მოწყობილობები მიერთებული არაა</translation>
+        <translation>ჰოსტზე მხარდაჭერილი მოწყობილობები მიერთებული არაა</translation>
     </message>
 </context>
 <context>
     <name>UIUSBSettingsEditor</name>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">&amp;USB კონტროლერის ჩართვა</translation>
+        <translation>&amp;USB კონტროლერის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">თუ ჩართულია, ამ მანქანაზე ვირტუალური USB კონტროლერი ჩაირთვება.</translation>
+        <translation>თუ ჩართულია, ამ მანქანაზე ვირტუალური USB კონტროლერი ჩაირთვება.</translation>
     </message>
 </context>
 <context>
@@ -15039,7 +12467,7 @@
     </message>
     <message>
         <source>Never</source>
-        <translation>არასოდეს</translation>
+        <translation>არასდროს</translation>
     </message>
 </context>
 <context>
@@ -15050,11 +12478,11 @@
     </message>
     <message>
         <source>&amp;Check for Updates</source>
-        <translation type="unfinished">განახ&amp;ლების შემოწმება</translation>
+        <translation>განახ&amp;ლების შემოწმება</translation>
     </message>
     <message>
         <source>&amp;Once per:</source>
-        <translation type="unfinished">&amp;შემოწმების პერიოდი:</translation>
+        <translation>&amp;შემოწმების პერიოდი:</translation>
     </message>
     <message>
         <source>Selects how often the new version check should be performed.</source>
@@ -15062,15 +12490,15 @@
     </message>
     <message>
         <source>Next Check:</source>
-        <translation type="unfinished">შემდეგი შემოწმება:</translation>
+        <translation>შემდეგი შემოწმება:</translation>
     </message>
     <message>
         <source>Check for:</source>
-        <translation type="unfinished">შემოწმება:</translation>
+        <translation>შემოწმება:</translation>
     </message>
     <message>
         <source>&amp;Stable Release Versions</source>
-        <translation type="unfinished">&amp;სტაბილური რელიზები</translation>
+        <translation>&amp;სტაბილური რელიზები</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about stable updates to VirtualBox.</source>
@@ -15078,7 +12506,7 @@
     </message>
     <message>
         <source>&amp;All New Releases</source>
-        <translation type="unfinished">&amp;ყველა რელიზი</translation>
+        <translation>&amp;ყველა რელიზი</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases.</source>
@@ -15086,7 +12514,7 @@
     </message>
     <message>
         <source>All New Releases and &amp;Pre-Releases</source>
-        <translation type="unfinished">ყველა ახალი რელიზი და &amp;პრე-რელიზი</translation>
+        <translation>ყველა ახალი რელიზი და &amp;პრე-რელიზი</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases and pre-release versions of VirtualBox.</source>
@@ -15102,144 +12530,137 @@
     </message>
 </context>
 <context>
-    <name>UIUpdateStepVirtualBox</name>
-    <message>
-        <source>Checking for a new VirtualBox version...</source>
-        <translation type="vanished">VirtualBox-ის ახალი ვერსიის შემოწმება...</translation>
-    </message>
-</context>
-<context>
     <name>UIUserNamePasswordEditor</name>
     <message>
         <source>Invalid username</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი მომხმარებელი</translation>
     </message>
     <message>
         <source>Pass&amp;word</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;პაროლი</translation>
     </message>
     <message>
         <source>&amp;Repeat Password</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გაიმეორეთ პაროლი</translation>
     </message>
     <message>
         <source>U&amp;sername</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;მომხარებლის სახელი</translation>
     </message>
     <message>
         <source>Holds username.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს მომხმარებლის სახელს.</translation>
     </message>
     <message>
         <source>Holds password.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს პაროლს.</translation>
     </message>
     <message>
         <source>Holds the repeated password.</source>
-        <translation type="unfinished"></translation>
+        <translation>შეიცავს გამეორებულ პაროლს.</translation>
     </message>
     <message>
         <source>Invalid password pair</source>
-        <translation type="unfinished"></translation>
+        <translation>პაროლების არასწორი წყვილი</translation>
     </message>
 </context>
 <context>
     <name>UIVMActivityOverviewWidget</name>
     <message>
         <source>Used</source>
-        <translation type="unfinished">გამოყენებული</translation>
+        <translation>Გამოყენებული</translation>
     </message>
     <message>
         <source>Host CPU Load</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტის CPU-ის დატვირთვა</translation>
     </message>
     <message>
         <source>User</source>
-        <translation type="unfinished"></translation>
+        <translation>მომხმარებელი</translation>
     </message>
     <message>
         <source>Kernel</source>
-        <translation type="unfinished"></translation>
+        <translation>ბირთვი</translation>
     </message>
     <message>
         <source>Total</source>
-        <translation type="unfinished">ჯამში</translation>
+        <translation>სულ</translation>
     </message>
     <message>
         <source>Host RAM Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>ჰოსტის RAM-ის დატვირთვა</translation>
     </message>
     <message>
         <source>Free</source>
-        <translation type="unfinished">თავისუფალი</translation>
+        <translation>თავისუფალი</translation>
     </message>
     <message>
         <source>Host File System</source>
-        <translation type="unfinished">ჰოსტის ფაილური სისტემა</translation>
+        <translation>ჰოსტის ფაილური სისტემა</translation>
     </message>
     <message>
         <source>N/A</source>
-        <translation type="unfinished"></translation>
+        <translation>ა/მ</translation>
     </message>
     <message>
         <source>VM Name</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის სახელი</translation>
     </message>
     <message>
         <source>CPU Guest</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU Guest</translation>
     </message>
     <message>
         <source>CPU VMM</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU VMM</translation>
     </message>
     <message>
         <source>RAM Used/Total</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM გამოყენებული/სულ</translation>
     </message>
     <message>
         <source>RAM %</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM %</translation>
     </message>
     <message>
         <source>Network Up Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>ატვირთვის სიჩქარე</translation>
     </message>
     <message>
         <source>Network Down Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>გადმოწერის სიჩქარე</translation>
     </message>
     <message>
         <source>Network Up Total</source>
-        <translation type="unfinished"></translation>
+        <translation>ატვირთვა ჯამში</translation>
     </message>
     <message>
         <source>Network Down Total</source>
-        <translation type="unfinished"></translation>
+        <translation>გადმოწერა ჯამში</translation>
     </message>
     <message>
         <source>Disk Read Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკიდან კითხვის სიჩქარე</translation>
     </message>
     <message>
         <source>Disk Write Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკზე ჩაწერის სიჩქარე</translation>
     </message>
     <message>
         <source>Disk Read Total</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკიდან წაკითხვები სულ</translation>
     </message>
     <message>
         <source>Disk Write Total</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკზე ჩაწერები სულ</translation>
     </message>
     <message>
         <source>VM Exits</source>
-        <translation type="unfinished">ვმ-ი იხურება</translation>
+        <translation>ვმ-ი იხურება</translation>
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მანქანების სია</translation>
     </message>
 </context>
 <context>
@@ -15284,10 +12705,6 @@
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation type="vanished">მიმდინარე სწრაფი ასლის(%1) აღდგენა</translation>
-    </message>
 </context>
 <context>
     <name>UIVMInformationDialog</name>
@@ -15309,19 +12726,19 @@
     </message>
     <message>
         <source>System</source>
-        <translation>სისტემა</translation>
+        <translation>სისტემური</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>ეკრანი</translation>
+        <translation>დროის ჩვენება</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>საცავი</translation>
+        <translation>სათავსო</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>აუდიო</translation>
+        <translation>&amp;აუდიო</translation>
     </message>
     <message>
         <source>Network</source>
@@ -15333,19 +12750,15 @@
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation>USB მოწყობილობა</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <translation>გაზიარებული საქაღალდეები</translation>
     </message>
     <message>
-        <source>Performance &amp;Monitor</source>
-        <translation type="vanished">&amp;წარმადობის მონიტორი</translation>
-    </message>
-    <message>
         <source>Reset</source>
-        <translation>განულება</translation>
+        <translation>საწყისი მნიშვნელობები</translation>
     </message>
     <message>
         <source>Show Pie Chart</source>
@@ -15354,10 +12767,6 @@
     <message>
         <source>Draw Area Chart</source>
         <translation>ფართობის გრაფიკის დახატვა</translation>
-    </message>
-    <message>
-        <source>Seconds</source>
-        <translation type="vanished">წამი</translation>
     </message>
     <message>
         <source>CPU Load</source>
@@ -15377,7 +12786,7 @@
     </message>
     <message>
         <source>Total</source>
-        <translation>ჯამში</translation>
+        <translation>სულ</translation>
     </message>
     <message>
         <source>Free</source>
@@ -15385,7 +12794,7 @@
     </message>
     <message>
         <source>Used</source>
-        <translation>გამოყენებული</translation>
+        <translation>Გამოყენებული</translation>
     </message>
     <message>
         <source>Network Rate</source>
@@ -15477,7 +12886,7 @@
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation>სტუმრის ოს-ის ტიპი</translation>
+        <translation>სტუმარი ოს-ის ტიპი</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
@@ -15520,7 +12929,7 @@
     <message>
         <source>not set</source>
         <comment>Execution Engine</comment>
-        <translation>დაყენებული არაა</translation>
+        <translation>არაა დაყენებული</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -15534,35 +12943,35 @@
     </message>
     <message>
         <source>Copy All</source>
-        <translation type="unfinished"></translation>
+        <translation>ყველას კოპირება</translation>
     </message>
     <message>
         <source>VM &amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>ვმ-ის &amp;აქტივობა</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">დახურვა</translation>
+        <translation>დახურვა</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">დახურვა შენახვის გარეშე</translation>
+        <translation>დახურვა შენახვის გარეშე</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Close this dialog (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>ამ ფანჯრის დახურვა (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
     <message>
         <source>This metric requires guest additions to work.</source>
@@ -15570,29 +12979,15 @@
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished">გატანა</translation>
+        <translation>გატანა</translation>
     </message>
     <message>
         <source>Sec.</source>
-        <translation type="unfinished"></translation>
+        <translation>წმ.</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIVMListView</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="obsolete">მიუწვდომელი</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMLogViewerDialog</name>
-    <message>
-        <source>%1 - Log Viewer</source>
-        <translation type="vanished">%1 - ჟურნალის მნახველი</translation>
     </message>
 </context>
 <context>
@@ -15714,14 +13109,6 @@
         <translation>VirtualBox-ის ჟურნალის შენახვა, როგორც</translation>
     </message>
     <message>
-        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
-        <translation type="vanished">&lt;p&gt;&lt;b&gt;მანქანა&lt;/b&gt; არჩეული არაა ან არჩეული მანქანა გაფუჭებულია. ჟურნალის სანახავად სწორი მანქანა აირჩიეთ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;ჟურნალის ფაილები არ არსებობს. გასაახლებლად დააწექით &lt;b&gt;განახლების&lt;/b&gt; ღილაკს&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Go to the next bookmark</source>
         <translation>შემდეგ სანიშნზე გადასვლა</translation>
     </message>
@@ -15734,28 +13121,24 @@
         <translation>არჩეულ სანიშნზე გადასვლა</translation>
     </message>
     <message>
-        <source>%1 - Log Viewer</source>
-        <translation type="unfinished">%1 - ჟურნალის მნახველი</translation>
-    </message>
-    <message>
         <source>Help</source>
-        <translation type="unfinished">დახმარება</translation>
+        <translation>დახმარება</translation>
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახურვა</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>ფანჯრის დახმარების ჩვენება</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">ფანჯრის დახურვა (%1)</translation>
+        <translation>ფანჯრის დახურვა (%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>დახმარების ჩვენება (%1)</translation>
     </message>
     <message>
         <source>Close this machine&apos;s logs</source>
@@ -15769,12 +13152,16 @@
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation>%1 - ჟურნალის მნახველი</translation>
+    </message>
 </context>
 <context>
     <name>UIVRDEAuthLibraryEditor</name>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished">V&amp;RDP-ის ავთენტიკაციის ბიბლიოთეკა:</translation>
+        <translation>V&amp;RDP-ის ავთენტიკაციის ბიბლიოთეკა:</translation>
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
@@ -15785,7 +13172,7 @@
     <name>UIVRDESettingsEditor</name>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">&amp;სერვერის ჩართვა</translation>
+        <translation>&amp;სერვერის ჩართვა</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
@@ -15793,7 +13180,7 @@
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished">სერვერის &amp;პორტი:</translation>
+        <translation>სერვერის &amp;პორტი:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify 0 (zero), to select port 3389, the standard port for RDP.</source>
@@ -15801,15 +13188,15 @@
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">ავთენტიკაციის &amp;მეთოდი:</translation>
+        <translation>ავთენტიკაციის &amp;მეთოდი:</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished">აირჩევს VRDP-ის ავთენტიკაციის მეთოდს.</translation>
+        <translation>აირჩევს VRDP-ის ავთენტიკაციის მეთოდს.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">ავთენტიკაციის &amp;ვადა:</translation>
+        <translation>ავთენტიკაციის &amp;ვადა:</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
@@ -15817,11 +13204,11 @@
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">გაფართოებული თვისებები:</translation>
+        <translation>გაფართოებული თვისებები:</translation>
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation type="unfinished">ბევრი &amp;კავშირის დაშვება</translation>
+        <translation>ბევრი &amp;კავშირის დაშვება</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
@@ -15883,7 +13270,7 @@
     <name>UIVirtualCPUEditor</name>
     <message>
         <source>&amp;Processors:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;პროცესორები:</translation>
     </message>
     <message>
         <source>Holds the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
@@ -15892,7 +13279,7 @@
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished">%1 CPU</translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>Minimum possible virtual CPU count.</source>
@@ -15901,53 +13288,32 @@
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished">%1 CPU</translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIVirtualMachineItem</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">მიუწვდომელი</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="vanished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3-ის შემდეგ&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;სესია %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="vanished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;მიუწვდომელია %2-დან&lt;/nobr&gt;</translation>
+        <translation>მაქსიმალური შესაძლო ვირტუალური CPU-ების რაოდენობა.</translation>
     </message>
 </context>
 <context>
     <name>UIVirtualMachineItemCloud</name>
     <message>
         <source>Loading ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ჩატვირთვა...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Inaccessible&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="obsolete">მიუწვდომელი</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;მიუწვდომელია&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Empty</source>
-        <translation type="unfinished">ცარიელი</translation>
+        <translation>ცარიელი</translation>
     </message>
     <message>
         <source>Inaccessible</source>
         <comment>VM</comment>
-        <translation type="unfinished">მიუწვდომელი</translation>
+        <translation>მიუწვდომელი</translation>
     </message>
 </context>
 <context>
@@ -15955,139 +13321,16 @@
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3-ის შემდეგ&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;სესია %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3-ის შემდეგ&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;სესია %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;მიუწვდომელია %2-დან&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;მიუწვდომელია %2-დან&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">მიუწვდომელი</translation>
-    </message>
-</context>
-<context>
-    <name>UIVisoCreator</name>
-    <message>
-        <source>Remove selected file objects from VISO</source>
-        <translation type="vanished">მონიშნული ფაილის ობიექტების VISO-დან წაშლა</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">სახელი</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">ზომა</translation>
-    </message>
-    <message>
-        <source>Change Time</source>
-        <translation type="vanished">დროის შეცვლა</translation>
-    </message>
-    <message>
-        <source>Owner</source>
-        <translation type="vanished">მფლობელი</translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation type="vanished">წვდომები</translation>
-    </message>
-    <message>
-        <source>Local Path</source>
-        <translation type="vanished">ლოკალური ბილიკი</translation>
-    </message>
-    <message>
-        <source>ISO Path</source>
-        <translation type="vanished">ISO ბილიკი</translation>
-    </message>
-    <message>
-        <source>&amp;Options...</source>
-        <translation type="vanished">&amp;პარამეტრები...</translation>
-    </message>
-    <message>
-        <source>Show Hidden Objects</source>
-        <translation type="vanished">დამალული ფაილების ჩვენება</translation>
-    </message>
-    <message>
-        <source>Create a new directory under the current location</source>
-        <translation type="vanished">მიმდინარე ადგილას ახალი საქაღალდის შექმნა</translation>
-    </message>
-    <message>
-        <source>Rename the selected object</source>
-        <translation type="vanished">მონიშნული ობიექტის სახელის გადარქმევა</translation>
-    </message>
-    <message>
-        <source>&amp;Configuration...</source>
-        <translation type="vanished">&amp;კონფიგურაცია...</translation>
-    </message>
-    <message>
-        <source>VISO Configuration</source>
-        <translation type="vanished">VISO-ის კონფიგურაცია</translation>
-    </message>
-    <message>
-        <source>Manage VISO Configuration</source>
-        <translation type="vanished">VISO-ის კონფიგურაციის მართვა</translation>
-    </message>
-    <message>
-        <source>Dialog Options</source>
-        <translation type="vanished">ფანჯრის მორგება</translation>
-    </message>
-    <message>
-        <source>Manage Dialog Options</source>
-        <translation type="vanished">ფანჯრის პარამეტრების მართვა</translation>
-    </message>
-    <message>
-        <source>VISO Name:</source>
-        <translation type="vanished">VISO-ის სახელი:</translation>
-    </message>
-    <message>
-        <source>Custom VISO options:</source>
-        <translation type="vanished">VISO-ის ხელით მითითებული პარამეტრები:</translation>
-    </message>
-    <message>
-        <source>Close the pane</source>
-        <translation type="vanished">პანელის დახურვა</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="vanished">წაშლა</translation>
-    </message>
-    <message>
-        <source>New Directory</source>
-        <translation type="vanished">ახალი საქაღალდე</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">თავიდან ჩართვა</translation>
-    </message>
-    <message>
-        <source>VISO Creator</source>
-        <translation type="vanished">VISO-ის შემქმნელი</translation>
-    </message>
-    <message>
-        <source>VISO</source>
-        <translation type="vanished">VISO</translation>
-    </message>
-    <message>
-        <source>Remove current option.</source>
-        <translation type="vanished">მიმდინარე პარამეტრის წაშლა.</translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="vanished">დამატება</translation>
-    </message>
-    <message>
-        <source>Click to show/hide the tree view</source>
-        <translation type="vanished">დააწკაპუნეთ ხის ხედის ჩასართ/გამოსართავად</translation>
-    </message>
-    <message>
-        <source>Add selected file objects to VISO</source>
-        <translation type="vanished">მონიშნული ფაილის ობიექტების VISO-ში დამატება</translation>
-    </message>
-    <message>
-        <source>Reset VISO content.</source>
-        <translation type="vanished">VISO-ის შემცველობის საწყის მნიშვნელობაზე დაბრუნება.</translation>
+        <translation>მიუწვდომელი</translation>
     </message>
 </context>
 <context>
@@ -16098,47 +13341,47 @@
     </message>
     <message>
         <source>Shows the current location.</source>
-        <translation type="unfinished"></translation>
+        <translation>მიმდინარე მდებარეობის ჩვენება.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">სახელი</translation>
+        <translation>სახელი</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">ზომა</translation>
+        <translation>ზომა</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">დროის შეცვლა</translation>
+        <translation>დროის შეცვლა</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">მფლობელი</translation>
+        <translation>მეპატრონე</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">წვდომები</translation>
+        <translation>ნებართვები</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">ლოკალური ბილიკი</translation>
+        <translation>ლოკალური ბილიკი</translation>
     </message>
     <message>
         <source>ISO Path</source>
-        <translation type="unfinished">ISO ბილიკი</translation>
+        <translation>ISO ბილიკი</translation>
     </message>
     <message>
         <source>Host File System</source>
-        <translation type="unfinished">ჰოსტის ფაილური სისტემა</translation>
+        <translation>ჰოსტის ფაილური სისტემა</translation>
     </message>
     <message>
         <source>VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO -ის შემცველობა</translation>
     </message>
     <message>
         <source>C&amp;reate</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;შექმნა</translation>
     </message>
     <message>
         <source>Creates VISO file with the selected content</source>
@@ -16149,20 +13392,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO Creator</source>
-        <translation type="unfinished">VISO-ის შემქმნელი</translation>
-    </message>
-    <message>
         <source>VISO Name:</source>
-        <translation type="unfinished">VISO-ის სახელი:</translation>
+        <translation>VISO-ის სახელი:</translation>
     </message>
     <message>
         <source>Custom VISO options:</source>
-        <translation type="unfinished">VISO-ის ხელით მითითებული პარამეტრები:</translation>
+        <translation>VISO-ის ხელით მითითებული პარამეტრები:</translation>
     </message>
     <message>
         <source>Remove current option.</source>
-        <translation type="unfinished">მიმდინარე პარამეტრის წაშლა.</translation>
+        <translation>მიმდინარე პარამეტრის წაშლა.</translation>
     </message>
     <message>
         <source>Holds the name of the VISO medium.</source>
@@ -16174,18 +13413,22 @@
     </message>
     <message>
         <source>Show Hidden Objects</source>
-        <translation type="unfinished">დამალული ფაილების ჩვენება</translation>
+        <translation>დამალული ფაილების ჩვენება</translation>
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation>VISO-ის შემქმნელი</translation>
     </message>
 </context>
 <context>
     <name>UIVisualStateEditor</name>
     <message>
         <source>Visual &amp;State:</source>
-        <translation type="unfinished"></translation>
+        <translation>ვიზუალური &amp;მდგომარეობა:</translation>
     </message>
     <message>
         <source>Selects the visual state. If machine is running it will be applied as soon as possible, otherwise desired one will be defined.</source>
@@ -16200,17 +13443,6 @@
     </message>
 </context>
 <context>
-    <name>UIWizard</name>
-    <message>
-        <source>&amp;Expert Mode</source>
-        <translation type="vanished">&amp;ექსპერტის რეჟიმი</translation>
-    </message>
-    <message>
-        <source>&amp;Guided Mode</source>
-        <translation type="vanished">&amp;გამყოლის რეჟიმი</translation>
-    </message>
-</context>
-<context>
     <name>UIWizardAddCloudVM</name>
     <message>
         <source>Add Cloud Virtual Machine</source>
@@ -16218,15 +13450,15 @@
     </message>
     <message>
         <source>Location</source>
-        <translation type="unfinished">მდებარეობა</translation>
+        <translation>დებარეობა</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="unfinished">წყარო</translation>
+        <translation>წყარო</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი პროფილის მმართველის გახსნა...</translation>
     </message>
     <message>
         <source>Add VM from cloud service provider.</source>
@@ -16234,7 +13466,7 @@
     </message>
     <message>
         <source>Source to add from</source>
-        <translation type="unfinished"></translation>
+        <translation>დასამატებელი წყარო</translation>
     </message>
     <message>
         <source>Please choose the source to add cloud virtual machine from.  This can be one of known cloud service providers below.</source>
@@ -16242,50 +13474,26 @@
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;წყარო:</translation>
-    </message>
-    <message>
-        <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;წყარო:</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;პროფილი:</translation>
     </message>
     <message>
         <source>&amp;Instances:</source>
+        <translation>&amp;გაშვებული ასლები:</translation>
+    </message>
+    <message>
+        <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIWizardCloneVD</name>
     <message>
-        <source>Copy</source>
-        <translation type="vanished">კოპირება</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically allocated</source>
-        <translation type="vanished">&amp;დინამიკურად გამოყოფილი</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed size</source>
-        <translation type="vanished">&amp;ფიქსირებული ზომა</translation>
-    </message>
-    <message>
-        <source>&amp;Split into files of less than 2GB</source>
-        <translation type="vanished">2გბ-იანი ფაილებად დახლეჩა</translation>
-    </message>
-    <message>
         <source>Storage on physical hard disk</source>
         <translation>საცავი ფიზიკურ მყარ დისკზე</translation>
-    </message>
-    <message>
-        <source>Copy Virtual Disk Image</source>
-        <translation type="vanished">ვირტუალური დისკის გამოსახულების კოპირება</translation>
-    </message>
-    <message>
-        <source>Disk image file type</source>
-        <translation type="vanished">დისკის გამოსახულების ფაილის ტიპი</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
@@ -16304,37 +13512,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please choose a location for new virtual disk image file</source>
-        <translation type="vanished">აირჩიეთ ვირტუალური დისკის ახალი ფაილის მდებარეობა</translation>
-    </message>
-    <message>
-        <source>New disk image to create</source>
-        <translation type="vanished">დისკის ახალი გამოსახულების შექმნა</translation>
-    </message>
-    <message>
-        <source>Choose a location for new virtual disk image file...</source>
-        <translation type="vanished">აირჩიეთ ვირტუალური დისკის ახალი ფაილის მდებარეობა...</translation>
-    </message>
-    <message>
-        <source>%1_copy</source>
-        <comment>copied virtual disk image name</comment>
-        <translation type="vanished">%1_copy</translation>
-    </message>
-    <message>
-        <source>&amp;New disk image to create</source>
-        <translation type="vanished">&amp;დისკის ახალი გამოსახულების შექმნა</translation>
-    </message>
-    <message>
-        <source>Disk image file &amp;type</source>
-        <translation type="vanished">დისკის გამოსახულების ფაილის &amp;ტიპი</translation>
-    </message>
-    <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური დისკის კოპირება</translation>
     </message>
     <message>
         <source>Virtual Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მყარი დისკის ფაილის ტიპი</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the destination virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
@@ -16345,12 +13528,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>copy</source>
+        <source>Hard Disk File &amp;Type and Variant</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <source>copy</source>
+        <translation>copy</translation>
     </message>
 </context>
 <context>
@@ -16364,28 +13547,12 @@
         <translation>ვირტუალური მანქანის კლონირება</translation>
     </message>
     <message>
-        <source>Clone</source>
-        <translation type="vanished">კლონირება</translation>
-    </message>
-    <message>
-        <source>%1 Clone</source>
-        <translation>%1-ის კლონირება</translation>
-    </message>
-    <message>
         <source>Clone type</source>
         <translation>კლონის ტიპი</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Full clone</source>
-        <translation>&amp;სრული კლონი</translation>
-    </message>
-    <message>
-        <source>&amp;Linked clone</source>
-        <translation>&amp;მიბმული კლონი</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -16408,26 +13575,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Current &amp;machine state</source>
-        <translation>მანქანის &amp;მიმდინარე მდგომარეობა</translation>
-    </message>
-    <message>
-        <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Everything</source>
-        <translation>&amp;ყველაფერი</translation>
-    </message>
-    <message>
-        <source>&amp;Full Clone</source>
-        <translation type="vanished">&amp;სრული კლონი</translation>
-    </message>
-    <message>
-        <source>&amp;Linked Clone</source>
-        <translation type="vanished">&amp;მიბმული კლონი</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16436,68 +13583,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Name:</source>
-        <translation type="vanished">სახელი:</translation>
-    </message>
-    <message>
-        <source>Path:</source>
-        <translation type="vanished">ბილიკი:</translation>
-    </message>
-    <message>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="vanished">MAC მისამართების &amp;წესები:</translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses</source>
-        <translation>ყველა ქსელის ბარათის MAC მისამართის დამატება</translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses</source>
-        <translation>მხოლოდ NAT ქსელის MAC მისამართების ჩასმა</translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters</source>
-        <translation>ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია</translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>კლონირებისას მხოლოდ NAT ქსელის MAC მისამართების ჩასმა.</translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>კლონირებისას ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია.</translation>
-    </message>
-    <message>
-        <source>Additional Options:</source>
-        <translation>დამატებითი პარამეტრები:</translation>
-    </message>
-    <message>
-        <source>Don&apos;t change the disk names during cloning.</source>
-        <translation type="vanished">კლონირებისას არ შეცვალო დისკის სახელები.</translation>
-    </message>
-    <message>
-        <source>Keep &amp;Disk Names</source>
-        <translation>&amp;დისკის სახელების დამახსოვრება</translation>
-    </message>
-    <message>
-        <source>Don&apos;t change hardware UUIDs during cloning.</source>
-        <translation type="vanished">კლონირებისას არ შეცვალო აპარატურის UUID-ები.</translation>
-    </message>
-    <message>
-        <source>Keep &amp;Hardware UUIDs</source>
-        <translation type="vanished">აპარატურის UUID_ების დატოვება</translation>
-    </message>
-    <message>
         <source>New machine &amp;name and path</source>
         <translation>ახალი ვირტუალური მანქანის &amp;სახელი და ბილიკი</translation>
     </message>
     <message>
         <source>New machine name and path</source>
         <translation>ახალი მანქანის სახელი და ბილიკი</translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>კლონირებისას ადაპტერის MAC მისამართების ზუსტად გადატანა.</translation>
     </message>
     <message>
         <source>Additional options</source>
@@ -16509,19 +13600,23 @@
     </message>
     <message>
         <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>ბილიკი არასწორია</translation>
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>კლონის სახელი უნიკალური არაა</translation>
+    </message>
+    <message>
+        <source>%1 Clone</source>
+        <translation>%1-ის კლონირება</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;სახელი:</translation>
+        <translation>&amp;სახელი:</translation>
     </message>
     <message>
         <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ბილიკი:</translation>
     </message>
     <message>
         <source>Holds a name for the new virtual machine.</source>
@@ -16533,10 +13628,82 @@
     </message>
     <message>
         <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC მისამართების &amp;პოლიტიკა:</translation>
     </message>
     <message>
         <source>Determines MAC address policy for clonning:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses</source>
+        <translation>ყველა ქსელის ბარათის MAC მისამართის დამატება</translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during cloning.</source>
+        <translation>კლონირებისას ადაპტერის MAC მისამართების ზუსტად გადატანა.</translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses</source>
+        <translation>მხოლოდ NAT ქსელის MAC მისამართების ჩასმა</translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during cloning.</source>
+        <translation>კლონირებისას მხოლოდ NAT ქსელის MAC მისამართების ჩასმა.</translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters</source>
+        <translation>ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია</translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during cloning.</source>
+        <translation>კლონირებისას ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია.</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation>დამატებითი პარამეტრები:</translation>
+    </message>
+    <message>
+        <source>Keep &amp;Disk Names</source>
+        <translation>&amp;დისკის სახელების დამახსოვრება</translation>
+    </message>
+    <message>
+        <source>Keep Hard&amp;ware UUIDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full clone</source>
+        <translation>&amp;სრული კლონი</translation>
+    </message>
+    <message>
+        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked clone</source>
+        <translation>&amp;მიბმული კლონი</translation>
+    </message>
+    <message>
+        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;machine state</source>
+        <translation>მანქანის &amp;მიმდინარე მდგომარეობა</translation>
+    </message>
+    <message>
+        <source>When chosen, only the current state of the source vm is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;snapshot tree branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Everything</source>
+        <translation>&amp;ყველაფერი</translation>
+    </message>
+    <message>
+        <source>When chosen, all the saved states of the source vm are also cloned.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -16547,56 +13714,12 @@
         <source>When checked, hardware UUIDs will be preserved during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIWizardExportApp</name>
     <message>
-        <source>Checking files ...</source>
-        <translation type="vanished">ფაილების შემოწმება ...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation type="vanished">ფაილების წაშლა ...</translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation type="vanished">შეკუმშული მანქანის გატანა ...</translation>
-    </message>
-    <message>
         <source>Export Virtual Appliance</source>
         <translation>შეკუმშული მანქანის გატანა</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">&amp;ნაგულისხმევი პარამეტრების აღდგენა</translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="vanished">გატანა</translation>
-    </message>
-    <message>
-        <source>Virtual machines to export</source>
-        <translation type="vanished">გასატანი ვირტუალური მანქანები</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
@@ -16633,10 +13756,6 @@
     <message>
         <source>This is the descriptive information which will be added to the virtual appliance.  You can change it by double clicking on individual lines.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Virtual &amp;machines to export</source>
-        <translation type="vanished">&amp;გასატანი ვირტუალური მანქანები</translation>
     </message>
     <message>
         <source>Please choose a file to export the virtual appliance to</source>
@@ -16680,7 +13799,7 @@
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation>MAC მისამართების &amp;წესები:</translation>
+        <translation>MAC მისამართების წესები:</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
@@ -16715,24 +13834,8 @@
         <translation>&amp;მანისფესტის ფაილის ჩაწერა</translation>
     </message>
     <message>
-        <source>Include ISO image files in exported VM archive.</source>
-        <translation type="vanished">ვმ-ის გატანილ არქივში ISO ფაილების ჩამატება.</translation>
-    </message>
-    <message>
         <source>&amp;Include ISO image files</source>
         <translation>&amp;ISO ფაილის ჩათვლით</translation>
-    </message>
-    <message>
-        <source>&amp;Account:</source>
-        <translation type="vanished">&amp;ანგარიში:</translation>
-    </message>
-    <message>
-        <source>Virtual system settings</source>
-        <translation type="vanished">ვირტუალური სისტემის მორგება</translation>
-    </message>
-    <message>
-        <source>Virtual &amp;system settings</source>
-        <translation type="vanished">ვირტუალური &amp;სისტემის მორგება</translation>
     </message>
     <message>
         <source>Include ISO image files into exported VM archive.</source>
@@ -16755,28 +13858,24 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Acquire export form ...</source>
-        <translation type="vanished">გატანის ფორმის მიღება ...</translation>
-    </message>
-    <message>
         <source>Virtual &amp;machines</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური &amp;მანქანები</translation>
     </message>
     <message>
         <source>Format &amp;settings</source>
-        <translation type="unfinished"></translation>
+        <translation>ფორმატის &amp;მორგება</translation>
     </message>
     <message>
         <source>&amp;Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;შეკუმშული მანქანის მორგება</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;პროფილი:</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი პროფილის მმართველის გახსნა...</translation>
     </message>
     <message>
         <source>Do not ask me about it, leave custom &amp;image for future usage</source>
@@ -16788,7 +13887,11 @@
     </message>
     <message>
         <source>Format settings</source>
-        <translation type="unfinished"></translation>
+        <translation>ფორმატის მორგება</translation>
+    </message>
+    <message>
+        <source>Virtual machines</source>
+        <translation>ვირტუალური მანქანები</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
@@ -16798,32 +13901,9 @@
         <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Virtual machines</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardFirstRun</name>
-    <message>
-        <source>Select start-up disk</source>
-        <translation type="vanished">აირჩიეთ გასაშვები დისკი</translation>
-    </message>
-    <message>
-        <source>Start</source>
-        <translation type="vanished">დაწყება</translation>
-    </message>
 </context>
 <context>
     <name>UIWizardImportApp</name>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">&amp;ნაგულისხმევი პარამეტრების აღდგენა</translation>
-    </message>
-    <message>
-        <source>Import</source>
-        <translation type="vanished">შემოტანა</translation>
-    </message>
     <message>
         <source>Appliance to import</source>
         <translation>შეკუმშული მანქანის შემოტანა</translation>
@@ -16881,10 +13961,6 @@
         <translation>შეუმოწმებელი თვითხელმოწერილი ხელმოწერა %1-სგან!</translation>
     </message>
     <message>
-        <source>Importing Appliance ...</source>
-        <translation type="vanished">შეკუმშული მანქანის შემოტანა...</translation>
-    </message>
-    <message>
         <source>Local File System</source>
         <translation>ლოკალური ფაილური სისტემა</translation>
     </message>
@@ -16901,10 +13977,6 @@
         <translation>&amp;ფაილი:</translation>
     </message>
     <message>
-        <source>&amp;Account:</source>
-        <translation type="vanished">&amp;ანგარიში:</translation>
-    </message>
-    <message>
         <source>&amp;Machines:</source>
         <translation>&amp;მანქანები:</translation>
     </message>
@@ -16918,19 +13990,7 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation>მორგება</translation>
-    </message>
-    <message>
-        <source>Acquire cloud instances ...</source>
-        <translation type="vanished">ღრუბლოვანი გაშებულ ასლების მიღება ...</translation>
-    </message>
-    <message>
-        <source>Read appliance ...</source>
-        <translation type="vanished">შეკუმშული მანქანის წაკითხვა ...</translation>
-    </message>
-    <message>
-        <source>Acquire import form ...</source>
-        <translation type="vanished">შემოტანის მიღების ფორმა ...</translation>
+        <translation>პარამეტრები</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
@@ -16942,27 +14002,7 @@
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">&amp;მანქანის ნაგულისხმები საქაღალდე:</translation>
-    </message>
-    <message>
-        <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Additional Options:</source>
-        <translation type="unfinished">დამატებითი პარამეტრები:</translation>
-    </message>
-    <message>
-        <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">&amp;მყარი დისკების VDI ფორმატში შემოტანა</translation>
-    </message>
-    <message>
-        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="unfinished">თუ ჩართულია, ამ შეკუმშული მანქანის ყველა მყარი დისკი VDI ფორმატში იქნება შემოტანილი.</translation>
+        <translation>ღრუბლოვანი პროფილის მმართველის გახსნა...</translation>
     </message>
     <message>
         <source>Holds the path of the file selected for import.</source>
@@ -16970,27 +14010,51 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">ყველა ქსელის ბარათის MAC მისამართის დამატება</translation>
+        <translation>ყველა ქსელის ბარათის MAC მისამართის დამატება</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished">შემოტანისას ყველა ქსელის ბარათის MAC მისამართის დამატება.</translation>
+        <translation>შემოტანისას ყველა ქსელის ბარათის MAC მისამართის დამატება.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">მხოლოდ NAT ქსელის MAC მისამართების ჩასმა</translation>
+        <translation>მხოლოდ NAT ქსელის MAC მისამართების ჩასმა</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished">შემოტანისას მხოლოდ NAT ქსელის MAC მისამართების ჩასმა.</translation>
+        <translation>შემოტანისას მხოლოდ NAT ქსელის MAC მისამართების ჩასმა.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია</translation>
+        <translation>ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished">შემოტანისას ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია.</translation>
+        <translation>შემოტანისას ყველა ქსელის ბარათისთვის ახალი MAC მისამართის გენერაცია.</translation>
+    </message>
+    <message>
+        <source>&amp;Profile:</source>
+        <translation>&amp;პროფილი:</translation>
+    </message>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation>&amp;მანქანის ნაგულისხმები საქაღალდე:</translation>
+    </message>
+    <message>
+        <source>MAC Address &amp;Policy:</source>
+        <translation>MAC მისამართების წესები:</translation>
+    </message>
+    <message>
+        <source>Additional Options:</source>
+        <translation>დამატებითი პარამეტრები:</translation>
+    </message>
+    <message>
+        <source>&amp;Import hard drives as VDI</source>
+        <translation>&amp;მყარი დისკების VDI ფორმატში შემოტანა</translation>
+    </message>
+    <message>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
+        <translation>თუ ჩართულია, ამ შეკუმშული მანქანის ყველა მყარი დისკი VDI ფორმატში იქნება შემოტანილი.</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
@@ -17000,36 +14064,16 @@
         <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
-    <message>
-        <source>Create Cloud Machine ...</source>
-        <translation type="vanished">ღრუბლოვანი მანქანის შექმნა...</translation>
-    </message>
     <message>
         <source>Create Cloud Virtual Machine</source>
         <translation>ღრუბლოვანი ვირტუალური მანქანის შექმნა</translation>
     </message>
     <message>
-        <source>Create</source>
-        <translation type="vanished">შექმნა</translation>
-    </message>
-    <message>
         <source>Create VM for cloud service provider.</source>
         <translation>აირჩიეთ ღრუბლოვანი მომწოდებლის ვმ-ი.</translation>
-    </message>
-    <message>
-        <source>&amp;Account:</source>
-        <translation type="vanished">&amp;ანგარიში:</translation>
-    </message>
-    <message>
-        <source>&amp;Images:</source>
-        <translation type="vanished">&amp;გამოსახულებები:</translation>
     </message>
     <message>
         <source>Cloud Virtual Machine settings</source>
@@ -17040,48 +14084,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Destination</source>
-        <translation type="vanished">დანიშნულება</translation>
-    </message>
-    <message>
         <source>Settings</source>
-        <translation>მორგება</translation>
-    </message>
-    <message>
-        <source>Acquire launch form ...</source>
-        <translation type="vanished">გამშვების მიღების წყარო ...</translation>
-    </message>
-    <message>
-        <source>Acquire cloud images ...</source>
-        <translation type="vanished">ღრუბლოვანი გამოსახულების მიღება...</translation>
-    </message>
-    <message>
-        <source>&amp;Destination:</source>
-        <translation type="vanished">&amp;დანიშნულება:</translation>
+        <translation>პარამეტრები</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation type="unfinished">მდებარეობა</translation>
+        <translation>დებარეობა</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="unfinished">წყარო</translation>
+        <translation>წყარო</translation>
     </message>
     <message>
         <source>&amp;Images</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;გამოსახულებები</translation>
     </message>
     <message>
         <source>&amp;Boot Volumes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ჩატვირთვადი ტომები</translation>
     </message>
     <message>
         <source>Open Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>ღრუბლოვანი პროფილის მმართველის გახსნა...</translation>
     </message>
     <message>
         <source>Location to create</source>
-        <translation type="unfinished"></translation>
+        <translation>შესაქმნელი მდებარეობა</translation>
     </message>
     <message>
         <source>Please choose the location to create cloud virtual machine in.  This can be one of known cloud service providers below.</source>
@@ -17089,19 +14117,19 @@
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished">&amp;მდებარეობა:</translation>
+        <translation>&amp;მდებარეობა:</translation>
+    </message>
+    <message>
+        <source>&amp;Profile:</source>
+        <translation>&amp;პროფილი:</translation>
+    </message>
+    <message>
+        <source>&amp;Source:</source>
+        <translation>&amp;წყარო:</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;წყარო:</translation>
     </message>
 </context>
 <context>
@@ -17109,14 +14137,6 @@
     <message>
         <source>Create Virtual Hard Disk</source>
         <translation>ვირტუალური მყარი დისკის შექმნა</translation>
-    </message>
-    <message>
-        <source>Create</source>
-        <translation type="vanished">შექმნა</translation>
-    </message>
-    <message>
-        <source>Hard disk file type</source>
-        <translation type="vanished">მყარი დისკის ფაილის ტიპი</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
@@ -17143,40 +14163,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Dynamically allocated</source>
-        <translation type="vanished">&amp;დინამიკურად გამოყოფილი</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed size</source>
-        <translation type="vanished">&amp;ფიქსირებული ზომა</translation>
-    </message>
-    <message>
-        <source>&amp;Split into files of less than 2GB</source>
-        <translation type="vanished">2გბ-იანი ფაილებად დახლეჩა</translation>
-    </message>
-    <message>
         <source>File location and size</source>
         <translation>ფაილის მდებარეობა და ზომა</translation>
     </message>
     <message>
-        <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="vanished">აირჩიეთ დისკის ახალი ფაილის მდებარეობა...</translation>
-    </message>
-    <message>
-        <source>File &amp;location</source>
-        <translation type="vanished">&amp;ფაილის მდებარეობა</translation>
-    </message>
-    <message>
-        <source>File &amp;size</source>
-        <translation type="vanished">ფაილის &amp;ზომა</translation>
-    </message>
-    <message>
-        <source>Hard disk file &amp;type</source>
-        <translation type="vanished">მყარი დისკის ფაილის &amp;ტიპი</translation>
-    </message>
-    <message>
         <source>Virtual Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მყარი დისკის ფაილის ტიპი</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
@@ -17190,51 +14182,11 @@
         <translation>ვირტუალური მანქანის შექმნა</translation>
     </message>
     <message>
-        <source>Create</source>
-        <translation type="vanished">შექმნა</translation>
-    </message>
-    <message>
-        <source>Name and operating system</source>
-        <translation type="vanished">სახელი და ოპერაციული სისტემა</translation>
-    </message>
-    <message>
-        <source>Memory size</source>
-        <translation type="vanished">მეხსიერების ზომა</translation>
-    </message>
-    <message>
-        <source>&amp;Memory size</source>
-        <translation type="vanished">&amp;მეხსიერების ზომა</translation>
-    </message>
-    <message>
-        <source>Hard disk</source>
-        <translation type="vanished">მყარი დისკი</translation>
-    </message>
-    <message>
-        <source>&amp;Do not add a virtual hard disk</source>
-        <translation type="vanished">&amp;არ დაამატო ვირტუალური მყარი დისკი</translation>
-    </message>
-    <message>
-        <source>&amp;Create a virtual hard disk now</source>
-        <translation type="vanished">&amp;ვირტუალური მყარი დისკის ახლა დამატება</translation>
-    </message>
-    <message>
-        <source>&amp;Use an existing virtual hard disk file</source>
-        <translation type="vanished">&amp;არსებული ვირტუალური მყარი დისკის გამოყენება</translation>
-    </message>
-    <message>
-        <source>Choose a virtual hard disk file...</source>
-        <translation type="vanished">აირჩიეტ ვირტუალური მყარი დისკის ფაილი...</translation>
-    </message>
-    <message>
         <source>Username and Password</source>
-        <translation type="unfinished"></translation>
+        <translation>მომხმარებელი და პაროლი</translation>
     </message>
     <message>
         <source>Selects an installation medium (ISO file) for the Guest Additions.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest &amp;Additions ISO:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -17242,39 +14194,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the guest additions will be installed after the guest OS install.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invalid Guest Additions installation media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>დამატებითი პარამეტრები</translation>
     </message>
     <message>
         <source>&amp;Product Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;პროდუქტის გასაღები:</translation>
     </message>
     <message>
         <source>&amp;Install in Background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Enable EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -17302,10 +14234,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Detected OS type: %1. %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17326,24 +14254,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hardware</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
-        <translation type="unfinished"></translation>
+        <translation>აპარატურა</translation>
     </message>
     <message>
         <source>Virtual Hard disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>ვირტუალური მყარი დისკი</translation>
     </message>
     <message>
         <source>&amp;Do Not Add a Virtual Hard Disk</source>
@@ -17363,11 +14279,11 @@
     </message>
     <message>
         <source>D&amp;isk Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;დისკის ზომა:</translation>
     </message>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;სრული ზომის წინასწარი გამოთხოვა</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
@@ -17395,11 +14311,11 @@
     </message>
     <message>
         <source>Hard Dis&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;მყარი დისკი</translation>
     </message>
     <message>
         <source>H&amp;ardware</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;აპარატურა</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
@@ -17423,7 +14339,7 @@
     </message>
     <message>
         <source>Invalid ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>არასწორი ISO ფაილი</translation>
     </message>
     <message>
         <source>No valid disk is selected</source>
@@ -17431,7 +14347,7 @@
     </message>
     <message>
         <source>Invalid disk size</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის არასწორი ზომა</translation>
     </message>
     <message>
         <source>Machine Name and OS Type</source>
@@ -17439,19 +14355,19 @@
     </message>
     <message>
         <source>Machine Name</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის სახელი</translation>
     </message>
     <message>
         <source>Machine Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>მანქანის საქაღალდე</translation>
     </message>
     <message>
         <source>ISO Image</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO გამოსახულება</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>სტუმარი ოს-ის ტიპი</translation>
     </message>
     <message>
         <source>Skip Unattended Install</source>
@@ -17463,11 +14379,11 @@
     </message>
     <message>
         <source>Username</source>
-        <translation type="unfinished"></translation>
+        <translation>მომხმარებელი</translation>
     </message>
     <message>
         <source>Product Key</source>
-        <translation type="unfinished"></translation>
+        <translation>პროდუქტის გასაღები</translation>
     </message>
     <message>
         <source>Hostname/Domain Name</source>
@@ -17487,7 +14403,7 @@
     </message>
     <message>
         <source>Base Memory</source>
-        <translation type="unfinished">საბაზისო მეხსიერება</translation>
+        <translation>საბაზისო მეხსიერება</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -17495,35 +14411,75 @@
     </message>
     <message>
         <source>EFI Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>EFI -ის ჩართვა</translation>
     </message>
     <message>
         <source>Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკი</translation>
     </message>
     <message>
         <source>Disk Size</source>
-        <translation type="unfinished"></translation>
+        <translation>დისკის ზომა</translation>
     </message>
     <message>
         <source>Pre-allocate Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>სრული ზომის წინასწარი გამოთხოვა</translation>
     </message>
     <message>
         <source>Attached Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>მიმაგრებული დისკი</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">არცერთი</translation>
+        <translation>არცერთი</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>ჯამში</translation>
     </message>
     <message>
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the product key.</source>
+        <translation>შეიცავს პროდუქტის გასაღებს.</translation>
+    </message>
+    <message>
+        <source>When checked, the guest additions will be installed after the guest OS install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detected OS type: %1. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest &amp;Additions ISO:</source>
+        <translation>სტუმრის &amp;დამატებების ISO:</translation>
     </message>
 </context>
 <context>
@@ -17554,19 +14510,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;არ ვეთანხმები</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxUSBMenu</name>
-    <message>
-        <source>&lt;no devices available&gt;</source>
-        <comment>USB devices</comment>
-        <translation type="vanished">&lt;no devices available&gt;</translation>
-    </message>
-    <message>
-        <source>No supported devices connected to the host PC</source>
-        <comment>USB device tooltip</comment>
-        <translation type="vanished">ჰოსტზე მხარდაჭერილი მოწყობილობები მიერთებული არაა</translation>
     </message>
 </context>
 </TS>
