@@ -4208,38 +4208,38 @@ HRESULT Unattended::i_attachImage(UnattendedInstallationDisk const *pImage, ComP
     rLock.release();
 
     ComPtr<IMedium> ptrMedium;
-    HRESULT rc = mParent->OpenMedium(Bstr(pImage->strImagePath).raw(),
-                                     pImage->enmDeviceType,
-                                     pImage->enmAccessType,
-                                     true,
-                                     ptrMedium.asOutParam());
-    LogRelFlowFunc(("VirtualBox::openMedium -> %Rhrc\n", rc));
-    if (SUCCEEDED(rc))
+    HRESULT hrc = mParent->OpenMedium(Bstr(pImage->strImagePath).raw(),
+                                      pImage->enmDeviceType,
+                                      pImage->enmAccessType,
+                                      true,
+                                      ptrMedium.asOutParam());
+    LogRelFlowFunc(("VirtualBox::openMedium -> %Rhrc\n", hrc));
+    if (SUCCEEDED(hrc))
     {
         if (pImage->fAuxiliary && pImage->strImagePath.endsWith(".viso"))
         {
-            rc = ptrMedium->SetProperty(Bstr(L"UnattendedInstall").raw(), Bstr(L"1").raw());
-            LogRelFlowFunc(("Medium::SetProperty -> %Rhrc\n", rc));
+            hrc = ptrMedium->SetProperty(Bstr(L"UnattendedInstall").raw(), Bstr(L"1").raw());
+            LogRelFlowFunc(("Medium::SetProperty -> %Rhrc\n", hrc));
         }
 
         if (pImage->fMountOnly)
         {
             // mount the opened disk image
-            rc = rPtrSessionMachine->MountMedium(Bstr(pImage->strControllerName).raw(), pImage->iPort,
-                                                 pImage->iDevice, ptrMedium, TRUE /*fForce*/);
-            LogRelFlowFunc(("Machine::MountMedium -> %Rhrc\n", rc));
+            hrc = rPtrSessionMachine->MountMedium(Bstr(pImage->strControllerName).raw(), pImage->iPort,
+                                                  pImage->iDevice, ptrMedium, TRUE /*fForce*/);
+            LogRelFlowFunc(("Machine::MountMedium -> %Rhrc\n", hrc));
         }
         else
         {
             //attach the opened disk image to the controller
-            rc = rPtrSessionMachine->AttachDevice(Bstr(pImage->strControllerName).raw(), pImage->iPort,
-                                                  pImage->iDevice, pImage->enmDeviceType, ptrMedium);
-            LogRelFlowFunc(("Machine::AttachDevice -> %Rhrc\n", rc));
+            hrc = rPtrSessionMachine->AttachDevice(Bstr(pImage->strControllerName).raw(), pImage->iPort,
+                                                   pImage->iDevice, pImage->enmDeviceType, ptrMedium);
+            LogRelFlowFunc(("Machine::AttachDevice -> %Rhrc\n", hrc));
         }
     }
 
     rLock.acquire();
-    return rc;
+    return hrc;
 }
 
 bool Unattended::i_isGuestOSArchX64(Utf8Str const &rStrGuestOsTypeId)
