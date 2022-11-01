@@ -4218,7 +4218,7 @@ HRESULT Unattended::i_attachImage(UnattendedInstallationDisk const *pImage, ComP
     {
         if (pImage->fAuxiliary && pImage->strImagePath.endsWith(".viso"))
         {
-            hrc = ptrMedium->SetProperty(Bstr(L"UnattendedInstall").raw(), Bstr(L"1").raw());
+            hrc = ptrMedium->SetProperty(Bstr("UnattendedInstall").raw(), Bstr("1").raw());
             LogRelFlowFunc(("Medium::SetProperty -> %Rhrc\n", hrc));
         }
 
