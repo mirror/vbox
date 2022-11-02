@@ -35,6 +35,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
 #define VMCPU_INCL_CPUM_GST_CTX
+#define CPUM_WITH_NONCONST_HOST_FEATURES /* required for initializing parts of the g_CpumHostFeatures structure here. */
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
@@ -168,6 +169,23 @@ typedef enum
 
 
 /**
+ * MSR information.
+ */
+typedef enum
+{
+    HV_VMX_INFO_MSR_IA32_ARCH_CAPABILITIES = 0,
+    HV_VMX_INFO_MSR_IA32_PERF_CAPABILITIES,
+    HV_VMX_VALID_MSR_IA32_PERFEVNTSEL,
+    HV_VMX_VALID_MSR_IA32_FIXED_CTR_CTRL,
+    HV_VMX_VALID_MSR_IA32_PERF_GLOBAL_CTRL,
+    HV_VMX_VALID_MSR_IA32_PERF_GLOBAL_STATUS,
+    HV_VMX_VALID_MSR_IA32_DEBUGCTL,
+    HV_VMX_VALID_MSR_IA32_SPEC_CTRL,
+    HV_VMX_NEED_MSR_IA32_SPEC_CTRL
+} hv_vmx_msr_info_t;
+
+
+/**
  * HV x86 register enumeration.
  */
 typedef enum
@@ -278,6 +296,7 @@ typedef hv_return_t FN_HV_VMX_READ_CAPABILITY(hv_vmx_capability_t field, uint64_
 typedef hv_return_t FN_HV_VMX_VCPU_SET_APIC_ADDRESS(hv_vcpuid_t vcpu, hv_gpaddr_t gpa);
 
 /* Since 11.0 */
+typedef hv_return_t FN_HV_VMX_GET_MSR_INFO(hv_vmx_msr_info_t field, uint64_t *value);
 typedef hv_return_t FN_HV_VMX_VCPU_GET_CAP_WRITE_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t *allowed_0, uint64_t *allowed_1);
 typedef hv_return_t FN_HV_VCPU_ENABLE_MANAGED_MSR(hv_vcpuid_t vcpu, uint32_t msr, bool enable);
 typedef hv_return_t FN_HV_VCPU_SET_MSR_ACCESS(hv_vcpuid_t vcpu, uint32_t msr, hv_msr_flags_t flags);
@@ -334,6 +353,7 @@ static FN_HV_VMX_VCPU_WRITE_SHADOW_VMCS *g_pfnHvVmxVCpuWriteShadowVmcs  = NULL; 
 static FN_HV_VMX_VCPU_SET_SHADOW_ACCESS *g_pfnHvVmxVCpuSetShadowAccess  = NULL; /* Since 10.15 */
 static FN_HV_VMX_VCPU_SET_APIC_ADDRESS  *g_pfnHvVmxVCpuSetApicAddress   = NULL; /* Since 10.10 */
 
+static FN_HV_VMX_GET_MSR_INFO            *g_pfnHvVmxGetMsrInfo          = NULL; /* Since 11.0 */
 static FN_HV_VMX_VCPU_GET_CAP_WRITE_VMCS *g_pfnHvVmxVCpuGetCapWriteVmcs = NULL; /* Since 11.0 */
 static FN_HV_VCPU_ENABLE_MANAGED_MSR     *g_pfnHvVCpuEnableManagedMsr   = NULL; /* Since 11.0 */
 static FN_HV_VCPU_SET_MSR_ACCESS         *g_pfnHvVCpuSetMsrAccess       = NULL; /* Since 11.0 */
@@ -387,6 +407,7 @@ static const struct
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuWriteShadowVmcs, hv_vmx_vcpu_write_shadow_vmcs),
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuSetShadowAccess, hv_vmx_vcpu_set_shadow_access),
     NEM_DARWIN_IMPORT(false, g_pfnHvVmxVCpuSetApicAddress,  hv_vmx_vcpu_set_apic_address),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxGetMsrInfo,          hv_vmx_get_msr_info),
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuGetCapWriteVmcs, hv_vmx_vcpu_get_cap_write_vmcs),
     NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuEnableManagedMsr,   hv_vcpu_enable_managed_msr),
     NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuSetMsrAccess,       hv_vcpu_set_msr_access)
@@ -436,6 +457,7 @@ static const struct
 # define hv_vmx_vcpu_set_shadow_access  g_pfnHvVmxVCpuSetShadowAccess
 # define hv_vmx_vcpu_set_apic_address   g_pfnHvVmxVCpuSetApicAddress
 
+# define hv_vmx_get_msr_info            g_pfnHvVmxGetMsrInfo
 # define hv_vmx_vcpu_get_cap_write_vmcs g_pfnHvVmxVCpuGetCapWriteVmcs
 # define hv_vcpu_enable_managed_msr     g_pfnHvVCpuEnableManagedMsr
 # define hv_vcpu_set_msr_access         g_pfnHvVCpuSetMsrAccess
@@ -2122,6 +2144,47 @@ static int nemR3DarwinCapsInit(void)
         g_fHmVmxSupportsVmcsEfer = true; //(g_HmMsrs.u.vmx.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
                                 //&& (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
                                 //&& (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR);
+    }
+
+    /*
+     * Get MSR_IA32_ARCH_CAPABILITIES and expand it into the host feature structure.
+     * This is only available with 11.0+ (BigSur) as the required API is only available there,
+     * we could in theory initialize this when creating the EMTs using hv_vcpu_read_msr() but
+     * the required vCPU handle is created after CPUM was initialized which is too late.
+     * Given that the majority of users is on 11.0 and later we don't care for now.
+     */
+    if (   hrc == HV_SUCCESS
+        && hv_vmx_get_msr_info)
+    {
+        g_CpumHostFeatures.s.fArchRdclNo             = 0;
+        g_CpumHostFeatures.s.fArchIbrsAll            = 0;
+        g_CpumHostFeatures.s.fArchRsbOverride        = 0;
+        g_CpumHostFeatures.s.fArchVmmNeedNotFlushL1d = 0;
+        g_CpumHostFeatures.s.fArchMdsNo              = 0;
+        uint32_t const cStdRange = ASMCpuId_EAX(0);
+        if (   RTX86IsValidStdRange(cStdRange)
+            && cStdRange >= 7)
+        {
+            uint32_t const fStdFeaturesEdx = ASMCpuId_EDX(1);
+            uint32_t fStdExtFeaturesEdx;
+            ASMCpuIdExSlow(7, 0, 0, 0, NULL, NULL, NULL, &fStdExtFeaturesEdx);
+            if (   (fStdExtFeaturesEdx & X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP)
+                && (fStdFeaturesEdx    & X86_CPUID_FEATURE_EDX_MSR))
+            {
+                uint64_t fArchVal;
+                hrc = hv_vmx_get_msr_info(HV_VMX_INFO_MSR_IA32_ARCH_CAPABILITIES, &fArchVal);
+                if (hrc == HV_SUCCESS)
+                {
+                    g_CpumHostFeatures.s.fArchRdclNo             = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RDCL_NO);
+                    g_CpumHostFeatures.s.fArchIbrsAll            = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_IBRS_ALL);
+                    g_CpumHostFeatures.s.fArchRsbOverride        = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RSBO);
+                    g_CpumHostFeatures.s.fArchVmmNeedNotFlushL1d = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D);
+                    g_CpumHostFeatures.s.fArchMdsNo              = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_MDS_NO);
+                }
+            }
+            else
+                g_CpumHostFeatures.s.fArchCap = 0;
+        }
     }
 
     return nemR3DarwinHvSts2Rc(hrc);
