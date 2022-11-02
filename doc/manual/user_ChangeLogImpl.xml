@@ -87,7 +87,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Added an option to global settings (the display page) scale application fonts.</para>
+        <para>GUI: Added an option to the global settings (the display page) to resize user interface font.</para>
       </listitem>
 
     </itemizedlist>
