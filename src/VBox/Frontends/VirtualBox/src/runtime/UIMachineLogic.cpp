@@ -1050,7 +1050,7 @@ void UIMachineLogic::prepareActionConnections()
 
     /* 'Machine' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings), &UIAction::triggered,
-            this, &UIMachineLogic::sltOpenVMSettingsDialogDefault);
+            this, &UIMachineLogic::sltOpenSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), &UIAction::triggered,
             this, &UIMachineLogic::sltTakeSnapshot);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), &UIAction::triggered,
@@ -1117,17 +1117,17 @@ void UIMachineLogic::prepareActionConnections()
     /* 'Devices' actions connections: */
     connect(actionPool(), &UIActionPool::sigNotifyAboutMenuPrepare, this, &UIMachineLogic::sltHandleMenuPrepare);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), &UIAction::triggered,
-            this, &UIMachineLogic::sltOpenStorageSettingsDialog);
+            this, &UIMachineLogic::sltOpenSettingsDialogStorage);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output), &UIAction::toggled,
             this, &UIMachineLogic::sltToggleAudioOutput);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input), &UIAction::toggled,
             this, &UIMachineLogic::sltToggleAudioInput);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), &UIAction::triggered,
-            this, &UIMachineLogic::sltOpenNetworkSettingsDialog);
+            this, &UIMachineLogic::sltOpenSettingsDialogNetwork);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), &UIAction::triggered,
-            this, &UIMachineLogic::sltOpenUSBDevicesSettingsDialog);
+            this, &UIMachineLogic::sltOpenSettingsDialogUSBDevices);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), &UIAction::triggered,
-            this, &UIMachineLogic::sltOpenSharedFoldersSettingsDialog);
+            this, &UIMachineLogic::sltOpenSettingsDialogSharedFolders);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), &UIAction::triggered,
             this, &UIMachineLogic::sltInstallGuestAdditions);
 
@@ -2074,7 +2074,7 @@ void UIMachineLogic::sltTakeScreenshot()
 void UIMachineLogic::sltOpenRecordingOptions()
 {
     /* Open VM settings : Display page : Recording tab: */
-    sltOpenVMSettingsDialog("#display", "m_pCheckboxVideoCapture");
+    sltOpenSettingsDialog("#display", "m_pCheckboxVideoCapture");
 }
 
 void UIMachineLogic::sltToggleRecording(bool fEnabled)
@@ -2145,13 +2145,8 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
     }
 }
 
-void UIMachineLogic::sltOpenVMSettingsDialogDefault()
-{
-    sltOpenVMSettingsDialog();
-}
-
-void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,
-                                             const QString &strControl /* = QString()*/)
+void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QString() */,
+                                           const QString &strControl /* = QString()*/)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
@@ -2179,10 +2174,10 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
         pMachineWindow->updateAppearanceOf(UIVisualElement_HDStuff | UIVisualElement_CDStuff | UIVisualElement_FDStuff);
 }
 
-void UIMachineLogic::sltOpenStorageSettingsDialog()
+void UIMachineLogic::sltOpenSettingsDialogStorage()
 {
     /* Machine settings: Storage page: */
-    sltOpenVMSettingsDialog("#storage");
+    sltOpenSettingsDialog("#storage");
 }
 
 void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
@@ -2259,26 +2254,26 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
     }
 }
 
-void UIMachineLogic::sltOpenNetworkSettingsDialog()
+void UIMachineLogic::sltOpenSettingsDialogNetwork()
 {
     /* Open VM settings : Network page: */
-    sltOpenVMSettingsDialog("#network");
+    sltOpenSettingsDialog("#network");
 }
 
-void UIMachineLogic::sltOpenUSBDevicesSettingsDialog()
+void UIMachineLogic::sltOpenSettingsDialogUSBDevices()
 {
     /* Machine settings: Storage page: */
-    sltOpenVMSettingsDialog("#usb");
+    sltOpenSettingsDialog("#usb");
 }
 
-void UIMachineLogic::sltOpenSharedFoldersSettingsDialog()
+void UIMachineLogic::sltOpenSettingsDialogSharedFolders()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
         UINotificationMessage::remindAboutGuestAdditionsAreNotActive();
 
     /* Open VM settings : Shared folders page: */
-    sltOpenVMSettingsDialog("#sharedFolders");
+    sltOpenSettingsDialog("#sharedFolders");
 }
 
 void UIMachineLogic::sltMountStorageMedium()
