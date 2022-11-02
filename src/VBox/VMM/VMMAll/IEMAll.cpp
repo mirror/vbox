@@ -4168,13 +4168,10 @@ VBOXSTRICTRC iemRaiseMathFault(PVMCPUCC pVCpu)
 {
     if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_NE)
         return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_MF, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
-    else
-    {
-        /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
-        PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13 /* u8Irq */, 1 /* u8Level */, 0 /* uTagSrc */);
-        iemRegUpdateRipAndClearRF(pVCpu);
-        return VINF_SUCCESS;
-    }
+
+    /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
+    PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13 /* u8Irq */, 1 /* u8Level */, 0 /* uTagSrc */);
+    return iemRegUpdateRipAndFinishClearingRF(pVCpu);
 }
 
 

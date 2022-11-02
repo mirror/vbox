@@ -147,10 +147,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
      */
     ADDR_TYPE       uCounterReg  = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
 
@@ -300,8 +297,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -317,10 +313,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
      */
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
 
@@ -470,8 +463,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -487,10 +479,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
      */
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES);
     uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
@@ -602,8 +591,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -619,10 +607,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
      */
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES);
     uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
@@ -733,8 +718,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -752,10 +736,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
      */
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
 
@@ -895,8 +876,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -912,10 +892,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
      */
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES);
 
@@ -1044,8 +1021,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -1061,10 +1037,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
      */
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg));
     PCCPUMSELREGHID pSrcHid   = iemSRegGetHid(pVCpu, iEffSeg);
@@ -1170,8 +1143,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -1249,6 +1221,9 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
     rcStrict = IOMIOPortRead(pVM, pVCpu, pVCpu->cpum.GstCtx.dx, &u32Value, OP_SIZE / 8);
     if (IOM_SUCCESS(rcStrict))
     {
+        /**
+         * @todo I/O breakpoint support for INS
+         */
         *puMem = (OP_TYPE)u32Value;
 # ifdef IN_RING3
         VBOXSTRICTRC rcStrict2 = iemMemCommitAndUnmap(pVCpu, puMem, IEM_ACCESS_DATA_W);
@@ -1261,7 +1236,17 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
                 pVCpu->cpum.GstCtx.ADDR_rDI += OP_SIZE / 8;
             else
                 pVCpu->cpum.GstCtx.ADDR_rDI -= OP_SIZE / 8;
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+
+            /** @todo finish: work out how this should work wrt status codes. Not sure we
+             * can use iemSetPassUpStatus here, but it depends on what
+             * iemRegAddToRipAndFinishingClearingRF may eventually return (if anything)... */
+            rcStrict2 = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+            if (rcStrict2 != VINF_SUCCESS)
+            {
+                iemSetPassUpStatus(pVCpu, rcStrict);
+                rcStrict = rcStrict2;
+            }
+            pVCpu->iem.s.cPotentialExits++;
         }
         else
             AssertLogRelMsgFailedReturn(("rcStrict2=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict2)), RT_FAILURE_NP(rcStrict2) ? rcStrict2 : VERR_IEM_IPE_1);
@@ -1327,10 +1312,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
 
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     uint64_t        uBaseAddr   = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckWriteAccessEx(pVCpu, iemSRegUpdateHid(pVCpu, &pVCpu->cpum.GstCtx.es), X86_SREG_ES, &uBaseAddr);
@@ -1398,9 +1380,13 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                 {
                     if (IOM_SUCCESS(rcStrict))
                     {
+                        /** @todo finish: work out how this should work wrt status codes. Not sure we
+                         * can use iemSetPassUpStatus here, but it depends on what
+                         * iemRegAddToRipAndFinishingClearingRF may eventually return (if anything)... */
                         rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                         if (uCounterReg == 0)
-                            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                            rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+                        pVCpu->iem.s.cPotentialExits++;
                     }
                     return rcStrict;
                 }
@@ -1462,9 +1448,13 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             cLeftPage--;
             if (rcStrict != VINF_SUCCESS)
             {
-                if (uCounterReg == 0)
-                    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                /** @todo finish: work out how this should work wrt status codes. Not sure we
+                 * can use iemSetPassUpStatus here, but it depends on what
+                 * iemRegAddToRipAndFinishingClearingRF may eventually return (if anything)... */
                 rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+                if (uCounterReg == 0)
+                    rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+                pVCpu->iem.s.cPotentialExits++;
                 return rcStrict;
             }
 
@@ -1483,8 +1473,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    pVCpu->iem.s.cPotentialExits++;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -1552,9 +1542,13 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
                 pVCpu->cpum.GstCtx.ADDR_rSI += OP_SIZE / 8;
             else
                 pVCpu->cpum.GstCtx.ADDR_rSI -= OP_SIZE / 8;
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            /** @todo finish: work out how this should work wrt status codes. Not sure we
+             * can use iemSetPassUpStatus here, but it depends on what
+             * iemRegAddToRipAndFinishingClearingRF may eventually return (if anything)... */
             if (rcStrict != VINF_SUCCESS)
                 rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+            rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+            pVCpu->iem.s.cPotentialExits++;
         }
     }
     return rcStrict;
@@ -1616,10 +1610,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 
     ADDR_TYPE       uCounterReg = pVCpu->cpum.GstCtx.ADDR_rCX;
     if (uCounterReg == 0)
-    {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
     PCCPUMSELREGHID pHid      = iemSRegGetHid(pVCpu, iEffSeg);
     uint64_t        uBaseAddr = 0; /* gcc may not be used uninitialized */
@@ -1679,9 +1670,13 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 {
                     if (IOM_SUCCESS(rcStrict))
                     {
+                        /** @todo finish: work out how this should work wrt status codes. Not sure we
+                         * can use iemSetPassUpStatus here, but it depends on what
+                         * iemRegAddToRipAndFinishingClearingRF may eventually return (if anything)... */
                         rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                         if (uCounterReg == 0)
-                            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                            rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+                        pVCpu->iem.s.cPotentialExits++;
                     }
                     return rcStrict;
                 }
@@ -1728,9 +1723,13 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             {
                 if (IOM_SUCCESS(rcStrict))
                 {
-                    if (uCounterReg == 0)
-                        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                    /** @todo finish: work out how this should work wrt status codes. Not sure we
+                     * can use iemSetPassUpStatus here, but it depends on what
+                     * iemRegAddToRipAndFinishingClearingRF may eventually return (if anything)... */
                     rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+                    if (uCounterReg == 0)
+                        iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+                    pVCpu->iem.s.cPotentialExits++;
                 }
                 return rcStrict;
             }
@@ -1749,8 +1748,8 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     /*
      * Done.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    pVCpu->iem.s.cPotentialExits++;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 #endif /* OP_SIZE != 64-bit */

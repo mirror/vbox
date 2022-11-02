@@ -1251,7 +1251,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
         pVCpu->cpum.GstCtx.SysEnter.esp    = VmcbNstGst.u64SysEnterESP;
         pVCpu->cpum.GstCtx.SysEnter.eip    = VmcbNstGst.u64SysEnterEIP;
 
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
     return rcStrict;
 # endif
@@ -1331,7 +1331,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
         rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcb + RT_UOFFSETOF(SVMVMCB, guest), &VmcbNstGst,
                                             sizeof(SVMVMCBSTATESAVE));
         if (rcStrict == VINF_SUCCESS)
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
     return rcStrict;
 # endif
@@ -1375,12 +1375,12 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     }
 
     CPUMSetGuestGif(&pVCpu->cpum.GstCtx, false);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 #  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+    iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
 #  else
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 #  endif
 # endif
 }
@@ -1423,12 +1423,12 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
     }
 
     CPUMSetGuestGif(&pVCpu->cpum.GstCtx, true);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 #  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+    iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
 #  else
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 #  endif
 # endif
 }
@@ -1473,8 +1473,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
     }
 
     PGMInvalidatePage(pVCpu, GCPtrPage);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -1552,8 +1551,7 @@ IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
     if (fCheckIntercept)
         IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
 
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
@@ -1569,8 +1567,10 @@ IEM_CIMPL_DEF_1(iemCImpl_Hypercall, uint16_t, uDisOpcode)
         VBOXSTRICTRC rcStrict = GIMHypercallEx(pVCpu, IEM_GET_CTX(pVCpu), uDisOpcode, cbInstr);
         if (RT_SUCCESS(rcStrict))
         {
+            /** @todo finish: Sort out assertion here when iemRegAddToRipAndFinishingClearingRF
+             * starts returning non-VINF_SUCCESS statuses. */
             if (rcStrict == VINF_SUCCESS)
-                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
             if (   rcStrict == VINF_SUCCESS
                 || rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
                 return VINF_SUCCESS;

@@ -4347,7 +4347,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     if (rcStrict == VINF_SUCCESS)
     {
         pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
-        iemRegUpdateRipAndClearRF(pVCpu);
+        return iemRegUpdateRipAndFinishClearingRF(pVCpu);
     }
     return rcStrict;
 

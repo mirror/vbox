@@ -7733,8 +7733,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
         Log(("%s: VMCS pointer %#RGp invalid -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_PtrInvalid;
         iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Current VMCS is not a shadow VMCS. */
@@ -7745,8 +7744,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
         Log(("%s: VMCS pointer %#RGp is a shadow VMCS -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_PtrShadowVmcs;
         iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /** @todo Distinguish block-by-MovSS from block-by-STI. Currently we
@@ -7758,8 +7756,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
         Log(("%s: VM entry with events blocked by MOV SS -> VMFail\n", pszInstr));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_BlocKMovSS;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_BLOCK_MOVSS);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     if (uInstrId == VMXINSTRID_VMLAUNCH)
@@ -7772,8 +7769,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
             Log(("vmlaunch: VMLAUNCH with non-clear VMCS -> VMFail\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_VmcsClear;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
     }
     else
@@ -7786,8 +7782,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
             Log(("vmresume: VMRESUME with non-launched VMCS -> VMFail\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_VmcsLaunch;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
     }
 
@@ -7932,13 +7927,11 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
         }
 
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 # endif
 }
 
@@ -8112,8 +8105,7 @@ static VBOXSTRICTRC iemVmxVmreadCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t
         Log(("vmread: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_PtrInvalid;
         iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* VMCS-link pointer in non-root mode. */
@@ -8125,8 +8117,7 @@ static VBOXSTRICTRC iemVmxVmreadCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t
         Log(("vmread: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_LinkPtrInvalid;
         iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Supported VMCS field. */
@@ -8138,8 +8129,7 @@ static VBOXSTRICTRC iemVmxVmreadCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmread_FieldInvalid;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64VmcsField;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMREAD_INVALID_COMPONENT);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /*
@@ -8172,8 +8162,7 @@ static VBOXSTRICTRC iemVmxVmreadReg64(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t 
     if (rcStrict == VINF_SUCCESS)
     {
         iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     Log(("vmread/reg: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -8201,8 +8190,7 @@ static VBOXSTRICTRC iemVmxVmreadReg32(PVMCPUCC pVCpu, uint8_t cbInstr, uint32_t 
     {
         *pu32Dst = u64Dst;
         iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     Log(("vmread/reg: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -8241,8 +8229,7 @@ static VBOXSTRICTRC iemVmxVmreadMem(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEf
         if (rcStrict == VINF_SUCCESS)
         {
             iemVmxVmSucceed(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         Log(("vmread/mem: Failed to write to memory operand at %#RGv, rc=%Rrc\n", GCPtrDst, VBOXSTRICTRC_VAL(rcStrict)));
@@ -8415,8 +8402,7 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         Log(("vmwrite: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_PtrInvalid;
         iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* VMCS-link pointer in non-root mode. */
@@ -8428,8 +8414,7 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         Log(("vmwrite: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_LinkPtrInvalid;
         iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* If the VMWRITE instruction references memory, access the specified memory operand. */
@@ -8463,8 +8448,7 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmwrite_FieldInvalid;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64VmcsField;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_INVALID_COMPONENT);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Read-only VMCS field. */
@@ -8478,8 +8462,7 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmwrite_FieldRo;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64VmcsField;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_RO_COMPONENT);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /*
@@ -8500,8 +8483,7 @@ static VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
     }
 
     iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -8601,8 +8583,7 @@ static VBOXSTRICTRC iemVmxVmclear(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrAlign;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* VMCS physical-address width limits. */
@@ -8614,8 +8595,7 @@ static VBOXSTRICTRC iemVmxVmclear(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrWidth;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* VMCS is not the VMXON region. */
@@ -8627,8 +8607,7 @@ static VBOXSTRICTRC iemVmxVmclear(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrVmxon;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_VMXON_PTR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
@@ -8641,8 +8620,7 @@ static VBOXSTRICTRC iemVmxVmclear(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrAbnormal;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /*
@@ -8670,8 +8648,7 @@ static VBOXSTRICTRC iemVmxVmclear(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
     }
 
     iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -8743,8 +8720,7 @@ static VBOXSTRICTRC iemVmxVmptrst(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return rcStrict;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     Log(("vmptrst: Failed to store VMCS pointer to memory at destination operand %#Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -8836,8 +8812,7 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrAlign;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* VMCS physical-address width limits. */
@@ -8849,8 +8824,7 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrWidth;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* VMCS is not the VMXON region. */
@@ -8862,8 +8836,7 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrVmxon;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_VMXON_PTR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
@@ -8876,8 +8849,7 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrAbnormal;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Read just the VMCS revision from the VMCS. */
@@ -8908,16 +8880,14 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
             Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32, GCPtrVmcs=%#RGv GCPhysVmcs=%#RGp -> VMFail()\n",
                  VMX_V_VMCS_REVISION_ID, VmcsRevId.n.u31RevisionId, GCPtrVmcs, GCPhysVmcs));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_VmcsRevId;
-            iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
         }
-
-        Log(("vmptrld: Shadow VMCS -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_ShadowVmcs;
+        else
+        {
+            Log(("vmptrld: Shadow VMCS -> VMFail()\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_ShadowVmcs;
+        }
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /*
@@ -8953,8 +8923,7 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
 
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
     iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -9053,8 +9022,7 @@ VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTG
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_TypeInvalid;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64InvvpidType;
         iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /*
@@ -9075,8 +9043,7 @@ VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTG
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_DescRsvd;
             pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = uDesc.s.Lo;
             iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
@@ -9162,7 +9129,7 @@ VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTG
             }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
     return rcStrict;
 }
@@ -9265,8 +9232,7 @@ static VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSe
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invept_TypeInvalid;
         pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64InveptType;
         iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /*
@@ -9290,8 +9256,7 @@ static VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSe
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invept_DescRsvd;
             pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = uDesc.s.Hi;
             iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         /*
@@ -9309,8 +9274,7 @@ static VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSe
                 pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invept_EptpInvalid;
                 pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysEptPtr;
                 iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
-                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-                return VINF_SUCCESS;
+                return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
             }
         }
 
@@ -9320,7 +9284,7 @@ static VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSe
         PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
 
         iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     return rcStrict;
@@ -9486,8 +9450,7 @@ static VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrAlign;
             pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmxon;
             iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         /* VMXON physical-address width limits. */
@@ -9499,8 +9462,7 @@ static VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrWidth;
             pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmxon;
             iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         /* Ensure VMXON region is not MMIO, ROM etc. This is not an Intel requirement but a
@@ -9513,8 +9475,7 @@ static VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrAbnormal;
             pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmxon;
             iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         /* Read the VMCS revision ID from the VMXON region. */
@@ -9541,16 +9502,14 @@ static VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg
                      VmcsRevId.n.u31RevisionId));
                 pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmcsRevId;
                 iemVmxVmFailInvalid(pVCpu);
-                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-                return VINF_SUCCESS;
+                return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
             }
 
             /* Shadow VMCS disallowed. */
             Log(("vmxon: Shadow VMCS -> VMFailInvalid\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_ShadowVmcs;
             iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
 
         /*
@@ -9565,10 +9524,9 @@ static VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg
         /** @todo NSTVMX: Intel PT. */
 
         iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
-    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         /* Nested-guest intercept. */
         if (pExitInfo)
@@ -9589,8 +9547,7 @@ static VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg
     /* VMXON when already in VMX root mode. */
     iemVmxVmFail(pVCpu, VMXINSTRERR_VMXON_IN_VMXROOTMODE);
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmxAlreadyRoot;
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -9648,8 +9605,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     else
     {
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMXOFF_DUAL_MON);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     /* Record that we're no longer in VMX root operation, block INIT, block and disable A20M. */
@@ -9663,8 +9619,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     /** @todo NSTVMX: Unblock and enable A20M. */
 
     iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 
@@ -9832,8 +9787,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmx_pause)
      * Outside VMX non-root operation or if the PAUSE instruction does not cause
      * a VM-exit, the instruction operates normally.
      */
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
 #endif  /* VBOX_WITH_NESTED_HWVIRT_VMX */

@@ -54,7 +54,7 @@
 
 /** Advances RIP, finishes the instruction and returns.
  * This may include raising debug exceptions and such. */
-#define IEM_MC_ADVANCE_RIP_AND_FINISH()                 return iemRegUpdateRipAndClearRF(pVCpu)
+#define IEM_MC_ADVANCE_RIP_AND_FINISH()                 return iemRegUpdateRipAndFinishClearingRF(pVCpu)
 /** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH(a_i8)              return iemRegRipRelativeJumpS8(pVCpu, (a_i8))
 /** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
