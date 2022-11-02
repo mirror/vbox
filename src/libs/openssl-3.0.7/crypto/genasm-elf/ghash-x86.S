@@ -4,7 +4,11 @@
 .align	16
 gcm_gmult_4bit_x86:
 .L_gcm_gmult_4bit_x86_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -99,7 +103,11 @@ gcm_gmult_4bit_x86:
 .align	16
 gcm_ghash_4bit_x86:
 .L_gcm_ghash_4bit_x86_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -207,7 +215,11 @@ gcm_ghash_4bit_x86:
 .type	_mmx_gmult_4bit_inner,@function
 .align	16
 _mmx_gmult_4bit_inner:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	xorl	%ecx,%ecx
 	movl	%ebx,%edx
 	movb	%dl,%cl
@@ -604,7 +616,11 @@ _mmx_gmult_4bit_inner:
 .align	16
 gcm_gmult_4bit_mmx:
 .L_gcm_gmult_4bit_mmx_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -634,7 +650,11 @@ gcm_gmult_4bit_mmx:
 .align	16
 gcm_ghash_4bit_mmx:
 .L_gcm_ghash_4bit_mmx_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi

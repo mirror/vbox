@@ -3,7 +3,11 @@
 .align	4
 _ChaCha20_ctr32:
 L_ChaCha20_ctr32_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi

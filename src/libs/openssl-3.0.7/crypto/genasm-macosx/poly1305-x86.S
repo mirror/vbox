@@ -4,7 +4,11 @@
 .align	4
 _poly1305_init:
 L_poly1305_init_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -44,7 +48,11 @@ L000nokey:
 .align	4
 _poly1305_blocks:
 L_poly1305_blocks_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -211,7 +219,11 @@ L002nodata:
 .align	4
 _poly1305_emit:
 L_poly1305_emit_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi

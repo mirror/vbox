@@ -3,7 +3,11 @@
 .align	4
 _gcm_gmult_4bit_x86:
 L_gcm_gmult_4bit_x86_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -96,7 +100,11 @@ L001x86_break:
 .align	4
 _gcm_ghash_4bit_x86:
 L_gcm_ghash_4bit_x86_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -202,7 +210,11 @@ L004x86_break:
 	ret
 .align	4
 __mmx_gmult_4bit_inner:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	xorl	%ecx,%ecx
 	movl	%ebx,%edx
 	movb	%dl,%cl
@@ -597,7 +609,11 @@ __mmx_gmult_4bit_inner:
 .align	4
 _gcm_gmult_4bit_mmx:
 L_gcm_gmult_4bit_mmx_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -625,7 +641,11 @@ L005pic_point:
 .align	4
 _gcm_ghash_4bit_mmx:
 L_gcm_ghash_4bit_mmx_begin:
+	#ifdef __CET__
+
 .byte	243,15,30,251
+	#endif
+
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi

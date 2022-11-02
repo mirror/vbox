@@ -4836,7 +4836,7 @@ endif
 
 # openssl
 SDK_VBOX_OPENSSL                        := OpenSSL - Only for VBoxRT and/or statically linked programs.
-SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS      := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
+SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS      := $(PATH_OUT)/obj/crypto-3.0.7-headers/include
 SDK_VBOX_OPENSSL_INCS                   ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL_ORDERDEPS              ?= $(crypto-headers_1_TARGET)
 if  !defined(VBOX_ONLY_SDK) \
@@ -4850,7 +4850,7 @@ SDK_VBOX_OPENSSL_LIBS                   ?= \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
 SDK_VBOX_OPENSSL-x86                    := OpenSSL/x86 - Only for VBoxRT and/or statically linked programs.
-SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS  := $(PATH_OUT)/obj/crypto-3.0.3-headers/include
+SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS  := $(PATH_OUT)/obj/crypto-3.0.7-headers/include
 SDK_VBOX_OPENSSL-x86_INCS               ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL-x86_ORDERDEPS          ?= $(crypto-headers_1_TARGET)
 if ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
@@ -8341,7 +8341,7 @@ TEMPLATE_VBoxBldProg_LIBS                = network iconv
 TEMPLATE_VBoxBldProg_LIBPATH            += \
 	/boot/common/lib
  else if1of ($(KBUILD_HOST), freebsd openbsd)
-TEMPLATE_VBoxBldProg_TOOL                = GXX3
+TEMPLATE_VBoxBldProg_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBoxBldProg_LIBS                = pthread
 TEMPLATE_VBoxBldProg_INCS               += \
 	/usr/include \

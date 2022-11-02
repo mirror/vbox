@@ -4301,9 +4301,10 @@ const SSL_CIPHER *ssl3_choose_cipher(SSL *s, STACK_OF(SSL_CIPHER) *clnt,
 
             if (prefer_sha256) {
                 const SSL_CIPHER *tmp = sk_SSL_CIPHER_value(allow, ii);
+                const EVP_MD *md = ssl_md(s->ctx, tmp->algorithm2);
 
-                if (EVP_MD_is_a(ssl_md(s->ctx, tmp->algorithm2),
-                                       OSSL_DIGEST_NAME_SHA2_256)) {
+                if (md != NULL
+                        && EVP_MD_is_a(md, OSSL_DIGEST_NAME_SHA2_256)) {
                     ret = tmp;
                     break;
                 }
@@ -4709,7 +4710,7 @@ EVP_PKEY *ssl_generate_pkey_group(SSL *s, uint16_t id)
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
         goto err;
     }
-    if (!EVP_PKEY_CTX_set_group_name(pctx, ginf->realname)) {
+    if (EVP_PKEY_CTX_set_group_name(pctx, ginf->realname) <= 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
         goto err;
     }
@@ -4743,7 +4744,7 @@ EVP_PKEY *ssl_generate_param_group(SSL *s, uint16_t id)
         goto err;
     if (EVP_PKEY_paramgen_init(pctx) <= 0)
         goto err;
-    if (!EVP_PKEY_CTX_set_group_name(pctx, ginf->realname)) {
+    if (EVP_PKEY_CTX_set_group_name(pctx, ginf->realname) <= 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_EVP_LIB);
         goto err;
     }

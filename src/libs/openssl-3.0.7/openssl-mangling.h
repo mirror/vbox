@@ -55457,12 +55457,21 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef evp_method_store_flush
-#  define evp_method_store_flush OPENSSL_MANGLER(evp_method_store_flush)
+# ifndef evp_method_store_cache_flush
+#  define evp_method_store_cache_flush OPENSSL_MANGLER(evp_method_store_cache_flush)
 # endif
 #else
-# ifndef _evp_method_store_flush
-#  define _evp_method_store_flush OPENSSL_MANGLER_ASM(evp_method_store_flush)
+# ifndef _evp_method_store_cache_flush
+#  define _evp_method_store_cache_flush OPENSSL_MANGLER_ASM(evp_method_store_cache_flush)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef evp_method_store_remove_all_provided
+#  define evp_method_store_remove_all_provided OPENSSL_MANGLER(evp_method_store_remove_all_provided)
+# endif
+#else
+# ifndef _evp_method_store_remove_all_provided
+#  define _evp_method_store_remove_all_provided OPENSSL_MANGLER_ASM(evp_method_store_remove_all_provided)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -58760,12 +58769,12 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_DER_w_ulong
-#  define ossl_DER_w_ulong OPENSSL_MANGLER(ossl_DER_w_ulong)
+# ifndef ossl_DER_w_uint32
+#  define ossl_DER_w_uint32 OPENSSL_MANGLER(ossl_DER_w_uint32)
 # endif
 #else
-# ifndef _ossl_DER_w_ulong
-#  define _ossl_DER_w_ulong OPENSSL_MANGLER_ASM(ossl_DER_w_ulong)
+# ifndef _ossl_DER_w_uint32
+#  define _ossl_DER_w_uint32 OPENSSL_MANGLER_ASM(ossl_DER_w_uint32)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -60641,6 +60650,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_blowfish128cfb64_functions
+#  define ossl_blowfish128cfb64_functions OPENSSL_MANGLER(ossl_blowfish128cfb64_functions)
+# endif
+#else
+# ifndef _ossl_blowfish128cfb64_functions
+#  define _ossl_blowfish128cfb64_functions OPENSSL_MANGLER_ASM(ossl_blowfish128cfb64_functions)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_blowfish128ecb_functions
 #  define ossl_blowfish128ecb_functions OPENSSL_MANGLER(ossl_blowfish128ecb_functions)
 # endif
@@ -60650,21 +60668,12 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_blowfish64cfb64_functions
-#  define ossl_blowfish64cfb64_functions OPENSSL_MANGLER(ossl_blowfish64cfb64_functions)
+# ifndef ossl_blowfish128ofb64_functions
+#  define ossl_blowfish128ofb64_functions OPENSSL_MANGLER(ossl_blowfish128ofb64_functions)
 # endif
 #else
-# ifndef _ossl_blowfish64cfb64_functions
-#  define _ossl_blowfish64cfb64_functions OPENSSL_MANGLER_ASM(ossl_blowfish64cfb64_functions)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_blowfish64ofb64_functions
-#  define ossl_blowfish64ofb64_functions OPENSSL_MANGLER(ossl_blowfish64ofb64_functions)
-# endif
-#else
-# ifndef _ossl_blowfish64ofb64_functions
-#  define _ossl_blowfish64ofb64_functions OPENSSL_MANGLER_ASM(ossl_blowfish64ofb64_functions)
+# ifndef _ossl_blowfish128ofb64_functions
+#  define _ossl_blowfish128ofb64_functions OPENSSL_MANGLER_ASM(ossl_blowfish128ofb64_functions)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -60962,15 +60971,6 @@
 #else
 # ifndef _ossl_c448_ed448_verify_prehash
 #  define _ossl_c448_ed448_verify_prehash OPENSSL_MANGLER_ASM(ossl_c448_ed448_verify_prehash)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_c_locale
-#  define ossl_c_locale OPENSSL_MANGLER(ossl_c_locale)
-# endif
-#else
-# ifndef _ossl_c_locale
-#  define _ossl_c_locale OPENSSL_MANGLER_ASM(ossl_c_locale)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -63467,21 +63467,30 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_decoder_store_cache_flush
+#  define ossl_decoder_store_cache_flush OPENSSL_MANGLER(ossl_decoder_store_cache_flush)
+# endif
+#else
+# ifndef _ossl_decoder_store_cache_flush
+#  define _ossl_decoder_store_cache_flush OPENSSL_MANGLER_ASM(ossl_decoder_store_cache_flush)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_decoder_store_remove_all_provided
+#  define ossl_decoder_store_remove_all_provided OPENSSL_MANGLER(ossl_decoder_store_remove_all_provided)
+# endif
+#else
+# ifndef _ossl_decoder_store_remove_all_provided
+#  define _ossl_decoder_store_remove_all_provided OPENSSL_MANGLER_ASM(ossl_decoder_store_remove_all_provided)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_default_provider_init
 #  define ossl_default_provider_init OPENSSL_MANGLER(ossl_default_provider_init)
 # endif
 #else
 # ifndef _ossl_default_provider_init
 #  define _ossl_default_provider_init OPENSSL_MANGLER_ASM(ossl_default_provider_init)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_deinit_casecmp
-#  define ossl_deinit_casecmp OPENSSL_MANGLER(ossl_deinit_casecmp)
-# endif
-#else
-# ifndef _ossl_deinit_casecmp
-#  define _ossl_deinit_casecmp OPENSSL_MANGLER_ASM(ossl_deinit_casecmp)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -66419,6 +66428,24 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_encoder_store_cache_flush
+#  define ossl_encoder_store_cache_flush OPENSSL_MANGLER(ossl_encoder_store_cache_flush)
+# endif
+#else
+# ifndef _ossl_encoder_store_cache_flush
+#  define _ossl_encoder_store_cache_flush OPENSSL_MANGLER_ASM(ossl_encoder_store_cache_flush)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_encoder_store_remove_all_provided
+#  define ossl_encoder_store_remove_all_provided OPENSSL_MANGLER(ossl_encoder_store_remove_all_provided)
+# endif
+#else
+# ifndef _ossl_encoder_store_remove_all_provided
+#  define _ossl_encoder_store_remove_all_provided OPENSSL_MANGLER_ASM(ossl_encoder_store_remove_all_provided)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_engine_table_select
 #  define ossl_engine_table_select OPENSSL_MANGLER(ossl_engine_table_select)
 # endif
@@ -66860,6 +66887,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_ffc_named_group_get_keylength
+#  define ossl_ffc_named_group_get_keylength OPENSSL_MANGLER(ossl_ffc_named_group_get_keylength)
+# endif
+#else
+# ifndef _ossl_ffc_named_group_get_keylength
+#  define _ossl_ffc_named_group_get_keylength OPENSSL_MANGLER_ASM(ossl_ffc_named_group_get_keylength)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_ffc_named_group_get_name
 #  define ossl_ffc_named_group_get_name OPENSSL_MANGLER(ossl_ffc_named_group_get_name)
 # endif
@@ -66887,12 +66923,12 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ffc_named_group_set_pqg
-#  define ossl_ffc_named_group_set_pqg OPENSSL_MANGLER(ossl_ffc_named_group_set_pqg)
+# ifndef ossl_ffc_named_group_set
+#  define ossl_ffc_named_group_set OPENSSL_MANGLER(ossl_ffc_named_group_set)
 # endif
 #else
-# ifndef _ossl_ffc_named_group_set_pqg
-#  define _ossl_ffc_named_group_set_pqg OPENSSL_MANGLER_ASM(ossl_ffc_named_group_set_pqg)
+# ifndef _ossl_ffc_named_group_set
+#  define _ossl_ffc_named_group_set OPENSSL_MANGLER_ASM(ossl_ffc_named_group_set)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -67319,6 +67355,15 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_get_extension_type
+#  define ossl_get_extension_type OPENSSL_MANGLER(ossl_get_extension_type)
+# endif
+#else
+# ifndef _ossl_get_extension_type
+#  define _ossl_get_extension_type OPENSSL_MANGLER_ASM(ossl_get_extension_type)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_global_properties_no_mirrored
 #  define ossl_global_properties_no_mirrored OPENSSL_MANGLER(ossl_global_properties_no_mirrored)
 # endif
@@ -67472,15 +67517,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_init_casecmp
-#  define ossl_init_casecmp OPENSSL_MANGLER(ossl_init_casecmp)
-# endif
-#else
-# ifndef _ossl_init_casecmp
-#  define _ossl_init_casecmp OPENSSL_MANGLER_ASM(ossl_init_casecmp)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_init_thread
 #  define ossl_init_thread OPENSSL_MANGLER(ossl_init_thread)
 # endif
@@ -67523,6 +67559,33 @@
 #else
 # ifndef _ossl_is_partially_overlapping
 #  define _ossl_is_partially_overlapping OPENSSL_MANGLER_ASM(ossl_is_partially_overlapping)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_isdigit
+#  define ossl_isdigit OPENSSL_MANGLER(ossl_isdigit)
+# endif
+#else
+# ifndef _ossl_isdigit
+#  define _ossl_isdigit OPENSSL_MANGLER_ASM(ossl_isdigit)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_islower
+#  define ossl_islower OPENSSL_MANGLER(ossl_islower)
+# endif
+#else
+# ifndef _ossl_islower
+#  define _ossl_islower OPENSSL_MANGLER_ASM(ossl_islower)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_isupper
+#  define ossl_isupper OPENSSL_MANGLER(ossl_isupper)
+# endif
+#else
+# ifndef _ossl_isupper
+#  define _ossl_isupper OPENSSL_MANGLER_ASM(ossl_isupper)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -68030,12 +68093,30 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_method_lock_store
+#  define ossl_method_lock_store OPENSSL_MANGLER(ossl_method_lock_store)
+# endif
+#else
+# ifndef _ossl_method_lock_store
+#  define _ossl_method_lock_store OPENSSL_MANGLER_ASM(ossl_method_lock_store)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_method_store_add
 #  define ossl_method_store_add OPENSSL_MANGLER(ossl_method_store_add)
 # endif
 #else
 # ifndef _ossl_method_store_add
 #  define _ossl_method_store_add OPENSSL_MANGLER_ASM(ossl_method_store_add)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_method_store_cache_flush_all
+#  define ossl_method_store_cache_flush_all OPENSSL_MANGLER(ossl_method_store_cache_flush_all)
+# endif
+#else
+# ifndef _ossl_method_store_cache_flush_all
+#  define _ossl_method_store_cache_flush_all OPENSSL_MANGLER_ASM(ossl_method_store_cache_flush_all)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -68075,15 +68156,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_method_store_flush_cache
-#  define ossl_method_store_flush_cache OPENSSL_MANGLER(ossl_method_store_flush_cache)
-# endif
-#else
-# ifndef _ossl_method_store_flush_cache
-#  define _ossl_method_store_flush_cache OPENSSL_MANGLER_ASM(ossl_method_store_flush_cache)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_method_store_free
 #  define ossl_method_store_free OPENSSL_MANGLER(ossl_method_store_free)
 # endif
@@ -68108,6 +68180,24 @@
 #else
 # ifndef _ossl_method_store_remove
 #  define _ossl_method_store_remove OPENSSL_MANGLER_ASM(ossl_method_store_remove)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_method_store_remove_all_provided
+#  define ossl_method_store_remove_all_provided OPENSSL_MANGLER(ossl_method_store_remove_all_provided)
+# endif
+#else
+# ifndef _ossl_method_store_remove_all_provided
+#  define _ossl_method_store_remove_all_provided OPENSSL_MANGLER_ASM(ossl_method_store_remove_all_provided)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_method_unlock_store
+#  define ossl_method_unlock_store OPENSSL_MANGLER(ossl_method_unlock_store)
+# endif
+#else
+# ifndef _ossl_method_unlock_store
+#  define _ossl_method_unlock_store OPENSSL_MANGLER_ASM(ossl_method_unlock_store)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -69827,15 +69917,6 @@
 #else
 # ifndef _ossl_provider_add_to_store
 #  define _ossl_provider_add_to_store OPENSSL_MANGLER_ASM(ossl_provider_add_to_store)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_provider_clear_all_operation_bits
-#  define ossl_provider_clear_all_operation_bits OPENSSL_MANGLER(ossl_provider_clear_all_operation_bits)
-# endif
-#else
-# ifndef _ossl_provider_clear_all_operation_bits
-#  define _ossl_provider_clear_all_operation_bits OPENSSL_MANGLER_ASM(ossl_provider_clear_all_operation_bits)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -72383,6 +72464,24 @@
 #else
 # ifndef _ossl_store_loader_get_number
 #  define _ossl_store_loader_get_number OPENSSL_MANGLER_ASM(ossl_store_loader_get_number)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_store_loader_store_cache_flush
+#  define ossl_store_loader_store_cache_flush OPENSSL_MANGLER(ossl_store_loader_store_cache_flush)
+# endif
+#else
+# ifndef _ossl_store_loader_store_cache_flush
+#  define _ossl_store_loader_store_cache_flush OPENSSL_MANGLER_ASM(ossl_store_loader_store_cache_flush)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef ossl_store_loader_store_remove_all_provided
+#  define ossl_store_loader_store_remove_all_provided OPENSSL_MANGLER(ossl_store_loader_store_remove_all_provided)
+# endif
+#else
+# ifndef _ossl_store_loader_store_remove_all_provided
+#  define _ossl_store_loader_store_remove_all_provided OPENSSL_MANGLER_ASM(ossl_store_loader_store_remove_all_provided)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM

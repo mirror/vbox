@@ -301,7 +301,7 @@ struct servent *getservbyname(const char *name, const char *proto);
 /* end vxworks */
 
 /* system-specific variants defining ossl_sleep() */
-#ifdef OPENSSL_SYS_UNIX
+#if defined(OPENSSL_SYS_UNIX) || defined(__DJGPP__)
 # include <unistd.h>
 static ossl_inline void ossl_sleep(unsigned long millis)
 {
@@ -421,6 +421,26 @@ inline int nssgetpid();
 #   else
 #     define OPENSSL_NO_SECURE_MEMORY
 #   endif
+# endif
+
+/*
+ * str[n]casecmp_l is defined in POSIX 2008-01. Value is taken accordingly
+ * https://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
+ * There are also equivalent functions on Windows.
+ * There is no locale_t on NONSTOP.
+ */
+# if defined(OPENSSL_SYS_WINDOWS)
+#  define locale_t _locale_t
+#  define freelocale _free_locale
+#  define strcasecmp_l _stricmp_l
+#  define strncasecmp_l _strnicmp_l
+#  define strcasecmp _stricmp
+#  define strncasecmp _strnicmp
+# elif !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L \
+     || defined(OPENSSL_SYS_TANDEM)
+#  ifndef OPENSSL_NO_LOCALE
+#   define OPENSSL_NO_LOCALE
+#  endif
 # endif
 
 #endif
