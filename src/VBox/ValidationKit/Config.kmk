@@ -122,7 +122,7 @@ TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIB
 
 #TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBOXGUESTR3EXE
 
-TEMPLATE_VBoxValidationKitR3_USES += vboximportchecker
+TEMPLATE_VBoxValidationKitR3_USES.win += vboximportchecker
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt31
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 
