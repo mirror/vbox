@@ -46,6 +46,7 @@
 #include "UIBootFailureDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIFileManagerDialog.h"
 #include "UIFrameBuffer.h"
@@ -1555,21 +1556,25 @@ void UIMachineLogic::sltOpenPreferencesDialog(const QString &strCategory /* = QS
     if (!isMachineWindowsCreated())
         return;
 
-    /* Check that we do NOT handling that already: */
-    if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
-        return;
-    /* Remember that we handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
+    /* Create instance if not yet created: */
+    if (!m_settings.contains(UISettingsDialog::DialogType_Global))
+    {
+        m_settings[UISettingsDialog::DialogType_Global] = new UISettingsDialogGlobal(activeMachineWindow(),
+                                                                                     strCategory,
+                                                                                     strControl);
+        connect(m_settings[UISettingsDialog::DialogType_Global], &UISettingsDialogGlobal::sigClose,
+                this, &UIMachineLogic::sltClosePreferencesDialog);
+        m_settings.value(UISettingsDialog::DialogType_Global)->load();
+    }
 
-    /* Create and execute global settings window: */
-    QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
-                                                                          strCategory, strControl);
-    pDialog->execute();
-    if (pDialog)
-        delete pDialog;
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::DialogType_Global));
+}
 
-    /* Remember that we do NOT handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
+void UIMachineLogic::sltClosePreferencesDialog()
+{
+    /* Remove instance if exist: */
+    delete m_settings.take(UISettingsDialog::DialogType_Global);
 }
 
 void UIMachineLogic::sltClose()
@@ -1610,18 +1615,27 @@ void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QStri
     if (!isMachineWindowsCreated())
         return;
 
-    /* Create VM settings window on the heap!
-     * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
-    QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
-                                                                            machine().GetId(),
-                                                                            strCategory, strControl, actionPool());
-    /* Executing VM settings window.
-     * This blocking function calls for the internal event-loop to process all further events,
-     * including event which can delete the dialog itself. */
-    pDialog->execute();
-    /* Delete dialog if its still valid: */
-    if (pDialog)
-        delete pDialog;
+    /* Create instance if not yet created: */
+    if (!m_settings.contains(UISettingsDialog::DialogType_Machine))
+    {
+        m_settings[UISettingsDialog::DialogType_Machine] = new UISettingsDialogMachine(activeMachineWindow(),
+                                                                                       machine().GetId(),
+                                                                                       strCategory,
+                                                                                       strControl,
+                                                                                       actionPool());
+        connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogGlobal::sigClose,
+                this, &UIMachineLogic::sltCloseSettingsDialog);
+        m_settings.value(UISettingsDialog::DialogType_Machine)->load();
+    }
+
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::DialogType_Machine));
+}
+
+void UIMachineLogic::sltCloseSettingsDialog()
+{
+    /* Remove instance if exist: */
+    delete m_settings.take(UISettingsDialog::DialogType_Machine);
 
     /* We can't rely on MediumChange events as they are not yet properly implemented within Main.
      * We can't watch for MachineData change events as well as they are of broadcast type
@@ -2766,6 +2780,8 @@ void UIMachineLogic::sltHandleCommitData()
     sltCloseInformationDialog();
     sltCloseSoftKeyboard();
     sltSwitchKeyboardLedsToPreviousLeds();
+    sltCloseSettingsDialog();
+    sltClosePreferencesDialog();
 }
 
 void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)

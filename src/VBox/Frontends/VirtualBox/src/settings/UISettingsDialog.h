@@ -32,11 +32,11 @@
 #endif
 
 /* Qt includes: */
+#include <QMainWindow>
 #include <QPointer>
 #include <QVariant>
 
 /* GUI includes: */
-#include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UISettingsDefs.h"
 
@@ -58,12 +58,17 @@ class UIWarningPane;
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-/** QIMainDialog subclass used as
+/** QMainWindow subclass used as
   * base dialog class for both Global Preferences & Machine Settings
   * dialogs, which encapsulates most of their common functionality. */
-class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>
+class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about dialog should be closed. */
+    void sigClose();
 
 public:
 
@@ -78,8 +83,10 @@ public:
     /** Returns dialog type. */
     virtual DialogType dialogType() const = 0;
 
-    /** Performs modal dialog call. */
-    void execute();
+    /** Loads the dialog data. */
+    virtual void load() = 0;
+    /** Saves the dialog data. */
+    virtual void save() = 0;
 
 protected slots:
 
@@ -107,8 +114,10 @@ protected:
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles first show @a pEvent. */
-    virtual void polishEvent(QShowEvent *pEvent) RT_OVERRIDE;
+    virtual void polishEvent(QShowEvent *pEvent);
     /** Handles close @a pEvent. */
     virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
@@ -116,11 +125,6 @@ protected:
     void loadData(QVariant &data);
     /** Saves the dialog @a data. */
     void saveData(QVariant &data);
-
-    /** Loads the dialog data. */
-    virtual void load() = 0;
-    /** Saves the dialog data. */
-    virtual void save() = 0;
 
     /** Returns configuration access level. */
     ConfigurationAccessLevel configurationAccessLevel() const { return m_enmConfigurationAccessLevel; }
@@ -198,10 +202,14 @@ private:
     /** Holds the serialize process instance. */
     UISettingsSerializer *m_pSerializeProcess;
 
+    /** Holds whether dialog is polished. */
+    bool  m_fPolished;
     /** Holds whether the serialization is in progress. */
     bool  m_fSerializationIsInProgress;
     /** Holds whether there were no serialization errors. */
     bool  m_fSerializationClean;
+    /** Holds whether the dialod had emitted signal to be closed. */
+    bool  m_fClosed;
 
     /** Holds the status-bar widget instance. */
     QStackedWidget *m_pStatusBar;

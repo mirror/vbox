@@ -638,6 +638,8 @@ void UIVirtualBoxManager::sltHandleCommitData()
     sltCloseManagerWindow(UIToolType_Network);
     sltCloseManagerWindow(UIToolType_Cloud);
     sltCloseManagerWindow(UIToolType_CloudConsole);
+    sltCloseSettingsDialog();
+    sltClosePreferencesDialog();
 }
 
 void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
@@ -973,20 +975,23 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
      * if the user tries to open global settings: */
     m_fFirstMediumEnumerationHandled = true;
 
-    /* Lock the action preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndex_M_Application_S_Preferences), "opened", true);
-    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
-    updateActionsAppearance();
+    /* Create instance if not yet created: */
+    if (!m_settings.contains(UISettingsDialog::DialogType_Global))
+    {
+        m_settings[UISettingsDialog::DialogType_Global] = new UISettingsDialogGlobal(this);
+        connect(m_settings[UISettingsDialog::DialogType_Global], &UISettingsDialogGlobal::sigClose,
+                this, &UIVirtualBoxManager::sltClosePreferencesDialog);
+        m_settings.value(UISettingsDialog::DialogType_Global)->load();
+    }
 
-    /* Use the "safe way" to open stack of Mac OS X Sheets: */
-    QWidget *pDialogParent = windowManager().realParentWindow(this);
-    UISafePointerSettingsDialogGlobal pDialog = new UISettingsDialogGlobal(pDialogParent);
-    windowManager().registerNewParent(pDialog, pDialogParent);
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::DialogType_Global));
+}
 
-    /* Execute dialog: */
-    pDialog->execute();
-    delete pDialog;
+void UIVirtualBoxManager::sltClosePreferencesDialog()
+{
+    /* Remove instance if exist: */
+    delete m_settings.take(UISettingsDialog::DialogType_Global);
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -1083,16 +1088,21 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
              * if the user tries to open VM settings: */
             m_fFirstMediumEnumerationHandled = true;
 
-            /* Use the "safe way" to open stack of Mac OS X Sheets: */
-            QWidget *pDialogParent = windowManager().realParentWindow(this);
-            UISafePointerSettingsDialogMachine pDialog = new UISettingsDialogMachine(pDialogParent,
-                                                                                     uID.isNull() ? pItem->id() : uID,
-                                                                                     strCategory, strControl, actionPool());
-            windowManager().registerNewParent(pDialog, pDialogParent);
+            /* Create instance if not yet created: */
+            if (!m_settings.contains(UISettingsDialog::DialogType_Machine))
+            {
+                m_settings[UISettingsDialog::DialogType_Machine] = new UISettingsDialogMachine(this,
+                                                                                               uID.isNull() ? pItem->id() : uID,
+                                                                                               strCategory,
+                                                                                               strControl,
+                                                                                               actionPool());
+                connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogGlobal::sigClose,
+                        this, &UIVirtualBoxManager::sltCloseSettingsDialog);
+                m_settings.value(UISettingsDialog::DialogType_Machine)->load();
+            }
 
-            /* Execute dialog: */
-            pDialog->execute();
-            delete pDialog;
+            /* Expose instance: */
+            UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::DialogType_Machine));
         }
     }
     /* For cloud machine: */
@@ -1108,6 +1118,12 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
         pDialog->exec();
         delete pDialog;
     }
+}
+
+void UIVirtualBoxManager::sltCloseSettingsDialog()
+{
+    /* Remove instance if exist: */
+    delete m_settings.take(UISettingsDialog::DialogType_Machine);
 }
 
 void UIVirtualBoxManager::sltOpenCloneMachineWizard()

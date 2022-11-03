@@ -34,6 +34,7 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
+#include "UISettingsDialog.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -263,11 +264,13 @@ private slots:
     /* "Application" menu functionality: */
     void sltOpenPreferencesDialog(const QString &strCategory = QString(), const QString &strControl = QString());
     void sltOpenPreferencesDialogDefault() { sltOpenPreferencesDialog(); }
+    void sltClosePreferencesDialog();
     void sltClose();
 
     /* "Machine" menu functionality: */
     void sltOpenSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
     void sltOpenSettingsDialogDefault() { sltOpenSettingsDialog(); }
+    void sltCloseSettingsDialog();
     void sltTakeSnapshot();
     void sltShowInformationDialog();
     void sltCloseInformationDialog(bool fAsync = false);
@@ -445,6 +448,9 @@ private:
 
     /** Holds whether VM should perform HID LEDs synchronization. */
     bool m_fIsHidLedsSyncEnabled;
+
+    /** Holds the map of settings dialogs. */
+    QMap<UISettingsDialog::DialogType, UISettingsDialog*>  m_settings;
 
     /** Holds the log viewer dialog instance. */
     QIManagerDialog       *m_pLogViewerDialog;

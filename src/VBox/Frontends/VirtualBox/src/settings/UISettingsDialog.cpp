@@ -39,6 +39,7 @@
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -59,13 +60,15 @@
 
 
 UISettingsDialog::UISettingsDialog(QWidget *pParent)
-    : QIWithRetranslateUI<QIMainDialog>(pParent)
+    : QIWithRetranslateUI<QMainWindow>(pParent)
     , m_pSelector(0)
     , m_pStack(0)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pSerializeProcess(0)
+    , m_fPolished(false)
     , m_fSerializationIsInProgress(false)
     , m_fSerializationClean(true)
+    , m_fClosed(false)
     , m_pStatusBar(0)
     , m_pProcessBar(0)
     , m_pWarningPane(0)
@@ -96,15 +99,6 @@ UISettingsDialog::~UISettingsDialog()
     delete m_pSelector;
 }
 
-void UISettingsDialog::execute()
-{
-    /* Load data: */
-    load();
-
-    /* Execute dialog: */
-    exec();
-}
-
 void UISettingsDialog::accept()
 {
     /* Save data: */
@@ -113,15 +107,19 @@ void UISettingsDialog::accept()
     /* If serialization was clean: */
     if (m_fSerializationClean)
     {
-        /* Call to base-class: */
-        QIWithRetranslateUI<QIMainDialog>::accept();
+        /* Tell the listener to close us (once): */
+        if (!m_fClosed)
+        {
+            m_fClosed = true;
+            emit sigClose();
+        }
     }
 }
 
 void UISettingsDialog::reject()
 {
     if (!isSerializationInProgress())
-        QIWithRetranslateUI<QIMainDialog>::reject();
+        close();
 }
 
 void UISettingsDialog::sltCategoryChanged(int cId)
@@ -221,12 +219,12 @@ bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore objects which are NOT widgets: */
     if (!pObject->isWidgetType())
-        return QIMainDialog::eventFilter(pObject, pEvent);
+        return QMainWindow::eventFilter(pObject, pEvent);
 
     /* Ignore widgets which window is NOT settings window: */
     QWidget *pWidget = static_cast<QWidget*>(pObject);
     if (pWidget->window() != this)
-        return QIMainDialog::eventFilter(pObject, pEvent);
+        return QMainWindow::eventFilter(pObject, pEvent);
 
     /* Process different event-types: */
     switch (pEvent->type())
@@ -254,7 +252,7 @@ bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Base-class processing: */
-    return QIMainDialog::eventFilter(pObject, pEvent);
+    return QMainWindow::eventFilter(pObject, pEvent);
 }
 
 void UISettingsDialog::retranslateUi()
@@ -280,7 +278,20 @@ void UISettingsDialog::retranslateUi()
     revalidate();
 }
 
-void UISettingsDialog::polishEvent(QShowEvent *pEvent)
+void UISettingsDialog::showEvent(QShowEvent *pEvent)
+{
+    /* Polish stuff: */
+    if (!m_fPolished)
+    {
+        m_fPolished = true;
+        polishEvent(pEvent);
+    }
+
+    /* Call to base-class: */
+    QIWithRetranslateUI<QMainWindow>::showEvent(pEvent);
+}
+
+void UISettingsDialog::polishEvent(QShowEvent*)
 {
     /* Check what's the minimum selector size: */
     const int iMinWidth = m_pSelector->minWidth();
@@ -338,24 +349,26 @@ void UISettingsDialog::polishEvent(QShowEvent *pEvent)
 
 #endif /* VBOX_WS_MAC */
 
-    /* Call to base-class: */
-    QIWithRetranslateUI<QIMainDialog>::polishEvent(pEvent);
+    /* Explicit centering according to our parent: */
+    UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
 }
 
 void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
 {
+    /* Ignore event initially: */
+    pEvent->ignore();
+
     /* Check whether there are unsaved settings
      * which will be lost in such case: */
     if (   !isSettingsChanged()
         || msgCenter().confirmSettingsDiscarding(this))
     {
-        /* Call to base-class: */
-        QIWithRetranslateUI<QIMainDialog>::closeEvent(pEvent);
-    }
-    else
-    {
-        /* Otherwise ignore this: */
-        pEvent->ignore();
+        /* Tell the listener to close us (once): */
+        if (!m_fClosed)
+        {
+            m_fClosed = true;
+            emit sigClose();
+        }
     }
 }
 
@@ -713,8 +726,6 @@ void UISettingsDialog::prepare()
     /* Prepare button-box: */
     if (m_pButtonBox)
     {
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-
         /* Create status-bar: */
         m_pStatusBar = new QStackedWidget;
         if (m_pStatusBar)
@@ -820,6 +831,8 @@ void UISettingsDialog::prepareWidgets()
                 m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
                                                  QDialogButtonBox::NoButton);
 #endif
+                m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Return);
+                m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
                 connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::close);
                 connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
 #ifndef VBOX_WS_MAC
