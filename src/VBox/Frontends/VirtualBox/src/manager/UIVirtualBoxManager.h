@@ -211,15 +211,15 @@ private slots:
         /** Handles call to disband group. */
         void sltDisbandGroup();
 
-        /** Handles call to open Machine Settings dialog.
+        /** Handles call to open Settings dialog.
           * @param strCategory can bring the settings category to start from.
           * @param strControl  can bring the widget of the page to focus.
           * @param uID       can bring the ID of machine to manage. */
-        void sltOpenMachineSettingsDialog(QString strCategory = QString(),
-                                          QString strControl = QString(),
-                                          const QUuid &uID = QUuid());
-        /** Handles call to open Machine Settings dialog the default way. */
-        void sltOpenMachineSettingsDialogDefault() { sltOpenMachineSettingsDialog(); }
+        void sltOpenSettingsDialog(QString strCategory = QString(),
+                                   QString strControl = QString(),
+                                   const QUuid &uID = QUuid());
+        /** Handles call to open Settings dialog the default way. */
+        void sltOpenSettingsDialogDefault() { sltOpenSettingsDialog(); }
 
         /** Handles call to open Clone Machine wizard. */
         void sltOpenCloneMachineWizard();

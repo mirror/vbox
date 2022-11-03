@@ -1034,9 +1034,9 @@ void UIVirtualBoxManager::sltDisbandGroup()
     m_pWidget->disbandGroup();
 }
 
-void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
-                                                       QString strControl /* = QString() */,
-                                                       const QUuid &uID /* = QString() */)
+void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString() */,
+                                                QString strControl /* = QString() */,
+                                                const QUuid &uID /* = QString() */)
 {
     /* Lock the action preventing cascade calls: */
     UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), "opened", true);
@@ -2178,7 +2178,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
             this, &UIVirtualBoxManager::sltHandleToolTypeChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
-            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialog);
+            this, &UIVirtualBoxManager::sltOpenSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
             this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
@@ -2255,7 +2255,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
+            this, &UIVirtualBoxManager::sltOpenSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloneMachineWizard);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Move), &UIAction::triggered,
