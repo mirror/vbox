@@ -130,6 +130,9 @@ private slots:
         /** Handles request to update actions. */
         void sltHandleUpdateActionAppearanceRequest() { updateActionsAppearance(); }
 
+        /** Handles request to commit data. */
+        void sltHandleCommitData();
+
         /** Handles signal about medium-enumeration finished. */
         void sltHandleMediumEnumerationFinish();
 

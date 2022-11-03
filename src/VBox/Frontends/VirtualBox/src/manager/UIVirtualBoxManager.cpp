@@ -630,6 +630,16 @@ void UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange()
 }
 #endif /* VBOX_WS_X11 */
 
+void UIVirtualBoxManager::sltHandleCommitData()
+{
+    /* Close the sub-dialogs first: */
+    sltCloseManagerWindow(UIToolType_Extensions);
+    sltCloseManagerWindow(UIToolType_Media);
+    sltCloseManagerWindow(UIToolType_Network);
+    sltCloseManagerWindow(UIToolType_Cloud);
+    sltCloseManagerWindow(UIToolType_CloudConsole);
+}
+
 void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 {
 #if 0 // ohh, come on!
@@ -2161,6 +2171,8 @@ void UIVirtualBoxManager::prepareConnections()
 #endif
 
     /* UICommon connections: */
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVirtualBoxManager::sltHandleCommitData);
     connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIVirtualBoxManager::sltHandleMediumEnumerationFinish);
 
@@ -2408,12 +2420,8 @@ void UIVirtualBoxManager::cleanupMenuBar()
 
 void UIVirtualBoxManager::cleanup()
 {
-    /* Close the sub-dialogs first: */
-    sltCloseManagerWindow(UIToolType_Extensions);
-    sltCloseManagerWindow(UIToolType_Media);
-    sltCloseManagerWindow(UIToolType_Network);
-    sltCloseManagerWindow(UIToolType_Cloud);
-    sltCloseManagerWindow(UIToolType_CloudConsole);
+    /* Ask sub-dialogs to commit data: */
+    sltHandleCommitData();
 
     /* Cleanup: */
     cleanupConnections();
