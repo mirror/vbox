@@ -819,6 +819,15 @@ void UIDesktopWidgetWatchdog::centerWidget(QWidget *pWidget,
 }
 
 /* static */
+void UIDesktopWidgetWatchdog::restoreWidget(QWidget *pWidget)
+{
+    pWidget->show();
+    pWidget->setWindowState(pWidget->windowState() & ~Qt::WindowMinimized);
+    pWidget->activateWindow();
+    pWidget->raise();
+}
+
+/* static */
 void UIDesktopWidgetWatchdog::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h)
 {
     AssertPtrReturnVoid(pWidget);

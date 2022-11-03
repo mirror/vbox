@@ -149,6 +149,8 @@ public:
     static void centerWidget(QWidget *pWidget,
                              QWidget *pRelative,
                              bool fCanResize = true);
+    /** Restores and exposes the @a pWidget on desktop. */
+    static void restoreWidget(QWidget *pWidget);
 
     /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
       * @note  Take into account that this request may fail on X11. */
