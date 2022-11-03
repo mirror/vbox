@@ -377,7 +377,8 @@
     if (m_fUpdateCtx)
     {
         Log(("OvlView(%p) vboxUpdateCtxIfNecessary: m_fUpdateCtx\n", (void *)self));
-        [[self openGLContext] update];
+        /* This must be done on the main thread or it will crash with an error. */
+        [[self openGLContext] performSelectorOnMainThread:@selector(update) withObject:nil waitUntilDone:YES];
         m_fUpdateCtx = false;
     }
 }
