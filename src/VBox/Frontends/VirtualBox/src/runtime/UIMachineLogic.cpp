@@ -1552,7 +1552,8 @@ void UIMachineLogic::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
         (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
 }
 
-void UIMachineLogic::sltOpenPreferencesDialog(const QString &strCategory /* = QString() */, const QString &strControl /* = QString() */)
+void UIMachineLogic::sltOpenPreferencesDialog(const QString &strCategory /* = QString() */,
+                                              const QString &strControl /* = QString() */)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
