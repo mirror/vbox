@@ -2978,6 +2978,16 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
             pVM->nem.s.fLbr = false;
         }
 
+        /*
+         * While hv_vcpu_run_until() is available starting with Catalina (10.15) it sometimes returns
+         * an error there for no obvious reasons and there is no indication as to why this happens
+         * and Apple doesn't document anything. Starting with BigSur (11.0) it appears to work correctly
+         * so pretend that hv_vcpu_run_until() doesn't exist on Catalina which can be determined by checking
+         * whether another method is available which was introduced with BigSur.
+         */
+        if (!hv_vmx_get_msr_info) /* Not available means this runs on < 11.0 */
+            hv_vcpu_run_until = NULL;
+
         if (hv_vcpu_run_until)
         {
             struct mach_timebase_info TimeInfo;
