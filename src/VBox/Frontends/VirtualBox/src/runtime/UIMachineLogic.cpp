@@ -913,10 +913,6 @@ void UIMachineLogic::updateDockOverlay()
 }
 #endif /* VBOX_WS_MAC */
 
-void UIMachineLogic::prepareRequiredFeatures()
-{
-}
-
 void UIMachineLogic::prepareSessionConnections()
 {
     /* We should watch for VBoxSVC availability changes: */

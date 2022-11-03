@@ -220,7 +220,7 @@ protected:
 #endif /* VBOX_WS_MAC */
 
     /* Prepare helpers: */
-    virtual void prepareRequiredFeatures();
+    virtual void prepareRequiredFeatures() {}
     virtual void prepareSessionConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
