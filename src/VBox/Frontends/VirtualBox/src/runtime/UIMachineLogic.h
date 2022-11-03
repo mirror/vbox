@@ -260,37 +260,30 @@ private slots:
     /** Handle menu prepare. */
     void sltHandleMenuPrepare(int iIndex, QMenu *pMenu);
 
+    /** Show Global Preferences on page defined by @a strCategory and tab defined by @a strControl. */
+    void sltOpenPreferencesDialog(const QString &strCategory = QString(), const QString &strControl = QString());
+    void sltOpenPreferencesDialogDefault() { sltOpenPreferencesDialog(); }
+    /* "Application" menu functionality: */
+    void sltClose();
+
     /* "Machine" menu functionality: */
-    void sltShowKeyboardSettings();
-    void sltShowSoftKeyboard();
-    void sltCloseSoftKeyboard(bool fAsync = false);
-    void sltCloseSoftKeyboardDefault() { sltCloseSoftKeyboard(true); }
-    void sltToggleMouseIntegration(bool fEnabled);
-    void sltTypeCAD();
-#ifdef VBOX_WS_X11
-    void sltTypeCABS();
-#endif /* VBOX_WS_X11 */
-    void sltTypeCtrlBreak();
-    void sltTypeInsert();
-    void sltTypePrintScreen();
-    void sltTypeAltPrintScreen();
-    void sltTypeHostKeyComboPressRelease(bool fToggleSequence);
+    void sltOpenSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
+    void sltOpenSettingsDialogDefault() { sltOpenSettingsDialog(); }
     void sltTakeSnapshot();
     void sltShowInformationDialog();
-    void sltCloseVMInformationDialog(bool fAsync = false);
-    void sltCloseVMInformationDialogDefault() { sltCloseVMInformationDialog(true); }
+    void sltCloseInformationDialog(bool fAsync = false);
+    void sltCloseInformationDialogDefault() { sltCloseInformationDialog(true); }
     void sltShowFileManagerDialog();
     void sltCloseFileManagerDialog();
     void sltShowLogDialog();
     /** Handles close signal from the log viewer dialog. */
-    void sltCloseLogViewerWindow();
-    void sltReset();
+    void sltCloseLogDialog();
     void sltPause(bool fOn);
+    void sltReset();
     void sltDetach();
     void sltSaveState();
     void sltShutdown();
     void sltPowerOff();
-    void sltClose();
 
     /* "View" menu functionality: */
     void sltMinimizeActiveMachineWindow();
@@ -301,16 +294,30 @@ private slots:
     void sltToggleRecording(bool fEnabled);
     void sltToggleVRDE(bool fEnabled);
 
+    /* "Input" menu functionality: */
+    void sltShowKeyboardSettings();
+    void sltShowSoftKeyboard();
+    void sltCloseSoftKeyboard(bool fAsync = false);
+    void sltCloseSoftKeyboardDefault() { sltCloseSoftKeyboard(true); }
+    void sltTypeCAD();
+#ifdef VBOX_WS_X11
+    void sltTypeCABS();
+#endif /* VBOX_WS_X11 */
+    void sltTypeCtrlBreak();
+    void sltTypeInsert();
+    void sltTypePrintScreen();
+    void sltTypeAltPrintScreen();
+    void sltTypeHostKeyComboPressRelease(bool fToggleSequence);
+    void sltToggleMouseIntegration(bool fEnabled);
+
     /* "Device" menu functionality: */
-    void sltOpenSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
-    void sltOpenSettingsDialogDefault() { sltOpenSettingsDialog(); }
     void sltOpenSettingsDialogStorage();
+    void sltMountStorageMedium();
     void sltToggleAudioOutput(bool fEnabled);
     void sltToggleAudioInput(bool fEnabled);
     void sltOpenSettingsDialogNetwork();
     void sltOpenSettingsDialogUSBDevices();
     void sltOpenSettingsDialogSharedFolders();
-    void sltMountStorageMedium();
     void sltAttachUSBDevice();
     void sltAttachWebCamDevice();
     void sltChangeSharedClipboardType(QAction *pAction);
@@ -349,9 +356,6 @@ private slots:
     /* Handle disabling/enabling host screen saver. */
     void sltDisableHostScreenSaverStateChanged(bool fDisabled);
 
-    /** Show Global Preferences. */
-    void sltShowGlobalPreferences();
-
     /** Handles request for visual state change. */
     void sltHandleVisualStateChange();
 
@@ -380,9 +384,6 @@ private:
     /** Update 'Window' menu routine. */
     void updateMenuWindow(QMenu *pMenu);
 #endif /* VBOX_WS_MAC */
-
-    /** Show Global Preferences on the page defined by @a strCategory and tab defined by @a strControl. */
-    void showGlobalPreferences(const QString &strCategory = QString(), const QString &strControl = QString());
 
     /** Asks user for the disks encryption passwords. */
     void askUserForTheDiskEncryptionPasswords();

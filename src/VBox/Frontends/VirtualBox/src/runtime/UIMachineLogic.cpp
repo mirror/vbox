@@ -1044,7 +1044,7 @@ void UIMachineLogic::prepareActionConnections()
 {
     /* 'Application' actions connection: */
     connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), &UIAction::triggered,
-            this, &UIMachineLogic::sltShowGlobalPreferences, Qt::UniqueConnection);
+            this, &UIMachineLogic::sltOpenPreferencesDialogDefault, Qt::UniqueConnection);
     connect(actionPool()->action(UIActionIndex_M_Application_S_Close), &UIAction::triggered,
             this, &UIMachineLogic::sltClose, Qt::QueuedConnection);
 
@@ -1552,160 +1552,87 @@ void UIMachineLogic::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
         (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
 }
 
-void UIMachineLogic::sltShowKeyboardSettings()
+void UIMachineLogic::sltOpenPreferencesDialog(const QString &strCategory /* = QString() */, const QString &strControl /* = QString() */)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
-    /* Open Global Preferences: Input page: */
-    showGlobalPreferences("#input", "m_pMachineTable");
-}
-
-void UIMachineLogic::sltShowSoftKeyboard()
-{
-    if (machine().isNull() || !activeMachineWindow())
+    /* Check that we do NOT handling that already: */
+    if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
         return;
+    /* Remember that we handling that already: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
 
-    if (!m_pSoftKeyboardDialog)
-    {
-        QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
-        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uisession(), pCenterWidget, machine().GetName());
-        connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose, this, &UIMachineLogic::sltCloseSoftKeyboardDefault);
-    }
+    /* Create and execute global settings window: */
+    QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
+                                                                          strCategory, strControl);
+    pDialog->execute();
+    if (pDialog)
+        delete pDialog;
 
-    if (m_pSoftKeyboardDialog)
-    {
-        m_pSoftKeyboardDialog->show();
-        m_pSoftKeyboardDialog->raise();
-        m_pSoftKeyboardDialog->setWindowState(m_pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
-        m_pSoftKeyboardDialog->activateWindow();
-    }
+    /* Remember that we do NOT handling that already: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
 }
 
-void UIMachineLogic::sltCloseSoftKeyboard(bool fAsync /* = false */)
-{
-    if (!m_pSoftKeyboardDialog)
-        return;
-    if (fAsync)
-        m_pSoftKeyboardDialog->deleteLater();
-    else
-        delete m_pSoftKeyboardDialog;
-    m_pSoftKeyboardDialog = 0;
-}
-
-void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)
+void UIMachineLogic::sltClose()
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
-    /* Disable/Enable mouse-integration for all view(s): */
-    mouseHandler()->setMouseIntegrationEnabled(fEnabled);
-}
+    /* Do not close machine-window in 'manual-override' mode: */
+    if (uisession()->isManualOverrideMode())
+        return;
 
-void UIMachineLogic::sltTypeCAD()
-{
-    keyboard().PutCAD();
-    AssertWrapperOk(keyboard());
-}
-
-#ifdef VBOX_WS_X11
-void UIMachineLogic::sltTypeCABS()
-{
-    static QVector<LONG> sequence(6);
-    sequence[0] = 0x1d;        /* Ctrl down */
-    sequence[1] = 0x38;        /* Alt down */
-    sequence[2] = 0x0E;        /* Backspace down */
-    sequence[3] = 0x0E | 0x80; /* Backspace up */
-    sequence[4] = 0x38 | 0x80; /* Alt up */
-    sequence[5] = 0x1d | 0x80; /* Ctrl up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
-}
-#endif /* VBOX_WS_X11 */
-
-void UIMachineLogic::sltTypeCtrlBreak()
-{
-    static QVector<LONG> sequence(6);
-    sequence[0] = 0x1d;        /* Ctrl down */
-    sequence[1] = 0xe0;        /* Extended flag */
-    sequence[2] = 0x46;        /* Break down */
-    sequence[3] = 0xe0;        /* Extended flag */
-    sequence[4] = 0x46 | 0x80; /* Break up */
-    sequence[5] = 0x1d | 0x80; /* Ctrl up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
-}
-
-void UIMachineLogic::sltTypeInsert()
-{
-    static QVector<LONG> sequence(4);
-    sequence[0] = 0xE0;        /* Extended flag */
-    sequence[1] = 0x52;        /* Insert down */
-    sequence[2] = 0xE0;        /* Extended flag */
-    sequence[3] = 0x52 | 0x80; /* Insert up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
-}
-
-void UIMachineLogic::sltTypePrintScreen()
-{
-    static QVector<LONG> sequence(8);
-    sequence[0] = 0xE0;        /* Extended flag */
-    sequence[1] = 0x2A;        /* Print.. down */
-    sequence[2] = 0xE0;        /* Extended flag */
-    sequence[3] = 0x37;        /* ..Screen down */
-    sequence[4] = 0xE0;        /* Extended flag */
-    sequence[5] = 0x37 | 0x80; /* ..Screen up */
-    sequence[6] = 0xE0;        /* Extended flag */
-    sequence[7] = 0x2A | 0x80; /* Print.. up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
-}
-
-void UIMachineLogic::sltTypeAltPrintScreen()
-{
-    static QVector<LONG> sequence(10);
-    sequence[0] = 0x38;        /* Alt down */
-    sequence[1] = 0xE0;        /* Extended flag */
-    sequence[2] = 0x2A;        /* Print.. down */
-    sequence[3] = 0xE0;        /* Extended flag */
-    sequence[4] = 0x37;        /* ..Screen down */
-    sequence[5] = 0xE0;        /* Extended flag */
-    sequence[6] = 0x37 | 0x80; /* ..Screen up */
-    sequence[7] = 0xE0;        /* Extended flag */
-    sequence[8] = 0x2A | 0x80; /* Print.. up */
-    sequence[9] = 0x38 | 0x80; /* Alt up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
-}
-
-void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool fToggleSequence)
-{
-    if (keyboardHandler())
-        keyboardHandler()->setHostKeyComboPressedFlag(fToggleSequence);
-    QList<unsigned> shortCodes = UIHostCombo::modifiersToScanCodes(gEDataManager->hostKeyCombination());
-    QVector<LONG> codes;
-    foreach (unsigned idxCode, shortCodes)
+    /* First, we have to close/hide any opened modal & popup application widgets.
+     * We have to make sure such window is hidden even if close-event was rejected.
+     * We are re-throwing this slot if any widget present to test again.
+     * If all opened widgets are closed/hidden, we can try to close machine-window: */
+    QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
+                       QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0;
+    if (pWidget)
     {
-        /* Check if we need to include extended code for this key: */
-        if (idxCode & 0x100)
-            codes << 0xE0;
-        if (fToggleSequence)
-        {
-            /* Add the press code: */
-            codes << (idxCode & 0x7F);
-        }
-        else
-        {
-            /* Add the release code: */
-            codes << ((idxCode & 0x7F) | 0x80);
-        }
+        /* Closing/hiding all we found: */
+        pWidget->close();
+        if (!pWidget->isHidden())
+            pWidget->hide();
+        QTimer::singleShot(0, this, SLOT(sltClose()));
+        return;
     }
 
-    keyboard().PutScancodes(codes);
-    AssertWrapperOk(keyboard());
+    /* Try to close active machine-window: */
+    LogRel(("GUI: Request to close active machine-window.\n"));
+    activeMachineWindow()->close();
+}
+
+void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QString() */,
+                                           const QString &strControl /* = QString()*/)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Create VM settings window on the heap!
+     * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
+    QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
+                                                                            machine().GetId(),
+                                                                            strCategory, strControl, actionPool());
+    /* Executing VM settings window.
+     * This blocking function calls for the internal event-loop to process all further events,
+     * including event which can delete the dialog itself. */
+    pDialog->execute();
+    /* Delete dialog if its still valid: */
+    if (pDialog)
+        delete pDialog;
+
+    /* We can't rely on MediumChange events as they are not yet properly implemented within Main.
+     * We can't watch for MachineData change events as well as they are of broadcast type
+     * and console event-handler do not processing broadcast events.
+     * But we still want to be updated after possible medium changes at least if they were
+     * originated from our side. */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->updateAppearanceOf(UIVisualElement_HDStuff | UIVisualElement_CDStuff | UIVisualElement_FDStuff);
 }
 
 void UIMachineLogic::sltTakeSnapshot()
@@ -1768,11 +1695,11 @@ void UIMachineLogic::sltShowInformationDialog()
         m_pVMInformationDialog->raise();
         m_pVMInformationDialog->setWindowState(m_pVMInformationDialog->windowState() & ~Qt::WindowMinimized);
         m_pVMInformationDialog->activateWindow();
-        connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose, this, &UIMachineLogic::sltCloseVMInformationDialogDefault);
+        connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose, this, &UIMachineLogic::sltCloseInformationDialogDefault);
     }
 }
 
-void UIMachineLogic::sltCloseVMInformationDialog(bool fAsync /* = false */)
+void UIMachineLogic::sltCloseInformationDialog(bool fAsync /* = false */)
 {
     if (!m_pVMInformationDialog)
         return;
@@ -1825,14 +1752,51 @@ void UIMachineLogic::sltCloseFileManagerDialog()
     UIFileManagerDialogFactory().cleanup(pDialog);
 }
 
-void UIMachineLogic::sltReset()
+void UIMachineLogic::sltShowLogDialog()
 {
-    reset(true);
+    if (machine().isNull() || !activeMachineWindow())
+        return;
+
+    /* Create a logviewer only if we don't have one already */
+    if (m_pLogViewerDialog)
+        return;
+
+    QIManagerDialog *pLogViewerDialog;
+    UIVMLogViewerDialogFactory dialogFactory(actionPool(), machine().GetId(), machine().GetName());
+    dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
+    if (pLogViewerDialog)
+    {
+        m_pLogViewerDialog = pLogViewerDialog;
+
+        /* Show instance: */
+        pLogViewerDialog->show();
+        pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
+        pLogViewerDialog->activateWindow();
+        connect(pLogViewerDialog, &QIManagerDialog::sigClose,
+                this, &UIMachineLogic::sltCloseLogDialog);
+    }
+}
+
+void UIMachineLogic::sltCloseLogDialog()
+{
+    if (!m_pLogViewerDialog)
+        return;
+
+    QIManagerDialog* pDialog = m_pLogViewerDialog;
+    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
+    m_pLogViewerDialog = 0;
+    pDialog->close();
+    UIVMLogViewerDialogFactory().cleanup(pDialog);
 }
 
 void UIMachineLogic::sltPause(bool fOn)
 {
     uisession()->setPause(fOn);
+}
+
+void UIMachineLogic::sltReset()
+{
+    reset(true);
 }
 
 void UIMachineLogic::sltDetach()
@@ -1886,37 +1850,6 @@ void UIMachineLogic::sltPowerOff()
     LogRel(("GUI: User requested to power VM off.\n"));
     const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
     uisession()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
-}
-
-void UIMachineLogic::sltClose()
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Do not close machine-window in 'manual-override' mode: */
-    if (uisession()->isManualOverrideMode())
-        return;
-
-    /* First, we have to close/hide any opened modal & popup application widgets.
-     * We have to make sure such window is hidden even if close-event was rejected.
-     * We are re-throwing this slot if any widget present to test again.
-     * If all opened widgets are closed/hidden, we can try to close machine-window: */
-    QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
-                       QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0;
-    if (pWidget)
-    {
-        /* Closing/hiding all we found: */
-        pWidget->close();
-        if (!pWidget->isHidden())
-            pWidget->hide();
-        QTimer::singleShot(0, this, SLOT(sltClose()));
-        return;
-    }
-
-    /* Try to close active machine-window: */
-    LogRel(("GUI: Request to close active machine-window.\n"));
-    activeMachineWindow()->close();
 }
 
 void UIMachineLogic::sltMinimizeActiveMachineWindow()
@@ -2145,39 +2078,175 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
     }
 }
 
-void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QString() */,
-                                           const QString &strControl /* = QString()*/)
+void UIMachineLogic::sltShowKeyboardSettings()
+{
+    /* Global preferences: Input page: */
+    sltOpenPreferencesDialog("#input", "m_pMachineTable");
+}
+
+void UIMachineLogic::sltShowSoftKeyboard()
+{
+    if (machine().isNull() || !activeMachineWindow())
+        return;
+
+    if (!m_pSoftKeyboardDialog)
+    {
+        QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
+        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uisession(), pCenterWidget, machine().GetName());
+        connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose, this, &UIMachineLogic::sltCloseSoftKeyboardDefault);
+    }
+
+    if (m_pSoftKeyboardDialog)
+    {
+        m_pSoftKeyboardDialog->show();
+        m_pSoftKeyboardDialog->raise();
+        m_pSoftKeyboardDialog->setWindowState(m_pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
+        m_pSoftKeyboardDialog->activateWindow();
+    }
+}
+
+void UIMachineLogic::sltCloseSoftKeyboard(bool fAsync /* = false */)
+{
+    if (!m_pSoftKeyboardDialog)
+        return;
+    if (fAsync)
+        m_pSoftKeyboardDialog->deleteLater();
+    else
+        delete m_pSoftKeyboardDialog;
+    m_pSoftKeyboardDialog = 0;
+}
+
+void UIMachineLogic::sltTypeCAD()
+{
+    keyboard().PutCAD();
+    AssertWrapperOk(keyboard());
+}
+
+#ifdef VBOX_WS_X11
+void UIMachineLogic::sltTypeCABS()
+{
+    static QVector<LONG> sequence(6);
+    sequence[0] = 0x1d;        /* Ctrl down */
+    sequence[1] = 0x38;        /* Alt down */
+    sequence[2] = 0x0E;        /* Backspace down */
+    sequence[3] = 0x0E | 0x80; /* Backspace up */
+    sequence[4] = 0x38 | 0x80; /* Alt up */
+    sequence[5] = 0x1d | 0x80; /* Ctrl up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+#endif /* VBOX_WS_X11 */
+
+void UIMachineLogic::sltTypeCtrlBreak()
+{
+    static QVector<LONG> sequence(6);
+    sequence[0] = 0x1d;        /* Ctrl down */
+    sequence[1] = 0xe0;        /* Extended flag */
+    sequence[2] = 0x46;        /* Break down */
+    sequence[3] = 0xe0;        /* Extended flag */
+    sequence[4] = 0x46 | 0x80; /* Break up */
+    sequence[5] = 0x1d | 0x80; /* Ctrl up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypeInsert()
+{
+    static QVector<LONG> sequence(4);
+    sequence[0] = 0xE0;        /* Extended flag */
+    sequence[1] = 0x52;        /* Insert down */
+    sequence[2] = 0xE0;        /* Extended flag */
+    sequence[3] = 0x52 | 0x80; /* Insert up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypePrintScreen()
+{
+    static QVector<LONG> sequence(8);
+    sequence[0] = 0xE0;        /* Extended flag */
+    sequence[1] = 0x2A;        /* Print.. down */
+    sequence[2] = 0xE0;        /* Extended flag */
+    sequence[3] = 0x37;        /* ..Screen down */
+    sequence[4] = 0xE0;        /* Extended flag */
+    sequence[5] = 0x37 | 0x80; /* ..Screen up */
+    sequence[6] = 0xE0;        /* Extended flag */
+    sequence[7] = 0x2A | 0x80; /* Print.. up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypeAltPrintScreen()
+{
+    static QVector<LONG> sequence(10);
+    sequence[0] = 0x38;        /* Alt down */
+    sequence[1] = 0xE0;        /* Extended flag */
+    sequence[2] = 0x2A;        /* Print.. down */
+    sequence[3] = 0xE0;        /* Extended flag */
+    sequence[4] = 0x37;        /* ..Screen down */
+    sequence[5] = 0xE0;        /* Extended flag */
+    sequence[6] = 0x37 | 0x80; /* ..Screen up */
+    sequence[7] = 0xE0;        /* Extended flag */
+    sequence[8] = 0x2A | 0x80; /* Print.. up */
+    sequence[9] = 0x38 | 0x80; /* Alt up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool fToggleSequence)
+{
+    if (keyboardHandler())
+        keyboardHandler()->setHostKeyComboPressedFlag(fToggleSequence);
+    QList<unsigned> shortCodes = UIHostCombo::modifiersToScanCodes(gEDataManager->hostKeyCombination());
+    QVector<LONG> codes;
+    foreach (unsigned idxCode, shortCodes)
+    {
+        /* Check if we need to include extended code for this key: */
+        if (idxCode & 0x100)
+            codes << 0xE0;
+        if (fToggleSequence)
+        {
+            /* Add the press code: */
+            codes << (idxCode & 0x7F);
+        }
+        else
+        {
+            /* Add the release code: */
+            codes << ((idxCode & 0x7F) | 0x80);
+        }
+    }
+
+    keyboard().PutScancodes(codes);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
-    /* Create VM settings window on the heap!
-     * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
-    QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
-                                                                            machine().GetId(),
-                                                                            strCategory, strControl, actionPool());
-    /* Executing VM settings window.
-     * This blocking function calls for the internal event-loop to process all further events,
-     * including event which can delete the dialog itself. */
-    pDialog->execute();
-    /* Delete dialog if its still valid: */
-    if (pDialog)
-        delete pDialog;
-
-    /* We can't rely on MediumChange events as they are not yet properly implemented within Main.
-     * We can't watch for MachineData change events as well as they are of broadcast type
-     * and console event-handler do not processing broadcast events.
-     * But we still want to be updated after possible medium changes at least if they were
-     * originated from our side. */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->updateAppearanceOf(UIVisualElement_HDStuff | UIVisualElement_CDStuff | UIVisualElement_FDStuff);
+    /* Disable/Enable mouse-integration for all view(s): */
+    mouseHandler()->setMouseIntegrationEnabled(fEnabled);
 }
 
 void UIMachineLogic::sltOpenSettingsDialogStorage()
 {
     /* Machine settings: Storage page: */
     sltOpenSettingsDialog("#storage");
+}
+
+void UIMachineLogic::sltMountStorageMedium()
+{
+    /* Sender action: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertMsgReturnVoid(pAction, ("This slot should only be called by menu action!\n"));
+
+    /* Current mount-target: */
+    const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
+
+    /* Update current machine mount-target: */
+    uiCommon().updateMachineStorage(machine(), target, actionPool());
 }
 
 void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
@@ -2274,19 +2343,6 @@ void UIMachineLogic::sltOpenSettingsDialogSharedFolders()
 
     /* Open VM settings : Shared folders page: */
     sltOpenSettingsDialog("#sharedFolders");
-}
-
-void UIMachineLogic::sltMountStorageMedium()
-{
-    /* Sender action: */
-    QAction *pAction = qobject_cast<QAction*>(sender());
-    AssertMsgReturnVoid(pAction, ("This slot should only be called by menu action!\n"));
-
-    /* Current mount-target: */
-    const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
-
-    /* Update current machine mount-target: */
-    uiCommon().updateMachineStorage(machine(), target, actionPool());
 }
 
 void UIMachineLogic::sltAttachUSBDevice()
@@ -2455,43 +2511,6 @@ void UIMachineLogic::sltInstallGuestAdditions()
         gpNotificationCenter->append(pNotification);
     }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-}
-
-void UIMachineLogic::sltShowLogDialog()
-{
-    if (machine().isNull() || !activeMachineWindow())
-        return;
-
-    /* Create a logviewer only if we don't have one already */
-    if (m_pLogViewerDialog)
-        return;
-
-    QIManagerDialog *pLogViewerDialog;
-    UIVMLogViewerDialogFactory dialogFactory(actionPool(), machine().GetId(), machine().GetName());
-    dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
-    if (pLogViewerDialog)
-    {
-        m_pLogViewerDialog = pLogViewerDialog;
-
-        /* Show instance: */
-        pLogViewerDialog->show();
-        pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
-        pLogViewerDialog->activateWindow();
-        connect(pLogViewerDialog, &QIManagerDialog::sigClose,
-                this, &UIMachineLogic::sltCloseLogViewerWindow);
-    }
-}
-
-void UIMachineLogic::sltCloseLogViewerWindow()
-{
-    if (!m_pLogViewerDialog)
-        return;
-
-    QIManagerDialog* pDialog = m_pLogViewerDialog;
-    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pLogViewerDialog = 0;
-    pDialog->close();
-    UIVMLogViewerDialogFactory().cleanup(pDialog);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2716,16 +2735,6 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
     }
 }
 
-void UIMachineLogic::sltShowGlobalPreferences()
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Just show Global Preferences: */
-    showGlobalPreferences();
-}
-
 void UIMachineLogic::sltHandleVisualStateChange()
 {
     /* Check for new requested value stored in extra-data: */
@@ -2752,12 +2761,12 @@ void UIMachineLogic::sltHandleCommitData()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Cleanup debugger before VBoxDbg module handle cleaned up: */
     cleanupDebugger();
-    sltCloseLogViewerWindow();
+    sltCloseLogDialog();
     sltCloseGuestControlConsoleDialog();
 #endif
     activateScreenSaver();
     sltCloseFileManagerDialog();
-    sltCloseVMInformationDialog();
+    sltCloseInformationDialog();
     sltCloseSoftKeyboard();
     sltSwitchKeyboardLedsToPreviousLeds();
 }
@@ -3070,29 +3079,6 @@ void UIMachineLogic::updateMenuWindow(QMenu *pMenu)
     }
 }
 #endif /* VBOX_WS_MAC */
-
-void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QString() */, const QString &strControl /* = QString() */)
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Check that we do NOT handling that already: */
-    if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
-        return;
-    /* Remember that we handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
-
-    /* Create and execute global settings window: */
-    QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
-                                                                          strCategory, strControl);
-    pDialog->execute();
-    if (pDialog)
-        delete pDialog;
-
-    /* Remember that we do NOT handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
-}
 
 void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
 {
