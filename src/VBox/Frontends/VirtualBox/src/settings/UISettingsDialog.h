@@ -67,10 +67,16 @@ class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QIMainD
 
 public:
 
+    /** Dialog types. */
+    enum DialogType { DialogType_Global, DialogType_Machine };
+
     /** Constructs settings dialog passing @a pParent to the base-class. */
     UISettingsDialog(QWidget *pParent);
     /** Destructs settings dialog. */
     virtual ~UISettingsDialog() RT_OVERRIDE;
+
+    /** Returns dialog type. */
+    virtual DialogType dialogType() const = 0;
 
     /** Performs modal dialog call. */
     void execute();
