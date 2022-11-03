@@ -131,7 +131,7 @@ void UISettingsDialogGlobal::retranslateUi()
     setWindowTitle(title());
 }
 
-void UISettingsDialogGlobal::loadOwnData()
+void UISettingsDialogGlobal::load()
 {
     /* Get host & properties: */
     CHost comHost = uiCommon().host();
@@ -145,7 +145,7 @@ void UISettingsDialogGlobal::loadOwnData()
     UISettingsDialog::loadData(varData);
 }
 
-void UISettingsDialogGlobal::saveOwnData()
+void UISettingsDialogGlobal::save()
 {
     /* Get host & properties: */
     CHost comHost = uiCommon().host();
@@ -405,7 +405,7 @@ void UISettingsDialogMachine::retranslateUi()
     setWindowTitle(title());
 }
 
-void UISettingsDialogMachine::loadOwnData()
+void UISettingsDialogMachine::load()
 {
     /* Check that session is NOT created: */
     if (!m_session.isNull())
@@ -431,7 +431,7 @@ void UISettingsDialogMachine::loadOwnData()
     UISettingsDialog::loadData(varData);
 }
 
-void UISettingsDialogMachine::saveOwnData()
+void UISettingsDialogMachine::save()
 {
     /* Check that session is NOT created: */
     if (!m_session.isNull())
@@ -642,7 +642,7 @@ void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &uMachineId)
         return;
 
     /* Reload data: */
-    loadOwnData();
+    load();
 }
 
 void UISettingsDialogMachine::prepare()

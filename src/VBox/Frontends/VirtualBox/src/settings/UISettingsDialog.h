@@ -58,8 +58,9 @@ class UIWarningPane;
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-/** QIMainDialog aubclass used as
-  * base dialog class for both Global & VM settings which encapsulates most of their common functionality. */
+/** QIMainDialog subclass used as
+  * base dialog class for both Global Preferences & Machine Settings
+  * dialogs, which encapsulates most of their common functionality. */
 class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>
 {
     Q_OBJECT;
@@ -105,27 +106,25 @@ protected:
     /** Handles close @a pEvent. */
     virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
-    /** Returns the serialize process instance. */
-    UISettingsSerializer *serializeProcess() const { return m_pSerializeProcess; }
-    /** Returns whether the serialization is in progress. */
-    bool isSerializationInProgress() const { return m_fSerializationIsInProgress; }
-
-    /** Loads the @a data. */
+    /** Loads the dialog @a data. */
     void loadData(QVariant &data);
-    /** Wrapper for the method above.
-      * Loads the data from the corresponding source. */
-    virtual void loadOwnData() = 0;
-
-    /** Saves the @a data. */
+    /** Saves the dialog @a data. */
     void saveData(QVariant &data);
-    /** Wrapper for the method above.
-      * Saves the data to the corresponding source. */
-    virtual void saveOwnData() = 0;
+
+    /** Loads the dialog data. */
+    virtual void load() = 0;
+    /** Saves the dialog data. */
+    virtual void save() = 0;
 
     /** Returns configuration access level. */
     ConfigurationAccessLevel configurationAccessLevel() const { return m_enmConfigurationAccessLevel; }
     /** Defines configuration access level. */
     void setConfigurationAccessLevel(ConfigurationAccessLevel enmConfigurationAccessLevel);
+
+    /** Returns the serialize process instance. */
+    UISettingsSerializer *serializeProcess() const { return m_pSerializeProcess; }
+    /** Returns whether the serialization is in progress. */
+    bool isSerializationInProgress() const { return m_fSerializationIsInProgress; }
 
     /** Returns the dialog title extension. */
     virtual QString titleExtension() const = 0;
