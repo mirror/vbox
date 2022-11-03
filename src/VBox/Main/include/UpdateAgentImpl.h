@@ -134,13 +134,14 @@ public:
     /** @}  */
 
     /** @name Public methods for internal purposes only
-     *        (ensure there is a caller and a read lock before calling them!) */
+     *        (ensure there is a caller and a read lock before calling them!)
+     * @{ */
     HRESULT i_loadSettings(const settings::UpdateAgent &data);
     HRESULT i_saveSettings(settings::UpdateAgent &data);
 
     virtual HRESULT i_setCheckCount(ULONG aCount);
     virtual HRESULT i_setLastCheckDate(const com::Utf8Str &aDate);
-    /** @}  */
+    /** @} */
 
 protected:
 
