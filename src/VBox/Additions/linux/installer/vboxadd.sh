@@ -265,7 +265,9 @@ cleanup_modules()
         KERN_VER="${KERN_VER#/lib/modules/}"
         unset do_update
         for j in ${OLDMODULES}; do
-            test -f "${i}/${j}.ko" && do_update=1 && rm -f "${i}/${j}.ko"
+            for mod_ext in ko ko.gz ko.xz ko.zst; do
+                test -f "${i}/${j}.${mod_ext}" && do_update=1 && rm -f "${i}/${j}.${mod_ext}"
+            done
         done
         test -z "$do_update" || update_initramfs "$KERN_VER"
         # Remove empty /lib/modules folders which may have been kept around

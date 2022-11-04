@@ -634,18 +634,18 @@ cleanup()
     for i in /lib/modules/*; do
         # Check whether we are only cleaning up for uninstalled kernels.
         test -n "${only_old}" && test -e "${i}/kernel/drivers" && continue
-        # We could just do "rm -f", but we only want to try deleting folders if
-        # we are sure they were ours, i.e. they had our modules in beforehand.
-        if    test -e "${i}/misc/vboxdrv.ko" \
-           || test -e "${i}/misc/vboxnetadp.ko" \
-           || test -e "${i}/misc/vboxnetflt.ko" \
-           || test -e "${i}/misc/vboxpci.ko"; then
-            rm -f "${i}/misc/vboxdrv.ko" "${i}/misc/vboxnetadp.ko" \
-                  "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
-            version=`expr "${i}" : "/lib/modules/\(.*\)"`
-            depmod -a "${version}"
-            sync
-        fi
+
+        unset do_update
+        for j in $MODULE_LIST; do
+            for mod_ext in ko ko.gz ko.xz ko.zst; do
+                test -f "${i}/${j}.${mod_ext}" && do_update=1 && rm -f "${i}/${j}.${mod_ext}"
+            done
+        done
+
+        # Trigger depmod(8) only in case if directory content was modified
+        # and save a bit of run time.
+        test -n "$do_update" && depmod -a "$(basename "$i")" && sync
+
         # Remove the kernel version folder if it was empty except for us.
         test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
              = "${i}/misc/* ${i}/misc/.. ${i}/misc ${i}/.." &&
