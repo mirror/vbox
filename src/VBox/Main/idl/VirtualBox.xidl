@@ -14940,7 +14940,7 @@
       <param name="flags" type="wstring" dir="in" safearray="yes">
         <desc>Array of comma-separated list of source flags.
 
-          The following flags are available for directory sources:
+          The following flags are available:
 
           <table>
             <tr>
@@ -14949,12 +14949,11 @@
             </tr>
           </table>
 
-          The following flags are available for file sources:
-
           <table>
             <tr>
               <td>NoReplace</td>
-              <td>Do not replace any destination object.</td>
+              <td>Do not replace any existing destination files on
+                the destination.</td>
             </tr>
             <tr>
               <td>FollowLinks</td>
@@ -14996,7 +14995,7 @@
       <param name="flags" type="wstring" dir="in" safearray="yes">
         <desc>Array of comma-separated list of source flags.
 
-          The following flags are available for directory sources:
+          The following flags are available:
 
           <table>
             <tr>
@@ -15005,12 +15004,11 @@
             </tr>
           </table>
 
-          The following flags are available for file sources:
-
           <table>
             <tr>
               <td>NoReplace</td>
-              <td>Do not replace any destination object.</td>
+              <td>Do not replace any existing destination files on
+                the destination.</td>
             </tr>
             <tr>
               <td>FollowLinks</td>

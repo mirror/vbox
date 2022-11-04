@@ -1749,14 +1749,14 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         Utf8Str strCopyFlags;
         if (fRecursive && fIsDir) /* Only available for directories. Just ignore otherwise. */
             strCopyFlags += "Recursive,";
-        if (fIsDir)
-            strCopyFlags += "CopyIntoExisting,"; /* Implicit. */
         if (fFollow)
             strCopyFlags += "FollowLinks,";
-        if (fUpdate && !fIsDir)    /* Only affects files. */
+        if (fUpdate)    /* Only copy source files which are newer than the destination file. */
             strCopyFlags += "Update,";
-        if (fNoReplace && !fIsDir) /* Ditto. */
+        if (fNoReplace) /* Do not overwrite files. */
             strCopyFlags += "NoReplace,";
+        else if (!fNoReplace && fIsDir)
+            strCopyFlags += "CopyIntoExisting,"; /* Only copy into existing directories if "--no-replace" isn't specified. */
        aCopyFlags.push_back(Bstr(strCopyFlags).raw());
     }
 

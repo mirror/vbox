@@ -1417,6 +1417,26 @@ const char *GuestBase::fsObjTypeToStr(FsObjType_T enmType)
     return "unknown";
 }
 
+/**
+ * Converts a PathStyle_T to a human-readable string.
+ *
+ * @returns Human-readable string of PathStyle_T.
+ * @param   enmPathStyle        PathStyle_T to convert.
+ */
+/* static */
+const char *GuestBase::pathStyleToStr(PathStyle_T enmPathStyle)
+{
+    switch (enmPathStyle)
+    {
+        case PathStyle_DOS:     return "DOS";
+        case PathStyle_UNIX:    return "UNIX";
+        case PathStyle_Unknown: return "Unknown";
+        default:                break;
+    }
+
+    return "<invalid>";
+}
+
 GuestObject::GuestObject(void)
     : mSession(NULL),
       mObjectID(0)
@@ -1689,6 +1709,53 @@ int GuestWaitEvent::SignalExternal(IEvent *pEvent)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Builds a (final) destination path from a given source + destination path.
+ *
+ * This does not utilize any file system access whatsoever. Used for guest and host paths.
+ *
+ * @returns VBox status code.
+ * @param   strSrcPath          Source path to build destination path for.
+ * @param   enmSrcPathStyle     Path style the source path is in.
+ * @param   strDstPath          Destination path to use for building the (final) destination path.
+ * @param   enmDstPathStyle     Path style the destination path is in.
+ *
+ * @note    See rules within the function.
+ */
+/* static */
+int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSrcPathStyle, Utf8Str &strDstPath, PathStyle_T enmDstPathStyle)
+{
+    /**
+     * Rules:
+     *
+     * #    source       dest             final dest                        remarks
+     *
+     * 1    /gst/dir1/   /dst/dir2/       /dst/dir2/<contents of dir1>      Just copies contents of <contents>, not the directory itself.
+     * 2    /gst/dir1    /dst/dir2/       /dst/dir2/dir1                    Copies dir1 into dir2.
+     * 3    /gst/dir1    /dst/dir2        /dst/dir2                         Overwrites stuff from dir2 with stuff from dir1.
+     */
+    const char *pszSrcName = RTPathFilenameEx(strSrcPath.c_str(),
+                                                 enmSrcPathStyle == PathStyle_DOS
+                                              ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
+
+    const char *pszDstName = RTPathFilenameEx(strDstPath.c_str(),
+                                                enmDstPathStyle == PathStyle_DOS
+                                              ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
+
+    if (   (!pszSrcName && !pszDstName)  /* #1 */
+        || ( pszSrcName &&  pszDstName)) /* #3 */
+    {
+        /* Note: Must have DirectoryFlag_CopyIntoExisting + FileFlag_NoReplace *not* set. */
+    }
+    else if (pszSrcName && !pszDstName) /* #2 */
+    {
+        strDstPath += RTPATH_SLASH_STR;
+        strDstPath += pszSrcName;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Translates a path from a specific path style into another.
  *
  * @returns VBox status code.
@@ -1709,10 +1776,6 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
 
     AssertReturn(RTStrIsValidEncoding(strPath.c_str()), VERR_INVALID_PARAMETER);
 
-#ifdef DEBUG
-    Utf8Str const strPathOrg = strPath; /* Make a backup so that we later can log stuff properly. */
-#endif
-
     int vrc = VINF_SUCCESS;
 
     Utf8Str strTranslated;
@@ -1721,14 +1784,16 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
             && enmDstPathStyle == PathStyle_UNIX)
         || (fForce && enmDstPathStyle == PathStyle_UNIX))
     {
-        strTranslated = RTPathChangeToUnixSlashes(strPath.mutableRaw(), true /* fForce */);
+        strTranslated = strPath;
+        RTPathChangeToUnixSlashes(strTranslated.mutableRaw(), true /* fForce */);
     }
     else if (enmDstPathStyle == PathStyle_DOS)
     {
         if (   enmSrcPathStyle == PathStyle_DOS
             && fForce)
         {
-            strTranslated = RTPathChangeToDosSlashes(strPath.mutableRaw(), true /* fForce */);
+            strTranslated = strPath;
+            RTPathChangeToDosSlashes(strTranslated.mutableRaw(), true /* fForce */);
         }
         else if (enmSrcPathStyle == PathStyle_UNIX)
         {
@@ -1777,7 +1842,10 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
     }
 
     if (RT_FAILURE(vrc))
+    {
+        LogRel2(("Guest Control: Translating path '%s' -> '%s' failed, vrc=%Rrc\n", strPath.c_str(), strTranslated.c_str(), vrc));
         return vrc;
+    }
 
     /* Cleanup. */
     const char  *psz = strTranslated.mutableRaw();
@@ -1807,12 +1875,13 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
 
     strTranslated.jolt();
 
+    LogRel2(("Guest Control: Translating '%s' (%s) -> '%s' (%s)\n",
+             strPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
+             strTranslated.c_str(), GuestBase::pathStyleToStr(enmDstPathStyle), vrc));
+
     if (RT_SUCCESS(vrc))
         strPath = strTranslated;
 
-#ifdef DEBUG
-    LogRel2(("Guest Control: Mapping '%s' -> '%s', vrc=%Rrc\n", strPathOrg.c_str(), strPath.c_str(), vrc));
-#endif
     return vrc;
 }
 

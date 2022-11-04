@@ -693,7 +693,12 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
         /* If the source is an directory, make sure to add the appropriate flag to make copying work
          * into existing directories on the guest. This otherwise would fail (default): */
         else if (enmFileType == KFsObjType_Directory)
+        {
+            /* Make sure that if the source is a directory, that we append a trailing delimiter to it,
+             * so that it gets copied *into* the destination directory as a whole, and not just it's contents. */
+            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strDirectoryFlags;
+        }
         else
             aFlags << strFileFlags;
     }
@@ -743,6 +748,7 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
         return;
     }
 
+    QString strDestinationPath = hostDestinationPath;
     QString strDirectoryFlags("CopyIntoExisting,Recursive,FollowLinks");
     QString strFileFlags;
     foreach (const QString &strSource, sourcePaths)
@@ -759,12 +765,18 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
         }
 
         if (fileType(fileInfo) == KFsObjType_Directory)
+        {
+            /* Make sure that if the source is a directory, that we append a trailing delimiter to the destination,
+             * so that the source directory gets copied *into* the destination directory as a whole, and not
+             * just it's contents. */
+            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strDirectoryFlags;
+        }
         else
             aFlags << strFileFlags;
     }
 
-    CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
+    CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
     if (!checkGuestSession())
         return;
     emit sigNewFileOperation(progress, m_strTableName);

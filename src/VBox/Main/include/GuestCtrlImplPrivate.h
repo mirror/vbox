@@ -1291,6 +1291,7 @@ public:
 
     static FsObjType_T fileModeToFsObjType(RTFMODE fMode);
     static const char *fsObjTypeToStr(FsObjType_T enmType);
+    static const char *pathStyleToStr(PathStyle_T enmPathStyle);
     static Utf8Str getErrorAsString(const Utf8Str &strAction, const GuestErrorInfo& guestErrorInfo);
     static Utf8Str getErrorAsString(const GuestErrorInfo &guestErrorInfo);
 
@@ -1404,6 +1405,7 @@ public:
 
     /** @name Static helper functions.
      * @{ */
+    static int BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSrcPathStyle, Utf8Str &strDstPath, PathStyle_T enmDstPathStyle);
     static int Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle, bool fForce = false);
     /** @}  */
 };
