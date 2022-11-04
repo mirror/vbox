@@ -70,10 +70,10 @@ if sys.version_info[0] >= 3:
     long = int      # pylint: disable=redefined-builtin,invalid-name
     xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
-def limitString(sString, cLimit = 32):
+def limitString(sString, cLimit = 128):
     """
     Returns a string with ellipsis ("...") when exceeding the specified limit.
-    Useful for toning down logging. By default strings will be shortened at 32 characters.
+    Useful for toning down logging. By default strings will be shortened at 128 characters.
     """
     if not isinstance(sString, str):
         sString = str(sString);
