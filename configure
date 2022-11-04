@@ -108,7 +108,8 @@ WITH_VNC=0
 WITH_EXTPACK=1
 WITH_DOCS=1
 WITH_LIBVPX=1
-WITH_LIBOPUS=1
+WITH_LIBOGG=0
+WITH_LIBVORBIS=0
 WITH_LIBTPMS=1
 BUILD_LIBXML2=
 BUILD_LIBCURL=
@@ -1725,41 +1726,6 @@ EOF
 
 
 #
-# Check for libopus
-#
-check_libopus()
-{
-  if [ -z "$BUILD_LIBOPUS" ]; then
-    test_header libopus
-    if which_wrapper pkg-config > /dev/null; then
-      libopus_ver=`pkg-config opus --modversion 2>> $LOG`
-      if [ $? -eq 0 ]; then
-        FLGOPUS=`pkg-config opus --cflags`
-        INCOPUS=`strip_I "$FLGOPUS"`
-        LIBOPUS=`pkg-config opus --libs`
-      fi
-      cat > $ODIR.tmp_src.cc << EOF
-#include <cstdio>
-#include <opus/opus.h>
-extern "C" int main(void)
-{
-  OpusEncoder *test;
-  printf("found, OK.\n");
-}
-EOF
-      [ -n "$INCOPUS" ] && I_INCOPUS=`prefix_I "$INCOPUS"`
-      if test_compile "$LIBOPUS $I_INCOPUS" opus opus; then
-        if test_execute; then
-          cnf_append "SDK_VBOX_OPUS_INCS" "$INCOPUS"
-          cnf_append "SDK_VBOX_OPUS_LIBS" "`strip_l "$LIBOPUS"`"
-          fi
-      fi
-    fi
-  fi
-}
-
-
-#
 # Check for libvpx
 #
 check_vpx()
@@ -1840,6 +1806,80 @@ EOF
       else
         echo "not found -- building libtpms from in-tree code."
       fi
+    fi
+  fi
+}
+
+
+#
+# Check for libvorbis
+#
+check_libvorbis()
+{
+  test_header libvorbis
+  if which_wrapper pkg-config > /dev/null; then
+    libvorbis_ver=`pkg-config vorbis --modversion 2>> $LOG`
+    if [ $? -eq 0 ]; then
+      FLGVRB=`pkg-config vorbis --cflags`
+      INCVRB=`strip_I "$FLGVRB"`
+      LIBVRB=`pkg-config vorbis --libs`
+    fi
+    cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <vorbis/vorbisenc.h>
+extern "C" int main(void)
+{
+  vorbis_info v;
+  vorbis_info_init(&v);
+  printf("found, OK.\n");
+  return 0;
+}
+EOF
+    [ -n "$INCVRB" ] && I_INCVRB=`prefix_I "$INCVRB"`
+    if test_compile "$LIBVRB $I_INCVRB" vorbis vorbis nofatal; then
+      if test_execute; then
+        cnf_append "SDK_VBOX_VORBIS_INCS" "$INCVRB"
+        cnf_append "SDK_VBOX_VORBIS_LIBS" "`strip_l "$LIBVRB"`"
+      fi
+    else
+      echo "not found -- building libvorbis from in-tree code."
+    fi
+  fi
+}
+
+
+#
+# Check for libogg
+#
+check_libogg()
+{
+  test_header libogg
+  if which_wrapper pkg-config > /dev/null; then
+    libogg_ver=`pkg-config ogg --modversion 2>> $LOG`
+    if [ $? -eq 0 ]; then
+      FLGOGG=`pkg-config ogg --cflags`
+      INCOGG=`strip_I "$FLGOGG"`
+      LIBOGG=`pkg-config ogg --libs`
+    fi
+    cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <ogg/ogg.h>
+extern "C" int main(void)
+{
+  oggpack_buffer o;
+  oggpack_get_buffer(&o);
+  printf("found, OK.\n");
+  return 0;
+}
+EOF
+    [ -n "$INCOGG" ] && I_INCVRB=`prefix_I "$INCOGG"`
+    if test_compile "$LIBOGG $I_INCOGG" ogg ogg nofatal; then
+      if test_execute; then
+        cnf_append "SDK_VBOX_OGG_INCS" "$INCOGG"
+        cnf_append "SDK_VBOX_OGG_LIBS" "`strip_l "$LIBOGG"`"
+      fi
+    else
+      echo "not found -- building libogg from in-tree code."
     fi
   fi
 }
@@ -2435,7 +2475,8 @@ EOF
 [ $OSE          -eq 0 ] && echo "  --disable-extpack        don't build the extpack"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ $WITH_LIBVPX  -eq 1 ] && echo "  --disable-libvpx         don't use libvpx for video capturing"
-[ $WITH_LIBOPUS -eq 1 ] && echo "  --disable-libopus        don't use libopus for audio capturing"
+[ $WITH_LIBVORBIS -eq 0 ] && echo "  --enable-libvorbis       enable system libvorbis"
+[ $WITH_LIBOGG -eq 0 ]  && echo "  --enable-libogg          enable system libogg"
 [ $WITH_LIBTPMS -eq 1 ] && echo "  --disable-libtpms        don't use libtpms for TPM emulation"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
@@ -2511,7 +2552,8 @@ if [ "$OS" = "darwin" ]; then
   BUILD_LIBVPX=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
-  [ $OSE -eq 1 ] && WITH_LIBOPUS=0
+  [ $OSE -eq 1 ] && WITH_LIBOGG=0
+  [ $OSE -eq 1 ] && WITH_LIBVORBIS=0
   WITH_XCODE_DIR=""
 elif [ "$OS" = "haiku" ]; then
   #WITH_SDL=0
@@ -2526,15 +2568,16 @@ elif [ "$OS" = "haiku" ]; then
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
   WITH_LIBVPX=0
-  WITH_LIBOPUS=0
-  # it is part of libroot, which is linked by default,
+  WITH_LIBOGG=0
+  WITH_LIBVORBIS=0
   # but the script wants something
   LIBPTHREAD="-lroot"
   #[ $OSE -eq 1 ] || BUILD_LIBCURL=1
   [ $OSE -eq 1 ] || BUILD_LIBSSL=1
 elif [ "$OS" = "solaris" ]; then
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
-  [ $OSE -eq 1 ] && WITH_LIBOPUS=0
+  [ $OSE -eq 1 ] && WITH_LIBOGG=0
+  [ $OSE -eq 1 ] && WITH_LIBVORBIS=0
 fi
 
 # scan command line options
@@ -2667,9 +2710,6 @@ for option in "$@"; do
     --enable-hardening)
       WITH_HARDENING=2
       ;;
-    --build-libopus)
-      BUILD_LIBOPUS=1
-      ;;
     --disable-udptunnel)
       WITH_UDPTUNNEL=0
       ;;
@@ -2682,11 +2722,14 @@ for option in "$@"; do
     --disable-libvpx)
       WITH_LIBVPX=0
       ;;
-    --disable-libopus)
-      WITH_LIBOPUS=0
-      ;;
     --disable-libtpms)
       WITH_LIBTPMS=0
+      ;;
+    --enable-libogg)
+      WITH_LIBOGG=1
+      ;;
+    --enable-libvorbis)
+      WITH_LIBVORBIS=1
       ;;
     --disable-sdl)
       WITH_SDL=0
@@ -2880,8 +2923,9 @@ if [ $WITH_LIBVPX -eq 0 ]; then
   cnf_append "VBOX_WITH_LIBVPX" ""
   cnf_append "VBOX_WITH_RECORDING" ""
 fi
-if [ $WITH_LIBOPUS -eq 0 ]; then
-  cnf_append "VBOX_WITH_LIBOPUS" ""
+if [ $WITH_LIBOGG -eq 0 -o $WITH_LIBVORBIS -eq 0 ]; then
+  cnf_append "VBOX_WITH_LIBOGG" ""
+  cnf_append "VBOX_WITH_LIBVORBIS" ""
   cnf_append "VBOX_WITH_AUDIO_RECORDING" ""
 fi
 
@@ -2907,7 +2951,8 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_ssl
   check_curl
   [ $WITH_LIBVPX -eq 1 ] && check_vpx
-  [ $WITH_LIBOPUS -eq 1 ] && check_libopus
+  [ $WITH_LIBOGG -eq 1 ] && check_libogg
+  [ $WITH_LIBVORBIS -eq 1 ] && check_libvorbis
   [ $WITH_LIBTPMS -eq 1 ] && check_libtpms
   [ "$OS" != "darwin"  ] && check_png
   [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
