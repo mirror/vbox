@@ -803,6 +803,33 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 }
 #endif
 
+/**
+ * Releases one reference from the given controller instances active request counter.
+ *
+ * @returns nothing.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       VirtIO SCSI shared instance data.
+ * @param   pThisCC     VirtIO SCSI ring-3 instance data.
+ */
+DECLINLINE(void) virtioScsiR3Release(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC)
+{
+    Assert(pThis->cActiveReqs);
+
+    if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
+        PDMDevHlpAsyncNotificationCompleted(pDevIns);
+}
+
+/**
+ * Retains one reference for the given controller instances active request counter.
+ *
+ * @returns nothing.
+ * @param   pThis       VirtIO SCSI shared instance data.
+ */
+DECLINLINE(void) virtioScsiR3Retain(PVIRTIOSCSI pThis)
+{
+    ASMAtomicIncU32(&pThis->cActiveReqs);
+}
+
 /** Internal worker. */
 static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
 {
@@ -864,9 +891,6 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
 
     virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /* fFence */);
     virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, uVirtqNbr);
-
-    if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
-        PDMDevHlpAsyncNotificationCompleted(pDevIns);
 
     Log2(("---------------------------------------------------------------------------------\n"));
 
@@ -1058,10 +1082,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
     }
 
     virtioScsiR3FreeReq(pTarget, pReq);
-
-    if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
-        PDMDevHlpAsyncNotificationCompleted(pDevIns);
-
+    virtioScsiR3Release(pDevIns, pThis, pThisCC);
     return rc;
 }
 
@@ -1155,9 +1176,6 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
 static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC,
                                  uint16_t uVirtqNbr, PVIRTQBUF pVirtqBuf)
 {
-
-    ASMAtomicIncU32(&pThis->cActiveReqs);
-
     /*
      * Validate configuration values we use here before we start.
      */
@@ -1294,6 +1312,8 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     /*
      * Have underlying driver allocate a req of size set during initialization of this device.
      */
+    virtioScsiR3Retain(pThis);
+
     PDMMEDIAEXIOREQ     hIoReq    = NULL;
     PVIRTIOSCSIREQ      pReq      = NULL;
     PPDMIMEDIAEX        pIMediaEx = pTarget->pDrvMediaEx;
@@ -1301,7 +1321,11 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     int rc = pIMediaEx->pfnIoReqAlloc(pIMediaEx, &hIoReq, (void **)&pReq, 0 /* uIoReqId */,
                                       PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
 
-    AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
+    if (RT_FAILURE(rc))
+    {
+        virtioScsiR3Release(pDevIns, pThis, pThisCC);
+        return rc;
+    }
 
     pReq->hIoReq      = hIoReq;
     pReq->pTarget     = pTarget;
@@ -1354,6 +1378,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResidual  = (cbDataIn + cbDataOut) & UINT32_MAX;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf, &respHdr, abSense, cbSenseCfg);
         virtioScsiR3FreeReq(pTarget, pReq);
+        virtioScsiR3Release(pDevIns, pThis, pThisCC);
     }
     return VINF_SUCCESS;
 }
@@ -2392,12 +2417,11 @@ static DECLCALLBACK(void) virtioScsiR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterf
         case PDMMEDIAEXIOREQSTATE_SUSPENDED:
         {
             /* Stop considering this request active */
-            if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
-                PDMDevHlpAsyncNotificationCompleted(pDevIns);
+            virtioScsiR3Release(pDevIns, pThis, pThisCC);
             break;
         }
         case PDMMEDIAEXIOREQSTATE_ACTIVE:
-            ASMAtomicIncU32(&pThis->cActiveReqs);
+            virtioScsiR3Retain(pThis);
             break;
         default:
             AssertMsgFailed(("Invalid request state given %u\n", enmState));
