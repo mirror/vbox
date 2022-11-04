@@ -1701,7 +1701,7 @@ int GuestSessionTaskCopyFrom::Run(void)
             if (RT_FAILURE(vrc))
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Translating host destination root path '%s' failed: %Rrc"),
+                                    Utf8StrFmt(tr("Translating host destination root path \"%s\" failed: %Rrc"),
                                                strDstRootAbs.c_str(), vrc));
                 break;
             }
@@ -1738,22 +1738,18 @@ int GuestSessionTaskCopyFrom::Run(void)
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Translating guest source path '%s' from %s to %s failed: %Rrc"),
-                                                   strSrcAbs.c_str(),
-                                                   GuestBase::pathStyleToStr(pList->mSourceSpec.enmPathStyle),
-                                                   GuestBase::pathStyleToStr(pList->mSourceSpec.enmPathStyle), vrc));
+                                        Utf8StrFmt(tr("Translating guest source path \"%s\" failed: %Rrc"),
+                                                   strSrcAbs.c_str(), vrc));
                     break;
                 }
 
                 /* Translate the final host destination path. */
-                vrc = GuestPath::Translate(strDstAbs, pList->mSourceSpec.enmPathStyle, PATH_STYLE_NATIVE /* Source */, true /* fForce */);
+                vrc = GuestPath::Translate(strDstAbs, PATH_STYLE_NATIVE /* Source */, PATH_STYLE_NATIVE /* Dest */, true /* fForce */);
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Translating host destination path '%s' from %s to %s failed: %Rrc"),
-                                                   strDstAbs.c_str(),
-                                                   GuestBase::pathStyleToStr(pList->mSourceSpec.enmPathStyle),
-                                                   GuestBase::pathStyleToStr(PATH_STYLE_NATIVE), vrc));
+                                        Utf8StrFmt(tr("Translating host destination path \"%s\" failed: %Rrc"),
+                                                   strDstAbs.c_str(), vrc));
                     break;
                 }
 
@@ -2065,10 +2061,8 @@ int GuestSessionTaskCopyTo::Run(void)
         if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(tr("Translating guest destination path '%s' from %s to %s failed: %Rrc"),
-                                           strDstRootAbs.c_str(),
-                                           GuestBase::pathStyleToStr(PATH_STYLE_NATIVE),
-                                           GuestBase::pathStyleToStr(mSession->i_getGuestPathStyle()), vrc));
+                                Utf8StrFmt(tr("Translating guest destination path \"%s\" failed: %Rrc"),
+                                           strDstRootAbs.c_str(), vrc));
             break;
         }
 
@@ -2177,7 +2171,7 @@ int GuestSessionTaskCopyTo::Run(void)
             if (RT_FAILURE(vrc))
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Translating guest destination root path '%s' failed: %Rrc"),
+                                    Utf8StrFmt(tr("Translating guest destination root path \"%s\" failed: %Rrc"),
                                                strDstRootAbs.c_str(), vrc));
                 break;
             }
@@ -2215,10 +2209,8 @@ int GuestSessionTaskCopyTo::Run(void)
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Translating host source path '%s' from %s to %s failed: %Rrc"),
-                                                   strSrcAbs.c_str(),
-                                                   GuestBase::pathStyleToStr(PATH_STYLE_NATIVE),
-                                                   GuestBase::pathStyleToStr(PATH_STYLE_NATIVE), vrc));
+                                        Utf8StrFmt(tr("Translating host source path\"%s\" failed: %Rrc"),
+                                                   strSrcAbs.c_str(), vrc));
                     break;
                 }
 
@@ -2229,10 +2221,8 @@ int GuestSessionTaskCopyTo::Run(void)
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Translating guest destination path '%s' from %s to %s failed: %Rrc"),
-                                                   strDstAbs.c_str(),
-                                                   GuestBase::pathStyleToStr(PATH_STYLE_NATIVE),
-                                                   GuestBase::pathStyleToStr(mSession->i_getGuestPathStyle()), vrc));
+                                        Utf8StrFmt(tr("Translating guest destination path \"%s\" failed: %Rrc"),
+                                                   strDstAbs.c_str(), vrc));
                     break;
                 }
 
@@ -2322,7 +2312,7 @@ int GuestSessionTaskCopyTo::Run(void)
             if (RT_FAILURE(vrc))
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Translating guest destination path '%s' from %s to %s failed: %Rrc"),
+                                    Utf8StrFmt(tr("Translating guest destination path \"%s\" failed: %Rrc"),
                                                strDstRootAbs.c_str(), vrc));
                 break;
             }

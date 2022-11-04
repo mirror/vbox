@@ -1843,7 +1843,9 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
 
     if (RT_FAILURE(vrc))
     {
-        LogRel2(("Guest Control: Translating path '%s' -> '%s' failed, vrc=%Rrc\n", strPath.c_str(), strTranslated.c_str(), vrc));
+        LogRel(("Guest Control: Translating path '%s' (%s) -> '%s' (%s) failed, vrc=%Rrc\n",
+                strPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
+                strTranslated.c_str(), GuestBase::pathStyleToStr(enmDstPathStyle), vrc));
         return vrc;
     }
 
