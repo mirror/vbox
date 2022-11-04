@@ -83,7 +83,15 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+       <para>VMM: Fixed rare guru meditations with certain guests on macOS 10.15 (Catalina) (bug #21237)</para>
+      </listitem>
+
+      <listitem>
         <para>VirtioSCSI: Fixed recognition of the virtio SCSI controller by the EFI firmware (bug #21200)</para>
+      </listitem>
+
+      <listitem>
+        <para>3D: Fixed VM process crash on macOS with 3D enabled (bug #21232)</para>
       </listitem>
 
       <listitem>
