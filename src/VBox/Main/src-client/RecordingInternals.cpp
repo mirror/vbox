@@ -138,10 +138,11 @@ void RecordingFrameFree(PRECORDINGFRAME pFrame)
 
     switch (pFrame->enmType)
     {
+#ifdef VBOX_WITH_AUDIO_RECORDING
         case RECORDINGFRAME_TYPE_AUDIO:
             recordingAudioFrameDestroy(&pFrame->Audio);
             break;
-
+#endif
         case RECORDINGFRAME_TYPE_VIDEO:
             RecordingVideoFrameDestroy(&pFrame->Video);
             break;

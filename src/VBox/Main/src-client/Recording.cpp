@@ -836,11 +836,13 @@ bool RecordingContext::NeedsUpdate( uint32_t uScreen, uint64_t msTimestamp)
 
     if (m_enmState == RECORDINGSTS_STARTED)
     {
+#ifdef VBOX_WITH_AUDIO_RECORDING
         if (   recordingCodecIsInitialized(&m_CodecAudio)
             && recordingCodecGetWritable(&m_CodecAudio, msTimestamp) > 0)
         {
             fNeedsUpdate = true;
         }
+#endif /* VBOX_WITH_AUDIO_RECORDING */
 
         if (!fNeedsUpdate)
         {
