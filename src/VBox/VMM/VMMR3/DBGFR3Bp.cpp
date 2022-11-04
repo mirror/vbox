@@ -1519,7 +1519,7 @@ static int dbgfR3BpPortIoAdd(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 /**
  * Get a breakpoint give by address.
  *
- * @returns The breakpoint handle on success or NIL_DBGF if not found.
+ * @returns The breakpoint handle on success or NIL_DBGFBP if not found.
  * @param   pUVM                The user mode VM handle.
  * @param   enmType             The breakpoint type.
  * @param   GCPtr               The breakpoint address.
@@ -2197,7 +2197,8 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             &&  pBp->Pub.u.Int3.PhysAddr == GCPhysBpAddr)
         {
             rc = VINF_SUCCESS;
-            if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
+            if (   !DBGF_BP_PUB_IS_ENABLED(&pBp->Pub)
+                && (fFlags & DBGF_BP_F_ENABLED))
                 rc = dbgfR3BpArm(pUVM, hBp, pBp);
             if (RT_SUCCESS(rc))
             {
