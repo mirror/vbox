@@ -6855,8 +6855,8 @@ DECLINLINE(int) PDMDevHlpMmio2ControlDirtyPageTracking(PPDMDEVINS pDevIns, PGMMM
 /**
  * @copydoc PDMDEVHLPR3::pfnMmioMapMmio2Page
  */
-DECLINLINE(RTGCPHYS) PDMDevHlpMmioMapMmio2Page(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
-                                               uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags)
+DECLINLINE(int) PDMDevHlpMmioMapMmio2Page(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                          uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnMmioMapMmio2Page(pDevIns, hRegion, offRegion, hMmio2, offMmio2, fPageFlags);
 }
@@ -6864,7 +6864,7 @@ DECLINLINE(RTGCPHYS) PDMDevHlpMmioMapMmio2Page(PPDMDEVINS pDevIns, IOMMMIOHANDLE
 /**
  * @copydoc PDMDEVHLPR3::pfnMmioResetRegion
  */
-DECLINLINE(RTGCPHYS) PDMDevHlpMmioResetRegion(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+DECLINLINE(int) PDMDevHlpMmioResetRegion(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnMmioResetRegion(pDevIns, hRegion);
 }
