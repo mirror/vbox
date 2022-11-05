@@ -1562,58 +1562,14 @@ DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu)
     return pVCpu->cpum.GstCtx.sp;
 }
 
-#if 0 /* unused and buggy */
-/**
- * Updates the RIP/EIP/IP to point to the next instruction.
- *
- * This function leaves the EFLAGS.RF flag alone.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   cbInstr             The number of bytes to add.
- */
-DECLINLINE(void) iemRegAddToRipKeepRF(PVMCPUCC pVCpu, uint8_t cbInstr)
-{
-    switch (pVCpu->iem.s.enmCpuMode)
-    {
-        case IEMMODE_16BIT:
-            Assert(pVCpu->cpum.GstCtx.rip <= UINT16_MAX);
-            pVCpu->cpum.GstCtx.eip += cbInstr;
-            pVCpu->cpum.GstCtx.eip &= UINT32_C(0xffff);
-            break;
 
-        case IEMMODE_32BIT:
-            pVCpu->cpum.GstCtx.eip += cbInstr;
-            Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
-            break;
-
-        case IEMMODE_64BIT:
-            pVCpu->cpum.GstCtx.rip += cbInstr;
-            break;
-        default: AssertFailed();
-    }
-}
-#endif
-
-#if 0
 /**
  * Updates the RIP/EIP/IP to point to the next instruction.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- */
-DECLINLINE(void) iemRegUpdateRipKeepRF(PVMCPUCC pVCpu)
-{
-    return iemRegAddToRipKeepRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
-}
-#endif
-
-/**
- * Updates the RIP/EIP/IP to point to the next instruction and clears EFLAGS.RF
- * and CPUMCTX_INHIBIT_SHADOW.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
  */
-DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr)
+DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
     /*
      * Advance RIP.
@@ -1634,14 +1590,121 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, ui
         pVCpu->cpum.GstCtx.rip = (uint32_t)uRipNext;
     else
         pVCpu->cpum.GstCtx.rip = (uint16_t)uRipNext;
+}
 
+
+/**
+ * Called by iemRegAddToRipAndFinishingClearingRF and others when any of the
+ * following EFLAGS bits are set:
+ *      - X86_EFL_RF - clear it.
+ *      - CPUMCTX_INHIBIT_SHADOW (_SS/_STI) - clear them.
+ *      - X86_EFL_TF - generate single step \#DB trap.
+ *      - CPUMCTX_DBG_HIT_DR0/1/2/3 - generate \#DB trap (data or I/O, not
+ *        instruction).
+ *
+ * According to @sdmv3{077,200,Table 6-2,Priority Among Concurrent Events},
+ * a #DB due to TF (single stepping) or a DRx non-instruction breakpoint
+ * takes priority over both NMIs and hardware interrupts.  So, neither is
+ * considered here.  (The RESET, \#MC, SMI, INIT, STOPCLK and FLUSH events are
+ * either unsupported will be triggered on-top of any \#DB raised here.)
+ *
+ * The RF flag only needs to be cleared here as it only suppresses instruction
+ * breakpoints which are not raised here (happens synchronously during
+ * instruction fetching).
+ *
+ * The CPUMCTX_INHIBIT_SHADOW_SS flag will be cleared by this function, so its
+ * status has no bearing on whether \#DB exceptions are raised.
+ *
+ * @note This must *NOT* be called by the two instructions setting the
+ *       CPUMCTX_INHIBIT_SHADOW_SS flag.
+ *
+ * @see  @sdmv3{077,200,Table 6-2,Priority Among Concurrent Events}
+ * @see  @sdmv3{077,200,6.8.3,Masking Exceptions and Interrupts When Switching
+ *              Stacks}
+ */
+static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu)
+{
     /*
-     * Clear RF and interrupt shadowing.
+     * Normally we're just here to clear RF and/or interrupt shadow bits.
+     */
+    if (RT_LIKELY((pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK)) == 0))
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
+    else
+    {
+#if 1
+        /*
+         * Raise a #DB.
+         */
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+        if (pVCpu->cpum.GstCtx.eflags.uBoth & X86_EFL_TF)
+            pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS;
+        pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+        /** @todo Do we set all pending \#DB events, or just one? */
+        LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64\n",
+                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],
+                     pVCpu->cpum.GstCtx.rflags.uBoth));
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
+        return iemRaiseDebugException(pVCpu);
+#else
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
+#endif
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Clears the RF and CPUMCTX_INHIBIT_SHADOW, triggering \#DB if pending.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu)
+{
+    /*
+     * We assume that most of the time nothing actually needs doing here.
      */
     AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
-    pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
+    if (RT_LIKELY(!(  pVCpu->cpum.GstCtx.eflags.uBoth
+                    & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK)) ))
+        return VINF_SUCCESS;
+    return iemFinishInstructionWithFlagsSet(pVCpu);
+}
 
-    return VINF_SUCCESS;
+
+/**
+ * Updates the RIP/EIP/IP to point to the next instruction and clears EFLAGS.RF
+ * and CPUMCTX_INHIBIT_SHADOW.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+    iemRegAddToRip(pVCpu, cbInstr);
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Extended version of iemFinishInstructionWithFlagsSet that goes with
+ * iemRegAddToRipAndFinishingClearingRfEx.
+ *
+ * See iemFinishInstructionWithFlagsSet() for details.
+ */
+static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu)
+{
+    /*
+     * Raise a #DB.
+     */
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+    pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS
+                             |  (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+    /** @todo Do we set all pending \#DB events, or just one? */
+    LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64 (popf)\n",
+                 pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],
+                 pVCpu->cpum.GstCtx.rflags.uBoth));
+    pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
+    return iemRaiseDebugException(pVCpu);
 }
 
 
@@ -1659,34 +1722,10 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, ui
  */
 DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, uint8_t cbInstr, uint32_t fEflOld)
 {
-    /*
-     * Advance RIP.
-     *
-     * When we're targetting 8086/8, 80186/8 or 80286 mode the updates are 16-bit,
-     * while in all other modes except LM64 the updates are 32-bit.  This means
-     * we need to watch for both 32-bit and 16-bit "carry" situations, i.e.
-     * 4GB and 64KB rollovers, and decide whether anything needs masking.
-     *
-     * See PC wrap around tests in bs3-cpu-weird-1.
-     */
-    uint64_t const uRipPrev = pVCpu->cpum.GstCtx.rip;
-    uint64_t const uRipNext = uRipPrev + cbInstr;
-    if (RT_LIKELY(   !((uRipNext ^ uRipPrev) & (RT_BIT_64(32) | RT_BIT_64(16)))
-                  || CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx)))
-        pVCpu->cpum.GstCtx.rip = uRipNext;
-    else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
-        pVCpu->cpum.GstCtx.rip = (uint32_t)uRipNext;
-    else
-        pVCpu->cpum.GstCtx.rip = (uint16_t)uRipNext;
-
-    /*
-     * Clear RF and interrupt shadowing.
-     */
-    AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
-    pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
-
-    RT_NOREF(fEflOld);
-    return VINF_SUCCESS;
+    iemRegAddToRip(pVCpu, cbInstr);
+    if (!(fEflOld & X86_EFL_TF))
+        return iemRegFinishClearingRF(pVCpu);
+    return iemFinishInstructionWithTfSet(pVCpu);
 }
 
 

@@ -10011,6 +10011,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                  */
                 uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
                 rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+#ifdef VBOX_STRICT
+                CPUMAssertGuestRFlagsCookie(pVM, pVCpu);
+#endif
                 if (RT_LIKELY(rcStrict == VINF_SUCCESS))
                 {
                     Assert(pVCpu->iem.s.cActiveMappings == 0);

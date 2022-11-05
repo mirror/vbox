@@ -4504,12 +4504,38 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
 
 
 /**
+ * Completes a MOV SReg,XXX or POP SReg instruction.
+ *
+ * When not modifying SS or when we're already in an interrupt shadow we
+ * can update RIP and finish the instruction the normal way.
+ *
+ * Otherwise, the MOV/POP SS interrupt shadow that we now enable will block
+ * both TF and DBx events.  The TF will be ignored while the DBx ones will
+ * be delayed till the next instruction boundrary.  For more details see
+ * @sdmv3{077,200,6.8.3,Masking Exceptions and Interrupts When Switching Stacks}.
+ */
+DECLINLINE(VBOXSTRICTRC) iemCImpl_LoadSRegFinish(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iSegReg)
+{
+    if (iSegReg != X86_SREG_SS || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx))
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+
+    iemRegAddToRip(pVCpu, cbInstr);
+    pVCpu->cpum.GstCtx.eflags.uBoth &= ~X86_EFL_RF; /* Shadow int isn't set and DRx is delayed, so only clear RF. */
+    CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Common worker for 'pop SReg', 'mov SReg, GReg' and 'lXs GReg, reg/mem'.
  *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
  * @param   iSegReg     The segment register number (valid).
  * @param   uSel        The new selector value.
  */
-IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
+static VBOXSTRICTRC iemCImpl_LoadSRegWorker(PVMCPUCC pVCpu, uint8_t iSegReg, uint16_t uSel)
 {
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
     uint16_t       *pSel = iemSRegRef(pVCpu, iSegReg);
@@ -4538,17 +4564,14 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                                 ? X86_SEL_TYPE_RW
                                 : X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
 #endif
-        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS);
-        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
-
     /*
      * Protected mode.
      *
      * Check if it's a null segment selector value first, that's OK for DS, ES,
      * FS and GS.  If not null, then we have to load and parse the descriptor.
      */
-    if (!(uSel & X86_SEL_MASK_OFF_RPL))
+    else if (!(uSel & X86_SEL_MASK_OFF_RPL))
     {
         Assert(iSegReg != X86_SREG_CS); /** @todo testcase for \#UD on MOV CS, ax! */
         if (iSegReg == X86_SREG_SS)
@@ -4571,116 +4594,114 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
         iemHlpLoadNullDataSelectorProt(pVCpu, pHid, uSel);
         if (iSegReg == X86_SREG_SS)
             pHid->Attr.u |= pVCpu->iem.s.uCpl << X86DESCATTR_DPL_SHIFT;
-
-        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pHid));
-        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS);
-
-        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
-    }
-
-    /* Fetch the descriptor. */
-    IEMSELDESC Desc;
-    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pVCpu, &Desc, uSel, X86_XCPT_GP); /** @todo Correct exception? */
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
-
-    /* Check GPs first. */
-    if (!Desc.Legacy.Gen.u1DescType)
-    {
-        Log(("load sreg %d (=%#x) - system selector (%#x) -> #GP\n", iSegReg, uSel, Desc.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-    }
-    if (iSegReg == X86_SREG_SS) /* SS gets different treatment */
-    {
-        if (    (Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
-            || !(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
-        {
-            Log(("load sreg SS, %#x - code or read only (%#x) -> #GP\n", uSel, Desc.Legacy.Gen.u4Type));
-            return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-        }
-        if ((uSel & X86_SEL_RPL) != pVCpu->iem.s.uCpl)
-        {
-            Log(("load sreg SS, %#x - RPL and CPL (%d) differs -> #GP\n", uSel, pVCpu->iem.s.uCpl));
-            return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-        }
-        if (Desc.Legacy.Gen.u2Dpl != pVCpu->iem.s.uCpl)
-        {
-            Log(("load sreg SS, %#x - DPL (%d) and CPL (%d) differs -> #GP\n", uSel, Desc.Legacy.Gen.u2Dpl, pVCpu->iem.s.uCpl));
-            return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-        }
     }
     else
     {
-        if ((Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE)
-        {
-            Log(("load sreg%u, %#x - execute only segment -> #GP\n", iSegReg, uSel));
-            return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-        }
-        if (   (Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-            != (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-        {
-#if 0 /* this is what intel says. */
-            if (   (uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl
-                && pVCpu->iem.s.uCpl        > Desc.Legacy.Gen.u2Dpl)
-            {
-                Log(("load sreg%u, %#x - both RPL (%d) and CPL (%d) are greater than DPL (%d) -> #GP\n",
-                     iSegReg, uSel, (uSel & X86_SEL_RPL), pVCpu->iem.s.uCpl, Desc.Legacy.Gen.u2Dpl));
-                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-            }
-#else /* this is what makes more sense. */
-            if ((unsigned)(uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl)
-            {
-                Log(("load sreg%u, %#x - RPL (%d) is greater than DPL (%d) -> #GP\n",
-                     iSegReg, uSel, (uSel & X86_SEL_RPL), Desc.Legacy.Gen.u2Dpl));
-                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-            }
-            if (pVCpu->iem.s.uCpl > Desc.Legacy.Gen.u2Dpl)
-            {
-                Log(("load sreg%u, %#x - CPL (%d) is greater than DPL (%d) -> #GP\n",
-                     iSegReg, uSel, pVCpu->iem.s.uCpl, Desc.Legacy.Gen.u2Dpl));
-                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
-            }
-#endif
-        }
-    }
 
-    /* Is it there? */
-    if (!Desc.Legacy.Gen.u1Present)
-    {
-        Log(("load sreg%d,%#x - segment not present -> #NP\n", iSegReg, uSel));
-        return iemRaiseSelectorNotPresentBySelector(pVCpu, uSel);
-    }
-
-    /* The base and limit. */
-    uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
-    uint64_t u64Base = X86DESC_BASE(&Desc.Legacy);
-
-    /*
-     * Ok, everything checked out fine.  Now set the accessed bit before
-     * committing the result into the registers.
-     */
-    if (!(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-    {
-        rcStrict = iemMemMarkSelDescAccessed(pVCpu, uSel);
+        /* Fetch the descriptor. */
+        IEMSELDESC Desc;
+        VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pVCpu, &Desc, uSel, X86_XCPT_GP); /** @todo Correct exception? */
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-        Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+
+        /* Check GPs first. */
+        if (!Desc.Legacy.Gen.u1DescType)
+        {
+            Log(("load sreg %d (=%#x) - system selector (%#x) -> #GP\n", iSegReg, uSel, Desc.Legacy.Gen.u4Type));
+            return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+        }
+        if (iSegReg == X86_SREG_SS) /* SS gets different treatment */
+        {
+            if (    (Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
+                || !(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
+            {
+                Log(("load sreg SS, %#x - code or read only (%#x) -> #GP\n", uSel, Desc.Legacy.Gen.u4Type));
+                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+            }
+            if ((uSel & X86_SEL_RPL) != pVCpu->iem.s.uCpl)
+            {
+                Log(("load sreg SS, %#x - RPL and CPL (%d) differs -> #GP\n", uSel, pVCpu->iem.s.uCpl));
+                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+            }
+            if (Desc.Legacy.Gen.u2Dpl != pVCpu->iem.s.uCpl)
+            {
+                Log(("load sreg SS, %#x - DPL (%d) and CPL (%d) differs -> #GP\n", uSel, Desc.Legacy.Gen.u2Dpl, pVCpu->iem.s.uCpl));
+                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+            }
+        }
+        else
+        {
+            if ((Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE)
+            {
+                Log(("load sreg%u, %#x - execute only segment -> #GP\n", iSegReg, uSel));
+                return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+            }
+            if (   (Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+                != (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+            {
+#if 0 /* this is what intel says. */
+                if (   (uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl
+                    && pVCpu->iem.s.uCpl        > Desc.Legacy.Gen.u2Dpl)
+                {
+                    Log(("load sreg%u, %#x - both RPL (%d) and CPL (%d) are greater than DPL (%d) -> #GP\n",
+                         iSegReg, uSel, (uSel & X86_SEL_RPL), pVCpu->iem.s.uCpl, Desc.Legacy.Gen.u2Dpl));
+                    return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+                }
+#else /* this is what makes more sense. */
+                if ((unsigned)(uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl)
+                {
+                    Log(("load sreg%u, %#x - RPL (%d) is greater than DPL (%d) -> #GP\n",
+                         iSegReg, uSel, (uSel & X86_SEL_RPL), Desc.Legacy.Gen.u2Dpl));
+                    return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+                }
+                if (pVCpu->iem.s.uCpl > Desc.Legacy.Gen.u2Dpl)
+                {
+                    Log(("load sreg%u, %#x - CPL (%d) is greater than DPL (%d) -> #GP\n",
+                         iSegReg, uSel, pVCpu->iem.s.uCpl, Desc.Legacy.Gen.u2Dpl));
+                    return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
+                }
+#endif
+            }
+        }
+
+        /* Is it there? */
+        if (!Desc.Legacy.Gen.u1Present)
+        {
+            Log(("load sreg%d,%#x - segment not present -> #NP\n", iSegReg, uSel));
+            return iemRaiseSelectorNotPresentBySelector(pVCpu, uSel);
+        }
+
+        /* The base and limit. */
+        uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
+        uint64_t u64Base = X86DESC_BASE(&Desc.Legacy);
+
+        /*
+         * Ok, everything checked out fine.  Now set the accessed bit before
+         * committing the result into the registers.
+         */
+        if (!(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pVCpu, uSel);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        /* commit */
+        *pSel = uSel;
+        pHid->Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
+        pHid->u32Limit = cbLimit;
+        pHid->u64Base  = u64Base;
+        pHid->ValidSel = uSel;
+        pHid->fFlags   = CPUMSELREG_FLAGS_VALID;
+
+        /** @todo check if the hidden bits are loaded correctly for 64-bit
+         *        mode.  */
     }
 
-    /* commit */
-    *pSel = uSel;
-    pHid->Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
-    pHid->u32Limit = cbLimit;
-    pHid->u64Base  = u64Base;
-    pHid->ValidSel = uSel;
-    pHid->fFlags   = CPUMSELREG_FLAGS_VALID;
-
-    /** @todo check if the hidden bits are loaded correctly for 64-bit
-     *        mode.  */
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pHid));
-
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS);
-    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -4692,12 +4713,9 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
  */
 IEM_CIMPL_DEF_2(iemCImpl_load_SReg, uint8_t, iSegReg, uint16_t, uSel)
 {
-    if (iSegReg != X86_SREG_SS)
-        return IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
-    /** @todo only set it the shadow flag if it was clear before? */
-    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+    VBOXSTRICTRC rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, uSel);
     if (rcStrict == VINF_SUCCESS)
-        CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
+        rcStrict = iemCImpl_LoadSRegFinish(pVCpu, cbInstr, iSegReg);
     return rcStrict;
 }
 
@@ -4724,7 +4742,7 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
             uint16_t uSel;
             rcStrict = iemMemStackPopU16Ex(pVCpu, &uSel, &TmpRsp);
             if (rcStrict == VINF_SUCCESS)
-                rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+                rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, uSel);
             break;
         }
 
@@ -4733,7 +4751,7 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
             uint32_t u32Value;
             rcStrict = iemMemStackPopU32Ex(pVCpu, &u32Value, &TmpRsp);
             if (rcStrict == VINF_SUCCESS)
-                rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, (uint16_t)u32Value);
+                rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, (uint16_t)u32Value);
             break;
         }
 
@@ -4742,25 +4760,21 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
             uint64_t u64Value;
             rcStrict = iemMemStackPopU64Ex(pVCpu, &u64Value, &TmpRsp);
             if (rcStrict == VINF_SUCCESS)
-                rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, (uint16_t)u64Value);
+                rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, (uint16_t)u64Value);
             break;
         }
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
-    /*
-     * Commit the stack on success and set interrupt shadow flag if appropriate
-     * (the latter must be done after updating RIP).
+    /* 
+     * If the load succeeded, commit the stack change and finish the instruction.
      */
     if (rcStrict == VINF_SUCCESS)
     {
         pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
-        if (iSegReg == X86_SREG_SS)
-        {
-            /** @todo only set it the shadow flag if it was clear before? */
-            CPUMSetInInterruptShadowSs(&pVCpu->cpum.GstCtx);
-        }
+        rcStrict = iemCImpl_LoadSRegFinish(pVCpu, cbInstr, iSegReg);
     }
+
     return rcStrict;
 }
 
@@ -4771,11 +4785,11 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg, uint16_t, uSel, uint64_t, offSeg, uint8_t, iSegReg, uint8_t, iGReg, IEMMODE, enmEffOpSize)
 {
     /*
-     * Use iemCImpl_LoadSReg to do the tricky segment register loading.
+     * Use iemCImpl_LoadSRegWorker to do the tricky segment register loading.
      */
     /** @todo verify and test that mov, pop and lXs works the segment
      *        register loading in the exact same way. */
-    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+    VBOXSTRICTRC rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, uSel);
     if (rcStrict == VINF_SUCCESS)
     {
         switch (enmEffOpSize)
@@ -4784,15 +4798,13 @@ IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg, uint16_t, uSel, uint64_t, offSeg, uint8
                 *(uint16_t *)iemGRegRef(pVCpu, iGReg) = offSeg;
                 break;
             case IEMMODE_32BIT:
-                *(uint64_t *)iemGRegRef(pVCpu, iGReg) = offSeg;
-                break;
             case IEMMODE_64BIT:
                 *(uint64_t *)iemGRegRef(pVCpu, iGReg) = offSeg;
                 break;
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
+        return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
-
     return rcStrict;
 }
 

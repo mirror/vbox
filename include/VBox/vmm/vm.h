@@ -538,13 +538,24 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /** Pending MTF (Monitor Trap Flag) event.  */
 #define VMCPU_FF_VMX_MTF                    RT_BIT_64(VMCPU_FF_VMX_MTF_BIT)
 #define VMCPU_FF_VMX_MTF_BIT                32
-/** VMX APIC-write emulation pending.  */
+/** VMX APIC-write emulation pending.
+ * @todo possible candidate for internal EFLAGS, or maybe just a summary bit
+ *       (see also VMCPU_FF_VMX_INT_WINDOW). */
 #define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
 #define VMCPU_FF_VMX_APIC_WRITE_BIT         33
-/** VMX interrupt-window event pending. */
+/** VMX interrupt-window event pending.
+ *
+ * "Pending" is misleading here, it would be better to say that the event need
+ * to be generated at the next opportunity and that this flag causes it to be
+ * polled for on every instruction boundrary and such.
+ *
+ * @todo Change the IEM side of this to not poll but to track down the places
+ *       where it can be generated and set an internal EFLAGS bit that causes it
+ *       to be checked out when finishing the current instruction. */
 #define VMCPU_FF_VMX_INT_WINDOW             RT_BIT_64(VMCPU_FF_VMX_INT_WINDOW_BIT)
 #define VMCPU_FF_VMX_INT_WINDOW_BIT         34
-/** VMX NMI-window event pending. */
+/** VMX NMI-window event pending.
+ * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW. */
 #define VMCPU_FF_VMX_NMI_WINDOW             RT_BIT_64(VMCPU_FF_VMX_NMI_WINDOW_BIT)
 #define VMCPU_FF_VMX_NMI_WINDOW_BIT         35
 

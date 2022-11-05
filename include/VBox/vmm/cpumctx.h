@@ -275,11 +275,12 @@ AssertCompileSize(CPUMHWVIRT, 4);
 
 /** Mask of internal flags kept with EFLAGS, 64-bit version.
  * The first 3 available bits are taken by CPUMCTX_INHIBIT_SHADOW_SS,
- * CPUMCTX_INHIBIT_SHADOW_STI and CPUMCTX_INHIBIT_NMI.
+ * CPUMCTX_INHIBIT_SHADOW_STI and CPUMCTX_INHIBIT_NMI.  The next 4 bits are
+ * taken by CPUMCTX_DBG_HIT_DRX_MASK.
  */
-#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x0000000007000000)
+#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x000000007f000000)
 /** Mask of internal flags kept with EFLAGS, 32-bit version. */
-#define CPUMX86EFLAGS_INT_MASK_32           UINT32_C(0x07000000)
+#define CPUMX86EFLAGS_INT_MASK_32           UINT32_C(0x7f000000)
 
 
 /**
@@ -1024,13 +1025,38 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
  * "The processor also invokes certain hardware conditions to ensure that no
  * other interrupts, including NMI interrupts, are received until the NMI
  * handler has completed executing."  This flag indicates that these
- * conditions are currently active.  */
+ * conditions are currently active.
+ *
+ * @todo this does not really need to be in the lower 32-bits of EFLAGS.
+ */
 #define CPUMCTX_INHIBIT_NMI             RT_BIT_32(2 + CPUMX86EFLAGS_HW_BITS)
 
 /** Mask containing all the interrupt inhibit bits. */
 #define CPUMCTX_INHIBIT_ALL_MASK        (CPUMCTX_INHIBIT_SHADOW_SS | CPUMCTX_INHIBIT_SHADOW_STI | CPUMCTX_INHIBIT_NMI)
 AssertCompile(CPUMCTX_INHIBIT_ALL_MASK < UINT32_MAX);
 /** @} */
+
+/** @name CPUMCTX_DBG_XXX - Pending debug events.
+ * @{ */
+/** Hit guest DR0 breakpoint. */
+#define CPUMCTX_DBG_HIT_DR0             RT_BIT_32(CPUMCTX_DBG_HIT_DR0_BIT)
+#define CPUMCTX_DBG_HIT_DR0_BIT         (3 + CPUMX86EFLAGS_HW_BITS)
+/** Hit guest DR1 breakpoint. */
+#define CPUMCTX_DBG_HIT_DR1             RT_BIT_32(CPUMCTX_DBG_HIT_DR1_BIT)
+#define CPUMCTX_DBG_HIT_DR1_BIT         (4 + CPUMX86EFLAGS_HW_BITS)
+/** Hit guest DR2 breakpoint. */
+#define CPUMCTX_DBG_HIT_DR2             RT_BIT_32(CPUMCTX_DBG_HIT_DR2_BIT)
+#define CPUMCTX_DBG_HIT_DR2_BIT         (5 + CPUMX86EFLAGS_HW_BITS)
+/** Hit guest DR3 breakpoint. */
+#define CPUMCTX_DBG_HIT_DR3             RT_BIT_32(CPUMCTX_DBG_HIT_DR3_BIT)
+#define CPUMCTX_DBG_HIT_DR3_BIT         (6 + CPUMX86EFLAGS_HW_BITS)
+/** Shift for the CPUMCTX_DBG_HIT_DRx bits. */
+#define CPUMCTX_DBG_HIT_DRX_SHIFT       CPUMCTX_DBG_HIT_DR0_BIT
+/** Mask of all guest pending DR0-DR3 breakpoint indicators. */
+#define CPUMCTX_DBG_HIT_DRX_MASK       (CPUMCTX_DBG_HIT_DR0 | CPUMCTX_DBG_HIT_DR1 | CPUMCTX_DBG_HIT_DR2 | CPUMCTX_DBG_HIT_DR3)
+AssertCompile(CPUMCTX_DBG_HIT_DRX_MASK < UINT32_MAX);
+/** @}  */
+
 
 
 /**
