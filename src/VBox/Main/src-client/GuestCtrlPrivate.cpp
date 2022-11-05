@@ -1722,9 +1722,10 @@ int GuestWaitEvent::SignalExternal(IEvent *pEvent)
  * @note    See rules within the function.
  */
 /* static */
-int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSrcPathStyle, Utf8Str &strDstPath, PathStyle_T enmDstPathStyle)
+int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSrcPathStyle,
+                                    Utf8Str &strDstPath, PathStyle_T enmDstPathStyle)
 {
-    /**
+    /*
      * Rules:
      *
      * #    source       dest             final dest                        remarks
@@ -1734,7 +1735,7 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
      * 3    /gst/dir1    /dst/dir2        /dst/dir2                         Overwrites stuff from dir2 with stuff from dir1.
      */
     const char *pszSrcName = RTPathFilenameEx(strSrcPath.c_str(),
-                                                 enmSrcPathStyle == PathStyle_DOS
+                                                enmSrcPathStyle == PathStyle_DOS
                                               ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
 
     const char *pszDstName = RTPathFilenameEx(strDstPath.c_str(),
@@ -1810,7 +1811,20 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
                  * Do a mapping of "\", which marks an escape sequence for paths on UNIX-y OSes to DOS-based OSes (like Windows),
                  * however, on DOS "\" is a path separator.
                  *
-                 * See @bugref{21095}.
+                 * See @ticketref{21095}.
+                 */
+                /** @todo r=bird: Seeing that callers like GuestSessionTaskCopyFrom::Run() has
+                 * passed strPath to RTPathQueryInfoEx() prior to calling this function, I don't
+                 * get the comments a bout escape sequence stuff here.
+                 *
+                 * "\" ("\\" in C/C++) is not an escape sequence on unix unless you're in a
+                 * typical unix shell like bash.  It's just a filename character that doesn't
+                 * get interpreted as anything special by the kernel (unlike '/' and '\0' (C/C++
+                 * encoding)).
+                 *
+                 * "\ " (or "\\ " in C/C++) does not mark a single space in a path component, it
+                 * signifies two characters, a backslash and a space, neither with any special
+                 * meaning to a UNIX host.
                  */
                 else if (psz[off] == '\\')
                 {
