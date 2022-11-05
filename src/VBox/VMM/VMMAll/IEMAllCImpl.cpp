@@ -4766,7 +4766,7 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
-    /* 
+    /*
      * If the load succeeded, commit the stack change and finish the instruction.
      */
     if (rcStrict == VINF_SUCCESS)
