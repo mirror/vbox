@@ -1815,7 +1815,7 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
                  */
                 /** @todo r=bird: Seeing that callers like GuestSessionTaskCopyFrom::Run() has
                  * passed strPath to RTPathQueryInfoEx() prior to calling this function, I don't
-                 * get the comments a bout escape sequence stuff here.
+                 * get the comments about escape sequence stuff here.
                  *
                  * "\" ("\\" in C/C++) is not an escape sequence on unix unless you're in a
                  * typical unix shell like bash.  It's just a filename character that doesn't
