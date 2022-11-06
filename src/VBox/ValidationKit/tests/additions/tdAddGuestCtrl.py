@@ -5053,7 +5053,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             atTests.extend([
                 # This should fail, as sScratchHst exists and is a directory.
                 [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst), tdTestResultFailure() ],
-                # Same existing host directory, but this time with a trailing slash. 
+                # Same existing host directory, but this time with a trailing slash.
                 # This should succeed, as the file isn't there yet on the destination.
                 [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst + os.path.sep), tdTestResultSuccess() ],
                 # Overwrite the existing file.
@@ -5085,7 +5085,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir2Hst + os.path.sep,
                                     afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
                 # Copy with a different destination name just for the heck of it:
-                [ tdTestCopyFromDir(sSrc = oEmptyDirGst.sPath, sDst = os.path.join(sScratchDstDir2Hst, 'empty2'), 
+                [ tdTestCopyFromDir(sSrc = oEmptyDirGst.sPath, sDst = os.path.join(sScratchDstDir2Hst, 'empty2'),
                                     fIntoDst = True),
                   tdTestResultSuccess() ],
             ]);
