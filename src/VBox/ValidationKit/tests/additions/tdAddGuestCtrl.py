@@ -5075,7 +5075,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir2Hst + os.path.sep,
                                     afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
                 # Copy with a different destination name just for the heck of it:
-                [ tdTestCopyFromDir(sSrc = oEmptyDirGst.sPath, sDst = os.path.join(sScratchDstDir2Hst, 'empty2'), fIntoDst = True),
+                [ tdTestCopyFromDir(sSrc = oEmptyDirGst.sPath, sDst = os.path.join(sScratchDstDir2Hst, 'empty2'), 
+                                    fIntoDst = True),
                   tdTestResultSuccess() ],
             ]);
             atTests.extend([
