@@ -1654,8 +1654,8 @@ int GuestSessionTaskCopyFrom::Run(void)
         /* Create the root directory. */
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                         pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogRel(("Guest Control: Directory: fDstExists=%RTbool, fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
+                    fDstExists, pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks));
 
             if (fDstExists)
             {
@@ -1782,8 +1782,8 @@ int GuestSessionTaskCopyFrom::Run(void)
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
-            LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                         pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogRel(("Guest Control: File: fDstExists=%RTbool, fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
+                    fDstExists, pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks));
 
             if (fDstExists)
             {
