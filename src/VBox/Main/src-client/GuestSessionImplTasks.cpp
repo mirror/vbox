@@ -785,10 +785,10 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
 }
 
 /**
- * Copies a file from the guest to the host.
+ * Copies a file from the host to the guest.
  *
- * @param  strSrc               Full path of source file on the host to copy.
- * @param  strDst               Full destination path and file name (guest style) to copy file to.
+ * @param  strSrc               Full path of source file on the host.
+ * @param  strDst               Full destination path and file name (guest style) to copy file to. Guest-path style.
  * @param  fFileCopyFlags       File copy flags.
  */
 int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strDst, FileCopyFlag_T fFileCopyFlags)
@@ -810,11 +810,11 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
     if (RT_FAILURE(vrc))
     {
         if (vrc == VERR_GSTCTL_GUEST_ERROR)
-            setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Guest file could not be opened"),
-                                GuestErrorInfo(GuestErrorInfo::Type_File, vrcGuest, strSrc.c_str()));
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Guest file \"%s\" could not be created or replaced"),
+                                GuestErrorInfo(GuestErrorInfo::Type_File, vrcGuest, strDst.c_str()));
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(tr("Guest file \"%s\" could not be opened: %Rrc"), strSrc.c_str(), vrc));
+                                Utf8StrFmt(tr("Guest file \"%s\" could not be created or replaced: %Rrc"), strDst.c_str(), vrc));
         return vrc;
     }
 
