@@ -64,7 +64,7 @@ BS3_DECL_CALLBACK(void)     bs3CpuBasic2_Do32BitTests_pe32();
 static const BS3TESTMODEENTRY g_aModeTest[] =
 {
     BS3TESTMODEENTRY_MODE("tss / gate / esp", bs3CpuBasic2_TssGateEsp),
-    //BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1), // !long mode is broken!
+    BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1),
 };
 
 static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
