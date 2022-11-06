@@ -1131,7 +1131,7 @@ class TestDriver(base.TestDriver):                                              
 
         reporter.log2('VBoxSVC environment:');
         for sKey, sVal in sorted(os.environ.items()):
-            reporter.log2('%s=%s\n' % (sKey, sVal));
+            reporter.log2('%s=%s' % (sKey, sVal));
 
         # Always leave a pid file behind so we can kill it during cleanup-before.
         self.sVBoxSvcPidFile = '%s/VBoxSVC.pid' % (self.sScratchPath,);
@@ -1377,7 +1377,7 @@ class TestDriver(base.TestDriver):                                              
 
         reporter.log2('Self environment:');
         for sKey, sVal in sorted(os.environ.items()):
-            reporter.log2('%s=%s\n' % (sKey, sVal));
+            reporter.log2('%s=%s' % (sKey, sVal));
 
         # Hack the sys.path + environment so the vboxapi can be found.
         sys.path.insert(0, self.oBuild.sInstallPath);
