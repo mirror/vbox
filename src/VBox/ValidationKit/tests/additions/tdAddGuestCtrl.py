@@ -4844,8 +4844,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ]);
         if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only 6.0 and later.
             atTests.extend([
-                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst), tdTestResultSuccess() ],
-                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst), tdTestResultSuccess() ],            # Overwrite
+                # Should succeed, as the file isn't there yet on the destination.
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst + os.path.sep), tdTestResultSuccess() ],
+                # Overwrite the existing file.
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst + os.path.sep), tdTestResultSuccess() ],
+                # Same file, but with a different name on the destination.
                 [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, os.path.split(sBigFileHst)[1])),
                   tdTestResultSuccess() ],                                                                  # Overwrite
             ]);
@@ -4865,7 +4868,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
             atTests.extend([
                 # Without a trailing slash added to the destination this should fail,
-                # as the destination directory already exist.
+                # as the destination directory already exists.
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst),   tdTestResultFailure() ],
                 # Same existing host directory, but this time with DirectoryCopyFlag_CopyIntoExisting set.
                 # This should copy the contents of oEmptyDirGst to sScratchDstDir1Gst (empty, but anyway).
@@ -5037,23 +5040,30 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Single file copying.
         #
         atTests.extend([
-            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile1')),
-              tdTestResultSuccess() ],
-            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile1')), # Overwrite it
-              tdTestResultSuccess() ],
-            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile2')),
-              tdTestResultSuccess() ],
+            # Should succeed, as the file isn't there yet on the destination.
+            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile1')), tdTestResultSuccess() ],
+            # Overwrite the existing file.
+            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile1')), tdTestResultSuccess() ],
+            # Same file, but with a different name on the destination.
+            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile2')), tdTestResultSuccess() ],
         ]);
-        if self.oTstDrv.fpApiVer > 5.2:
+
+        if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only 6.0 and later.
             # Copy into a directory.
             atTests.extend([
-                [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst), tdTestResultSuccess() ],
+                # This should fail, as sScratchHst exists and is a directory.
+                [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst), tdTestResultFailure() ],
+                # Same existing host directory, but this time with a trailing slash. 
+                # This should succeed, as the file isn't there yet on the destination.
+                [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst + os.path.sep), tdTestResultSuccess() ],
+                # Overwrite the existing file.
                 [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst + os.path.sep), tdTestResultSuccess() ],
             ]);
 
-            #
-            # Directory tree copying:
-            #
+        #
+        # Directory handling.
+        #
+        if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
             atTests.extend([
                 # Without a trailing slash added to the destination this should fail,
                 # as the destination directory already exist.
