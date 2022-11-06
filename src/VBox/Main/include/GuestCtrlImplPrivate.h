@@ -1387,6 +1387,14 @@ protected:
     /** @} */
 };
 
+/** Returns the path separator based on \a a_enmPathStyle as a C-string. */
+#define PATH_STYLE_SEP_STR(a_enmPathStyle) a_enmPathStyle == PathStyle_DOS ? "\\" : "/"
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+# define PATH_STYLE_NATIVE               PathStyle_DOS
+#else
+# define PATH_STYLE_NATIVE               PathStyle_UNIX
+#endif
+
 /**
  * Class for handling guest / host path functions.
  */

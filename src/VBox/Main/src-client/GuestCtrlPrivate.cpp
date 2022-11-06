@@ -1749,7 +1749,8 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
     }
     else if (pszSrcName && !pszDstName) /* #2 */
     {
-        strDstPath += RTPATH_SLASH_STR;
+        if (!strDstPath.endsWith(PATH_STYLE_SEP_STR(enmDstPathStyle)))
+            strDstPath += PATH_STYLE_SEP_STR(enmDstPathStyle);
         strDstPath += pszSrcName;
     }
 

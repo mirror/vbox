@@ -74,14 +74,6 @@
 #define ISOFILE_FLAG_OPTIONAL            RT_BIT(8)
 
 
-/** Returns the path separator based on \a a_enmPathStyle as a C-string. */
-#define PATH_STYLE_SEP_STR(a_enmPathStyle) a_enmPathStyle == PathStyle_DOS ? "\\" : "/"
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-# define PATH_STYLE_NATIVE               PathStyle_DOS
-#else
-# define PATH_STYLE_NATIVE               PathStyle_UNIX
-#endif
-
 // session task classes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2050,14 +2042,16 @@ int GuestSessionTaskCopyTo::Run(void)
         Utf8Str strSrcRootAbs = pList->mSrcRootAbs;
         Utf8Str strDstRootAbs = pList->mDstRootAbs;
 
-        GuestPath::BuildDestinationPath(strSrcRootAbs, PATH_STYLE_NATIVE,
-                                        strDstRootAbs, mSession->i_getGuestPathStyle());
-
-        /* Translate the destination path from the host to a path compatible with the guest.
-         * strDstRootAbs already is in the destination path style, so just do a path cleanup. */
+        /* Translate the destination path to a path compatible with the guest.
+         * Note: This needs to be done *before* GuestPath::BuildDestinationPath() below! */
         vrc = GuestPath::Translate(strDstRootAbs,
                                    mSession->i_getGuestPathStyle() /* Source */, mSession->i_getGuestPathStyle() /* Dest */,
                                    true /* fForce */);
+
+        GuestPath::BuildDestinationPath(strSrcRootAbs, PATH_STYLE_NATIVE,
+                                        strDstRootAbs, mSession->i_getGuestPathStyle());
+
+
         if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
