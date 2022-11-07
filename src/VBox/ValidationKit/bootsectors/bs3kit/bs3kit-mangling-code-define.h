@@ -160,6 +160,7 @@
 #define Bs3SelFlatDataToProtFar16 BS3_CMN_MANGLER(Bs3SelFlatDataToProtFar16)
 #define Bs3SelFlatDataToRealMode BS3_CMN_MANGLER(Bs3SelFlatDataToRealMode)
 #define Bs3SelLnkPtrToCurPtr BS3_CMN_MANGLER(Bs3SelLnkPtrToCurPtr)
+#define Bs3SelLnkPtrToFlat BS3_CMN_MANGLER(Bs3SelLnkPtrToFlat)
 #define Bs3SelProtFar16DataToFlat BS3_CMN_MANGLER(Bs3SelProtFar16DataToFlat)
 #define Bs3SelProtFar16DataToRealMode BS3_CMN_MANGLER(Bs3SelProtFar16DataToRealMode)
 #define Bs3SelProtFar32ToFlat32 BS3_CMN_MANGLER(Bs3SelProtFar32ToFlat32)

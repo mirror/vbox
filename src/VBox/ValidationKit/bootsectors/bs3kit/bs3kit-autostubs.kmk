@@ -36,6 +36,7 @@
 
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelFlatDataToProtFar16,4)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelFlatDataToRealMode,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelLnkPtrToFlat,4)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelProtFar16DataToFlat,4)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelProtFar16DataToRealMode,4)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelRealModeCodeToFlat,4)

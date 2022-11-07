@@ -191,6 +191,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-SelFlatDataToProtFar16.asm \
        bs3-cmn-SelFlatDataToRealMode.asm \
        bs3-cmn-SelLnkPtrToCurPtr.c \
+       bs3-cmn-SelLnkPtrToFlat.c \
        bs3-cmn-SelSetup16BitData.c \
        bs3-cmn-SelSetup16BitCode.c \
        bs3-cmn-SelSetup32BitCode.c \
