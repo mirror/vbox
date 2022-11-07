@@ -499,7 +499,7 @@ private:
     QMap<UISettingsDialog::DialogType, UISettingsDialog*>  m_settings;
 
     /** Holds the instance of UIVMLogViewerDialog. */
-    QIManagerDialog   *m_pLogViewerDialog;
+    QIManagerDialog *m_pLogViewerDialog;
 
     /** Holds the central-widget instance. */
     UIVirtualBoxManagerWidget *m_pWidget;

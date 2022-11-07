@@ -112,6 +112,14 @@ public:
     /** Returns dialog type. */
     virtual DialogType dialogType() const { return DialogType_Machine; }
 
+    /** Update machine stuff.
+      * @param  uMachineId   Brings the machine ID.
+      * @param  strCategory  Brings the name of category to be opened.
+      * @param  strControl   Brings the name of control to be focused. */
+    void setNewMachineId(const QUuid &uMachineId,
+                         const QString &strCategory = QString(),
+                         const QString &strControl = QString());
+
 protected:
 
     /** Handles translation event. */

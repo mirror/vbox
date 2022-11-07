@@ -753,6 +753,23 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
 
     updateActionsVisibility();
     updateActionsAppearance();
+
+    /* Special handling for opened settings dialog: */
+    if (   m_pWidget->isMachineItemSelected()
+        && m_settings.contains(UISettingsDialog::DialogType_Machine))
+    {
+        /* Cast dialog to required type: */
+        UISettingsDialogMachine *pDialog =
+            qobject_cast<UISettingsDialogMachine*>(m_settings.value(UISettingsDialog::DialogType_Machine));
+        AssertPtrReturnVoid(pDialog);
+
+        /* Get current item: */
+        UIVirtualMachineItem *pItem = currentItem();
+        AssertPtrReturnVoid(pItem);
+
+        /* Update machine stuff: */
+        pDialog->setNewMachineId(pItem->id());
+    }
 }
 
 void UIVirtualBoxManager::sltHandleGroupSavingProgressChange()

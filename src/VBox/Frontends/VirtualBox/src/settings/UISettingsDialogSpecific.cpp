@@ -314,6 +314,34 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent,
     prepare();
 }
 
+void UISettingsDialogMachine::setNewMachineId(const QUuid &uMachineId,
+                                              const QString &strCategory /* = QString() */,
+                                              const QString &strControl /* = QString() */)
+{
+    /* Cache new machine stuff: */
+    m_uMachineId = uMachineId;
+    m_strCategory = strCategory;
+    m_strControl = strControl;
+
+    /* Get corresponding machine (required to determine dialog type and page availability): */
+    m_machine = uiCommon().virtualBox().FindMachine(m_uMachineId.toString());
+    AssertReturnVoid(!m_machine.isNull());
+    m_enmSessionState = m_machine.GetSessionState();
+    m_enmMachineState = m_machine.GetState();
+
+    /* Calculate initial configuration access level: */
+    setConfigurationAccessLevel(::configurationAccessLevel(m_enmSessionState, m_enmMachineState));
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Choose page/tab: */
+    choosePageAndTab(true /* keep previous by default */);
+
+    /* Load finally: */
+    load();
+}
+
 void UISettingsDialogMachine::retranslateUi()
 {
     /* Selector itself: */
