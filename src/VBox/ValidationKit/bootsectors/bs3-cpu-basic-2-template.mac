@@ -516,17 +516,15 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb__ud2
 
 
 ; jmp rel8 (backwards)
+BS3_GLOBAL_NAME_EX RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_jmp_jb_back__ud2),.again), function, 2
+        ud2
+        times 7 int3
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jb_back__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jb_back__ud2, BS3_PBC_NEAR
-        jmp     .start
-.again: ud2
-        times 7 int3
-        jmp     .again
-.start:
         jmp short .again
 .post_jmp:
         int3
-AssertCompile(.post_jmp - .start == 2)
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 2)
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb_back__ud2
 
 
@@ -548,20 +546,18 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv__ud2
 
 
 ; jmp rel16 (backwards)
+BS3_GLOBAL_NAME_EX RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_jmp_jv_back__ud2),.again), function, 2
+        ud2
+        times 6 int3
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv_back__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_back__ud2, BS3_PBC_NEAR
-        jmp     .start
-.again: ud2
-        times 6 int3
-        jmp     .again
-.start:
         jmp near .again
 .post_jmp:
         int3
  %if TMPL_BITS == 16
-AssertCompile(.post_jmp - .start == 3)
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 3)
  %else
-AssertCompile(.post_jmp - .start == 5)
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 5)
  %endif
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_back__ud2
 
@@ -598,29 +594,27 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb_opsize__ud2
 
 
 ; jmp rel8 (backwards) with opsize override.
+BS3_GLOBAL_NAME_EX RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_jmp_jb_opsize_back__ud2),.again), function, 2
+        ud2
+        times 19 int3
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jb_opsize_back__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jb_opsize_back__ud2, BS3_PBC_NEAR
-        jmp     .start
-.again: ud2
-        times 19 int3
-        jmp     .again
-.start:
-        db 66h
+        db      66h
         jmp short .again
 .post_jmp:
         int3
-AssertCompile(.post_jmp - .start == 3)
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 3)
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb_opsize_back__ud2
 
 
 ; jmp rel16 (forwards) with opsize override.
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv_opsize__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_opsize__ud2, BS3_PBC_NEAR
-        db 66h, 0e9h                    ; o32 jmp near .again
+        db      66h, 0e9h               ; o32 jmp near .again
  %if TMPL_BITS != 32
-        dd 11
+        dd      11
  %else
-        dw 11
+        dw      11
  %endif
 .post_jmp:
         times 11 int3
@@ -631,22 +625,20 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_opsize__ud2
 
 
 ; jmp rel16 (backwards) with opsize override.
+BS3_GLOBAL_NAME_EX RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_jmp_jv_opsize_back__ud2),.again), function, 2
+        ud2
+        times 19 int3
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv_opsize_back__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_opsize_back__ud2, BS3_PBC_NEAR
-        jmp     .start
-.again: ud2
-        int3
-        jmp     .again
-.start:
  %if TMPL_BITS != 32
         db      66h, 0e9h               ; o32 jmp near .again
-        dd      -(6 + 1 + 2 + 2)
+        dd      RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_jmp_jv_opsize_back__ud2),.again) - .post_jmp
  %else
         db      66h, 0e9h               ; o16 jmp near .again
-        dw      -(4 + 1 + 2 + 2)
+        dw      RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_jmp_jv_opsize_back__ud2),.again) - .post_jmp
  %endif
 .post_jmp:
-        times 11 int3
+        int3
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_opsize_back__ud2
 
 
