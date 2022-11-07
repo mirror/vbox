@@ -59,8 +59,12 @@
 #endif
 
 
-UISettingsDialog::UISettingsDialog(QWidget *pParent)
+UISettingsDialog::UISettingsDialog(QWidget *pParent,
+                                   const QString &strCategory,
+                                   const QString &strControl)
     : QIWithRetranslateUI<QMainWindow>(pParent)
+    , m_strCategory(strCategory)
+    , m_strControl(strControl)
     , m_pSelector(0)
     , m_pStack(0)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
@@ -370,6 +374,43 @@ void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
             emit sigClose();
         }
     }
+}
+
+void UISettingsDialog::choosePageAndTab(bool fKeepPreviousByDefault /* = false */)
+{
+    /* Setup settings window: */
+    if (!m_strCategory.isNull())
+    {
+        m_pSelector->selectByLink(m_strCategory);
+        /* Search for a widget with the given name: */
+        if (!m_strControl.isNull())
+        {
+            if (QWidget *pWidget = m_pStack->findChild<QWidget*>(m_strControl))
+            {
+                QList<QWidget*> parents;
+                QWidget *pParentWidget = pWidget;
+                while ((pParentWidget = pParentWidget->parentWidget()) != 0)
+                {
+                    if (QTabWidget *pTabWidget = qobject_cast<QTabWidget*>(pParentWidget))
+                    {
+                        // WORKAROUND:
+                        // The tab contents widget is two steps down
+                        // (QTabWidget -> QStackedWidget -> QWidget).
+                        QWidget *pTabPage = parents[parents.count() - 1];
+                        if (pTabPage)
+                            pTabPage = parents[parents.count() - 2];
+                        if (pTabPage)
+                            pTabWidget->setCurrentWidget(pTabPage);
+                    }
+                    parents.append(pParentWidget);
+                }
+                pWidget->setFocus();
+            }
+        }
+    }
+    /* First item as default (if previous is not guarded): */
+    else if (!fKeepPreviousByDefault)
+        m_pSelector->selectById(0);
 }
 
 void UISettingsDialog::loadData(QVariant &data)

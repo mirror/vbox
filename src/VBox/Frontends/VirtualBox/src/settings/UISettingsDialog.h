@@ -75,8 +75,12 @@ public:
     /** Dialog types. */
     enum DialogType { DialogType_Global, DialogType_Machine };
 
-    /** Constructs settings dialog passing @a pParent to the base-class. */
-    UISettingsDialog(QWidget *pParent);
+    /** Constructs settings dialog passing @a pParent to the base-class.
+      * @param  strCategory  Brings the name of category to be opened.
+      * @param  strControl   Brings the name of control to be focused. */
+    UISettingsDialog(QWidget *pParent,
+                     const QString &strCategory,
+                     const QString &strControl);
     /** Destructs settings dialog. */
     virtual ~UISettingsDialog() RT_OVERRIDE;
 
@@ -120,6 +124,10 @@ protected:
     virtual void polishEvent(QShowEvent *pEvent);
     /** Handles close @a pEvent. */
     virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
+
+    /** Selects page and tab.
+      * @param  fKeepPreviousByDefault  Brings whether we should keep current page/tab by default. */
+    void choosePageAndTab(bool fKeepPreviousByDefault = false);
 
     /** Loads the dialog @a data. */
     void loadData(QVariant &data);
@@ -166,6 +174,11 @@ protected:
 
     /** Returns whether settings were changed. */
     bool isSettingsChanged();
+
+    /** Holds the name of category to be opened. */
+    QString  m_strCategory;
+    /** Holds the name of control to be focused. */
+    QString  m_strControl;
 
     /** Holds the page selector instance. */
     UISettingsSelector *m_pSelector;
@@ -232,10 +245,10 @@ private:
     QPointer<QWidget>  m_pWhatsThisCandidate;
 
     /** Holds the map of settings pages. */
-    QMap<int, int>  m_pages;
+    QMap<int, int>      m_pages;
     /** Stores the help tag per page. Key is the page type (either GlobalSettingsPageType or MachineSettingsPageType)
       * and value is the help tag. Used in context sensitive help: */
-    QMap<int, QString> m_pageHelpKeywords;
+    QMap<int, QString>  m_pageHelpKeywords;
 
 #ifdef VBOX_WS_MAC
     /** Holds the list of settings page sizes for animation purposes. */
@@ -244,9 +257,9 @@ private:
 
     /** @name Widgets
      * @{ */
-       QLabel *m_pLabelTitle;
+       QLabel            *m_pLabelTitle;
        QIDialogButtonBox *m_pButtonBox;
-       QWidget *m_pWidgetStackHandler;
+       QWidget           *m_pWidgetStackHandler;
     /** @} */
 };
 

@@ -85,11 +85,6 @@ private:
 
     /** Returns whether page with certain @a iPageId is available. */
     bool isPageAvailable(int iPageId) const;
-
-    /** Holds the name of category to be opened. */
-    QString  m_strCategory;
-    /** Holds the name of control to be focused. */
-    QString  m_strControl;
 };
 
 /** Safe pointer to cloud machine settings dialog. */
@@ -107,7 +102,7 @@ public:
       * @param  uMachineId   Brings the machine ID.
       * @param  pActionPool  Brings the action pool instance.
       * @param  strCategory  Brings the name of category to be opened.
-      * @param  strControl   Brings the name of control to be focused.  */
+      * @param  strControl   Brings the name of control to be focused. */
     UISettingsDialogMachine(QWidget *pParent,
                             const QUuid &uMachineId,
                             UIActionPool *pActionPool,
@@ -169,10 +164,6 @@ private:
     QUuid         m_uMachineId;
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the name of category to be opened. */
-    QString       m_strCategory;
-    /** Holds the name of control to be focused. */
-    QString       m_strControl;
 
     /** Holds the session state. */
     KSessionState  m_enmSessionState;

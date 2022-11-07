@@ -81,9 +81,7 @@
 UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
                                                const QString &strCategory /* = QString() */,
                                                const QString &strControl /* = QString() */)
-    : UISettingsDialog(pParent)
-    , m_strCategory(strCategory)
-    , m_strControl(strControl)
+    : UISettingsDialog(pParent, strCategory, strControl)
 {
     prepare();
 }
@@ -289,39 +287,8 @@ void UISettingsDialogGlobal::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Setup settings window: */
-    if (!m_strCategory.isNull())
-    {
-        m_pSelector->selectByLink(m_strCategory);
-        /* Search for a widget with the given name: */
-        if (!m_strControl.isNull())
-        {
-            if (QWidget *pWidget = m_pStack->findChild<QWidget*>(m_strControl))
-            {
-                QList<QWidget*> parents;
-                QWidget *pParentWidget = pWidget;
-                while ((pParentWidget = pParentWidget->parentWidget()) != 0)
-                {
-                    if (QTabWidget *pTabWidget = qobject_cast<QTabWidget*>(pParentWidget))
-                    {
-                        // WORKAROUND:
-                        // The tab contents widget is two steps down
-                        // (QTabWidget -> QStackedWidget -> QWidget).
-                        QWidget *pTabPage = parents[parents.count() - 1];
-                        if (pTabPage)
-                            pTabPage = parents[parents.count() - 2];
-                        if (pTabPage)
-                            pTabWidget->setCurrentWidget(pTabPage);
-                    }
-                    parents.append(pParentWidget);
-                }
-                pWidget->setFocus();
-            }
-        }
-    }
-    /* First item as default: */
-    else
-        m_pSelector->selectById(GlobalSettingsPageType_General);
+    /* Choose page/tab finally: */
+    choosePageAndTab();
 }
 
 bool UISettingsDialogGlobal::isPageAvailable(int) const
@@ -340,11 +307,9 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent,
                                                  UIActionPool *pActionPool,
                                                  const QString &strCategory /* = QString() */,
                                                  const QString &strControl /* = QString() */)
-    : UISettingsDialog(pParent)
+    : UISettingsDialog(pParent, strCategory, strControl)
     , m_uMachineId(uMachineId)
     , m_pActionPool(pActionPool)
-    , m_strCategory(strCategory)
-    , m_strControl(strControl)
 {
     prepare();
 }
@@ -790,39 +755,8 @@ void UISettingsDialogMachine::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Setup settings window: */
-    if (!m_strCategory.isNull())
-    {
-        m_pSelector->selectByLink(m_strCategory);
-        /* Search for a widget with the given name: */
-        if (!m_strControl.isNull())
-        {
-            if (QWidget *pWidget = m_pStack->findChild<QWidget*>(m_strControl))
-            {
-                QList<QWidget*> parents;
-                QWidget *pParentWidget = pWidget;
-                while ((pParentWidget = pParentWidget->parentWidget()) != 0)
-                {
-                    if (QTabWidget *pTabWidget = qobject_cast<QTabWidget*>(pParentWidget))
-                    {
-                        // WORKAROUND:
-                        // The tab contents widget is two steps down
-                        // (QTabWidget -> QStackedWidget -> QWidget).
-                        QWidget *pTabPage = parents[parents.count() - 1];
-                        if (pTabPage)
-                            pTabPage = parents[parents.count() - 2];
-                        if (pTabPage)
-                            pTabWidget->setCurrentWidget(pTabPage);
-                    }
-                    parents.append(pParentWidget);
-                }
-                pWidget->setFocus();
-            }
-        }
-    }
-    /* First item as default: */
-    else
-        m_pSelector->selectById(MachineSettingsPageType_General);
+    /* Choose page/tab finally: */
+    choosePageAndTab();
 }
 
 bool UISettingsDialogMachine::isPageAvailable(int iPageId) const
