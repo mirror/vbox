@@ -3679,7 +3679,6 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp)(uint8_t bMode)
     Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
 
     bs3CpuBasic2_SetGlobals(bMode);
-if (bMode != BS3_MODE_LM64) return BS3TESTDOMODE_SKIPPED; // temp
 
     /*
      * Create a context.
@@ -3751,7 +3750,7 @@ if (bMode != BS3_MODE_LM64) return BS3TESTDOMODE_SKIPPED; // temp
                     CtxExpected.rip.u = BS3_FP_OFF(bs3CpuBasic2_jmp_target_wrap_forward);
             }
             CtxExpected.cs = Ctx.cs;
-Bs3TestPrintf("cs:rip=%04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u);
+            //Bs3TestPrintf("cs:rip=%04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u);
 
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
 
@@ -3773,7 +3772,7 @@ Bs3TestPrintf("cs:rip=%04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u);
                 if (s_aTests[iTest].iWrap < 0)
                 {
                     CtxExpected.rip.u = Ctx.rip.u = BS3_FP_OFF(s_aTests[iTest].pfnTest);
-Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v1\n", Ctx.cs, Ctx.rip.u);
+                    //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v1\n", Ctx.cs, Ctx.rip.u);
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                     bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
                     g_usBs3TestStep++;
@@ -3790,7 +3789,7 @@ Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v1\n", Ctx.cs, Ctx.rip.u);
                         CtxExpected.rip.u = Ctx.rip.u;
                     else
                         CtxExpected.rip.u = BS3_FP_OFF(bs3CpuBasic2_jmp_target_wrap_backward);
-Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
+                    //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                     bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
                     g_usBs3TestStep++;
@@ -3800,6 +3799,10 @@ Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
     }
     /*
      * 32-bit & 64-bit tests.
+     *
+     * When the opsize prefix is applied here, IP is updated and bits 63:16
+     * cleared.  However in 64-bit mode, Intel ignores the opsize prefix
+     * whereas AMD doesn't and it works like you expect.
      */
     else
     {
@@ -3807,29 +3810,41 @@ Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
         {
             uint8_t     cBits;
             bool        fOpSizePfx;
+            bool        fIgnPfx;
             FPFNBS3FAR  pfnTest;
         }
         const s_aTests[] =
         {
-            {  32, false, bs3CpuBasic2_jmp_jb__ud2_c32,                  },
-            {  32, false, bs3CpuBasic2_jmp_jb_back__ud2_c32,             },
-            {  32,  true, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,           },
-            {  32,  true, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,      },
-            {  32, false, bs3CpuBasic2_jmp_jv__ud2_c32,                  },
-            {  32, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
-            {  32,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
-            {  32,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
-            /* 64bit: */
-            {  64, false, bs3CpuBasic2_jmp_jb__ud2_c64,                  },
-            {  64, false, bs3CpuBasic2_jmp_jb_back__ud2_c64,             },
-            {  64,  true, bs3CpuBasic2_jmp_jb_opsize__ud2_c64,           },
-            {  64,  true, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c64,      },
-            {  64, false, bs3CpuBasic2_jmp_jv__ud2_c64,                  },
-            {  64, false, bs3CpuBasic2_jmp_jv_back__ud2_c64,             },
-            {  64,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c64,           },
-            {  64,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c64,      },
+            {  32, false, false, bs3CpuBasic2_jmp_jb__ud2_c32,                  },
+            {  32, false, false, bs3CpuBasic2_jmp_jb_back__ud2_c32,             },
+            {  32,  true, false, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,           },
+            {  32,  true, false, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,      },
+            {  32, false, false, bs3CpuBasic2_jmp_jv__ud2_c32,                  },
+            {  32, false, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
+            {  32,  true, false, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
+            {  32,  true, false, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
+            /* 64bit/Intel: Use the _c64 tests, which are written to ignore the o16 prefix. */
+            {  64, false,  true, bs3CpuBasic2_jmp_jb__ud2_c64,                  },
+            {  64, false,  true, bs3CpuBasic2_jmp_jb_back__ud2_c64,             },
+            {  64,  true,  true, bs3CpuBasic2_jmp_jb_opsize__ud2_c64,           },
+            {  64,  true,  true, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c64,      },
+            {  64, false,  true, bs3CpuBasic2_jmp_jv__ud2_c64,                  },
+            {  64, false,  true, bs3CpuBasic2_jmp_jv_back__ud2_c64,             },
+            {  64,  true,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c64,           },
+            {  64,  true,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c64,      },
+            /* 64bit/AMD: Use the _c32 tests. */
+            {  64, false, false, bs3CpuBasic2_jmp_jb__ud2_c32,                  },
+            {  64, false, false, bs3CpuBasic2_jmp_jb_back__ud2_c32,             },
+            {  64,  true, false, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,           },
+            {  64,  true, false, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,      },
+            {  64, false, false, bs3CpuBasic2_jmp_jv__ud2_c32,                  },
+            {  64, false, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
+            {  64,  true, false, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
+            {  64,  true, false, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
         };
         uint8_t const           cBits    = BS3_MODE_IS_64BIT_CODE(bMode) ? 64 : 32;
+        BS3CPUVENDOR const      enmCpuVendor = Bs3GetCpuVendor();
+        bool const              fIgnPfx  = cBits == 64 && enmCpuVendor == BS3CPUVENDOR_INTEL; /** @todo what does VIA do? */
 
         /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
         uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_jmp_opsize_begin_c32);
@@ -3839,10 +3854,10 @@ Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
         if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
             Bs3TestFailedF("Opsize overriden jumps are out of place: %#x LB %#z\n", offLow, cbLow);
         Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
-        if (cBits != 64) /** @todo wtf? Intel 10980xe doesn't clear RIP[63:16] for short jumps with o16 prefix. */
+        if (!fIgnPfx)
         {
             for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
-                if (s_aTests[iTest].fOpSizePfx && s_aTests[iTest].cBits == cBits)
+                if (s_aTests[iTest].fOpSizePfx && s_aTests[iTest].cBits == cBits && s_aTests[iTest].fIgnPfx == fIgnPfx)
                 {
                     uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
                     uint16_t const offUd = offFn + pbCode16[offFn - 1];
@@ -3856,14 +3871,14 @@ Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
         /* Run the tests. */
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
         {
-            if (s_aTests[iTest].cBits == cBits)
+            if (s_aTests[iTest].cBits == cBits && s_aTests[iTest].fIgnPfx == fIgnPfx)
             {
                 uint8_t const BS3_FAR *fpbCode = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
                 Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
                 CtxExpected.rip.u = Ctx.rip.u + fpbCode[-1];
-                if (s_aTests[iTest].fOpSizePfx && cBits != 64)
+                if (s_aTests[iTest].fOpSizePfx && !fIgnPfx)
                     CtxExpected.rip.u &= UINT16_MAX;
-Bs3TestPrintf("cs:rip=%04RX16:%08RX64\n", Ctx.cs, Ctx.rip.u);
+                //Bs3TestPrintf("cs:rip=%04RX16:%08RX64\n", Ctx.cs, Ctx.rip.u);
 
                 if (BS3_MODE_IS_16BIT_SYS(bMode))
                     g_uBs3TrapEipHint = s_aTests[iTest].fOpSizePfx ? 0 : Ctx.rip.u32;
