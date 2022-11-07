@@ -1733,7 +1733,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         self.oTestFiles = vboxtestfileset.TestFileSet(oTestVm,
                                                       self.oTstDrv.getGuestTempDir(oTestVm), 'addgst-1',
                                                       # Make sure that we use a lowest common denominator across all supported
-                                                      # platforms, to make testing the randomly generated file paths work reliably.
+                                                      # platforms, to make testing the randomly generated file paths work
+                                                      # reliably.
                                                       cchMaxPath = cchMaxPath, asCompatibleWith = [ ('cross') ]);
         return self.oTestFiles.upload(oTxsSession, self.oTstDrv);
 
