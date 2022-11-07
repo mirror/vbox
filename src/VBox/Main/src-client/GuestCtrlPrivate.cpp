@@ -1793,65 +1793,13 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
         strTranslated = strPath;
         RTPathChangeToUnixSlashes(strTranslated.mutableRaw(), true /* fForce */);
     }
-    else if (enmDstPathStyle == PathStyle_DOS)
+    else if (  (   enmSrcPathStyle == PathStyle_UNIX
+                && enmDstPathStyle == PathStyle_DOS)
+            || (fForce && enmDstPathStyle == PathStyle_DOS))
+
     {
-        if (   enmSrcPathStyle == PathStyle_DOS
-            && fForce)
-        {
-            strTranslated = strPath;
-            RTPathChangeToDosSlashes(strTranslated.mutableRaw(), true /* fForce */);
-        }
-        else if (enmSrcPathStyle == PathStyle_UNIX)
-        {
-            /** @todo Check for quoted (sub) strings, e.g. '/foo/bar/\ baz' vs . '/foo/bar/"\ baz"'? */
-            const char  *psz = strPath.c_str();
-            size_t const cch = strPath.length();
-            size_t       off = 0;
-            while (off < cch)
-            {
-                /* Most likely cases first. */
-                if (psz[off] == '/') /* Just transform slashes. */
-                    strTranslated += '\\';
-                /*
-                 * Do a mapping of "\", which marks an escape sequence for paths on UNIX-y OSes to DOS-based OSes (like Windows),
-                 * however, on DOS "\" is a path separator.
-                 *
-                 * See @ticketref{21095}.
-                 */
-                /** @todo r=bird: Seeing that callers like GuestSessionTaskCopyFrom::Run() has
-                 * passed strPath to RTPathQueryInfoEx() prior to calling this function, I don't
-                 * get the comments about escape sequence stuff here.
-                 *
-                 * "\" ("\\" in C/C++) is not an escape sequence on unix unless you're in a
-                 * typical unix shell like bash.  It's just a filename character that doesn't
-                 * get interpreted as anything special by the kernel (unlike '/' and '\0' (C/C++
-                 * encoding)).
-                 *
-                 * "\ " (or "\\ " in C/C++) does not mark a single space in a path component, it
-                 * signifies two characters, a backslash and a space, neither with any special
-                 * meaning to a UNIX host.
-                 */
-                else if (psz[off] == '\\')
-                {
-                    /* "\ " is valid on UNIX-system and mark a space in a path component. */
-                    if (   off + 1      <= cch
-                        && psz[off + 1] == ' ')
-                    {
-                        strTranslated += ' ';
-                        off++; /* Skip actual escape sequence char (space in this case). */
-                    }
-                    else
-                    {
-                        /* Every other escape sequence is not supported and would lead to different paths anyway, so bail out here. */
-                        vrc = VERR_NOT_SUPPORTED;
-                        break;
-                    }
-                }
-                else /* Just add it unmodified. */
-                    strTranslated += psz[off];
-                off++;
-            }
-        }
+        strTranslated = strPath;
+        RTPathChangeToDosSlashes(strTranslated.mutableRaw(), true /* fForce */);
     }
 
     if (   strTranslated.isEmpty() /* Not forced. */
@@ -1876,14 +1824,17 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
     {
         if (off + 1 > cch)
             break;
-        /* Remove double slashes. */
-        if (   psz[off]     == '\\'
+        /* Remove double back slashes (DOS only). */
+        if (   enmDstPathStyle == PathStyle_DOS
+            && psz[off]     == '\\'
             && psz[off + 1] == '\\')
         {
             strTranslated.erase(off + 1, 1);
             off++;
         }
-        if (   psz[off]     == '/'
+        /* Remove double forward slashes (UNIX only). */
+        if (   enmDstPathStyle == PathStyle_UNIX
+            && psz[off]     == '/'
             && psz[off + 1] == '/')
         {
             strTranslated.erase(off + 1, 1);
