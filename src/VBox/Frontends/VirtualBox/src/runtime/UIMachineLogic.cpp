@@ -1620,9 +1620,9 @@ void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QStri
     {
         m_settings[UISettingsDialog::DialogType_Machine] = new UISettingsDialogMachine(activeMachineWindow(),
                                                                                        machine().GetId(),
+                                                                                       actionPool(),
                                                                                        strCategory,
-                                                                                       strControl,
-                                                                                       actionPool());
+                                                                                       strControl);
         connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogGlobal::sigClose,
                 this, &UIMachineLogic::sltCloseSettingsDialog);
         m_settings.value(UISettingsDialog::DialogType_Machine)->load();

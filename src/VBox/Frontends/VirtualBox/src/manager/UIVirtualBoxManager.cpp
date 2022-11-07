@@ -1093,9 +1093,9 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
             {
                 m_settings[UISettingsDialog::DialogType_Machine] = new UISettingsDialogMachine(this,
                                                                                                uID.isNull() ? pItem->id() : uID,
+                                                                                               actionPool(),
                                                                                                strCategory,
-                                                                                               strControl,
-                                                                                               actionPool());
+                                                                                               strControl);
                 connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogGlobal::sigClose,
                         this, &UIVirtualBoxManager::sltCloseSettingsDialog);
                 m_settings.value(UISettingsDialog::DialogType_Machine)->load();

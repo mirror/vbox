@@ -104,12 +104,15 @@ class SHARED_LIBRARY_STUFF UISettingsDialogMachine : public UISettingsDialog
 public:
 
     /** Constructs settings dialog passing @a pParent to the base-class.
-      * @param  uMachineId    Brings the machine ID.
-      * @param  strCategory   Brings the name of category to be opened.
-      * @param  strControl    Brings the name of control to be focused.
-      * @param  pActionPool   Brings the action pool instance.  */
-    UISettingsDialogMachine(QWidget *pParent, const QUuid &uMachineId,
-                            const QString &strCategory, const QString &strControl, UIActionPool *pActionPool);
+      * @param  uMachineId   Brings the machine ID.
+      * @param  pActionPool  Brings the action pool instance.
+      * @param  strCategory  Brings the name of category to be opened.
+      * @param  strControl   Brings the name of control to be focused.  */
+    UISettingsDialogMachine(QWidget *pParent,
+                            const QUuid &uMachineId,
+                            UIActionPool *pActionPool,
+                            const QString &strCategory = QString(),
+                            const QString &strControl = QString());
 
     /** Returns dialog type. */
     virtual DialogType dialogType() const { return DialogType_Machine; }
@@ -163,11 +166,13 @@ private:
     void updateConfigurationAccessLevel();
 
     /** Holds the machine ID. */
-    QUuid    m_uMachineId;
+    QUuid         m_uMachineId;
+    /** Holds the action-pool reference. */
+    UIActionPool *m_pActionPool;
     /** Holds the name of category to be opened. */
-    QString  m_strCategory;
+    QString       m_strCategory;
     /** Holds the name of control to be focused. */
-    QString  m_strControl;
+    QString       m_strControl;
 
     /** Holds the session state. */
     KSessionState  m_enmSessionState;
@@ -180,8 +185,6 @@ private:
     CMachine  m_machine;
     /** Holds the console reference. */
     CConsole  m_console;
-
-    UIActionPool *m_pActionPool;
 };
 
 /** Safe pointer to cloud machine settings dialog. */
