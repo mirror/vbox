@@ -498,6 +498,162 @@ AssertCompile(.again - BS3_LAST_LABEL == 1)
 BS3_PROC_END_CMN   bs3CpuBasic2_insb__ud2
 
 
+;*********************************************************************************************************************************
+;*  JMP Tests (simple ones).                                                                                                     *
+;*********************************************************************************************************************************
+
+; jmp rel8 (forwards)
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jb__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jb__ud2, BS3_PBC_NEAR
+        jmp short .again
+.post_jmp:
+        times 7 int3
+.again: ud2
+        int3
+        jmp     .again
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 2)
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb__ud2
+
+
+; jmp rel8 (backwards)
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jb_back__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jb_back__ud2, BS3_PBC_NEAR
+        jmp     .start
+.again: ud2
+        times 7 int3
+        jmp     .again
+.start:
+        jmp short .again
+.post_jmp:
+        int3
+AssertCompile(.post_jmp - .start == 2)
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb_back__ud2
+
+
+; jmp rel16 (forwards)
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv__ud2, BS3_PBC_NEAR
+        jmp near .again
+.post_jmp:
+        times 9 int3
+.again: ud2
+        int3
+        jmp     .again
+ %if TMPL_BITS == 16
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 3)
+ %else
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 5)
+ %endif
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv__ud2
+
+
+; jmp rel16 (backwards)
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv_back__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_back__ud2, BS3_PBC_NEAR
+        jmp     .start
+.again: ud2
+        times 6 int3
+        jmp     .again
+.start:
+        jmp near .again
+.post_jmp:
+        int3
+ %if TMPL_BITS == 16
+AssertCompile(.post_jmp - .start == 3)
+ %else
+AssertCompile(.post_jmp - .start == 5)
+ %endif
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_back__ud2
+
+
+;
+; When applying opsize, we need to put this in the 16-bit text segment to
+; better control where we end up in 32-bit and 64-bit mode.
+;
+; Try keep the code out of the IVT and BIOS data area.  This unfortunately
+; requires manual padding here.
+;
+BS3_BEGIN_TEXT16
+        BS3_SET_BITS TMPL_BITS
+%if TMPL_BITS == 32
+        align   0x100, int3             ; Currently takes us up to 0x400 (max align value is 0x100)
+        times   0x200 int3              ; Brings us up to 0x600.
+%endif
+
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_jmp_opsize_begin), , 1
+
+
+; jmp rel8 (forwards) with opsize override.
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jb_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jb_opsize__ud2, BS3_PBC_NEAR
+        db 66h
+        jmp short .again
+.post_jmp:
+        times 8 int3
+.again: ud2
+        int3
+        jmp     .again
+AssertCompile(.post_jmp - BS3_LAST_LABEL == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb_opsize__ud2
+
+
+; jmp rel8 (backwards) with opsize override.
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jb_opsize_back__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jb_opsize_back__ud2, BS3_PBC_NEAR
+        jmp     .start
+.again: ud2
+        times 19 int3
+        jmp     .again
+.start:
+        db 66h
+        jmp short .again
+.post_jmp:
+        int3
+AssertCompile(.post_jmp - .start == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jb_opsize_back__ud2
+
+
+; jmp rel16 (forwards) with opsize override.
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_opsize__ud2, BS3_PBC_NEAR
+        db 66h, 0e9h                    ; o32 jmp near .again
+ %if TMPL_BITS != 32
+        dd 11
+ %else
+        dw 11
+ %endif
+.post_jmp:
+        times 11 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_opsize__ud2
+
+
+; jmp rel16 (backwards) with opsize override.
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_jv_opsize_back__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_opsize_back__ud2, BS3_PBC_NEAR
+        jmp     .start
+.again: ud2
+        int3
+        jmp     .again
+.start:
+ %if TMPL_BITS != 32
+        db      66h, 0e9h               ; o32 jmp near .again
+        dd      -(6 + 1 + 2 + 2)
+ %else
+        db      66h, 0e9h               ; o16 jmp near .again
+        dw      -(4 + 1 + 2 + 2)
+ %endif
+.post_jmp:
+        times 11 int3
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_opsize_back__ud2
+
+
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_jmp_opsize_end), , 1
+        int3
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment

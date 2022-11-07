@@ -159,6 +159,83 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_Store_cmpxchg, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuBasic2_Store_cmpxchg
 
 
+;
+; Jump code segment 64KB.
+;
+; There is no ORG directive in OMF mode of course. :-(
+;
+section BS3JMPTEXT16 align=16 CLASS=BS3CLASS16JMPCODE PRIVATE USE16
+        GROUP BS3GROUPJMPTEXT16 BS3JMPTEXT16
+        BS3_SET_BITS 16
+
+; 0000: Start with two int3 filler instructions.
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmptext16_start), function, 2
+        int3
+        int3
+
+; 0002: This is the target for forward wrap around jumps, should they succeed.
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_target_wrap_forward), function, 2
+        ud2
+        align 8, int3
+
+; 0008
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jb_wrap_backward__ud2), function, 2
+        db      0ebh, -012h             ; jmp (0x0008 + 2 - 0x12 = 0xFFFFFFF8 (-8))
+        int3
+
+; 000b
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jb_opsize_wrap_backward__ud2), function, 3
+        db      066h, 0ebh, -016h       ; jmp (0x000b + 3 - 0x16 = 0xFFFFFFF8 (-8))
+        int3
+
+        align   0x80, int3
+; 0080
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_wrap_backward__ud2), function, 3
+        db      0e9h                    ; jmp (0x0080 + 3 - 0x8b = 0xFFFFFFF8 (-8))
+        dw      -08bh
+        int3
+
+; 0084
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_opsize_wrap_backward__ud2), function, 3
+        db      066h, 0e9h              ; jmp (0x0084 + 6 - 0x92 = 0xFFFFFFF8 (-8))
+        dd      -092h
+        int3
+
+
+        align   0x100, int3             ; Note! Doesn't work correctly for higher values.
+        times   (0xff76 - 0x100) int3
+
+
+; ff76
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_wrap_forward__ud2), function, 5
+        db      0e9h                    ; jmp (0xff76+4 + 0x88 = 0x10002 (65538))
+        dw      089h
+        int3
+
+; ff7a
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_opsize_wrap_forward__ud2), function, 7
+        db      066h, 0e9h              ; o32 jmp (0xff7a+6 + 0x82 = 0x10002 (65538))
+        dd      082h
+        int3
+
+; ff81
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jb_wrap_forward__ud2), function, 2
+        db      0ebh, 07fh              ; jmp (0xff81+2 + 0x7f = 0x10002 (65538))
+        int3
+
+; ff84
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jb_opsize_wrap_forward__ud2), function, 3
+        db      066h, 0ebh, 07bh        ; o32 jmp (0xff84+3 + 0x7b = 0x10002 (65538))
+; ff87
+
+        times   (0xfff8 - 0xff87) int3
+
+; fff8: This is the target for backward wrap around jumps, should they succeed.
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_target_wrap_backward), function, 2
+        ud2
+        times   6 int3
+; End of segment.
+
 BS3_BEGIN_TEXT16
 
 ;
