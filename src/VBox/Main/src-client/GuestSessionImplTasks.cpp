@@ -1040,7 +1040,6 @@ void FsList::Destroy(void)
     LogFlowFuncLeave();
 }
 
-#ifdef DEBUG
 /**
  * Dumps a FsList to the debug log.
  */
@@ -1058,7 +1057,6 @@ void FsList::DumpToLog(void)
 
     LogFlowFuncLeave();
 }
-#endif /* DEBUG */
 
 /**
  * Builds a guest file list from a given path (and optional filter).
@@ -1536,9 +1534,9 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                                         strSrc.c_str(), vrc);
                     break;
                 }
-#ifdef DEBUG
+
                 pFsList->DumpToLog();
-#endif
+
                 mVecLists.push_back(pFsList);
             }
             catch (std::bad_alloc &)
@@ -1979,9 +1977,9 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                                         strSrc.c_str(), vrc);
                     break;
                 }
-#ifdef DEBUG
+
                 pFsList->DumpToLog();
-#endif
+
                 mVecLists.push_back(pFsList);
             }
             catch (std::bad_alloc &)
