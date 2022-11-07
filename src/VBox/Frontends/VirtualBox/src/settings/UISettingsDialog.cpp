@@ -410,7 +410,7 @@ void UISettingsDialog::choosePageAndTab(bool fKeepPreviousByDefault /* = false *
     }
     /* First item as default (if previous is not guarded): */
     else if (!fKeepPreviousByDefault)
-        m_pSelector->selectById(0);
+        m_pSelector->selectById(1);
 }
 
 void UISettingsDialog::loadData(QVariant &data)
