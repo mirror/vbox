@@ -354,6 +354,7 @@ void UIFileManagerOperationsPanel::addNewProgress(const CProgress &comProgress, 
             this, &UIFileManagerOperationsPanel::sltHandleWidgetFocusIn);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusOut,
             this, &UIFileManagerOperationsPanel::sltHandleWidgetFocusOut);
+    sigShowPanel(this);
 }
 
 QString UIFileManagerOperationsPanel::panelName() const
