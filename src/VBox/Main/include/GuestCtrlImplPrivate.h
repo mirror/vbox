@@ -823,6 +823,7 @@ struct GuestFsObjData
     /** @name Helper functions to extract the data from a certin VBoxService tool's guest stream block.
      * @{ */
     int FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong);
+    int FromRm(const GuestProcessStreamBlock &strmBlk);
     int FromStat(const GuestProcessStreamBlock &strmBlk);
     int FromMkTemp(const GuestProcessStreamBlock &strmBlk);
     /** @}  */

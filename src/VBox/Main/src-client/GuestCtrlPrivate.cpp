@@ -246,6 +246,25 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
 }
 
 /**
+ * Parses stream block output data which came from the 'rm' (vbox_rm)
+ * VBoxService toolbox command. The result will be stored in this object.
+ *
+ * @returns VBox status code.
+ * @param   strmBlk             Stream block output data to parse.
+ */
+int GuestFsObjData::FromRm(const GuestProcessStreamBlock &strmBlk)
+{
+#ifdef DEBUG
+    strmBlk.DumpToLog();
+#endif
+    /* Object name. */
+    mName = strmBlk.GetString("fname");
+
+    /* Return the stream block's rc. */
+    return strmBlk.GetRc();
+}
+
+/**
  * Parses stream block output data which came from the 'stat' (vbox_stat)
  * VBoxService toolbox command. The result will be stored in this object.
  *
@@ -404,6 +423,7 @@ size_t GuestProcessStreamBlock::GetCount(void) const
  * Gets the return code (name = "rc") of this stream block.
  *
  * @return  VBox status code.
+ * @retval  VERR_NOT_FOUND if the return code string ("rc") was not found.
  */
 int GuestProcessStreamBlock::GetRc(void) const
 {
@@ -412,6 +432,7 @@ int GuestProcessStreamBlock::GetRc(void) const
     {
         return RTStrToInt16(pszValue);
     }
+    /** @todo We probably should have a dedicated error for that, VERR_GSTCTL_GUEST_TOOLBOX_whatever. */
     return VERR_NOT_FOUND;
 }
 

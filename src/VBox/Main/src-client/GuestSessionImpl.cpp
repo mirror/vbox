@@ -1585,8 +1585,6 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
-    int vrc = VINF_SUCCESS;
-
     GuestProcessStartupInfo procInfo;
     GuestProcessStream      streamOut;
 
@@ -1602,13 +1600,33 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
     }
     catch (std::bad_alloc &)
     {
-        vrc = VERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
     }
 
-    if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::run(this, procInfo, prcGuest);
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    GuestCtrlStreamObjects stdOut;
+    int vrc = GuestProcessTool::runEx(this, procInfo, &stdOut, 1 /* cStrmOutObjects */, &vrcGuest);
+    if (GuestProcess::i_isGuestError(vrc))
+    {
+        if (!stdOut.empty())
+        {
+            GuestFsObjData objData;
+            vrc = objData.FromRm(stdOut.at(0));
+            if (RT_FAILURE(vrc))
+            {
+                vrcGuest = vrc;
+                if (prcGuest)
+                    *prcGuest = vrcGuest;
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            }
+        }
+        else
+            vrc = VERR_BROKEN_PIPE;
+    }
+    else if (prcGuest)
+        *prcGuest = vrcGuest;
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
     return vrc;
 }
 
