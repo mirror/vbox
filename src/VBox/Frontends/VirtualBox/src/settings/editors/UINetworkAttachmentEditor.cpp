@@ -374,7 +374,7 @@ void UINetworkAttachmentEditor::populateTypeCombo()
     }
 
     /* Restore previously selected type if possible: */
-    const int iIndex = m_pComboType->findData(m_enmType);
+    const int iIndex = m_pComboType->findData(QVariant::fromValue(m_enmType));
     m_pComboType->setCurrentIndex(iIndex != -1 ? iIndex : 0);
 
     /* Handle combo item change: */
