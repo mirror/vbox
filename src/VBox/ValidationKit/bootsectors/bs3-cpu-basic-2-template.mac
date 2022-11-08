@@ -586,9 +586,42 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_mem__ud2, BS3_PBC_NEAR
 .again: ud2
         int3
         jmp     .again
-        align xCB, int3
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_mem__ud2
 
+; jmp [xAX]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_xAX__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_xAX__ud2, BS3_PBC_NEAR
+        jmp     xAX
+.post_jmp:
+        times 17 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_xAX__ud2
+
+; jmp [xDI]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_xDI__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_xDI__ud2, BS3_PBC_NEAR
+        jmp     xDI
+.post_jmp:
+        times 17 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_xDI__ud2
+
+ %if TMPL_BITS == 64
+; jmp [xAX]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_r9__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_r9__ud2, BS3_PBC_NEAR
+        jmp     r9
+.post_jmp:
+        times 17 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_r9__ud2
+ %endif
 
 ;
 ; When applying opsize, we need to put this in the 16-bit text segment to
@@ -715,6 +748,18 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel
  %endif
+
+; jmp [xAX]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_xAX_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_xAX_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+        jmp     xAX
+.post_jmp:
+        times 8 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_xAX_opsize__ud2
 
 
 %endif ; BS3_INSTANTIATING_CMN

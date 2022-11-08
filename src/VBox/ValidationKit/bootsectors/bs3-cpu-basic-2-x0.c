@@ -3642,6 +3642,9 @@ PROTO_ALL(bs3CpuBasic2_jmp_jb_back__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv_back__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_ind_mem__ud2);
+PROTO_ALL(bs3CpuBasic2_jmp_ind_xAX__ud2);
+PROTO_ALL(bs3CpuBasic2_jmp_ind_xDI__ud2);
+FNBS3FAR  bs3CpuBasic2_jmp_ind_r9__ud2_c64;
 
 PROTO_ALL(bs3CpuBasic2_jmp_opsize_begin);
 PROTO_ALL(bs3CpuBasic2_jmp_jb_opsize__ud2);
@@ -3650,6 +3653,7 @@ PROTO_ALL(bs3CpuBasic2_jmp_jv_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv_opsize_back__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_ind_mem_opsize__ud2);
 FNBS3FAR  bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel_c64;
+PROTO_ALL(bs3CpuBasic2_jmp_ind_xAX_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_opsize_end);
 #undef PROTO_ALL
 
@@ -3711,30 +3715,34 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
         {
             int8_t      iWrap;
             bool        fOpSizePfx;
+            int8_t      iGprIndirect;
             FPFNBS3FAR  pfnTest;
         }
         const s_aTests[] =
         {
-            {  0, false, bs3CpuBasic2_jmp_jb__ud2_c16,                  },
-            {  0, false, bs3CpuBasic2_jmp_jb_back__ud2_c16,             },
-            {  0,  true, bs3CpuBasic2_jmp_jb_opsize__ud2_c16,           },
-            {  0,  true, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c16,      },
-            {  0, false, bs3CpuBasic2_jmp_jv__ud2_c16,                  },
-            {  0, false, bs3CpuBasic2_jmp_jv_back__ud2_c16,             },
-            {  0,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c16,           },
-            {  0,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c16,      },
-            {  0, false, bs3CpuBasic2_jmp_ind_mem__ud2_c16,             },
-            {  0,  true, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c16,      },
+            {  0, false,           -1, bs3CpuBasic2_jmp_jb__ud2_c16,                  },
+            {  0, false,           -1, bs3CpuBasic2_jmp_jb_back__ud2_c16,             },
+            {  0,  true,           -1, bs3CpuBasic2_jmp_jb_opsize__ud2_c16,           },
+            {  0,  true,           -1, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c16,      },
+            {  0, false,           -1, bs3CpuBasic2_jmp_jv__ud2_c16,                  },
+            {  0, false,           -1, bs3CpuBasic2_jmp_jv_back__ud2_c16,             },
+            {  0,  true,           -1, bs3CpuBasic2_jmp_jv_opsize__ud2_c16,           },
+            {  0,  true,           -1, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c16,      },
+            {  0, false,           -1, bs3CpuBasic2_jmp_ind_mem__ud2_c16,             },
+            {  0,  true,           -1, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c16,      },
+            {  0, false, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX__ud2_c16,             },
+            {  0, false, X86_GREG_xDI, bs3CpuBasic2_jmp_ind_xDI__ud2_c16,             },
+            {  0,  true, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX_opsize__ud2_c16,      },
 
-            { -1, false, bs3CpuBasic2_jmp_jb_wrap_backward__ud2,        },
-            { +1, false, bs3CpuBasic2_jmp_jb_wrap_forward__ud2,         },
-            { -1,  true, bs3CpuBasic2_jmp_jb_opsize_wrap_backward__ud2, },
-            { +1,  true, bs3CpuBasic2_jmp_jb_opsize_wrap_forward__ud2,  },
+            { -1, false,           -1, bs3CpuBasic2_jmp_jb_wrap_backward__ud2,        },
+            { +1, false,           -1, bs3CpuBasic2_jmp_jb_wrap_forward__ud2,         },
+            { -1,  true,           -1, bs3CpuBasic2_jmp_jb_opsize_wrap_backward__ud2, },
+            { +1,  true,           -1, bs3CpuBasic2_jmp_jb_opsize_wrap_forward__ud2,  },
 
-            { -1, false, bs3CpuBasic2_jmp_jv16_wrap_backward__ud2,        },
-            { +1, false, bs3CpuBasic2_jmp_jv16_wrap_forward__ud2,         },
-            { -1,  true, bs3CpuBasic2_jmp_jv16_opsize_wrap_backward__ud2, },
-            { +1,  true, bs3CpuBasic2_jmp_jv16_opsize_wrap_forward__ud2,  },
+            { -1, false,           -1, bs3CpuBasic2_jmp_jv16_wrap_backward__ud2,        },
+            { +1, false,           -1, bs3CpuBasic2_jmp_jv16_wrap_forward__ud2,         },
+            { -1,  true,           -1, bs3CpuBasic2_jmp_jv16_opsize_wrap_backward__ud2, },
+            { +1,  true,           -1, bs3CpuBasic2_jmp_jv16_opsize_wrap_forward__ud2,  },
         };
 
         if (!BS3_MODE_IS_RM_OR_V86(bMode))
@@ -3742,6 +3750,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
 
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
         {
+            uint64_t uGprSaved;
             if (s_aTests[iTest].iWrap == 0)
             {
                 uint8_t const BS3_FAR *fpbCode;
@@ -3764,6 +3773,12 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
                     CtxExpected.rip.u = BS3_FP_OFF(bs3CpuBasic2_jmp_target_wrap_forward);
             }
             CtxExpected.cs = Ctx.cs;
+            if (s_aTests[iTest].iGprIndirect >= 0)
+            {
+                uGprSaved = (&Ctx.rax)[s_aTests[iTest].iGprIndirect].u;
+                (&Ctx.rax)[s_aTests[iTest].iGprIndirect].u
+                    = (&CtxExpected.rax)[s_aTests[iTest].iGprIndirect].u = CtxExpected.rip.u;
+            }
             //Bs3TestPrintf("cs:rip=%04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u);
 
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
@@ -3788,6 +3803,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
+
+            if (s_aTests[iTest].iGprIndirect >= 0)
+                (&Ctx.rax)[s_aTests[iTest].iGprIndirect].u = (&CtxExpected.rax)[s_aTests[iTest].iGprIndirect].u = uGprSaved;
         }
 
         /* Limit the wraparound CS segment to exlcude bs3CpuBasic2_jmp_target_wrap_backward
@@ -3839,42 +3857,54 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             uint8_t     cBits;
             bool        fOpSizePfx;
             bool        fIgnPfx;
+            int8_t      iGprIndirect;
             FPFNBS3FAR  pfnTest;
         }
         const s_aTests[] =
         {
-            {  32, false, false, bs3CpuBasic2_jmp_jb__ud2_c32,                  },
-            {  32, false, false, bs3CpuBasic2_jmp_jb_back__ud2_c32,             },
-            {  32,  true, false, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,           },
-            {  32,  true, false, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,      },
-            {  32, false, false, bs3CpuBasic2_jmp_jv__ud2_c32,                  },
-            {  32, false, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
-            {  32,  true, false, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
-            {  32,  true, false, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
-            {  32, false, false, bs3CpuBasic2_jmp_ind_mem__ud2_c32,             },
-            {  32,  true, false, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c32,      },
+            {  32, false, false,           -1, bs3CpuBasic2_jmp_jb__ud2_c32,                    },
+            {  32, false, false,           -1, bs3CpuBasic2_jmp_jb_back__ud2_c32,               },
+            {  32,  true, false,           -1, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,             },
+            {  32,  true, false,           -1, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,        },
+            {  32, false, false,           -1, bs3CpuBasic2_jmp_jv__ud2_c32,                    },
+            {  32, false, false,           -1, bs3CpuBasic2_jmp_jv_back__ud2_c32,               },
+            {  32,  true, false,           -1, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,             },
+            {  32,  true, false,           -1, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,        },
+            {  32, false, false,           -1, bs3CpuBasic2_jmp_ind_mem__ud2_c32,               },
+            {  32,  true, false,           -1, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c32,        },
+            {  32, false, false, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX__ud2_c32,               },
+            {  32, false, false, X86_GREG_xDI, bs3CpuBasic2_jmp_ind_xDI__ud2_c32,               },
+            {  32,  true, false, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX_opsize__ud2_c32,        },
             /* 64bit/Intel: Use the _c64 tests, which are written to ignore the o16 prefix. */
-            {  64, false,  true, bs3CpuBasic2_jmp_jb__ud2_c64,                  },
-            {  64, false,  true, bs3CpuBasic2_jmp_jb_back__ud2_c64,             },
-            {  64,  true,  true, bs3CpuBasic2_jmp_jb_opsize__ud2_c64,           },
-            {  64,  true,  true, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c64,      },
-            {  64, false,  true, bs3CpuBasic2_jmp_jv__ud2_c64,                  },
-            {  64, false,  true, bs3CpuBasic2_jmp_jv_back__ud2_c64,             },
-            {  64,  true,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c64,           },
-            {  64,  true,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c64,      },
-            {  64, false,  true, bs3CpuBasic2_jmp_ind_mem__ud2_c64,             },
-            {  64,  true,  true, bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel_c64, },
+            {  64, false,  true,           -1, bs3CpuBasic2_jmp_jb__ud2_c64,                    },
+            {  64, false,  true,           -1, bs3CpuBasic2_jmp_jb_back__ud2_c64,               },
+            {  64,  true,  true,           -1, bs3CpuBasic2_jmp_jb_opsize__ud2_c64,             },
+            {  64,  true,  true,           -1, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c64,        },
+            {  64, false,  true,           -1, bs3CpuBasic2_jmp_jv__ud2_c64,                    },
+            {  64, false,  true,           -1, bs3CpuBasic2_jmp_jv_back__ud2_c64,               },
+            {  64,  true,  true,           -1, bs3CpuBasic2_jmp_jv_opsize__ud2_c64,             },
+            {  64,  true,  true,           -1, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c64,        },
+            {  64, false,  true,           -1, bs3CpuBasic2_jmp_ind_mem__ud2_c64,               },
+            {  64,  true,  true,           -1, bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel_c64, },
+            {  64, false,  true, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX__ud2_c64,               },
+            {  64, false,  true, X86_GREG_xDI, bs3CpuBasic2_jmp_ind_xDI__ud2_c64,               },
+            {  64, false,  true, X86_GREG_x9,  bs3CpuBasic2_jmp_ind_r9__ud2_c64,                },
+            {  64,  true,  true, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX_opsize__ud2_c64,        }, /* no intel version needed */
             /* 64bit/AMD: Use the _c32 tests. */
-            {  64, false, false, bs3CpuBasic2_jmp_jb__ud2_c32,                  },
-            {  64, false, false, bs3CpuBasic2_jmp_jb_back__ud2_c32,             },
-            {  64,  true, false, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,           },
-            {  64,  true, false, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,      },
-            {  64, false, false, bs3CpuBasic2_jmp_jv__ud2_c32,                  },
-            {  64, false, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
-            {  64,  true, false, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
-            {  64,  true, false, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
-            {  64, false, false, bs3CpuBasic2_jmp_ind_mem__ud2_c64,             }, /* using c64 here */
-            {  64,  true, false, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c64,      }, /* using c64 here */
+            {  64, false, false,           -1, bs3CpuBasic2_jmp_jb__ud2_c32,                    },
+            {  64, false, false,           -1, bs3CpuBasic2_jmp_jb_back__ud2_c32,               },
+            {  64,  true, false,           -1, bs3CpuBasic2_jmp_jb_opsize__ud2_c32,             },
+            {  64,  true, false,           -1, bs3CpuBasic2_jmp_jb_opsize_back__ud2_c32,        },
+            {  64, false, false,           -1, bs3CpuBasic2_jmp_jv__ud2_c32,                    },
+            {  64, false, false,           -1, bs3CpuBasic2_jmp_jv_back__ud2_c32,               },
+            {  64,  true, false,           -1, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,             },
+            {  64,  true, false,           -1, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,        },
+            {  64, false, false,           -1, bs3CpuBasic2_jmp_ind_mem__ud2_c64,               }, /* using c64 here */
+            {  64,  true, false,           -1, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c64,        }, /* using c64 here */
+            {  64, false, false, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX__ud2_c64,               }, /* ditto */
+            {  64, false, false, X86_GREG_xDI, bs3CpuBasic2_jmp_ind_xDI__ud2_c64,               }, /* ditto */
+            {  64, false, false, X86_GREG_x9,  bs3CpuBasic2_jmp_ind_r9__ud2_c64,                }, /* ditto */
+            {  64,  true, false, X86_GREG_xAX, bs3CpuBasic2_jmp_ind_xAX_opsize__ud2_c64,        }, /* ditto */
         };
         uint8_t const           cBits    = BS3_MODE_IS_64BIT_CODE(bMode) ? 64 : 32;
         BS3CPUVENDOR const      enmCpuVendor = Bs3GetCpuVendor();
@@ -3907,9 +3937,16 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
         {
             if (s_aTests[iTest].cBits == cBits && s_aTests[iTest].fIgnPfx == fIgnPfx)
             {
+                uint64_t               uGprSaved;
                 uint8_t const BS3_FAR *fpbCode = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
                 Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
                 CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
+                if (s_aTests[iTest].iGprIndirect >= 0)
+                {
+                    uGprSaved = (&Ctx.rax)[s_aTests[iTest].iGprIndirect].u;
+                    (&Ctx.rax)[s_aTests[iTest].iGprIndirect].u
+                        = (&CtxExpected.rax)[s_aTests[iTest].iGprIndirect].u = CtxExpected.rip.u;
+                }
                 if (s_aTests[iTest].fOpSizePfx && !fIgnPfx)
                     CtxExpected.rip.u &= UINT16_MAX;
                 //Bs3TestPrintf("cs:rip=%04RX16:%08RX64\n", Ctx.cs, Ctx.rip.u);
@@ -3931,6 +3968,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
                 Ctx.rflags.u16        &= ~X86_EFL_TF;
                 CtxExpected.rflags.u16 = Ctx.rflags.u16;
                 g_usBs3TestStep++;
+
+                if (s_aTests[iTest].iGprIndirect >= 0)
+                    (&Ctx.rax)[s_aTests[iTest].iGprIndirect].u = (&CtxExpected.rax)[s_aTests[iTest].iGprIndirect].u = uGprSaved;
             }
         }
 
