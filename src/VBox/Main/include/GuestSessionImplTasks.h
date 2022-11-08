@@ -184,18 +184,30 @@ public:
     void handler()
     {
         int vrc = Run();
-        if (RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc)) /* Could be VERR_INTERRUPTED if the user manually canceled the task. */
         {
-            /* Make sure to let users know if there is a buggy task which failed but didn't set the progress object to a failed state. */
-            BOOL fCompleted;
-            if (SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted))))
+            /* Make sure to let users know if there is a buggy task which failed but didn't set the progress object
+             * to a failed state, and if not canceled manually by the user. */
+            BOOL fCanceled;
+            if (SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled))))
             {
-                AssertReleaseMsg(fCompleted,
-                                 ("Guest Control: Task '%s' failed with %Rrc, but progress is not completed yet. Please report this bug!\n",
-                                  mDesc.c_str(), vrc));
+                if (!fCanceled)
+                {
+                    BOOL fCompleted;
+                    if (SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted))))
+                    {
+                        if (!fCompleted)
+                            setProgressErrorMsg(E_UNEXPECTED,
+                                                Utf8StrFmt(tr("Task '%s' failed with %Rrc, but progress is still pending. Please report this bug!\n"),
+                                                           mDesc.c_str(), vrc));
+                    }
+                    else
+                        AssertReleaseMsgFailed(("Guest Control: Unable to retrieve progress completion status for task '%s' (task result is %Rrc)\n",
+                                                mDesc.c_str(), vrc));
+                }
             }
             else
-                AssertReleaseMsgFailed(("Guest Control: Unable to retrieve progress completion status for task '%s' (task result is %Rrc)\n",
+                AssertReleaseMsgFailed(("Guest Control: Unable to retrieve progress cancellation status for task '%s' (task result is %Rrc)\n",
                                         mDesc.c_str(), vrc));
         }
     }
