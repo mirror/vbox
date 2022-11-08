@@ -41,7 +41,7 @@
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
  * @param   rcStrict    The status from executing an instruction.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict) RT_NOEXCEPT
 {
     if (rcStrict != VINF_SUCCESS)
     {
@@ -131,7 +131,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
  * @param   rcPassUp            The pass up status.  Must be informational.
  *                              VINF_SUCCESS is not allowed.
  */
-DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp)
+DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp) RT_NOEXCEPT
 {
     AssertRC(VBOXSTRICTRC_VAL(rcPassUp)); Assert(rcPassUp != VINF_SUCCESS);
 
@@ -172,7 +172,7 @@ DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp)
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  */
-DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu)
+DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     if (CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx))
         return IEMMODE_64BIT;
@@ -192,7 +192,7 @@ DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu)
  * @remarks Callers of this must call iemUninitExec() to undo potentially fatal
  *          side-effects in strict builds.
  */
-DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers)
+DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
@@ -270,7 +270,7 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
-DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu)
+DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     IEMMODE const enmMode = iemCalcCpuMode(pVCpu);
     uint8_t const uCpl    = CPUMGetGuestCPL(pVCpu);
@@ -305,7 +305,7 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  */
-DECLINLINE(void) iemUninitExec(PVMCPUCC pVCpu)
+DECLINLINE(void) iemUninitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     /* Note! do not touch fInPatchCode here! (see iemUninitExecAndFiddleStatusAndMaybeReenter) */
 #ifdef VBOX_STRICT
@@ -329,7 +329,7 @@ DECLINLINE(void) iemUninitExec(PVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
  * @param   rcStrict    The status code to fiddle.
  */
-DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
+DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict) RT_NOEXCEPT
 {
     iemUninitExec(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
@@ -360,7 +360,7 @@ DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PVMCPUCC pV
  *                              calling thread.
  * @param   pu8                 Where to return the opcode byte.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PVMCPUCC pVCpu, uint8_t *pu8)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOEXCEPT
 {
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
@@ -380,7 +380,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PVMCPUCC pVCpu, uint8_t *pu8)
  * @returns The opcode byte.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu)
+DECLINLINE(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -433,7 +433,7 @@ DECLINLINE(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pi8                 Where to return the signed byte.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PVMCPUCC pVCpu, int8_t *pi8)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PVMCPUCC pVCpu, int8_t *pi8) RT_NOEXCEPT
 {
     return iemOpcodeGetNextU8(pVCpu, (uint8_t *)pi8);
 }
@@ -470,7 +470,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PVMCPUCC pVCpu, int8_t *pi8)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu16                Where to return the unsigned word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode >= pVCpu->iem.s.cbOpcode))
@@ -510,7 +510,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu32                Where to return the unsigned dword.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode >= pVCpu->iem.s.cbOpcode))
@@ -551,7 +551,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu64                Where to return the unsigned qword.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode >= pVCpu->iem.s.cbOpcode))
@@ -592,7 +592,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
  *                              calling thread.
  * @param   pu8                 Where to return the opcode byte.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPUCC pVCpu, uint8_t *pu8)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOEXCEPT
 {
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     pVCpu->iem.s.offModRm = offOpcode;
@@ -611,7 +611,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPUCC pVCpu, uint8_t *pu8)
  * @returns The opcode byte.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu)
+DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -669,7 +669,7 @@ DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu16                Where to return the opcode word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPUCC pVCpu, uint16_t *pu16)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPUCC pVCpu, uint16_t *pu16) RT_NOEXCEPT
 {
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 2 <= pVCpu->iem.s.cbOpcode))
@@ -693,7 +693,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPUCC pVCpu, uint16_t *pu16)
  * @returns The opcode word.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu)
+DECLINLINE(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -751,7 +751,7 @@ DECLINLINE(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu32                Where to return the opcode double word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PVMCPUCC pVCpu, uint32_t *pu32)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PVMCPUCC pVCpu, uint32_t *pu32) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode + 2 > pVCpu->iem.s.cbOpcode))
@@ -790,7 +790,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PVMCPUCC pVCpu, uint32_t *pu32
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu64                Where to return the opcode quad word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PVMCPUCC pVCpu, uint64_t *pu64)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode + 2 > pVCpu->iem.s.cbOpcode))
@@ -830,7 +830,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PVMCPUCC pVCpu, uint64_t *pu64
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pi16                Where to return the signed word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PVMCPUCC pVCpu, int16_t *pi16)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PVMCPUCC pVCpu, int16_t *pi16) RT_NOEXCEPT
 {
     return iemOpcodeGetNextU16(pVCpu, (uint16_t *)pi16);
 }
@@ -865,7 +865,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PVMCPUCC pVCpu, int16_t *pi16)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu32                Where to return the opcode double word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPUCC pVCpu, uint32_t *pu32)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPUCC pVCpu, uint32_t *pu32) RT_NOEXCEPT
 {
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 4 <= pVCpu->iem.s.cbOpcode))
@@ -892,7 +892,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPUCC pVCpu, uint32_t *pu32)
  * @returns The opcode dword.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu)
+DECLINLINE(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -956,7 +956,7 @@ DECLINLINE(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu64                Where to return the opcode quad word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PVMCPUCC pVCpu, uint64_t *pu64)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode + 4 > pVCpu->iem.s.cbOpcode))
@@ -999,7 +999,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PVMCPUCC pVCpu, uint64_t *pu64
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pi32                Where to return the signed double word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PVMCPUCC pVCpu, int32_t *pi32)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PVMCPUCC pVCpu, int32_t *pi32) RT_NOEXCEPT
 {
     return iemOpcodeGetNextU32(pVCpu, (uint32_t *)pi32);
 }
@@ -1032,7 +1032,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PVMCPUCC pVCpu, int32_t *pi32)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu64                Where to return the opcode quad word.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_NOEXCEPT
 {
     uint8_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_UNLIKELY(offOpcode + 4 > pVCpu->iem.s.cbOpcode))
@@ -1076,7 +1076,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pu64                Where to return the opcode qword.
  */
-DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64)
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_NOEXCEPT
 {
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 8 <= pVCpu->iem.s.cbOpcode))
@@ -1107,7 +1107,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64)
  * @returns The opcode qword.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu)
+DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -1201,7 +1201,7 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu)
  * @param   pSReg               Pointer to the segment register.
  * @param   uRpl                The RPL.
  */
-DECLINLINE(void) iemHlpLoadNullDataSelectorProt(PVMCPUCC pVCpu, PCPUMSELREG pSReg, RTSEL uRpl)
+DECLINLINE(void) iemHlpLoadNullDataSelectorProt(PVMCPUCC pVCpu, PCPUMSELREG pSReg, RTSEL uRpl) RT_NOEXCEPT
 {
     /** @todo Testcase: write a testcase checking what happends when loading a NULL
      *        data selector in protected mode. */
@@ -1239,7 +1239,7 @@ DECLINLINE(void) iemHlpLoadNullDataSelectorProt(PVMCPUCC pVCpu, PCPUMSELREG pSRe
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemRecalEffOpSize(PVMCPUCC pVCpu)
+DECLINLINE(void) iemRecalEffOpSize(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     switch (pVCpu->iem.s.enmCpuMode)
     {
@@ -1276,7 +1276,7 @@ DECLINLINE(void) iemRecalEffOpSize(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemRecalEffOpSize64Default(PVMCPUCC pVCpu)
+DECLINLINE(void) iemRecalEffOpSize64Default(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
     pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
@@ -1295,7 +1295,7 @@ DECLINLINE(void) iemRecalEffOpSize64Default(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC pVCpu)
+DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
     pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
@@ -1320,7 +1320,7 @@ DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC 
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(PCPUMSELREG) iemSRegGetHid(PVMCPUCC pVCpu, uint8_t iSegReg)
+DECLINLINE(PCPUMSELREG) iemSRegGetHid(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1338,7 +1338,7 @@ DECLINLINE(PCPUMSELREG) iemSRegGetHid(PVMCPUCC pVCpu, uint8_t iSegReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pSReg               The segment register.
  */
-DECLINLINE(PCPUMSELREG) iemSRegUpdateHid(PVMCPUCC pVCpu, PCPUMSELREG pSReg)
+DECLINLINE(PCPUMSELREG) iemSRegUpdateHid(PVMCPUCC pVCpu, PCPUMSELREG pSReg) RT_NOEXCEPT
 {
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     NOREF(pVCpu);
@@ -1354,7 +1354,7 @@ DECLINLINE(PCPUMSELREG) iemSRegUpdateHid(PVMCPUCC pVCpu, PCPUMSELREG pSReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(uint16_t *) iemSRegRef(PVMCPUCC pVCpu, uint8_t iSegReg)
+DECLINLINE(uint16_t *) iemSRegRef(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1369,7 +1369,7 @@ DECLINLINE(uint16_t *) iemSRegRef(PVMCPUCC pVCpu, uint8_t iSegReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(uint16_t) iemSRegFetchU16(PVMCPUCC pVCpu, uint8_t iSegReg)
+DECLINLINE(uint16_t) iemSRegFetchU16(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1384,7 +1384,7 @@ DECLINLINE(uint16_t) iemSRegFetchU16(PVMCPUCC pVCpu, uint8_t iSegReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(uint64_t) iemSRegBaseFetchU64(PVMCPUCC pVCpu, uint8_t iSegReg)
+DECLINLINE(uint64_t) iemSRegBaseFetchU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1399,7 +1399,7 @@ DECLINLINE(uint64_t) iemSRegBaseFetchU64(PVMCPUCC pVCpu, uint8_t iSegReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The general purpose register.
  */
-DECLINLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg];
@@ -1415,7 +1415,7 @@ DECLINLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     if (iReg < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX))
     {
@@ -1435,7 +1435,7 @@ DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint16_t *) iemGRegRefU16(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint16_t *) iemGRegRefU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg].u16;
@@ -1449,7 +1449,7 @@ DECLINLINE(uint16_t *) iemGRegRefU16(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint32_t *) iemGRegRefU32(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint32_t *) iemGRegRefU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg].u32;
@@ -1463,7 +1463,7 @@ DECLINLINE(uint32_t *) iemGRegRefU32(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(int32_t *) iemGRegRefI32(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(int32_t *) iemGRegRefI32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return (int32_t *)&pVCpu->cpum.GstCtx.aGRegs[iReg].u32;
@@ -1477,7 +1477,7 @@ DECLINLINE(int32_t *) iemGRegRefI32(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint64_t *) iemGRegRefU64(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint64_t *) iemGRegRefU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 64);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg].u64;
@@ -1491,7 +1491,7 @@ DECLINLINE(uint64_t *) iemGRegRefU64(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(int64_t *) iemGRegRefI64(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(int64_t *) iemGRegRefI64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return (int64_t *)&pVCpu->cpum.GstCtx.aGRegs[iReg].u64;
@@ -1505,7 +1505,7 @@ DECLINLINE(int64_t *) iemGRegRefI64(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment selector.
  */
-DECLINLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg)
+DECLINLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1520,7 +1520,7 @@ DECLINLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     return *iemGRegRefU8(pVCpu, iReg);
 }
@@ -1533,7 +1533,7 @@ DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint16_t) iemGRegFetchU16(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint16_t) iemGRegFetchU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return pVCpu->cpum.GstCtx.aGRegs[iReg].u16;
@@ -1547,7 +1547,7 @@ DECLINLINE(uint16_t) iemGRegFetchU16(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint32_t) iemGRegFetchU32(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint32_t) iemGRegFetchU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return pVCpu->cpum.GstCtx.aGRegs[iReg].u32;
@@ -1561,7 +1561,7 @@ DECLINLINE(uint32_t) iemGRegFetchU32(PVMCPUCC pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg)
+DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return pVCpu->cpum.GstCtx.aGRegs[iReg].u64;
@@ -1573,7 +1573,7 @@ DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu)
+DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu) RT_NOEXCEPT
 {
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         return pVCpu->cpum.GstCtx.rsp;
@@ -1589,7 +1589,7 @@ DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
  */
-DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr)
+DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
     /*
      * Advance RIP.
@@ -1642,7 +1642,7 @@ DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr)
  * @see  @sdmv3{077,200,6.8.3,Masking Exceptions and Interrupts When Switching
  *              Stacks}
  */
-static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu)
+static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     /*
      * Normally we're just here to clear RF and/or interrupt shadow bits.
@@ -1678,7 +1678,7 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu)
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     /*
      * We assume that most of the time nothing actually needs doing here.
@@ -1698,7 +1698,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
  */
-DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr)
+DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
     iemRegAddToRip(pVCpu, cbInstr);
     return iemRegFinishClearingRF(pVCpu);
@@ -1711,7 +1711,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, ui
  *
  * See iemFinishInstructionWithFlagsSet() for details.
  */
-static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu)
+static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     /*
      * Raise a #DB.
@@ -1740,7 +1740,7 @@ static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu)
  * @param   fEflOld             The EFLAGS at the start of the instruction
  *                              execution.
  */
-DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, uint8_t cbInstr, uint32_t fEflOld)
+DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, uint8_t cbInstr, uint32_t fEflOld) RT_NOEXCEPT
 {
     iemRegAddToRip(pVCpu, cbInstr);
     if (!(fEflOld & X86_EFL_TF))
@@ -1754,7 +1754,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, 
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(VBOXSTRICTRC) iemRegUpdateRipAndFinishClearingRF(PVMCPUCC pVCpu)
+DECLINLINE(VBOXSTRICTRC) iemRegUpdateRipAndFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }
@@ -1766,7 +1766,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegUpdateRipAndFinishClearingRF(PVMCPUCC pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbToAdd             The number of bytes to add (8-bit!).
  */
-DECLINLINE(void) iemRegAddToRsp(PVMCPUCC pVCpu, uint8_t cbToAdd)
+DECLINLINE(void) iemRegAddToRsp(PVMCPUCC pVCpu, uint8_t cbToAdd) RT_NOEXCEPT
 {
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         pVCpu->cpum.GstCtx.rsp += cbToAdd;
@@ -1783,7 +1783,7 @@ DECLINLINE(void) iemRegAddToRsp(PVMCPUCC pVCpu, uint8_t cbToAdd)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbToSub             The number of bytes to subtract (8-bit!).
  */
-DECLINLINE(void) iemRegSubFromRsp(PVMCPUCC pVCpu, uint8_t cbToSub)
+DECLINLINE(void) iemRegSubFromRsp(PVMCPUCC pVCpu, uint8_t cbToSub) RT_NOEXCEPT
 {
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         pVCpu->cpum.GstCtx.rsp -= cbToSub;
@@ -1801,7 +1801,7 @@ DECLINLINE(void) iemRegSubFromRsp(PVMCPUCC pVCpu, uint8_t cbToSub)
  * @param   pTmpRsp             The temporary SP/ESP/RSP to update.
  * @param   cbToAdd             The number of bytes to add (16-bit).
  */
-DECLINLINE(void) iemRegAddToRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cbToAdd)
+DECLINLINE(void) iemRegAddToRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cbToAdd) RT_NOEXCEPT
 {
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         pTmpRsp->u           += cbToAdd;
@@ -1821,7 +1821,7 @@ DECLINLINE(void) iemRegAddToRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cb
  * @remarks The @a cbToSub argument *MUST* be 16-bit, iemCImpl_enter is
  *          expecting that.
  */
-DECLINLINE(void) iemRegSubFromRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cbToSub)
+DECLINLINE(void) iemRegSubFromRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cbToSub) RT_NOEXCEPT
 {
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         pTmpRsp->u          -= cbToSub;
@@ -1841,7 +1841,7 @@ DECLINLINE(void) iemRegSubFromRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t 
  * @param   cbItem              The size of the stack item to pop.
  * @param   puNewRsp            Where to return the new RSP value.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCVMCPU pVCpu, uint8_t cbItem, uint64_t *puNewRsp)
+DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCVMCPU pVCpu, uint8_t cbItem, uint64_t *puNewRsp) RT_NOEXCEPT
 {
     RTUINT64U   uTmpRsp;
     RTGCPTR     GCPtrTop;
@@ -1867,7 +1867,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCVMCPU pVCpu, uint8_t cbItem, uint64_t 
  * @param   cbItem              The size of the stack item to pop.
  * @param   puNewRsp            Where to return the new RSP value.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCVMCPU pVCpu, uint8_t cbItem, uint64_t *puNewRsp)
+DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCVMCPU pVCpu, uint8_t cbItem, uint64_t *puNewRsp) RT_NOEXCEPT
 {
     RTUINT64U   uTmpRsp;
     RTGCPTR     GCPtrTop;
@@ -1902,7 +1902,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCVMCPU pVCpu, uint8_t cbItem, uint64_t *
  * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   cbItem              The size of the stack item to pop.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint8_t cbItem)
+DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint8_t cbItem) RT_NOEXCEPT
 {
     RTGCPTR GCPtrTop;
 
@@ -1925,7 +1925,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uin
  * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   cbItem              The size of the stack item to pop.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint8_t cbItem)
+DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint8_t cbItem) RT_NOEXCEPT
 {
     RTGCPTR GCPtrTop;
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
@@ -1962,7 +1962,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuPrepareUsage(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuPrepareUsage(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #ifdef IN_RING3
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_FPU_REM);
@@ -1980,7 +1980,7 @@ DECLINLINE(void) iemFpuPrepareUsage(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuPrepareUsageSse(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuPrepareUsageSse(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     iemFpuPrepareUsage(pVCpu);
 }
@@ -1993,7 +1993,7 @@ DECLINLINE(void) iemFpuPrepareUsageSse(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuPrepareUsageAvx(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuPrepareUsageAvx(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     iemFpuPrepareUsage(pVCpu);
 }
@@ -2006,7 +2006,7 @@ DECLINLINE(void) iemFpuPrepareUsageAvx(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuActualizeStateForRead(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuActualizeStateForRead(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #ifdef IN_RING3
     NOREF(pVCpu);
@@ -2024,7 +2024,7 @@ DECLINLINE(void) iemFpuActualizeStateForRead(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuActualizeStateForChange(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuActualizeStateForChange(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #ifdef IN_RING3
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_FPU_REM);
@@ -2043,7 +2043,7 @@ DECLINLINE(void) iemFpuActualizeStateForChange(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuActualizeSseStateForRead(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuActualizeSseStateForRead(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #if defined(IN_RING3) || defined(VBOX_WITH_KERNEL_USING_XMM)
     NOREF(pVCpu);
@@ -2062,7 +2062,7 @@ DECLINLINE(void) iemFpuActualizeSseStateForRead(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuActualizeSseStateForChange(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuActualizeSseStateForChange(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #if defined(IN_RING3) || defined(VBOX_WITH_KERNEL_USING_XMM)
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_FPU_REM);
@@ -2084,7 +2084,7 @@ DECLINLINE(void) iemFpuActualizeSseStateForChange(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuActualizeAvxStateForRead(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuActualizeAvxStateForRead(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #ifdef IN_RING3
     NOREF(pVCpu);
@@ -2103,7 +2103,7 @@ DECLINLINE(void) iemFpuActualizeAvxStateForRead(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuActualizeAvxStateForChange(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuActualizeAvxStateForChange(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
 #ifdef IN_RING3
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_FPU_REM);
@@ -2122,7 +2122,7 @@ DECLINLINE(void) iemFpuActualizeAvxStateForChange(PVMCPUCC pVCpu)
  *
  * @param   pReg                Pointer to the register.
  */
-DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg)
+DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg) RT_NOEXCEPT
 {
     pReg->au32[0] = UINT32_C(0x00000000);
     pReg->au32[1] = UINT32_C(0xc0000000);
@@ -2136,7 +2136,7 @@ DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
  */
-DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx)
+DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
 {
     Assert(pVCpu->iem.s.uFpuOpcode != UINT16_MAX);
     pFpuCtx->FOP = pVCpu->iem.s.uFpuOpcode;
@@ -2167,7 +2167,7 @@ DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuC
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iStReg              The register to free.
  */
-DECLINLINE(void) iemFpuStackFree(PVMCPUCC pVCpu, uint8_t iStReg)
+DECLINLINE(void) iemFpuStackFree(PVMCPUCC pVCpu, uint8_t iStReg) RT_NOEXCEPT
 {
     Assert(iStReg < 8);
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
@@ -2181,7 +2181,7 @@ DECLINLINE(void) iemFpuStackFree(PVMCPUCC pVCpu, uint8_t iStReg)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuStackIncTop(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuStackIncTop(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t    uFsw    = pFpuCtx->FSW;
@@ -2198,7 +2198,7 @@ DECLINLINE(void) iemFpuStackIncTop(PVMCPUCC pVCpu)
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemFpuStackDecTop(PVMCPUCC pVCpu)
+DECLINLINE(void) iemFpuStackDecTop(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t    uFsw    = pFpuCtx->FSW;
@@ -2212,7 +2212,7 @@ DECLINLINE(void) iemFpuStackDecTop(PVMCPUCC pVCpu)
 
 
 
-DECLINLINE(int) iemFpuStRegNotEmpty(PVMCPUCC pVCpu, uint8_t iStReg)
+DECLINLINE(int) iemFpuStRegNotEmpty(PVMCPUCC pVCpu, uint8_t iStReg) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t    iReg    = (X86_FSW_TOP_GET(pFpuCtx->FSW) + iStReg) & X86_FSW_TOP_SMASK;
@@ -2222,7 +2222,7 @@ DECLINLINE(int) iemFpuStRegNotEmpty(PVMCPUCC pVCpu, uint8_t iStReg)
 }
 
 
-DECLINLINE(int) iemFpuStRegNotEmptyRef(PVMCPUCC pVCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
+DECLINLINE(int) iemFpuStRegNotEmptyRef(PVMCPUCC pVCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t    iReg    = (X86_FSW_TOP_GET(pFpuCtx->FSW) + iStReg) & X86_FSW_TOP_SMASK;
@@ -2236,7 +2236,7 @@ DECLINLINE(int) iemFpuStRegNotEmptyRef(PVMCPUCC pVCpu, uint8_t iStReg, PCRTFLOAT
 
 
 DECLINLINE(int) iemFpu2StRegsNotEmptyRef(PVMCPUCC pVCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0,
-                                        uint8_t iStReg1, PCRTFLOAT80U *ppRef1)
+                                        uint8_t iStReg1, PCRTFLOAT80U *ppRef1) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t    iTop    = X86_FSW_TOP_GET(pFpuCtx->FSW);
@@ -2252,7 +2252,7 @@ DECLINLINE(int) iemFpu2StRegsNotEmptyRef(PVMCPUCC pVCpu, uint8_t iStReg0, PCRTFL
 }
 
 
-DECLINLINE(int) iemFpu2StRegsNotEmptyRefFirst(PVMCPUCC pVCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0, uint8_t iStReg1)
+DECLINLINE(int) iemFpu2StRegsNotEmptyRefFirst(PVMCPUCC pVCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0, uint8_t iStReg1) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t    iTop    = X86_FSW_TOP_GET(pFpuCtx->FSW);
@@ -2276,7 +2276,7 @@ DECLINLINE(int) iemFpu2StRegsNotEmptyRefFirst(PVMCPUCC pVCpu, uint8_t iStReg0, P
  *          arrange the FP registers in stack order.
  *          MUST be done before writing the new TOS (FSW).
  */
-DECLINLINE(void) iemFpuRotateStackSetTop(PX86FXSTATE pFpuCtx, uint16_t iNewTop)
+DECLINLINE(void) iemFpuRotateStackSetTop(PX86FXSTATE pFpuCtx, uint16_t iNewTop) RT_NOEXCEPT
 {
     uint16_t iOldTop = X86_FSW_TOP_GET(pFpuCtx->FSW);
     RTFLOAT80U ar80Temp[8];
@@ -2311,7 +2311,7 @@ DECLINLINE(void) iemFpuRotateStackSetTop(PX86FXSTATE pFpuCtx, uint16_t iNewTop)
  *
  * @param   pFpuCtx             The FPU context.
  */
-DECLINLINE(void) iemFpuRecalcExceptionStatus(PX86FXSTATE pFpuCtx)
+DECLINLINE(void) iemFpuRecalcExceptionStatus(PX86FXSTATE pFpuCtx) RT_NOEXCEPT
 {
     uint16_t u16Fsw = pFpuCtx->FSW;
     if ((u16Fsw & X86_FSW_XCPT_MASK) & ~(pFpuCtx->FCW & X86_FCW_XCPT_MASK))
@@ -2328,7 +2328,7 @@ DECLINLINE(void) iemFpuRecalcExceptionStatus(PX86FXSTATE pFpuCtx)
  * @returns The full FTW.
  * @param   pFpuCtx             The FPU context.
  */
-DECLINLINE(uint16_t) iemFpuCalcFullFtw(PCX86FXSTATE pFpuCtx)
+DECLINLINE(uint16_t) iemFpuCalcFullFtw(PCX86FXSTATE pFpuCtx) RT_NOEXCEPT
 {
     uint8_t const   u8Ftw  = (uint8_t)pFpuCtx->FTW;
     uint16_t        u16Ftw = 0;
@@ -2370,7 +2370,7 @@ DECLINLINE(uint16_t) iemFpuCalcFullFtw(PCX86FXSTATE pFpuCtx)
  * @returns The compressed FTW.
  * @param   u16FullFtw      The full FTW to convert.
  */
-DECLINLINE(uint16_t) iemFpuCompressFtw(uint16_t u16FullFtw)
+DECLINLINE(uint16_t) iemFpuCompressFtw(uint16_t u16FullFtw) RT_NOEXCEPT
 {
     uint8_t u8Ftw = 0;
     for (unsigned i = 0; i < 8; i++)
@@ -2398,7 +2398,7 @@ DECLINLINE(uint16_t) iemFpuCompressFtw(uint16_t u16FullFtw)
  * @returns true if enabled, false if not.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(bool) iemMemAreAlignmentChecksEnabled(PVMCPUCC pVCpu)
+DECLINLINE(bool) iemMemAreAlignmentChecksEnabled(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     AssertCompile(X86_CR0_AM == X86_EFL_AC);
     return pVCpu->iem.s.uCpl == 3
@@ -2418,7 +2418,8 @@ DECLINLINE(bool) iemMemAreAlignmentChecksEnabled(PVMCPUCC pVCpu)
  *                              segment. (In 64-bit code it may differ from the
  *                              base in the hidden segment.)
  */
-DECLINLINE(VBOXSTRICTRC) iemMemSegCheckWriteAccessEx(PVMCPUCC pVCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg, uint64_t *pu64BaseAddr)
+DECLINLINE(VBOXSTRICTRC) iemMemSegCheckWriteAccessEx(PVMCPUCC pVCpu, PCCPUMSELREGHID pHid,
+                                                     uint8_t iSegReg, uint64_t *pu64BaseAddr) RT_NOEXCEPT
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
 
@@ -2457,7 +2458,8 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckWriteAccessEx(PVMCPUCC pVCpu, PCCPUMSELRE
  *                              segment. (In 64-bit code it may differ from the
  *                              base in the hidden segment.)
  */
-DECLINLINE(VBOXSTRICTRC) iemMemSegCheckReadAccessEx(PVMCPUCC pVCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg, uint64_t *pu64BaseAddr)
+DECLINLINE(VBOXSTRICTRC) iemMemSegCheckReadAccessEx(PVMCPUCC pVCpu, PCCPUMSELREGHID pHid,
+                                                    uint8_t iSegReg, uint64_t *pu64BaseAddr) RT_NOEXCEPT
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
 
@@ -2491,7 +2493,8 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckReadAccessEx(PVMCPUCC pVCpu, PCCPUMSELREG
  * @param   ppvMem              Where to return the mapping address.
  * @param   pLock               The PGM lock.
  */
-DECLINLINE(int) iemMemPageMap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, void **ppvMem, PPGMPAGEMAPLOCK pLock)
+DECLINLINE(int) iemMemPageMap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fAccess,
+                              void **ppvMem, PPGMPAGEMAPLOCK pLock) RT_NOEXCEPT
 {
 #ifdef IEM_LOG_MEMORY_WRITES
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
@@ -2524,7 +2527,8 @@ DECLINLINE(int) iemMemPageMap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fAcce
  * @param   pvMem               What iemMemPageMap returned.
  * @param   pLock               The PGM lock.
  */
-DECLINLINE(void) iemMemPageUnmap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, const void *pvMem, PPGMPAGEMAPLOCK pLock)
+DECLINLINE(void) iemMemPageUnmap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fAccess,
+                                 const void *pvMem, PPGMPAGEMAPLOCK pLock) RT_NOEXCEPT
 {
     NOREF(pVCpu);
     NOREF(GCPhysMem);
@@ -2536,7 +2540,8 @@ DECLINLINE(void) iemMemPageUnmap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fA
 #ifdef IEM_WITH_SETJMP
 
 /** @todo slim this down   */
-DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem, RTGCPTR GCPtrMem)
+DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem,
+                                                RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
     Assert(cbMem >= 1);
     Assert(iSegReg < X86_SREG_COUNT);
@@ -2613,7 +2618,8 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
 
 
 /** @todo slim this down   */
-DECLINLINE(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem, RTGCPTR GCPtrMem)
+DECLINLINE(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem,
+                                                 RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
     Assert(cbMem >= 1);
     Assert(iSegReg < X86_SREG_COUNT);
@@ -2674,7 +2680,7 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t iSegReg
  * @param   pDescSs             Where to return the fake stack descriptor.
  * @param   uDpl                The DPL we want.
  */
-DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl)
+DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_NOEXCEPT
 {
     pDescSs->Long.au64[0] = 0;
     pDescSs->Long.au64[1] = 0;
@@ -2700,7 +2706,7 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl)
  * @returns CR0 fixed-0 bits.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu)
+DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu) RT_NOEXCEPT
 {
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
@@ -2720,7 +2726,7 @@ DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offApic     The offset in the virtual-APIC page that was written.
  */
-DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPUCC pVCpu, uint16_t offApic)
+DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPUCC pVCpu, uint16_t offApic) RT_NOEXCEPT
 {
     Assert(offApic < XAPIC_OFF_END + 4);
 
