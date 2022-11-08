@@ -1227,7 +1227,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
             {
                 vrcGuest = vrc;
                 if (prcGuest)
-                    *prcGuest = vrc;
+                    *prcGuest = vrcGuest;
                 vrc = VERR_GSTCTL_GUEST_ERROR;
             }
         }
@@ -1853,7 +1853,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
             {
                 vrcGuest = vrc;
                 if (prcGuest)
-                    *prcGuest = vrc;
+                    *prcGuest = vrcGuest;
                 vrc = VERR_GSTCTL_GUEST_ERROR;
             }
         }
