@@ -66,6 +66,17 @@ RT_C_DECLS_BEGIN
 # define IEM_WITH_SETJMP
 #endif
 
+/** @def IEM_DO_LONGJMP
+ *
+ * Wrapper around longjmp / throw.
+ *
+ * @param   a_pVCpu     The CPU handle.
+ * @param   a_rc        The status code jump back with / throw.
+ */
+#if defined(IEM_WITH_SETJMP) || defined(DOXYGEN_RUNNING)
+# define IEM_DO_LONGJMP(a_pVCpu, a_rc)  longjmp(*(a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf), (a_rc))
+#endif
+
 /** For use with IEM function that may do a longjmp (when enabled).
  *
  * Visual C++ has trouble longjmp'ing from/over functions with the noexcept
@@ -865,7 +876,7 @@ typedef IEMCPU const *PCIEMCPU;
         else \
         { \
             int rcCtxImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
-            AssertRCStmt(rcCtxImport, longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), rcCtxImport)); \
+            AssertRCStmt(rcCtxImport, IEM_DO_LONGJMP(pVCpu, rcCtxImport)); \
         } \
     } while (0)
 

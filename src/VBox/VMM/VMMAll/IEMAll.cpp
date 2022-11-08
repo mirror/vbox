@@ -857,7 +857,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
                                          | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
             int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.CodeTlb.uTlbPhysRev,
                                                 &pTlbe->pbMappingR3, &pTlbe->fFlagsAndPhysRev);
-            AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
+            AssertRCStmt(rc, IEM_DO_LONGJMP(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
         }
 
 # if defined(IN_RING3) || defined(IN_RING0) /** @todo fixme */
@@ -913,7 +913,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
                 Log(("iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
                      GCPtrNext, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
                 rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
-                AssertStmt(rcStrict == VINF_SUCCESS, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICRC_VAL(rcStrict)));
+                AssertStmt(rcStrict == VINF_SUCCESS, IEM_DO_LONGJMP(pVCpu, VBOXSTRICRC_VAL(rcStrict)));
             }
             else
             {
@@ -921,7 +921,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
                      ? "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
                      : "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
                      GCPtrNext, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
-                longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+                IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
             }
         }
         /*
@@ -942,7 +942,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
                 Log(("iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
                      GCPtrFirst, pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK), VBOXSTRICTRC_VAL(rcStrict), cbToRead));
                 rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
-                AssertStmt(rcStrict == VINF_SUCCESS, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(rcStrict)));
+                AssertStmt(rcStrict == VINF_SUCCESS, IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict)));
             }
             else
             {
@@ -950,7 +950,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
                      ? "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
                      : "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
                      GCPtrFirst, pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK), VBOXSTRICTRC_VAL(rcStrict), cbToRead));
-                longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+                IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
             }
             pVCpu->iem.s.offInstrNextByte = offBuf + cbToRead;
             if (cbToRead == cbDst)
@@ -965,7 +965,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
     }
 #else
     RT_NOREF(pvDst, cbDst);
-    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VERR_INTERNAL_ERROR);
+    IEM_DO_LONGJMP(pVCpu, VERR_INTERNAL_ERROR);
 #endif
 }
 
@@ -1151,7 +1151,7 @@ uint8_t iemOpcodeGetNextU8SlowJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pVCpu, 1);
     if (rcStrict == VINF_SUCCESS)
         return pVCpu->iem.s.abOpcode[pVCpu->iem.s.offOpcode++];
-    longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 # endif
 }
 
@@ -1265,7 +1265,7 @@ uint16_t iemOpcodeGetNextU16SlowJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
         return RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
 #  endif
     }
-    longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 # endif
 }
 
@@ -1377,7 +1377,7 @@ uint32_t iemOpcodeGetNextU32SlowJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
                                    pVCpu->iem.s.abOpcode[offOpcode + 3]);
 #  endif
     }
-    longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 # endif
 }
 
@@ -1503,7 +1503,7 @@ uint64_t iemOpcodeGetNextU64SlowJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
                                    pVCpu->iem.s.abOpcode[offOpcode + 7]);
 #  endif
     }
-    longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 # endif
 }
 
@@ -3910,7 +3910,7 @@ iemRaiseXcptOrIntJmp(PVMCPUCC    pVCpu,
                      uint64_t    uCr2) IEM_NOEXCEPT_MAY_LONGJMP
 {
     VBOXSTRICTRC rcStrict = iemRaiseXcptOrInt(pVCpu, cbInstr, u8Vector, fFlags, uErr, uCr2);
-    longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 }
 #endif
 
@@ -4158,7 +4158,7 @@ VBOXSTRICTRC iemRaisePageFault(PVMCPUCC pVCpu, RTGCPTR GCPtrWhere, uint32_t fAcc
 /** \#PF(n) - 0e, longjmp.  */
 DECL_NO_RETURN(void) iemRaisePageFaultJmp(PVMCPUCC pVCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc) IEM_NOEXCEPT_MAY_LONGJMP
 {
-    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(iemRaisePageFault(pVCpu, GCPtrWhere, fAccess, rc)));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(iemRaisePageFault(pVCpu, GCPtrWhere, fAccess, rc)));
 }
 #endif
 
@@ -4185,7 +4185,7 @@ VBOXSTRICTRC iemRaiseAlignmentCheckException(PVMCPUCC pVCpu) RT_NOEXCEPT
 /** \#AC(0) - 11, longjmp.  */
 DECL_NO_RETURN(void) iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
-    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(iemRaiseAlignmentCheckException(pVCpu)));
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(iemRaiseAlignmentCheckException(pVCpu)));
 }
 #endif
 
@@ -6158,7 +6158,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
                                      | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
         int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
                                             &pbMem, &pTlbe->fFlagsAndPhysRev);
-        AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
+        AssertRCStmt(rc, IEM_DO_LONGJMP(pVCpu, rc));
 # ifdef IN_RING3
         pTlbe->pbMappingR3 = pbMem;
 # endif
@@ -6314,7 +6314,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
 
     VBOXSTRICTRC rcStrict = iemMemApplySegment(pVCpu, fAccess, iSegReg, cbMem, &GCPtrMem);
     if (rcStrict == VINF_SUCCESS) { /*likely*/ }
-    else longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    else IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 
     /*
      * Alignment check.
@@ -6358,7 +6358,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
                             ("active=%d fAccess[0] = {%#x, %#x, %#x}\n", pVCpu->iem.s.cActiveMappings,
                              pVCpu->iem.s.aMemMappings[0].fAccess, pVCpu->iem.s.aMemMappings[1].fAccess,
                              pVCpu->iem.s.aMemMappings[2].fAccess),
-                            longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VERR_IEM_IPE_9));
+                            IEM_DO_LONGJMP(pVCpu, VERR_IEM_IPE_9));
     }
 
     /*
@@ -6372,7 +6372,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         rcStrict = iemMemBounceBufferMapCrossPage(pVCpu, iMemMap, &pvMem, cbMem, GCPtrMem, fAccess);
         if (rcStrict == VINF_SUCCESS)
             return pvMem;
-        longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+        IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
     }
 
 #ifdef IEM_WITH_DATA_TLB
@@ -6488,7 +6488,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
                                          | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
             int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
                                                 &pbMem, &pTlbe->fFlagsAndPhysRev);
-            AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
+            AssertRCStmt(rc, IEM_DO_LONGJMP(pVCpu, rc));
 # ifdef IN_RING3
             pTlbe->pbMappingR3 = pbMem;
 # endif
@@ -6508,7 +6508,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
                                                                                                      : VERR_PGM_PHYS_TLB_CATCH_WRITE);
             if (rcStrict == VINF_SUCCESS)
                 return pbMem;
-            longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+            IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
         }
     }
     Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_NO_MAPPINGR3)); /* ASSUMPTIONS about PGMPhysIemGCPhys2PtrNoLock behaviour. */
@@ -6526,7 +6526,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         rcStrict = iemMemPageMap(pVCpu, GCPhysFirst, fAccess, (void **)&pbMem, &pVCpu->iem.s.aMemMappingLocks[iMemMap].Lock);
         if (rcStrict == VINF_SUCCESS)
             return pbMem;
-        longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+        IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
     }
 
     void * const pvMem = pbMem;
@@ -6542,7 +6542,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     RTGCPHYS GCPhysFirst;
     rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrMem, fAccess, &GCPhysFirst);
     if (rcStrict == VINF_SUCCESS) { /*likely*/ }
-    else longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+    else IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
         Log8(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
@@ -6558,7 +6558,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         rcStrict = iemMemBounceBufferMapPhys(pVCpu, iMemMap, &pvMem, cbMem, GCPhysFirst, fAccess, rcStrict);
         if (rcStrict == VINF_SUCCESS)
             return pvMem;
-        longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+        IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
     }
 
 #endif /* !IEM_WITH_DATA_TLB */
@@ -6586,7 +6586,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
 void iemMemCommitAndUnmapJmp(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess) IEM_NOEXCEPT_MAY_LONGJMP
 {
     int iMemMap = iemMapLookup(pVCpu, pvMem, fAccess);
-    AssertStmt(iMemMap >= 0, longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), iMemMap));
+    AssertStmt(iMemMap >= 0, IEM_DO_LONGJMP(pVCpu, iMemMap));
 
     /* If it's bounce buffered, we may need to write back the buffer. */
     if (pVCpu->iem.s.aMemMappings[iMemMap].fAccess & IEM_ACCESS_BOUNCE_BUFFERED)
@@ -6596,7 +6596,7 @@ void iemMemCommitAndUnmapJmp(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess) IEM_
             VBOXSTRICTRC rcStrict = iemMemBounceBufferCommitAndUnmap(pVCpu, iMemMap, false /*fPostponeFail*/);
             if (rcStrict == VINF_SUCCESS)
                 return;
-            longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+            IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
         }
     }
     /* Otherwise unlock it. */
@@ -9287,7 +9287,7 @@ RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPUCC pVCpu, uint8_t bRm, uint8_t cbImm) IEM
                     case 0:  u16EffAddr = 0;                             break;
                     case 1:  IEM_OPCODE_GET_NEXT_S8_SX_U16(&u16EffAddr); break;
                     case 2:  IEM_OPCODE_GET_NEXT_U16(&u16EffAddr);       break;
-                    default: AssertFailedStmt(longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VERR_IEM_IPE_1)); /* (caller checked for these) */
+                    default: AssertFailedStmt(IEM_DO_LONGJMP(pVCpu, VERR_IEM_IPE_1)); /* (caller checked for these) */
                 }
 
                 /* Add the base and index registers to the disp. */
@@ -9393,7 +9393,7 @@ RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPUCC pVCpu, uint8_t bRm, uint8_t cbImm) IEM
                     break;
                 }
                 default:
-                    AssertFailedStmt(longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VERR_IEM_IPE_2)); /* (caller checked for these) */
+                    AssertFailedStmt(IEM_DO_LONGJMP(pVCpu, VERR_IEM_IPE_2)); /* (caller checked for these) */
             }
         }
 
