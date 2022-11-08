@@ -276,12 +276,12 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         IEM_MC_ARG_CONST(uint8_t,       bImmArg, /*=*/ bImm, 2);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
         IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_FPU_TO_MMX_MODE();
         IEM_MC_REF_MREG_U64(pDst, IEM_GET_MODRM_REG_8(bRm));
         IEM_MC_FETCH_MREG_U64(uSrc, IEM_GET_MODRM_RM_8(bRm));
         IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_palignr_u64, iemAImpl_palignr_u64_fallback),
                                  pDst, uSrc, bImmArg);
         IEM_MC_MODIFIED_MREG_BY_REF(pDst);
-        IEM_MC_FPU_TO_MMX_MODE();
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -303,11 +303,11 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_FPU_TO_MMX_MODE();
         IEM_MC_REF_MREG_U64(pDst, IEM_GET_MODRM_REG_8(bRm));
         IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fSsse3, iemAImpl_palignr_u64, iemAImpl_palignr_u64_fallback),
                                  pDst, uSrc, bImmArg);
         IEM_MC_MODIFIED_MREG_BY_REF(pDst);
-        IEM_MC_FPU_TO_MMX_MODE();
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
