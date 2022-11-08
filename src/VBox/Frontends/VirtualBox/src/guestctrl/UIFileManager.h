@@ -124,6 +124,7 @@ private slots:
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
     void sltHandleHidePanel(UIDialogPanel *pPanel);
+    void sltHandleShowPanel(UIDialogPanel *pPanel);
     void sltCommitDataSignalReceived();
     void sltFileTableSelectionChanged(bool fHasSelection);
     void sltCurrentTabChanged(int iIndex);

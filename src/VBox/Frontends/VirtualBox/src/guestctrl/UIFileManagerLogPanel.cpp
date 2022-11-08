@@ -112,6 +112,9 @@ void UIFileManagerLogPanel::appendLog(const QString &strLog, const QString &strM
     }
     QString strColoredLog = QString("%1 %2: %3 %4 %5").arg(strStartTag).arg(QTime::currentTime().toString("hh:mm:ss:z")).arg(strMachineName).arg(strLog).arg(strEndTag);
     m_pLogTextEdit->append(strColoredLog);
+    m_pLogTextEdit->moveCursor(QTextCursor::End);
+    m_pLogTextEdit->ensureCursorVisible();
+    emit sigShowPanel(this);
 }
 
 QString UIFileManagerLogPanel::panelName() const
