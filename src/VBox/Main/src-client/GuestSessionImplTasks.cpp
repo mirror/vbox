@@ -495,6 +495,10 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
 /**
  * Copies a file from the guest to the host.
  *
+ * @return VBox status code.
+ * @retval VWRN_ALREADY_EXISTS  if the file already exists and FileCopyFlag_NoReplace is specified,
+ *                              *or * the file at the destination has the same (or newer) modification time
+ *                              and FileCopyFlag_Update is specified.
  * @param  strSrc               Full path of source file on the guest to copy.
  * @param  strDst               Full destination path and file name (host style) to copy file to.
  * @param  fFileCopyFlags       File copy flags.
@@ -578,18 +582,20 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         {
             if (fFileCopyFlags & FileCopyFlag_NoReplace)
             {
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Host file \"%s\" already exists"), strDst.c_str()));
-                vrc = VERR_ALREADY_EXISTS;
+                LogRel2(("Guest Control: Host file \"%s\" already exists, skipping", strDst.c_str()));
+                vrc = VWRN_ALREADY_EXISTS;
+                fSkip = true;
             }
 
-            if (fFileCopyFlags & FileCopyFlag_Update)
+            if (   !fSkip
+                && fFileCopyFlags & FileCopyFlag_Update)
             {
                 RTTIMESPEC srcModificationTimeTS;
                 RTTimeSpecSetSeconds(&srcModificationTimeTS, srcObjData.mModificationTime);
                 if (RTTimeSpecCompare(&srcModificationTimeTS, &dstObjInfo.ModificationTime) <= 0)
                 {
                     LogRel2(("Guest Control: Host file \"%s\" has same or newer modification date, skipping", strDst.c_str()));
+                    vrc = VWRN_ALREADY_EXISTS;
                     fSkip = true;
                 }
             }
@@ -600,7 +606,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                 vrc = VERR_FILE_NOT_FOUND;        /* Needed in next block further down. */
             else if (vrc != VERR_FILE_NOT_FOUND)  /* Ditto. */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Host destination file lookup for \"%s\" failed: %Rrc"), strDst.c_str(), vrc));
+                                    Utf8StrFmt(tr("Host file lookup for \"%s\" failed: %Rrc"), strDst.c_str(), vrc));
         }
     }
 
@@ -608,7 +614,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
     {
         int vrc2 = srcFile->i_closeFile(&vrcGuest);
         AssertRC(vrc2);
-        return VINF_SUCCESS;
+        return vrc;
     }
 
     if (RT_SUCCESS(vrc))
@@ -641,13 +647,12 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         }
     }
 
-    LogRel2(("Guest Control: Copying file '%s' from guest to '%s' on host ...\n", strSrc.c_str(), strDst.c_str()));
-
     LogFlowFunc(("vrc=%Rrc, dstFsType=%#x, pszDstFile=%s\n", vrc, dstObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDst.c_str()));
 
     if (   RT_SUCCESS(vrc)
         || vrc == VERR_FILE_NOT_FOUND)
     {
+        LogRel2(("Guest Control: Copying file '%s' from guest to '%s' on host ...\n", strSrc.c_str(), strDst.c_str()));
 
         RTFILE hDstFile;
         vrc = RTFileOpen(&hDstFile, strDst.c_str(),
@@ -787,13 +792,17 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
 /**
  * Copies a file from the host to the guest.
  *
+ * @return VBox status code.
+ * @retval VWRN_ALREADY_EXISTS  if the file already exists and FileCopyFlag_NoReplace is specified,
+ *                              *or * the file at the destination has the same (or newer) modification time
+ *                              and FileCopyFlag_Update is specified.
  * @param  strSrc               Full path of source file on the host.
  * @param  strDst               Full destination path and file name (guest style) to copy file to. Guest-path style.
  * @param  fFileCopyFlags       File copy flags.
  */
 int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strDst, FileCopyFlag_T fFileCopyFlags)
 {
-    LogFlowThisFunc(("strSource=%s, strDst=%s, fFileCopyFlags=0x%x\n", strSrc.c_str(), strDst.c_str(), fFileCopyFlags));
+    LogFlowThisFunc(("strSource=%s, strDst=%s, fFileCopyFlags=%#x\n", strSrc.c_str(), strDst.c_str(), fFileCopyFlags));
 
     GuestFileOpenInfo dstOpenInfo;
     dstOpenInfo.mFilename        = strDst;
@@ -839,20 +848,34 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
             vrc = RTPathQueryInfo(szSrcReal, &srcObjInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_SUCCESS(vrc))
             {
-                if (fFileCopyFlags & FileCopyFlag_Update)
+                /* Only perform a remote file query when needed.  */
+                if (   (fFileCopyFlags & FileCopyFlag_Update)
+                    || (fFileCopyFlags & FileCopyFlag_NoReplace))
                 {
                     GuestFsObjData dstObjData;
                     vrc = mSession->i_fileQueryInfo(strDst, RT_BOOL(fFileCopyFlags & FileCopyFlag_FollowLinks), dstObjData,
                                                     &vrcGuest);
                     if (RT_SUCCESS(vrc))
                     {
-                        RTTIMESPEC dstModificationTimeTS;
-                        RTTimeSpecSetSeconds(&dstModificationTimeTS, dstObjData.mModificationTime);
-                        if (RTTimeSpecCompare(&dstModificationTimeTS, &srcObjInfo.ModificationTime) <= 0)
+                        if (fFileCopyFlags & FileCopyFlag_NoReplace)
                         {
-                            LogRel2(("Guest Control: Guest file \"%s\" has same or newer modification date, skipping",
-                                     strDst.c_str()));
+                            LogRel2(("Guest Control: Guest file \"%s\" already exists, skipping", strDst.c_str()));
+                            vrc = VWRN_ALREADY_EXISTS;
                             fSkip = true;
+                        }
+
+                        if (   !fSkip
+                            && fFileCopyFlags & FileCopyFlag_Update)
+                        {
+                            RTTIMESPEC dstModificationTimeTS;
+                            RTTimeSpecSetSeconds(&dstModificationTimeTS, dstObjData.mModificationTime);
+                            if (RTTimeSpecCompare(&dstModificationTimeTS, &srcObjInfo.ModificationTime) <= 0)
+                            {
+                                LogRel2(("Guest Control: Guest file \"%s\" has same or newer modification date, skipping",
+                                         strDst.c_str()));
+                                vrc = VWRN_ALREADY_EXISTS;
+                                fSkip = true;
+                            }
                         }
                     }
                     else
@@ -892,7 +915,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
     {
         int vrc2 = dstFile->i_closeFile(&vrcGuest);
         AssertRC(vrc2);
-        return VINF_SUCCESS;
+        return vrc;
     }
 
     if (RT_SUCCESS(vrc))
@@ -1791,6 +1814,10 @@ int GuestSessionTaskCopyFrom::Run(void)
                             vrc = VERR_IS_A_DIRECTORY;
                             break;
                         }
+
+                        /* Append the actual file name to the destination. */
+                        strDstRootAbs += PATH_STYLE_SEP_STR(PATH_STYLE_NATIVE);
+                        strDstRootAbs += RTPathFilename(strSrcRootAbs.c_str());
                         break;
                     }
 
