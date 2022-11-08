@@ -93,6 +93,8 @@ RT_C_DECLS_BEGIN
 0f 00000041`cadfec70 00007ffb`e1d0df8d     VBoxVMM!EMHistoryExec+0x4f1 [L:\vbox-intern\src\VBox\VMM\VMMAll\EMAll.cpp @ 452]
 10 00000041`cadfed60 00007ffb`e1d0d4c0     VBoxVMM!nemR3WinHandleExitCpuId+0x79d [L:\vbox-intern\src\VBox\VMM\VMMAll\NEMAllNativeTemplate-win.cpp.h @ 1829]    @encode
    @endcode
+ *
+ * @see https://developercommunity.visualstudio.com/t/fragile-behavior-of-longjmp-called-from-noexcept-f/1532859
  */
 #if defined(_MSC_VER) && defined(IEM_WITH_SETJMP)
 # define IEM_NOEXCEPT_MAY_LONGJMP   RT_NOEXCEPT_EX(false)
