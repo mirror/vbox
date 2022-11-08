@@ -9681,6 +9681,72 @@ static VBOXSTRICTRC iemHandleNestedInstructionBoundaryFFs(PVMCPUCC pVCpu, VBOXST
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
+/** @def IEM_TRY_SETJMP
+ * Wrapper around setjmp / try, hiding all the ugly differences.
+ *
+ * @note Use with extreme care as this is a fragile macro.
+ * @param   a_pVCpu     The cross context virtual CPU structure of the calling EMT.
+ * @param   a_rcTarget  The variable that should receive the status code in case
+ *                      of a longjmp/throw.
+ */
+/** @def IEM_TRY_SETJMP_AGAIN
+ * For when setjmp / try is used again in the same variable scope as a previous
+ * IEM_TRY_SETJMP invocation.
+ */
+/** @def IEM_CATCH_LONGJMP_BEGIN
+ * Start wrapper for catch / setjmp-else.
+ *
+ * This will set up a scope.
+ *
+ * @note Use with extreme care as this is a fragile macro.
+ * @param   a_pVCpu     The cross context virtual CPU structure of the calling EMT.
+ * @param   a_rcTarget  The variable that should receive the status code in case
+ *                      of a longjmp/throw.
+ */
+/** @def IEM_CATCH_LONGJMP_END
+ * End wrapper for catch / setjmp-else.
+ *
+ * This will close the scope set up by IEM_CATCH_LONGJMP_BEGIN and clean up the
+ * state.
+ *
+ * @note Use with extreme care as this is a fragile macro.
+ * @param   a_pVCpu     The cross context virtual CPU structure of the calling EMT.
+ */
+#if defined(IEM_WITH_SETJMP) || defined(DOXYGEN_RUNNING)
+# ifdef IEM_WITH_THROW_CATCH
+#  define IEM_TRY_SETJMP(a_pVCpu, a_rcTarget) \
+        a_rcTarget = VINF_SUCCESS; \
+        try
+#  define IEM_TRY_SETJMP_AGAIN(a_pVCpu, a_rcTarget) \
+        IEM_TRY_SETJMP(a_pVCpu, a_rcTarget)
+#  define IEM_CATCH_LONGJMP_BEGIN(a_pVCpu, a_rcTarget) \
+        catch (int rcThrown) \
+        { \
+            a_rcTarget = rcThrown
+#  define IEM_CATCH_LONGJMP_END(a_pVCpu) \
+        } \
+        ((void)0)
+# else  /* !IEM_WITH_THROW_CATCH */
+#  define IEM_TRY_SETJMP(a_pVCpu, a_rcTarget) \
+        jmp_buf  JmpBuf; \
+        jmp_buf * volatile pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf); \
+        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf; \
+        if ((rcStrict = setjmp(JmpBuf)) == 0)
+#  define IEM_TRY_SETJMP_AGAIN(a_pVCpu, a_rcTarget) \
+        pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf); \
+        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf; \
+        if ((rcStrict = setjmp(JmpBuf)) == 0)
+#  define IEM_CATCH_LONGJMP_BEGIN(a_pVCpu, a_rcTarget) \
+        else \
+        { \
+            ((void)0)
+#  define IEM_CATCH_LONGJMP_END(a_pVCpu) \
+        } \
+        (a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf
+# endif /* !IEM_WITH_THROW_CATCH */
+#endif  /* IEM_WITH_SETJMP */
+
+
 /**
  * The actual code execution bits of IEMExecOne, IEMExecOneEx, and
  * IEMExecOneWithPrefetchedByPC.
@@ -9702,17 +9768,16 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
 
 #ifdef IEM_WITH_SETJMP
     VBOXSTRICTRC rcStrict;
-    jmp_buf      JmpBuf;
-    jmp_buf     *pSavedJmpBuf  = pVCpu->iem.s.CTX_SUFF(pJmpBuf);
-    pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf;
-    if ((rcStrict = setjmp(JmpBuf)) == 0)
+    IEM_TRY_SETJMP(pVCpu, rcStrict)
     {
         uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
         rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
     }
-    else
+    IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
+    {
         pVCpu->iem.s.cLongJumps++;
-    pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
+    }
+    IEM_CATCH_LONGJMP_END(pVCpu);
 #else
     uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
     VBOXSTRICTRC rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
@@ -9763,15 +9828,16 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
             iemLogCurInstr(pVCpu, false, pszFunction);
 #endif
 #ifdef IEM_WITH_SETJMP
-            pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf;
-            if ((rcStrict = setjmp(JmpBuf)) == 0)
+            IEM_TRY_SETJMP_AGAIN(pVCpu, rcStrict)
             {
                 uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
                 rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
             }
-            else
+            IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
+            {
                 pVCpu->iem.s.cLongJumps++;
-            pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
+            }
+            IEM_CATCH_LONGJMP_END(pVCpu);
 #else
             IEM_OPCODE_GET_NEXT_U8(&b);
             rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
@@ -10033,11 +10099,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
     if (rcStrict == VINF_SUCCESS)
     {
 #ifdef IEM_WITH_SETJMP
-        jmp_buf         JmpBuf;
-        jmp_buf        *pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf);
-        pVCpu->iem.s.CTX_SUFF(pJmpBuf)   = &JmpBuf;
-        pVCpu->iem.s.cActiveMappings     = 0;
-        if ((rcStrict = setjmp(JmpBuf)) == 0)
+        pVCpu->iem.s.cActiveMappings = 0; /** @todo wtf? */
+        IEM_TRY_SETJMP(pVCpu, rcStrict)
 #endif
         {
             /*
@@ -10122,7 +10185,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
             }
         }
 #ifdef IEM_WITH_SETJMP
-        else
+        IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
         {
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
@@ -10131,7 +10194,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
 # endif
             pVCpu->iem.s.cLongJumps++;
         }
-        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
+        IEM_CATCH_LONGJMP_END(pVCpu);
 #endif
 
         /*
@@ -10198,11 +10261,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
     if (rcStrict == VINF_SUCCESS)
     {
 #ifdef IEM_WITH_SETJMP
-        jmp_buf         JmpBuf;
-        jmp_buf        *pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf);
-        pVCpu->iem.s.CTX_SUFF(pJmpBuf)   = &JmpBuf;
-        pVCpu->iem.s.cActiveMappings     = 0;
-        if ((rcStrict = setjmp(JmpBuf)) == 0)
+        pVCpu->iem.s.cActiveMappings     = 0; /** @todo wtf?!? */
+        IEM_TRY_SETJMP(pVCpu, rcStrict)
 #endif
         {
 #ifdef IN_RING0
@@ -10311,13 +10371,13 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
             }
         }
 #ifdef IEM_WITH_SETJMP
-        else
+        IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
         {
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
             pVCpu->iem.s.cLongJumps++;
         }
-        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
+        IEM_CATCH_LONGJMP_END(pVCpu);
 #endif
 
         /*
