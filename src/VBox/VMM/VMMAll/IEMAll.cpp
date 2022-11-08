@@ -4392,7 +4392,9 @@ VBOXSTRICTRC iemRegRipRelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   enmEffOpSize        Effective operand size.
  */
 VBOXSTRICTRC iemRegRipRelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int32_t offNextInstr,
                                                          IEMMODE enmEffOpSize) RT_NOEXCEPT
