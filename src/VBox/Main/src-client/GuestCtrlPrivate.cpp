@@ -1754,9 +1754,9 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
         strDstPath += pszSrcName;
     }
 
-    LogRel(("Guest Control: Building destination path for '%s' (%s) -> '%s' (%s)\n",
-            strSrcPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
-            strDstPath.c_str(), GuestBase::pathStyleToStr(enmDstPathStyle)));
+    LogRel2(("Guest Control: Building destination path for '%s' (%s) -> '%s' (%s)\n",
+             strSrcPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
+             strDstPath.c_str(), GuestBase::pathStyleToStr(enmDstPathStyle)));
 
     return VINF_SUCCESS;
 }
@@ -1847,9 +1847,9 @@ int GuestPath::Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyl
 
     strTranslated.jolt();
 
-    LogRel(("Guest Control: Translating '%s' (%s) -> '%s' (%s): %Rrc\n",
-            strPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
-            strTranslated.c_str(), GuestBase::pathStyleToStr(enmDstPathStyle), vrc));
+    LogRel2(("Guest Control: Translating '%s' (%s) -> '%s' (%s): %Rrc\n",
+             strPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
+             strTranslated.c_str(), GuestBase::pathStyleToStr(enmDstPathStyle), vrc));
 
     if (RT_SUCCESS(vrc))
         strPath = strTranslated;

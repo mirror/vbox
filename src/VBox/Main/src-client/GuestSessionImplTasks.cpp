@@ -354,7 +354,7 @@ int GuestSessionTask::directoryCreateOnHost(const com::Utf8Str &strPath, uint32_
 {
     LogFlowFunc(("strPath=%s, fMode=%RU32, fCreate=0x%x, fCanExist=%RTbool\n", strPath.c_str(), fMode, fCreate, fCanExist));
 
-    LogRel(("Guest Control: Creating host directory '%s' ...\n", strPath.c_str()));
+    LogRel2(("Guest Control: Creating host directory '%s' ...\n", strPath.c_str()));
 
     int vrc = RTDirCreate(strPath.c_str(), fMode, fCreate);
     if (RT_FAILURE(vrc))
@@ -589,7 +589,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                 RTTimeSpecSetSeconds(&srcModificationTimeTS, srcObjData.mModificationTime);
                 if (RTTimeSpecCompare(&srcModificationTimeTS, &dstObjInfo.ModificationTime) <= 0)
                 {
-                    LogRel(("Guest Control: Host file \"%s\" has same or newer modification date, skipping", strDst.c_str()));
+                    LogRel2(("Guest Control: Host file \"%s\" has same or newer modification date, skipping", strDst.c_str()));
                     fSkip = true;
                 }
             }
@@ -641,7 +641,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         }
     }
 
-    LogRel(("Guest Control: Copying file '%s' from guest to '%s' on host ...\n", strSrc.c_str(), strDst.c_str()));
+    LogRel2(("Guest Control: Copying file '%s' from guest to '%s' on host ...\n", strSrc.c_str(), strDst.c_str()));
 
     LogFlowFunc(("vrc=%Rrc, dstFsType=%#x, pszDstFile=%s\n", vrc, dstObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDst.c_str()));
 
@@ -850,7 +850,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
                         RTTimeSpecSetSeconds(&dstModificationTimeTS, dstObjData.mModificationTime);
                         if (RTTimeSpecCompare(&dstModificationTimeTS, &srcObjInfo.ModificationTime) <= 0)
                         {
-                            LogRel(("Guest Control: Guest file \"%s\" has same or newer modification date, skipping",
+                            LogRel2(("Guest Control: Guest file \"%s\" has same or newer modification date, skipping",
                                      strDst.c_str()));
                             fSkip = true;
                         }
@@ -897,7 +897,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
 
     if (RT_SUCCESS(vrc))
     {
-        LogRel(("Guest Control: Copying file '%s' from host to '%s' on guest ...\n", strSrc.c_str(), strDst.c_str()));
+        LogRel2(("Guest Control: Copying file '%s' from host to '%s' on guest ...\n", strSrc.c_str(), strDst.c_str()));
 
         RTVFSFILE hSrcFile;
         vrc = RTVfsFileOpenNormal(szSrcReal, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hSrcFile);
@@ -1040,24 +1040,25 @@ void FsList::Destroy(void)
     LogFlowFuncLeave();
 }
 
+#ifdef DEBUG
 /**
  * Dumps a FsList to the debug log.
  */
 void FsList::DumpToLog(void)
 {
-    LogRel(("strSrcRootAbs=%s, strDstRootAbs=%s\n", mSrcRootAbs.c_str(), mDstRootAbs.c_str()));
+    LogFlowFunc(("strSrcRootAbs=%s, strDstRootAbs=%s\n", mSrcRootAbs.c_str(), mDstRootAbs.c_str()));
 
     FsEntries::iterator itEntry = mVecEntries.begin();
     while (itEntry != mVecEntries.end())
     {
         FsEntry *pEntry = *itEntry;
-        LogRel(("\t%s: strPath=%s (fMode %#x)\n",
-                RTFS_IS_DIRECTORY(pEntry->fMode) ? "Dir" : "File", pEntry->strPath.c_str(), pEntry->fMode));
+        LogFlowFunc(("\tstrPath=%s (fMode %#x)\n", pEntry->strPath.c_str(), pEntry->fMode));
         ++itEntry;
     }
 
     LogFlowFuncLeave();
 }
+#endif /* DEBUG */
 
 /**
  * Builds a guest file list from a given path (and optional filter).
@@ -1082,7 +1083,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
     LogFlowFunc(("Entering '%s' (sub '%s')\n", strPathAbs.c_str(), strPathSub.c_str()));
 
-    LogRel(("Guest Control: Handling directory '%s' on guest ...\n", strPathAbs.c_str()));
+    LogRel2(("Guest Control: Handling directory '%s' on guest ...\n", strPathAbs.c_str()));
 
     GuestDirectoryOpenInfo dirOpenInfo;
     dirOpenInfo.mFilter = "";
@@ -1146,7 +1147,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                         break;
                     }
 
-                    LogRel(("Guest Control: Directory '%s'\n", strEntry.c_str()));
+                    LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
 
                     if (!(mSourceSpec.fDirCopyFlags & DirectoryCopyFlag_Recursive))
                         break;
@@ -1162,7 +1163,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                     {
                         /** @todo Symlink handling from guest is not implemented yet.
                          *        See IGuestSession::symlinkRead(). */
-                        LogRel(("Guest Control: Warning: Symlink support on guest side not available, skipping '%s'",
+                        LogRel2(("Guest Control: Warning: Symlink support on guest side not available, skipping '%s'",
                                  strEntry.c_str()));
                     }
                     break;
@@ -1170,7 +1171,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
                 case FsObjType_File:
                 {
-                    LogRel(("Guest Control: File '%s'\n", strEntry.c_str()));
+                    LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
 
                     vrc = AddEntryFromGuest(strEntry, fsObjInfo->i_getData());
                     break;
@@ -1221,7 +1222,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
 
     LogFlowFunc(("Entering '%s' (sub '%s')\n", strPathAbs.c_str(), strPathSub.c_str()));
 
-    LogRel(("Guest Control: Handling directory '%s' on host ...\n", strPathAbs.c_str()));
+    LogRel2(("Guest Control: Handling directory '%s' on host ...\n", strPathAbs.c_str()));
 
     RTFSOBJINFO objInfo;
     int vrc = RTPathQueryInfo(strPathAbs.c_str(), &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -1261,7 +1262,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                 if (RTDirEntryExIsStdDotLink(pDirEntry))
                                     break;
 
-                                LogRel(("Guest Control: Directory '%s'\n", strEntry.c_str()));
+                                LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
 
                                 if (!(mSourceSpec.fDirCopyFlags & DirectoryCopyFlag_Recursive))
                                     break;
@@ -1272,7 +1273,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
 
                             case RTFS_TYPE_FILE:
                             {
-                                LogRel(("Guest Control: File '%s'\n", strEntry.c_str()));
+                                LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
 
                                 vrc = AddEntryFromHost(strEntry, &pDirEntry->Info);
                                 break;
@@ -1290,14 +1291,14 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                     {
                                         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                                         {
-                                            LogRel(("Guest Control: Symbolic link '%s' -> '%s' (directory)\n",
+                                            LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (directory)\n",
                                                      strEntryAbs.c_str(), pszPathReal));
                                             if (mSourceSpec.fDirCopyFlags  & DirectoryCopyFlag_FollowLinks)
                                                 vrc = AddDirFromHost(strPath, strEntry, pszPathReal, cbPathReal, pDirEntry);
                                         }
                                         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                                         {
-                                            LogRel(("Guest Control: Symbolic link '%s' -> '%s' (file)\n",
+                                            LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (file)\n",
                                                      strEntryAbs.c_str(), pszPathReal));
                                             if (mSourceSpec.fFileCopyFlags & DirectoryCopyFlag_FollowLinks)
                                                 vrc = AddEntryFromHost(strEntry, &objInfo);
@@ -1307,12 +1308,12 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                     }
 
                                     if (RT_FAILURE(vrc))
-                                        LogRel(("Guest Control: Unable to query symbolic link info for '%s', rc=%Rrc\n",
+                                        LogRel2(("Guest Control: Unable to query symbolic link info for '%s', rc=%Rrc\n",
                                                  pszPathReal, vrc));
                                 }
                                 else
                                 {
-                                    LogRel(("Guest Control: Unable to resolve symlink for '%s', rc=%Rrc\n", strPathAbs.c_str(), vrc));
+                                    LogRel2(("Guest Control: Unable to resolve symlink for '%s', rc=%Rrc\n", strPathAbs.c_str(), vrc));
                                     if (vrc == VERR_FILE_NOT_FOUND) /* Broken symlink, skip. */
                                         vrc = VINF_SUCCESS;
                                 }
@@ -1522,7 +1523,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                             break;
 
                         default:
-                            LogRel(("Guest Control: Warning: Unknown guest file system type %#x for source \"%s\", skipping\n",
+                            LogRel2(("Guest Control: Warning: Unknown guest file system type %#x for source \"%s\", skipping\n",
                                      itSrc->enmType, strSrc.c_str()));
                             break;
                     }
@@ -1535,9 +1536,9 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                                         strSrc.c_str(), vrc);
                     break;
                 }
-
+#ifdef DEBUG
                 pFsList->DumpToLog();
-
+#endif
                 mVecLists.push_back(pFsList);
             }
             catch (std::bad_alloc &)
@@ -1645,8 +1646,8 @@ int GuestSessionTaskCopyFrom::Run(void)
         /* Create the root directory. */
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            LogRel(("Guest Control: Directory: fDstExists=%RTbool, fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                    fDstExists, pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
+                         pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks));
 
             if (fDstExists)
             {
@@ -1773,8 +1774,8 @@ int GuestSessionTaskCopyFrom::Run(void)
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
-            LogRel(("Guest Control: File: fDstExists=%RTbool, fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                    fDstExists, pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
+                         pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks));
 
             if (fDstExists)
             {
@@ -1965,7 +1966,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                             break;
 
                         default:
-                            LogRel(("Guest Control: Warning: Unknown guest host system type %#x for source \"%s\", skipping\n",
+                            LogRel2(("Guest Control: Warning: Unknown guest host system type %#x for source \"%s\", skipping\n",
                                      itSrc->enmType, strSrc.c_str()));
                             break;
                     }
@@ -1978,9 +1979,9 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                                         strSrc.c_str(), vrc);
                     break;
                 }
-
+#ifdef DEBUG
                 pFsList->DumpToLog();
-
+#endif
                 mVecLists.push_back(pFsList);
             }
             catch (std::bad_alloc &)
@@ -2220,7 +2221,7 @@ int GuestSessionTaskCopyTo::Run(void)
                 {
                     case RTFS_TYPE_DIRECTORY:
                     {
-                        LogRel(("Guest Control: Copying directory '%s' from host to '%s' on guest ...\n", strSrcAbs.c_str(), strDstAbs.c_str()));
+                        LogRel2(("Guest Control: Copying directory '%s' from host to '%s' on guest ...\n", strSrcAbs.c_str(), strDstAbs.c_str()));
                         if (!pList->mSourceSpec.fDryRun)
                             vrc = directoryCreateOnGuest(strDstAbs, fDirMode, DirectoryCreateFlag_None,
                                                          fFollowSymlinks, fCopyIntoExisting);
@@ -2235,7 +2236,7 @@ int GuestSessionTaskCopyTo::Run(void)
                     }
 
                     default:
-                        LogRel(("Guest Control: Warning: Host file system type 0x%x for '%s' is not supported, skipping\n",
+                        LogRel2(("Guest Control: Warning: Host file system type 0x%x for '%s' is not supported, skipping\n",
                                  pEntry->fMode & RTFS_TYPE_MASK, strSrcAbs.c_str()));
                         break;
                 }

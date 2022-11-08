@@ -768,7 +768,7 @@ HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
     GuestSessionFsSourceSet::const_iterator itSrc = SourceSet.begin();
     while (itSrc != SourceSet.end())
     {
-        LogRel(("Guest Control: Copying '%s' from guest to '%s' on the host (type: %s, filter: %s)\n",
+        LogRel2(("Guest Control: Copying '%s' from guest to '%s' on the host (type: %s, filter: %s)\n",
                  itSrc->strSource.c_str(), strDestination.c_str(), GuestBase::fsObjTypeToStr(itSrc->enmType), itSrc->strFilter.c_str()));
         ++itSrc;
     }
@@ -835,7 +835,7 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
     GuestSessionFsSourceSet::const_iterator itSrc = SourceSet.begin();
     while (itSrc != SourceSet.end())
     {
-        LogRel(("Guest Control: Copying '%s' from host to '%s' on the guest (type: %s, filter: %s)\n",
+        LogRel2(("Guest Control: Copying '%s' from host to '%s' on the guest (type: %s, filter: %s)\n",
                  itSrc->strSource.c_str(), strDestination.c_str(), GuestBase::fsObjTypeToStr(itSrc->enmType), itSrc->strFilter.c_str()));
         ++itSrc;
     }

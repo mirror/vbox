@@ -123,7 +123,9 @@ public:
     int Init(const Utf8Str &strSrcRootAbs, const Utf8Str &strDstRootAbs, const GuestSessionFsSourceSpec &SourceSpec);
     void Destroy(void);
 
+#ifdef DEBUG
     void DumpToLog(void);
+#endif
 
     int AddEntryFromGuest(const Utf8Str &strFile, const GuestFsObjData &fsObjData);
     int AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir = "");
