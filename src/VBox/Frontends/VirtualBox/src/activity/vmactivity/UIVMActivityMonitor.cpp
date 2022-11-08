@@ -193,7 +193,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_fUseAreaChart(true)
     , m_fIsAvailable(true)
     , m_fIsAreaChartAllowed(false)
-    , m_fDrawCurenValueIndicators(true)
+    , m_fDrawCurenValueIndicators(false)
     , m_iRightMarginCharWidth(10)
 {
     m_axisFont = font();
