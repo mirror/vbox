@@ -716,7 +716,7 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCa
  *
  * @todo    Make cbDst = 0 a way of initializing pbInstrBuf?
  */
-void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCEPT
+void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXCEPT_MAY_LONGJMP
 {
 #ifdef IN_RING3
     for (;;)
@@ -857,7 +857,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) RT_NOEXCE
                                          | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
             int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.CodeTlb.uTlbPhysRev,
                                                 &pTlbe->pbMappingR3, &pTlbe->fFlagsAndPhysRev);
-            AssertRCStmt(rc, IEM_DO_LONGJMP(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
+            AssertRCStmt(rc, IEM_DO_LONGJMP(pVCpu, rc));
         }
 
 # if defined(IN_RING3) || defined(IN_RING0) /** @todo fixme */
@@ -6158,7 +6158,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
                                      | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
         int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
                                             &pbMem, &pTlbe->fFlagsAndPhysRev);
-        AssertRCStmt(rc, IEM_DO_LONGJMP(pVCpu, rc));
+        AssertRCReturn(rc, rc);
 # ifdef IN_RING3
         pTlbe->pbMappingR3 = pbMem;
 # endif
