@@ -3214,11 +3214,11 @@ typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOPRM)(PVMCPUCC pVCpu
 typedef VBOXSTRICTRC (__fastcall * PFNIEMOP)(PVMCPUCC pVCpu);
 typedef VBOXSTRICTRC (__fastcall * PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 # define FNIEMOP_DEF(a_Name) \
-    IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu) RT_NO_THROW_DEF
+    IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
-    IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0) RT_NO_THROW_DEF
+    IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0) IEM_NOEXCEPT_MAY_LONGJMP
 # define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
-    IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW_DEF
+    IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0, a_Type1 a_Name1) IEM_NOEXCEPT_MAY_LONGJMP
 
 #elif defined(__GNUC__)
 typedef VBOXSTRICTRC (* PFNIEMOP)(PVMCPUCC pVCpu);
@@ -3234,11 +3234,11 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 typedef VBOXSTRICTRC (* PFNIEMOP)(PVMCPUCC pVCpu);
 typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 # define FNIEMOP_DEF(a_Name) \
-    IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu) RT_NO_THROW_DEF
+    IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
-    IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0) RT_NO_THROW_DEF
+    IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0) IEM_NOEXCEPT_MAY_LONGJMP
 # define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
-    IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW_DEF
+    IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0, a_Type1 a_Name1) IEM_NOEXCEPT_MAY_LONGJMP
 
 #endif
 #define FNIEMOPRM_DEF(a_Name) FNIEMOP_DEF_1(a_Name, uint8_t, bRm)
