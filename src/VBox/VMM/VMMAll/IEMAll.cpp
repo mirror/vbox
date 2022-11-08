@@ -4433,60 +4433,89 @@ VBOXSTRICTRC iemRegRipRelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t
 /**
  * Performs a near jump to the specified address.
  *
- * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
- * segment limit.
+ * May raise a \#GP(0) if the new IP outside the code segment limit.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   uNewRip             The new RIP value.
+ * @param   uNewIp              The new IP value.
  */
-VBOXSTRICTRC iemRegRipJump(PVMCPUCC pVCpu, uint64_t uNewRip) RT_NOEXCEPT
+VBOXSTRICTRC iemRegRipJumpU16AndFinishClearningRF(PVMCPUCC pVCpu, uint16_t uNewIp) RT_NOEXCEPT
 {
-    switch (pVCpu->iem.s.enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-        {
-            Assert(uNewRip <= UINT16_MAX);
-            if (   uNewRip > pVCpu->cpum.GstCtx.cs.u32Limit
-                && pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT) /* no need to check for non-canonical. */
-                return iemRaiseGeneralProtectionFault0(pVCpu);
-            /** @todo Test 16-bit jump in 64-bit mode.  */
-            pVCpu->cpum.GstCtx.rip = uNewRip;
-            break;
-        }
-
-        case IEMMODE_32BIT:
-        {
-            Assert(uNewRip <= UINT32_MAX);
-            Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
-            Assert(pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
-
-            if (uNewRip > pVCpu->cpum.GstCtx.cs.u32Limit)
-                return iemRaiseGeneralProtectionFault0(pVCpu);
-            pVCpu->cpum.GstCtx.rip = uNewRip;
-            break;
-        }
-
-        case IEMMODE_64BIT:
-        {
-            Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
-
-            if (!IEM_IS_CANONICAL(uNewRip))
-                return iemRaiseGeneralProtectionFault0(pVCpu);
-            pVCpu->cpum.GstCtx.rip = uNewRip;
-            break;
-        }
-
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
-
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
+    if (RT_LIKELY(   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+                  || pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT /* no limit checks in 64-bit mode */))
+        pVCpu->cpum.GstCtx.rip = uNewIp;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    /** @todo Test 16-bit jump in 64-bit mode.  */
 
 #ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
 #endif
 
-    return VINF_SUCCESS;
+    /*
+     * Clear RF and finish the instruction (maybe raise #DB).
+     */
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address.
+ *
+ * May raise a \#GP(0) if the new RIP is outside the code segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewEip             The new EIP value.
+ */
+VBOXSTRICTRC iemRegRipJumpU32AndFinishClearningRF(PVMCPUCC pVCpu, uint32_t uNewEip) RT_NOEXCEPT
+{
+    Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
+    Assert(pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
+
+    if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewEip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    /* Flush the prefetch buffer. */
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+
+    /*
+     * Clear RF and finish the instruction (maybe raise #DB).
+     */
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewRip             The new RIP value.
+ */
+VBOXSTRICTRC iemRegRipJumpU64AndFinishClearningRF(PVMCPUCC pVCpu, uint64_t uNewRip) RT_NOEXCEPT
+{
+    Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
+
+    if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+        pVCpu->cpum.GstCtx.rip = uNewRip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    /* Flush the prefetch buffer. */
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+
+    /*
+     * Clear RF and finish the instruction (maybe raise #DB).
+     */
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 /** @}  */

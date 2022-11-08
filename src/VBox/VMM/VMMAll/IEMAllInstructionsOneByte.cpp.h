@@ -11591,7 +11591,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(jmpn_Ev, "jmpn Ev");
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
