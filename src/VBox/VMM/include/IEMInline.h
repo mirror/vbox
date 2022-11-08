@@ -1287,6 +1287,26 @@ DECLINLINE(void) iemRecalEffOpSize64Default(PVMCPUCC pVCpu)
 }
 
 
+/**
+ * Sets the default operand size to 64-bit and recalculates the effective
+ * operand size, with intel ignoring any operand size prefix (AMD respects it).
+ *
+ * This is for the relative jumps.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ */
+DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC pVCpu)
+{
+    Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
+    pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
+    if (   (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_REX_W | IEM_OP_PRF_SIZE_OP)) != IEM_OP_PRF_SIZE_OP
+        || pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
+        pVCpu->iem.s.enmEffOpSize = IEMMODE_64BIT;
+    else
+        pVCpu->iem.s.enmEffOpSize = IEMMODE_16BIT;
+}
+
+
 
 
 /** @name   Register Access.
@@ -1584,7 +1604,7 @@ DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr)
     uint64_t const uRipPrev = pVCpu->cpum.GstCtx.rip;
     uint64_t const uRipNext = uRipPrev + cbInstr;
     if (RT_LIKELY(   !((uRipNext ^ uRipPrev) & (RT_BIT_64(32) | RT_BIT_64(16)))
-                  || CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx)))
+                  || pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT))
         pVCpu->cpum.GstCtx.rip = uRipNext;
     else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
         pVCpu->cpum.GstCtx.rip = (uint32_t)uRipNext;

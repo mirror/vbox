@@ -3926,9 +3926,9 @@ VBOXSTRICTRC iemRaiseDivideError(PVMCPUCC pVCpu) RT_NOEXCEPT
  * @note This automatically clear DR7.GD.  */
 VBOXSTRICTRC iemRaiseDebugException(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
-    /** @todo set/clear RF. */
+    /* This always clears RF (via IEM_XCPT_FLAGS_DRx_INSTR_BP). */
     pVCpu->cpum.GstCtx.dr[7] &= ~X86_DR7_GD;
-    return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_DB, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+    return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_DB, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_DRx_INSTR_BP, 0, 0);
 }
 
 
@@ -4290,31 +4290,36 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT
  * segment limit.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   enmEffOpSize        Effective operand size.
  */
-VBOXSTRICTRC iemRegRipRelativeJumpS8(PVMCPUCC pVCpu, int8_t offNextInstr) RT_NOEXCEPT
+VBOXSTRICTRC iemRegRipRelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
+                                                        IEMMODE enmEffOpSize) RT_NOEXCEPT
 {
-    switch (pVCpu->iem.s.enmEffOpSize)
+    switch (enmEffOpSize)
     {
         case IEMMODE_16BIT:
         {
-            uint16_t uNewIp = pVCpu->cpum.GstCtx.ip + offNextInstr + IEM_GET_INSTR_LEN(pVCpu);
-            if (   uNewIp > pVCpu->cpum.GstCtx.cs.u32Limit
-                && pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT) /* no need to check for non-canonical. */
+            uint16_t const uNewIp = pVCpu->cpum.GstCtx.ip + cbInstr + (int16_t)offNextInstr;
+            if (RT_LIKELY(   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+                          || pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT /* no CS limit checks in 64-bit mode */))
+                pVCpu->cpum.GstCtx.rip = uNewIp;
+            else
                 return iemRaiseGeneralProtectionFault0(pVCpu);
-            pVCpu->cpum.GstCtx.rip = uNewIp;
             break;
         }
 
         case IEMMODE_32BIT:
         {
-            Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
             Assert(pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
+            Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
 
-            uint32_t uNewEip = pVCpu->cpum.GstCtx.eip + offNextInstr + IEM_GET_INSTR_LEN(pVCpu);
-            if (uNewEip > pVCpu->cpum.GstCtx.cs.u32Limit)
+            uint32_t const uNewEip = pVCpu->cpum.GstCtx.eip + cbInstr + (int32_t)offNextInstr;
+            if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+                pVCpu->cpum.GstCtx.rip = uNewEip;
+            else
                 return iemRaiseGeneralProtectionFault0(pVCpu);
-            pVCpu->cpum.GstCtx.rip = uNewEip;
             break;
         }
 
@@ -4322,24 +4327,26 @@ VBOXSTRICTRC iemRegRipRelativeJumpS8(PVMCPUCC pVCpu, int8_t offNextInstr) RT_NOE
         {
             Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
 
-            uint64_t uNewRip = pVCpu->cpum.GstCtx.rip + offNextInstr + IEM_GET_INSTR_LEN(pVCpu);
-            if (!IEM_IS_CANONICAL(uNewRip))
+            uint64_t const uNewRip = pVCpu->cpum.GstCtx.rip + cbInstr + (int64_t)offNextInstr;
+            if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+                pVCpu->cpum.GstCtx.rip = uNewRip;
+            else
                 return iemRaiseGeneralProtectionFault0(pVCpu);
-            pVCpu->cpum.GstCtx.rip = uNewRip;
             break;
         }
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
-
 #ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+    pVCpu->iem.s.cbOpcode = cbInstr;
 #endif
 
-    return VINF_SUCCESS;
+    /*
+     * Clear RF and finish the instruction (maybe raise #DB).
+     */
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 
@@ -4351,26 +4358,29 @@ VBOXSTRICTRC iemRegRipRelativeJumpS8(PVMCPUCC pVCpu, int8_t offNextInstr) RT_NOE
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
  */
-VBOXSTRICTRC iemRegRipRelativeJumpS16(PVMCPUCC pVCpu, int16_t offNextInstr) RT_NOEXCEPT
+VBOXSTRICTRC iemRegRipRelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int16_t offNextInstr) RT_NOEXCEPT
 {
     Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT);
 
-    uint16_t uNewIp = pVCpu->cpum.GstCtx.ip + offNextInstr + IEM_GET_INSTR_LEN(pVCpu);
-    if (   uNewIp > pVCpu->cpum.GstCtx.cs.u32Limit
-        && pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT) /* no need to check for non-canonical. */
+    uint16_t const uNewIp = pVCpu->cpum.GstCtx.ip + cbInstr + offNextInstr;
+    if (RT_LIKELY(   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+                  || pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT /* no limit checking in 64-bit mode */))
+        pVCpu->cpum.GstCtx.rip = uNewIp;
+    else
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    /** @todo Test 16-bit jump in 64-bit mode. possible?  */
-    pVCpu->cpum.GstCtx.rip = uNewIp;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
 
 #ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
 #endif
 
-    return VINF_SUCCESS;
+    /*
+     * Clear RF and finish the instruction (maybe raise #DB).
+     */
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 
@@ -4384,36 +4394,39 @@ VBOXSTRICTRC iemRegRipRelativeJumpS16(PVMCPUCC pVCpu, int16_t offNextInstr) RT_N
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   offNextInstr        The offset of the next instruction.
  */
-VBOXSTRICTRC iemRegRipRelativeJumpS32(PVMCPUCC pVCpu, int32_t offNextInstr) RT_NOEXCEPT
+VBOXSTRICTRC iemRegRipRelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int32_t offNextInstr,
+                                                         IEMMODE enmEffOpSize) RT_NOEXCEPT
 {
-    Assert(pVCpu->iem.s.enmEffOpSize != IEMMODE_16BIT);
-
-    if (pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT)
+    if (enmEffOpSize == IEMMODE_32BIT)
     {
         Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX); Assert(pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
 
-        uint32_t uNewEip = pVCpu->cpum.GstCtx.eip + offNextInstr + IEM_GET_INSTR_LEN(pVCpu);
-        if (uNewEip > pVCpu->cpum.GstCtx.cs.u32Limit)
+        uint32_t const uNewEip = pVCpu->cpum.GstCtx.eip + cbInstr + offNextInstr;
+        if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+            pVCpu->cpum.GstCtx.rip = uNewEip;
+        else
             return iemRaiseGeneralProtectionFault0(pVCpu);
-        pVCpu->cpum.GstCtx.rip = uNewEip;
     }
     else
     {
-        Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
+        Assert(enmEffOpSize == IEMMODE_64BIT);
 
-        uint64_t uNewRip = pVCpu->cpum.GstCtx.rip + offNextInstr + IEM_GET_INSTR_LEN(pVCpu);
-        if (!IEM_IS_CANONICAL(uNewRip))
+        uint64_t const uNewRip = pVCpu->cpum.GstCtx.rip + cbInstr + (int64_t)offNextInstr;
+        if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+            pVCpu->cpum.GstCtx.rip = uNewRip;
+        else
             return iemRaiseGeneralProtectionFault0(pVCpu);
-        pVCpu->cpum.GstCtx.rip = uNewRip;
     }
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
 
 #ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
 #endif
 
-    return VINF_SUCCESS;
+    /*
+     * Clear RF and finish the instruction (maybe raise #DB).
+     */
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 

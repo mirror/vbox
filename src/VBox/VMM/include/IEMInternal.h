@@ -3728,9 +3728,11 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
 
 /** @name Register Access.
  * @{ */
-VBOXSTRICTRC    iemRegRipRelativeJumpS8(PVMCPUCC pVCpu, int8_t offNextInstr) RT_NOEXCEPT;
-VBOXSTRICTRC    iemRegRipRelativeJumpS16(PVMCPUCC pVCpu, int16_t offNextInstr) RT_NOEXCEPT;
-VBOXSTRICTRC    iemRegRipRelativeJumpS32(PVMCPUCC pVCpu, int32_t offNextInstr) RT_NOEXCEPT;
+VBOXSTRICTRC    iemRegRipRelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
+                                                           IEMMODE enmEffOpSize) RT_NOEXCEPT;
+VBOXSTRICTRC    iemRegRipRelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int16_t offNextInstr) RT_NOEXCEPT;
+VBOXSTRICTRC    iemRegRipRelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int32_t offNextInstr,
+                                                            IEMMODE enmEffOpSize) RT_NOEXCEPT;
 VBOXSTRICTRC    iemRegRipJump(PVMCPUCC pVCpu, uint64_t uNewRip) RT_NOEXCEPT;
 /** @} */
 

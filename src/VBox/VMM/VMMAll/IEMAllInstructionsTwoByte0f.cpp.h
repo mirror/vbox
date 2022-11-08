@@ -7694,7 +7694,7 @@ FNIEMOP_DEF(iemOp_jo_Jv)
 {
     IEMOP_MNEMONIC(jo_Jv, "jo  Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7729,7 +7729,7 @@ FNIEMOP_DEF(iemOp_jno_Jv)
 {
     IEMOP_MNEMONIC(jno_Jv, "jno Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7764,7 +7764,7 @@ FNIEMOP_DEF(iemOp_jc_Jv)
 {
     IEMOP_MNEMONIC(jc_Jv, "jc/jb/jnae Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7799,7 +7799,7 @@ FNIEMOP_DEF(iemOp_jnc_Jv)
 {
     IEMOP_MNEMONIC(jnc_Jv, "jnc/jnb/jae Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7834,7 +7834,7 @@ FNIEMOP_DEF(iemOp_je_Jv)
 {
     IEMOP_MNEMONIC(je_Jv, "je/jz Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7869,7 +7869,7 @@ FNIEMOP_DEF(iemOp_jne_Jv)
 {
     IEMOP_MNEMONIC(jne_Jv, "jne/jnz Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7904,7 +7904,7 @@ FNIEMOP_DEF(iemOp_jbe_Jv)
 {
     IEMOP_MNEMONIC(jbe_Jv, "jbe/jna Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7939,7 +7939,7 @@ FNIEMOP_DEF(iemOp_jnbe_Jv)
 {
     IEMOP_MNEMONIC(ja_Jv, "jnbe/ja Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -7974,7 +7974,7 @@ FNIEMOP_DEF(iemOp_js_Jv)
 {
     IEMOP_MNEMONIC(js_Jv, "js  Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8009,7 +8009,7 @@ FNIEMOP_DEF(iemOp_jns_Jv)
 {
     IEMOP_MNEMONIC(jns_Jv, "jns Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8044,7 +8044,7 @@ FNIEMOP_DEF(iemOp_jp_Jv)
 {
     IEMOP_MNEMONIC(jp_Jv, "jp  Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8079,7 +8079,7 @@ FNIEMOP_DEF(iemOp_jnp_Jv)
 {
     IEMOP_MNEMONIC(jnp_Jv, "jnp Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8114,7 +8114,7 @@ FNIEMOP_DEF(iemOp_jl_Jv)
 {
     IEMOP_MNEMONIC(jl_Jv, "jl/jnge Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8149,7 +8149,7 @@ FNIEMOP_DEF(iemOp_jnl_Jv)
 {
     IEMOP_MNEMONIC(jge_Jv, "jnl/jge Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8184,7 +8184,7 @@ FNIEMOP_DEF(iemOp_jle_Jv)
 {
     IEMOP_MNEMONIC(jle_Jv, "jle/jng Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
@@ -8219,7 +8219,7 @@ FNIEMOP_DEF(iemOp_jnle_Jv)
 {
     IEMOP_MNEMONIC(jg_Jv, "jnle/jg Jv");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
     {
         int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
