@@ -75,7 +75,7 @@ static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 #endif
 #if 1
     //{ "iret", bs3CpuBasic2_iret_f16, 0 },
-    { "jmp jb / jv",  bs3CpuBasic2_jmp_rel_f16, 0 },
+    { "jmp jb / jv / ind",  bs3CpuBasic2_jmp_rel_f16, 0 },
 #endif
 #if 0
     { "sidt", bs3CpuBasic2_sidt_f16, 0 },

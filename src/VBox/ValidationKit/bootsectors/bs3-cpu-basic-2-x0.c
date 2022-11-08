@@ -3641,12 +3641,15 @@ PROTO_ALL(bs3CpuBasic2_jmp_jb__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jb_back__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv_back__ud2);
+PROTO_ALL(bs3CpuBasic2_jmp_ind_mem__ud2);
 
 PROTO_ALL(bs3CpuBasic2_jmp_opsize_begin);
 PROTO_ALL(bs3CpuBasic2_jmp_jb_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jb_opsize_back__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_jmp_jv_opsize_back__ud2);
+PROTO_ALL(bs3CpuBasic2_jmp_ind_mem_opsize__ud2);
+FNBS3FAR  bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel_c64;
 PROTO_ALL(bs3CpuBasic2_jmp_opsize_end);
 #undef PROTO_ALL
 
@@ -3720,6 +3723,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             {  0, false, bs3CpuBasic2_jmp_jv_back__ud2_c16,             },
             {  0,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c16,           },
             {  0,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c16,      },
+            {  0, false, bs3CpuBasic2_jmp_ind_mem__ud2_c16,             },
+            {  0,  true, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c16,      },
 
             { -1, false, bs3CpuBasic2_jmp_jb_wrap_backward__ud2,        },
             { +1, false, bs3CpuBasic2_jmp_jb_wrap_forward__ud2,         },
@@ -3769,6 +3774,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             g_usBs3TestStep++;
 
             /* Again single stepping: */
+            //Bs3TestPrintf("stepping...\n");
             Ctx.rflags.u16        |= X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
@@ -3845,6 +3851,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             {  32, false, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
             {  32,  true, false, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
             {  32,  true, false, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
+            {  32, false, false, bs3CpuBasic2_jmp_ind_mem__ud2_c32,             },
+            {  32,  true, false, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c32,      },
             /* 64bit/Intel: Use the _c64 tests, which are written to ignore the o16 prefix. */
             {  64, false,  true, bs3CpuBasic2_jmp_jb__ud2_c64,                  },
             {  64, false,  true, bs3CpuBasic2_jmp_jb_back__ud2_c64,             },
@@ -3854,6 +3862,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             {  64, false,  true, bs3CpuBasic2_jmp_jv_back__ud2_c64,             },
             {  64,  true,  true, bs3CpuBasic2_jmp_jv_opsize__ud2_c64,           },
             {  64,  true,  true, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c64,      },
+            {  64, false,  true, bs3CpuBasic2_jmp_ind_mem__ud2_c64,             },
+            {  64,  true,  true, bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel_c64, },
             /* 64bit/AMD: Use the _c32 tests. */
             {  64, false, false, bs3CpuBasic2_jmp_jb__ud2_c32,                  },
             {  64, false, false, bs3CpuBasic2_jmp_jb_back__ud2_c32,             },
@@ -3863,6 +3873,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
             {  64, false, false, bs3CpuBasic2_jmp_jv_back__ud2_c32,             },
             {  64,  true, false, bs3CpuBasic2_jmp_jv_opsize__ud2_c32,           },
             {  64,  true, false, bs3CpuBasic2_jmp_jv_opsize_back__ud2_c32,      },
+            {  64, false, false, bs3CpuBasic2_jmp_ind_mem__ud2_c64,             }, /* using c64 here */
+            {  64,  true, false, bs3CpuBasic2_jmp_ind_mem_opsize__ud2_c64,      }, /* using c64 here */
         };
         uint8_t const           cBits    = BS3_MODE_IS_64BIT_CODE(bMode) ? 64 : 32;
         BS3CPUVENDOR const      enmCpuVendor = Bs3GetCpuVendor();
@@ -3910,6 +3922,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_rel)(uint8_t bMode)
                 g_usBs3TestStep++;
 
                 /* Again single stepping: */
+                //Bs3TestPrintf("stepping...\n");
                 Ctx.rflags.u16        |= X86_EFL_TF;
                 CtxExpected.rflags.u16 = Ctx.rflags.u16;
                 Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);

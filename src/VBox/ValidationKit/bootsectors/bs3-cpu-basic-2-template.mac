@@ -562,6 +562,34 @@ AssertCompile(.post_jmp - BS3_LAST_LABEL == 5)
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_back__ud2
 
 
+; jmp [indirect]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_mem__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_mem__ud2, BS3_PBC_NEAR
+%if TMPL_BITS == 16
+        jmp     [word cs:.npAgain]
+%elif TMPL_BITS == 32
+        jmp     [dword cs:.npAgain]
+%else
+        jmp     [.npAgain]
+%endif
+.post_jmp:
+        times 9 int3
+.npAgain:
+ %if TMPL_BITS == 16
+        dw    BS3_TEXT16_WRT(.again)
+ %else
+        dd    .again wrt FLAT
+  %if TMPL_BITS == 64
+        dd    0
+  %endif
+ %endif
+.again: ud2
+        int3
+        jmp     .again
+        align xCB, int3
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_mem__ud2
+
+
 ;
 ; When applying opsize, we need to put this in the 16-bit text segment to
 ; better control where we end up in 32-bit and 64-bit mode.
@@ -644,6 +672,49 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_opsize_back__ud2
 
 BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_jmp_opsize_end), , 1
         int3
+
+; jmp [indirect]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_mem_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_mem_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+ %if TMPL_BITS == 16
+        jmp     [word cs:.npAgain]
+ %elif TMPL_BITS == 32
+        jmp     [dword cs:.npAgain wrt FLAT]
+ %else
+        jmp     [.npAgain wrt FLAT]
+ %endif
+.post_jmp:
+        times 9 int3
+.npAgain:
+ %if TMPL_BITS == 16
+        dw      BS3_TEXT16_WRT(.again)
+        dw      0
+ %else
+        dw      .again wrt CGROUP16
+        dw      0faceh, 0f00dh, 07777h  ; non-canonical address
+ %endif
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_mem_opsize__ud2
+
+ %if TMPL_BITS == 64
+; jmp [indirect] - 64-bit intel version
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel, BS3_PBC_NEAR
+        db      66h
+        jmp     [.npAgain wrt FLAT]
+.post_jmp:
+        times 8 int3
+.npAgain:
+        dd      .again wrt FLAT
+        dd      0
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_mem_opsize__ud2__intel
+ %endif
 
 
 %endif ; BS3_INSTANTIATING_CMN
