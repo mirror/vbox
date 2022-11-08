@@ -99,7 +99,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Added an option to the global settings (the display page) to resize user interface font.</para>
+        <para>GUI: Added an option to the global settings (the display page) to resize user interface font</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed a regression in new vm wizard. Selected virtual disks are no longer deleted when the wizard is cancelled (bug #21244)</para>
       </listitem>
 
     </itemizedlist>
