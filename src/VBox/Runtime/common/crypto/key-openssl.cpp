@@ -110,7 +110,7 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, void /*EVP_P
         *ppEvpKey = pRet = d2i_PublicKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
     else
         *ppEvpKey = pRet = d2i_PrivateKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-    if (pRet)
+    if (pRet != NULL && pRet == pEvpNewKey)
         return VINF_SUCCESS;
 
     /* Bail out: */
@@ -203,7 +203,7 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKeyEx(RTCRKEY hKey, bool fNeedPublic, const char
                 *ppEvpKey = pRet = d2i_PublicKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
             else
                 *ppEvpKey = pRet = d2i_PrivateKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-            if (pRet)
+            if (pRet != NULL && pRet == pEvpNewKey)
                 return VINF_SUCCESS;
 
             /* Bail out: */

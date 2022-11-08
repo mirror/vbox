@@ -444,9 +444,9 @@ RTDECL(int) RTCrStoreConvertToOpenSslCertStore(RTCRSTORE hStore, uint32_t fFlags
                 if (   (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
                     && pCertCtx->cbEncoded > 0)
                 {
-                    X509 *pOsslCert = NULL;
+                    X509                *pOsslCert  = NULL;
                     const unsigned char *pabEncoded = (const unsigned char *)pCertCtx->pabEncoded;
-                    if (d2i_X509(&pOsslCert, &pabEncoded, pCertCtx->cbEncoded) == pOsslCert)
+                    if (d2i_X509(&pOsslCert, &pabEncoded, pCertCtx->cbEncoded) == pOsslCert && pOsslCert != NULL)
                     {
                         if (!X509_STORE_add_cert(pOsslStore, pOsslCert))
                             rc = VERR_NO_MEMORY;
@@ -500,9 +500,9 @@ RTDECL(int) RTCrStoreConvertToOpenSslCertStack(RTCRSTORE hStore, uint32_t fFlags
                 if (   (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
                     && pCertCtx->cbEncoded > 0)
                 {
-                    X509 *pOsslCert = NULL;
+                    X509                *pOsslCert  = NULL;
                     const unsigned char *pabEncoded = (const unsigned char *)pCertCtx->pabEncoded;
-                    if (d2i_X509(&pOsslCert, &pabEncoded, pCertCtx->cbEncoded) == pOsslCert)
+                    if (d2i_X509(&pOsslCert, &pabEncoded, pCertCtx->cbEncoded) == pOsslCert && pOsslCert != NULL)
                     {
                         if (!sk_X509_push(pOsslStack, pOsslCert))
                         {

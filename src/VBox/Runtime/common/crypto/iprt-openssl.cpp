@@ -110,7 +110,7 @@ DECLHIDDEN(int) rtCrOpenSslConvertX509Cert(void **ppvOsslCert, PCRTCRX509CERTIFI
         X509 *pOsslCert = NULL;
         X509 *pOsslCertRet = d2i_X509(&pOsslCert, &pabEncoded, cbEncoded);
         RTMemTmpFree(pvFree);
-        if (pOsslCertRet == pOsslCert)
+        if (pOsslCert != NULL && pOsslCertRet == pOsslCert)
         {
             *ppvOsslCert = pOsslCert;
             return VINF_SUCCESS;
@@ -180,7 +180,7 @@ DECLHIDDEN(int) rtCrOpenSslConvertPkcs7Attribute(void **ppvOsslAttrib, PCRTCRPKC
         X509_ATTRIBUTE *pOsslAttrib = NULL;
         X509_ATTRIBUTE *pOsslAttribRet = d2i_X509_ATTRIBUTE(&pOsslAttrib, &pabEncoded, cbEncoded);
         RTMemTmpFree(pvFree);
-        if (pOsslAttribRet == pOsslAttrib)
+        if (pOsslAttrib != NULL && pOsslAttribRet == pOsslAttrib)
         {
             *ppvOsslAttrib = pOsslAttrib;
             return VINF_SUCCESS;

@@ -83,7 +83,7 @@ RTDECL(int) RTCrKeyCreateNewRsa(PRTCRKEY phKey, uint32_t cBits, uint32_t uPubExp
                      */
                     unsigned char *pbRsaPrivateKey = NULL;
                     int cbRsaPrivateKey = i2d_RSAPrivateKey(pRsa, &pbRsaPrivateKey);
-                    if (cbRsaPrivateKey)
+                    if (cbRsaPrivateKey > 0)
                     {
                         rc = rtCrKeyCreateRsaPrivate(phKey, pbRsaPrivateKey, cbRsaPrivateKey, NULL, NULL);
                         OPENSSL_free(pbRsaPrivateKey);
