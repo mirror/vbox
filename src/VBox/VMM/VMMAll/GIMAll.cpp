@@ -448,12 +448,12 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSR
  * Queries the opcode bytes for a native hypercall.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pvBuf       The destination buffer.
- * @param   cbBuf       The size of the buffer.
- * @param   pcbWritten  Where to return the number of bytes written.  This is
- *                      reliably updated only on successful return.  Optional.
- * @param   puDisOpcode Where to return the disassembler opcode.  Optional.
+ * @param   pVM             The cross context VM structure.
+ * @param   pvBuf           The destination buffer.
+ * @param   cbBuf           The size of the buffer.
+ * @param   pcbWritten      Where to return the number of bytes written.  This is
+ *                          reliably updated only on successful return.  Optional.
+ * @param   puDisOpcode     Where to return the disassembler opcode.  Optional.
  */
 VMM_INT_DECL(int) GIMQueryHypercallOpcodeBytes(PVM pVM, void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint16_t *puDisOpcode)
 {
