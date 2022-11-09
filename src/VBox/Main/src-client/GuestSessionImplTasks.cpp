@@ -1459,7 +1459,12 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
      *       be processed.
      */
 
-    if (mDest.isEmpty())
+    if (mSources.empty())
+    {
+        strErrorInfo.printf(tr("No guest sources specified"));
+        vrc = VERR_INVALID_PARAMETER;
+    }
+    else if (mDest.isEmpty())
     {
         strErrorInfo.printf(tr("Host destination must not be empty"));
         vrc = VERR_INVALID_PARAMETER;
@@ -1577,12 +1582,12 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         }
     }
 
-    if (cOperations) /* Use the first element as description (if available). */
+    if (RT_SUCCESS(vrc))
     {
-        Assert(mVecLists.size());
-        Assert(mVecLists[0]->mVecEntries.size());
-
-        Utf8Str const &strFirstOp = mVecLists[0]->mVecEntries[0]->strPath;
+        /* When there are no entries in the first source list, this means the source only contains a single file
+         * (see \a mSrcRootAbs of FsList). So use \a mSrcRootAbs directly. */
+        Utf8Str const &strFirstOp = mVecLists[0]->mVecEntries.size() > 0
+                                  ? mVecLists[0]->mVecEntries[0]->strPath : mVecLists[0]->mSrcRootAbs;
 
         /* Now that we know how many objects we're handling, tweak the progress description so that it
          * reflects more accurately what the progress is actually doing. */
@@ -1597,15 +1602,18 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                               TRUE /* aCancelable */, cOperations + 1 /* Number of operations */, Bstr(strFirstOp).raw());
     }
-    else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
+    else /* On error we go with an "empty" progress object when will be used for error handling. */
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                               TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
+
+    if (FAILED(hrc)) /* Progress object creation failed -- we're doomed. */
+        return hrc;
 
     if (RT_FAILURE(vrc))
     {
         if (strErrorInfo.isEmpty())
             strErrorInfo.printf(tr("Failed with %Rrc"), vrc);
-        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+        hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
     LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hrc, vrc));
@@ -1915,7 +1923,12 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
      *       be processed.
      */
 
-    if (mDest.isEmpty())
+    if (mSources.empty())
+    {
+        strErrorInfo.printf(tr("No host sources specified"));
+        vrc = VERR_INVALID_PARAMETER;
+    }
+    else if (mDest.isEmpty())
     {
         strErrorInfo.printf(tr("Guest destination must not be empty"));
         vrc = VERR_INVALID_PARAMETER;
@@ -1992,6 +2005,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                             RTDIRENTRYEX DirEntry;
                             vrc = pFsList->AddDirFromHost(strSrc /* strPath */, "" /* strSubDir */,
                                                           szPathReal, sizeof(szPathReal), &DirEntry);
+                            break;
                         }
 
                         case FsObjType_File:
@@ -2030,12 +2044,12 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         }
     }
 
-    if (cOperations) /* Use the first element as description (if available). */
+    if (RT_SUCCESS(vrc))
     {
-        Assert(mVecLists.size());
-        Assert(mVecLists[0]->mVecEntries.size());
-
-        Utf8Str const &strFirstOp = mVecLists[0]->mVecEntries[0]->strPath;
+        /* When there are no entries in the first source list, this means the source only contains a single file
+         * (see \a mSrcRootAbs of FsList). So use \a mSrcRootAbs directly. */
+        Utf8Str const &strFirstOp = mVecLists[0]->mVecEntries.size() > 0
+                                  ? mVecLists[0]->mVecEntries[0]->strPath : mVecLists[0]->mSrcRootAbs;
 
         /* Now that we know how many objects we're handling, tweak the progress description so that it
          * reflects more accurately what the progress is actually doing. */
@@ -2048,18 +2062,21 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             mDesc.printf(tr("Copying \"%s\" from host to \"%s\" on the guest ..."), strFirstOp.c_str(), mDest.c_str());
 
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                              TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
+                              TRUE /* aCancelable */, cOperations + 1/* Number of operations */,
                               Bstr(strFirstOp).raw());
     }
-    else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
+    else /* On error we go with an "empty" progress object when will be used for error handling. */
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                               TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
+
+    if (FAILED(hrc)) /* Progress object creation failed -- we're doomed. */
+        return hrc;
 
     if (RT_FAILURE(vrc))
     {
         if (strErrorInfo.isEmpty())
             strErrorInfo.printf(tr("Failed with %Rrc"), vrc);
-        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+        hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
     LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hrc, vrc));
