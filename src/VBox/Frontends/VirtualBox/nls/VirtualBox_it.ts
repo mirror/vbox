@@ -3411,7 +3411,7 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ferma</translation>
     </message>
 </context>
 <context>
@@ -9142,19 +9142,19 @@ p, li { white-space: pre-wrap; }
     <name>UIFontScaleEditor</name>
     <message>
         <source>F&amp;ont Scaling:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ridimensi&amp;onamento caratteri:</translation>
     </message>
     <message>
         <source>Holds the scaling factor for the font size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Contiene il fattore di scala per la dimensione del carattere.</translation>
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished">Fattore di scala minimo possibile.</translation>
+        <translation>Fattore di scala minimo possibile.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished">Fattore di scala massimo possibile.</translation>
+        <translation>Fattore di scala massimo possibile.</translation>
     </message>
 </context>
 <context>

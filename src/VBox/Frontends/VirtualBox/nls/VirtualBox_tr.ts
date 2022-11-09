@@ -3219,7 +3219,7 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Durdur</translation>
     </message>
 </context>
 <context>
@@ -8687,19 +8687,19 @@ Oturum Panelini kullanın</translation>
     <name>UIFontScaleEditor</name>
     <message>
         <source>F&amp;ont Scaling:</source>
-        <translation type="unfinished"></translation>
+        <translation>Y&amp;azı Tipi Ölçeklendirme:</translation>
     </message>
     <message>
         <source>Holds the scaling factor for the font size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yazı tipi boyutu için ölçekleme etkenini tutar.</translation>
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished">En düşük olası ölçek etkeni.</translation>
+        <translation>En düşük olası ölçek etkeni.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished">En yüksek olası ölçek etkeni.</translation>
+        <translation>En yüksek olası ölçek etkeni.</translation>
     </message>
 </context>
 <context>
