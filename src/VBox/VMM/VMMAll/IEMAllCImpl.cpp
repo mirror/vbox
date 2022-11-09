@@ -69,6 +69,29 @@
 #include "IEMInline.h"
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/**
+ * Flushes the prefetch buffer, light version.
+ */
+#ifndef IEM_WITH_CODE_TLB
+# define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.cbOpcode   = (a_cbInstr); } while (0)
+#else
+# define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) do { } while (0)
+#endif
+
+/**
+ * Flushes the prefetch buffer, heavy version.
+ */
+#ifndef IEM_WITH_CODE_TLB
+# define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.cbOpcode   = (a_cbInstr); } while (0)
+#else
+# define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.pbInstrBuf = NULL; } while (0)
+#endif
+
+
+
 /** @name Misc Helpers
  * @{
  */
@@ -817,22 +840,19 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
 {
-    uint16_t uOldPC = pVCpu->cpum.GstCtx.ip + cbInstr;
-    if (uNewPC > pVCpu->cpum.GstCtx.cs.u32Limit)
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-
-    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldPC);
-    if (rcStrict != VINF_SUCCESS)
+    uint16_t const uOldPC = pVCpu->cpum.GstCtx.ip + cbInstr;
+    if (uNewPC <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    {
+        VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldPC);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rip = uNewPC;
+            IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
+            return iemRegFinishClearingRF(pVCpu);
+        }
         return rcStrict;
-
-    pVCpu->cpum.GstCtx.rip = uNewPC;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
-
-#ifndef IEM_WITH_CODE_TLB
-    /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
-    return VINF_SUCCESS;
+    }
+    return iemRaiseGeneralProtectionFault0(pVCpu);
 }
 
 
@@ -851,11 +871,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
         if (rcStrict == VINF_SUCCESS)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
-
-#ifndef IEM_WITH_CODE_TLB
-            /* Flush the prefetch buffer. */
-            pVCpu->iem.s.cbOpcode = cbInstr;
-#endif
+            IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
             return iemRegFinishClearingRF(pVCpu);
         }
         return rcStrict;
@@ -872,22 +888,19 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
 {
-    uint32_t uOldPC = pVCpu->cpum.GstCtx.eip + cbInstr;
-    if (uNewPC > pVCpu->cpum.GstCtx.cs.u32Limit)
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-
-    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldPC);
-    if (rcStrict != VINF_SUCCESS)
+    uint32_t const uOldPC = pVCpu->cpum.GstCtx.eip + cbInstr;
+    if (uNewPC <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    {
+        VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldPC);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rip = uNewPC;
+            IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
+            return iemRegFinishClearingRF(pVCpu);
+        }
         return rcStrict;
-
-    pVCpu->cpum.GstCtx.rip = uNewPC;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
-
-#ifndef IEM_WITH_CODE_TLB
-    /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
-    return VINF_SUCCESS;
+    }
+    return iemRaiseGeneralProtectionFault0(pVCpu);
 }
 
 
@@ -906,11 +919,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
         if (rcStrict == VINF_SUCCESS)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
-
-#ifndef IEM_WITH_CODE_TLB
-            /* Flush the prefetch buffer. */
-            pVCpu->iem.s.cbOpcode = cbInstr;
-#endif
+            IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
             return iemRegFinishClearingRF(pVCpu);
         }
         return rcStrict;
@@ -927,22 +936,19 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
 {
-    uint64_t uOldPC = pVCpu->cpum.GstCtx.rip + cbInstr;
-    if (!IEM_IS_CANONICAL(uNewPC))
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-
-    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldPC);
-    if (rcStrict != VINF_SUCCESS)
+    uint64_t const uOldPC = pVCpu->cpum.GstCtx.rip + cbInstr;
+    if (IEM_IS_CANONICAL(uNewPC))
+    {
+        VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldPC);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rip = uNewPC;
+            IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
+            return iemRegFinishClearingRF(pVCpu);
+        }
         return rcStrict;
-
-    pVCpu->cpum.GstCtx.rip = uNewPC;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
-
-#ifndef IEM_WITH_CODE_TLB
-    /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
-    return VINF_SUCCESS;
+    }
+    return iemRaiseGeneralProtectionFault0(pVCpu);
 }
 
 
@@ -961,11 +967,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
         if (rcStrict == VINF_SUCCESS)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
-
-#ifndef IEM_WITH_CODE_TLB
-            /* Flush the prefetch buffer. */
-            pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+            IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
             return iemRegFinishClearingRF(pVCpu);
         }
         return rcStrict;
@@ -1742,11 +1744,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
     pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
 
     /* Flush the prefetch buffer. */
-# ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-# else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-# endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
     return VINF_SUCCESS;
 #endif
 }
@@ -1978,11 +1976,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
      *        mode.  */
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -2205,11 +2199,8 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
      *        mode.  */
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
+
     return VINF_SUCCESS;
 }
 
@@ -2620,11 +2611,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     }
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo use light flush for same privlege? */
     return VINF_SUCCESS;
 }
 
@@ -2697,10 +2684,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
 
     /* Flush the prefetch buffer. */
-#ifndef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
-
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo only need a light flush here, don't we?  We don't really need any flushing... */
     return VINF_SUCCESS;
 }
 
@@ -3036,12 +3020,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     IEMMISC_SET_EFL(pVCpu, uNewFlags);
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
-
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo can do light flush in real mode at least */
     return VINF_SUCCESS;
 }
 
@@ -3121,11 +3100,7 @@ IEM_CIMPL_DEF_4(iemCImpl_iret_prot_v8086, uint32_t, uNewEip, uint16_t, uNewCs, u
     pVCpu->iem.s.uCpl  = 3;
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -3536,11 +3511,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     }
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo may light flush if same ring? */
 
     return VINF_SUCCESS;
 }
@@ -3842,11 +3813,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     }
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo may light flush if the ring + mode doesn't change */
 
     return VINF_SUCCESS;
 }
@@ -4068,11 +4035,8 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS | CPUM_CHANGED_IDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_TR | CPUM_CHANGED_LDTR);
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
+
     return rcStrict;
 }
 
@@ -4180,11 +4144,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -4292,11 +4252,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
     pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -4397,11 +4353,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
     pVCpu->iem.s.uCpl                   = 0;
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -4495,11 +4447,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
     pVCpu->iem.s.uCpl                   = 3;
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-#endif
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
