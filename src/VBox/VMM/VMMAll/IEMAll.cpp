@@ -6072,7 +6072,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
 # endif
-            iemRaisePageFaultJmp(pVCpu, GCPtrMem, fAccess, rc);
+            return iemRaisePageFault(pVCpu, GCPtrMem, fAccess, rc);
         }
 
         Assert(Walk.fSucceeded);
@@ -6101,7 +6101,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
 # endif
-            iemRaisePageFaultJmp(pVCpu, GCPtrMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
+            return iemRaisePageFault(pVCpu, GCPtrMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
         }
 
         /* Kernel memory accessed by userland? */
@@ -6114,7 +6114,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
 # endif
-            iemRaisePageFaultJmp(pVCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
+            return iemRaisePageFault(pVCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
         }
     }
 
