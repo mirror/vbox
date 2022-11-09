@@ -1582,7 +1582,18 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         Assert(mVecLists.size());
         Assert(mVecLists[0]->mVecEntries.size());
 
-        Utf8Str strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
+        Utf8Str const &strFirstOp = mVecLists[0]->mVecEntries[0]->strPath;
+
+        /* Now that we know how many objects we're handling, tweak the progress description so that it
+         * reflects more accurately what the progress is actually doing. */
+        if (cOperations > 1)
+        {
+            mDesc.printf(tr("Copying \"%s\" [and %zu %s] from guest to \"%s\" on the host ..."),
+                         strFirstOp.c_str(), cOperations - 1, cOperations > 2 ? tr("others") : tr("other"), mDest.c_str());
+        }
+        else
+            mDesc.printf(tr("Copying \"%s\" from guest to \"%s\" on the host ..."), strFirstOp.c_str(), mDest.c_str());
+
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                               TRUE /* aCancelable */, cOperations + 1 /* Number of operations */, Bstr(strFirstOp).raw());
     }
@@ -2024,9 +2035,21 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         Assert(mVecLists.size());
         Assert(mVecLists[0]->mVecEntries.size());
 
+        Utf8Str const &strFirstOp = mVecLists[0]->mVecEntries[0]->strPath;
+
+        /* Now that we know how many objects we're handling, tweak the progress description so that it
+         * reflects more accurately what the progress is actually doing. */
+        if (cOperations > 1)
+        {
+            mDesc.printf(tr("Copying \"%s\" [and %zu %s] from host to \"%s\" on the guest ..."),
+                         strFirstOp.c_str(), cOperations - 1, cOperations > 2 ? tr("others") : tr("other"), mDest.c_str());
+        }
+        else
+            mDesc.printf(tr("Copying \"%s\" from host to \"%s\" on the guest ..."), strFirstOp.c_str(), mDest.c_str());
+
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                               TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
-                              Bstr(mDesc).raw());
+                              Bstr(strFirstOp).raw());
     }
     else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
         hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
