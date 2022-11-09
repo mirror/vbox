@@ -297,10 +297,8 @@ void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProg
         m_eStatus = OperationStatus_Succeded;
     }
     if (m_pProgressBar)
-    {
-        m_pProgressBar->setEnabled(false);
         m_pProgressBar->setValue(100);
-    }
+
     cleanupEventHandler();
     retranslateUi();
 }
