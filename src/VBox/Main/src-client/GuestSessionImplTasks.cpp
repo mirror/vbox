@@ -1669,8 +1669,9 @@ int GuestSessionTaskCopyFrom::Run(void)
         /* Create the root directory. */
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                         pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool -> fDstExist=%RTbool (%s)\n",
+                         pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks,
+                         fDstExists, GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(ObjInfo.Attr.fMode))));
 
             if (fDstExists)
             {
@@ -1797,8 +1798,9 @@ int GuestSessionTaskCopyFrom::Run(void)
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
-            LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                         pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool -> fDstExist=%RTbool (%s)\n",
+                         pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks,
+                         fDstExists, GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(ObjInfo.Attr.fMode))));
 
             if (fDstExists)
             {
@@ -1806,18 +1808,10 @@ int GuestSessionTaskCopyFrom::Run(void)
                 {
                     case RTFS_TYPE_DIRECTORY:
                     {
-                        if (!fCopyIntoExisting)
-                        {
-                            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                Utf8StrFmt(tr("Destination \"%s\" on the host already exists and is a directory"),
-                                                           strDstRootAbs.c_str()));
-                            vrc = VERR_IS_A_DIRECTORY;
-                            break;
-                        }
-
-                        /* Append the actual file name to the destination. */
-                        strDstRootAbs += PATH_STYLE_SEP_STR(PATH_STYLE_NATIVE);
-                        strDstRootAbs += RTPathFilename(strSrcRootAbs.c_str());
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                            Utf8StrFmt(tr("Destination \"%s\" on the host already exists and is a directory"),
+                                                       strDstRootAbs.c_str()));
+                        vrc = VERR_IS_A_DIRECTORY;
                         break;
                     }
 
@@ -2141,8 +2135,9 @@ int GuestSessionTaskCopyTo::Run(void)
 
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                         pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool -> fDstExist=%RTbool (%s)\n",
+                         pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks,
+                         fDstExists, GuestBase::fsObjTypeToStr(dstObjData.mType)));
 
             if (fDstExists)
             {
@@ -2276,8 +2271,9 @@ int GuestSessionTaskCopyTo::Run(void)
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
-            LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
-                         pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks));
+            LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool -> fDstExist=%RTbool (%s)\n",
+                         pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks,
+                         fDstExists, GuestBase::fsObjTypeToStr(dstObjData.mType)));
 
             if (fDstExists)
             {
@@ -2285,18 +2281,10 @@ int GuestSessionTaskCopyTo::Run(void)
                 {
                     case FsObjType_Directory:
                     {
-                        if (!fCopyIntoExisting)
-                        {
-                            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                Utf8StrFmt(tr("Destination \"%s\" on the guest already exists and is a directory"),
-                                                           strDstRootAbs.c_str()));
-                            vrc = VERR_IS_A_DIRECTORY;
-                            break;
-                        }
-
-                        /* Append the actual file name to the destination. */
-                        strDstRootAbs += PATH_STYLE_SEP_STR(mSession->i_getGuestPathStyle());
-                        strDstRootAbs += RTPathFilename(strSrcRootAbs.c_str());
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                            Utf8StrFmt(tr("Destination \"%s\" on the guest already exists and is a directory"),
+                                                       strDstRootAbs.c_str()));
+                        vrc = VERR_IS_A_DIRECTORY;
                         break;
                     }
 

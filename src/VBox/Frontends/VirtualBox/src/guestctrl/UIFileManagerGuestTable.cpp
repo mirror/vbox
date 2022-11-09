@@ -700,7 +700,11 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
             aFlags << strDirectoryFlags;
         }
         else
+        {
+            /* Ditto goes for source files, as the destination always is a directory path. */
+            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strFileFlags;
+        }
     }
 
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
@@ -773,7 +777,11 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
             aFlags << strDirectoryFlags;
         }
         else
+        {
+            /* Ditto goes for source files, as the destination always is a directory path. */
+            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strFileFlags;
+        }
     }
 
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
