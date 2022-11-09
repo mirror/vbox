@@ -367,11 +367,11 @@ class tdUnitTest1(vbox.TestDriver):
 
         self.sVBoxInstallRoot = None;
 
-        # Testing mode being used:
+        ## Testing mode being used:
         #   "local":       Execute unit tests locally (same host, default).
         #   "remote-copy": Copies unit tests from host to the remote, then executing it.
         #   "remote-exec": Executes unit tests right on the remote from a given source.
-        self.sMode = 'local';
+        self.sMode      = 'local';
 
         self.cSkipped   = 0;
         self.cPassed    = 0;
@@ -427,8 +427,7 @@ class tdUnitTest1(vbox.TestDriver):
         #
         # Do some sanity checking first.
         #
-        if  self.sMode == 'remote-exec' \
-        and not self.sUnitTestsPathSrc: # There is no way we can figure this out automatically.
+        if self.sMode == 'remote-exec' and not self.sUnitTestsPathSrc: # There is no way we can figure this out automatically.
             reporter.error('Unit tests source must be specified explicitly for selected mode!');
             return False;
 
@@ -548,9 +547,7 @@ class tdUnitTest1(vbox.TestDriver):
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
-            if    asArgs[iArg] == 'local' \
-               or asArgs[iArg] == 'remote-copy' \
-               or asArgs[iArg] == 'remote-exec':
+            if asArgs[iArg] in ('local', 'remote-copy', 'remote-exec',):
                 self.sMode = asArgs[iArg];
             else:
                 raise base.InvalidOption('Argument "%s" invalid' % (asArgs[iArg]));
@@ -587,7 +584,7 @@ class tdUnitTest1(vbox.TestDriver):
             return False;
 
         # Do the configuring.
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             if   self.sNicAttachment == 'nat':     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT;
             elif self.sNicAttachment == 'bridged': eNic0AttachType = vboxcon.NetworkAttachmentType_Bridged;
             else:                                  eNic0AttachType = None;
@@ -600,7 +597,7 @@ class tdUnitTest1(vbox.TestDriver):
             # Uploading files is needed for this test driver, however.
             #
             ## @todo Get rid of this as soon as we create test VMs in a descriptive (automated) manner.
-            return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType, \
+            return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType,
                                                 sDvdImage = self.sVBoxValidationKitIso);
 
         return True;
@@ -618,7 +615,7 @@ class tdUnitTest1(vbox.TestDriver):
             self.sUnitTestsPathDst = self.sScratchPath;
         reporter.log2('Unit test destination path is "%s"\n' % self.sUnitTestsPathDst);
 
-        if self.sMode.startswith('remote'): # Run on a test VM (guest).
+        if self.isRemoteMode(): # Run on a test VM (guest).
             if self.fpApiVer < 7.0: ## @todo Needs Validation Kit .ISO tweaking (including the unit tests) first.
                 reporter.log('Remote unit tests for non-trunk builds skipped.');
                 fRc = True;
@@ -633,6 +630,13 @@ class tdUnitTest1(vbox.TestDriver):
         return fRc;
 
     #
+    # Misc.
+    #
+    def isRemoteMode(self):
+        """ Predicate method for checking if in any remote mode. """
+        return self.sMode.startswith('remote');
+
+    #
     # Test execution helpers.
     #
 
@@ -642,7 +646,7 @@ class tdUnitTest1(vbox.TestDriver):
         """
 
         # Determine executable suffix based on selected execution mode.
-        if self.sMode.startswith('remote'): # Run on a test VM (guest).
+        if self.isRemoteMode(): # Run on a test VM (guest).
             if oTestVm.isWindows():
                 self.sExeSuff = '.exe';
             else:
@@ -661,17 +665,17 @@ class tdUnitTest1(vbox.TestDriver):
             reporter.log('DRY RUN - DRY RUN - DRY RUN - DRY RUN - DRY RUN - DRY RUN');
             reporter.log('*********************************************************');
         reporter.log('*********************************************************');
-        reporter.log('           Target: %s' % (oTestVm.sVmName if oTestVm else 'local'));
-        reporter.log('             Mode: %s' % (self.sMode));
-        reporter.log('Unit tests source: %s %s' % (self.sUnitTestsPathSrc, \
-                    '(on remote)' if self.sMode == 'remote-exec' else ''));
-        reporter.log('VBox install root: %s %s' % (self.sVBoxInstallRoot, \
-                     '(on remote)' if self.sMode == 'remote-exec' else ''));
+        reporter.log('           Target: %s' % (oTestVm.sVmName if oTestVm else 'local',));
+        reporter.log('             Mode: %s' % (self.sMode,));
+        reporter.log('Unit tests source: %s %s'
+                     % (self.sUnitTestsPathSrc, '(on remote)' if self.sMode == 'remote-exec' else '',));
+        reporter.log('VBox install root: %s %s'
+                     % (self.sVBoxInstallRoot, '(on remote)' if self.sMode == 'remote-exec' else '',));
         reporter.log('*********************************************************');
-        reporter.log('***  PASSED: %d' % self.cPassed);
-        reporter.log('***  FAILED: %d' % self.cFailed);
-        reporter.log('*** SKIPPED: %d' % self.cSkipped);
-        reporter.log('***   TOTAL: %d' % (self.cPassed + self.cFailed + self.cSkipped));
+        reporter.log('***  PASSED: %d' % (self.cPassed,));
+        reporter.log('***  FAILED: %d' % (self.cFailed,));
+        reporter.log('*** SKIPPED: %d' % (self.cSkipped,));
+        reporter.log('***   TOTAL: %d' % (self.cPassed + self.cFailed + self.cSkipped,));
 
         return fRc;
 
@@ -686,8 +690,8 @@ class tdUnitTest1(vbox.TestDriver):
 
         if not self.fDryRun:
             # Try waiting for a bit longer (5 minutes) until the CD is available to avoid running into timeouts.
-            self.oSession, self.oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, \
-                                                                                fCdWait = not self.fDryRun, \
+            self.oSession, self.oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
+                                                                                fCdWait = not self.fDryRun,
                                                                                 cMsCdWait = 5 * 60 * 1000);
             if self.oSession is None:
                 return False;
@@ -800,7 +804,7 @@ class tdUnitTest1(vbox.TestDriver):
         otherwise False is returned.
         """
         reporter.log2('Executing [sudo]: %s' % (asArgs, ));
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             iRc = -1; ## @todo Not used remotely yet.
         else:
             try:
@@ -819,8 +823,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         No-op if no TxS involved.
         """
-        if reporter.getVerbosity() < cVerbosity \
-        or self.oTxsSession is None:
+        if reporter.getVerbosity() < cVerbosity  or  self.oTxsSession is None:
             return;
         sStringExp = self.oTxsSession.syncExpandString(sString);
         if not sStringExp:
@@ -835,7 +838,7 @@ class tdUnitTest1(vbox.TestDriver):
         if self.fDryRun:
             return True;
         fRc = False;
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             self._logExpandString(sPath);
             fRc = self.oTxsSession.syncIsDir(sPath, fIgnoreErrors = True);
             if not fRc:
@@ -852,7 +855,7 @@ class tdUnitTest1(vbox.TestDriver):
         if self.fDryRun:
             return True;
         fRc = True;
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             fRc = self.oTxsSession.syncMkDirPath(sPath, fMode = 0o755);
         else:
             if utils.getHostOs() in [ 'win', 'os2' ]:
@@ -871,7 +874,7 @@ class tdUnitTest1(vbox.TestDriver):
         if self.fDryRun:
             return True;
         fRc = True;
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             self._logExpandString(sSrc);
             self._logExpandString(sDst);
             if self.sMode == 'remote-exec':
@@ -902,7 +905,7 @@ class tdUnitTest1(vbox.TestDriver):
         if self.fDryRun:
             return True;
         fRc = True;
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             if self.oTxsSession.syncIsFile(sPath):
                 fRc = self.oTxsSession.syncRmFile(sPath, fIgnoreErrors = True);
         else:
@@ -923,7 +926,7 @@ class tdUnitTest1(vbox.TestDriver):
         if self.fDryRun:
             return True;
         fRc = True;
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             if self.oTxsSession.syncIsDir(sPath):
                 fRc = self.oTxsSession.syncRmDir(sPath, fIgnoreErrors = True);
         else:
@@ -937,7 +940,7 @@ class tdUnitTest1(vbox.TestDriver):
         return fRc;
 
     def _envSet(self, sName, sValue):
-        if self.sMode.startswith('remote'):
+        if self.isRemoteMode():
             # For remote execution we cache the environment block and pass it
             # right when the process execution happens.
             self.asEnv.append([ sName, sValue ]);
@@ -958,22 +961,13 @@ class tdUnitTest1(vbox.TestDriver):
         # directory in order to work. They also have to be executed as
         # root, i.e. via sudo.
         #
-        fHardened       = False;
-        fCopyToRemote   = False;
-        fCopyDeps       = False;
+        fHardened       = sName in self.kasHardened and self.sUnitTestsPathSrc != self.sVBoxInstallRoot;
+        fCopyToRemote   = self.isRemoteMode();
+        fCopyDeps       = self.isRemoteMode();
         asFilesToRemove = []; # Stuff to clean up.
         asDirsToRemove  = []; # Ditto.
 
-        if  sName in self.kasHardened \
-        and self.sUnitTestsPathSrc != self.sVBoxInstallRoot:
-            fHardened = True;
-
-        if self.sMode.startswith('remote'):
-            fCopyToRemote = True;
-            fCopyDeps     = True;
-
-        if fHardened \
-        or fCopyToRemote:
+        if fHardened or fCopyToRemote:
             if fCopyToRemote:
                 sDstDir = os.path.join(self.sUnitTestsPathDst, sTestCaseSubDir);
             else:
@@ -993,8 +987,7 @@ class tdUnitTest1(vbox.TestDriver):
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath) + self.sExeSuff);
             fModeExe  = 0;
             fModeDeps = 0;
-            if  not oTestVm \
-            or (oTestVm and not oTestVm.isWindows()): ## @todo NT4 does not like the chmod. Investigate this!
+            if not oTestVm or (oTestVm and not oTestVm.isWindows()): ## @todo NT4 does not like the chmod. Investigate this!
                 fModeExe  = 0o755;
                 fModeDeps = 0o644;
             self._wrapCopyFile(sSrc, sDst, fModeExe);
@@ -1065,7 +1058,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         if not self.fDryRun:
             if fCopyToRemote:
-                fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0], \
+                fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0],
                                       asArgs = asArgs, asAddEnv = self.asEnv, fCheckSessionStatus = True);
                 if fRc:
                     iRc = 0;
@@ -1167,8 +1160,7 @@ class tdUnitTest1(vbox.TestDriver):
         # Process the file list and run everything looking like a testcase.
         #
         if not self.fOnlyWhiteList:
-            if self.sMode == 'local' \
-            or self.sMode == 'remote-copy':
+            if self.sMode in ('local', 'remote-copy'):
                 asFiles = sorted(os.listdir(os.path.join(self.sUnitTestsPathSrc, sTestCaseSubDir)));
             else: # 'remote-exec'
                 ## @todo Implement remote file enumeration / directory listing.
@@ -1189,19 +1181,17 @@ class tdUnitTest1(vbox.TestDriver):
             if sTestCaseSubDir != '.':
                 sName = sTestCaseSubDir + '/' + sName;
 
-            reporter.log2('sTestCasePattern=%s, sBaseName=%s, sName=%s, sSuffix=%s, sFileName=%s' \
+            reporter.log2('sTestCasePattern=%s, sBaseName=%s, sName=%s, sSuffix=%s, sFileName=%s'
                           % (sTestCasePattern, sBaseName, sName, sSuffix, sFilename,));
 
             # Process white list first, if set.
-            if  self.fOnlyWhiteList \
-            and not self._isExcluded(sName, self.kdTestCasesWhiteList):
+            if self.fOnlyWhiteList  and  not self._isExcluded(sName, self.kdTestCasesWhiteList):
                 # (No testStart/Done or accounting here!)
                 reporter.log('%s: SKIPPED (not in white list)' % (sName,));
                 continue;
 
             # Basic exclusion.
-            if   not re.match(sTestCasePattern, sBaseName) \
-              or sSuffix in self.kasSuffixBlackList:
+            if  not re.match(sTestCasePattern, sBaseName)  or  sSuffix in self.kasSuffixBlackList:
                 reporter.log2('"%s" is not a test case.' % (sName,));
                 continue;
 
