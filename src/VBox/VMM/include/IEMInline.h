@@ -380,7 +380,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOE
  * @returns The opcode byte.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -611,7 +611,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOE
  * @returns The opcode byte.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -693,7 +693,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPUCC pVCpu, uint16_t *pu16) RT_
  * @returns The opcode word.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -892,7 +892,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPUCC pVCpu, uint32_t *pu32) RT_
  * @returns The opcode dword.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -1107,7 +1107,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_
  * @returns The opcode qword.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
@@ -2540,8 +2540,8 @@ DECLINLINE(void) iemMemPageUnmap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fA
 #ifdef IEM_WITH_SETJMP
 
 /** @todo slim this down   */
-DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem,
-                                                RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
+                                                       size_t cbMem, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
     Assert(cbMem >= 1);
     Assert(iSegReg < X86_SREG_COUNT);
@@ -2618,8 +2618,8 @@ DECLINLINE(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t iSegReg,
 
 
 /** @todo slim this down   */
-DECLINLINE(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem,
-                                                 RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t iSegReg, size_t cbMem,
+                                                        RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
     Assert(cbMem >= 1);
     Assert(iSegReg < X86_SREG_COUNT);
