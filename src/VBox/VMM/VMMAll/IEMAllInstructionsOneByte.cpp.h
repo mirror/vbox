@@ -10472,7 +10472,7 @@ FNIEMOP_DEF(iemOp_out_Ib_eAX)
 FNIEMOP_DEF(iemOp_call_Jv)
 {
     IEMOP_MNEMONIC(call_Jv, "call Jv");
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:

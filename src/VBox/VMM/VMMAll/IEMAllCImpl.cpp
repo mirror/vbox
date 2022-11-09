@@ -843,23 +843,24 @@ IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
 {
-    uint16_t uOldPC = pVCpu->cpum.GstCtx.ip + cbInstr;
-    uint16_t uNewPC = uOldPC + offDisp;
-    if (uNewPC > pVCpu->cpum.GstCtx.cs.u32Limit)
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-
-    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldPC);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
-
-    pVCpu->cpum.GstCtx.rip = uNewPC;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
+    uint16_t const uOldPC = pVCpu->cpum.GstCtx.ip + cbInstr;
+    uint16_t const uNewPC = uOldPC + offDisp;
+    if (uNewPC <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    {
+        VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldPC);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rip = uNewPC;
 
 #ifndef IEM_WITH_CODE_TLB
-    /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+            /* Flush the prefetch buffer. */
+            pVCpu->iem.s.cbOpcode = cbInstr;
 #endif
-    return VINF_SUCCESS;
+            return iemRegFinishClearingRF(pVCpu);
+        }
+        return rcStrict;
+    }
+    return iemRaiseGeneralProtectionFault0(pVCpu);
 }
 
 
@@ -897,23 +898,24 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
 {
-    uint32_t uOldPC = pVCpu->cpum.GstCtx.eip + cbInstr;
-    uint32_t uNewPC = uOldPC + offDisp;
-    if (uNewPC > pVCpu->cpum.GstCtx.cs.u32Limit)
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-
-    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldPC);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
-
-    pVCpu->cpum.GstCtx.rip = uNewPC;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
+    uint32_t const uOldPC = pVCpu->cpum.GstCtx.eip + cbInstr;
+    uint32_t const uNewPC = uOldPC + offDisp;
+    if (uNewPC <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    {
+        VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldPC);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rip = uNewPC;
 
 #ifndef IEM_WITH_CODE_TLB
-    /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+            /* Flush the prefetch buffer. */
+            pVCpu->iem.s.cbOpcode = cbInstr;
 #endif
-    return VINF_SUCCESS;
+            return iemRegFinishClearingRF(pVCpu);
+        }
+        return rcStrict;
+    }
+    return iemRaiseGeneralProtectionFault0(pVCpu);
 }
 
 
@@ -951,24 +953,24 @@ IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 {
-    uint64_t uOldPC = pVCpu->cpum.GstCtx.rip + cbInstr;
-    uint64_t uNewPC = uOldPC + offDisp;
-    if (!IEM_IS_CANONICAL(uNewPC))
-        return iemRaiseNotCanonical(pVCpu);
-
-    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldPC);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
-
-    pVCpu->cpum.GstCtx.rip = uNewPC;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
+    uint64_t const uOldPC = pVCpu->cpum.GstCtx.rip + cbInstr;
+    uint64_t const uNewPC = uOldPC + offDisp;
+    if (IEM_IS_CANONICAL(uNewPC))
+    {
+        VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldPC);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rip = uNewPC;
 
 #ifndef IEM_WITH_CODE_TLB
-    /* Flush the prefetch buffer. */
-    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+            /* Flush the prefetch buffer. */
+            pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
 #endif
-
-    return VINF_SUCCESS;
+            return iemRegFinishClearingRF(pVCpu);
+        }
+        return rcStrict;
+    }
+    return iemRaiseNotCanonical(pVCpu);
 }
 
 
