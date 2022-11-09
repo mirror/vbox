@@ -1828,7 +1828,7 @@ int GuestSessionTaskCopyFrom::Run(void)
 
                     default:
                     {
-                        /** @ŧodo Resolve symlinks? */
+                        /** @todo Resolve symlinks? */
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(tr("Unknown object type (%#x) on host for \"%s\""),
                                                        ObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDstRootAbs.c_str()));
@@ -2165,7 +2165,7 @@ int GuestSessionTaskCopyTo::Run(void)
                     }
 
                     case FsObjType_Symlink:
-                        /** @ŧodo Resolve symlinks? */
+                        /** @todo Resolve symlinks? */
                         break;
 
                     default:
