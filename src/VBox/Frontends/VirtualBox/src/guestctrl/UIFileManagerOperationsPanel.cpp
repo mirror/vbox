@@ -219,6 +219,8 @@ void UIFileOperationProgressWidget::prepareWidgets()
     {
         m_pOperationDescriptionLabel->setContextMenuPolicy(Qt::NoContextMenu);
         m_pMainLayout->addWidget(m_pOperationDescriptionLabel, 0, 0, 1, 3);
+        if (!m_comProgress.isNull())
+            m_pOperationDescriptionLabel->setText(m_comProgress.GetDescription());
     }
 
     m_pProgressBar = new QProgressBar;
@@ -274,10 +276,6 @@ void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUui
 {
     Q_UNUSED(uProgressId);
     m_pProgressBar->setValue(iPercent);
-
-    if (m_pOperationDescriptionLabel)
-        m_pOperationDescriptionLabel->setText(m_comProgress.GetDescription());
-
 }
 
 void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProgressId)
