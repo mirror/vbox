@@ -71,10 +71,15 @@ RT_C_DECLS_BEGIN
  * mode code when IEM_WITH_SETJMP is in effect.
  *
  * With GCC 11.3.1 and code TLB on linux, using throw/catch instead of
- * setjmp/long resulted in bs2-test-1 running %3 faster all but on test result
- * value improving by more than 1%. (Best out of three.)
+ * setjmp/long resulted in bs2-test-1 running 3.00% faster and all but on test
+ * result value improving by more than 1%. (Best out of three.)
+ *
+ * With Visual C++ 2019 and code TLB on windows, using throw/catch instead of
+ * setjmp/long resulted in bs2-test-1 running 3.68% faster and all but some of
+ * the MMIO and CPUID tests ran noticeably faster. Variation is greater than on
+ * Linux, but it should be quite a bit faster for normal code.
  */
-#if (defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || 0)) \
+#if (defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || defined(_MSC_VER))) \
  || defined(DOXYGEN_RUNNING)
 # define IEM_WITH_THROW_CATCH
 #endif
