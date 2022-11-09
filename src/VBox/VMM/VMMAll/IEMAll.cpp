@@ -965,7 +965,8 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
     }
 #else
     RT_NOREF(pvDst, cbDst);
-    IEM_DO_LONGJMP(pVCpu, VERR_INTERNAL_ERROR);
+    if (pvDst || cbDst)
+        IEM_DO_LONGJMP(pVCpu, VERR_INTERNAL_ERROR);
 #endif
 }
 
