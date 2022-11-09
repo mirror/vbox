@@ -623,6 +623,40 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_r9__ud2, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_r9__ud2
  %endif
 
+
+; call rel16/32 (forwards)
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_jv__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_jv__ud2, BS3_PBC_NEAR
+        call near .again
+.post_call:
+        times 9 int3
+.again: ud2
+        int3
+        jmp     .again
+ %if TMPL_BITS == 16
+AssertCompile(.post_call - BS3_LAST_LABEL == 3)
+ %else
+AssertCompile(.post_call - BS3_LAST_LABEL == 5)
+ %endif
+BS3_PROC_END_CMN   bs3CpuBasic2_call_jv__ud2
+
+; call rel16/32 (backwards)
+BS3_GLOBAL_NAME_EX RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_call_jv_back__ud2),.again), function, 2
+        ud2
+        times 6 int3
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_jv_back__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_jv_back__ud2, BS3_PBC_NEAR
+        call near .again
+.post_call:
+        int3
+ %if TMPL_BITS == 16
+AssertCompile(.post_call - BS3_LAST_LABEL == 3)
+ %else
+AssertCompile(.post_call - BS3_LAST_LABEL == 5)
+ %endif
+BS3_PROC_END_CMN   bs3CpuBasic2_call_jv_back__ud2
+
+
 ;
 ; When applying opsize, we need to put this in the 16-bit text segment to
 ; better control where we end up in 32-bit and 64-bit mode.
@@ -760,6 +794,41 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_ind_xAX_opsize__ud2, BS3_PBC_NEAR
         int3
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_ind_xAX_opsize__ud2
+
+
+; call rel16/32 (forwards) with opsize override.
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_jv_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_jv_opsize__ud2, BS3_PBC_NEAR
+        db      66h, 0e8h               ; o32 jmp near .again
+ %if TMPL_BITS != 32
+        dd      12
+ %else
+        dw      12
+ %endif
+.post_call:
+        times 12 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_jv_opsize__ud2
+
+
+; call rel16/32 (backwards) with opsize override.
+BS3_GLOBAL_NAME_EX RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_call_jv_opsize_back__ud2),.again), function, 2
+        ud2
+        times 19 int3
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_jv_opsize_back__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_jv_opsize_back__ud2, BS3_PBC_NEAR
+ %if TMPL_BITS != 32
+        db      66h, 0e8h               ; o32 call near .again
+        dd      RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_call_jv_opsize_back__ud2),.again) - .post_call
+ %else
+        db      66h, 0e8h               ; o16 call near .again
+        dw      RT_CONCAT(BS3_CMN_NM(bs3CpuBasic2_call_jv_opsize_back__ud2),.again) - .post_call
+ %endif
+.post_call:
+        int3
+BS3_PROC_END_CMN   bs3CpuBasic2_call_jv_opsize_back__ud2
 
 
 %endif ; BS3_INSTANTIATING_CMN
