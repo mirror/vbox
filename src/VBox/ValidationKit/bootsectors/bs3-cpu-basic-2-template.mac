@@ -656,6 +656,67 @@ AssertCompile(.post_call - BS3_LAST_LABEL == 5)
  %endif
 BS3_PROC_END_CMN   bs3CpuBasic2_call_jv_back__ud2
 
+; call [indirect]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_mem__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_mem__ud2, BS3_PBC_NEAR
+%if TMPL_BITS == 16
+        call    [word cs:.npAgain]
+%elif TMPL_BITS == 32
+        call    [dword cs:.npAgain]
+%else
+        call    [.npAgain]
+%endif
+.post_call:
+        times 9 int3
+.npAgain:
+ %if TMPL_BITS == 16
+        dw    BS3_TEXT16_WRT(.again)
+ %else
+        dd    .again wrt FLAT
+  %if TMPL_BITS == 64
+        dd    0
+  %endif
+ %endif
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_mem__ud2
+
+; call [xAX]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_xAX__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_xAX__ud2, BS3_PBC_NEAR
+        call    xAX
+.post_call:
+        times 17 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_xAX__ud2
+
+; call [xDI]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_xDI__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_xDI__ud2, BS3_PBC_NEAR
+        call    xDI
+.post_call:
+        times 17 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_xDI__ud2
+
+ %if TMPL_BITS == 64
+; call [xAX]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_r9__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_r9__ud2, BS3_PBC_NEAR
+        call    r9
+.post_call:
+        times 17 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_r9__ud2
+ %endif
+
 
 ;
 ; When applying opsize, we need to put this in the 16-bit text segment to
@@ -829,6 +890,61 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_jv_opsize_back__ud2, BS3_PBC_NEAR
 .post_call:
         int3
 BS3_PROC_END_CMN   bs3CpuBasic2_call_jv_opsize_back__ud2
+
+; call [indirect]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_mem_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_mem_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+ %if TMPL_BITS == 16
+        call    [word cs:.npAgain]
+ %elif TMPL_BITS == 32
+        call    [dword cs:.npAgain wrt FLAT]
+ %else
+        call    [.npAgain wrt FLAT]
+ %endif
+.post_call:
+        times 9 int3
+.npAgain:
+ %if TMPL_BITS == 16
+        dw      BS3_TEXT16_WRT(.again)
+        dw      0
+ %else
+        dw      .again wrt CGROUP16
+        dw      0faceh, 0f00dh, 07777h  ; non-canonical address
+ %endif
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_mem_opsize__ud2
+
+ %if TMPL_BITS == 64
+; call [indirect] - 64-bit intel version
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_mem_opsize__ud2__intel
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_mem_opsize__ud2__intel, BS3_PBC_NEAR
+        db      66h
+        call    [.npAgain wrt FLAT]
+.post_call:
+        times 8 int3
+.npAgain:
+        dd      .again wrt FLAT
+        dd      0
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_mem_opsize__ud2__intel
+ %endif
+
+; call [xAX]
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_call_ind_xAX_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_xAX_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+        call    xAX
+.post_call:
+        times 8 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_xAX_opsize__ud2
 
 
 %endif ; BS3_INSTANTIATING_CMN

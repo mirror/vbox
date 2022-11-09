@@ -196,15 +196,38 @@ BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_wrap_backward__ud2), function, 3
         int3
 
 ; 0084
-BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_opsize_wrap_backward__ud2), function, 3
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_opsize_wrap_backward__ud2), function, 6
         db      066h, 0e9h              ; jmp (0x0084 + 6 - 0x92 = 0xFFFFFFF8 (-8))
         dd      -092h
         int3
 
+; 008b
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_call_jv16_wrap_backward__ud2), function, 3
+        db      0e8h                    ; call (0x008b + 3 - 0x96)
+        dw      -096h
+        int3
+
+; 008f
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_call_jv16_opsize_wrap_backward__ud2), function, 6
+        db      066h, 0e8h              ; call (0x008f + 6 - 0x9d = 0xFFFFFFF8 (-8))
+        dd      -09dh
+        int3
+
 
         align   0x100, int3             ; Note! Doesn't work correctly for higher values.
-        times   (0xff76 - 0x100) int3
+        times   (0xff6b - 0x100) int3
 
+; ff6b
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_call_jv16_wrap_forward__ud2), function, 4
+        db      0e8h                    ; call (0xff6b+3 + 0x94 = 0x10002 (65538))
+        dw      094h
+        int3
+
+; ff6f
+BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_call_jv16_opsize_wrap_forward__ud2), function, 7
+        db      066h, 0e8h              ; o32 call (0xff6f+6 + 0x8d = 0x10002 (65538))
+        dd      08dh
+        int3
 
 ; ff76
 BS3_GLOBAL_NAME_EX NAME(bs3CpuBasic2_jmp_jv16_wrap_forward__ud2), function, 5
