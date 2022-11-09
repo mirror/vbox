@@ -75,7 +75,7 @@ FNIEMOP_DEF_1(iemOpCommonSsse3_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc,         1);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -134,7 +134,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc,         1);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -194,7 +194,7 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc,         1);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -295,7 +295,7 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         IEM_MC_ARG(uint64_t,                    uSrc,                1);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -433,7 +433,7 @@ FNIEMOP_DEF(iemOp_pclmulqdq_Vdq_Wdq_Ib)
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc,         1);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -535,7 +535,7 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
         IEM_MC_ARG_LOCAL_REF(PIEMPCMPISTRISRC,  pSrc,           Src, 2);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 3);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
