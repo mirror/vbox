@@ -1838,7 +1838,8 @@ int GuestSessionTaskCopyFrom::Run(void)
                 }
             }
 
-            if (!pList->mSourceSpec.fDryRun)
+            if (   RT_SUCCESS(vrc)
+                && !pList->mSourceSpec.fDryRun)
                 vrc = fileCopyFromGuest(strSrcRootAbs, strDstRootAbs, pList->mSourceSpec.fFileCopyFlags);
         }
         else
@@ -2321,7 +2322,8 @@ int GuestSessionTaskCopyTo::Run(void)
                 break;
             }
 
-            if (!pList->mSourceSpec.fDryRun)
+            if (   RT_SUCCESS(vrc)
+                && !pList->mSourceSpec.fDryRun)
                 vrc = fileCopyToGuest(strSrcRootAbs, strDstRootAbs, pList->mSourceSpec.fFileCopyFlags);
         }
         else
