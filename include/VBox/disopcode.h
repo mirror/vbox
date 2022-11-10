@@ -149,6 +149,7 @@ enum OPCODES
     OP_IRET,
     OP_AAM,
     OP_AAD,
+    OP_SALC,
     OP_XLAT,
     OP_ESCF0,
     OP_ESCF1,

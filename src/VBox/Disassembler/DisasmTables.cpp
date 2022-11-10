@@ -341,8 +341,9 @@ const DISOPCODE g_aOneByteMapX86[256] =
     OP("Shift Grp2 %Ev,CL",  IDX_ParseShiftGrp2, IDX_ParseFixedReg, 0,          OP_SHIFT_GRP2,  OP_PARM_Ev,         OP_PARM_REG_CL, OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("aam %Ib",            IDX_ParseImmByte,   0,                 0,          OP_AAM,         OP_PARM_Ib,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64),
     OP("aad %Ib",            IDX_ParseImmByte,   0,                 0,          OP_AAD,         OP_PARM_Ib,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64),
-    /* setalc?? */
-    INVALID_OPCODE,
+    OP("salc",               IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,          OP_SALC,        OP_PARM_REG_AL,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64),
+    /** @todo xlat has AL as both source and destination and DS:xBX as
+     *        translation table pointer. */
     OP("xlat",               0,                  0,                 0,          OP_XLAT,        OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("esc 0xf0",           IDX_ParseEscFP,     0,                 0,          OP_ESCF0,       OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("esc 0xf1",           IDX_ParseEscFP,     0,                 0,          OP_ESCF1,       OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
