@@ -118,7 +118,7 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu)
             {
                 if (pPatch->enmType == HMTPRINSTR_WRITE_REG)
                 {
-                    uint8_t idxReg = pPatch->uDstOperand;
+                    uint8_t idxReg = pPatch->uSrcOperand;
                     AssertStmt(idxReg < RT_ELEMENTS(pCtx->aGRegs), idxReg = RT_ELEMENTS(pCtx->aGRegs) - 1);
                     u8Tpr = pCtx->aGRegs[idxReg].u8;
                 }

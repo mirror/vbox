@@ -91,6 +91,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+       <para>VMM: Fixed Windows XP guest hang or BSOD on AMD CPUs under certain circumstances (bug #21256)</para>
+      </listitem>
+
+      <listitem>
         <para>VirtioSCSI: Fixed recognition of the virtio SCSI controller by the EFI firmware (bug #21200)</para>
       </listitem>
 
