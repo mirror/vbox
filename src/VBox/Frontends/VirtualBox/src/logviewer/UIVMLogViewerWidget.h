@@ -203,7 +203,7 @@ private:
     void removeAllLogPages();
     void markLabelTabs();
 
-    /** Resets document (of the curent tab) and scrollbar highligthing */
+    /** Resets document (of the current tab) and scrollbar highligthing */
     void resetHighlighthing();
     void hidePanel(UIDialogPanel* panel);
     void showPanel(UIDialogPanel* panel);
