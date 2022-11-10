@@ -363,3 +363,15 @@ void UIVMLogPage::scrollToEnd()
     if (m_pTextEdit)
         m_pTextEdit->scrollToEnd();
 }
+
+void UIVMLogPage::saveScrollBarPosition()
+{
+    if (m_pTextEdit)
+        m_pTextEdit->saveScrollBarPosition();
+}
+
+void UIVMLogPage::restoreScrollBarPosition()
+{
+    if (m_pTextEdit)
+        m_pTextEdit->restoreScrollBarPosition();
+}

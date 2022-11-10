@@ -202,6 +202,7 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(true)
     , m_bHasContextMenu(false)
+    , m_iVerticalScrollBarValue(0)
 {
     configure();
     prepare();
@@ -248,6 +249,19 @@ void UIVMLogViewerTextEdit::setCurrentFont(QFont font)
     setFont(font);
     if (m_pLineNumberArea)
         m_pLineNumberArea->setFont(font);
+}
+
+void UIVMLogViewerTextEdit::saveScrollBarPosition()
+{
+    if (verticalScrollBar())
+        m_iVerticalScrollBarValue = verticalScrollBar()->value();
+}
+
+void UIVMLogViewerTextEdit::restoreScrollBarPosition()
+{
+    QScrollBar *pBar = verticalScrollBar();
+    if (pBar && pBar->maximum() >= m_iVerticalScrollBarValue && pBar->minimum() <= m_iVerticalScrollBarValue)
+        pBar->setValue(m_iVerticalScrollBarValue);
 }
 
 int UIVMLogViewerTextEdit::lineNumberAreaWidth()

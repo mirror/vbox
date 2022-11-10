@@ -128,6 +128,9 @@ public:
 
     void scrollToEnd();
 
+    void saveScrollBarPosition();
+    void restoreScrollBarPosition();
+
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);

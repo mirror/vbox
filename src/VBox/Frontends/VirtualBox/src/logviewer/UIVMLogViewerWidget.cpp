@@ -220,6 +220,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_pCornerButton(0)
     , m_pMachineSelectionMenu(0)
     , m_fCommitDataSignalReceived(false)
+    , m_pPreviousLogPage(0)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -555,6 +556,10 @@ void UIVMLogViewerWidget::sltHandleSearchUpdated()
 void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
 {
     Q_UNUSED(tabIndex);
+
+    if (m_pPreviousLogPage)
+        m_pPreviousLogPage->saveScrollBarPosition();
+
     if (labelTabHandler())
         return;
     /* Dont refresh the search here as it is refreshed by the filtering mechanism
@@ -565,6 +570,10 @@ void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
     /* We keep a separate QVector<LogBookmark> for each log page: */
     if (m_pBookmarksPanel && currentLogPage())
         m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
+
+    m_pPreviousLogPage = currentLogPage();
+    if (m_pPreviousLogPage)
+        m_pPreviousLogPage->restoreScrollBarPosition();
 }
 
 void UIVMLogViewerWidget::sltFilterApplied()

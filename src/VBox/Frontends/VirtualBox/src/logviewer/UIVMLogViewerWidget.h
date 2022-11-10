@@ -262,6 +262,7 @@ private:
     /** All extra data saves are done dynamically (as an option changes etc.). The this flag is true
       * we should not try to save anything to extra data anymore. */
     bool m_fCommitDataSignalReceived;
+    QPointer<UIVMLogPage> m_pPreviousLogPage;
 
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerPanel;

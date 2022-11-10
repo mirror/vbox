@@ -78,6 +78,8 @@ public:
     int  currentVerticalScrollBarValue() const;
     void setCurrentVerticalScrollBarValue(int value);
     void setCurrentFont(QFont font);
+    void saveScrollBarPosition();
+    void restoreScrollBarPosition();
 
 protected:
 
@@ -123,6 +125,7 @@ private:
     QString      m_strBackgroungText;
     friend class UILineNumberArea;
     bool         m_bHasContextMenu;
+    int          m_iVerticalScrollBarValue;
  };
 
 
