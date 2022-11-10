@@ -1746,7 +1746,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
     return VINF_SUCCESS;
-#endif
+#endif /* IEM_IMPLEMENTS_CALLGATE */
 }
 
 
@@ -1854,8 +1854,8 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         pVCpu->cpum.GstCtx.cs.ValidSel   = uSel;
         pVCpu->cpum.GstCtx.cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pVCpu->cpum.GstCtx.cs.u64Base    = (uint32_t)uSel << 4;
-        pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
-        return VINF_SUCCESS;
+
+        return iemRegFinishClearingRF(pVCpu);
     }
 
     /*
@@ -1931,22 +1931,23 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     if (enmEffOpSize == IEMMODE_16BIT)
         offSeg &= UINT16_MAX;
 
-    /* Limit check. (Should alternatively check for non-canonical addresses
-       here, but that is ruled out by offSeg being 32-bit, right?) */
+    /* Limit check and get the base.  */
     uint64_t u64Base;
     uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
-    if (Desc.Legacy.Gen.u1Long)
-        u64Base = 0;
-    else
+    if (   !Desc.Legacy.Gen.u1Long
+        || !IEM_IS_LONG_MODE(pVCpu))
     {
-        if (offSeg > cbLimit)
+        if (RT_LIKELY(offSeg <= cbLimit))
+            u64Base = X86DESC_BASE(&Desc.Legacy);
+        else
         {
             Log(("jmpf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
             /** @todo Intel says this is \#GP(0)! */
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
         }
-        u64Base = X86DESC_BASE(&Desc.Legacy);
     }
+    else
+        u64Base = 0;
 
     /*
      * Ok, everything checked out fine.  Now set the accessed bit before
@@ -1971,14 +1972,13 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     pVCpu->cpum.GstCtx.cs.u32Limit    = cbLimit;
     pVCpu->cpum.GstCtx.cs.u64Base     = u64Base;
     pVCpu->iem.s.enmCpuMode  = iemCalcCpuMode(pVCpu);
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
-    return VINF_SUCCESS;
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 
