@@ -103,6 +103,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Storage: Fixed I/O errors with the VirtioSCSI controller when the host I/O cache is enabled (bug #19717)</para>
+      </listitem>
+
+      <listitem>
         <para>3D: Fixed VM process crash on macOS with 3D enabled (bug #21232)</para>
       </listitem>
 

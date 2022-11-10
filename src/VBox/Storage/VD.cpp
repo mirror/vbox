@@ -3321,43 +3321,6 @@ static DECLCALLBACK(int) vdIOFlushSyncFallback(void *pvUser, void *pvStorage)
 }
 
 /**
- * VD async I/O interface callback for a asynchronous read from the file.
- */
-static DECLCALLBACK(int) vdIOReadAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
-                                               PCRTSGSEG paSegments, size_t cSegments,
-                                               size_t cbRead, void *pvCompletion,
-                                               void **ppTask)
-{
-    RT_NOREF8(pvUser, pStorage, uOffset, paSegments, cSegments, cbRead, pvCompletion, ppTask);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
-/**
- * VD async I/O interface callback for a asynchronous write to the file.
- */
-static DECLCALLBACK(int) vdIOWriteAsyncFallback(void *pvUser, void *pStorage, uint64_t uOffset,
-                                                PCRTSGSEG paSegments, size_t cSegments,
-                                                size_t cbWrite, void *pvCompletion,
-                                                void **ppTask)
-{
-    RT_NOREF8(pvUser, pStorage, uOffset, paSegments, cSegments, cbWrite, pvCompletion, ppTask);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
-/**
- * VD async I/O interface callback for a asynchronous flush of the file data.
- */
-static DECLCALLBACK(int) vdIOFlushAsyncFallback(void *pvUser, void *pStorage,
-                                                void *pvCompletion, void **ppTask)
-{
-    RT_NOREF4(pvUser, pStorage, pvCompletion, ppTask);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
-/**
  * Internal - Continues an I/O context after
  * it was halted because of an active transfer.
  */
@@ -3995,7 +3958,8 @@ static DECLCALLBACK(int) vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, 
 
     Assert(cbRead > 0);
 
-    if (pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+    if (   (pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+        || !pVDIo->pInterfaceIo->pfnReadAsync)
     {
         RTSGSEG Seg;
         unsigned cSegments = 1;
@@ -4093,7 +4057,8 @@ static DECLCALLBACK(int) vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage,
 
     Assert(cbWrite > 0);
 
-    if (pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+    if (   (pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+        || !pVDIo->pInterfaceIo->pfnWriteAsync)
     {
         RTSGSEG Seg;
         unsigned cSegments = 1;
@@ -4203,7 +4168,8 @@ static DECLCALLBACK(int) vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, 
         VD_IS_LOCKED(pDisk);
 
     if (   !pIoCtx
-        || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+        || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC
+        || !pVDIo->pInterfaceIo->pfnReadAsync)
     {
         /* Handle synchronous metadata I/O. */
         /** @todo Integrate with metadata transfers below. */
@@ -4325,7 +4291,8 @@ static DECLCALLBACK(int) vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage,
         VD_IS_LOCKED(pDisk);
 
     if (   !pIoCtx
-        || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+        || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC
+        || !pVDIo->pInterfaceIo->pfnWriteAsync)
     {
         /* Handle synchronous metadata I/O. */
         /** @todo Integrate with metadata transfers below. */
@@ -4518,7 +4485,8 @@ static DECLCALLBACK(int) vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVD
         return VINF_SUCCESS;
 
     if (   !pIoCtx
-        || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
+        || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC
+        || !pVDIo->pInterfaceIo->pfnFlushAsync)
     {
         /* Handle synchronous flushes. */
         /** @todo Integrate with metadata transfers below. */
@@ -4982,9 +4950,9 @@ static void vdIfIoFallbackCallbacksSetup(PVDINTERFACEIO pIfIo)
     pIfIo->pfnReadSync            = vdIOReadSyncFallback;
     pIfIo->pfnWriteSync           = vdIOWriteSyncFallback;
     pIfIo->pfnFlushSync           = vdIOFlushSyncFallback;
-    pIfIo->pfnReadAsync           = vdIOReadAsyncFallback;
-    pIfIo->pfnWriteAsync          = vdIOWriteAsyncFallback;
-    pIfIo->pfnFlushAsync          = vdIOFlushAsyncFallback;
+    pIfIo->pfnReadAsync           = NULL;
+    pIfIo->pfnWriteAsync          = NULL;
+    pIfIo->pfnFlushAsync          = NULL;
 }
 
 /**
