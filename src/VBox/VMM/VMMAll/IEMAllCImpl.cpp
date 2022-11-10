@@ -979,13 +979,18 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 /**
  * Implements far jumps and calls thru task segments (TSS).
  *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
  * @param   pDesc           The descriptor corresponding to @a uSel. The type is
  *                          task gate.
  */
-IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
+static VBOXSTRICTRC iemCImpl_BranchTaskSegment(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uSel, IEMBRANCH enmBranch,
+                                               IEMMODE enmEffOpSize, PIEMSELDESC pDesc)
 {
 #ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
@@ -1023,13 +1028,18 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch
 /**
  * Implements far jumps and calls thru task gates.
  *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
  * @param   pDesc           The descriptor corresponding to @a uSel. The type is
  *                          task gate.
  */
-IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
+static VBOXSTRICTRC iemCImpl_BranchTaskGate(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uSel, IEMBRANCH enmBranch,
+                                            IEMMODE enmEffOpSize, PIEMSELDESC pDesc)
 {
 #ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
@@ -1093,13 +1103,18 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 /**
  * Implements far jumps and calls thru call gates.
  *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
  * @param   pDesc           The descriptor corresponding to @a uSel. The type is
  *                          call gate.
  */
-IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
+static VBOXSTRICTRC iemCImpl_BranchCallGate(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uSel, IEMBRANCH enmBranch,
+                                            IEMMODE enmEffOpSize, PIEMSELDESC pDesc)
 {
 #define IEM_IMPLEMENTS_CALLGATE
 #ifndef IEM_IMPLEMENTS_CALLGATE
@@ -1753,12 +1768,17 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 /**
  * Implements far jumps and calls thru system selectors.
  *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
  * @param   pDesc           The descriptor corresponding to @a uSel.
  */
-IEM_CIMPL_DEF_4(iemCImpl_BranchSysSel, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
+static VBOXSTRICTRC iemCImpl_BranchSysSel(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uSel, IEMBRANCH enmBranch,
+                                          IEMMODE enmEffOpSize, PIEMSELDESC pDesc)
 {
     Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
     Assert((uSel & X86_SEL_MASK_OFF_RPL));
@@ -1768,7 +1788,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchSysSel, uint16_t, uSel, IEMBRANCH, enmBranch, IEM
         switch (pDesc->Legacy.Gen.u4Type)
         {
             case AMD64_SEL_TYPE_SYS_CALL_GATE:
-                return IEM_CIMPL_CALL_4(iemCImpl_BranchCallGate, uSel, enmBranch, enmEffOpSize, pDesc);
+                return iemCImpl_BranchCallGate(pVCpu, cbInstr, uSel, enmBranch, enmEffOpSize, pDesc);
 
             default:
             case AMD64_SEL_TYPE_SYS_LDT:
@@ -1784,14 +1804,14 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchSysSel, uint16_t, uSel, IEMBRANCH, enmBranch, IEM
     {
         case X86_SEL_TYPE_SYS_286_CALL_GATE:
         case X86_SEL_TYPE_SYS_386_CALL_GATE:
-            return IEM_CIMPL_CALL_4(iemCImpl_BranchCallGate, uSel, enmBranch, enmEffOpSize, pDesc);
+            return iemCImpl_BranchCallGate(pVCpu, cbInstr, uSel, enmBranch, enmEffOpSize, pDesc);
 
         case X86_SEL_TYPE_SYS_TASK_GATE:
-            return IEM_CIMPL_CALL_4(iemCImpl_BranchTaskGate, uSel, enmBranch, enmEffOpSize, pDesc);
+            return iemCImpl_BranchTaskGate(pVCpu, cbInstr, uSel, enmBranch, enmEffOpSize, pDesc);
 
         case X86_SEL_TYPE_SYS_286_TSS_AVAIL:
         case X86_SEL_TYPE_SYS_386_TSS_AVAIL:
-            return IEM_CIMPL_CALL_4(iemCImpl_BranchTaskSegment, uSel, enmBranch, enmEffOpSize, pDesc);
+            return iemCImpl_BranchTaskSegment(pVCpu, cbInstr, uSel, enmBranch, enmEffOpSize, pDesc);
 
         case X86_SEL_TYPE_SYS_286_TSS_BUSY:
             Log(("branch %04x -> busy 286 TSS\n", uSel));
@@ -1885,7 +1905,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
      * here and dispatch the system selectors to worker functions.
      */
     if (!Desc.Legacy.Gen.u1DescType)
-        return IEM_CIMPL_CALL_4(iemCImpl_BranchSysSel, uSel, IEMBRANCH_JUMP, enmEffOpSize, &Desc);
+        return iemCImpl_BranchSysSel(pVCpu, cbInstr, uSel, IEMBRANCH_JUMP, enmEffOpSize, &Desc);
 
     /* Only code segments. */
     if (!(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
@@ -2063,7 +2083,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
      * here and dispatch the system selectors to worker functions.
      */
     if (!Desc.Legacy.Gen.u1DescType)
-        return IEM_CIMPL_CALL_4(iemCImpl_BranchSysSel, uSel, IEMBRANCH_CALL, enmEffOpSize, &Desc);
+        return iemCImpl_BranchSysSel(pVCpu, cbInstr, uSel, IEMBRANCH_CALL, enmEffOpSize, &Desc);
 
     /* Only code segments. */
     if (!(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
