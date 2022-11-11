@@ -791,12 +791,18 @@ bool UIMessageCenter::confirmSettingsDiscarding(QWidget *pParent /* = 0 */) cons
 
 bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0 */) const
 {
+    if (warningShown("confirmSettingsReloading"))
+        return false;
+    setWarningShown("confirmSettingsReloading", true);
+
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>The machine settings were changed while you were editing them. "
                              "You currently have unsaved setting changes.</p>"
                              "<p>Would you like to reload the changed settings or to keep your own changes?</p>"),
                           0 /* auto-confirm id */,
                           tr("Reload settings"), tr("Keep changes"));
+
+    setWarningShown("confirmSettingsReloading", false);
 }
 
 int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) const
