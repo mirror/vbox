@@ -1757,6 +1757,7 @@ static VBOXSTRICTRC iemCImpl_BranchCallGate(PVMCPUCC pVCpu, uint8_t cbInstr, uin
         }
     }
     pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
+/** @todo single stepping   */
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -2035,6 +2036,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
             return rcStrict;
 
         /* Check the target address range. */
+/** @todo this must be wrong! Write unreal mode tests! */
         if (offSeg > UINT32_MAX)
             return iemRaiseGeneralProtectionFault0(pVCpu);
 
@@ -2059,8 +2061,8 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         pVCpu->cpum.GstCtx.cs.ValidSel   = uSel;
         pVCpu->cpum.GstCtx.cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pVCpu->cpum.GstCtx.cs.u64Base    = (uint32_t)uSel << 4;
-        pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
-        return VINF_SUCCESS;
+
+        return iemRegFinishClearingRF(pVCpu);
     }
 
     /*
@@ -2214,14 +2216,13 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     pVCpu->cpum.GstCtx.cs.u32Limit    = cbLimit;
     pVCpu->cpum.GstCtx.cs.u64Base     = u64Base;
     pVCpu->iem.s.enmCpuMode  = iemCalcCpuMode(pVCpu);
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
-    return VINF_SUCCESS;
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 
@@ -2902,6 +2903,7 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, IEMINT, enmInt)
                 return iemSetPassUpStatus(pVCpu, rcStrict);
         }
     }
+/** @todo single stepping   */
     return iemRaiseXcptOrInt(pVCpu,
                              cbInstr,
                              u8Int,
@@ -3041,6 +3043,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo can do light flush in real mode at least */
+
+/** @todo single stepping   */
     return VINF_SUCCESS;
 }
 
@@ -3122,6 +3126,7 @@ IEM_CIMPL_DEF_4(iemCImpl_iret_prot_v8086, uint32_t, uNewEip, uint16_t, uNewCs, u
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
+/** @todo single stepping   */
     return VINF_SUCCESS;
 }
 
@@ -3533,6 +3538,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo may light flush if same ring? */
 
+/** @todo single stepping   */
     return VINF_SUCCESS;
 }
 
@@ -3835,6 +3841,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo may light flush if the ring + mode doesn't change */
 
+/** @todo single stepping   */
     return VINF_SUCCESS;
 }
 
@@ -4057,6 +4064,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
+/** @todo single stepping   */
     return rcStrict;
 }
 
@@ -4166,6 +4174,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
+/** @todo single step   */
     return VINF_SUCCESS;
 }
 
@@ -4274,6 +4283,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
+/** @todo single step   */
     return VINF_SUCCESS;
 }
 
@@ -4375,6 +4385,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
+/** @todo single stepping   */
     return VINF_SUCCESS;
 }
 
@@ -4465,6 +4476,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
     pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
 
     pVCpu->iem.s.uCpl                   = 3;
+/** @todo single stepping   */
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
