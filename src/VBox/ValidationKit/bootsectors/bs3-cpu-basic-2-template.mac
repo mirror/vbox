@@ -362,7 +362,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2, 
         jmp     .again
 AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2) == 13)
 BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2
- %endif
+ %endif ; TMPL_BITS != 64
 
 ;
 ; #PF & #AC
@@ -949,10 +949,10 @@ BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_xAX_opsize__ud2
 
 
 ;*********************************************************************************************************************************
-;*  FAR JMP & FAR CALL Tests                                                                                                     *
+;*  FAR JMP ABS                                                                                                                  *
 ;*********************************************************************************************************************************
 
-  %if TMPL_BITS == 16
+ %if TMPL_BITS == 16
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_ptr_rm__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_rm__ud2, BS3_PBC_NEAR
         db      0eah
@@ -964,9 +964,9 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_rm__ud2, BS3_PBC_NEAR
         int3
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_ptr_rm__ud2
-  %endif
+ %endif
 
-  %if TMPL_BITS != 64
+ %if TMPL_BITS != 64
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_ptr_same_r0__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_same_r0__ud2, BS3_PBC_NEAR
@@ -1078,6 +1078,140 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_r0_cs16l__ud2, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_ptr_r0_cs16l__ud2
 
  %endif ; TMPL_BITS != 64
+
+
+
+;*********************************************************************************************************************************
+;*  FAR CALL ABS                                                                                                                 *
+;*********************************************************************************************************************************
+
+ %if TMPL_BITS == 16
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_rm__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_rm__ud2, BS3_PBC_NEAR
+        db      09ah
+        dw      .again wrt CGROUP16
+        dw      BS3_SEL_TEXT16
+.post_call:
+        times 2 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_rm__ud2
+ %endif
+
+ %if TMPL_BITS != 64
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_same_r0__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_same_r0__ud2, BS3_PBC_NEAR
+        db      09ah
+  %if TMPL_BITS == 16
+        dw      .again wrt CGROUP16
+        dw      BS3_SEL_R0_CS16
+  %else
+        dd      .again wrt FLAT
+        dw      BS3_SEL_R0_CS32
+  %endif
+.post_call:
+        times 7 int3
+.again: ud2
+        int3
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_same_r0__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_same_r1__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_same_r1__ud2, BS3_PBC_NEAR
+        db      09ah
+  %if TMPL_BITS == 16
+        dw      .again wrt CGROUP16
+        dw      BS3_SEL_R1_CS16 | 1
+  %else
+        dd      .again wrt FLAT
+        dw      BS3_SEL_R1_CS32 | 1
+  %endif
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_same_r1__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_same_r2__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_same_r2__ud2, BS3_PBC_NEAR
+        db      09ah
+  %if TMPL_BITS == 16
+        dw      .again wrt CGROUP16
+        dw      BS3_SEL_R2_CS16 | 2
+  %else
+        dd      .again wrt FLAT
+        dw      BS3_SEL_R2_CS32 | 2
+  %endif
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_same_r2__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_same_r3__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_same_r3__ud2, BS3_PBC_NEAR
+        db      09ah
+  %if TMPL_BITS == 16
+        dw      .again wrt CGROUP16
+        dw      BS3_SEL_R3_CS16 | 3
+  %else
+        dd      .again wrt FLAT
+        dw      BS3_SEL_R3_CS32 | 3
+  %endif
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_same_r3__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2, BS3_PBC_NEAR
+        db      066h, 09ah
+  %if TMPL_BITS == 32
+        dw      .again wrt CGROUP16
+        dw      BS3_SEL_R0_CS16
+  %else
+        dd      .again wrt FLAT
+        dw      BS3_SEL_R0_CS32
+  %endif
+        times 4 int3
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2
+
+; Do a call to BS3_SEL_R0_CS64.  Except for when we're in long mode, this will
+; result in a 16-bit CS with zero base and 4G limit.
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_r0_cs64__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_r0_cs64__ud2, BS3_PBC_NEAR
+  %if TMPL_BITS == 16
+        db      066h
+  %endif
+        db      09ah
+        dd      .call_target wrt FLAT
+        dw      BS3_SEL_R0_CS64
+        times 8 int3
+.call_target:
+        salc                            ; #UD in 64-bit mode
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_r0_cs64__ud2
+
+; Variation of the previous with a CS16 copy that has the L bit set, emulating
+; pre-AMD64 software using the L bit for other stuff.  (Don't run in long mode
+; w/o copying the 3 bytes to the 0xxxxh memory range.)
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_r0_cs16l__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_r0_cs16l__ud2, BS3_PBC_NEAR
+  %if TMPL_BITS != 16
+        db      066h
+  %endif
+        db      09ah
+        dw      .call_target wrt CGROUP16
+        dw      BS3_SEL_SPARE_00        ; ASSUMES this is set up as CGROUP16 but with L=1.
+        times 3 int3
+.call_target:
+        salc                            ; #UD in 64-bit mode
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_r0_cs16l__ud2
+
+ %endif ; TMPL_BITS != 64
+
 
 %endif ; BS3_INSTANTIATING_CMN
 
