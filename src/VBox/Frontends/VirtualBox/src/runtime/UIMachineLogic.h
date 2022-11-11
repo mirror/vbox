@@ -201,7 +201,7 @@ protected:
 
     /* Protected getters/setters: */
     bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }
-    void setMachineWindowsCreated(bool fIsWindowsCreated);
+    void setMachineWindowsCreated(bool fIsWindowsCreated) { m_fIsWindowsCreated = fIsWindowsCreated; }
 
     /* Protected members: */
     void setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler);

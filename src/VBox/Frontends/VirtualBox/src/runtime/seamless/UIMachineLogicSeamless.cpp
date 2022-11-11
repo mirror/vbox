@@ -33,7 +33,6 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicSeamless.h"

@@ -66,7 +66,6 @@
 #include "UIModalWindowManager.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
-#include "UIPopupCenter.h"
 #include "UISession.h"
 #include "UISettingsDialogSpecific.h"
 #include "UISoftKeyboard.h"
@@ -795,35 +794,6 @@ UIMachineLogic::~UIMachineLogic()
     qDeleteAll(m_methods.begin(), m_methods.end());
     m_methods.clear();
 #endif
-}
-
-void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
-{
-    /* Make sure something changed: */
-    if (m_fIsWindowsCreated == fIsWindowsCreated)
-        return;
-
-    /* Special handling for 'destroyed' case: */
-    if (!fIsWindowsCreated)
-    {
-        /* We ask popup-center to hide corresponding popup-stack *before* the remembering new value
-         * because we want UIMachineLogic::activeMachineWindow() to be yet alive. */
-        popupCenter().hidePopupStack(activeMachineWindow());
-    }
-
-    /* Remember new value: */
-    m_fIsWindowsCreated = fIsWindowsCreated;
-
-    /* Special handling for 'created' case: */
-    if (fIsWindowsCreated)
-    {
-        /* We ask popup-center to show corresponding popup-stack *after* the remembering new value
-         * because we want UIMachineLogic::activeMachineWindow() to be already alive. */
-        popupCenter().setPopupStackType(activeMachineWindow(),
-                                        visualStateType() == UIVisualStateType_Seamless ?
-                                        UIPopupStackType_Separate : UIPopupStackType_Embedded);
-        popupCenter().showPopupStack(activeMachineWindow());
-    }
 }
 
 void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
