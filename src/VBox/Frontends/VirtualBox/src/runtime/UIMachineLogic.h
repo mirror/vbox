@@ -85,9 +85,6 @@ signals:
     /** Notifies about frame-buffer resize. */
     void sigFrameBufferResize();
 
-    /** Notifies listeners about 3D overlay visibility change. */
-    void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
-
 public:
 
     /* Factory functions to create/destroy required logic sub-child: */
@@ -152,9 +149,6 @@ public:
     UIMachineView* dockPreviewView() const;
     virtual void updateDock();
 #endif /* VBOX_WS_MAC */
-
-    /* API: 3D overlay visibility stuff: */
-    virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
 
     /** Returns whether VM should perform HID LEDs synchronization. */
     bool isHidLedsSyncEnabled() const { return m_fIsHidLedsSyncEnabled; }

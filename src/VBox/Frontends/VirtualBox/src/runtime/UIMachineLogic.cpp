@@ -401,21 +401,6 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 }
 #endif /* VBOX_WS_MAC */
 
-void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
-{
-    /* If active machine-window is defined now: */
-    if (activeMachineWindow())
-    {
-        /* Reinstall corresponding popup-stack according 3D overlay visibility status: */
-        popupCenter().hidePopupStack(activeMachineWindow());
-        popupCenter().setPopupStackType(activeMachineWindow(), fVisible ? UIPopupStackType_Separate : UIPopupStackType_Embedded);
-        popupCenter().showPopupStack(activeMachineWindow());
-    }
-
-    /* Notify other listeners: */
-    emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
-}
-
 void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 {
     /* Do nothing if VBoxSVC still availabile: */

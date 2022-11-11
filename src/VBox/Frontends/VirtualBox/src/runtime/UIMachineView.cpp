@@ -655,11 +655,6 @@ void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
     Q_UNUSED(region);
 }
 
-void UIMachineView::sltHandle3DOverlayVisibilityChange(bool fVisible)
-{
-    machineLogic()->notifyAbout3DOverlayVisibilityChange(fVisible);
-}
-
 void UIMachineView::sltDesktopResized()
 {
     setMaxGuestSize();

@@ -140,10 +140,6 @@ void UIMachineLogicNormal::sltOpenMenuBarSettings()
         /* Configure menu-bar editor: */
         connect(pMenuBarEditor, &UIMenuBarEditorWindow::destroyed,
                 this, &UIMachineLogicNormal::sltMenuBarSettingsClosed);
-#ifdef VBOX_WS_MAC
-        connect(this, &UIMachineLogicNormal::sigNotifyAbout3DOverlayVisibilityChange,
-                pMenuBarEditor, &UIMenuBarEditorWindow::sltActivateWindow);
-#endif /* VBOX_WS_MAC */
         /* Show window: */
         pMenuBarEditor->show();
     }
@@ -195,10 +191,6 @@ void UIMachineLogicNormal::sltOpenStatusBarSettings()
         /* Configure status-bar editor: */
         connect(pStatusBarEditor, &UIStatusBarEditorWindow::destroyed,
                 this, &UIMachineLogicNormal::sltStatusBarSettingsClosed);
-#ifdef VBOX_WS_MAC
-        connect(this, &UIMachineLogicNormal::sigNotifyAbout3DOverlayVisibilityChange,
-                pStatusBarEditor, &UIStatusBarEditorWindow::sltActivateWindow);
-#endif /* VBOX_WS_MAC */
         /* Show window: */
         pStatusBarEditor->show();
     }

@@ -247,8 +247,6 @@ signals:
     void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
     /** Notifies listener about guest-screen visible-region changes. */
     void sigSetVisibleRegion(QRegion region);
-    /** Notifies listener about guest 3D capability changes. */
-    void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
 
 public:
 
@@ -1632,17 +1630,9 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
         case VBOX3D_NOTIFY_TYPE_3DDATA_VISIBLE:
         case VBOX3D_NOTIFY_TYPE_3DDATA_HIDDEN:
         {
-            /* Notify machine-view with the async-signal
-             * about 3D overlay visibility change: */
-            BOOL fVisible = uType == VBOX3D_NOTIFY_TYPE_3DDATA_VISIBLE;
-            LogRel2(("GUI: UIFrameBufferPrivate::Notify3DEvent: Sending to async-handler: "
-                     "(VBOX3D_NOTIFY_TYPE_3DDATA_%s)\n",
-                     fVisible ? "VISIBLE" : "HIDDEN"));
-            emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
-
-            /* Unlock access to frame-buffer: */
-            unlock();
-
+            /// @todo wipe out whole case when confirmed
+            // We are no more supporting this, am I right?
+            AssertFailed();
             /* Confirm Notify3DEvent: */
             return S_OK;
         }
@@ -2026,9 +2016,6 @@ void UIFrameBufferPrivate::prepareConnections()
     connect(this, &UIFrameBufferPrivate::sigSetVisibleRegion,
             m_pMachineView, &UIMachineView::sltHandleSetVisibleRegion,
             Qt::QueuedConnection);
-    connect(this, &UIFrameBufferPrivate::sigNotifyAbout3DOverlayVisibilityChange,
-            m_pMachineView, &UIMachineView::sltHandle3DOverlayVisibilityChange,
-            Qt::QueuedConnection);
 
     /* Attach GUI connections: */
     connect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
@@ -2046,8 +2033,6 @@ void UIFrameBufferPrivate::cleanupConnections()
                m_pMachineView, &UIMachineView::sltHandleNotifyUpdate);
     disconnect(this, &UIFrameBufferPrivate::sigSetVisibleRegion,
                m_pMachineView, &UIMachineView::sltHandleSetVisibleRegion);
-    disconnect(this, &UIFrameBufferPrivate::sigNotifyAbout3DOverlayVisibilityChange,
-               m_pMachineView, &UIMachineView::sltHandle3DOverlayVisibilityChange);
 
     /* Detach GUI connections: */
     disconnect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
