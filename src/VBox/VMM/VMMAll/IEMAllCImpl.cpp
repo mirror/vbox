@@ -87,7 +87,11 @@
 #ifndef IEM_WITH_CODE_TLB
 # define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.cbOpcode   = (a_cbInstr); } while (0)
 #else
-# define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.pbInstrBuf = NULL; } while (0)
+# if 1
+#  define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.pbInstrBuf = NULL; } while (0)
+# else
+#  define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { } while (0)
+# endif
 #endif
 
 
@@ -1844,7 +1848,7 @@ static VBOXSTRICTRC iemCImpl_BranchSysSel(PVMCPUCC pVCpu, uint8_t cbInstr, uint1
 IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEffOpSize)
 {
     NOREF(cbInstr);
-    Assert(offSeg <= UINT32_MAX);
+    Assert(offSeg <= UINT32_MAX || (!IEM_IS_GUEST_CPU_AMD(pVCpu) && pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT));
 
     /*
      * Real mode and V8086 mode are easy.  The only snag seems to be that

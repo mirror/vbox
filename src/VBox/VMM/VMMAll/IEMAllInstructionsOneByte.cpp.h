@@ -11515,6 +11515,14 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
     else
         return IEMOP_RAISE_INVALID_OPCODE(); /* callf eax is not legal */
 
+    /* 64-bit mode: Intel has a fixed default opcode size of 64-bit. AMD64 OTOH defaults to 32-bit and ignores REX.W. */
+    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    { }
+    else if (IEM_IS_GUEST_CPU_INTEL(pVCpu))
+        IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
+    else if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
+        pVCpu->iem.s.enmEffOpSize = IEMMODE_32BIT;
+
     /* Far pointer loaded from memory. */
     switch (pVCpu->iem.s.enmEffOpSize)
     {
@@ -11533,26 +11541,19 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
             return VINF_SUCCESS;
 
         case IEMMODE_64BIT:
-            /** @todo testcase: AMD does not seem to believe in the case (see bs-cpu-xcpt-1)
-             *        and will apparently ignore REX.W, at least for the jmp far qword [rsp]
-             *        and call far qword [rsp] encodings. */
-            if (!IEM_IS_GUEST_CPU_AMD(pVCpu))
-            {
-                IEM_MC_BEGIN(3, 1);
-                IEM_MC_ARG(uint16_t,        u16Sel,                         0);
-                IEM_MC_ARG(uint64_t,        offSeg,                         1);
-                IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
-                IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_FETCH_MEM_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 8);
-                IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
-                IEM_MC_END();
-                return VINF_SUCCESS;
-            }
-            /* AMD falls thru. */
-            RT_FALL_THRU();
+            Assert(!IEM_IS_GUEST_CPU_AMD(pVCpu));
+            IEM_MC_BEGIN(3, 1);
+            IEM_MC_ARG(uint16_t,        u16Sel,                         0);
+            IEM_MC_ARG(uint64_t,        offSeg,                         1);
+            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_64BIT,    2);
+            IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_FETCH_MEM_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 8);
+            IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
+            IEM_MC_END();
+            return VINF_SUCCESS;
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(3, 1);
