@@ -6135,21 +6135,23 @@ static int iemVmxVmentryCheckHostState(PVMCPUCC pVCpu, const char *pszInstr) RT_
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostPatMsr);
 
     /* EFER MSR. */
-    uint64_t const uValidEferMask = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
-    if (   !(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
-        || !(pVmcs->u64HostEferMsr.u & ~uValidEferMask))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostEferMsrRsvd);
+    bool const     fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    uint64_t const uValidEferMask  = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+    {
+        if (!(pVmcs->u64HostEferMsr.u & ~uValidEferMask))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostEferMsrRsvd);
 
-    bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-    bool const fHostLma        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_LMA);
-    bool const fHostLme        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_LME);
-    if (   fHostInLongMode == fHostLma
-        && fHostInLongMode == fHostLme)
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostEferMsr);
+        bool const fHostLma = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_LMA);
+        bool const fHostLme = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_LME);
+        if (   fHostInLongMode == fHostLma
+            && fHostInLongMode == fHostLme)
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostEferMsr);
+    }
 
     /*
      * Host Segment and Descriptor-Table Registers.
