@@ -4437,7 +4437,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
             CtxExpected.cs    = s_aTests[iTest].uDstSel;
             if (s_aTests[iTest].uDstBits == 16)
                 CtxExpected.rip.u &= UINT16_MAX;
-            else if (s_aTests[iTest].uDstBits == 64 && fFix64OpSize)
+            else if (s_aTests[iTest].uDstBits == 64 && fFix64OpSize && s_aTests[iTest].uDstSel != BS3_SEL_SPARE_00)
                 CtxExpected.rip.u |= UINT64_C(0xfffff00000000000);
 
             if (fGp || fUd)
