@@ -11517,7 +11517,7 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
 
     /* 64-bit mode: Default is 32-bit, but only intel respects a REX.W prefix. */
     /** @todo what does VIA do? */
-    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT || IEM_IS_GUEST_CPU_INTEL(pVCpu) || pVCpu->iem.s.enmEffOpSize != IEMMODE_64BIT)
+    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT || pVCpu->iem.s.enmEffOpSize != IEMMODE_64BIT || IEM_IS_GUEST_CPU_INTEL(pVCpu))
     { /* likely */ }
     else
         pVCpu->iem.s.enmEffOpSize = IEMMODE_32BIT;

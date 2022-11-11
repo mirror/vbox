@@ -2155,24 +2155,24 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /* Limit / canonical check. */
     uint64_t u64Base;
     uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (   !Desc.Legacy.Gen.u1Long
+        || !IEM_IS_LONG_MODE(pVCpu))
     {
-        if (!IEM_IS_CANONICAL(offSeg))
+        if (RT_LIKELY(offSeg <= cbLimit))
+            u64Base = X86DESC_BASE(&Desc.Legacy);
+        else
         {
-            Log(("callf %04x:%016RX64 - not canonical -> #GP\n", uSel, offSeg));
-            return iemRaiseNotCanonical(pVCpu);
-        }
-        u64Base = 0;
-    }
-    else
-    {
-        if (offSeg > cbLimit)
-        {
-            Log(("callf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
+            Log(("jmpf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
             /** @todo Intel says this is \#GP(0)! */
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uSel);
         }
-        u64Base = X86DESC_BASE(&Desc.Legacy);
+    }
+    else if (IEM_IS_CANONICAL(offSeg))
+        u64Base = 0;
+    else
+    {
+        Log(("callf %04x:%016RX64 - not canonical -> #GP\n", uSel, offSeg));
+        return iemRaiseNotCanonical(pVCpu);
     }
 
     /*
