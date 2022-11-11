@@ -4103,6 +4103,15 @@ PROTO_ALL(bs3CpuBasic2_jmpf_mem_r0_cs32__ud2);
 PROTO_ALL(bs3CpuBasic2_jmpf_mem_r0_cs64__ud2);
 PROTO_ALL(bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2);
 
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_same_r0__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_same_r1__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_same_r2__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_same_r3__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_r0_cs16__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_r0_cs32__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_r0_cs64__ud2_intel_c64;
+FNBS3FAR  bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2_intel_c64;
+
 #undef PROTO_ALL
 
 
@@ -4370,36 +4379,48 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
             uint16_t    uDstSel;
             uint8_t     uDstBits;
             bool        fOpSizePfx;
+            int8_t      fFix64OpSize;
             FPFNBS3FAR  pfnTest;
         }
         const s_aTests[] =
         {
             /* invalid opcodes: */
-            {  true, false, BS3_SEL_R0_CS32,        64, false, bs3CpuBasic2_jmpf_ptr_same_r0__ud2_c32, },
-            {  true, false, BS3_SEL_R1_CS32 | 1,    64, false, bs3CpuBasic2_jmpf_ptr_same_r1__ud2_c32, },
-            {  true, false, BS3_SEL_R2_CS32 | 2,    64, false, bs3CpuBasic2_jmpf_ptr_same_r2__ud2_c32, },
-            {  true, false, BS3_SEL_R3_CS32 | 3,    64, false, bs3CpuBasic2_jmpf_ptr_same_r3__ud2_c32, },
-            {  true, false, BS3_SEL_R0_CS16,        64, false, bs3CpuBasic2_jmpf_ptr_opsize_flipbit_r0__ud2_c32, },
-            {  true, false, BS3_SEL_R0_CS64,        64, false, bs3CpuBasic2_jmpf_ptr_r0_cs64__ud2_c32, },
-            {  true, false, BS3_SEL_SPARE_00,       64, false, bs3CpuBasic2_jmpf_ptr_r0_cs16l__ud2_c32, },
+            {  true, false, BS3_SEL_R0_CS32,        64, false,    -1, bs3CpuBasic2_jmpf_ptr_same_r0__ud2_c32, },
+            {  true, false, BS3_SEL_R1_CS32 | 1,    64, false,    -1, bs3CpuBasic2_jmpf_ptr_same_r1__ud2_c32, },
+            {  true, false, BS3_SEL_R2_CS32 | 2,    64, false,    -1, bs3CpuBasic2_jmpf_ptr_same_r2__ud2_c32, },
+            {  true, false, BS3_SEL_R3_CS32 | 3,    64, false,    -1, bs3CpuBasic2_jmpf_ptr_same_r3__ud2_c32, },
+            {  true, false, BS3_SEL_R0_CS16,        64, false,    -1, bs3CpuBasic2_jmpf_ptr_opsize_flipbit_r0__ud2_c32, },
+            {  true, false, BS3_SEL_R0_CS64,        64, false,    -1, bs3CpuBasic2_jmpf_ptr_r0_cs64__ud2_c32, },
+            {  true, false, BS3_SEL_SPARE_00,       64, false,    -1, bs3CpuBasic2_jmpf_ptr_r0_cs16l__ud2_c32, },
 
-            {  true,  true, BS3_SEL_R0_CS32,        64, false, bs3CpuBasic2_callf_ptr_same_r0__ud2_c32, },
-            {  true,  true, BS3_SEL_R1_CS32 | 1,    64, false, bs3CpuBasic2_callf_ptr_same_r1__ud2_c32, },
-            {  true,  true, BS3_SEL_R2_CS32 | 2,    64, false, bs3CpuBasic2_callf_ptr_same_r2__ud2_c32, },
-            {  true,  true, BS3_SEL_R3_CS32 | 3,    64, false, bs3CpuBasic2_callf_ptr_same_r3__ud2_c32, },
-            {  true,  true, BS3_SEL_R0_CS16,        64, false, bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2_c32, },
-            {  true,  true, BS3_SEL_R0_CS64,        64, false, bs3CpuBasic2_callf_ptr_r0_cs64__ud2_c32, },
-            {  true,  true, BS3_SEL_SPARE_00,       64, false, bs3CpuBasic2_callf_ptr_r0_cs16l__ud2_c32, },
+            {  true,  true, BS3_SEL_R0_CS32,        64, false,    -1, bs3CpuBasic2_callf_ptr_same_r0__ud2_c32, },
+            {  true,  true, BS3_SEL_R1_CS32 | 1,    64, false,    -1, bs3CpuBasic2_callf_ptr_same_r1__ud2_c32, },
+            {  true,  true, BS3_SEL_R2_CS32 | 2,    64, false,    -1, bs3CpuBasic2_callf_ptr_same_r2__ud2_c32, },
+            {  true,  true, BS3_SEL_R3_CS32 | 3,    64, false,    -1, bs3CpuBasic2_callf_ptr_same_r3__ud2_c32, },
+            {  true,  true, BS3_SEL_R0_CS16,        64, false,    -1, bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2_c32, },
+            {  true,  true, BS3_SEL_R0_CS64,        64, false,    -1, bs3CpuBasic2_callf_ptr_r0_cs64__ud2_c32, },
+            {  true,  true, BS3_SEL_SPARE_00,       64, false,    -1, bs3CpuBasic2_callf_ptr_r0_cs16l__ud2_c32, },
 
-            { false, false, BS3_SEL_R0_CS64,        64, false, bs3CpuBasic2_jmpf_mem_same_r0__ud2_c64, },
-            { false, false, BS3_SEL_R1_CS64 | 1,    64, false, bs3CpuBasic2_jmpf_mem_same_r1__ud2_c64, },
-            { false, false, BS3_SEL_R2_CS64 | 2,    64, false, bs3CpuBasic2_jmpf_mem_same_r2__ud2_c64, },
-            { false, false, BS3_SEL_R3_CS64 | 3,    64, false, bs3CpuBasic2_jmpf_mem_same_r3__ud2_c64, },
-            { false, false, BS3_SEL_R0_CS16,        16,  true, bs3CpuBasic2_jmpf_mem_r0_cs16__ud2_c64, },
-            { false, false, BS3_SEL_R0_CS32,        32, false, bs3CpuBasic2_jmpf_mem_r0_cs32__ud2_c64, },
-            { false, false, BS3_SEL_R0_CS64,        64, false, bs3CpuBasic2_jmpf_mem_r0_cs64__ud2_c64, },  /* 16-bit CS, except in LM. */
-            { false, false, BS3_SEL_SPARE_00,       64,  true, bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2_c64, }, /* 16-bit CS, except in LM. */
+            { false, false, BS3_SEL_R0_CS64,        64, false, false, bs3CpuBasic2_jmpf_mem_same_r0__ud2_c64, },
+            { false, false, BS3_SEL_R1_CS64 | 1,    64, false, false, bs3CpuBasic2_jmpf_mem_same_r1__ud2_c64, },
+            { false, false, BS3_SEL_R2_CS64 | 2,    64, false, false, bs3CpuBasic2_jmpf_mem_same_r2__ud2_c64, },
+            { false, false, BS3_SEL_R3_CS64 | 3,    64, false, false, bs3CpuBasic2_jmpf_mem_same_r3__ud2_c64, },
+            { false, false, BS3_SEL_R0_CS16,        16,  true, false, bs3CpuBasic2_jmpf_mem_r0_cs16__ud2_c64, },
+            { false, false, BS3_SEL_R0_CS32,        32, false, false, bs3CpuBasic2_jmpf_mem_r0_cs32__ud2_c64, },
+            { false, false, BS3_SEL_R0_CS64,        64, false, false, bs3CpuBasic2_jmpf_mem_r0_cs64__ud2_c64, },  /* 16-bit CS, except in LM. */
+            { false, false, BS3_SEL_SPARE_00,       64,  true, false, bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2_c64, }, /* 16-bit CS, except in LM. */
+
+            { false, false, BS3_SEL_R0_CS64,        64, false,  true, bs3CpuBasic2_jmpf_mem_same_r0__ud2_intel_c64, },
+            { false, false, BS3_SEL_R1_CS64 | 1,    64, false,  true, bs3CpuBasic2_jmpf_mem_same_r1__ud2_intel_c64, },
+            { false, false, BS3_SEL_R2_CS64 | 2,    64, false,  true, bs3CpuBasic2_jmpf_mem_same_r2__ud2_intel_c64, },
+            { false, false, BS3_SEL_R3_CS64 | 3,    64, false,  true, bs3CpuBasic2_jmpf_mem_same_r3__ud2_intel_c64, },
+            { false, false, BS3_SEL_R0_CS16,        16,  true,  true, bs3CpuBasic2_jmpf_mem_r0_cs16__ud2_intel_c64, },
+            { false, false, BS3_SEL_R0_CS32,        32, false,  true, bs3CpuBasic2_jmpf_mem_r0_cs32__ud2_intel_c64, },
+            { false, false, BS3_SEL_R0_CS64,        64, false,  true, bs3CpuBasic2_jmpf_mem_r0_cs64__ud2_intel_c64, },  /* 16-bit CS, except in LM. */
+            { false, false, BS3_SEL_SPARE_00,       64,  true,  true, bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2_intel_c64, }, /* 16-bit CS, except in LM. */
         };
+        BS3CPUVENDOR const enmCpuVendor = Bs3GetCpuVendor();
+        bool const         fFix64OpSize = enmCpuVendor == BS3CPUVENDOR_INTEL; /** @todo what does VIA do? */
 
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
         {
@@ -4408,12 +4429,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
             bool const             fGp       = !s_aTests[iTest].fCall && (s_aTests[iTest].uDstSel & X86_SEL_RPL) != 0;
             uint8_t const BS3_FAR *fpbCode   = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
 
+            if (s_aTests[iTest].fFix64OpSize != fFix64OpSize && s_aTests[iTest].fFix64OpSize >= 0)
+                continue;
+
             Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
             CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
             CtxExpected.cs    = s_aTests[iTest].uDstSel;
             if (s_aTests[iTest].uDstBits == 16)
                 CtxExpected.rip.u &= UINT16_MAX;
-            else if (s_aTests[iTest].uDstBits == 64)
+            else if (s_aTests[iTest].uDstBits == 64 && fFix64OpSize)
                 CtxExpected.rip.u |= UINT64_C(0xfffff00000000000);
 
             if (fGp || fUd)
