@@ -262,8 +262,8 @@ void UIVMLogPage::scrollToBookmark(int bookmarkIndex)
     if (bookmarkIndex >= m_bookmarkVector.size())
         return;
 
-    int lineNumber = m_bookmarkVector.at(bookmarkIndex).first;
-    m_pTextEdit->scrollToLine(lineNumber);
+    int iCursorPosition = m_bookmarkVector.at(bookmarkIndex).first;
+    m_pTextEdit->setCursorPosition(iCursorPosition);
 }
 
 const QVector<LogBookmark>& UIVMLogPage::bookmarkVector() const

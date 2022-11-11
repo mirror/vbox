@@ -264,6 +264,14 @@ void UIVMLogViewerTextEdit::restoreScrollBarPosition()
         pBar->setValue(m_iVerticalScrollBarValue);
 }
 
+void UIVMLogViewerTextEdit::setCursorPosition(int iPosition)
+{
+    QTextCursor cursor = textCursor();
+    cursor.setPosition(iPosition);
+    setTextCursor(cursor);
+    centerCursor();
+}
+
 int UIVMLogViewerTextEdit::lineNumberAreaWidth()
 {
     if (!m_bShowLineNumbers)
@@ -478,8 +486,9 @@ int  UIVMLogViewerTextEdit::lineNumberForPos(const QPoint &position)
 
 QPair<int, QString> UIVMLogViewerTextEdit::bookmarkForPos(const QPoint &position)
 {
-    QTextBlock block = cursorForPosition(position).block();
-    return QPair<int, QString>(lineNumberForPos(position), block.text());
+    QTextCursor cursor = cursorForPosition(position);
+    QTextBlock block = cursor.block();
+    return QPair<int, QString>(cursor.position(), block.text());
 }
 
 void UIVMLogViewerTextEdit::setMouseCursorLine(int lineNumber)

@@ -81,6 +81,8 @@ public:
     void saveScrollBarPosition();
     void restoreScrollBarPosition();
 
+    void setCursorPosition(int iPosition);
+
 protected:
 
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
