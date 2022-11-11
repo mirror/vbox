@@ -2642,19 +2642,24 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
 
 /**
- * Implements retn.
+ * Implements retn and retn imm16.
  *
  * We're doing this in C because of the \#GP that might be raised if the popped
  * program counter is out of bounds.
  *
- * @param   enmEffOpSize    The effective operand size.
+ * The hope with this forced inline worker function, is that the compiler will
+ * be clever enough to eliminate unused code for the constant enmEffOpSize and
+ * maybe cbPop parameters.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   enmEffOpSize    The effective operand size.  This is constant.
  * @param   cbPop           The amount of arguments to pop from the stack
- *                          (bytes).
+ *                          (bytes).  This can be constant (zero).
  */
-IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemCImpl_ReturnNearCommon(PVMCPUCC pVCpu, uint8_t cbInstr, IEMMODE enmEffOpSize, uint16_t cbPop)
 {
-    NOREF(cbInstr);
-
     /* Fetch the RSP from the stack. */
     VBOXSTRICTRC    rcStrict;
     RTUINT64U       NewRip;
@@ -2684,7 +2689,9 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
      *        of it.  The canonical test is performed here and for call. */
     if (enmEffOpSize != IEMMODE_64BIT)
     {
-        if (NewRip.DWords.dw0 > pVCpu->cpum.GstCtx.cs.u32Limit)
+        if (RT_LIKELY(NewRip.DWords.dw0 <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        { /* likely */ }
+        else
         {
             Log(("retn newrip=%llx - out of bounds (%x) -> #GP\n", NewRip.u, pVCpu->cpum.GstCtx.cs.u32Limit));
             return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
@@ -2692,7 +2699,9 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     }
     else
     {
-        if (!IEM_IS_CANONICAL(NewRip.u))
+        if (RT_LIKELY(IEM_IS_CANONICAL(NewRip.u)))
+        { /* likely */ }
+        else
         {
             Log(("retn newrip=%llx - not canonical -> #GP\n", NewRip.u));
             return iemRaiseNotCanonical(pVCpu);
@@ -2711,6 +2720,72 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo only need a light flush here, don't we?  We don't really need any flushing... */
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements retn imm16 with 16-bit effective operand size.
+ *
+ * @param   cbPop The amount of arguments to pop from the stack (bytes).
+ */
+IEM_CIMPL_DEF_1(iemCImpl_retn_iw_16, uint16_t, cbPop)
+{
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_16BIT, cbPop);
+}
+
+
+/**
+ * Implements retn imm16 with 32-bit effective operand size.
+ *
+ * @param   cbPop The amount of arguments to pop from the stack (bytes).
+ */
+IEM_CIMPL_DEF_1(iemCImpl_retn_iw_32, uint16_t, cbPop)
+{
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_32BIT, cbPop);
+}
+
+
+/**
+ * Implements retn imm16 with 64-bit effective operand size.
+ *
+ * @param   cbPop The amount of arguments to pop from the stack (bytes).
+ */
+IEM_CIMPL_DEF_1(iemCImpl_retn_iw_64, uint16_t, cbPop)
+{
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_32BIT, cbPop);
+}
+
+
+/**
+ * Implements retn with 16-bit effective operand size.
+ *
+ * @param   cbPop The amount of arguments to pop from the stack (bytes).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_retn_16)
+{
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_16BIT, 0);
+}
+
+
+/**
+ * Implements retn with 32-bit effective operand size.
+ *
+ * @param   cbPop The amount of arguments to pop from the stack (bytes).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_retn_32)
+{
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_32BIT, 0);
+}
+
+
+/**
+ * Implements retn with 64-bit effective operand size.
+ *
+ * @param   cbPop The amount of arguments to pop from the stack (bytes).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_retn_64)
+{
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_64BIT, 0);
 }
 
 

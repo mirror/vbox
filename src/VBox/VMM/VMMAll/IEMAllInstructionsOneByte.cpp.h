@@ -6205,7 +6205,16 @@ FNIEMOP_DEF(iemOp_retn_Iw)
     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_retn, pVCpu->iem.s.enmEffOpSize, u16Imm);
+    switch (pVCpu->iem.s.enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_retn_iw_16, u16Imm);
+        case IEMMODE_32BIT:
+            return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_retn_iw_32, u16Imm);
+        case IEMMODE_64BIT:
+            return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_retn_iw_64, u16Imm);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
 }
 
 
@@ -6217,7 +6226,16 @@ FNIEMOP_DEF(iemOp_retn)
     IEMOP_MNEMONIC(retn, "retn");
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_retn, pVCpu->iem.s.enmEffOpSize, 0);
+    switch (pVCpu->iem.s.enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_retn_16);
+        case IEMMODE_32BIT:
+            return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_retn_32);
+        case IEMMODE_64BIT:
+            return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_retn_64);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
 }
 
 
