@@ -44,8 +44,7 @@
 ;*********************************************************************************************************************************
 ;*  Defined Constants And Macros                                                                                                 *
 ;*********************************************************************************************************************************
-%ifndef BS3_CPUBAS2_UD_OFF_DEFINED
-%define BS3_CPUBAS2_UD_OFF_DEFINED
+%ifnmacro BS3_CPUBAS2_UD_OFF
 %macro BS3_CPUBAS2_UD_OFF 1
 BS3_GLOBAL_NAME_EX BS3_CMN_NM(%1) %+ _offUD, , 1
         db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
@@ -55,13 +54,10 @@ BS3_GLOBAL_NAME_EX BS3_CMN_NM(%1) %+ _offUD, , 1
 %undef BS3_CPUBAS2_REF_LABEL_VIA_CS
 %if TMPL_BITS == 16
  %define BS3_CPUBAS2_REF_LABEL_VIA_CS(a_Label)     cs:a_Label
- %define BS3_CPUBAS2_JMP_FAR_MEM_LABEL(a_Label)    jmp far [BS3_CPUBAS2_REF_LABEL_VIA_CS(a_Label)]
 %elif TMPL_BITS == 32
  %define BS3_CPUBAS2_REF_LABEL_VIA_CS(a_Label)     cs:a_Label wrt FLAT
- %define BS3_CPUBAS2_JMP_FAR_MEM_LABEL(a_Label)    jmp far [BS3_CPUBAS2_REF_LABEL_VIA_CS(a_Label)]
 %elif TMPL_BITS == 64
  %define BS3_CPUBAS2_REF_LABEL_VIA_CS(a_Label)     a_Label wrt FLAT
- %define BS3_CPUBAS2_JMP_FAR_MEM_LABEL(a_Label)    jmp far [BS3_CPUBAS2_REF_LABEL_VIA_CS(a_Label)]
 %else
  %error TMPL_BITS
 %endif
@@ -70,15 +66,17 @@ BS3_GLOBAL_NAME_EX BS3_CMN_NM(%1) %+ _offUD, , 1
 ; Macro for generating far jmp instruction w/o nasm adding REX.W prefixes.
 ;
 ; @param 1      The label of the memory pointer.
-; @param 2      Set to 0 for no prefix, 1 for REX.W prefix.
-%ifndef BS3_CPUBAS2_JMP_FAR_MEM_LABEL_DEFINED
-%define BS3_CPUBAS2_JMP_FAR_MEM_LABEL_DEFINED
+; @param 2      Prefix: 0: none, 1: 066h, 2: REX.W, 3: 066h REX.W
+%ifnmacro BS3_CPUBAS2_JMP_FAR_MEM_LABEL
 %macro BS3_CPUBAS2_JMP_FAR_MEM_LABEL 2
+ %if (%2) == 1 || (%2) == 3
+        db      066h                        ; o16/o32
+ %endif
  %if TMPL_BITS != 64
         jmp far [BS3_CPUBAS2_REF_LABEL_VIA_CS(%1)]
  %elif TMPL_BITS == 64
         ;  48FF2C25[040C0000]  <3>  jmp far [BS3_CPUBAS2_REF_LABLE_VIA_CS(.fpfn)]
-  %if %2 != 0
+  %if (%2) == 2 || (%2) == 3
         db      048h                        ; REX.W
   %endif
         db      0ffh, 02ch, 025h
@@ -87,20 +85,22 @@ BS3_GLOBAL_NAME_EX BS3_CMN_NM(%1) %+ _offUD, , 1
   %error TMPL_BITS
  %endif
 %endmacro
-%endif ; BS3_CPUBAS2_JMP_FAR_MEM_LABEL_DEFINED
+%endif
 
 ;;
 ; Macro for generating far call instruction w/o nasm adding REX.W prefixes.
 ;
 ; @param 1      The label of the memory pointer.
-; @param 2      Set to 0 for no prefix, 1 for REX.W prefix.
-%ifndef BS3_CPUBAS2_CALL_FAR_MEM_LABEL_DEFINED
-%define BS3_CPUBAS2_CALL_FAR_MEM_LABEL_DEFINED
+; @param 2      Prefix: 0: none, 1: 066h, 2: REX.W, 3: 066h REX.W
+%ifnmacro BS3_CPUBAS2_CALL_FAR_MEM_LABEL
 %macro BS3_CPUBAS2_CALL_FAR_MEM_LABEL 2
+ %if (%2) == 1 || (%2) == 3
+        db      066h                        ; o16/o32
+ %endif
  %if TMPL_BITS != 64
         call far [BS3_CPUBAS2_REF_LABEL_VIA_CS(%1)]
  %elif TMPL_BITS == 64
-  %if %2 != 0
+  %if (%2) == 2 || (%2) == 3
         db      048h                        ; REX.W
   %endif
         db      0ffh, 01ch, 025h            ; call far [mem]
@@ -109,7 +109,7 @@ BS3_GLOBAL_NAME_EX BS3_CMN_NM(%1) %+ _offUD, , 1
   %error TMPL_BITS
  %endif
 %endmacro
-%endif ; BS3_CPUBAS2_CALL_FAR_MEM_LABEL_DEFINED
+%endif
 
 
 ;*********************************************************************************************************************************
@@ -1295,13 +1295,16 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_rm__ud2
 ;;
 ; Since AMD and Intel treat REX.W differently, we need two versions of the
 ; test functions here and use a macro to accomplish that.
-%ifndef jmpf_macro_defined
-%define jmpf_macro_defined
+;
+; @param 1      Symbol suffix
+; @param 2      0 for AMD, 1 for Intel.
+;
+%ifnmacro jmpf_macro
 %macro jmpf_macro 2
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_same_r0__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_same_r0__ud2 %+ %1, BS3_PBC_NEAR
-        jmp     far [BS3_CPUBAS2_REF_LABEL_VIA_CS(.fpfn)]
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 2
 .fpfn:
  %if TMPL_BITS == 16
         dw      .again wrt CGROUP16
@@ -1325,7 +1328,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_same_r0__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_same_r1__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_same_r1__ud2 %+ %1, BS3_PBC_NEAR
-        jmp     far [BS3_CPUBAS2_REF_LABEL_VIA_CS(.fpfn)]
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 2
 .fpfn:
  %if TMPL_BITS == 16
         dw      .again wrt CGROUP16
@@ -1364,7 +1367,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_same_r2__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_same_r3__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_same_r3__ud2 %+ %1, BS3_PBC_NEAR
-        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 1
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 2
 .fpfn:
  %if TMPL_BITS == 16
         dw      .again wrt CGROUP16
@@ -1385,10 +1388,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_same_r3__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1, BS3_PBC_NEAR
-  %if TMPL_BITS != 16
-        db      66h
-  %endif
-        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 0
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, (TMPL_BITS != 16) ; TMPL_BITS != 16 ? 1 : 0
 .fpfn:
         dw      .again wrt CGROUP16
         dw      BS3_SEL_R0_CS16
@@ -1399,10 +1399,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_r0_cs32__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs32__ud2 %+ %1, BS3_PBC_NEAR
-  %if TMPL_BITS == 16
-        db      66h
-  %endif
-        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 0
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, (TMPL_BITS == 16) ; TMPL_BITS == 16 ? 1 : 0
 .fpfn:
         dd      .again wrt FLAT
         dw      BS3_SEL_R0_CS32
@@ -1415,10 +1412,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_r0_cs32__ud2 %+ %1
 ; result in a 16-bit CS with zero base and 4G limit.
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_r0_cs64__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs64__ud2 %+ %1, BS3_PBC_NEAR
- %if TMPL_BITS == 16
-        db      066h
- %endif
-        jmp     far [BS3_CPUBAS2_REF_LABEL_VIA_CS(.fpfn)]
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, (2 - (TMPL_BITS == 16)) ; TMPL_BITS == 16 ? 1 : 2
 .fpfn:
         dd      .jmp_target wrt FLAT
  %if TMPL_BITS == 64 && %2 != 0
@@ -1440,10 +1434,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_r0_cs64__ud2 %+ %1
 ; The _c64 version will test that the base is ignored.
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2 %+ %1, BS3_PBC_NEAR
- %if TMPL_BITS == 32
-        db      066h
- %endif
-        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, 0
+        BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, (TMPL_BITS == 32) ; TMPL_BITS == 32 ? 1 : 0
 .fpfn:
  %if TMPL_BITS != 64
         dw      .jmp_target wrt CGROUP16
@@ -1494,13 +1485,16 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_rm__ud2
 ;;
 ; Since AMD and Intel treat REX.W differently, we need two versions of the
 ; test functions here and use a macro to accomplish that.
-%ifndef callf_macro_defined
-%define callf_macro_defined
+;
+; @param 1      Symbol suffix
+; @param 2      0 for AMD, 1 for Intel.
+;
+%ifnmacro callf_macro
 %macro callf_macro 2
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_same_r0__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_same_r0__ud2 %+ %1, BS3_PBC_NEAR
-        call    far [BS3_CPUBAS2_REF_LABEL_VIA_CS(.fpfn)]
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 2
 .fpfn:
  %if TMPL_BITS == 16
         dw      .again wrt CGROUP16
@@ -1524,7 +1518,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_same_r0__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_same_r1__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_same_r1__ud2 %+ %1, BS3_PBC_NEAR
-        call    far [BS3_CPUBAS2_REF_LABEL_VIA_CS(.fpfn)]
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 2
 .fpfn:
  %if TMPL_BITS == 16
         dw      .again wrt CGROUP16
@@ -1563,7 +1557,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_same_r2__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_same_r3__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_same_r3__ud2 %+ %1, BS3_PBC_NEAR
-        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 1
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 2
 .fpfn:
  %if TMPL_BITS == 16
         dw      .again wrt CGROUP16
@@ -1584,10 +1578,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_same_r3__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1, BS3_PBC_NEAR
-  %if TMPL_BITS != 16
-        db      66h
-  %endif
-        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 0
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, (TMPL_BITS != 16) ; (TMPL_BITS == 16 ? 0 : 1)
 .fpfn:
         dw      .again wrt CGROUP16
         dw      BS3_SEL_R0_CS16
@@ -1598,10 +1589,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_r0_cs32__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs32__ud2 %+ %1, BS3_PBC_NEAR
-  %if TMPL_BITS == 16
-        db      66h
-  %endif
-        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 0
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, (TMPL_BITS == 16) ; (TMPL_BITS == 16 ? 1 : 0)
 .fpfn:
         dd      .again wrt FLAT
         dw      BS3_SEL_R0_CS32
@@ -1614,10 +1602,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_r0_cs32__ud2 %+ %1
 ; result in a 16-bit CS with zero base and 4G limit.
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_r0_cs64__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs64__ud2 %+ %1, BS3_PBC_NEAR
- %if TMPL_BITS == 16
-        db      066h
- %endif
-        call    far [BS3_CPUBAS2_REF_LABEL_VIA_CS(.fpfn)]
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, (2 - (TMPL_BITS == 16)) ; (TMPL_BITS == 16 ? 1 : 2)
 .fpfn:
         dd      .call_target wrt FLAT
  %if TMPL_BITS == 64 && %2 != 0
@@ -1639,10 +1624,7 @@ BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_r0_cs64__ud2 %+ %1
 ; The _c64 version will test that the base is ignored.
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_r0_cs16l__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs16l__ud2 %+ %1, BS3_PBC_NEAR
- %if TMPL_BITS == 32
-        db      066h
- %endif
-        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, 0
+        BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, (TMPL_BITS == 32) ; (TMPL_BITS == 32 ? 1 : 0)
 .fpfn:
  %if TMPL_BITS != 64
         dw      .call_target wrt CGROUP16
