@@ -6430,13 +6430,18 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_CR0);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7);
 
-    if (   (iDrReg == 4 || iDrReg == 5)
-        && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_DE) )
+    /** @todo \#UD in outside ring-0 too? */
+    if (iDrReg == 4 || iDrReg == 5)
     {
-        Log(("mov r%u,dr%u: CR4.DE=1 -> #GP(0)\n", iGReg, iDrReg));
-        return iemRaiseGeneralProtectionFault0(pVCpu);
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_CR4);
+        if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_DE)
+        {
+            Log(("mov r%u,dr%u: CR4.DE=1 -> #GP(0)\n", iGReg, iDrReg));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+        iDrReg += 2;
     }
 
     /* Raise #DB if general access detect is enabled. */
@@ -6469,14 +6474,12 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
             drX = pVCpu->cpum.GstCtx.dr[3];
             break;
         case 6:
-        case 4:
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
             drX = pVCpu->cpum.GstCtx.dr[6];
             drX |= X86_DR6_RA1_MASK;
             drX &= ~X86_DR6_RAZ_MASK;
             break;
         case 7:
-        case 5:
             IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7);
             drX = pVCpu->cpum.GstCtx.dr[7];
             drX |=X86_DR7_RA1_MASK;
@@ -6536,10 +6539,11 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_CR4);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7);
 
     if (iDrReg == 4 || iDrReg == 5)
     {
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_CR4);
         if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_DE)
         {
             Log(("mov dr%u,r%u: CR4.DE=1 -> #GP(0)\n", iDrReg, iGReg));
