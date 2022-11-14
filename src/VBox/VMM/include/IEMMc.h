@@ -423,6 +423,9 @@
     } while (0)
 #define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         *iemGRegRefU64(pVCpu, (a_iGReg)) |= (a_u64Value)
 
+#define IEM_MC_BSWAP_LOCAL_U16(a_u16Local)              (a_u16Local) = RT_BSWAP_U16((a_u16Local));
+#define IEM_MC_BSWAP_LOCAL_U32(a_u32Local)              (a_u32Local) = RT_BSWAP_U32((a_u32Local));
+#define IEM_MC_BSWAP_LOCAL_U64(a_u64Local)              (a_u64Local) = RT_BSWAP_U64((a_u64Local));
 
 /** @note Not for IOPL or IF modification. */
 #define IEM_MC_SET_EFL_BIT(a_fBit)                      do { pVCpu->cpum.GstCtx.eflags.u |= (a_fBit); } while (0)
@@ -496,14 +499,16 @@
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iDword)] = (a_XmmValue).au32[(a_iDword)]; } while (0)
 #define IEM_MC_STORE_XREG_XMM_U64(a_iXReg, a_iQword, a_XmmValue) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[(a_iQword)] = (a_XmmValue).au64[(a_iQword)]; } while (0)
-#define IEM_MC_STORE_XREG_U64(a_iXReg, a_u64Value) \
-    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (a_u64Value); } while (0)
+#define IEM_MC_STORE_XREG_U64(a_iXReg, a_iQword, a_u64Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[(a_iQword)] = (a_u64Value); } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
          pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1] = 0; \
     } while (0)
-#define IEM_MC_STORE_XREG_U32(a_iXReg, a_u32Value) \
-    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[0] = (a_u32Value); } while (0)
+#define IEM_MC_STORE_XREG_U32(a_iXReg, a_iDword, a_u32Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iDword)] = (a_u32Value); } while (0)
+#define IEM_MC_STORE_XREG_U32_U128(a_iXReg, a_iDwDst, a_u128Value, a_iDwSrc) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iDwDst)] = (a_u128Value).au32[(a_iDwSrc)]; } while (0)
 #define IEM_MC_STORE_XREG_R32(a_iXReg, a_r32Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar32[0] = (a_r32Value); } while (0)
 #define IEM_MC_STORE_XREG_R64(a_iXReg, a_r64Value) \

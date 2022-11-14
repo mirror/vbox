@@ -1508,10 +1508,80 @@ FNIEMOP_DEF(iemOp_aesdeclast_Vdq_Wdq)
 /*  Opcode 0x66 0x0f 0x38 0xef - invalid. */
 
 
-/** Opcode      0x0f 0x38 0xf0. */
-FNIEMOP_STUB(iemOp_movbe_Gy_My);
-/** Opcode 0x66 0x0f 0x38 0xf0. */
-FNIEMOP_STUB(iemOp_movbe_Gw_Mw);
+/** Opcode      [0x66] 0x0f 0x38 0xf0. */
+FNIEMOP_DEF(iemOp_movbe_Gv_Mv)
+{
+    IEMOP_MNEMONIC2(RM, MOVBE, movbe, Gv, Ev, DISOPTYPE_HARMLESS, 0);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fMovBe)
+        return iemOp_InvalidNeedRM(pVCpu);
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (!IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, memory.
+         */
+        switch (pVCpu->iem.s.enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint16_t,  uSrc);
+                IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U16(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+                IEM_MC_BSWAP_LOCAL_U16(uSrc);
+                IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), uSrc);
+
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint32_t,  uSrc);
+                IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U32(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+                IEM_MC_BSWAP_LOCAL_U32(uSrc);
+                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), uSrc);
+
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint64_t,  uSrc);
+                IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+                IEM_MC_BSWAP_LOCAL_U64(uSrc);
+                IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm), uSrc);
+
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
+                IEM_MC_END();
+                break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        /* Reg/reg not supported. */
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+}
+
+
 /*  Opcode 0xf3 0x0f 0x38 0xf0 - invalid. */
 
 
@@ -1563,10 +1633,71 @@ FNIEMOP_DEF(iemOp_crc32_Gd_Eb)
 }
 
 
-/** Opcode      0x0f 0x38 0xf1. */
-FNIEMOP_STUB(iemOp_movbe_My_Gy);
-/** Opcode 0x66 0x0f 0x38 0xf1. */
-FNIEMOP_STUB(iemOp_movbe_Mw_Gw);
+/** Opcode      [0x66] 0x0f 0x38 0xf1. */
+FNIEMOP_DEF(iemOp_movbe_Mv_Gv)
+{
+    IEMOP_MNEMONIC2(MR, MOVBE, movbe, Ev, Gv, DISOPTYPE_HARMLESS, 0);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fMovBe)
+        return iemOp_InvalidNeedRM(pVCpu);
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (!IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Memory, register.
+         */
+        switch (pVCpu->iem.s.enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint16_t, u16Value);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_GREG_U16(u16Value, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_BSWAP_LOCAL_U16(u16Value);
+                IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u16Value);
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint32_t, u32Value);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_GREG_U32(u32Value, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_BSWAP_LOCAL_U32(u32Value);
+                IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u32Value);
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint64_t, u64Value);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_GREG_U64(u64Value, IEM_GET_MODRM_REG(pVCpu, bRm));
+                IEM_MC_BSWAP_LOCAL_U64(u64Value);
+                IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u64Value);
+                IEM_MC_ADVANCE_RIP_AND_FINISH();
+                IEM_MC_END();
+                break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        /* Reg/reg not supported. */
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+}
+
+
 /*  Opcode 0xf3 0x0f 0x38 0xf1 - invalid. */
 
 
@@ -2033,8 +2164,8 @@ IEM_STATIC const PFNIEMOP g_apfnThreeByte0f38[] =
     /* 0xee */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xef */  IEMOP_X4(iemOp_InvalidNeedRM),
 
-    /* 0xf0 */  iemOp_movbe_Gy_My,          iemOp_movbe_Gw_Mw,          iemOp_InvalidNeedRM,        iemOp_crc32_Gd_Eb,
-    /* 0xf1 */  iemOp_movbe_My_Gy,          iemOp_movbe_Mw_Gw,          iemOp_InvalidNeedRM,        iemOp_crc32_Gv_Ev,
+    /* 0xf0 */  iemOp_movbe_Gv_Mv,          iemOp_movbe_Gv_Mv,          iemOp_InvalidNeedRM,        iemOp_crc32_Gd_Eb,
+    /* 0xf1 */  iemOp_movbe_Mv_Gv,          iemOp_movbe_Mv_Gv,          iemOp_InvalidNeedRM,        iemOp_crc32_Gv_Ev,
     /* 0xf2 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xf3 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xf4 */  IEMOP_X4(iemOp_InvalidNeedRM),
