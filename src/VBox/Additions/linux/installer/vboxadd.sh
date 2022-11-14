@@ -69,8 +69,22 @@ SERVICE="VirtualBox Guest Additions"
 ## systemd logs information about service status, otherwise do that ourselves.
 QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
+
 # Marker to ignore a particular kernel version which was already installed.
+#
+# This is needed in order to prevent modules rebuild on system start and do
+# that on system shutdown instead. Modern Linux distributions might attempt
+# to run Additions service in async mode. As a result, on system boot, modules
+# not-by-us will be loaded while we will try to build our modules. This marker is:
+#
+#   created -- in scope of setup_modules() when actual modules are built.
+#   checked -- in scope of stop() when system goes shutdown and if marker
+#              for certain kernel version does not exist, modules rebuild
+#              will be triggered for this kernel version.
+#   removed -- in scope of cleanup_modules() when modules are removed from
+#              system for all installed kernels.
 SKIPFILE_BASE=/var/lib/VBoxGuestAdditions/skip
+
 export VBOX_KBUILD_TYPE
 export USERNAME
 
@@ -497,6 +511,11 @@ setup_modules()
     sign_modules "${KERN_VER}"
 
     update_initramfs "${KERN_VER}"
+
+    # We have just built modules for KERN_VER kernel. Create a marker to indicate
+    # that modules for this kernel version should not be rebuilt on system shutdown.
+    touch "$SKIPFILE_BASE"-"$KERN_VER"
+
     return 0
 }
 
@@ -787,16 +806,9 @@ cleanup()
 start()
 {
     begin "Starting."
-    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
-        # We want to build modules for newly installed kernels on shutdown, so
-        # mark the ones already present.  These will be ignored on shutdown.
-        rm -f "$SKIPFILE_BASE"-*
-        for setupi in /lib/modules/*; do
-            KERN_VER="${setupi##*/}"
-            # For a full setup, mark kernels we do not want to build.
-            touch "$SKIPFILE_BASE"-"$KERN_VER"
-        done
-    fi
+
+    # Check if kernel modules for currently running kernel are ready
+    # and rebuild them if needed.
     setup
 
     # Warn if Secure Boot setup not yet complete.
