@@ -847,9 +847,9 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
 #ifndef VIRTIO_VBUF_ON_STACK
     PVIRTQBUF pVirtqBuf = (PVIRTQBUF)RTMemAllocZ(sizeof(VIRTQBUF_T));
     AssertReturn(pVirtqBuf, VERR_NO_MEMORY);
+#endif /* !VIRTIO_VBUF_ON_STACK */
     pVirtqBuf->u32Magic  = VIRTQBUF_MAGIC;
     pVirtqBuf->cRefs     = 1;
-#endif /* !VIRTIO_VBUF_ON_STACK */
     pVirtqBuf->uHeadIdx  = uHeadIdx;
     pVirtqBuf->uVirtq    = uVirtq;
 #ifndef VIRTIO_VBUF_ON_STACK
