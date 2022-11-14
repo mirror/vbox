@@ -2559,6 +2559,65 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
     return vrc;
 }
 
+/**
+ * Helper function which waits until Guest Additions services started.
+ *
+ * @returns 0 on success or VERR_TIMEOUT if guest services were not
+ *          started on time.
+ * @param   pGuest      Guest interface to use.
+ */
+int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest)
+{
+    int vrc                         = VERR_GSTCTL_GUEST_ERROR;
+    int rc                          = VERR_TIMEOUT;
+
+    uint64_t tsStart                = RTTimeSystemMilliTS();
+    const uint64_t timeoutMs        = 600 * 1000;
+
+    AssertReturn(!pGuest.isNull(), VERR_TIMEOUT);
+
+    do
+    {
+        ComObjPtr<GuestSession> pSession;
+        GuestCredentials        guestCreds;
+        GuestSessionStartupInfo startupInfo;
+
+        startupInfo.mName           = "Guest Additions connection checker";
+        startupInfo.mOpenTimeoutMS  = 100;
+
+        vrc = pGuest->i_sessionCreate(startupInfo, guestCreds, pSession);
+        if (RT_SUCCESS(vrc))
+        {
+            int vrcGuest = VERR_GSTCTL_GUEST_ERROR; /* unused. */
+
+            Assert(!pSession.isNull());
+
+            vrc = pSession->i_startSession(&vrcGuest);
+            if (RT_SUCCESS(vrc))
+            {
+                GuestSessionWaitResult_T enmWaitResult = GuestSessionWaitResult_None;
+                int rcGuest = 0; /* unused. */
+
+                /* Wait for VBoxService to start. */
+                vrc = pSession->i_waitFor(GuestSessionWaitForFlag_Start, 100 /* timeout, ms */, enmWaitResult, &rcGuest);
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = pSession->Close();
+                    rc = 0;
+                    break;
+                }
+            }
+
+            vrc = pSession->Close();
+        }
+
+        RTThreadSleep(100);
+
+    } while ((RTTimeSystemMilliTS() - tsStart) < timeoutMs);
+
+    return rc;
+}
+
 /** @copydoc GuestSessionTask::Run */
 int GuestSessionTaskUpdateAdditions::Run(void)
 {
@@ -3045,8 +3104,38 @@ int GuestSessionTaskUpdateAdditions::Run(void)
 
                 if (RT_SUCCESS(vrc))
                 {
-                    LogRel(("Automatic update of Guest Additions succeeded\n"));
-                    vrc = setProgressSuccess();
+                    /* Linux Guest Additions will restart VBoxService during installation process.
+                     * In this case, connection to the guest will be temporary lost until new
+                     * kernel modules will be rebuilt, loaded and new VBoxService restarted.
+                     * Handle this case here: check if old connection was terminated and
+                     * new one has started. */
+                    if (osType == eOSType_Linux)
+                    {
+                        if (pSession->i_isTerminated())
+                        {
+                            LogRel(("Old guest session has terminated, waiting updated guest services to start\n"));
+
+                            /* Wait for VBoxService to restart. */
+                            vrc = waitForGuestSession(pSession->i_getParent());
+                            if (RT_FAILURE(vrc))
+                                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                          Utf8StrFmt(tr("Automatic update of Guest Additions has failed: "
+                                                                        "guest services were not restarted, please reinstall Guest Additions")));
+                        }
+                        else
+                        {
+                            vrc = VERR_TRY_AGAIN;
+                            hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                      Utf8StrFmt(tr("Old guest session is still active, guest services were not restarted "
+                                                                    "after installation, please reinstall Guest Additions")));
+                        }
+                    }
+
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRel(("Automatic update of Guest Additions succeeded\n"));
+                        hrc = setProgressSuccess();
+                    }
                 }
             }
 
@@ -3062,6 +3151,13 @@ int GuestSessionTaskUpdateAdditions::Run(void)
 
             hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                       Utf8StrFmt(tr("Installation was canceled")));
+        }
+        else if (vrc == VERR_TIMEOUT)
+        {
+            LogRel(("Automatic update of Guest Additions has timed out\n"));
+
+            hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                      Utf8StrFmt(tr("Installation has timed out")));
         }
         else
         {

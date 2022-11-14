@@ -419,6 +419,7 @@ protected:
     int addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource);
     int copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional);
     int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
+    int waitForGuestSession(ComObjPtr<Guest> pGuest);
 
     /** Files to handle. */
     std::vector<ISOFile>        mFiles;
