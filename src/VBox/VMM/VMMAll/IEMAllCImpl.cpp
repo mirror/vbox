@@ -2753,7 +2753,7 @@ IEM_CIMPL_DEF_1(iemCImpl_retn_iw_32, uint16_t, cbPop)
  */
 IEM_CIMPL_DEF_1(iemCImpl_retn_iw_64, uint16_t, cbPop)
 {
-    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_32BIT, cbPop);
+    return iemCImpl_ReturnNearCommon(pVCpu, cbInstr, IEMMODE_64BIT, cbPop);
 }
 
 
