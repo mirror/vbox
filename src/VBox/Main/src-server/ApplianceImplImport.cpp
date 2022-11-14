@@ -324,9 +324,9 @@ HRESULT Appliance::interpret()
             /* Check for the constraints */
             if (cpuCountVBox > SchemaDefs::MaxCPUCount)
             {
-                i_addWarning(tr("The virtual system \"%s\" claims support for %u CPU's, but VirtualBox has support for "
-                                "max %u CPU's only."),
-                                vsysThis.strName.c_str(), cpuCountVBox, SchemaDefs::MaxCPUCount);
+                i_addWarning(tr("Virtual appliance \"%s\" was configured with %u CPUs however VirtualBox "
+                                "supports a maximum of %u CPUs. Setting the CPU count to %u."),
+                                vsysThis.strName.c_str(), cpuCountVBox, SchemaDefs::MaxCPUCount, SchemaDefs::MaxCPUCount);
                 cpuCountVBox = SchemaDefs::MaxCPUCount;
             }
             if (vsysThis.cCPUs == 0)
@@ -336,25 +336,26 @@ HRESULT Appliance::interpret()
                                 Utf8StrFmt("%RU32", (uint32_t)vsysThis.cCPUs),
                                 Utf8StrFmt("%RU32", (uint32_t)cpuCountVBox));
 
-            /* RAM */
+            /* RAM (in bytes) */
             uint64_t ullMemSizeVBox;
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB)
-                ullMemSizeVBox = pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB;
+                ullMemSizeVBox = (uint64_t)pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB * _1M;
             else
-                ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
+                ullMemSizeVBox = vsysThis.ullMemorySize;  /* already in bytes via OVFReader::HandleVirtualSystemContent() */
             /* Check for the constraints */
             if (    ullMemSizeVBox != 0
-                 && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
-                      || ullMemSizeVBox > MM_RAM_MAX_IN_MB
+                 && (    ullMemSizeVBox < MM_RAM_MIN
+                      || ullMemSizeVBox > MM_RAM_MAX
                     )
                )
             {
-                i_addWarning(tr("The virtual system \"%s\" claims support for %llu MB RAM size, but VirtualBox has "
-                                "support for min %u & max %u MB RAM size only."),
-                                vsysThis.strName.c_str(), ullMemSizeVBox, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
-                ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, MM_RAM_MIN_IN_MB), MM_RAM_MAX_IN_MB);
+                i_addWarning(tr("Virtual appliance \"%s\" was configured with %RU64 MB of memory (RAM) "
+                                "however VirtualBox supports a minimum of %u MB and a maximum of %u MB "
+                                "of memory."),
+                                vsysThis.strName.c_str(), ullMemSizeVBox / _1M, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
+                ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, MM_RAM_MIN), MM_RAM_MAX);
             }
             if (vsysThis.ullMemorySize == 0)
             {
@@ -367,13 +368,13 @@ HRESULT Appliance::interpret()
                 }
                 else
                     memSizeVBox2 = 1024;
-                /* VBox stores that in MByte */
-                ullMemSizeVBox = (uint64_t)memSizeVBox2;
+                /* IGuestOSType::recommendedRAM() returns the size in MB so convert to bytes */
+                ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
             }
             pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
                                  "",
-                                 Utf8StrFmt("%RU64", (uint64_t)vsysThis.ullMemorySize),
-                                 Utf8StrFmt("%RU64", (uint64_t)ullMemSizeVBox));
+                                 Utf8StrFmt("%RU64", vsysThis.ullMemorySize),
+                                 Utf8StrFmt("%RU64", ullMemSizeVBox));
 
             /* Audio */
             Utf8Str strSoundCard;
@@ -416,8 +417,8 @@ HRESULT Appliance::interpret()
                 const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
                 /* Check for the constrains */
                 if (llNetworkAdapters.size() > maxNetworkAdapters)
-                    i_addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
-                                    "has support for max %u network adapter only.","", llNetworkAdapters.size()),
+                    i_addWarning(tr("Virtual appliance \"%s\" was configured with %zu network adapters however "
+                                    "VirtualBox supports a maximum of %u network adapters.", "", llNetworkAdapters.size()),
                                     vsysThis.strName.c_str(), llNetworkAdapters.size(), maxNetworkAdapters);
                 /* Iterate through all network adapters. */
                 settings::NetworkAdaptersList::const_iterator it1;
@@ -446,8 +447,8 @@ HRESULT Appliance::interpret()
 
                 /* Check for the constrains */
                 if (cEthernetAdapters > maxNetworkAdapters)
-                    i_addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
-                                    "has support for max %u network adapter only.", "", cEthernetAdapters),
+                    i_addWarning(tr("Virtual appliance \"%s\" was configured with %zu network adapters however "
+                                    "VirtualBox supports a maximum of %u network adapters.", "", cEthernetAdapters),
                                     vsysThis.strName.c_str(), cEthernetAdapters, maxNetworkAdapters);
 
                 /* Get the default network adapter type for the selected guest OS */
@@ -607,9 +608,10 @@ HRESULT Appliance::interpret()
                         else
                             /* Warn only once */
                             if (cIDEused == 2)
-                                i_addWarning(tr("The virtual \"%s\" system requests support for more than two "
-                                              "IDE controller channels, but VirtualBox supports only two."),
-                                              vsysThis.strName.c_str());
+                                i_addWarning(tr("Virtual appliance \"%s\" was configured with more than two "
+                                                "IDE controllers however VirtualBox supports a maximum of two "
+                                                "IDE controllers."),
+                                                vsysThis.strName.c_str());
 
                         ++cIDEused;
                     break;
@@ -629,8 +631,9 @@ HRESULT Appliance::interpret()
                         {
                             /* Warn only once */
                             if (cSATAused == 1)
-                                i_addWarning(tr("The virtual system \"%s\" requests support for more than one "
-                                                "SATA controller, but VirtualBox has support for only one"),
+                                i_addWarning(tr("Virtual appliance \"%s\" was configured with more than one "
+                                                "SATA controller however VirtualBox supports a maximum of one "
+                                                "SATA controller."),
                                                 vsysThis.strName.c_str());
 
                         }
@@ -657,9 +660,9 @@ HRESULT Appliance::interpret()
                                                  hdcController);
                         }
                         else
-                            i_addWarning(tr("The virtual system \"%s\" requests support for an additional "
-                                            "SCSI controller of type \"%s\" with ID %s, but VirtualBox presently "
-                                            "supports only one SCSI controller."),
+                            i_addWarning(tr("Virtual appliance \"%s\" was configured with more than one SCSI "
+                                            "controller of type \"%s\" with ID %s however VirtualBox supports "
+                                            "a maximum of one SCSI controller for each type."),
                                             vsysThis.strName.c_str(),
                                             hdc.strControllerType.c_str(),
                                             hdc.strIdController.c_str());
@@ -679,8 +682,9 @@ HRESULT Appliance::interpret()
                         {
                             /* Warn only once */
                             if (cVIRTIOSCSIused == 1)
-                                i_addWarning(tr("The virtual system \"%s\" requests support for more than one "
-                                                "VirtioSCSI controller, but VirtualBox has support for only one"),
+                                i_addWarning(tr("Virtual appliance \"%s\" was configured with more than one "
+                                                "VirtioSCSI controller however VirtualBox supports a maximum "
+                                                "of one VirtioSCSI controller."),
                                                 vsysThis.strName.c_str());
 
                         }
@@ -6077,7 +6081,8 @@ void Appliance::i_importMachines(ImportStack &stack)
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->i_findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
-        stack.ulMemorySizeMB = (ULONG)vsdeRAM.front()->strVBoxCurrent.toUInt64();
+        uint64_t ullMemorySizeMB = vsdeRAM.front()->strVBoxCurrent.toUInt64() / _1M;
+        stack.ulMemorySizeMB = (uint32_t)ullMemorySizeMB;
 
 #ifdef VBOX_WITH_USB
         // USB controller
