@@ -33,6 +33,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIVMLogBookmark.h"
 
 /* Qt includes: */
 #include <QPlainTextEdit>
@@ -48,8 +49,8 @@ class UIVMLogViewerTextEdit : public QIWithRetranslateUI<QPlainTextEdit>
 
 signals:
 
-    void sigAddBookmark(QPair<int, QString> bookmark);
-    void sigDeleteBookmark(QPair<int, QString> bookmark);
+    void sigAddBookmark(const UIVMLogBookmark& bookmark);
+    void sigDeleteBookmark(const UIVMLogBookmark& bookmark);
 
 public:
 
@@ -104,14 +105,13 @@ private:
     void configure();
     void prepare();
     void prepareWidgets();
-    QPair<int, QString> bookmarkForPos(const QPoint &position);
+    UIVMLogBookmark bookmarkForPos(const QPoint &position);
     int  lineNumberForPos(const QPoint &position);
     void setMouseCursorLine(int lineNumber);
     /** If bookmark exists this function removes it, if not it adds the bookmark. */
-    void toggleBookmark(const QPair<int, QString>& bookmark);
+    void toggleBookmark(const UIVMLogBookmark& bookmark);
 
-    /** Line number and text at the context menu position */
-    QPair<int, QString>  m_iContextMenuBookmark;
+    UIVMLogBookmark  m_iContextMenuBookmark;
     QWidget             *m_pLineNumberArea;
     /** Set of bookmarked lines. This set is updated from UIVMLogPage. This set is
         used only for lookup in this class. */

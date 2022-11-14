@@ -484,14 +484,14 @@ void UIVMLogViewerWidget::sltSave()
     }
 }
 
-void UIVMLogViewerWidget::sltDeleteBookmark(int index)
+void UIVMLogViewerWidget::sltDeleteBookmarkByIndex(int index)
 {
     UIVMLogPage* pLogPage = currentLogPage();
     if (!pLogPage)
         return;
-    pLogPage->deleteBookmark(index);
+    pLogPage->deleteBookmarkByIndex(index);
     if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkVector());
+        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkList());
 }
 
 void UIVMLogViewerWidget::sltDeleteAllBookmarks()
@@ -502,14 +502,14 @@ void UIVMLogViewerWidget::sltDeleteAllBookmarks()
     pLogPage->deleteAllBookmarks();
 
     if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkVector());
+        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkList());
 }
 
 void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
 {
     if (!currentLogPage() || !m_pBookmarksPanel)
         return;
-    m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
+    m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkList());
 }
 
 void UIVMLogViewerWidget::gotoBookmark(int bookmarkIndex)
@@ -569,7 +569,7 @@ void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
 
     /* We keep a separate QVector<LogBookmark> for each log page: */
     if (m_pBookmarksPanel && currentLogPage())
-        m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkVector());
+        m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkList());
 
     m_pPreviousLogPage = currentLogPage();
     if (m_pPreviousLogPage)
@@ -824,8 +824,8 @@ void UIVMLogViewerWidget::prepareWidgets()
         {
             /* Configure panel: */
             m_pBookmarksPanel->hide();
-            connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmark,
-                    this, &UIVMLogViewerWidget::sltDeleteBookmark);
+            connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmarkByIndex,
+                    this, &UIVMLogViewerWidget::sltDeleteBookmarkByIndex);
             connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
                     this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
             connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,

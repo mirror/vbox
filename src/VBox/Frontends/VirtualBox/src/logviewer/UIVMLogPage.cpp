@@ -116,10 +116,8 @@ void UIVMLogPage::prepareWidgets()
     m_pTextEdit = new UIVMLogViewerTextEdit(this);
     m_pMainLayout->addWidget(m_pTextEdit);
 
-    connect(m_pTextEdit, &UIVMLogViewerTextEdit::sigAddBookmark,
-            this, &UIVMLogPage::sltAddBookmark);
-    connect(m_pTextEdit, &UIVMLogViewerTextEdit::sigDeleteBookmark,
-            this, &UIVMLogPage::sltDeleteBookmark);
+    connect(m_pTextEdit, &UIVMLogViewerTextEdit::sigAddBookmark, this, &UIVMLogPage::sltAddBookmark);
+    connect(m_pTextEdit, &UIVMLogViewerTextEdit::sigDeleteBookmark, this, &UIVMLogPage::sltDeleteBookmark);
 }
 
 QPlainTextEdit *UIVMLogPage::textEdit()
@@ -225,33 +223,10 @@ void UIVMLogPage::documentUndo()
 }
 
 
-void UIVMLogPage::deleteBookmark(int index)
-{
-    if (m_bookmarkVector.size() <= index)
-         return;
-    m_bookmarkVector.remove(index, 1);
-    updateTextEditBookmarkLineSet();
-}
-
-void UIVMLogPage::deleteBookmark(LogBookmark bookmark)
-{
-    int index = -1;
-    for (int i = 0; i < m_bookmarkVector.size(); ++i)
-    {
-        if (m_bookmarkVector.at(i).first == bookmark.first)
-        {
-            index = i;
-            break;
-        }
-    }
-    if (index != -1)
-        deleteBookmark(index);
-}
-
 
 void UIVMLogPage::deleteAllBookmarks()
 {
-    m_bookmarkVector.clear();
+    m_bookmarkManager.deleteAllBookmarks();
     updateTextEditBookmarkLineSet();
 }
 
@@ -259,34 +234,31 @@ void UIVMLogPage::scrollToBookmark(int bookmarkIndex)
 {
     if (!m_pTextEdit)
         return;
-    if (bookmarkIndex >= m_bookmarkVector.size())
-        return;
-
-    int iCursorPosition = m_bookmarkVector.at(bookmarkIndex).first;
-    m_pTextEdit->setCursorPosition(iCursorPosition);
+    m_pTextEdit->setCursorPosition(m_bookmarkManager.cursorPosition(bookmarkIndex));
 }
 
-const QVector<LogBookmark>& UIVMLogPage::bookmarkVector() const
+const QVector<UIVMLogBookmark>& UIVMLogPage::bookmarkList() const
 {
-    return m_bookmarkVector;
+    return m_bookmarkManager.bookmarkList();
 }
 
-void UIVMLogPage::setBookmarkVector(const QVector<LogBookmark>& bookmarks)
+void UIVMLogPage::sltAddBookmark(const UIVMLogBookmark& bookmark)
 {
-    m_bookmarkVector = bookmarks;
-    updateTextEditBookmarkLineSet();
-}
-
-void UIVMLogPage::sltAddBookmark(LogBookmark bookmark)
-{
-    m_bookmarkVector.push_back(bookmark);
+    m_bookmarkManager.addBookmark(bookmark);
     updateTextEditBookmarkLineSet();
     emit sigBookmarksUpdated();
 }
 
-void UIVMLogPage::sltDeleteBookmark(LogBookmark bookmark)
+void UIVMLogPage::sltDeleteBookmark(const UIVMLogBookmark& bookmark)
 {
-    deleteBookmark(bookmark);
+    m_bookmarkManager.deleteBookmark(bookmark);
+    updateTextEditBookmarkLineSet();
+    emit sigBookmarksUpdated();
+}
+
+void UIVMLogPage::deleteBookmarkByIndex(int iIndex)
+{
+    m_bookmarkManager.deleteBookmarkByIndex(iIndex);
     updateTextEditBookmarkLineSet();
     emit sigBookmarksUpdated();
 }
@@ -295,12 +267,7 @@ void UIVMLogPage::updateTextEditBookmarkLineSet()
 {
     if (!m_pTextEdit)
         return;
-    QSet<int> bookmarkLinesSet;
-    for (int i = 0; i < m_bookmarkVector.size(); ++i)
-    {
-        bookmarkLinesSet.insert(m_bookmarkVector.at(i).first);
-    }
-    m_pTextEdit->setBookmarkLineSet(bookmarkLinesSet);
+    m_pTextEdit->setBookmarkLineSet(m_bookmarkManager.lineSet());
 }
 
 bool UIVMLogPage::isFiltered() const

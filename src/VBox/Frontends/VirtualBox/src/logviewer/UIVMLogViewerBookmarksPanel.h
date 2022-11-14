@@ -32,6 +32,7 @@
 #endif
 
 /* GUI includes: */
+#include "UIVMLogBookmark.h"
 #include "UIVMLogViewerPanel.h"
 
 /* Forward declarations: */
@@ -55,13 +56,14 @@ public:
     /** Clear the bookmark list and show this list instead. Probably done after
      *  user switches to another log page tab etc. */
     void setBookmarksList(const QVector<QPair<int, QString> > &bookmarkList);
-    void updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector);
+    void updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList);
     /** Disable/enable all the widget except the close button */
     void disableEnableBookmarking(bool flag);
     virtual QString panelName() const RT_OVERRIDE;
+
 signals:
 
-    void sigDeleteBookmark(int bookmarkIndex);
+    void sigDeleteBookmarkByIndex(int bookmarkIndex);
     void sigDeleteAllBookmarks();
     void sigBookmarkSelected(int index);
 

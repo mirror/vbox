@@ -54,7 +54,7 @@ UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVML
     prepare();
 }
 
-void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector)
+void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList)
 {
     if (!m_pBookmarksComboBox || !viewer())
         return;
@@ -62,10 +62,10 @@ void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QS
     m_pBookmarksComboBox->clear();
     QStringList bList;
     bList << "";
-    for (int i = 0; i < bookmarkVector.size(); ++i)
+    for (int i = 0; i < bookmarkList.size(); ++i)
     {
         QString strItem = QString("BookMark %1 at Line %2: %3").arg(QString::number(i)).
-            arg(QString::number(bookmarkVector.at(i).first)).arg(bookmarkVector.at(i).second);
+            arg(QString::number(bookmarkList[i].m_iLineNumber)).arg(bookmarkList[i].m_strBlockText);
 
         if (strItem.length() > m_iMaxBookmarkTextLength)
         {
@@ -76,11 +76,9 @@ void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QS
     }
     m_pBookmarksComboBox->addItems(bList);
     /* Goto last item of the combobox. Avoid emitting sigBookmarkSelected since we dont want text edit to scroll to there: */
-    disconnect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-               this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
+    m_pBookmarksComboBox->blockSignals(true);
     m_pBookmarksComboBox->setCurrentIndex(m_pBookmarksComboBox->count()-1);
-    connect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
+    m_pBookmarksComboBox->blockSignals(false);
 }
 
 void UIVMLogViewerBookmarksPanel::disableEnableBookmarking(bool flag)
@@ -234,7 +232,7 @@ void UIVMLogViewerBookmarksPanel::sltDeleteCurrentBookmark()
 
     if (m_pBookmarksComboBox->currentIndex() == 0)
         return;
-    emit sigDeleteBookmark(m_pBookmarksComboBox->currentIndex() - 1);
+    emit sigDeleteBookmarkByIndex(m_pBookmarksComboBox->currentIndex() - 1);
 }
 
 void UIVMLogViewerBookmarksPanel::sltBookmarkSelected(int index)
