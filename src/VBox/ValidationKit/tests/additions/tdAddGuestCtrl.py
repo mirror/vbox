@@ -1785,7 +1785,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 oFile = open(sDst, 'rb');                       # pylint: disable=consider-using-with
             except:
-                return reporter.errorXcpt('open(%s) failed during verfication' % (sDst,));
+                # Don't report expected non-existing paths / files as an error.
+                return reporter.maybeErrXcpt(fExpected, 'open(%s) failed during verfication (file / path not found)' % (sDst,));
             fEqual = oTest.oSrc.equalFile(oFile);
             oFile.close();
             if not fEqual:
