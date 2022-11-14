@@ -1774,8 +1774,8 @@ int GuestSessionTaskCopyFrom::Run(void)
                     break;
                 }
 
-                /* Clean up the final host desitnation path. */
-                vrc = GuestPath::Translate(strDstAbs, PATH_STYLE_NATIVE /* Source */, PATH_STYLE_NATIVE /* Dest */);
+                /* Translate the final host desitnation path. */
+                vrc = GuestPath::Translate(strDstAbs, mSession->i_getGuestPathStyle() /* Source */, PATH_STYLE_NATIVE /* Dest */);
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -1851,6 +1851,17 @@ int GuestSessionTaskCopyFrom::Run(void)
                         break;
                     }
                 }
+            }
+
+            /* Translate the final host destination file path. */
+            vrc = GuestPath::Translate(strDstRootAbs,
+                                       mSession->i_getGuestPathStyle() /* Dest */, PATH_STYLE_NATIVE /* Source */);
+            if (RT_FAILURE(vrc))
+            {
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(tr("Translating host destination path \"%s\" failed: %Rrc"),
+                                               strDstRootAbs.c_str(), vrc));
+                break;
             }
 
             if (   RT_SUCCESS(vrc)
@@ -2236,7 +2247,8 @@ int GuestSessionTaskCopyTo::Run(void)
                 strDstAbs += pEntry->strPath;
 
                 /* Clean up the final host source path. */
-                vrc = GuestPath::Translate(strSrcAbs, PATH_STYLE_NATIVE /* Source */, PATH_STYLE_NATIVE /* Dest */);
+                vrc = GuestPath::Translate(strSrcAbs, pList->mSourceSpec.enmPathStyle /* Source */,
+                                           pList->mSourceSpec.enmPathStyle /* Dest */);
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -2245,9 +2257,9 @@ int GuestSessionTaskCopyTo::Run(void)
                     break;
                 }
 
-                /* Clean up the final guest destination path. */
+                /* Translate final guest destination path. */
                 vrc = GuestPath::Translate(strDstAbs,
-                                           mSession->i_getGuestPathStyle() /* Source */, mSession->i_getGuestPathStyle() /* Dest */);
+                                           PATH_STYLE_NATIVE /* Source */,  mSession->i_getGuestPathStyle() /* Dest */);
                 if (RT_FAILURE(vrc))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -2329,9 +2341,9 @@ int GuestSessionTaskCopyTo::Run(void)
                 }
             }
 
-            /* Cleanup the destination path. */
+            /* Translate the final guest destination file path. */
             vrc = GuestPath::Translate(strDstRootAbs,
-                                       mSession->i_getGuestPathStyle() /* Source */,  mSession->i_getGuestPathStyle() /* Dest */);
+                                       PATH_STYLE_NATIVE /* Source */,  mSession->i_getGuestPathStyle() /* Dest */);
             if (RT_FAILURE(vrc))
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,

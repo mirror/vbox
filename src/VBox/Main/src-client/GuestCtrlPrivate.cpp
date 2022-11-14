@@ -1754,6 +1754,7 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
      * 1    /gst/dir1/   /dst/dir2/       /dst/dir2/<contents of dir1>      Just copies contents of <contents>, not the directory itself.
      * 2    /gst/dir1    /dst/dir2/       /dst/dir2/dir1                    Copies dir1 into dir2.
      * 3    /gst/dir1    /dst/dir2        /dst/dir2                         Overwrites stuff from dir2 with stuff from dir1.
+     * 4    Dotdot ("..") directories are forbidden for security reasons.
      */
     const char *pszSrcName = RTPathFilenameEx(strSrcPath.c_str(),
                                                 enmSrcPathStyle == PathStyle_DOS
@@ -1777,6 +1778,23 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
 
     /* Translate the built destination path to a path compatible with the destination. */
     int vrc = GuestPath::Translate(strDstPath, enmSrcPathStyle, enmDstPathStyle);
+    if (RT_SUCCESS(vrc))
+    {
+        union
+        {
+            RTPATHPARSED    Parsed;
+            RTPATHSPLIT     Split;
+            uint8_t         ab[4096];
+        } u;
+        RTPATHPARSED Parsed;
+        vrc = RTPathParse(strDstPath.c_str(), &Parsed, sizeof(u),  enmDstPathStyle == PathStyle_DOS
+                                                                 ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
+        if (RT_SUCCESS(vrc))
+        {
+            if (Parsed.fProps & RTPATH_PROP_DOTDOT_REFS) /* #4 */
+                vrc = VERR_INVALID_PARAMETER;
+        }
+    }
 
     LogRel2(("Guest Control: Building destination path for '%s' (%s) -> '%s' (%s): %Rrc\n",
              strSrcPath.c_str(), GuestBase::pathStyleToStr(enmSrcPathStyle),
