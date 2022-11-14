@@ -1119,7 +1119,9 @@ enum OPCODES
     OP_END_OF_OPCODES
 };
 AssertCompile(OP_LOCK == 7);
+#if 0
 AssertCompile(OP_END_OF_OPCODES < 1024 /* see 15 byte DISOPCODE variant */);
+#endif
 /** @} */
 
 

@@ -568,6 +568,7 @@ typedef struct DISOPCODE
 # pragma pack()
 AssertCompile(sizeof(DISOPCODE) == DISOPCODE_FORMAT);
 #endif
+AssertCompile(DISOPCODE_FORMAT != 15); /* Needs fixing before use as disopcode.h now has more than 1024 opcode values. */
 /** Pointer to const opcode. */
 typedef const struct DISOPCODE *PCDISOPCODE;
 
