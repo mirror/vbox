@@ -753,9 +753,14 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 uint32_t ulMemMB;
                                 if (VINF_SUCCESS == strOverride.toInt(ulMemMB))
                                 {
+                                    /* 'VBoxManage import --memory' size is in megabytes */
+                                    RTPrintf(Appliance::tr("%2u: Guest memory specified with --memory: %RU32 MB\n"),
+                                             a, ulMemMB);
+
+                                    /* IVirtualSystemDescription guest memory size is in bytes */
+                                    uint64_t ullMemBytes = (uint64_t)ulMemMB * _1M;
+                                    strOverride = Utf8StrFmt("%RU64", ullMemBytes);
                                     bstrFinalValue = strOverride;
-                                    RTPrintf(Appliance::tr("%2u: Guest memory specified with --memory: %ls MB\n"),
-                                             a, bstrFinalValue.raw());
                                 }
                                 else
                                     return errorSyntax(Appliance::tr("Argument to --memory option must be a non-negative number."));
