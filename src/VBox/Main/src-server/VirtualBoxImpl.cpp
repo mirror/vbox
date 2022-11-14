@@ -3474,6 +3474,17 @@ void VirtualBox::i_onMachineDataChanged(const Guid &aId, BOOL aTemporary)
 }
 
 /**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onMachineGroupsChanged(const Guid &aId)
+{
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = ::CreateMachineGroupsChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toString(), FALSE /*aDummy*/);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
+}
+
+/**
  *  @note Locks this object for reading.
  */
 BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, const Utf8Str &aKey, const Utf8Str &aValue, Bstr &aError)

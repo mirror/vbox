@@ -1370,6 +1370,7 @@ HRESULT Machine::setGroups(const std::vector<com::Utf8Str> &aGroups)
     mUserData.backup();
     mUserData->s.llGroups = llGroups;
 
+    mParent->i_onMachineGroupsChanged(mData->mUuid);
     return S_OK;
 }
 

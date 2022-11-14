@@ -176,6 +176,7 @@ public:
     void i_onStorageDeviceChanged(IMediumAttachment* aStorageDevice, BOOL fRemoved, BOOL fSilent);
     void i_onMachineStateChanged(const Guid &aId, MachineState_T aState);
     void i_onMachineDataChanged(const Guid &aId, BOOL aTemporary = FALSE);
+    void i_onMachineGroupsChanged(const Guid &aId);
     BOOL i_onExtraDataCanChange(const Guid &aId, const Utf8Str &aKey, const Utf8Str &aValue, Bstr &aError);
     void i_onExtraDataChanged(const Guid &aId, const Utf8Str &aKey, const Utf8Str &aValue);
     void i_onMachineRegistered(const Guid &aId, BOOL aRegistered);

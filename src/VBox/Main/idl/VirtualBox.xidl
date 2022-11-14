@@ -26732,8 +26732,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestDebugControlChangedEvent">IGuestDebugControlChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnMachineGroupsChanged" value="118">
+      <desc>
+        See <link to="IMachineGroupsChangedEvent">IMachineGroupsChangedEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
-    <const name="End" value="118">
+    <const name="End" value="119">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -29082,6 +29087,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="guestDebugControl" type="IGuestDebugControl" readonly="yes">
       <desc>
         Guest debug control object that is subject to change.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IMachineGroupsChangedEvent" extends="IMachineEvent"
+    uuid="ee37afb5-7002-4786-a5c4-a9c29e1cce75"
+    wsmap="managed" autogen="VBoxEvent" id="OnMachineGroupsChanged"
+    >
+    <desc>
+      The groups of the machine have changed.
+    </desc>
+
+    <attribute name="dummy" type="boolean" readonly="yes">
+      <desc>
+        Dummy state because you can't have an event without attributes apparently.
       </desc>
     </attribute>
   </interface>
