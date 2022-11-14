@@ -103,6 +103,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>virtio-net: Workaround a bug in the virtio-net driver included in FreeBSD version up to 12.3
+          which renders the device non functional (bug #21201)</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: Fixed I/O errors with the VirtioSCSI controller when the host I/O cache is enabled (bug #19717)</para>
       </listitem>
 
