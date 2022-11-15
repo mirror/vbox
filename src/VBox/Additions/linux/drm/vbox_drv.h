@@ -157,7 +157,7 @@
 # include <drm/drm_device.h>
 # include <drm/drm_ioctl.h>
 # include <drm/drm_fourcc.h>
-# if RTLNX_VER_MAX(5,15,0) && !RTLNX_RHEL_MAJ_PREREQ(9,1)
+# if RTLNX_VER_MAX(5,15,0) && !RTLNX_RHEL_RANGE(8,7, 8,99) && !RTLNX_RHEL_MAJ_PREREQ(9,1)
 #  include <drm/drm_irq.h>
 # endif
 # include <drm/drm_vblank.h>
