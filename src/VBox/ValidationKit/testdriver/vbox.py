@@ -3191,7 +3191,7 @@ class TestDriver(base.TestDriver):                                              
                 # VM failed to power up, still collect VBox.log, need to wrap the session object
                 # in order to use the helper for adding the log files to the report.
                 from testdriver.vboxwrappers import SessionWrapper;
-                oTmp = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, sLogFile);
+                oTmp = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, self.sSessionLogFile);
                 oTmp.addLogsToReport();
 
                 # Try to collect a stack trace of the process for further investigation of any startup hangs.
@@ -3220,7 +3220,7 @@ class TestDriver(base.TestDriver):                                              
         # Wrap up the session object and push on to the list before returning it.
         if oWrapped is None:
             from testdriver.vboxwrappers import SessionWrapper;
-            oWrapped = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, sLogFile);
+            oWrapped = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, self.sSessionLogFile);
 
         oWrapped.registerEventHandlerForTask();
         self.aoRemoteSessions.append(oWrapped);
