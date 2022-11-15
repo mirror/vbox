@@ -1786,12 +1786,11 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
             RTPATHSPLIT     Split;
             uint8_t         ab[4096];
         } u;
-        RTPATHPARSED Parsed;
-        vrc = RTPathParse(strDstPath.c_str(), &Parsed, sizeof(u),  enmDstPathStyle == PathStyle_DOS
-                                                                 ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
+        vrc = RTPathParse(strDstPath.c_str(), &u.Parsed, sizeof(u),  enmDstPathStyle == PathStyle_DOS
+                                                                   ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
         if (RT_SUCCESS(vrc))
         {
-            if (Parsed.fProps & RTPATH_PROP_DOTDOT_REFS) /* #4 */
+            if (u.Parsed.fProps & RTPATH_PROP_DOTDOT_REFS) /* #4 */
                 vrc = VERR_INVALID_PARAMETER;
         }
     }
