@@ -891,6 +891,7 @@ class TestDriver(base.TestDriver):                                              
         self.sLogSvcFlags       = 'time';
         self.sLogSvcDest        = '';
         self.sSelfLogFile       = None;
+        self.sSessionLogFile    = None;
         self.sVBoxSvcLogFile    = None;
         self.oVBoxSvcProcess    = None;
         self.sVBoxSvcPidFile    = None;
@@ -2044,6 +2045,10 @@ class TestDriver(base.TestDriver):                                              
                 reporter.addLogFile(self.sSelfLogFile, 'log/debug/client', 'Debug log file for the test driver');
                 self.sSelfLogFile = None;
 
+            if self.sSessionLogFile is not None  and  os.path.isfile(self.sSessionLogFile):
+                reporter.addLogFile(self.sSessionLogFile, 'log/debug/session', 'Debug log file for the VM session');
+                self.sSessionLogFile = None;
+
             sVBoxSvcRelLog = os.path.join(self.sScratchPath, 'VBoxUserHome', 'VBoxSVC.log');
             if os.path.isfile(sVBoxSvcRelLog):
                 reporter.addLogFile(sVBoxSvcRelLog, 'log/release/svc', 'Release log file for VBoxSVC');
@@ -3100,13 +3105,13 @@ class TestDriver(base.TestDriver):                                              
         self.processPendingEvents();
 
         # Construct the environment.
-        sLogFile = '%s/VM-%s.log' % (self.sScratchPath, sUuid);
-        try:    os.remove(sLogFile);
+        self.sSessionLogFile = '%s/VM-%s.log' % (self.sScratchPath, sUuid);
+        try:    os.remove(self.sSessionLogFile);
         except: pass;
         if self.sLogSessionDest:
             sLogDest = self.sLogSessionDest;
         else:
-            sLogDest = 'file=%s' % (sLogFile,);
+            sLogDest = 'file=%s' % (self.sSessionLogFile,);
         asEnvFinal = [
             'VBOX_LOG=%s' % (self.sLogSessionGroups,),
             'VBOX_LOG_FLAGS=%s' % (self.sLogSessionFlags,),
