@@ -808,7 +808,7 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
         IEM_MC_ARG(uint64_t,    uSrc, 1); \
         IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();  \
         IEM_MC_PREPARE_SSE_USAGE();  \
-        IEM_MC_FETCH_XREG_U64(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+        IEM_MC_FETCH_XREG_U64(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm), 0 /* a_iQword */); \
         IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
         IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
                                                              iemAImpl_ ## a_Instr ## _u128, \
