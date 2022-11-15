@@ -983,6 +983,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions));
 #ifdef VBOX_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window_S_Minimize));
@@ -1081,6 +1082,8 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), &UIAction::triggered,
             this, &UIMachineLogic::sltOpenSettingsDialogSharedFolders);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk), &UIAction::triggered,
+            this, &UIMachineLogic::sltInstallGuestAdditions);
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions), &UIAction::triggered,
             this, &UIMachineLogic::sltInstallGuestAdditions);
 
     /* 'Help' menu 'Contents' action. Done here since we react differently to this action
@@ -2433,11 +2436,18 @@ void UIMachineLogic::sltInstallGuestAdditions()
     if (!isMachineWindowsCreated())
         return;
 
+    bool fOnlyMount = sender() == actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk);
+
     /* Try to acquire default additions ISO: */
     CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
     const QString strAdditions = comSystemProperties.GetDefaultAdditionsISO();
     if (comSystemProperties.isOk() && !strAdditions.isEmpty())
-        return uisession()->sltInstallGuestAdditionsFrom(strAdditions);
+    {
+        if (fOnlyMount)
+            return uisession()->sltMountDVDAdHoc(strAdditions);
+        else
+            return uisession()->sltInstallGuestAdditionsFrom(strAdditions);
+    }
 
     /* Check whether we have already registered image: */
     CVirtualBox comVBox = uiCommon().virtualBox();
@@ -2456,7 +2466,12 @@ void UIMachineLogic::sltInstallGuestAdditions()
             {
                 const QString strFileName = QFileInfo(strPath).fileName();
                 if (RTPathCompare(strName.toUtf8().constData(), strFileName.toUtf8().constData()) == 0)
-                    return uisession()->sltInstallGuestAdditionsFrom(strPath);
+                {
+                    if (fOnlyMount)
+                        return uisession()->sltMountDVDAdHoc(strPath);
+                    else
+                        return uisession()->sltInstallGuestAdditionsFrom(strPath);
+                }
             }
         }
     }
@@ -2470,9 +2485,13 @@ void UIMachineLogic::sltInstallGuestAdditions()
     {
         /* Download guest additions: */
         UINotificationDownloaderGuestAdditions *pNotification = UINotificationDownloaderGuestAdditions::instance(GUI_GuestAdditionsName);
-        /* After downloading finished => propose to install the guest additions: */
-        connect(pNotification, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded,
-                uisession(), &UISession::sltInstallGuestAdditionsFrom);
+        /* After downloading finished => propose to install or just mount the guest additions: */
+        if (fOnlyMount)
+            connect(pNotification, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded,
+                    uisession(), &UISession::sltMountDVDAdHoc);
+        else
+            connect(pNotification, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded,
+                    uisession(), &UISession::sltInstallGuestAdditionsFrom);
         /* Append and start notification: */
         gpNotificationCenter->append(pNotification);
     }

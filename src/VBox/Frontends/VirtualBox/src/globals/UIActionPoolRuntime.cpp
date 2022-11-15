@@ -2764,17 +2764,17 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const RT_OVERRIDE
     {
-        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InsertGuestAdditionsDisk;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const RT_OVERRIDE
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InsertGuestAdditionsDisk);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const RT_OVERRIDE
     {
-        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools);
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InsertGuestAdditionsDisk);
     }
 
     /** Returns shortcut extra-data ID. */
@@ -2788,6 +2788,50 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Insert Guest Additions CD image..."));
         setStatusTip(QApplication::translate("UIActionPool", "Insert the Guest Additions disk file into the virtual optical drive"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Upgrade Guest Additions' action class. */
+class UIActionSimpleRuntimePerformUpgradeGuestAdditions : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleRuntimePerformUpgradeGuestAdditions(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png", true)
+    {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const RT_OVERRIDE
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_UpgradeGuestAdditions;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const RT_OVERRIDE
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_UpgradeGuestAdditions);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const RT_OVERRIDE
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_UpgradeGuestAdditions);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("UpgradeGuestAdditions");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "&Upgrade Guest Additions..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Upgrade Guest Additions"));
     }
 };
 
@@ -3332,6 +3376,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuRuntimeSharedFolders(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleRuntimeShowSharedFoldersSettings(this);
     m_pool[UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk] = new UIActionSimpleRuntimePerformInsertGuestAdditionsDisk(this);
+    m_pool[UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions] = new UIActionSimpleRuntimePerformUpgradeGuestAdditions(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions: */
@@ -4258,6 +4303,7 @@ void UIActionPoolRuntime::updateMenuDevices()
 
     /* Insert Guest Additions Disk action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices);

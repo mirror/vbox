@@ -656,26 +656,27 @@ public:
     /** Runtime UI: Menu "Devices": Action types. */
     enum RuntimeMenuDevicesActionType
     {
-        RuntimeMenuDevicesActionType_Invalid               = 0,
-        RuntimeMenuDevicesActionType_HardDrives            = RT_BIT(0),
-        RuntimeMenuDevicesActionType_HardDrivesSettings    = RT_BIT(1),
-        RuntimeMenuDevicesActionType_OpticalDevices        = RT_BIT(2),
-        RuntimeMenuDevicesActionType_FloppyDevices         = RT_BIT(3),
-        RuntimeMenuDevicesActionType_Audio                 = RT_BIT(4),
-        RuntimeMenuDevicesActionType_AudioOutput           = RT_BIT(5),
-        RuntimeMenuDevicesActionType_AudioInput            = RT_BIT(6),
-        RuntimeMenuDevicesActionType_Network               = RT_BIT(7),
-        RuntimeMenuDevicesActionType_NetworkSettings       = RT_BIT(8),
-        RuntimeMenuDevicesActionType_USBDevices            = RT_BIT(9),
-        RuntimeMenuDevicesActionType_USBDevicesSettings    = RT_BIT(10),
-        RuntimeMenuDevicesActionType_WebCams               = RT_BIT(11),
-        RuntimeMenuDevicesActionType_SharedClipboard       = RT_BIT(12),
-        RuntimeMenuDevicesActionType_DragAndDrop           = RT_BIT(13),
-        RuntimeMenuDevicesActionType_SharedFolders         = RT_BIT(14),
-        RuntimeMenuDevicesActionType_SharedFoldersSettings = RT_BIT(15),
-        RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(16),
-        RuntimeMenuDevicesActionType_Nothing               = RT_BIT(17),
-        RuntimeMenuDevicesActionType_All                   = 0xFFFF
+        RuntimeMenuDevicesActionType_Invalid                   = 0,
+        RuntimeMenuDevicesActionType_HardDrives                = RT_BIT(0),
+        RuntimeMenuDevicesActionType_HardDrivesSettings        = RT_BIT(1),
+        RuntimeMenuDevicesActionType_OpticalDevices            = RT_BIT(2),
+        RuntimeMenuDevicesActionType_FloppyDevices             = RT_BIT(3),
+        RuntimeMenuDevicesActionType_Audio                     = RT_BIT(4),
+        RuntimeMenuDevicesActionType_AudioOutput               = RT_BIT(5),
+        RuntimeMenuDevicesActionType_AudioInput                = RT_BIT(6),
+        RuntimeMenuDevicesActionType_Network                   = RT_BIT(7),
+        RuntimeMenuDevicesActionType_NetworkSettings           = RT_BIT(8),
+        RuntimeMenuDevicesActionType_USBDevices                = RT_BIT(9),
+        RuntimeMenuDevicesActionType_USBDevicesSettings        = RT_BIT(10),
+        RuntimeMenuDevicesActionType_WebCams                   = RT_BIT(11),
+        RuntimeMenuDevicesActionType_SharedClipboard           = RT_BIT(12),
+        RuntimeMenuDevicesActionType_DragAndDrop               = RT_BIT(13),
+        RuntimeMenuDevicesActionType_SharedFolders             = RT_BIT(14),
+        RuntimeMenuDevicesActionType_SharedFoldersSettings     = RT_BIT(15),
+        RuntimeMenuDevicesActionType_InsertGuestAdditionsDisk  = RT_BIT(16),
+        RuntimeMenuDevicesActionType_UpgradeGuestAdditions     = RT_BIT(17),
+        RuntimeMenuDevicesActionType_Nothing                   = RT_BIT(18),
+        RuntimeMenuDevicesActionType_All                       = 0xFFFF
     };
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

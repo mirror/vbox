@@ -857,25 +857,26 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevice
     QString strResult;
     switch (runtimeMenuDevicesActionType)
     {
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives:            strResult = "HardDrives"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings:    strResult = "HardDrivesSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio:                 strResult = "Audio"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput:           strResult = "AudioOutput"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput:            strResult = "AudioInput"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings:    strResult = "USBDevicesSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing:               strResult = "Nothing"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives:                strResult = "HardDrives"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings:        strResult = "HardDrivesSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices:            strResult = "OpticalDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices:             strResult = "FloppyDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio:                     strResult = "Audio"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput:               strResult = "AudioOutput"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput:                strResult = "AudioInput"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network:                   strResult = "Network"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings:           strResult = "NetworkSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices:                strResult = "USBDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings:        strResult = "USBDevicesSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams:                   strResult = "WebCams"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard:           strResult = "SharedClipboard"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop:               strResult = "DragAndDrop"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders:             strResult = "SharedFolders"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings:     strResult = "SharedFoldersSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InsertGuestAdditionsDisk:  strResult = "InsertGuestAdditionsDisk"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_UpgradeGuestAdditions:     strResult = "UpgradeGuestAdditions"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing:                   strResult = "Nothing"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All:                       strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuDevicesActionType));
@@ -921,8 +922,10 @@ fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(const QStr
         return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
     if (strRuntimeMenuDevicesActionType.compare("SharedFoldersSettings", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
-    if (strRuntimeMenuDevicesActionType.compare("InstallGuestTools", Qt::CaseInsensitive) == 0)
-        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
+    if (strRuntimeMenuDevicesActionType.compare("InsertGuestAdditionsDisk", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InsertGuestAdditionsDisk;
+    if (strRuntimeMenuDevicesActionType.compare("UpgradeGuestAdditions", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_UpgradeGuestAdditions;
     if (strRuntimeMenuDevicesActionType.compare("Nothing", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
     if (strRuntimeMenuDevicesActionType.compare("All", Qt::CaseInsensitive) == 0)

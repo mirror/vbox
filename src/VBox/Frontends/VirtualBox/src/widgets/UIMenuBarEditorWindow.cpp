@@ -1355,6 +1355,7 @@ void UIMenuBarEditorWidget::prepareMenuDevices()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions));
     }
 }
 

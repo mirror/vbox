@@ -123,6 +123,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Devices_M_SharedFolders,
     UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings,
     UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk,
+    UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions,
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debugger' menu actions: */

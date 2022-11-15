@@ -435,14 +435,15 @@ bool UISession::setPause(bool fOn)
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 {
-    /* Check whether we have something to update automatically: */
+    const CGuestOSType osType = uiCommon().vmGuestOSType(machine().GetOSTypeId());
+    const QString strGuestFamily = osType.GetFamilyId();
+    bool fIsWindowOrLinux = strGuestFamily.contains("window", Qt::CaseInsensitive) || strGuestFamily.contains("linux", Qt::CaseInsensitive);
+
+    /* Auto GA update is currently for Windows and Linux guests only,
+     ** also check whether we have something to update automatically, if not just mount and return: */
     const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
-    if (ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
-    {
-        /* Otherwise we'll just mount and be gone: */
-        sltMountDVDAdHoc(strSource);
-        return;
-    }
+    if (!fIsWindowOrLinux || ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
+        return sltMountDVDAdHoc(strSource);
 
     /* Update guest additions automatically: */
     UINotificationProgressGuestAdditionsInstall *pNotification =
