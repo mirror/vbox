@@ -435,14 +435,7 @@ bool UISession::setPause(bool fOn)
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 {
-    const CGuestOSType osType = uiCommon().vmGuestOSType(machine().GetOSTypeId());
-    const QString strGuestFamily = osType.GetFamilyId();
-    bool fIsWindowOrLinux = strGuestFamily.contains("window", Qt::CaseInsensitive) || strGuestFamily.contains("linux", Qt::CaseInsensitive);
-
-    /* Auto GA update is currently for Windows and Linux guests only,
-     ** also check whether we have something to update automatically, if not just mount and return: */
-    const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
-    if (!fIsWindowOrLinux || ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
+    if (!GuestAdditionsUpgradable())
         return sltMountDVDAdHoc(strSource);
 
     /* Update guest additions automatically: */
@@ -874,6 +867,9 @@ void UISession::sltAdditionsChange()
         /* Make sure action-pool knows whether GA supports graphics: */
         actionPool()->toRuntime()->setGuestSupportsGraphics(m_fIsGuestSupportsGraphics);
 
+        if (actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions))
+            actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(GuestAdditionsUpgradable());
+
         /* Notify listeners about GA state really changed: */
         LogRel(("GUI: UISession::sltAdditionsChange: GA state really changed, notifying listeners\n"));
         emit sigAdditionsStateActualChange();
@@ -1105,6 +1101,9 @@ void UISession::prepareActions()
             updateMenu();
         }
 #endif /* VBOX_WS_MAC */
+        /* Postpone enabling the GA update action until GA's are loaded: */
+        if (actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions))
+            actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(false);
     }
 }
 
@@ -2185,6 +2184,30 @@ void UISession::updateActionRestrictions()
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Session, restrictionForView);
     /* Apply cumulative restriction for 'Devices' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restrictionForDevices);
+}
+
+bool UISession::GuestAdditionsUpgradable()
+{
+    if (!machine().isOk())
+        return false;
+
+    /* Auto GA update is currently for Windows and Linux guests only */
+    const CGuestOSType osType = uiCommon().vmGuestOSType(machine().GetOSTypeId());
+    if (!osType.isOk())
+        return false;
+
+    const QString strGuestFamily = osType.GetFamilyId();
+    bool fIsWindowOrLinux = strGuestFamily.contains("window", Qt::CaseInsensitive) || strGuestFamily.contains("linux", Qt::CaseInsensitive);
+
+    if (!fIsWindowOrLinux)
+        return false;
+
+    /* Also check whether we have something to update automatically: */
+    const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
+    if (ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
+        return false;
+
+    return true;
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
