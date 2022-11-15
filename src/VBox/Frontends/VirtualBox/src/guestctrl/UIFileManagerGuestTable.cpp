@@ -688,7 +688,7 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
         return;
     }
     QString strDirectoryFlags("CopyIntoExisting,Recursive,FollowLinks");
-    QString strFileFlags;
+    QString strFileFlags("FollowLinks");
     foreach (const QString &strSource, sourcePaths)
     {
         KFsObjType enmFileType = UIFileManagerHostTable::fileType(strSource);
