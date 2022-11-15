@@ -1613,7 +1613,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
     {
         if (strErrorInfo.isEmpty())
             strErrorInfo.printf(tr("Failed with %Rrc"), vrc);
-        hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
     LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hrc, vrc));
@@ -1972,32 +1972,81 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                          strSrc.c_str(), GuestBase::pathStyleToStr(itSrc->enmPathStyle), strDst.c_str()));
 
             RTFSOBJINFO srcFsObjInfo;
-            vrc = RTPathQueryInfoEx(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING,
-                                    fFollowSymlinks ? RTPATH_F_FOLLOW_LINK : RTPATH_F_ON_LINK /* fFlags */);
+            vrc = RTPathQueryInfoEx(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK /* fFlags */);
             if (RT_FAILURE(vrc))
             {
                 strErrorInfo.printf(tr("No such host file/directory: %s"), strSrc.c_str());
                 break;
             }
 
-            if (RTFS_IS_DIRECTORY(srcFsObjInfo.Attr.fMode))
+            switch (srcFsObjInfo.Attr.fMode & RTFS_TYPE_MASK)
             {
-                if (itSrc->enmType != FsObjType_Directory)
+                case RTFS_TYPE_DIRECTORY:
                 {
-                    strErrorInfo.printf(tr("Host source is not a file: %s"), strSrc.c_str());
-                    vrc = VERR_NOT_A_FILE;
+                    if (itSrc->enmType != FsObjType_Directory)
+                    {
+                        strErrorInfo.printf(tr("Host source \"%s\" is not a file (is a directory)"), strSrc.c_str());
+                        vrc = VERR_NOT_A_FILE;
+                    }
                     break;
                 }
-            }
-            else
-            {
-                if (itSrc->enmType == FsObjType_Directory)
+
+                case RTFS_TYPE_FILE:
                 {
-                    strErrorInfo.printf(tr("Host source is not a directory: %s"), strSrc.c_str());
-                    vrc = VERR_NOT_A_DIRECTORY;
+                    if (itSrc->enmType == FsObjType_Directory)
+                    {
+                        strErrorInfo.printf(tr("Host source \"%s\" is not a directory (is a file)"), strSrc.c_str());
+                        vrc = VERR_NOT_A_DIRECTORY;
+                    }
                     break;
                 }
+
+                case RTFS_TYPE_SYMLINK:
+                {
+                    if (!fFollowSymlinks)
+                    {
+                        strErrorInfo.printf(tr("Host source \"%s\" is a symbolic link"), strSrc.c_str());
+                        vrc = VERR_IS_A_SYMLINK;
+                        break;
+                    }
+
+                    char szPathReal[RTPATH_MAX];
+                    vrc = RTPathReal(strSrc.c_str(), szPathReal, sizeof(szPathReal));
+                    if (RT_SUCCESS(vrc))
+                    {
+                        vrc = RTPathQueryInfoEx(szPathReal, &srcFsObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            LogRel2(("Guest Control: Host source symbolic link '%s' -> '%s' (%s)\n",
+                                     strSrc.c_str(), szPathReal,
+                                     GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(srcFsObjInfo.Attr.fMode))));
+
+                            /* We want to keep the symbolic link name of the source instead of the target pointing to,
+                             * so don't touch the source's name here. */
+                            itSrc->enmType = GuestBase::fileModeToFsObjType(srcFsObjInfo.Attr.fMode);
+                        }
+                        else
+                        {
+                            strErrorInfo.printf(tr("Querying symbolic link info for host source \"%s\" failed"), strSrc.c_str());
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        strErrorInfo.printf(tr("Resolving symbolic link for host source \"%s\" failed"), strSrc.c_str());
+                        break;
+                    }
+                    break;
+                }
+
+                default:
+                    LogRel2(("Guest Control: Warning: Unknown host file system type %#x for source \"%s\", skipping\n",
+                             srcFsObjInfo.Attr.fMode & RTFS_TYPE_MASK, strSrc.c_str()));
+                    break;
             }
+
+            if (RT_FAILURE(vrc))
+                break;
 
             FsList *pFsList = NULL;
             try
@@ -2021,8 +2070,12 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                             /* The file name is already part of the actual list's source root (strSrc). */
                             break;
 
+                        case FsObjType_Symlink:
+                            AssertFailed(); /* Should never get here, as we do the resolving above. */
+                            break;
+
                         default:
-                            LogRel2(("Guest Control: Warning: Unknown guest host system type %#x for source \"%s\", skipping\n",
+                            LogRel2(("Guest Control: Warning: Unknown source type %#x for host source \"%s\", skipping\n",
                                      itSrc->enmType, strSrc.c_str()));
                             break;
                     }
@@ -2085,7 +2138,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
     {
         if (strErrorInfo.isEmpty())
             strErrorInfo.printf(tr("Failed with %Rrc"), vrc);
-        hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
     LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hrc, vrc));
