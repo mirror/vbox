@@ -79,7 +79,7 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-       <para>VMM: Added nested paging support for nested virtualization (Intel hosts only).</para>
+       <para>VMM: Added nested paging support for nested virtualization (Intel hosts only)</para>
       </listitem>
 
       <listitem>
@@ -109,6 +109,10 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Storage: Fixed I/O errors with the VirtioSCSI controller when the host I/O cache is enabled (bug #19717)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: Fixed path handling issues (bug #21095)</para>
       </listitem>
 
       <listitem>
