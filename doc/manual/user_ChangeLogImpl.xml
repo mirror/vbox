@@ -112,6 +112,16 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Main: Restored input pointing device behavior in multi-monitor
+          VM configuration (bug #21137)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: Fixed progress indication during automatic Linux
+          Guest Additions installation</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Control: Fixed path handling issues (bug #21095)</para>
       </listitem>
 
@@ -134,6 +144,20 @@ Rules for adding a changelog entry to make them look more uniform:
       <listitem>
         <para>GUI: Fixed a regression in new vm wizard. Selected virtual disks are no longer deleted when the wizard
           is cancelled (bug #21244)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: General improvements in startup scripts</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Introduced initial support for
+          RHEL 8.7 and 9.2 kernels (bug #21272, #21258)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed kernel modules rebuild behavior on
+          system shutdown</para>
       </listitem>
 
     </itemizedlist>
