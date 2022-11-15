@@ -116,6 +116,14 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>GUI: Various bugfixes for the Guest Control file manager</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added more informative file operations in the Guest Control file manager</para>
+      </listitem>
+
+      <listitem>
         <para>3D: Fixed VM process crash on macOS with 3D enabled (bug #21232)</para>
       </listitem>
 
@@ -124,7 +132,8 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Fixed a regression in new vm wizard. Selected virtual disks are no longer deleted when the wizard is cancelled (bug #21244)</para>
+        <para>GUI: Fixed a regression in new vm wizard. Selected virtual disks are no longer deleted when the wizard
+          is cancelled (bug #21244)</para>
       </listitem>
 
     </itemizedlist>
