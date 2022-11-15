@@ -1853,20 +1853,22 @@ int GuestSessionTaskCopyFrom::Run(void)
                 }
             }
 
-            /* Translate the final host destination file path. */
-            vrc = GuestPath::Translate(strDstRootAbs,
-                                       mSession->i_getGuestPathStyle() /* Dest */, PATH_STYLE_NATIVE /* Source */);
-            if (RT_FAILURE(vrc))
+            if (RT_SUCCESS(vrc))
             {
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Translating host destination path \"%s\" failed: %Rrc"),
-                                               strDstRootAbs.c_str(), vrc));
-                break;
-            }
+                /* Translate the final host destination file path. */
+                vrc = GuestPath::Translate(strDstRootAbs,
+                                           mSession->i_getGuestPathStyle() /* Dest */, PATH_STYLE_NATIVE /* Source */);
+                if (RT_FAILURE(vrc))
+                {
+                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                        Utf8StrFmt(tr("Translating host destination path \"%s\" failed: %Rrc"),
+                                                   strDstRootAbs.c_str(), vrc));
+                    break;
+                }
 
-            if (   RT_SUCCESS(vrc)
-                && !pList->mSourceSpec.fDryRun)
-                vrc = fileCopyFromGuest(strSrcRootAbs, strDstRootAbs, pList->mSourceSpec.fFileCopyFlags);
+                if (!pList->mSourceSpec.fDryRun)
+                    vrc = fileCopyFromGuest(strSrcRootAbs, strDstRootAbs, pList->mSourceSpec.fFileCopyFlags);
+            }
         }
         else
             AssertFailedStmt(vrc = VERR_NOT_SUPPORTED);
@@ -2341,20 +2343,22 @@ int GuestSessionTaskCopyTo::Run(void)
                 }
             }
 
-            /* Translate the final guest destination file path. */
-            vrc = GuestPath::Translate(strDstRootAbs,
-                                       PATH_STYLE_NATIVE /* Source */,  mSession->i_getGuestPathStyle() /* Dest */);
-            if (RT_FAILURE(vrc))
+            if (RT_SUCCESS(vrc))
             {
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Translating guest destination path \"%s\" failed: %Rrc"),
-                                               strDstRootAbs.c_str(), vrc));
-                break;
-            }
+                /* Translate the final guest destination file path. */
+                vrc = GuestPath::Translate(strDstRootAbs,
+                                           PATH_STYLE_NATIVE /* Source */,  mSession->i_getGuestPathStyle() /* Dest */);
+                if (RT_FAILURE(vrc))
+                {
+                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                        Utf8StrFmt(tr("Translating guest destination path \"%s\" failed: %Rrc"),
+                                                   strDstRootAbs.c_str(), vrc));
+                    break;
+                }
 
-            if (   RT_SUCCESS(vrc)
-                && !pList->mSourceSpec.fDryRun)
-                vrc = fileCopyToGuest(strSrcRootAbs, strDstRootAbs, pList->mSourceSpec.fFileCopyFlags);
+                if (!pList->mSourceSpec.fDryRun)
+                    vrc = fileCopyToGuest(strSrcRootAbs, strDstRootAbs, pList->mSourceSpec.fFileCopyFlags);
+            }
         }
         else
             AssertFailedStmt(vrc = VERR_NOT_SUPPORTED);
