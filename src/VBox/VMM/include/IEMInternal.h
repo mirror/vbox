@@ -1042,14 +1042,20 @@ typedef struct IEM
 #define IEMOPFORM_MR_REG        (IEMOPFORM_MR | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), reg */
 #define IEMOPFORM_MR_MEM        (IEMOPFORM_MR | IEMOPFORM_NOT_MOD3)
+/** ModR/M: r/m, reg */
+#define IEMOPFORM_MRI           3
+/** ModR/M: r/m (register), reg */
+#define IEMOPFORM_MRI_REG       (IEMOPFORM_MR | IEMOPFORM_MOD3)
+/** ModR/M: r/m (memory), reg */
+#define IEMOPFORM_MRI_MEM       (IEMOPFORM_MR | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m only */
-#define IEMOPFORM_M             3
+#define IEMOPFORM_M             4
 /** ModR/M: r/m only (register). */
 #define IEMOPFORM_M_REG         (IEMOPFORM_M | IEMOPFORM_MOD3)
 /** ModR/M: r/m only (memory). */
 #define IEMOPFORM_M_MEM         (IEMOPFORM_M | IEMOPFORM_NOT_MOD3)
 /** ModR/M: reg only */
-#define IEMOPFORM_R             4
+#define IEMOPFORM_R             5
 
 /** VEX+ModR/M: reg, r/m */
 #define IEMOPFORM_VEX_RM        8
