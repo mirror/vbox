@@ -982,7 +982,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk));
 #ifdef VBOX_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window_S_Minimize));
@@ -1080,7 +1080,7 @@ void UIMachineLogic::prepareActionConnections()
             this, &UIMachineLogic::sltOpenSettingsDialogUSBDevices);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), &UIAction::triggered,
             this, &UIMachineLogic::sltOpenSettingsDialogSharedFolders);
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk), &UIAction::triggered,
             this, &UIMachineLogic::sltInstallGuestAdditions);
 
     /* 'Help' menu 'Contents' action. Done here since we react differently to this action

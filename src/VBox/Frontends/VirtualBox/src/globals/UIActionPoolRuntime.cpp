@@ -2747,15 +2747,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Perform Install Guest Tools' action class. */
-class UIActionSimpleRuntimePerformInstallGuestTools : public UIActionSimple
+/** Simple action extension, used as 'Perform Insert Guest Additions Disk' action class. */
+class UIActionSimpleRuntimePerformInsertGuestAdditionsDisk : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleRuntimePerformInstallGuestTools(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformInsertGuestAdditionsDisk(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png", true)
     {}
 
@@ -2780,7 +2780,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
-        return QString("InstallGuestAdditions");
+        return QString("InsertGuestAdditionsDisk");
     }
 
     /** Handles translation event. */
@@ -3331,7 +3331,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuRuntimeDragAndDrop(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuRuntimeSharedFolders(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleRuntimeShowSharedFoldersSettings(this);
-    m_pool[UIActionIndexRT_M_Devices_S_InstallGuestTools] = new UIActionSimpleRuntimePerformInstallGuestTools(this);
+    m_pool[UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk] = new UIActionSimpleRuntimePerformInsertGuestAdditionsDisk(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions: */
@@ -4256,8 +4256,8 @@ void UIActionPoolRuntime::updateMenuDevices()
         fSeparator = false;
     }
 
-    /* Install Guest Tools action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_S_InstallGuestTools)) || fSeparator;
+    /* Insert Guest Additions Disk action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices);
