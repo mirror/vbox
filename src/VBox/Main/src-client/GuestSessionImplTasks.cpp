@@ -1672,11 +1672,27 @@ int GuestSessionTaskCopyFrom::Run(void)
 
         bool            fDstExists        = true;
 
-        RTFSOBJINFO ObjInfo;
-        RT_ZERO(ObjInfo);
-        vrc = RTPathQueryInfoEx(strDstRootAbs.c_str(), &ObjInfo, RTFSOBJATTRADD_NOTHING,
-                                fFollowSymlinks ? RTPATH_F_FOLLOW_LINK : RTPATH_F_ON_LINK /* fFlags */);
-        if (RT_FAILURE(vrc))
+        RTFSOBJINFO dstFsObjInfo;
+        RT_ZERO(dstFsObjInfo);
+        vrc = RTPathQueryInfoEx(strDstRootAbs.c_str(), &dstFsObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK /* fFlags */);
+        if (RT_SUCCESS(vrc))
+        {
+            char szPathReal[RTPATH_MAX];
+            vrc = RTPathReal(strDstRootAbs.c_str(), szPathReal, sizeof(szPathReal));
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTPathQueryInfoEx(szPathReal, &dstFsObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK /* fFlags */);
+                if (RT_SUCCESS(vrc))
+                {
+                    LogRel2(("Guest Control: Host destination is a symbolic link '%s' -> '%s' (%s)\n",
+                             strDstRootAbs.c_str(), szPathReal,
+                             GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(dstFsObjInfo.Attr.fMode))));
+                }
+
+                strDstRootAbs = szPathReal;
+            }
+        }
+        else
         {
             if (   vrc == VERR_FILE_NOT_FOUND
                 || vrc == VERR_PATH_NOT_FOUND)
@@ -1697,11 +1713,11 @@ int GuestSessionTaskCopyFrom::Run(void)
         {
             LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool -> fDstExist=%RTbool (%s)\n",
                          pList->mSourceSpec.fDirCopyFlags, fCopyIntoExisting, fFollowSymlinks,
-                         fDstExists, GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(ObjInfo.Attr.fMode))));
+                         fDstExists, GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(dstFsObjInfo.Attr.fMode))));
 
             if (fDstExists)
             {
-                switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
+                switch (dstFsObjInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
                     case RTFS_TYPE_DIRECTORY:
                     {
@@ -1727,7 +1743,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                     {
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(tr("Unknown object type (%#x) on host for \"%s\""),
-                                                       ObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDstRootAbs.c_str()));
+                                                       dstFsObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDstRootAbs.c_str()));
                         vrc = VERR_NOT_SUPPORTED;
                         break;
                     }
@@ -1815,11 +1831,11 @@ int GuestSessionTaskCopyFrom::Run(void)
         {
             LogFlowFunc(("File: fFileCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool -> fDstExist=%RTbool (%s)\n",
                          pList->mSourceSpec.fFileCopyFlags, fCopyIntoExisting, fFollowSymlinks,
-                         fDstExists, GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(ObjInfo.Attr.fMode))));
+                         fDstExists, GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(dstFsObjInfo.Attr.fMode))));
 
             if (fDstExists)
             {
-                switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
+                switch (dstFsObjInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
                     case RTFS_TYPE_DIRECTORY:
                     {
@@ -1846,7 +1862,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                         /** @todo Resolve symlinks? */
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(tr("Unknown object type (%#x) on host for \"%s\""),
-                                                       ObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDstRootAbs.c_str()));
+                                                       dstFsObjInfo.Attr.fMode & RTFS_TYPE_MASK, strDstRootAbs.c_str()));
                         vrc = VERR_NOT_SUPPORTED;
                         break;
                     }
@@ -2017,7 +2033,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                         vrc = RTPathQueryInfoEx(szPathReal, &srcFsObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
                         if (RT_SUCCESS(vrc))
                         {
-                            LogRel2(("Guest Control: Host source symbolic link '%s' -> '%s' (%s)\n",
+                            LogRel2(("Guest Control: Host source is a symbolic link '%s' -> '%s' (%s)\n",
                                      strSrc.c_str(), szPathReal,
                                      GuestBase::fsObjTypeToStr(GuestBase::fileModeToFsObjType(srcFsObjInfo.Attr.fMode))));
 
