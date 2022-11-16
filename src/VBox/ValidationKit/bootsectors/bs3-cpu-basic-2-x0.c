@@ -4838,6 +4838,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c64, },
             { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
         };
+        BS3CPUVENDOR const enmCpuVendor = Bs3GetCpuVendor();
+        bool const         fFix64OpSize = enmCpuVendor == BS3CPUVENDOR_INTEL; /** @todo what does VIA do? */
 
         /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
         uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_begin_c64);
@@ -4866,17 +4868,17 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
             CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
             CtxExpected.cs    = Ctx.cs;
-            if (!s_aTests[iTest].fOpSizePfx)
+            if (!s_aTests[iTest].fOpSizePfx || fFix64OpSize)
                 CtxExpected.rsp.u = Ctx.rsp.u + s_aTests[iTest].cbImm + 8;
             else
             {
-                CtxExpected.rsp.u  = Ctx.rsp.u + s_aTests[iTest].cbImm + 8;
+                CtxExpected.rsp.u  = Ctx.rsp.u + s_aTests[iTest].cbImm + 2;
                 CtxExpected.rip.u &= UINT16_MAX;
             }
             g_uBs3TrapEipHint = CtxExpected.rip.u32;
             Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
             //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 8 : 8);
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
             bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
             g_usBs3TestStep++;
@@ -4886,7 +4888,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             Bs3RegSetDr6(X86_DR6_INIT_VAL);
             Ctx.rflags.u16        |= X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 8 : 8);
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
             bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
             Ctx.rflags.u16        &= ~X86_EFL_TF;
