@@ -638,7 +638,7 @@ cleanup()
         unset do_update
         for j in $MODULE_LIST; do
             for mod_ext in ko ko.gz ko.xz ko.zst; do
-                test -f "${i}/${j}.${mod_ext}" && do_update=1 && rm -f "${i}/${j}.${mod_ext}"
+                test -f "${i}/misc/${j}.${mod_ext}" && do_update=1 && rm -f "${i}/misc/${j}.${mod_ext}"
             done
         done
 
