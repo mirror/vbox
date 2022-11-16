@@ -8580,12 +8580,12 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
         pDst->Rsrvd2 = 0;
     }
 
-    /* XMM registers. */
+    /* XMM registers. Skipped in 64-bit CPL0 if EFER.FFXSR (AMD only) is set. */
     if (   !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_FFXSR)
         || pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT
         || pVCpu->iem.s.uCpl != 0)
     {
-        uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+        uint32_t cXmmRegs = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? 16 : 8;
         for (uint32_t i = 0; i < cXmmRegs; i++)
             pDst->aXMM[i] = pSrc->aXMM[i];
         /** @todo Testcase: What happens to the reserved XMM registers? Untouched,
@@ -8646,7 +8646,11 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
      * Load the registers.
      */
     /** @todo CPU/VM detection possible! If CR4.OSFXSR=0 MXCSR it's
-     * implementation specific whether MXCSR and XMM0-XMM7 are restored. */
+     * implementation specific whether MXCSR and XMM0-XMM7 are
+     * restored according to Intel.
+     * AMD says MXCSR and XMM registers are never loaded if
+     * CR4.OSFXSR=0.
+     */
 
     /* common for all formats */
     pDst->FCW       = pSrc->FCW;
@@ -8664,7 +8668,8 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     }
 
     /* FPU IP, CS, DP and DS. */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    /** @todo AMD says this is only done if FSW.ES is set after loading. */
+    if (enmEffOpSize == IEMMODE_64BIT)
     {
         pDst->FPUIP  = pSrc->FPUIP;
         pDst->CS     = pSrc->CS;
@@ -8683,22 +8688,27 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
         pDst->Rsrvd2 = 0;
     }
 
-    /* XMM registers. */
+    /* XMM registers. Skipped in 64-bit CPL0 if EFER.FFXSR (AMD only) is set.
+     * Does not affect MXCSR, only registers.
+     */
     if (   !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_FFXSR)
         || pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT
         || pVCpu->iem.s.uCpl != 0)
     {
-        uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+        uint32_t cXmmRegs = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? 16 : 8;
         for (uint32_t i = 0; i < cXmmRegs; i++)
             pDst->aXMM[i] = pSrc->aXMM[i];
     }
+
+    pDst->FCW &= ~X86_FCW_ZERO_MASK;
+    iemFpuRecalcExceptionStatus(pDst);
 
     if (pDst->FSW & X86_FSW_ES)
         Log11(("fxrstor: %04x:%08RX64: loading state with pending FPU exception (FSW=%#x)\n",
                pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pSrc->FSW));
 
     /*
-     * Commit the memory.
+     * Unmap the memory.
      */
     rcStrict = iemMemCommitAndUnmap(pVCpu, pvMem512, IEM_ACCESS_DATA_R);
     if (rcStrict != VINF_SUCCESS)
@@ -8939,7 +8949,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
         return rcStrict;
 
     /*
-     * Store the X87 state.
+     * Load the X87 state.
      */
     if (fReqComponents & XSAVE_C_X87)
     {
@@ -8955,7 +8965,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
             pDst->DS     = pSrc->DS;
             if (enmEffOpSize == IEMMODE_64BIT)
             {
-                /* Save upper 16-bits of FPUIP (IP:CS:Rsvd1) and FPUDP (DP:DS:Rsvd2). */
+                /* Load upper 16-bits of FPUIP (IP:CS:Rsvd1) and FPUDP (DP:DS:Rsvd2). */
                 pDst->Rsrvd1 = pSrc->Rsrvd1;
                 pDst->Rsrvd2 = pSrc->Rsrvd2;
             }
@@ -8971,6 +8981,10 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
                 pDst->aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
                 pDst->aRegs[i].au32[3] = 0;
             }
+
+            pDst->FCW &= ~X86_FCW_ZERO_MASK;
+            iemFpuRecalcExceptionStatus(pDst);
+
             if (pDst->FSW & X86_FSW_ES)
                 Log11(("xrstor: %04x:%08RX64: loading state with pending FPU exception (FSW=%#x)\n",
                        pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pSrc->FSW));
