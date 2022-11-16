@@ -95,6 +95,27 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>GUI: Various bugfixes for the Guest Control file manager</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added more informative file operations in the Guest Control file manager</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added an option to the global settings (the display page) to resize user interface font</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed a regression in new vm wizard. Selected virtual disks are no longer deleted when the wizard
+          is cancelled (bug #21244)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added a new menu item to the devices menu to optionally upgrade the guest additions.</para>
+      </listitem>
+
+      <listitem>
         <para>VirtioSCSI: Fixed recognition of the virtio SCSI controller by the EFI firmware (bug #21200)</para>
       </listitem>
 
@@ -128,27 +149,6 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Guest Control: Fixed path handling issues (bug #21095)</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: Various bugfixes for the Guest Control file manager</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: Added more informative file operations in the Guest Control file manager</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: Added an option to the global settings (the display page) to resize user interface font</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: Fixed a regression in new vm wizard. Selected virtual disks are no longer deleted when the wizard
-          is cancelled (bug #21244)</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: Added a new menu item to the devices menu to optionally upgrade the guest additions.</para>
       </listitem>
 
       <listitem>
