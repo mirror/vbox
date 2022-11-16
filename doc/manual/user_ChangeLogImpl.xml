@@ -156,6 +156,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Linux Guest Additions: Introduced initial support for SLES 15.4 kernels</para>
+      </listitem>
+
+      <listitem>
         <para>Linux Guest Additions: Fixed kernel modules rebuild behavior on
           system shutdown</para>
       </listitem>
