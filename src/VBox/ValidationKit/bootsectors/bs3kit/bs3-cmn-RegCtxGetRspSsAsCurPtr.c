@@ -69,6 +69,3 @@ BS3_CMN_DEF(void BS3_FAR *, Bs3RegCtxGetRspSsAsCurPtr,(PBS3REGCTX pRegCtx))
 #endif
 }
 
-
-
-
