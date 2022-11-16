@@ -4626,6 +4626,10 @@ PROTO_ALL(bs3CpuBasic2_retn_i24__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i24_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i0__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i0_opsize__ud2);
+FNBS3FAR  bs3CpuBasic2_retn_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_i24_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_opsize_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64;
 PROTO_ALL(bs3CpuBasic2_retn_opsize_end);
 #undef PROTO_ALL
 
@@ -4832,16 +4836,22 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
         const s_aTests[] =
         {
             { 32, false,  0, bs3CpuBasic2_retn__ud2_c64, },
+            { 32, false,  0, bs3CpuBasic2_retn_rexw__ud2_c64, },
             { 32,  true,  0, bs3CpuBasic2_retn_opsize__ud2_c64, },
+            { 32,  true,  0, bs3CpuBasic2_retn_opsize_rexw__ud2_c64, },
             { 32, false, 24, bs3CpuBasic2_retn_i24__ud2_c64, },
+            { 32, false, 24, bs3CpuBasic2_retn_i24_rexw__ud2_c64, },
             { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c64, },
+            { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64, },
             { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c64, },
             { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
         };
         BS3CPUVENDOR const enmCpuVendor = Bs3GetCpuVendor();
         bool const         fFix64OpSize = enmCpuVendor == BS3CPUVENDOR_INTEL; /** @todo what does VIA do? */
 
-        /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
+        /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed
+           tests, unless we're on intel where the opsize prefix is ignored. Here we
+           just fill low memory with int3's so we can detect non-intel behaviour.  */
         uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_begin_c64);
         uint16_t const          cbLow    = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_end_c64) - offLow;
         uint8_t BS3_FAR * const pbLow    = BS3_FP_MAKE(BS3_SEL_TILED_R0, 0);
@@ -4849,17 +4859,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
         if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
             Bs3TestFailedF("Opsize overriden jumps/calls are out of place: %#x LB %#x\n", offLow, cbLow);
         Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
-        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
-            if (s_aTests[iTest].fOpSizePfx)
-            {
-                uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
-                uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
-                BS3_ASSERT(offUd - offLow + 1 < cbLow);
-                pbCode16[offUd]     = 0xf1; /* replace original ud2 with icebp */
-                pbCode16[offUd + 1] = 0xf1;
-                pbLow[offUd]        = 0x0f; /* plant ud2 in low memory */
-                pbLow[offUd + 1]    = 0x0b;
-            }
+        if (!fFix64OpSize)
+            for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+                if (s_aTests[iTest].fOpSizePfx)
+                {
+                    uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
+                    uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
+                    BS3_ASSERT(offUd - offLow + 1 < cbLow);
+                    pbCode16[offUd]     = 0xf1; /* replace original ud2 with icebp */
+                    pbCode16[offUd + 1] = 0xf1;
+                    pbLow[offUd]        = 0x0f; /* plant ud2 in low memory */
+                    pbLow[offUd + 1]    = 0x0b;
+                }
 
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
         {
@@ -4876,7 +4887,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
                 CtxExpected.rip.u &= UINT16_MAX;
             }
             g_uBs3TrapEipHint = CtxExpected.rip.u32;
-            Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
+            //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
             //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
             bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
