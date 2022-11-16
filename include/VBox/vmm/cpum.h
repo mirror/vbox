@@ -1114,18 +1114,22 @@ typedef struct CPUMFEATURES
     uint32_t        fInvpcid : 1;
     /** Supports read/write FSGSBASE instructions. */
     uint32_t        fFsGsBase : 1;
-    /** Support BMI1 instructions (ANDN, BEXTR, BLSI, BLSMSK, BLSR, and TZCNT). */
+    /** Supports BMI1 instructions (ANDN, BEXTR, BLSI, BLSMSK, BLSR, and TZCNT). */
     uint32_t        fBmi1 : 1;
-    /** Support BMI2 instructions (BZHI, MULX, PDEP, PEXT, RORX, SARX, SHRX,
+    /** Supports BMI2 instructions (BZHI, MULX, PDEP, PEXT, RORX, SARX, SHRX,
      * and SHLX). */
     uint32_t        fBmi2 : 1;
-    /** Support POPCNT instruction. */
+    /** Supports POPCNT instruction. */
     uint32_t        fPopCnt : 1;
-    /** Support RDRAND instruction. */
+    /** Supports RDRAND instruction. */
     uint32_t        fRdRand : 1;
-    /** Support RDSEED instruction. */
+    /** Supports RDSEED instruction. */
     uint32_t        fRdSeed : 1;
-    /** Support PCLMULQDQ instruction. */
+    /** Supports Hardware Lock Elision (HLE). */
+    uint32_t        fHle : 1;
+    /** Supports Restricted Transactional Memory (RTM - XBEGIN, XEND, XABORT). */
+    uint32_t        fRtm : 1;
+    /** Supports PCLMULQDQ instruction. */
     uint32_t        fPclMul : 1;
     /** Supports AES-NI (six AESxxx instructions). */
     uint32_t        fAesNi : 1;
@@ -1191,7 +1195,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 29;
+    uint32_t        fPadding0 : 27;
 
 
     /** @name SVM

@@ -1465,6 +1465,8 @@ int cpumCpuIdExplodeFeaturesX86(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCP
             pFeatures->fBmi1                = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_BMI1);
             pFeatures->fBmi2                = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_BMI2);
             pFeatures->fRdSeed              = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_RDSEED);
+            pFeatures->fHle                 = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_HLE);
+            pFeatures->fRtm                 = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_RTM);
 
             pFeatures->fIbpb                = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB);
             pFeatures->fIbrs                = pFeatures->fIbpb;
