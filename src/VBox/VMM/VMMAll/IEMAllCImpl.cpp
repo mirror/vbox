@@ -2715,12 +2715,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemCImpl_ReturnNearCommon(PVMCPUCC pVCpu, uint8_
     /* Commit it. */
     pVCpu->cpum.GstCtx.rip = NewRip.u;
     pVCpu->cpum.GstCtx.rsp = NewRsp.u;
-    pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo only need a light flush here, don't we?  We don't really need any flushing... */
     RT_NOREF(cbInstr);
-    return VINF_SUCCESS;
+
+    return iemRegFinishClearingRF(pVCpu);
 }
 
 
