@@ -329,11 +329,17 @@ int main(int argc, char **argv)
        floppy.  The BIOS always report double sided floppies, and even if we
        the bootsector adjust it's bMaxHeads value when getting a 20h error
        we end up with a garbaged image (seems somewhere in the BIOS/FDC it is
-       still treated as a double sided floppy and we get half the data we want and
-       with gaps). */
+       still treated as a double sided floppy and we get half the data we want
+       and with gaps).
+
+       Similarly, if the size is 320KB or 360KB the FDC detects it as a double
+       sided 5.25" floppy with 40 tracks, while the BIOS keeps reporting a
+       1.44MB 3.5" floppy. So, just avoid those sizes too. */
     uint32_t cbOutput = ftell(pOutput);
-    if (   cbOutput == 512 * 8 * 40 /* 160kB 5"1/4 */
-        || cbOutput == 512 * 9 * 40 /* 180kB 5"1/4 */)
+    if (   cbOutput == 512 * 8 * 40 * 1 /* 160kB 5"1/4 SS */
+        || cbOutput == 512 * 9 * 40 * 1 /* 180kB 5"1/4 SS */
+        || cbOutput == 512 * 8 * 40 * 2 /* 320kB 5"1/4 DS */
+        || cbOutput == 512 * 9 * 40 * 2 /* 360kB 5"1/4 DS */ )
     {
         static uint8_t const s_abZeroSector[512] = { 0 };
         if (fwrite(s_abZeroSector, sizeof(uint8_t), sizeof(s_abZeroSector), pOutput) != sizeof(s_abZeroSector))

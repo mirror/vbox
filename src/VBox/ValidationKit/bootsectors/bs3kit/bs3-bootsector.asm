@@ -58,6 +58,10 @@
 ;; Halts on failure location. For debugging.
 ;%define HLT_ON_FAILURE 1
 
+;; Enables saving of initial register state.
+;; Dropping this is useful for making more room for debugging.
+%define BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
+
 
 %ifdef __YASM__
 [map all]
@@ -125,14 +129,17 @@ g_BpbEnd:                               ; 03ch
 bs3InitCode:
         cli
 
+%ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         ; save the registers.
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], ax
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ds
+%endif
 
         ; set up the DS segment reister so we can skip the CS prefix when saving more prefixes..
         mov     ax, 0
         mov     ds, ax
 
+%ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
         mov     di, BS3_ADDR_REG_SAVE
         mov     [di + BS3REGCTX.rsp], sp
@@ -140,6 +147,7 @@ bs3InitCode:
         mov     [di + BS3REGCTX.rcx], cx
         mov     [di + BS3REGCTX.es], es
         mov     [di + BS3REGCTX.rbp], bp
+%endif
 
         ; set up the stack.
         mov     ss, ax
@@ -197,17 +205,22 @@ CPU 286
         je      .is_386plus
 .is_80286:
 CPU 286
+%ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         smsw    [di + BS3REGCTX.cr0 - 0x70]
+%endif
 .pre_80286:
 CPU 8086
+%ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         mov     [di - 0x70 + BS3REGCTX.rbx], bx
         mov     [di - 0x70 + BS3REGCTX.rdx], dx
         mov     [di - 0x70 + BS3REGCTX.rsi], si
+%endif
         jmp     .do_load
 
         ; Save 386 registers. We can now skip the CS prefix as DS is flat.
 CPU 386
 .is_386plus:
+%ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         shr     eax, 16
         mov     [di - 0x70 + BS3REGCTX.rax+2], ax
         mov     eax, esp
@@ -252,9 +265,12 @@ CPU 386
         mov     eax, cr4
         mov     [di - 0x70 + BS3REGCTX.cr4], eax
 .no_cr4:
+%endif
         ; Make sure caching is enabled and alignment is off.
         mov     eax, cr0
+%ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         mov     [di - 0x70 + BS3REGCTX.cr0], eax
+%endif
         and     eax, ~(X86_CR0_NW | X86_CR0_CD | X86_CR0_AM)
         mov     cr0, eax
 
@@ -395,14 +411,14 @@ BEGINPROC bs3InitLoadImage
         mov     es, di                  ; es:bx -> buffer
         mov     ax, 0201h               ; al=1 sector; ah=read function
         int     13h
-%ifndef HLT_ON_FAILURE
+ %ifndef HLT_ON_FAILURE
         jc      .failure
-%else
+ %else
         jnc     .read_ok
         cli
         hlt
 .read_ok:
-%endif
+ %endif
 
         ; advance to the next sector/head/cylinder.
         inc     cl
@@ -481,7 +497,12 @@ BEGINPROC bs3InitLoadImage
         mov     bMaxHead, dh
         inc     ch
         jmp     .the_load_loop
-.read_one
+.read_one:
+%elifdef HLT_ON_FAILURE
+        je      .read_one_ok
+        cli
+        hlt
+.read_one_ok:
 %else
         jne     .failure
 %endif
