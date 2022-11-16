@@ -3226,7 +3226,7 @@ VBOXSTRICTRC iemVmxVmexitInstrMovDrX(PVMCPUCC pVCpu, VMXINSTRID uInstrId, uint8_
                                                                      ? VMX_EXIT_QUAL_DRX_DIRECTION_WRITE
                                                                      : VMX_EXIT_QUAL_DRX_DIRECTION_READ),
                                                         cbInstr);
-            return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
