@@ -337,10 +337,13 @@ GROUP FLAT BS3FLAT
 %endif
 
 
-%macro BS3_BEGIN_TEXT16 0-1 2
+;;
+; Changes to the BS3TEXT16 segment, defining it if necessary.
+; @param %1  The bitcount to invoke BS3_SET_BITS with, default is 16.
+%macro BS3_BEGIN_TEXT16 0-1 16
  %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
   %define BS3_BEGIN_TEXT16_NOT_FIRST
-        section BS3TEXT16 align=%1 CLASS=BS3CLASS16CODE PUBLIC USE16
+        section BS3TEXT16 align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
   %ifndef BS3_BEGIN_TEXT16_WITHOUT_GROUP ; bs3-first-common.mac trick.
    %ifndef BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
    %define BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
@@ -358,7 +361,7 @@ GROUP FLAT BS3FLAT
  %endif
  %undef   BS3_CUR_SEG_BEGIN_MACRO
  %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_TEXT16
-        BS3_SET_BITS 16
+        BS3_SET_BITS %1
 %endmacro
 
 %macro BS3_BEGIN_TEXT16_NEARSTUBS 0
