@@ -1751,9 +1751,9 @@ int GuestPath::BuildDestinationPath(const Utf8Str &strSrcPath, PathStyle_T enmSr
      *
      * #    source       dest             final dest                        remarks
      *
-     * 1    /gst/dir1/   /dst/dir2/       /dst/dir2/<contents of dir1>      Just copies contents of <contents>, not the directory itself.
-     * 2    /gst/dir1    /dst/dir2/       /dst/dir2/dir1                    Copies dir1 into dir2.
-     * 3    /gst/dir1    /dst/dir2        /dst/dir2                         Overwrites stuff from dir2 with stuff from dir1.
+     * 1    /src/path1/  /dst/path2/      /dst/path2/<contents of path1>    Just copies contents of <contents of path1>, not the path1 itself.
+     * 2    /src/path1   /dst/path2/      /dst/path2/path1                  Copies path1 into path2.
+     * 3    /src/path1   /dst/path2       /dst/path2                        Overwrites stuff from path2 with stuff from path1.
      * 4    Dotdot ("..") directories are forbidden for security reasons.
      */
     const char *pszSrcName = RTPathFilenameEx(strSrcPath.c_str(),
