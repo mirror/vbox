@@ -112,6 +112,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>VBoxManage: Fixed regression when 'createmedium disk --variant RawDisk' command resulted
+          in invalid .vmdk file (bug #21125)</para>
+      </listitem>
+
+      <listitem>
         <para>Main: Restored input pointing device behavior in multi-monitor
           VM configuration (bug #21137)</para>
       </listitem>
