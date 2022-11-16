@@ -143,13 +143,14 @@ class tdTestGuestCtrlBase(object):
         _ = oTxsSession;
 
         try:
-            self.oGuest = oSession.o.console.guest;
+            self.oGuest  = oSession.o.console.guest;
+            self.oTestVm = oTestVm;
         except:
             reporter.errorXcpt();
 
         if self.oCreds is None:
             self.oCreds = tdCtxCreds();
-        self.oCreds.applyDefaultsIfNotSet(oTestVm);
+        self.oCreds.applyDefaultsIfNotSet(self.oTestVm);
 
         return True;
 
@@ -216,6 +217,14 @@ class tdTestGuestCtrlBase(object):
                                           % (waitResult,));
                         return (False, None);
                     reporter.log('Session "%s" successfully started' % (sName,));
+
+                    #
+                    # Make sure that the test VM configuration and Guest Control use the same path separator style for the guest.
+                    #
+                    sGstSep = '\\' if self.oGuestSession.pathStyle is vboxcon.PathStyle_DOS else '/';
+                    if self.oTestVm.pathSep() != sGstSep:
+                        reporter.error('Configured test VM uses a different path style (%s) than Guest Control (%s)' \
+                                       % (self.oTestVm.pathSep(), sGstSep));
                     break;
                 except:
                     # Just log, don't assume an error here (will be done in the main loop then).
@@ -4849,9 +4858,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only 6.0 and later.
             atTests.extend([
                 # Should succeed, as the file isn't there yet on the destination.
-                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst + os.path.sep), tdTestResultSuccess() ],
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst + oTestVm.pathSep()), tdTestResultSuccess() ],
                 # Overwrite the existing file.
-                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst + os.path.sep), tdTestResultSuccess() ],
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst + oTestVm.pathSep()), tdTestResultSuccess() ],
                 # Same file, but with a different name on the destination.
                 [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, os.path.split(sBigFileHst)[1])),
                   tdTestResultSuccess() ],                                                                  # Overwrite
@@ -4883,12 +4892,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                   afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),  tdTestResultSuccess() ],
                 # With a trailing slash added to the destination, copy the empty guest directory
                 # (should end up as sScratchDstDir2Gst/empty):
-                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + os.path.sep), tdTestResultSuccess() ],
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
+                  tdTestResultSuccess() ],
                 # Repeat -- this time it should fail, as the destination directory already exists (and
                 # DirectoryCopyFlag_CopyIntoExisting is not specified):
-                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + os.path.sep), tdTestResultFailure() ],
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
+                  tdTestResultFailure() ],
                 # Add the DirectoryCopyFlag_CopyIntoExisting flag being set and it should work (again).
-                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + os.path.sep,
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep(),
                                   afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
                 # Copy with a different destination name just for the heck of it:
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = oTestVm.pathJoin(sScratchDstDir2Gst, 'empty2')),
@@ -4904,11 +4915,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ]);
             atTests.extend([
                 # Copy the entire test tree:
-                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + os.path.sep), tdTestResultSuccess() ],
+                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + oTestVm.pathSep()), tdTestResultSuccess() ],
                 # Again, should fail this time.
-                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + os.path.sep), tdTestResultFailure() ],
+                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + oTestVm.pathSep()), tdTestResultFailure() ],
                 # Works again, as DirectoryCopyFlag_CopyIntoExisting is specified.
-                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + os.path.sep,
+                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + oTestVm.pathSep(),
                                   afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
             ]);
 
