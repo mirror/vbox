@@ -677,7 +677,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu
         pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
         pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
         if (fDr6)
-            pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
+            pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6() | X86_DR6_RA1_MASK; /* ASSUMES no guest supprot for TSX-NI / RTM. */
     }
     ASMAtomicAndU32(&pVCpu->cpum.s.fUseFlags, ~(CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER));
 

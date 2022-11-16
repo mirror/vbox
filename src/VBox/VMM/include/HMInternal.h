@@ -275,7 +275,6 @@ typedef struct HM
         bool                        fEnabled;
         /** The shift mask employed by the VMX-Preemption timer (set by ring-0). */
         uint8_t                     cPreemptTimerShift;
-        bool                        fAlignment1;
 
         /** @name Configuration (gets copied if problematic)
          * @{ */
@@ -289,6 +288,10 @@ typedef struct HM
         /** Set if the preemption timer should be used if available.  Ring-0
          * quietly clears this if the hardware doesn't support the preemption timer. */
         bool                        fUsePreemptTimerCfg;
+        /** Whether to always intercept MOV DRx: 1 (always), 0 (default), -1 (lazy).
+         * In the default case it is only always intercepted when setting DR6 to 0 on
+         * the host results in a value different from X86_DR6_RA1_MASK. */
+        int8_t                      fAlwaysInterceptMovDRxCfg;
         /** @} */
 
         /** Pause-loop exiting (PLE) gap in ticks. */
@@ -364,7 +367,9 @@ typedef struct HM
             bool                        fSupportsVmcsEfer;
             /** Whether to use VMCS shadowing. */
             bool                        fUseVmcsShadowing;
-            bool                        fAlignment2;
+            /** Whether MOV DRx is always intercepted or not (set by ring-0 VMX init, for
+             * logging). */
+            bool                        fAlwaysInterceptMovDRx;
 
             /** Host CR4 value (set by ring-0 VMX init, for logging). */
             uint64_t                    u64HostCr4;
@@ -374,6 +379,8 @@ typedef struct HM
             uint64_t                    u64HostMsrEfer;
             /** Host IA32_FEATURE_CONTROL MSR (set by ring-0 VMX init, for logging). */
             uint64_t                    u64HostFeatCtrl;
+            /** Host zero'ed DR6 value (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostDr6Zeroed;
 
             /** The first valid host LBR branch-from-IP stack range. */
             uint32_t                    idLbrFromIpMsrFirst;
@@ -511,7 +518,9 @@ typedef struct HMR0PERVM
         bool                        fUseVmcsShadowing;
         /** Set if Last Branch Record (LBR) is enabled. */
         bool                        fLbr;
-        bool                        afAlignment2[3];
+        /** Set always intercept MOV DRx. */
+        bool                        fAlwaysInterceptMovDRx;
+        bool                        afAlignment2[2];
 
         /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
         bool                        fVpid;

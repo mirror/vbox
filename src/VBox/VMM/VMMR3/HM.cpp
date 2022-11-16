@@ -280,8 +280,9 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                               "|SvmVirtVmsaveVmload"
                               "|SvmVGif"
                               "|LovelyMesaDrvWorkaround"
-                              "|MissingOS2TlbFlushWorkaround",
-                              "" /* pszValidNodes */, "HM" /* pszWho */, 0 /* uInstance */);
+                              "|MissingOS2TlbFlushWorkaround"
+                              "|AlwaysInterceptVmxMovDRx"
+                              , "" /* pszValidNodes */, "HM" /* pszWho */, 0 /* uInstance */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -525,6 +526,26 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * modifications when returning to protected mode from a real mode call
      * (TESTCFG.SYS typically crashes).  See ticketref:20625 for details. */
     rc = CFGMR3QueryBoolDef(pCfgHm, "MissingOS2TlbFlushWorkaround", &pVM->hm.s.fMissingOS2TlbFlushWorkaround, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/HM/AlwaysInterceptVmxMovDRx,int8_t,-1}
+     * Whether to always intercept MOV DRx when using VMX.
+     * The value is a tristate: 1 for always intercepting, -1 for lazy intercept,
+     * and 0 for default.  The default means that it's always intercepted when the
+     * host DR6 contains bits not known to the guest.
+     *
+     * With the introduction of transactional synchronization extensions new
+     * instructions, aka TSX-NI or RTM, bit 16 in DR6 is cleared to indicate that a
+     * \#DB was related to a transaction.  The bit is also cleared when writing zero
+     * to it, so guest lazily resetting DR6 by writing 0 to it, ends up with an
+     * unexpected value.  Similiarly, bit 11 in DR7 is used to enabled RTM
+     * debugging support and therefore writable by the guest.
+     *
+     * Out of caution/paranoia, we will by default intercept DRx moves when setting
+     * DR6 to zero (on the host) doesn't result in 0xffff0ff0 (X86_DR6_RA1_MASK).
+     * Note that it seems DR6.RTM remains writable even after the microcode updates
+     * disabling TSX. */
+    rc = CFGMR3QueryS8Def(pCfgHm, "AlwaysInterceptVmxMovDRx", &pVM->hm.s.vmx.fAlwaysInterceptMovDRxCfg, -1);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -1601,6 +1622,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostCr4));
     LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl));
+    LogRel(("HM: Host DR6 zero'ed                  = %#RX64%s\n", pVM->hm.s.ForR3.vmx.u64HostDr6Zeroed,
+            pVM->hm.s.ForR3.vmx.fAlwaysInterceptMovDRx ? " - always intercept MOV DRx" : ""));
 
     hmR3VmxReportFeatCtlMsr(pVM->hm.s.ForR3.vmx.u64HostFeatCtrl);
     hmR3VmxReportBasicMsr(pVM->hm.s.ForR3.vmx.Msrs.u64Basic);

@@ -7143,6 +7143,7 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     uint64_t const uDR6 = X86_DR6_INIT_VAL
                         | (pVmxTransient->uExitQual & (  X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3
                                                        | X86_DR6_BD | X86_DR6_BS));
+    Log6Func(("uDR6=%#RX64 uExitQual=%#RX64\n", uDR6, pVmxTransient->uExitQual));
 
     int rc;
     if (!pVmxTransient->fIsNestedGuest)
@@ -7169,7 +7170,8 @@ static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         /*
          * The exception was for the guest.  Update DR6, DR7.GD and
          * IA32_DEBUGCTL.LBR before forwarding it.
-         * See Intel spec. 27.1 "Architectural State before a VM-Exit".
+         * See Intel spec. 27.1 "Architectural State before a VM-Exit"
+         * and @sdmv3{077,622,17.2.3,Debug Status Register (DR6)}.
          */
 #ifndef IN_NEM_DARWIN
         VMMRZCallRing3Disable(pVCpu);
@@ -9169,7 +9171,11 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     if (!pVmxTransient->fIsNestedGuest)
     {
         /* We should -not- get this VM-exit if the guest's debug registers were active. */
-        if (pVmxTransient->fWasGuestDebugStateActive)
+        if (   pVmxTransient->fWasGuestDebugStateActive
+#ifdef VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX
+            && !pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fAlwaysInterceptMovDRx
+#endif
+           )
         {
             AssertMsgFailed(("Unexpected MOV DRx exit\n"));
             HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
@@ -9181,10 +9187,21 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(!DBGFIsStepping(pVCpu));
             Assert(pVmcsInfo->u32XcptBitmap & RT_BIT(X86_XCPT_DB));
 
-            /* Don't intercept MOV DRx any more. */
-            pVmcsInfo->u32ProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
-            int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
-            AssertRC(rc);
+            /* Whether we disable intercepting MOV DRx instructions and resume
+               the current one, or emulate it and keep intercepting them is
+               configurable.  Though it usually comes down to whether there are
+               any new DR6 & DR7 bits (RTM) we want to hide from the guest. */
+#ifdef VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX
+            bool const fResumeInstruction = !pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fAlwaysInterceptMovDRx;
+#else
+            bool const fResumeInstruction = true;
+#endif
+            if (fResumeInstruction)
+            {
+                pVmcsInfo->u32ProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
+                int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
+                AssertRC(rc);
+            }
 
 #ifndef IN_NEM_DARWIN
             /* We're playing with the host CPU state here, make sure we can't preempt or longjmp. */
@@ -9203,15 +9220,18 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(!CPUMIsHyperDebugStateActive(pVCpu));
 #endif
 
-#ifdef VBOX_WITH_STATISTICS
-            vmxHCReadToTransient<HMVMX_READ_EXIT_QUALIFICATION>(pVCpu, pVmxTransient);
-            if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxWrite);
-            else
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxRead);
-#endif
             STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatDRxContextSwitch);
-            return VINF_SUCCESS;
+            if (fResumeInstruction)
+            {
+#ifdef VBOX_WITH_STATISTICS
+                vmxHCReadToTransient<HMVMX_READ_EXIT_QUALIFICATION>(pVCpu, pVmxTransient);
+                if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
+                    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxWrite);
+                else
+                    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxRead);
+#endif
+                return VINF_SUCCESS;
+            }
         }
     }
 
@@ -9225,10 +9245,11 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                                    | CPUMCTX_EXTRN_GPRS_MASK
                                    | CPUMCTX_EXTRN_DR7>(pVCpu, pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
-    Log4Func(("cs:rip=%#04x:%08RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
     uint8_t const iGReg  = VMX_EXIT_QUAL_DRX_GENREG(pVmxTransient->uExitQual);
     uint8_t const iDrReg = VMX_EXIT_QUAL_DRX_REGISTER(pVmxTransient->uExitQual);
+    Log4Func(("cs:rip=%#04x:%08RX64 r%d %s dr%d\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, iGReg,
+              VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE ? "->" : "<-", iDrReg));
 
     VBOXSTRICTRC  rcStrict;
     if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
@@ -9241,10 +9262,18 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                   || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
         if (rcStrict == VINF_SUCCESS)
+       {
             /** @todo r=bird: Not sure why we always flag DR7 as modified here, but I've
              * kept it for now to avoid breaking something non-obvious. */
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
                                                                 | HM_CHANGED_GUEST_DR7);
+            /* Update the DR6 register if guest debug state is active, otherwise we'll
+               trash it when calling CPUMR0DebugStateMaybeSaveGuestAndRestoreHost. */
+            if (iDrReg == 6 && CPUMIsGuestDebugStateActive(pVCpu))
+                ASMSetDR6(pVCpu->cpum.GstCtx.dr[6]);
+            Log4Func(("r%d=%#RX64 => dr%d=%#RX64\n", iGReg, pVCpu->cpum.GstCtx.aGRegs[iGReg].u,
+                      iDrReg, pVCpu->cpum.GstCtx.dr[iDrReg]));
+        }
         else if (rcStrict == VINF_IEM_RAISED_XCPT)
         {
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);

@@ -70,6 +70,9 @@
 # define HMVMX_ALWAYS_SWAP_EFER
 #endif
 
+/** Enables the fAlwaysInterceptMovDRx related code. */
+#define VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX 1
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -96,6 +99,14 @@ AssertCompileSizeAlignment(VMXPAGEALLOCINFO, 8);
 *********************************************************************************************************************************/
 static bool     hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient);
 static int      hmR0VmxExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo);
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** The DR6 value after writing zero to the register.
+ * Set by VMXR0GlobalInit(). */
+static uint64_t g_fDr6Zeroed = 0;
 
 
 /**
@@ -3043,6 +3054,20 @@ VMMR0DECL(int) VMXR0GlobalInit(void)
         Assert(g_aVMExitHandlers[i].pfn);
 # endif
 #endif
+
+    /*
+     * For detecting whether DR6.RTM is writable or not (done in VMXR0InitVM).
+     */
+    RTTHREADPREEMPTSTATE Preempt = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&Preempt);
+    RTCCUINTXREG const fSavedDr6 = ASMGetDR6();
+    ASMSetDR6(0);
+    RTCCUINTXREG const fZeroDr6  = ASMGetDR6();
+    ASMSetDR6(fSavedDr6);
+    RTThreadPreemptRestore(&Preempt);
+
+    g_fDr6Zeroed = fZeroDr6;
+
     return VINF_SUCCESS;
 }
 
@@ -3150,6 +3175,23 @@ VMMR0DECL(int) VMXR0InitVM(PVMCC pVM)
     strcpy((char *)pVM->hmr0.s.vmx.pbScratch, "SCRATCH Magic");
     *(uint64_t *)(pVM->hmr0.s.vmx.pbScratch + 16) = UINT64_C(0xdeadbeefdeadbeef);
 #endif
+
+    /*
+     * Copy out stuff that's for ring-3 and determin default configuration.
+     */
+    pVM->hm.s.ForR3.vmx.u64HostDr6Zeroed = g_fDr6Zeroed;
+
+    /* Since we do not emulate RTM, make sure DR6.RTM cannot be cleared by the
+       guest and cause confusion there.  It appears that the DR6.RTM bit can be
+       cleared even if TSX-NI is disabled (microcode update / system / whatever). */
+#ifdef VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX
+    if (pVM->hm.s.vmx.fAlwaysInterceptMovDRxCfg == 0)
+        pVM->hmr0.s.vmx.fAlwaysInterceptMovDRx = g_fDr6Zeroed != X86_DR6_RA1_MASK;
+    else
+#endif
+        pVM->hmr0.s.vmx.fAlwaysInterceptMovDRx = pVM->hm.s.vmx.fAlwaysInterceptMovDRxCfg > 0;
+    pVM->hm.s.ForR3.vmx.fAlwaysInterceptMovDRx = pVM->hmr0.s.vmx.fAlwaysInterceptMovDRx;
+
     return VINF_SUCCESS;
 }
 
@@ -3801,7 +3843,6 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 #endif
 
     bool     fSteppingDB      = false;
-    bool     fInterceptMovDRx = false;
     uint32_t uProcCtls        = pVmcsInfo->u32ProcCtls;
     if (pVCpu->hm.s.fSingleInstruction)
     {
@@ -3820,6 +3861,11 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         }
     }
 
+#ifdef VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX
+    bool     fInterceptMovDRx = pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fAlwaysInterceptMovDRx;
+#else
+    bool     fInterceptMovDRx = false;
+#endif
     uint64_t u64GuestDr7;
     if (   fSteppingDB
         || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
@@ -3859,7 +3905,9 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
                 Assert(!CPUMIsHyperDebugStateActive(pVCpu));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
             }
+#ifndef VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX
             Assert(!fInterceptMovDRx);
+#endif
         }
         else if (!CPUMIsGuestDebugStateActive(pVCpu))
         {
@@ -4606,9 +4654,11 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
     Assert(!CPUMIsGuestFPUStateActive(pVCpu));
 
     /* Restore host debug registers if necessary. We will resync on next R0 reentry. */
-#ifdef VBOX_STRICT
-    if (CPUMIsHyperDebugStateActive(pVCpu))
-        Assert(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT);
+#ifdef VMX_WITH_MAYBE_ALWAYS_INTERCEPT_MOV_DRX
+    Assert(   (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT)
+           || (!CPUMIsHyperDebugStateActive(pVCpu) && !pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fAlwaysInterceptMovDRx));
+#else
+    Assert((pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT) || !CPUMIsHyperDebugStateActive(pVCpu));
 #endif
     CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
@@ -5496,7 +5546,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     uint32_t       u32ProcCtls = (pVmcsNstGst->u32ProcCtls  & ~VMX_PROC_CTLS_USE_IO_BITMAPS)
                                | (pVmcsInfoGst->u32ProcCtls & ~(  VMX_PROC_CTLS_INT_WINDOW_EXIT
                                                                 | VMX_PROC_CTLS_NMI_WINDOW_EXIT
-                                                                | VMX_PROC_CTLS_MOV_DR_EXIT
+                                                                | VMX_PROC_CTLS_MOV_DR_EXIT /* hmR0VmxExportSharedDebugState makes
+                                                                                               sure guest DRx regs are loaded. */
                                                                 | VMX_PROC_CTLS_USE_TPR_SHADOW
                                                                 | VMX_PROC_CTLS_MONITOR_TRAP_FLAG));
 
