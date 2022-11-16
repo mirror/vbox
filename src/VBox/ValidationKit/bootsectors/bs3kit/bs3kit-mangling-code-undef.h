@@ -113,6 +113,7 @@
 #undef Bs3PrintX32
 #undef Bs3RegCtxConvertToRingX
 #undef Bs3RegCtxConvertV86ToRm
+#undef Bs3RegCtxGetRspSsAsCurPtr
 #undef Bs3RegCtxPrint
 #undef Bs3RegCtxRestore
 #undef Bs3RegCtxSave

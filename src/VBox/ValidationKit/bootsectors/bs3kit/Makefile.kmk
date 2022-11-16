@@ -115,6 +115,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxConvertToRingX.c \
        bs3-cmn-RegCtxConvertV86ToRm.c \
        bs3-cmn-RegCtxPrint.c \
+       bs3-cmn-RegCtxGetRspSsAsCurPtr.c \
        bs3-cmn-RegCtxSave.asm \
        bs3-cmn-RegCtxSaveEx.asm \
        bs3-cmn-RegCtxSaveForMode.c \

@@ -2828,6 +2828,14 @@ BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetRipCsFromCurPtr,(PBS3REGCTX pRegCtx, FPFNBS
  */
 BS3_CMN_PROTO_STUB(bool, Bs3RegCtxSetGpr,(PBS3REGCTX pRegCtx, uint8_t iGpr, uint64_t uValue, uint8_t cb));
 
+/**
+ * Gets the stack pointer as a current context pointer.
+ *
+ * @return  Pointer to the top of the stack. NULL on failure.
+ * @param   pRegCtx     The register context.
+ */
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3RegCtxGetRspSsAsCurPtr,(PBS3REGCTX pRegCtx));
+
 
 /**
  * The method to be used to save and restore the extended context.

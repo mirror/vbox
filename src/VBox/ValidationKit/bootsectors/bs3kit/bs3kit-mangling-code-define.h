@@ -113,6 +113,7 @@
 #define Bs3PrintX32 BS3_CMN_MANGLER(Bs3PrintX32)
 #define Bs3RegCtxConvertToRingX BS3_CMN_MANGLER(Bs3RegCtxConvertToRingX)
 #define Bs3RegCtxConvertV86ToRm BS3_CMN_MANGLER(Bs3RegCtxConvertV86ToRm)
+#define Bs3RegCtxGetRspSsAsCurPtr BS3_CMN_MANGLER(Bs3RegCtxGetRspSsAsCurPtr)
 #define Bs3RegCtxPrint BS3_CMN_MANGLER(Bs3RegCtxPrint)
 #define Bs3RegCtxRestore BS3_CMN_MANGLER(Bs3RegCtxRestore)
 #define Bs3RegCtxSave BS3_CMN_MANGLER(Bs3RegCtxSave)
