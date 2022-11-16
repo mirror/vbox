@@ -781,16 +781,17 @@ BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_r9__ud2
 ; When applying opsize, we need to put this in the 16-bit text segment to
 ; better control where we end up in 32-bit and 64-bit mode.
 ;
-; Try keep the code out of the IVT and BIOS data area.  This unfortunately
-; requires manual padding here.
+; Try keep the code out of the IVT and BIOS data area.  We ASSUME that the
+; BS3TEXT16 segment portion in this object file will be at the start of the
+; image, so we won't waste much space padding up to offset 0x600.
 ;
-BS3_BEGIN_TEXT16
-        BS3_SET_BITS TMPL_BITS
+BS3_BEGIN_TEXT16 TMPL_BITS
 %if TMPL_BITS == 32
-        align   0x100, int3             ; Currently takes us up to 0x400 (max align value is 0x100)
-        times   0x200 int3              ; Brings us up to 0x600.
+        %assign here ($ - $$)
+ %if here < 0x600
+        times (0x600 - here) int3
+ %endif
 %endif
-
 BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_jmp_opsize_begin), , 1
 
 
@@ -856,9 +857,6 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmp_jv_opsize_back__ud2, BS3_PBC_NEAR
         int3
 BS3_PROC_END_CMN   bs3CpuBasic2_jmp_jv_opsize_back__ud2
 
-
-BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_jmp_opsize_end), , 1
-        int3
 
 ; jmp [indirect]
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmp_ind_mem_opsize__ud2
@@ -1006,10 +1004,32 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ind_xAX_opsize__ud2, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuBasic2_call_ind_xAX_opsize__ud2
 
 
+;
+; Mark the end of the opsize jmp section.
+;
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_jmp_opsize_end), , 1
+        int3
+TMPL_BEGIN_TEXT
+
 
 ;*********************************************************************************************************************************
 ;*  FAR JMP ABS                                                                                                                  *
 ;*********************************************************************************************************************************
+
+;
+; Mark the start of the opsize far jmp/call section.
+;
+; Here we also need to keep the 16-bit code out of the IVT and BIOS data area,
+; not just the 32-bit and 64-bit code like for the above opsize cases.
+;
+BS3_BEGIN_TEXT16 TMPL_BITS
+        %assign here $-$$
+%if here < 0x600
+        times (0x600 - here) int3
+%endif
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_far_jmp_call_opsize_begin), , 1
+        int3
+TMPL_BEGIN_TEXT
 
  %if TMPL_BITS == 16
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_ptr_rm__ud2
@@ -1086,6 +1106,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_same_r3__ud2, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_ptr_same_r3__ud2
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_ptr_opsize_flipbit_r0__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_opsize_flipbit_r0__ud2, BS3_PBC_NEAR
         db      066h, 0eah
@@ -1100,6 +1121,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_opsize_flipbit_r0__ud2, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_ptr_opsize_flipbit_r0__ud2
+TMPL_BEGIN_TEXT
 
 ; Do a jmp to BS3_SEL_R0_CS64.  Except for when we're in long mode, this will
 ; result in a 16-bit CS with zero base and 4G limit.
@@ -1118,6 +1140,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_r0_cs64__ud2, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_ptr_r0_cs64__ud2
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 ; Variation of the previous with a CS16 copy that has the L bit set, emulating
 ; pre-AMD64 software using the L bit for other stuff.  (Don't run in long mode
 ; w/o copying the 3 bytes to the 0xxxxh memory range.)
@@ -1135,6 +1158,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_ptr_r0_cs16l__ud2, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_ptr_r0_cs16l__ud2
+TMPL_BEGIN_TEXT
 
  %endif ; TMPL_BITS != 64
 
@@ -1219,6 +1243,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_same_r3__ud2, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_same_r3__ud2
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2, BS3_PBC_NEAR
         db      066h, 09ah
@@ -1233,6 +1258,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_opsize_flipbit_r0__ud2
+TMPL_BEGIN_TEXT
 
 ; Do a call to BS3_SEL_R0_CS64.  Except for when we're in long mode, this will
 ; result in a 16-bit CS with zero base and 4G limit.
@@ -1251,6 +1277,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_r0_cs64__ud2, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_r0_cs64__ud2
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 ; Variation of the previous with a CS16 copy that has the L bit set, emulating
 ; pre-AMD64 software using the L bit for other stuff.  (Don't run in long mode
 ; w/o copying the 3 bytes to the 0xxxxh memory range.)
@@ -1268,6 +1295,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_ptr_r0_cs16l__ud2, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_ptr_r0_cs16l__ud2
+TMPL_BEGIN_TEXT
 
  %endif ; TMPL_BITS != 64
 
@@ -1386,6 +1414,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_same_r3__ud2 %+ %1, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_same_r3__ud2 %+ %1
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1, BS3_PBC_NEAR
         BS3_CPUBAS2_JMP_FAR_MEM_LABEL   .fpfn, (TMPL_BITS != 16) ; TMPL_BITS != 16 ? 1 : 0
@@ -1396,6 +1425,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_r0_cs16__ud2 %+ %1
+TMPL_BEGIN_TEXT
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_jmpf_mem_r0_cs32__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs32__ud2 %+ %1, BS3_PBC_NEAR
@@ -1428,6 +1458,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs64__ud2 %+ %1, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_r0_cs64__ud2 %+ %1
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 ; Variation of the previous with a CS16 copy that has the L bit set, emulating
 ; pre-AMD64 software using the L bit for other stuff.  (Don't run _c16/32 in
 ; long mode w/o copying the 3 bytes to the 0xxxxh memory range.)
@@ -1450,6 +1481,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2 %+ %1, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_jmpf_mem_r0_cs16l__ud2 %+ %1
+TMPL_BEGIN_TEXT
 
 %endmacro
 %endif
@@ -1576,6 +1608,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_same_r3__ud2 %+ %1, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_same_r3__ud2 %+ %1
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1, BS3_PBC_NEAR
         BS3_CPUBAS2_CALL_FAR_MEM_LABEL .fpfn, (TMPL_BITS != 16) ; (TMPL_BITS == 16 ? 0 : 1)
@@ -1586,6 +1619,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_r0_cs16__ud2 %+ %1
+TMPL_BEGIN_TEXT
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_callf_mem_r0_cs32__ud2 %+ %1
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs32__ud2 %+ %1, BS3_PBC_NEAR
@@ -1618,6 +1652,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs64__ud2 %+ %1, BS3_PBC_NEAR
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_r0_cs64__ud2 %+ %1
 
+BS3_BEGIN_TEXT16 TMPL_BITS
 ; Variation of the previous with a CS16 copy that has the L bit set, emulating
 ; pre-AMD64 software using the L bit for other stuff.  (Don't run _c16/32 in
 ; long mode w/o copying the 3 bytes to the 0xxxxh memory range.)
@@ -1640,6 +1675,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_callf_mem_r0_cs16l__ud2 %+ %1, BS3_PBC_NEAR
 .again: ud2
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuBasic2_callf_mem_r0_cs16l__ud2 %+ %1
+TMPL_BEGIN_TEXT
 
 %endmacro ; callf_macro
 %endif
@@ -1650,6 +1686,76 @@ callf_macro , 0
 callf_macro _intel, 1
  %endif
 
+;
+; Mark the end of the opsize far jmp/call section.
+;
+BS3_BEGIN_TEXT16 TMPL_BITS
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_far_jmp_call_opsize_end), , 1
+        int3
+TMPL_BEGIN_TEXT
+
+
+;*********************************************************************************************************************************
+;*  Near RET                                                                                                                     *
+;*********************************************************************************************************************************
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn__ud2, BS3_PBC_NEAR
+        ret
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_retn__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i24__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i24__ud2, BS3_PBC_NEAR
+        ret     24
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i24__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i0__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i0__ud2, BS3_PBC_NEAR
+        ret     0
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i0__ud2
+
+; Mark the start of opsize tests as we end up below 64K in 32-bit and 64-bit when used.
+BS3_BEGIN_TEXT16 TMPL_BITS
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_retn_opsize_begin), , 1
+        int3
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+        ret
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_opsize__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i24_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i24_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+        ret     24
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i24_opsize__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i0_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i0_opsize__ud2, BS3_PBC_NEAR
+        db      66h
+        ret     0
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i0_opsize__ud2
+
+; End of opsize tests.
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_retn_opsize_end), , 1
+        int3
+TMPL_BEGIN_TEXT
 
 %endif ; BS3_INSTANTIATING_CMN
 

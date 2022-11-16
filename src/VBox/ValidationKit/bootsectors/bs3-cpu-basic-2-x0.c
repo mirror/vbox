@@ -601,11 +601,20 @@ static void bs3CpuBasic2_CompareAcCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStar
  */
 static void bs3CpuBasic2_CompareDbCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint32_t fDr6Expect)
 {
-    uint32_t const fDr6 = Bs3RegGetDr6();
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    uint32_t const fDr6          = Bs3RegGetDr6();
     fDr6Expect |= X86_DR6_RA1_MASK;
     CHECK_MEMBER("dr6", "%#08RX32", fDr6, fDr6Expect);
 
     bs3CpuBasic2_CompareCpuTrapCtx(pTrapCtx, pStartCtx, 0 /*always zero*/, X86_XCPT_DB, false /*f486ResumeFlagHint?*/, 0 /*cbIpAdjust*/);
+
+    if (Bs3TestSubErrorCount() > cErrorsBefore)
+    {
+#if 0
+        Bs3TestPrintf("Halting\n");
+        ASMHalt();
+#endif
+    }
 }
 
 
@@ -615,9 +624,15 @@ static void bs3CpuBasic2_CompareDbCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStar
  */
 static void bs3CpuBasic2_CheckDr6InitVal(void)
 {
-    uint32_t const fDr6       = Bs3RegGetDr6();
-    uint32_t const fDr6Expect = X86_DR6_INIT_VAL;
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    uint32_t const fDr6          = Bs3RegGetDr6();
+    uint32_t const fDr6Expect    = X86_DR6_INIT_VAL;
     CHECK_MEMBER("dr6", "%#08RX32", fDr6, fDr6Expect);
+    if (Bs3TestSubErrorCount() > cErrorsBefore)
+    {
+        Bs3TestPrintf("Halting\n");
+        ASMHalt();
+    }
 }
 
 #if 0 /* convert me */
@@ -3998,7 +4013,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
         uint8_t BS3_FAR * const pbCode16 = BS3_MAKE_PROT_R0PTR_FROM_FLAT(BS3_ADDR_BS3TEXT16);
         uint8_t BS3_FAR * const pbLow    = BS3_FP_MAKE(BS3_SEL_TILED_R0, 0);
         if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
-            Bs3TestFailedF("Opsize overriden jumps are out of place: %#x LB %#z\n", offLow, cbLow);
+            Bs3TestFailedF("Opsize overriden jumps are out of place: %#x LB %#x\n", offLow, cbLow);
         Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
         if (!fIgnPfx)
         {
@@ -4007,6 +4022,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
                 {
                     uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
                     uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
+                    BS3_ASSERT(offUd - offLow + 1 < cbLow);
                     pbCode16[offUd]     = 0xf1; /* replace original ud2 with icebp */
                     pbCode16[offUd + 1] = 0xf1;
                     pbLow[offUd]        = 0x0f; /* plant ud2 in low memory */
@@ -4075,6 +4091,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
     FNBS3FAR a_Template ## _c16, \
              a_Template ## _c32, \
              a_Template ## _c64
+PROTO_ALL(bs3CpuBasic2_far_jmp_call_opsize_begin);
+
 FNBS3FAR  bs3CpuBasic2_jmpf_ptr_rm__ud2_c16;
 PROTO_ALL(bs3CpuBasic2_jmpf_ptr_same_r0__ud2);
 PROTO_ALL(bs3CpuBasic2_jmpf_ptr_same_r1__ud2);
@@ -4131,6 +4149,7 @@ FNBS3FAR  bs3CpuBasic2_callf_mem_r0_cs32__ud2_intel_c64;
 FNBS3FAR  bs3CpuBasic2_callf_mem_r0_cs64__ud2_intel_c64;
 FNBS3FAR  bs3CpuBasic2_callf_mem_r0_cs16l__ud2_intel_c64;
 
+PROTO_ALL(bs3CpuBasic2_far_jmp_call_opsize_end);
 #undef PROTO_ALL
 
 
@@ -4229,9 +4248,32 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
         };
         bool const fRmOrV86 = BS3_MODE_IS_RM_OR_V86(bMode);
 
+        /* Prepare a copy of the SALC & UD2 instructions in low memory for opsize
+           prefixed tests jumping to BS3_SEL_SPARE_00 when in 64-bit mode, because
+           it'll be a 64-bit CS then with base=0 instead of a CS16 with base=0x10000. */
+        if (BS3_MODE_IS_64BIT_SYS(bMode))
+        {
+            uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_far_jmp_call_opsize_begin_c16);
+            uint16_t const          cbLow    = BS3_FP_OFF(bs3CpuBasic2_far_jmp_call_opsize_end_c16) - offLow;
+            uint8_t BS3_FAR * const pbLow    = BS3_FP_MAKE(BS3_SEL_TILED_R0, 0);
+            uint8_t BS3_FAR * const pbCode16 = BS3_MAKE_PROT_R0PTR_FROM_FLAT(BS3_ADDR_BS3TEXT16);
+            if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
+                Bs3TestFailedF("Opsize overriden jumps/calls are out of place: %#x LB %#x\n", offLow, cbLow);
+            Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
+            for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+                if (s_aTests[iTest].uDstSel == BS3_SEL_SPARE_00 && s_aTests[iTest].uDstBits == 64)
+                {
+                    uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
+                    uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
+                    BS3_ASSERT(offUd - offLow + 1 < cbLow);
+                    pbLow[offUd - 1]    = 0xd6; /* plant salc + ud2 in low memory */
+                    pbLow[offUd]        = 0x0f;
+                    pbLow[offUd + 1]    = 0x0b;
+                }
+        }
+
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
-            if (   s_aTests[iTest].fRmOrV86 == fRmOrV86
-                && (s_aTests[iTest].uDstSel != BS3_SEL_SPARE_00 || !BS3_MODE_IS_64BIT_SYS(bMode))) /* skip it in LM16 for now*/
+            if (s_aTests[iTest].fRmOrV86 == fRmOrV86)
             {
                 uint64_t const         uSavedRsp = Ctx.rsp.u;
                 bool const             fGp       = (s_aTests[iTest].uDstSel & X86_SEL_RPL) != 0;
@@ -4245,6 +4287,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
                         && !BS3_MODE_IS_16BIT_SYS(bMode)
                         && s_aTests[iTest].uDstSel != BS3_SEL_SPARE_00))
                     CtxExpected.rip.u += BS3_ADDR_BS3TEXT16;
+                if (s_aTests[iTest].uDstSel == BS3_SEL_SPARE_00 && s_aTests[iTest].uDstBits == 64 && BS3_MODE_IS_64BIT_SYS(bMode))
+                    CtxExpected.rip.u &= UINT16_MAX;
                 CtxExpected.cs    = s_aTests[iTest].uDstSel;
                 if (fGp)
                 {
@@ -4343,67 +4387,89 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
             {  true, BS3_SEL_SPARE_00,       64,  true, bs3CpuBasic2_callf_mem_r0_cs16l__ud2_c32, }, /* 16-bit CS, except in LM. */
         };
 
+        /* Prepare a copy of the SALC & UD2 instructions in low memory for opsize
+           prefixed tests jumping to BS3_SEL_SPARE_00 when in 64-bit mode, because
+           it'll be a 64-bit CS then with base=0 instead of a CS16 with base=0x10000. */
+        if (BS3_MODE_IS_64BIT_SYS(bMode))
+        {
+            uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_far_jmp_call_opsize_begin_c32);
+            uint16_t const          cbLow    = BS3_FP_OFF(bs3CpuBasic2_far_jmp_call_opsize_end_c32) - offLow;
+            uint8_t BS3_FAR * const pbLow    = BS3_FP_MAKE(BS3_SEL_TILED_R0, 0);
+            uint8_t BS3_FAR * const pbCode16 = BS3_MAKE_PROT_R0PTR_FROM_FLAT(BS3_ADDR_BS3TEXT16);
+            if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
+                Bs3TestFailedF("Opsize overriden jumps/calls are out of place: %#x LB %#x\n", offLow, cbLow);
+            Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
+            for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+                if (s_aTests[iTest].uDstSel == BS3_SEL_SPARE_00 && s_aTests[iTest].uDstBits == 64)
+                {
+                    uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
+                    uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
+                    BS3_ASSERT(offUd - offLow + 1 < cbLow);
+                    pbLow[offUd - 1]    = 0xd6; /* plant salc + ud2 in low memory */
+                    pbLow[offUd]        = 0x0f;
+                    pbLow[offUd + 1]    = 0x0b;
+                }
+        }
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
-            if (s_aTests[iTest].uDstSel != BS3_SEL_SPARE_00 || !BS3_MODE_IS_64BIT_SYS(bMode)) /* skip it in LM32 for now*/
+        {
+            uint64_t const         uSavedRsp = Ctx.rsp.u;
+            bool const             fGp       = (s_aTests[iTest].uDstSel & X86_SEL_RPL) != 0;
+            uint8_t const BS3_FAR *fpbCode   = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
+
+            Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
+            CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
+            if (   s_aTests[iTest].uDstBits == 16
+                || (   s_aTests[iTest].uDstBits == 64
+                    && (   BS3_MODE_IS_16BIT_SYS(bMode))
+                        || s_aTests[iTest].uDstSel == BS3_SEL_SPARE_00))
+                CtxExpected.rip.u &= UINT16_MAX;
+            CtxExpected.cs    = s_aTests[iTest].uDstSel;
+            if (fGp)
             {
-                uint64_t const         uSavedRsp = Ctx.rsp.u;
-                bool const             fGp       = (s_aTests[iTest].uDstSel & X86_SEL_RPL) != 0;
-                uint8_t const BS3_FAR *fpbCode   = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
-
-                Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
-                CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
-                if (   s_aTests[iTest].uDstBits == 16
-                    || (   s_aTests[iTest].uDstBits == 64
-                        && (   BS3_MODE_IS_16BIT_SYS(bMode))
-                            || s_aTests[iTest].uDstSel == BS3_SEL_SPARE_00))
-                    CtxExpected.rip.u -= BS3_ADDR_BS3TEXT16;
-                CtxExpected.cs    = s_aTests[iTest].uDstSel;
-                if (fGp)
-                {
-                    CtxExpected.rip.u = Ctx.rip.u;
-                    CtxExpected.cs    = Ctx.cs;
-                }
-                g_uBs3TrapEipHint = CtxExpected.rip.u32;
-                CtxExpected.rsp.u = Ctx.rsp.u;
-                if (s_aTests[iTest].fCall && !fGp)
-                    CtxExpected.rsp.u -= s_aTests[iTest].fOpSizePfx ? 4 : 8;
-                if (s_aTests[iTest].uDstBits == 64 && !fGp)
-                {
-                    if (BS3_MODE_IS_64BIT_SYS(bMode))
-                        CtxExpected.rip.u -= 1;
-                    else
-                        CtxExpected.rax.u8 = CtxExpected.rflags.u & X86_EFL_CF ? 0xff : 0x00;
-                }
-                //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
-                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                if (!fGp)
-                    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
-                else
-                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aTests[iTest].uDstSel & X86_TRAP_ERR_SEL_MASK);
-                Ctx.rsp.u = uSavedRsp;
-                g_usBs3TestStep++;
-
-                /* Again single stepping: */
-                //Bs3TestPrintf("stepping...\n");
-                Bs3RegSetDr6(X86_DR6_INIT_VAL);
-                Ctx.rflags.u16        |= X86_EFL_TF;
-                CtxExpected.rflags.u16 = Ctx.rflags.u16;
-                CtxExpected.rax.u      = Ctx.rax.u;
-                if (s_aTests[iTest].uDstBits == 64 && !fGp && !BS3_MODE_IS_64BIT_SYS(bMode))
-                    CtxExpected.rip.u -= 1;
-                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                if (!fGp)
-                    bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
-                else
-                {
-                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aTests[iTest].uDstSel & X86_TRAP_ERR_SEL_MASK);
-                    bs3CpuBasic2_CheckDr6InitVal();
-                }
-                Ctx.rflags.u16        &= ~X86_EFL_TF;
-                CtxExpected.rflags.u16 = Ctx.rflags.u16;
-                Ctx.rsp.u              = uSavedRsp;
-                g_usBs3TestStep++;
+                CtxExpected.rip.u = Ctx.rip.u;
+                CtxExpected.cs    = Ctx.cs;
             }
+            g_uBs3TrapEipHint = CtxExpected.rip.u32;
+            CtxExpected.rsp.u = Ctx.rsp.u;
+            if (s_aTests[iTest].fCall && !fGp)
+                CtxExpected.rsp.u -= s_aTests[iTest].fOpSizePfx ? 4 : 8;
+            if (s_aTests[iTest].uDstBits == 64 && !fGp)
+            {
+                if (BS3_MODE_IS_64BIT_SYS(bMode))
+                    CtxExpected.rip.u -= 1;
+                else
+                    CtxExpected.rax.u8 = CtxExpected.rflags.u & X86_EFL_CF ? 0xff : 0x00;
+            }
+            //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            if (!fGp)
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            else
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aTests[iTest].uDstSel & X86_TRAP_ERR_SEL_MASK);
+            Ctx.rsp.u = uSavedRsp;
+            g_usBs3TestStep++;
+
+            /* Again single stepping: */
+            //Bs3TestPrintf("stepping...\n");
+            Bs3RegSetDr6(X86_DR6_INIT_VAL);
+            Ctx.rflags.u16        |= X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            CtxExpected.rax.u      = Ctx.rax.u;
+            if (s_aTests[iTest].uDstBits == 64 && !fGp && !BS3_MODE_IS_64BIT_SYS(bMode))
+                CtxExpected.rip.u -= 1;
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            if (!fGp)
+                bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            else
+            {
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aTests[iTest].uDstSel & X86_TRAP_ERR_SEL_MASK);
+                bs3CpuBasic2_CheckDr6InitVal();
+            }
+            Ctx.rflags.u16        &= ~X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            Ctx.rsp.u              = uSavedRsp;
+            g_usBs3TestStep++;
+        }
     }
     /*
      * 64-bit tests.
@@ -4501,7 +4567,6 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
                 CtxExpected.rip.u = Ctx.rip.u;
                 CtxExpected.cs    = Ctx.cs;
             }
-            g_uBs3TrapEipHint = CtxExpected.rip.u32;
             CtxExpected.rsp.u = Ctx.rsp.u;
             if (s_aTests[iTest].fCall && !fGp && !fUd)
             {
@@ -4537,6 +4602,295 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_jmp_call)(uint8_t bMode)
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             Ctx.rsp.u              = uSavedRsp;
+            g_usBs3TestStep++;
+        }
+    }
+    else
+        Bs3TestFailed("wtf?");
+
+    return 0;
+}
+
+
+/*********************************************************************************************************************************
+*   Near RET                                                                                                                     *
+*********************************************************************************************************************************/
+#define PROTO_ALL(a_Template) \
+    FNBS3FAR a_Template ## _c16, \
+             a_Template ## _c32, \
+             a_Template ## _c64
+PROTO_ALL(bs3CpuBasic2_retn_opsize_begin);
+PROTO_ALL(bs3CpuBasic2_retn__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_opsize__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i24__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i24_opsize__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i0__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i0_opsize__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_opsize_end);
+#undef PROTO_ALL
+
+
+static void bs3CpuBasic2_retn_PrepStack(BS3PTRUNION StkPtr, PCBS3REGCTX pCtxExpected, uint8_t cbAddr)
+{
+    StkPtr.pu32[3]  = UINT32_MAX;
+    StkPtr.pu32[2]  = UINT32_MAX;
+    StkPtr.pu32[1]  = UINT32_MAX;
+    StkPtr.pu32[0]  = UINT32_MAX;
+    StkPtr.pu32[-1] = UINT32_MAX;
+    StkPtr.pu32[-2] = UINT32_MAX;
+    StkPtr.pu32[-3] = UINT32_MAX;
+    StkPtr.pu32[-4] = UINT32_MAX;
+    if (cbAddr == 2)
+        StkPtr.pu16[0] = pCtxExpected->rip.u16;
+    else if (cbAddr == 4)
+        StkPtr.pu32[0] = pCtxExpected->rip.u32;
+    else
+        StkPtr.pu64[0] = pCtxExpected->rip.u64;
+}
+
+
+/**
+ * Entrypoint for FAR JMP & FAR CALL tests.
+ *
+ * @returns 0 or BS3TESTDOMODE_SKIPPED.
+ * @param   bMode       The CPU mode we're testing.
+ *
+ * @note    When testing v8086 code, we'll be running in v8086 mode. So, careful
+ *          with control registers and such.
+ */
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
+{
+    BS3TRAPFRAME            TrapCtx;
+    BS3REGCTX               Ctx;
+    BS3REGCTX               CtxExpected;
+    unsigned                iTest;
+    BS3PTRUNION             StkPtr;
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&CtxExpected, sizeof(Ctx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+
+    bs3CpuBasic2_SetGlobals(bMode);
+
+    /*
+     * Create a context.
+     *
+     * ASSUMES we're in ring-0, we'll be using the ring-2 stack for the testing
+     * to avoid overwriting it.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 768);
+    Ctx.rsp.u = BS3_ADDR_STACK - _16K;
+    Bs3MemCpy(&CtxExpected, &Ctx, sizeof(CtxExpected));
+
+    StkPtr.pv = Bs3RegCtxGetRspSsAsCurPtr(&Ctx);
+    //Bs3TestPrintf("Stack=%p rsp=%RX64\n", StkPtr.pv, Ctx.rsp.u);
+
+    /*
+     * 16-bit tests.
+     */
+    if (BS3_MODE_IS_16BIT_CODE(bMode))
+    {
+        static struct
+        {
+            bool        fOpSizePfx;
+            uint16_t    cbImm;
+            FPFNBS3FAR  pfnTest;
+        }
+        const s_aTests[] =
+        {
+            { false,  0, bs3CpuBasic2_retn__ud2_c16, },
+            {  true,  0, bs3CpuBasic2_retn_opsize__ud2_c16, },
+            { false, 24, bs3CpuBasic2_retn_i24__ud2_c16, },
+            {  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c16, },
+            { false,  0, bs3CpuBasic2_retn_i0__ud2_c16, },
+            {  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c16, },
+        };
+
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            uint8_t const BS3_FAR *fpbCode;
+
+            Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, s_aTests[iTest].pfnTest);
+            fpbCode = (uint8_t const BS3_FAR *)BS3_FP_MAKE(Ctx.cs, Ctx.rip.u16);
+            CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
+            g_uBs3TrapEipHint = CtxExpected.rip.u32;
+            CtxExpected.cs    = Ctx.cs;
+            if (!s_aTests[iTest].fOpSizePfx)
+                CtxExpected.rsp.u = Ctx.rsp.u + s_aTests[iTest].cbImm + 2;
+            else
+                CtxExpected.rsp.u = Ctx.rsp.u + s_aTests[iTest].cbImm + 4;
+            //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
+            //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 4 : 2);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            g_usBs3TestStep++;
+
+            /* Again single stepping: */
+            //Bs3TestPrintf("stepping...\n");
+            Bs3RegSetDr6(X86_DR6_INIT_VAL);
+            Ctx.rflags.u16        |= X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 4 : 2);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            Ctx.rflags.u16        &= ~X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            g_usBs3TestStep++;
+        }
+    }
+    /*
+     * 32-bit tests.
+     */
+    else if (BS3_MODE_IS_32BIT_CODE(bMode))
+    {
+        static struct
+        {
+            uint8_t     cBits;
+            bool        fOpSizePfx;
+            uint16_t    cbImm;
+            FPFNBS3FAR  pfnTest;
+        }
+        const s_aTests[] =
+        {
+            { 32, false,  0, bs3CpuBasic2_retn__ud2_c32, },
+            { 32,  true,  0, bs3CpuBasic2_retn_opsize__ud2_c32, },
+            { 32, false, 24, bs3CpuBasic2_retn_i24__ud2_c32, },
+            { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c32, },
+            { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c32, },
+            { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c32, },
+        };
+
+        /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
+        uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_begin_c32);
+        uint16_t const          cbLow    = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_end_c32) - offLow;
+        uint8_t BS3_FAR * const pbLow    = BS3_FP_MAKE(BS3_SEL_TILED_R0, 0);
+        uint8_t BS3_FAR * const pbCode16 = BS3_MAKE_PROT_R0PTR_FROM_FLAT(BS3_ADDR_BS3TEXT16);
+        if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
+            Bs3TestFailedF("Opsize overriden jumps/calls are out of place: %#x LB %#x\n", offLow, cbLow);
+        Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+            if (s_aTests[iTest].fOpSizePfx)
+            {
+                uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
+                uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
+                BS3_ASSERT(offUd - offLow + 1 < cbLow);
+                pbCode16[offUd]     = 0xf1; /* replace original ud2 with icebp */
+                pbCode16[offUd + 1] = 0xf1;
+                pbLow[offUd]        = 0x0f; /* plant ud2 in low memory */
+                pbLow[offUd + 1]    = 0x0b;
+            }
+
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            uint8_t const BS3_FAR *fpbCode   = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
+
+            Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
+            CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
+            CtxExpected.cs    = Ctx.cs;
+            if (!s_aTests[iTest].fOpSizePfx)
+                CtxExpected.rsp.u = Ctx.rsp.u + s_aTests[iTest].cbImm + 4;
+            else
+            {
+                CtxExpected.rsp.u  = Ctx.rsp.u + s_aTests[iTest].cbImm + 2;
+                CtxExpected.rip.u &= UINT16_MAX;
+            }
+            g_uBs3TrapEipHint = CtxExpected.rip.u32;
+            //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
+            //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 2 : 4);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            g_usBs3TestStep++;
+
+            /* Again single stepping: */
+            //Bs3TestPrintf("stepping...\n");
+            Bs3RegSetDr6(X86_DR6_INIT_VAL);
+            Ctx.rflags.u16        |= X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 2 : 4);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            Ctx.rflags.u16        &= ~X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            g_usBs3TestStep++;
+        }
+    }
+    /*
+     * 64-bit tests.
+     */
+    else if (BS3_MODE_IS_64BIT_CODE(bMode))
+    {
+        static struct
+        {
+            uint8_t     cBits;
+            bool        fOpSizePfx;
+            uint16_t    cbImm;
+            FPFNBS3FAR  pfnTest;
+        }
+        const s_aTests[] =
+        {
+            { 32, false,  0, bs3CpuBasic2_retn__ud2_c64, },
+            { 32,  true,  0, bs3CpuBasic2_retn_opsize__ud2_c64, },
+            { 32, false, 24, bs3CpuBasic2_retn_i24__ud2_c64, },
+            { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c64, },
+            { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c64, },
+            { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
+        };
+
+        /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
+        uint16_t const          offLow   = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_begin_c64);
+        uint16_t const          cbLow    = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_end_c64) - offLow;
+        uint8_t BS3_FAR * const pbLow    = BS3_FP_MAKE(BS3_SEL_TILED_R0, 0);
+        uint8_t BS3_FAR * const pbCode16 = BS3_MAKE_PROT_R0PTR_FROM_FLAT(BS3_ADDR_BS3TEXT16);
+        if (offLow < 0x600 || offLow + cbLow >= BS3_ADDR_STACK_R2)
+            Bs3TestFailedF("Opsize overriden jumps/calls are out of place: %#x LB %#x\n", offLow, cbLow);
+        Bs3MemSet(&pbLow[offLow], 0xcc /*int3*/, cbLow);
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+            if (s_aTests[iTest].fOpSizePfx)
+            {
+                uint16_t const offFn = BS3_FP_OFF(s_aTests[iTest].pfnTest);
+                uint16_t const offUd = offFn + (int16_t)(int8_t)pbCode16[offFn - 1];
+                BS3_ASSERT(offUd - offLow + 1 < cbLow);
+                pbCode16[offUd]     = 0xf1; /* replace original ud2 with icebp */
+                pbCode16[offUd + 1] = 0xf1;
+                pbLow[offUd]        = 0x0f; /* plant ud2 in low memory */
+                pbLow[offUd + 1]    = 0x0b;
+            }
+
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            uint8_t const BS3_FAR *fpbCode   = Bs3SelLnkPtrToCurPtr(s_aTests[iTest].pfnTest);
+
+            Ctx.rip.u = Bs3SelLnkPtrToFlat(s_aTests[iTest].pfnTest);
+            CtxExpected.rip.u = Ctx.rip.u + (int64_t)(int8_t)fpbCode[-1];
+            CtxExpected.cs    = Ctx.cs;
+            if (!s_aTests[iTest].fOpSizePfx)
+                CtxExpected.rsp.u = Ctx.rsp.u + s_aTests[iTest].cbImm + 8;
+            else
+            {
+                CtxExpected.rsp.u  = Ctx.rsp.u + s_aTests[iTest].cbImm + 8;
+                CtxExpected.rip.u &= UINT16_MAX;
+            }
+            g_uBs3TrapEipHint = CtxExpected.rip.u32;
+            Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
+            //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 8 : 8);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            g_usBs3TestStep++;
+
+            /* Again single stepping: */
+            //Bs3TestPrintf("stepping...\n");
+            Bs3RegSetDr6(X86_DR6_INIT_VAL);
+            Ctx.rflags.u16        |= X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 8 : 8);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            Ctx.rflags.u16        &= ~X86_EFL_TF;
+            CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
         }
     }
