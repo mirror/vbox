@@ -86,6 +86,8 @@ private slots:
 
     /** Sets Ok button to be @a fEnabled. */
     void setOkButtonEnabled(bool fEnabled);
+    /** Inits the dialog. */
+    void init() { load(); }
     /** Accepts the dialog. */
     void accept() { save(); }
 
