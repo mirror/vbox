@@ -181,6 +181,8 @@ void UINotificationProgress::handle()
                 this, &UINotificationProgress::sigProgressStarted);
         connect(m_pTask, &UIProgressTask::sigProgressChange,
                 this, &UINotificationProgress::sltHandleProgressChange);
+        connect(m_pTask, &UIProgressTask::sigProgressCanceled,
+                this, &UINotificationProgress::sigProgressFinished);
         connect(m_pTask, &UIProgressTask::sigProgressFinished,
                 this, &UINotificationProgress::sltHandleProgressFinished);
 

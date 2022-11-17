@@ -107,7 +107,11 @@ void UIProgressTask::start()
 void UIProgressTask::cancel()
 {
     if (m_pProgressObject)
+    {
         m_pProgressObject->cancel();
+        /* Notify external listeners: */
+        emit sigProgressCanceled();
+    }
 }
 
 void UIProgressTask::sltHandleProgressChange(ulong /*uOperations*/, QString /*strOperation*/,
