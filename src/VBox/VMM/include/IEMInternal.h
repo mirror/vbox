@@ -78,35 +78,9 @@ RT_C_DECLS_BEGIN
  * setjmp/long resulted in bs2-test-1 running 3.68% faster and all but some of
  * the MMIO and CPUID tests ran noticeably faster. Variation is greater than on
  * Linux, but it should be quite a bit faster for normal code.
- *
- * With LLVM/clang this doesn't work yet (on at least macOS). Throwing an exception
- * will result in a call to std::terminate because the exception is not caught apparently.
- * @code{.txt}
-* thread #20, name = 'EMT', stop reason = signal SIGABRT
-    frame #0: 0x00007ff800f4528e libsystem_kernel.dylib`__pthread_kill + 10
-    frame #1: 0x00007ff800f7cf7b libsystem_pthread.dylib`pthread_kill + 263
-    frame #2: 0x00007ff800ec6ca5 libsystem_c.dylib`abort + 123
-    frame #3: 0x00007ff800f37082 libc++abi.dylib`abort_message + 241
-    frame #4: 0x00007ff800f2823d libc++abi.dylib`demangling_terminate_handler() + 266
-    frame #5: 0x00007ff800c2602b libobjc.A.dylib`_objc_terminate() + 104
-    frame #6: 0x00007ff800f364a5 libc++abi.dylib`std::__terminate(void (*)()) + 8
-    frame #7: 0x00007ff800f36456 libc++abi.dylib`std::terminate() + 54
-    frame #8: 0x000000013000230b VBoxVMM.dylib`__clang_call_terminate + 11
-  * frame #9: 0x0000000130343580 VBoxVMM.dylib`iemOp_mov_Ov_rAX(pVCpu=0x0000000149763000) at IEMAllInstructionsOneByte.cpp.h:4909:5
-    frame #10: 0x000000013031c80d VBoxVMM.dylib`::IEMExecLots(pVCpu=0x0000000149763000, cMaxInstructions=4096, cPollRate=2047, pcInstructions=0x000070000fef1adc) at IEMAll.cpp:10126:28
-    frame #11: 0x00000001300cc732 VBoxVMM.dylib`::EMR3ExecuteVM(pVM=0x0000000149642000, pVCpu=0x0000000149763000) at EM.cpp:2571:30
-    frame #12: 0x000000013027bdc3 VBoxVMM.dylib`vmR3EmulationThreadWithId(hThreadSelf=0x000000010690ba00, pUVCpu=0x0000000149448d40, idCpu=0) at VMEmt.cpp:248:26
-    frame #13: 0x000000013027b278 VBoxVMM.dylib`::vmR3EmulationThread(hThreadSelf=0x000000010690ba00, pvArgs=0x0000000149448d40) at VMEmt.cpp:70:12
-    frame #14: 0x00000001029cf21a VBoxRT.dylib`::rtThreadMain(pThread=0x000000010690ba00, NativeThread=123145569640448, pszThreadName="EMT") at thread.cpp:759:10
-    frame #15: 0x0000000102bb7c80 VBoxRT.dylib`rtThreadNativeMain(pvArgs=0x000000010690ba00) at thread-posix.cpp:430:10
-    frame #16: 0x00007ff800f7d259 libsystem_pthread.dylib`_pthread_start + 125
-    frame #17: 0x00007ff800f78c7b libsystem_pthread.dylib`thread_start + 15
- * @endcode
  */
-#if    (defined(IEM_WITH_SETJMP) && defined(IN_RING3)       \
-    && (   (defined(__GNUC__) && !defined(__clang_major__)) \
-        || defined(_MSC_VER))) \
-    || defined(DOXYGEN_RUNNING)
+#if (defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || defined(_MSC_VER))) \
+ || defined(DOXYGEN_RUNNING)
 # define IEM_WITH_THROW_CATCH
 #endif
 
