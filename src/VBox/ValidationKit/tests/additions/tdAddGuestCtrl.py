@@ -4743,6 +4743,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sScratchDstDir2Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir2');
         sScratchDstDir3Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir3');
         sScratchDstDir4Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir4');
+        sScratchDotDotDirGst    = oTestVm.pathJoin(sScratchGst, '..');
         #sScratchGstNotExist     = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'no-such-file-or-directory');
         sScratchHstNotExist     = os.path.join(self.oTstDrv.sScratchPath,         'no-such-file-or-directory');
         sScratchGstPathNotFound = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'no-such-directory', 'or-file');
@@ -4794,6 +4795,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             open(sEmptyFileHst, "wb").close();                  # pylint: disable=consider-using-with
         except:
             return reporter.errorXcpt('sEmptyFileHst=%s' % (sEmptyFileHst,));
+
+        # os.path.join() is too clever for "..", so we just build up the path here ourselves.
+        sScratchDotDotFileHst = sScratchHst + os.path.sep + '..' + os.path.sep + 'gctrl-empty.data';
 
         #
         # Tests.
@@ -4925,6 +4929,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst + oTestVm.pathSep(),
                                   afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
             ]);
+        #
+        # Dotdot path handling.
+        #
+        if self.oTstDrv.fpApiVer >= 6.1:
+            atTests.extend([
+                # Test if copying stuff from a host dotdot ".." directory works.
+                [ tdTestCopyToFile(sSrc = sScratchDotDotFileHst, sDst = sScratchDstDir1Gst + oTestVm.pathSep()),
+                  tdTestResultSuccess() ],
+                # Test if copying stuff from the host to a guest's dotdot ".." directory works.
+                # That should fail on destinations.
+                [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = sScratchDotDotDirGst), tdTestResultFailure() ],
+            ]);
 
         fRc = True;
         for (i, tTest) in enumerate(atTests):
@@ -4966,6 +4982,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sScratchDstDir2Hst      = os.path.join(sScratchHst, "dstdir2");
         sScratchDstDir3Hst      = os.path.join(sScratchHst, "dstdir3");
         sScratchDstDir4Hst      = os.path.join(sScratchHst, "dstdir4");
+        # os.path.join() is too clever for "..", so we just build up the path here ourselves.
+        sScratchDotDotDirHst    = sScratchHst + os.path.sep + '..' + os.path.sep;
         oExistingFileGst        = self.oTestFiles.chooseRandomFile();
         oNonEmptyDirGst         = self.oTestFiles.chooseRandomDirFromTree(fNonEmpty = True);
         oTreeDirGst             = self.oTestFiles.oTreeDir;
@@ -4979,6 +4997,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sScratchHstInvalid  = "?*|<invalid-name>";
         else:
             sScratchHstInvalid  = None;
+
+        sScratchDotDotDirGst = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), '..');
 
         if os.path.exists(sScratchHst):
             if base.wipeDirectory(sScratchHst) != 0:
@@ -5122,6 +5142,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Works again, as DirectoryCopyFlag_CopyIntoExisting is specified.
                 [ tdTestCopyFromDir(oSrc = oTreeDirGst, sDst = sScratchDstDir4Hst + os.path.sep,
                                     afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+            ]);
+        #
+        # Dotdot path handling.
+        #
+        if self.oTstDrv.fpApiVer >= 6.1:
+            atTests.extend([
+                # Test if copying stuff from a guest dotdot ".." directory works.
+                [ tdTestCopyFromDir(sSrc = sScratchDotDotDirGst, sDst = sScratchDstDir1Hst + os.path.sep,
+                                    afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),
+                  tdTestResultFailure() ],
+                # Test if copying stuff from the guest to a host's dotdot ".." directory works.
+                # That should fail on destinations.
+                [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchDotDotDirHst), tdTestResultFailure() ],
             ]);
 
         reporter.log2('Executing tests ...');
