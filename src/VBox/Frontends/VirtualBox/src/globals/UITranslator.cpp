@@ -790,6 +790,28 @@ bool UITranslator::isTranslationInProgress()
     return s_fTranslationInProgress;
 }
 
+/* static */
+QString UITranslator::byteStringToMegaByteString(const QString &strByteString)
+{
+    if (strByteString.isEmpty())
+        return QString();
+    bool fConversionSuccess = false;
+    qulonglong uByte = strByteString.toULongLong(&fConversionSuccess);
+    AssertReturn(fConversionSuccess, QString());
+    return QString::number(uByte / _1M);
+}
+
+/* static */
+QString UITranslator::megabyteStringToByteString(const QString &strMegaByteString)
+{
+    if (strMegaByteString.isEmpty())
+        return QString();
+    bool fConversionSuccess = false;
+    qulonglong uMegaByte = strMegaByteString.toULongLong(&fConversionSuccess);
+    AssertReturn(fConversionSuccess, QString());
+    return QString::number(uMegaByte * _1M);
+}
+
 UITranslator::UITranslator(QObject *pParent /* = 0 */)
     : QTranslator(pParent)
 {

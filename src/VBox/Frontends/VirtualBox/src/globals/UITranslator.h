@@ -129,6 +129,11 @@ public:
     /** Returns whether we are performing translation currently. */
     static bool isTranslationInProgress();
 
+    /* Converts bytes string to megabytes string. */
+    static QString byteStringToMegaByteString(const QString &strByteString);
+    /* Converts megabytes string to bytes string. */
+    static QString megabyteStringToByteString(const QString &strMegaByteString);
+
 private:
 
     /** Constructs translator passing @a pParent to the base-class. */
