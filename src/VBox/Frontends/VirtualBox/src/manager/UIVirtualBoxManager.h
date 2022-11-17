@@ -38,6 +38,7 @@
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
+#include "UICloudMachineSettingsDialog.h"
 #include "UICommon.h"
 #include "UIExtraDataDefs.h"
 #include "UISettingsDialog.h"
@@ -497,6 +498,8 @@ private:
 
     /** Holds the map of various settings dialogs. */
     QMap<UISettingsDialog::DialogType, UISettingsDialog*>  m_settings;
+    /** Holds the cloud settings dialog instance. */
+    UISafePointerCloudMachineSettingsDialog                m_pCloudSettings;
 
     /** Holds the instance of UIVMLogViewerDialog. */
     QIManagerDialog *m_pLogViewerDialog;

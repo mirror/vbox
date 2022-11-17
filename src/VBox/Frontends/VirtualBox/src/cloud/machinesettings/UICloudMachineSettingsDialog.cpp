@@ -34,14 +34,15 @@
 #include "UICloudMachineSettingsDialog.h"
 #include "UICloudMachineSettingsDialogPage.h"
 #include "UICloudNetworkingStuff.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UINotificationCenter.h"
-
-/* COM includes: */
-#include "CProgress.h"
 
 
 UICloudMachineSettingsDialog::UICloudMachineSettingsDialog(QWidget *pParent, const CCloudMachine &comCloudMachine)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QIWithRetranslateUI2<QWidget>(pParent, Qt::Window)
+    , m_fPolished(false)
+    , m_fClosable(true)
+    , m_fClosed(false)
     , m_comCloudMachine(comCloudMachine)
     , m_pPage(0)
     , m_pButtonBox(0)
@@ -55,28 +56,10 @@ UICloudMachineSettingsDialog::~UICloudMachineSettingsDialog()
     cleanup();
 }
 
-int UICloudMachineSettingsDialog::exec()
+void UICloudMachineSettingsDialog::setCloudMachine(const CCloudMachine &comCloudMachine)
 {
-    /* Request dialog initialization: */
-    QMetaObject::invokeMethod(this, "sltRefresh", Qt::QueuedConnection);
-
-    /* Call to base-class: */
-    return QIWithRetranslateUI<QDialog>::exec();
-}
-
-void UICloudMachineSettingsDialog::accept()
-{
-    /* Makes sure page data committed: */
-    if (m_pPage)
-        m_pPage->makeSureDataCommitted();
-
-    /* Apply form: */
-    AssertReturnVoid(m_comForm.isNotNull());
-    if (!applyCloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))
-        return;
-
-    /* Call to base-class: */
-    QIWithRetranslateUI<QDialog>::accept();
+    m_comCloudMachine = comCloudMachine;
+    load();
 }
 
 void UICloudMachineSettingsDialog::retranslateUi()
@@ -89,28 +72,49 @@ void UICloudMachineSettingsDialog::retranslateUi()
         setWindowTitle(QString("%1 - %2").arg(m_strName, strCaption));
 }
 
+void UICloudMachineSettingsDialog::showEvent(QShowEvent *pEvent)
+{
+    /* Polish stuff: */
+    if (!m_fPolished)
+    {
+        m_fPolished = true;
+        polishEvent(pEvent);
+    }
+
+    /* Call to base-class: */
+    QIWithRetranslateUI2<QWidget>::showEvent(pEvent);
+}
+
+void UICloudMachineSettingsDialog::polishEvent(QShowEvent*)
+{
+    /* Explicit centering according to our parent: */
+    UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
+    /* Call for load stuff asynchronously: */
+    QMetaObject::invokeMethod(this, &UICloudMachineSettingsDialog::load, Qt::QueuedConnection);
+}
+
+void UICloudMachineSettingsDialog::closeEvent(QCloseEvent *pEvent)
+{
+    /* Ignore event initially: */
+    pEvent->ignore();
+
+    /* Do not close if NOT closable: */
+    if (!m_fClosable)
+        return;
+
+    /* Tell the listener to close us (once): */
+    if (!m_fClosed)
+    {
+        m_fClosed = true;
+        emit sigClose();
+    }
+}
+
 void UICloudMachineSettingsDialog::setOkButtonEnabled(bool fEnabled)
 {
     AssertPtrReturnVoid(m_pButtonBox);
     AssertPtrReturnVoid(m_pButtonBox->button(QDialogButtonBox::Ok));
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fEnabled);
-}
-
-void UICloudMachineSettingsDialog::sltRefresh()
-{
-    /* Update name: */
-    if (!cloudMachineName(m_comCloudMachine, m_strName, notificationCenter()))
-        reject();
-
-    /* Retranslate title: */
-    retranslateUi();
-
-    /* Update form: */
-    if (!cloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))
-        reject();
-
-    /* Assign page with form: */
-    m_pPage->setForm(m_comForm);
 }
 
 void UICloudMachineSettingsDialog::prepare()
@@ -139,7 +143,7 @@ void UICloudMachineSettingsDialog::prepare()
             m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
             m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
             connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UICloudMachineSettingsDialog::accept);
-            connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UICloudMachineSettingsDialog::reject);
+            connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UICloudMachineSettingsDialog::close);
             setOkButtonEnabled(false);
             /* Add into layout: */
             pLayout->addWidget(m_pButtonBox);
@@ -158,4 +162,42 @@ void UICloudMachineSettingsDialog::cleanup()
     /* Cleanup local notification-center: */
     delete m_pNotificationCenter;
     m_pNotificationCenter = 0;
+}
+
+void UICloudMachineSettingsDialog::load()
+{
+    /* Prevent closing: */
+    m_fClosable = false;
+
+    /* Update name: */
+    if (!cloudMachineName(m_comCloudMachine, m_strName, notificationCenter()))
+        close();
+
+    /* Retranslate title: */
+    retranslateUi();
+
+    /* Update form: */
+    if (!cloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))
+        close();
+
+    /* Assign page with form: */
+    m_pPage->setForm(m_comForm);
+
+    /* Allow closing again: */
+    m_fClosable = true;
+}
+
+void UICloudMachineSettingsDialog::save()
+{
+    /* Makes sure page data committed: */
+    if (m_pPage)
+        m_pPage->makeSureDataCommitted();
+
+    /* Apply form: */
+    AssertReturnVoid(m_comForm.isNotNull());
+    if (!applyCloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))
+        return;
+
+    /* Just close for now: */
+    close();
 }

@@ -32,8 +32,8 @@
 #endif
 
 /* Qt includes: */
-#include <QDialog>
 #include <QPointer>
+#include <QWidget>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -48,10 +48,15 @@
 class QIDialogButtonBox;
 class UINotificationCenter;
 
-/** Cloud machine settings dialog. */
-class UICloudMachineSettingsDialog : public QIWithRetranslateUI<QDialog>
+/** Cloud machine settings window. */
+class UICloudMachineSettingsDialog : public QIWithRetranslateUI2<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about dialog should be closed. */
+    void sigClose();
 
 public:
 
@@ -63,26 +68,26 @@ public:
     /** Returns local notification-center reference. */
     UINotificationCenter *notificationCenter() const { return m_pNotificationCenter; }
 
-public slots:
-
-    /** Shows the dialog as a modal dialog, blocking until the user closes it. */
-    virtual int exec() RT_OVERRIDE;
-
-    /** Hides the modal dialog and sets the result code to Accepted. */
-    virtual void accept() RT_OVERRIDE;
+    /** Defines @a comCloudMachine */
+    void setCloudMachine(const CCloudMachine &comCloudMachine);
 
 protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
+    /** Handles first show @a pEvent. */
+    virtual void polishEvent(QShowEvent*);
+    /** Handles close @a pEvent. */
+    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
     /** Sets Ok button to be @a fEnabled. */
     void setOkButtonEnabled(bool fEnabled);
-
-    /** Performs dialog refresh. */
-    void sltRefresh();
+    /** Accepts the dialog. */
+    void accept() { save(); }
 
 private:
 
@@ -90,6 +95,18 @@ private:
     void prepare();
     /** Cleanups all. */
     void cleanup();
+
+    /** Loads the data. */
+    void load();
+    /** Saves the data and closes the dialog. */
+    void save();
+
+    /** Holds whether dialog is polished. */
+    bool  m_fPolished;
+    /** Holds whether the dialod can really be closed. */
+    bool  m_fClosable;
+    /** Holds whether the dialod had emitted signal to be closed. */
+    bool  m_fClosed;
 
     /** Holds the cloud machine object reference. */
     CCloudMachine  m_comCloudMachine;
