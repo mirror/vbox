@@ -103,6 +103,8 @@ signals:
         void sigMachineDataChange(const QUuid &uId);
         /** Notifies about machine with @a uId was @a fRegistered. */
         void sigMachineRegistered(const QUuid &uId, const bool fRegistered);
+        /** Notifies about machine with @a uId has groups changed. */
+        void sigMachineGroupsChange(const QUuid &uId);
         /** Notifies about @a state change event for the session of the machine with @a uId. */
         void sigSessionStateChange(const QUuid &uId, const KSessionState state);
         /** Notifies about snapshot with @a uSnapshotId was taken for the machine with @a uId. */

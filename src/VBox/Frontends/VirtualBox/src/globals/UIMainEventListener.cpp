@@ -59,6 +59,7 @@
 #include "CMachineDataChangedEvent.h"
 #include "CMachineStateChangedEvent.h"
 #include "CMachineRegisteredEvent.h"
+#include "CMachineGroupsChangedEvent.h"
 #include "CMediumChangedEvent.h"
 #include "CMediumConfigChangedEvent.h"
 #include "CMediumRegisteredEvent.h"
@@ -309,6 +310,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CMachineRegisteredEvent comEventSpecific(pEvent);
             emit sigMachineRegistered(comEventSpecific.GetMachineId(), comEventSpecific.GetRegistered());
+            break;
+        }
+        case KVBoxEventType_OnMachineGroupsChanged:
+        {
+            CMachineGroupsChangedEvent comEventSpecific(pEvent);
+            emit sigMachineGroupsChange(comEventSpecific.GetMachineId());
             break;
         }
         case KVBoxEventType_OnSessionStateChanged:
