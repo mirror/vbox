@@ -485,7 +485,7 @@ private:
     void updateActionRestrictions();
 
     /* Check if GA can be upgraded. */
-    bool GuestAdditionsUpgradable();
+    bool guestAdditionsUpgradable();
     /* Private variables: */
     UIMachine *m_pMachine;
 
