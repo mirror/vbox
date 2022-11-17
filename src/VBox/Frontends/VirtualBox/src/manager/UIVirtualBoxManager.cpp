@@ -1153,11 +1153,15 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
 void UIVirtualBoxManager::sltCloseSettingsDialog()
 {
     /* What type of dialog should we delete? */
-    enum DelType { None, Local, Cloud, All } enmType = All;
+    enum DelType { None, Local, Cloud, All } enmType = None;
     if (qobject_cast<UISettingsDialog*>(sender()))
         enmType = (DelType)(enmType | Local);
     else if (qobject_cast<UICloudMachineSettingsDialog*>(sender()))
         enmType = (DelType)(enmType | Cloud);
+
+    /* It's all if nothing: */
+    if (enmType == None)
+        enmType = All;
 
     /* Remove requested instances: */
     if (enmType & Local)
