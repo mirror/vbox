@@ -70,6 +70,11 @@ SERVICE="VirtualBox Guest Additions"
 QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
 
+# Prepend PATH for building UEK7 on OL8 distribution.
+case $(uname -r) in
+    5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH"
+esac
+
 # Marker to ignore a particular kernel version which was already installed.
 #
 # This is needed in order to prevent modules rebuild on system start and do
