@@ -1740,6 +1740,23 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i24_rexw__ud2, BS3_PBC_NEAR
 AssertCompile(.again - BS3_LAST_LABEL == 4)
 BS3_PROC_END_CMN   bs3CpuBasic2_retn_i24_rexw__ud2
 
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_opsize_rexw__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_opsize_rexw__ud2, BS3_PBC_NEAR
+        db      66h, 048h
+        ret
+.again: ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_opsize_rexw__ud2
+
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i24_opsize_rexw__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i24_opsize_rexw__ud2, BS3_PBC_NEAR
+        db      66h, 048h
+        ret     24
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 5)
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i24_opsize_rexw__ud2
+
  %endif
 
 ; Mark the start of opsize tests as we end up below 64K in 32-bit and 64-bit when used.
@@ -1774,22 +1791,22 @@ AssertCompile(.again - BS3_LAST_LABEL == 4)
 BS3_PROC_END_CMN   bs3CpuBasic2_retn_i0_opsize__ud2
 
  %if TMPL_BITS == 64
-BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_opsize_rexw__ud2
-BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_opsize_rexw__ud2, BS3_PBC_NEAR
-        db      66h, 048h
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_rexw_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_rexw_opsize__ud2, BS3_PBC_NEAR
+        db      048h, 66h
         ret
 .again: ud2
         jmp     .again
-BS3_PROC_END_CMN   bs3CpuBasic2_retn_opsize_rexw__ud2
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_rexw_opsize__ud2
 
-BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i24_opsize_rexw__ud2
-BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i24_opsize_rexw__ud2, BS3_PBC_NEAR
-        db      66h, 048h
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i24_rexw_opsize__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i24_rexw_opsize__ud2, BS3_PBC_NEAR
+        db      048h, 66h
         ret     24
 .again: ud2
         jmp     .again
 AssertCompile(.again - BS3_LAST_LABEL == 5)
-BS3_PROC_END_CMN   bs3CpuBasic2_retn_i24_opsize_rexw__ud2
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i24_rexw_opsize__ud2
  %endif
 
 ; End of opsize tests.

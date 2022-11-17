@@ -4629,7 +4629,9 @@ PROTO_ALL(bs3CpuBasic2_retn_i0_opsize__ud2);
 FNBS3FAR  bs3CpuBasic2_retn_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i24_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_opsize_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_rexw_opsize__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64;
 PROTO_ALL(bs3CpuBasic2_retn_opsize_end);
 #undef PROTO_ALL
 
@@ -4838,11 +4840,13 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             { 32, false,  0, bs3CpuBasic2_retn__ud2_c64, },
             { 32, false,  0, bs3CpuBasic2_retn_rexw__ud2_c64, },
             { 32,  true,  0, bs3CpuBasic2_retn_opsize__ud2_c64, },
-            { 32,  true,  0, bs3CpuBasic2_retn_opsize_rexw__ud2_c64, },
+            { 32, false,  0, bs3CpuBasic2_retn_opsize_rexw__ud2_c64, },
+            { 32,  true,  0, bs3CpuBasic2_retn_rexw_opsize__ud2_c64, },
             { 32, false, 24, bs3CpuBasic2_retn_i24__ud2_c64, },
             { 32, false, 24, bs3CpuBasic2_retn_i24_rexw__ud2_c64, },
             { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c64, },
-            { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64, },
+            { 32, false, 24, bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64, },
+            { 32,  true, 24, bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64, },
             { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c64, },
             { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
         };
