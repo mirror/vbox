@@ -755,7 +755,7 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
     updateActionsAppearance();
 
     /* Special handling for opened settings dialog: */
-    if (   m_pWidget->isMachineItemSelected()
+    if (   m_pWidget->isLocalMachineItemSelected()
         && m_settings.contains(UISettingsDialog::DialogType_Machine))
     {
         /* Cast dialog to required type: */
@@ -1113,7 +1113,7 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
                                                                                                actionPool(),
                                                                                                strCategory,
                                                                                                strControl);
-                connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogGlobal::sigClose,
+                connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogMachine::sigClose,
                         this, &UIVirtualBoxManager::sltCloseSettingsDialog);
                 m_settings.value(UISettingsDialog::DialogType_Machine)->load();
             }
