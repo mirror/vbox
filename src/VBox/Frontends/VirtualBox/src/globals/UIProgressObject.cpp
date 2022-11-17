@@ -154,6 +154,12 @@ void UIProgressObject::prepare()
 void UIProgressObject::cleanup()
 {
     /* Destroy CProgress event handler: */
+    disconnect(m_pEventHandler, &UIProgressEventHandler::sigProgressPercentageChange,
+               this, &UIProgressObject::sltHandleProgressPercentageChange);
+    disconnect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
+               this, &UIProgressObject::sltHandleProgressTaskComplete);
+    disconnect(m_pEventHandler, &UIProgressEventHandler::sigHandlingFinished,
+               this, &UIProgressObject::sigProgressEventHandlingFinished);
     delete m_pEventHandler;
     m_pEventHandler = 0;
 }
