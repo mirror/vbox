@@ -1323,7 +1323,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                         {
                                             LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (file)\n",
                                                      strEntryAbs.c_str(), pszPathReal));
-                                            if (mSourceSpec.fFileCopyFlags & DirectoryCopyFlag_FollowLinks)
+                                            if (mSourceSpec.fFileCopyFlags & FileCopyFlag_FollowLinks)
                                                 vrc = AddEntryFromHost(strEntry, &objInfo);
                                         }
                                         else
