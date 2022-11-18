@@ -4383,6 +4383,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 acbChunks = (768*1024, 128*1024);
 
+            reporter.log2('Chunked reads');
+
             for cbChunk in acbChunks:
                 # Read the whole file straight thru:
                 #if oTestFile.cbContent >= 1024*1024: reporter.log2('... cbChunk=%s' % (cbChunk,));
@@ -4423,6 +4425,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # Random reads.
             #
+            reporter.log2('Random reads (seek)');
             for _ in xrange(8):
                 offFile  = self.oTestFiles.oRandom.randrange(0, oTestFile.cbContent + 1024);
                 cbToRead = self.oTestFiles.oRandom.randrange(1, min(oTestFile.cbContent + 256, 768*1024));
@@ -4471,6 +4474,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # Random reads using readAt.
             #
+            reporter.log2('Random reads (readAt)');
             for _ in xrange(12):
                 offFile  = self.oTestFiles.oRandom.randrange(0, oTestFile.cbContent + 1024);
                 cbToRead = self.oTestFiles.oRandom.randrange(1, min(oTestFile.cbContent + 256, 768*1024));
@@ -4512,6 +4516,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
 
             # Zero byte reads -> E_INVALIDARG.
+            reporter.log2('Zero byte reads');
             try:
                 abRead = oFile.read(0, 30*1000);
             except Exception as oXcpt:
@@ -4530,6 +4535,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             # See what happens when we read 1GiB.  We should get a max of 1MiB back.
             ## @todo Document this behaviour in VirtualBox.xidl.
+            reporter.log2('1GB reads');
             try:
                 oFile.seek(0, vboxcon.FileSeekOrigin_Begin);
             except:
