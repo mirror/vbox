@@ -328,10 +328,98 @@ FNIEMOP_DEF(iemOp_palignr_Vx_Wx_Ib)
 /*  Opcode 0x66 0x0f 0x11 - invalid */
 /*  Opcode 0x66 0x0f 0x12 - invalid */
 /*  Opcode 0x66 0x0f 0x13 - invalid */
+
+
 /** Opcode 0x66 0x0f 0x14. */
-FNIEMOP_STUB(iemOp_pextrb_RdMb_Vdq_Ib);
+FNIEMOP_DEF(iemOp_pextrb_RdMb_Vdq_Ib)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    IEMOP_MNEMONIC3(MRI, PEXTRB, pextrb, Ev, Vq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * greg32, XMM.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint8_t,   uValue);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_AND_LOCAL_U8(bImm, 15);
+        IEM_MC_FETCH_XREG_U8(uValue, IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iByte*/);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), uValue);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * [mem8], XMM.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint8_t,   uValue);
+        IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_AND_LOCAL_U8(bImm, 15);
+        IEM_MC_FETCH_XREG_U8(uValue, IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iByte*/);
+        IEM_MC_STORE_MEM_U8(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uValue);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /** Opcode 0x66 0x0f 0x15. */
-FNIEMOP_STUB(iemOp_pextrw_RdMw_Vdq_Ib);
+FNIEMOP_DEF(iemOp_pextrw_RdMw_Vdq_Ib)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    IEMOP_MNEMONIC3(MRI, PEXTRW, pextrw, Ev, Vq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * greg32, XMM.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint16_t,  uValue);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_AND_LOCAL_U8(bImm, 7);
+        IEM_MC_FETCH_XREG_U16(uValue, IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iWord*/);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), uValue);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * [mem16], XMM.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint16_t,  uValue);
+        IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_AND_LOCAL_U8(bImm, 7);
+        IEM_MC_FETCH_XREG_U16(uValue, IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iWord*/);
+        IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uValue);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
 
 
 FNIEMOP_DEF(iemOp_pextrd_q_RdMw_Vdq_Ib)
@@ -349,7 +437,7 @@ FNIEMOP_DEF(iemOp_pextrd_q_RdMw_Vdq_Ib)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /*
-             * XMM, greg64.
+             * greg64, XMM.
              */
             uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -366,7 +454,7 @@ FNIEMOP_DEF(iemOp_pextrd_q_RdMw_Vdq_Ib)
         else
         {
             /*
-             * XMM, [mem64].
+             * [mem64], XMM.
              */
             IEM_MC_BEGIN(0, 2);
             IEM_MC_LOCAL(uint64_t,  uSrc);
@@ -398,7 +486,7 @@ FNIEMOP_DEF(iemOp_pextrd_q_RdMw_Vdq_Ib)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /*
-             * XMM, greg32.
+             * greg32, XMM.
              */
             uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -415,7 +503,7 @@ FNIEMOP_DEF(iemOp_pextrd_q_RdMw_Vdq_Ib)
         else
         {
             /*
-             * XMM, [mem32].
+             * [mem32], XMM.
              */
             IEM_MC_BEGIN(0, 2);
             IEM_MC_LOCAL(uint32_t,  uSrc);
@@ -437,7 +525,50 @@ FNIEMOP_DEF(iemOp_pextrd_q_RdMw_Vdq_Ib)
 
 
 /** Opcode 0x66 0x0f 0x17. */
-FNIEMOP_STUB(iemOp_extractps_Ed_Vdq_Ib);
+FNIEMOP_DEF(iemOp_extractps_Ed_Vdq_Ib)
+{
+    IEMOP_MNEMONIC3(MRI, EXTRACTPS, extractps, Ed, Vdq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * greg32, XMM.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint32_t,  uSrc);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_AND_LOCAL_U8(bImm, 3);
+        IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iDword*/);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), uSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * [mem32], XMM.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint32_t,  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_AND_LOCAL_U8(bImm, 3);
+        IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iDword*/);
+        IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /*  Opcode 0x66 0x0f 0x18 - invalid (vex only). */
 /*  Opcode 0x66 0x0f 0x19 - invalid (vex only). */
 /*  Opcode 0x66 0x0f 0x1a - invalid */
@@ -449,7 +580,50 @@ FNIEMOP_STUB(iemOp_extractps_Ed_Vdq_Ib);
 
 
 /** Opcode 0x66 0x0f 0x20. */
-FNIEMOP_STUB(iemOp_pinsrb_Vdq_RyMb_Ib);
+FNIEMOP_DEF(iemOp_pinsrb_Vdq_RyMb_Ib)
+{
+    IEMOP_MNEMONIC3(RMI, PINSRB, pinsrb, Vd, Ey, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * XMM, greg32.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint8_t,   uSrc);
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_FETCH_GREG_U8(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_AND_LOCAL_U8(bImm, 15);
+        IEM_MC_STORE_XREG_U8(IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iByte*/, uSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * XMM, [mem8].
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint8_t,   uSrc);
+        IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_FETCH_MEM_U8(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_AND_LOCAL_U8(bImm, 15);
+        IEM_MC_STORE_XREG_U8(IEM_GET_MODRM_REG(pVCpu, bRm), bImm /*a_iByte*/, uSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
 /** Opcode 0x66 0x0f 0x21, */
 FNIEMOP_STUB(iemOp_insertps_Vdq_UdqMd_Ib);
 
