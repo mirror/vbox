@@ -1052,6 +1052,8 @@ typedef struct CPUMFEATURES
     uint32_t        fFxSaveRstor : 1;
     /** Supports the XSAVE and XRSTOR instructions. */
     uint32_t        fXSaveRstor : 1;
+    /** Supports the XSAVEOPT instruction. */
+    uint32_t        fXSaveOpt : 1;
     /** The XSAVE/XRSTOR bit in CR4 has been set (only applicable for host!). */
     uint32_t        fOpSysXSaveRstor : 1;
     /** Supports MMX. */
@@ -1195,7 +1197,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 27;
+    uint32_t        fPadding0 : 26;
 
 
     /** @name SVM
