@@ -1638,26 +1638,35 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
     if (aToRead > _1M)
         aToRead = _1M;
 
-    aData.resize(aToRead);
-
     HRESULT hrc = S_OK;
 
-    uint32_t cbRead;
-    int vrc = i_readData(aToRead, aTimeoutMS,
+    int vrc;
+    try
+    {
+        aData.resize(aToRead);
+
+        uint32_t cbRead;
+        vrc = i_readData(aToRead, aTimeoutMS,
                          &aData.front(), aToRead, &cbRead);
 
-    if (RT_SUCCESS(vrc))
-    {
-        if (aData.size() != cbRead)
-            aData.resize(cbRead);
+        if (RT_SUCCESS(vrc))
+        {
+            if (aData.size() != cbRead)
+                aData.resize(cbRead);
+        }
+        else
+        {
+            aData.resize(0);
+        }
     }
-    else
+    catch (std::bad_alloc &)
     {
-        aData.resize(0);
+        vrc = VERR_NO_MEMORY;
+    }
 
+    if (RT_FAILURE(vrc))
         hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from file \"%s\" failed: %Rrc"),
                            mData.mOpenInfo.mFilename.c_str(), vrc);
-    }
 
     LogFlowFuncLeaveRC(vrc);
     return hrc;
@@ -1677,25 +1686,34 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
     if (aToRead > _1M)
         aToRead = _1M;
 
-    aData.resize(aToRead);
-
     HRESULT hrc = S_OK;
 
-    size_t cbRead;
-    int vrc = i_readDataAt(aOffset, aToRead, aTimeoutMS,
-                           &aData.front(), aToRead, &cbRead);
-    if (RT_SUCCESS(vrc))
+    int vrc;
+    try
     {
-        if (aData.size() != cbRead)
-            aData.resize(cbRead);
-    }
-    else
-    {
-        aData.resize(0);
+        aData.resize(aToRead);
 
+        size_t cbRead;
+        vrc = i_readDataAt(aOffset, aToRead, aTimeoutMS,
+                           &aData.front(), aToRead, &cbRead);
+        if (RT_SUCCESS(vrc))
+        {
+            if (aData.size() != cbRead)
+                aData.resize(cbRead);
+        }
+        else
+        {
+            aData.resize(0);
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(vrc))
         hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from file \"%s\" (at offset %RU64) failed: %Rrc"),
                            mData.mOpenInfo.mFilename.c_str(), aOffset, vrc);
-    }
 
     LogFlowFuncLeaveRC(vrc);
     return hrc;
