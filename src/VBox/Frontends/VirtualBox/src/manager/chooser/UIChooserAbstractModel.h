@@ -181,6 +181,8 @@ protected slots:
         virtual void sltLocalMachineDataChanged(const QUuid &uMachineId);
         /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
         virtual void sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered);
+        /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
+        virtual void sltLocalMachineGroupsChanged(const QUuid &uMachineId);
 
         /** Handles session @a enmState change for machine with certain @a uMachineId. */
         virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
