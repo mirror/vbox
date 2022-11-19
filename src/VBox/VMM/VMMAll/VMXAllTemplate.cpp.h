@@ -812,7 +812,7 @@ static uint64_t vmxHCGetFixedCr4Mask(PCVMCPUCC pVCpu)
 static void vmxHCAddXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
 {
     PVMXVMCSINFO pVmcsInfo   = pVmxTransient->pVmcsInfo;
-    uint32_t       uXcptBitmap = pVmcsInfo->u32XcptBitmap;
+    uint32_t     uXcptBitmap = pVmcsInfo->u32XcptBitmap;
     if ((uXcptBitmap & uXcptMask) != uXcptMask)
     {
         uXcptBitmap |= uXcptMask;
@@ -851,9 +851,9 @@ static void vmxHCAddXcptIntercept(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, 
  */
 static int vmxHCRemoveXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
 {
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    uint32_t   u32XcptBitmap = pVmcsInfo->u32XcptBitmap;
-    if (u32XcptBitmap & uXcptMask)
+    PVMXVMCSINFO pVmcsInfo   = pVmxTransient->pVmcsInfo;
+    uint32_t     uXcptBitmap = pVmcsInfo->u32XcptBitmap;
+    if (uXcptBitmap & uXcptMask)
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         if (!pVmxTransient->fIsNestedGuest)
@@ -888,14 +888,14 @@ static int vmxHCRemoveXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTrans
             Assert(!(uXcptMask & RT_BIT(X86_XCPT_AC)));
 
             /* Remove it from the exception bitmap. */
-            u32XcptBitmap &= ~uXcptMask;
+            uXcptBitmap &= ~uXcptMask;
 
             /* Commit and update the cache if necessary. */
-            if (pVmcsInfo->u32XcptBitmap != u32XcptBitmap)
+            if (pVmcsInfo->u32XcptBitmap != uXcptBitmap)
             {
-                int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_EXCEPTION_BITMAP, u32XcptBitmap);
+                int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
                 AssertRC(rc);
-                pVmcsInfo->u32XcptBitmap = u32XcptBitmap;
+                pVmcsInfo->u32XcptBitmap = uXcptBitmap;
             }
         }
     }
@@ -11122,7 +11122,11 @@ static VBOXSTRICTRC vmxHCRunDebugStateRevert(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
     /* If we've modified the exception bitmap, we restore it and trigger
        reloading and partial recalculation the next time around. */
     if (pDbgState->fModifiedXcptBitmap)
+    {
+        int rc2 = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pDbgState->bmXcptInitial);
+        AssertRC(rc2);
         pVmcsInfo->u32XcptBitmap = pDbgState->bmXcptInitial;
+    }
 
     return rcStrict;
 }
