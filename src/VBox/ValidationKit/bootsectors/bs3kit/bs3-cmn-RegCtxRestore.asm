@@ -575,6 +575,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         ; IRETD to v8086 mode.  Frame includes ss:esp and the 4 data segment registers.
         ;
 .restore_v8086:
+        ; Create the return frame.
         or      eax, 0ffffffffh         ; poison unused parts of segment pushes
         mov     eax, [xBX + BS3REGCTX.gs]
         push    eax
@@ -592,6 +593,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         push    eax
         push    dword [xBX + BS3REGCTX.rip]
 
+        ; Load registers.
         mov     eax, [xBX + BS3REGCTX.rax]
         mov     edx, [xBX + BS3REGCTX.rdx]
         mov     ecx, [xBX + BS3REGCTX.rcx]
