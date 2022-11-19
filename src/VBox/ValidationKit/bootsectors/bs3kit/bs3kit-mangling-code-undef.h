@@ -220,6 +220,7 @@
 #undef Bs3Trap32Init
 #undef Bs3Trap32SetGate
 #undef Bs3Trap64Init
+#undef Bs3Trap64InitEx
 #undef Bs3Trap64SetGate
 #undef Bs3TrapDefaultHandler
 #undef Bs3TrapPrintFrame

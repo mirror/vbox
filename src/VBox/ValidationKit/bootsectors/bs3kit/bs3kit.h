@@ -3291,6 +3291,17 @@ BS3_CMN_PROTO_STUB(void, Bs3Trap32Init,(void));
 BS3_CMN_PROTO_STUB(void, Bs3Trap64Init,(void));
 
 /**
+ * Initializes 64-bit trap handling, extended version.
+ *
+ * @remarks Does not install 64-bit trap handling, just initializes the
+ *          structures.
+ * @param   fMoreIstUsage   Use the interrupt stacks for more CPU exceptions.
+ *                          Default (false) is to only IST1 for the double fault
+ *                          handler and the rest uses IST0.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3Trap64InitEx,(bool fMoreIstUsage));
+
+/**
  * Modifies the real-mode / V86 IVT entry specified by @a iIvt.
  *
  * @param   iIvt        The index of the IDT entry to set.

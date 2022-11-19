@@ -44,8 +44,39 @@
 #undef Bs3Trap64Init
 BS3_CMN_DEF(void, Bs3Trap64Init,(void))
 {
-     X86TSS64 BS3_FAR *pTss;
-     unsigned iIdt;
+    Bs3Trap64InitEx(false);
+}
+
+#undef Bs3Trap64InitEx
+BS3_CMN_DEF(void, Bs3Trap64InitEx,(bool fMoreIstUsage))
+{
+    static const uint8_t s_aAssignments[] =
+    {
+        /* [X86_XCPT_DE] = */   3,
+        /* [X86_XCPT_DB] = */   2,
+        /* [X86_XCPT_NMI] = */  0,
+        /* [X86_XCPT_BP] = */   2,
+        /* [X86_XCPT_OF] = */   3,
+        /* [X86_XCPT_BR] = */   3,
+        /* [X86_XCPT_UD] = */   4,
+        /* [X86_XCPT_NM] = */   3,
+        /* [X86_XCPT_DF] = */   1,
+        /*        [0x09] = */   0,
+        /* [X86_XCPT_TS] = */   1,
+        /* [X86_XCPT_NP] = */   5,
+        /* [X86_XCPT_SS] = */   5,
+        /* [X86_XCPT_GP] = */   6,
+        /* [X86_XCPT_PF] = */   7,
+        /*        [0x0f] = */   0,
+        /* [X86_XCPT_MF] = */   0,
+        /* [X86_XCPT_AC] = */   3,
+        /* [X86_XCPT_MC] = */   0,
+        /* [X86_XCPT_XF] = */   0,
+        /* [X86_XCPT_VE] = */   0,
+        /* [X86_XCPT_CP] = */   6,
+    };
+    X86TSS64 BS3_FAR *pTss;
+    unsigned iIdt;
 
     /*
      * IDT entries, except the system call gate.
@@ -53,10 +84,11 @@ BS3_CMN_DEF(void, Bs3Trap64Init,(void))
      */
     for (iIdt = 0; iIdt < BS3_TRAP_SYSCALL; iIdt++)
         Bs3Trap64SetGate(iIdt, AMD64_SEL_TYPE_SYS_INT_GATE, 0 /*bDpl*/,
-                         BS3_SEL_R0_CS64, g_Bs3Trap64GenericEntriesFlatAddr + iIdt * 8, iIdt == X86_XCPT_DF /*bIst*/);
+                         BS3_SEL_R0_CS64, g_Bs3Trap64GenericEntriesFlatAddr + iIdt * 8,
+                         !fMoreIstUsage ? iIdt == X86_XCPT_DF : iIdt < RT_ELEMENTS(s_aAssignments) ? s_aAssignments[iIdt] : 0);
     for (iIdt = BS3_TRAP_SYSCALL + 1; iIdt < 256; iIdt++)
         Bs3Trap64SetGate(iIdt, AMD64_SEL_TYPE_SYS_INT_GATE, 0 /*bDpl*/,
-                         BS3_SEL_R0_CS64, g_Bs3Trap64GenericEntriesFlatAddr + iIdt * 8, 0 /*bIst*/);
+                         BS3_SEL_R0_CS64, g_Bs3Trap64GenericEntriesFlatAddr + iIdt * 8, 0);
 
     /*
      * Initialize the normal TSS so we can do ring transitions via the IDT.

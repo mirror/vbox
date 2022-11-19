@@ -220,6 +220,7 @@
 #define Bs3Trap32Init BS3_CMN_MANGLER(Bs3Trap32Init)
 #define Bs3Trap32SetGate BS3_CMN_MANGLER(Bs3Trap32SetGate)
 #define Bs3Trap64Init BS3_CMN_MANGLER(Bs3Trap64Init)
+#define Bs3Trap64InitEx BS3_CMN_MANGLER(Bs3Trap64InitEx)
 #define Bs3Trap64SetGate BS3_CMN_MANGLER(Bs3Trap64SetGate)
 #define Bs3TrapDefaultHandler BS3_CMN_MANGLER(Bs3TrapDefaultHandler)
 #define Bs3TrapPrintFrame BS3_CMN_MANGLER(Bs3TrapPrintFrame)
