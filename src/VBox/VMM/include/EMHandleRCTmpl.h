@@ -154,7 +154,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
 
         case VINF_EM_RAW_GUEST_TRAP:
         case VINF_EM_RAW_EMULATE_INSTR:
-            Assert(!TRPMHasTrap(pVCpu)); /* We're directly executing instructions below without respecting any pending traps! */
+            AssertMsg(!TRPMHasTrap(pVCpu), ("trap=%#x\n", TRPMGetTrapNo(pVCpu))); /* We're directly executing instructions below without respecting any pending traps! */
             rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ");
             break;
 
