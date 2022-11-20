@@ -528,7 +528,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgHm, "MissingOS2TlbFlushWorkaround", &pVM->hm.s.fMissingOS2TlbFlushWorkaround, false);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/HM/AlwaysInterceptVmxMovDRx,int8_t,-1}
+    /** @cfgm{/HM/AlwaysInterceptVmxMovDRx,int8_t,0}
      * Whether to always intercept MOV DRx when using VMX.
      * The value is a tristate: 1 for always intercepting, -1 for lazy intercept,
      * and 0 for default.  The default means that it's always intercepted when the
@@ -545,7 +545,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * DR6 to zero (on the host) doesn't result in 0xffff0ff0 (X86_DR6_RA1_MASK).
      * Note that it seems DR6.RTM remains writable even after the microcode updates
      * disabling TSX. */
-    rc = CFGMR3QueryS8Def(pCfgHm, "AlwaysInterceptVmxMovDRx", &pVM->hm.s.vmx.fAlwaysInterceptMovDRxCfg, -1);
+    rc = CFGMR3QueryS8Def(pCfgHm, "AlwaysInterceptVmxMovDRx", &pVM->hm.s.vmx.fAlwaysInterceptMovDRxCfg, 0);
     AssertLogRelRCReturn(rc, rc);
 
     /*
