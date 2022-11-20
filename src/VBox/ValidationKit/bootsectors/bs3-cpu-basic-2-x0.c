@@ -4656,13 +4656,10 @@ static void bs3CpuBasic2_retn_PrepStack(BS3PTRUNION StkPtr, PCBS3REGCTX pCtxExpe
 
 
 /**
- * Entrypoint for FAR JMP & FAR CALL tests.
+ * Entrypoint for NEAR RET tests.
  *
  * @returns 0 or BS3TESTDOMODE_SKIPPED.
  * @param   bMode       The CPU mode we're testing.
- *
- * @note    When testing v8086 code, we'll be running in v8086 mode. So, careful
- *          with control registers and such.
  */
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
 {
@@ -4682,8 +4679,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
     /*
      * Create a context.
      *
-     * ASSUMES we're in ring-0, we'll be using the ring-2 stack for the testing
-     * to avoid overwriting it.
+     * ASSUMES we're in on the ring-0 stack in ring-0 and using less than 16KB.
      */
     Bs3RegCtxSaveEx(&Ctx, bMode, 768);
     Ctx.rsp.u = BS3_ADDR_STACK - _16K;
@@ -4914,6 +4910,288 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
     else
         Bs3TestFailed("wtf?");
 
+    return 0;
+}
+
+
+/*********************************************************************************************************************************
+*   Far RET                                                                                                                      *
+*********************************************************************************************************************************/
+#define PROTO_ALL(a_Template) \
+    FNBS3FAR a_Template ## _c16, \
+             a_Template ## _c32, \
+             a_Template ## _c64
+PROTO_ALL(bs3CpuBasic2_retf);
+PROTO_ALL(bs3CpuBasic2_retf_opsize);
+FNBS3FAR  bs3CpuBasic2_retf_rexw_c64;
+FNBS3FAR  bs3CpuBasic2_retf_rexw_opsize_c64;
+FNBS3FAR  bs3CpuBasic2_retf_opsize_rexw_c64;
+PROTO_ALL(bs3CpuBasic2_retf_i32);
+PROTO_ALL(bs3CpuBasic2_retf_i32_opsize);
+FNBS3FAR  bs3CpuBasic2_retf_i32_rexw_c64;
+FNBS3FAR  bs3CpuBasic2_retf_i32_rexw_opsize_c64;
+FNBS3FAR  bs3CpuBasic2_retf_i32_opsize_rexw_c64;
+#undef PROTO_ALL
+
+
+static void bs3CpuBasic2_retf_PrepStack(BS3PTRUNION StkPtr, uint8_t cbStkItem, RTSEL uRetCs, uint64_t uRetRip,
+                                        bool fWithStack, uint16_t cbImm, RTSEL uRetSs, uint64_t uRetRsp)
+{
+    Bs3MemSet(&StkPtr.pu32[-4], 0xff, 96);
+    if (cbStkItem == 2)
+    {
+        StkPtr.pu16[0] = (uint16_t)uRetRip;
+        StkPtr.pu16[1] = uRetCs;
+        if (fWithStack)
+        {
+            StkPtr.pb += cbImm;
+            StkPtr.pu16[2] = (uint16_t)uRetRsp;
+            StkPtr.pu16[3] = uRetSs;
+        }
+    }
+    else if (cbStkItem == 4)
+    {
+        StkPtr.pu32[0] = (uint32_t)uRetRip;
+        StkPtr.pu16[2] = uRetCs;
+        if (fWithStack)
+        {
+            StkPtr.pb += cbImm;
+            StkPtr.pu32[2] = (uint32_t)uRetRsp;
+            StkPtr.pu16[6] = uRetSs;
+        }
+    }
+    else
+    {
+        StkPtr.pu64[0] = uRetRip;
+        StkPtr.pu16[4] = uRetCs;
+        if (fWithStack)
+        {
+            StkPtr.pb += cbImm;
+            StkPtr.pu64[2]  = uRetRsp;
+            StkPtr.pu16[12] = uRetSs;
+        }
+    }
+}
+
+
+/**
+ * Entrypoint for FAR RET tests.
+ *
+ * @returns 0 or BS3TESTDOMODE_SKIPPED.
+ * @param   bMode       The CPU mode we're testing.
+ */
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
+{
+    BS3TRAPFRAME            TrapCtx;
+    BS3REGCTX               Ctx;
+    BS3REGCTX               CtxExpected;
+    unsigned                iTest;
+    unsigned                iSubTest;
+    BS3PTRUNION             StkPtr;
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&CtxExpected, sizeof(Ctx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+
+    bs3CpuBasic2_SetGlobals(bMode);
+
+    /*
+     * Use separate stacks for all relevant CPU exceptions so we can put
+     * garbage in unused RSP bits w/o needing to care about where a long mode
+     * handler will end up when accessing the whole RSP.  (Not an issue with
+     * 16-bit and 32-bit protected mode kernels, as here the weird SS based
+     * stack pointer handling is in effect and the exception handler code
+     * will just continue using the same SS and same portion of RSP.)
+     *
+     * See r154660.
+     */
+    if (BS3_MODE_IS_64BIT_SYS(bMode))
+        Bs3Trap64InitEx(true);
+
+    /*
+     * Create a context.
+     *
+     * ASSUMES we're in on the ring-0 stack in ring-0 and using less than 16KB.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 768);
+    Ctx.rsp.u = BS3_ADDR_STACK - _16K;
+    Bs3MemCpy(&CtxExpected, &Ctx, sizeof(CtxExpected));
+
+    StkPtr.pv = Bs3RegCtxGetRspSsAsCurPtr(&Ctx);
+    //Bs3TestPrintf("Stack=%p rsp=%RX64\n", StkPtr.pv, Ctx.rsp.u);
+
+    /*
+     * 16-bit tests.
+     */
+    if (BS3_MODE_IS_16BIT_CODE(bMode))
+    {
+        static struct
+        {
+            bool        fOpSizePfx;
+            uint16_t    cbImm;
+            FPFNBS3FAR  pfnTest;
+        } const s_aTests[] =
+        {
+            { false,  0, bs3CpuBasic2_retf_c16, },
+            {  true,  0, bs3CpuBasic2_retf_opsize_c16, },
+            { false, 32, bs3CpuBasic2_retf_i32_c16, },
+            {  true, 32, bs3CpuBasic2_retf_i32_opsize_c16, },
+        };
+
+        static struct
+        {
+            bool        fRmOrV86;
+            bool        fInterPriv;
+            int8_t      iXcpt;
+            RTSEL       uStartSs;
+            RTSEL       uDstCs;
+            union   /* must use a union here as the compiler won't compile if uint16_t and will mess up fixups for uint32_t. */
+            {
+                void __near *pv;
+                uint32_t     offDst;
+            };
+            RTSEL       uDstSs;
+            uint16_t    uErrCd;
+        } const s_aSubTests[] =
+        { /* rm/v86, PriChg, Xcpt,  uStartSs,          uDstCs               offDst/pv                                uDstSs              uErrCd */
+            {  true, false, -1,                   0, BS3_SEL_TEXT16,      { .pv = (void __near *)bs3CpuBasic2_ud2 }, 0 },
+            { false, false, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_TEXT16  | 0, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R0_SS16 | 0 },
+            { false, false, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R0_CS16 | 0, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R0_SS16 | 0 },
+            { false, false, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R0_CS16 | 0, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R0_SS16 | 0 },
+            { false,  true, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R1_CS16 | 1, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R1_SS16 | 1 },
+            { false,  true, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R1_CS16 | 1, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R1_SS16 | 1 },
+            { false,  true, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R1_CS16 | 1, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R1_SS32 | 1 },
+            { false,  true, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R1_CS16 | 1, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R1_SS32 | 1 },
+            { false,  true, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R2_CS16 | 2, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R2_SS16 | 2 },
+            { false,  true, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R2_CS16 | 2, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R2_SS16 | 2 },
+            { false,  true, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R2_CS16 | 2, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R2_SS32 | 2 },
+            { false,  true, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R2_CS16 | 2, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R2_SS32 | 2 },
+            { false,  true, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R3_CS16 | 3, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R3_SS16 | 3 },
+            { false,  true, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R3_CS16 | 3, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R3_SS16 | 3 },
+            { false,  true, -1, BS3_SEL_R0_SS16 | 0, BS3_SEL_R3_CS16 | 3, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R3_SS32 | 3 },
+            { false,  true, -1, BS3_SEL_R0_SS32 | 0, BS3_SEL_R3_CS16 | 3, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R3_SS32 | 3 },
+            /* some #GP variations */ /** @todo test all possible exceptions! */
+            { false,  true, 14, BS3_SEL_R0_SS32 | 0, BS3_SEL_R3_CS16 | 2, { .pv = (void __near *)bs3CpuBasic2_ud2 }, BS3_SEL_R2_SS16 | 2, BS3_SEL_R3_CS16 },
+        };
+
+        bool const fRmOrV86 = BS3_MODE_IS_RM_OR_V86(bMode);
+
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            g_usBs3TestStep = iTest << 8;
+            Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, s_aTests[iTest].pfnTest);
+
+            for (iSubTest = 0; iSubTest < RT_ELEMENTS(s_aSubTests); iSubTest++)
+                if (s_aSubTests[iSubTest].fRmOrV86 == fRmOrV86)
+                {
+                    uint16_t const cbFrmDisp = s_aSubTests[iSubTest].fInterPriv ? iSubTest % 7 : 0;
+                    uint16_t const cbStkItem = s_aTests[iTest].fOpSizePfx ? 4 : 2;
+                    uint16_t const cbFrame   = (s_aSubTests[iSubTest].fInterPriv ? 4 : 2) * cbStkItem;
+                    RTSEL    const uDstSs    = s_aSubTests[iSubTest].uDstSs;
+                    uint64_t       uDstRspExpect, uDstRspPush;
+
+                    Ctx.ss = s_aSubTests[iSubTest].uStartSs;
+                    if (Ctx.ss != BS3_SEL_R0_SS32)
+                        Ctx.rsp.u32 |= UINT32_C(0xfffe0000);
+                    else
+                        Ctx.rsp.u32 &= UINT16_MAX;
+                    uDstRspExpect = uDstRspPush = Ctx.rsp.u + s_aTests[iTest].cbImm + cbFrame + cbFrmDisp;
+                    if (s_aSubTests[iSubTest].fInterPriv)
+                    {
+                        if (s_aTests[iTest].fOpSizePfx)
+                            uDstRspPush = (uDstRspPush & UINT16_MAX) | UINT32_C(0xacdc0000);
+                        if (uDstSs == (BS3_SEL_R1_SS32 | 1) || uDstSs == (BS3_SEL_R2_SS32 | 2) || uDstSs == (BS3_SEL_R3_SS32 | 3))
+                        {
+                            if (s_aTests[iTest].fOpSizePfx)
+                                uDstRspExpect = uDstRspPush;
+                            else
+                                uDstRspExpect &= UINT16_MAX;
+                        }
+                    }
+
+                    CtxExpected.bCpl  = Ctx.bCpl;
+                    CtxExpected.cs    = Ctx.cs;
+                    CtxExpected.ss    = Ctx.ss;
+                    CtxExpected.ds    = Ctx.ds;
+                    CtxExpected.es    = Ctx.es;
+                    CtxExpected.fs    = Ctx.fs;
+                    CtxExpected.gs    = Ctx.gs;
+                    CtxExpected.rip.u = Ctx.rip.u;
+                    CtxExpected.rsp.u = Ctx.rsp.u;
+                    if (s_aSubTests[iSubTest].iXcpt < 0)
+                    {
+                        CtxExpected.cs    = s_aSubTests[iSubTest].uDstCs;
+                        CtxExpected.rip.u = s_aSubTests[iSubTest].offDst;
+                        CtxExpected.ss    = uDstSs;
+                        CtxExpected.rsp.u = uDstRspExpect;
+                        if (s_aSubTests[iSubTest].fInterPriv)
+                        {
+                            uint16_t BS3_FAR *puSel = &CtxExpected.ds; /* ASSUME member order! */
+                            unsigned          cSels = 4;
+                            CtxExpected.bCpl = CtxExpected.ss & X86_SEL_RPL;
+                            while (cSels-- > 0)
+                            {
+                                uint16_t uSel = *puSel;
+                                if (   (uSel & X86_SEL_MASK_OFF_RPL)
+                                    && Bs3Gdt[uSel >> X86_SEL_SHIFT].Gen.u2Dpl < CtxExpected.bCpl
+                                    &&    (Bs3Gdt[uSel >> X86_SEL_SHIFT].Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+                                       != (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+                                    *puSel = 0;
+                                puSel++;
+                            }
+                            CtxExpected.rsp.u += s_aTests[iTest].cbImm; /* arguments are dropped from both stacks. */
+                        }
+                    }
+                    //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
+                    //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64 -> %04RX16:%04RX64 [pushed %#RX64]\n", Ctx.ss, Ctx.rsp.u, CtxExpected.ss, CtxExpected.rsp.u, uDstRspPush);
+                    bs3CpuBasic2_retf_PrepStack(StkPtr, cbStkItem, s_aSubTests[iSubTest].uDstCs, s_aSubTests[iSubTest].offDst,
+                                                s_aSubTests[iSubTest].fInterPriv, s_aTests[iTest].cbImm,
+                                                s_aSubTests[iSubTest].uDstSs, uDstRspPush);
+                    //Bs3TestPrintf("%p: %04RX16 %04RX16 %04RX16 %04RX16\n%.48Rhxd\n", StkPtr.pu16, StkPtr.pu16[0], StkPtr.pu16[1], StkPtr.pu16[2], StkPtr.pu16[3], StkPtr.pu16);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (s_aSubTests[iSubTest].iXcpt < 0)
+                        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+                    else
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
+                    g_usBs3TestStep++;
+
+                    /* Again single stepping: */
+                    //Bs3TestPrintf("stepping...\n");
+                    Bs3RegSetDr6(X86_DR6_INIT_VAL);
+                    Ctx.rflags.u16        |= X86_EFL_TF;
+                    CtxExpected.rflags.u16 = Ctx.rflags.u16;
+                    bs3CpuBasic2_retf_PrepStack(StkPtr, cbStkItem, s_aSubTests[iSubTest].uDstCs, s_aSubTests[iSubTest].offDst,
+                                                s_aSubTests[iSubTest].fInterPriv, s_aTests[iTest].cbImm,
+                                                s_aSubTests[iSubTest].uDstSs, uDstRspPush);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (s_aSubTests[iSubTest].iXcpt < 0)
+                        bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+                    else
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
+                    Ctx.rflags.u16        &= ~X86_EFL_TF;
+                    CtxExpected.rflags.u16 = Ctx.rflags.u16;
+                    g_usBs3TestStep++;
+                }
+        }
+    }
+    /*
+     * 32-bit tests.
+     */
+    else if (BS3_MODE_IS_32BIT_CODE(bMode))
+    {
+    }
+    /*
+     * 64-bit tests.
+     */
+    else if (BS3_MODE_IS_64BIT_CODE(bMode))
+    {
+    }
+    else
+        Bs3TestFailed("wtf?");
+
+    if (BS3_MODE_IS_64BIT_SYS(bMode))
+        Bs3TrapReInit();
     return 0;
 }
 

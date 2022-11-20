@@ -1814,6 +1814,53 @@ BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_retn_opsize_end), , 1
         int3
 TMPL_BEGIN_TEXT
 
+
+;*********************************************************************************************************************************
+;*  FAR RET                                                                                                                      *
+;*********************************************************************************************************************************
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf, BS3_PBC_NEAR
+        db      0cbh                    ; retf
+BS3_PROC_END_CMN   bs3CpuBasic2_retf
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_opsize, BS3_PBC_NEAR
+        db      066h, 0cbh              ; o32/o16 retf
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_opsize
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i32, BS3_PBC_NEAR
+        db      0cah, 20h, 0            ; retf 32
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_i32
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i32_opsize, BS3_PBC_NEAR
+        db      066h, 0cah, 20h, 0      ; o32/o16 retf 32
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_i32_opsize
+
+ %if TMPL_BITS == 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_rexw, BS3_PBC_NEAR
+        db      048h, 0cbh              ; o64 retf
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_rexw
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_opsize_rexw, BS3_PBC_NEAR
+        db      066h, 048h, 0cbh        ; o16 o64 retf
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_opsize_rexw
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_rexw_opsize, BS3_PBC_NEAR
+        db      048h, 066h, 0cbh        ; o64 o16 retf
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_rexw_opsize
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i24_rexw, BS3_PBC_NEAR
+        db      048h, 0cah, 24, 0       ; o64 retf 24
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_i24_rexw
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i24_opsize_rexw, BS3_PBC_NEAR
+        db      066h, 048h, 0cah, 24, 0 ; o16 o64 retf 24
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_i24_opsize_rexw
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i24_rexw_opsize, BS3_PBC_NEAR
+        db      048h, 066h, 0cah, 24, 0 ; o64 o16 retf 24
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_i24_rexw_opsize
+ %endif
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment

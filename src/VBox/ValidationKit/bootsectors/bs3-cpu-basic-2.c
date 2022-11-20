@@ -57,6 +57,7 @@ FNBS3TESTDOMODE             bs3CpuBasic2_iret_f16;
 FNBS3TESTDOMODE             bs3CpuBasic2_jmp_call_f16;
 FNBS3TESTDOMODE             bs3CpuBasic2_far_jmp_call_f16;
 FNBS3TESTDOMODE             bs3CpuBasic2_near_ret_f16;
+FNBS3TESTDOMODE             bs3CpuBasic2_far_ret_f16;
 
 BS3_DECL_CALLBACK(void)     bs3CpuBasic2_Do32BitTests_pe32();
 
@@ -79,7 +80,8 @@ static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
     //{ "iret", bs3CpuBasic2_iret_f16, 0 },
     //{ "near jmp+call jb / jv / ind",  bs3CpuBasic2_jmp_call_f16, 0 },
     //{ "far jmp+call",  bs3CpuBasic2_far_jmp_call_f16, 0 },
-    { "near ret",  bs3CpuBasic2_near_ret_f16, 0 },
+    //{ "near ret",  bs3CpuBasic2_near_ret_f16, 0 },
+    { "far ret",   bs3CpuBasic2_far_ret_f16, 0 },
 #endif
 #if 0
     { "sidt", bs3CpuBasic2_sidt_f16, 0 },
