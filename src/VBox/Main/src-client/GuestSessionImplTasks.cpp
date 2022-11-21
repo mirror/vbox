@@ -493,6 +493,32 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
 }
 
 /**
+ * Closes a formerly opened guest file.
+ *
+ * @returns VBox status code.
+ * @param   file                Guest file to close.
+ *
+ * @note    Set a progress error message on error.
+ */
+int GuestSessionTask::fileClose(const ComObjPtr<GuestFile> &file)
+{
+    int vrcGuest;
+    int vrc = file->i_closeFile(&vrcGuest);
+    if (RT_FAILURE(vrc))
+    {
+        Utf8Str strFilename;
+        HRESULT const hrc = file->getFilename(strFilename);
+        AssertComRCReturn(hrc, VERR_OBJECT_DESTROYED);
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(tr("Error closing guest file \"%s\": %Rrc"),
+                                                          strFilename.c_str(), vrc == VERR_GSTCTL_GUEST_ERROR ? vrcGuest : vrc));
+        if (RT_SUCCESS(vrc))
+            vrc = vrc == VERR_GSTCTL_GUEST_ERROR ? vrcGuest : vrc;
+    }
+
+    return vrc;
+}
+
+/**
  * Copies a file from the guest to the host.
  *
  * @return VBox status code.
@@ -612,8 +638,10 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
 
     if (fSkip)
     {
-        int vrc2 = srcFile->i_closeFile(&vrcGuest);
-        AssertRC(vrc2);
+        int vrc2 = fileClose(srcFile);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
+
         return vrc;
     }
 
@@ -673,8 +701,9 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                                 Utf8StrFmt(tr("Opening/creating host file \"%s\" failed: %Rrc"), strDst.c_str(), vrc));
     }
 
-    int vrc2 = srcFile->i_closeFile(&vrcGuest);
-    AssertRC(vrc2);
+    int vrc2 = fileClose(srcFile);
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -913,8 +942,10 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
 
     if (fSkip)
     {
-        int vrc2 = dstFile->i_closeFile(&vrcGuest);
-        AssertRC(vrc2);
+        int vrc2 = fileClose(dstFile);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
+
         return vrc;
     }
 
@@ -941,8 +972,9 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
                                            szSrcReal, vrc));
     }
 
-    int vrc2 = dstFile->i_closeFile(&vrcGuest);
-    AssertRC(vrc2);
+    int vrc2 = fileClose(dstFile);
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -2563,8 +2595,9 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
             {
                 vrc = fileCopyToGuestInner(strFileSrc, hVfsFile, strFileDst, dstFile, FileCopyFlag_None, 0 /*offCopy*/, cbSrcSize);
 
-                int vrc2 = dstFile->i_closeFile(&vrcGuest);
-                AssertRC(vrc2);
+                int vrc2 = fileClose(dstFile);
+                if (RT_SUCCESS(vrc))
+                    vrc = vrc2;
             }
         }
 

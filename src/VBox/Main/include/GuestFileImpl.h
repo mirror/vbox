@@ -92,7 +92,7 @@ public:
     static Utf8Str  i_guestErrorToString(int guestRc, const char *pcszWhat);
     /** @}  */
 
-private:
+public:
 
     /** @name Wrapped IGuestFile properties.
      * @{ */
@@ -133,6 +133,8 @@ private:
                     ULONG aTimeoutMS,
                     ULONG *aWritten);
     /** @}  */
+
+private:
 
     /** This can safely be used without holding any locks.
      * An AutoCaller suffices to prevent it being destroy while in use and

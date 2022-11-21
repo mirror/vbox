@@ -242,6 +242,7 @@ protected:
 
     /** @name File handling primitives.
      * @{ */
+    int fileClose(const ComObjPtr<GuestFile> &file);
     int fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPtr<GuestFile> &srcFile,
                                const Utf8Str &strDstFile, PRTFILE phDstFile,
                                FileCopyFlag_T fFileCopyFlags, uint64_t offCopy, uint64_t cbSize);

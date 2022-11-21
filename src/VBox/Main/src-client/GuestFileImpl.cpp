@@ -383,7 +383,7 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
 }
 
 /**
- * Closes the file on the guest side.
+ * Closes the file on the guest side and unregisters it.
  *
  * @returns VBox status code.
  * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
@@ -423,6 +423,12 @@ int GuestFile::i_closeFile(int *prcGuest)
         vrc = i_waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
                                     NULL /* FileStatus */, prcGuest);
     unregisterWaitEvent(pEvent);
+
+    /* Unregister the file object from the guest session. */
+    AssertPtr(mSession);
+    int vrc2 = mSession->i_fileUnregister(this);
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1534,14 +1540,6 @@ HRESULT GuestFile::close()
     /* Close file on guest. */
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_closeFile(&vrcGuest);
-    /* On failure don't return here, instead do all the cleanup
-     * work first and then return an error. */
-
-    AssertPtr(mSession);
-    int vrc2 = mSession->i_fileUnregister(this);
-    if (RT_SUCCESS(vrc))
-        vrc = vrc2;
-
     if (RT_FAILURE(vrc))
     {
         if (vrc == VERR_GSTCTL_GUEST_ERROR)
