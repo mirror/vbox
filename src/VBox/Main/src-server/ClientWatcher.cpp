@@ -218,7 +218,7 @@ uint32_t VirtualBox::ClientWatcher::reapProcesses(void)
                                     pid, pid, Status.iStatus, Status.iStatus));
 #else
                             LogRel(("Reaper: Pid %d (%x) was signalled: %s (%d / %#x)\n",
-                                    pid, pid, strsignal(Status.iStatus), Status.iStatus, Status.iStatus));
+                                    pid, pid, sigabbrev_np(Status.iStatus), Status.iStatus, Status.iStatus));
 #endif
                             break;
                     }
