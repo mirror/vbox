@@ -2545,10 +2545,12 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             pVCpu->cpum.GstCtx.ss.u64Base    = 0;
         else
             pVCpu->cpum.GstCtx.ss.u64Base    = X86DESC_BASE(&DescSs.Legacy);
-        if (!pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig && pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
-            pVCpu->cpum.GstCtx.sp            = (uint16_t)uNewOuterRsp;
-        else
+        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
             pVCpu->cpum.GstCtx.rsp           = uNewOuterRsp;
+        else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
+            pVCpu->cpum.GstCtx.rsp           = (uint32_t)uNewOuterRsp;
+        else
+            pVCpu->cpum.GstCtx.sp            = (uint16_t)uNewOuterRsp;
 
         pVCpu->iem.s.uCpl           = (uNewCs & X86_SEL_RPL);
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pVCpu->cpum.GstCtx.ds);

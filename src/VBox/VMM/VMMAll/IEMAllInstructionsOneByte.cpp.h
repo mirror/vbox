@@ -6517,7 +6517,6 @@ FNIEMOP_DEF(iemOp_retf_Iw)
     IEMOP_MNEMONIC(retf_Iw, "retf Iw");
     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_retf, pVCpu->iem.s.enmEffOpSize, u16Imm);
 }
 
@@ -6529,7 +6528,6 @@ FNIEMOP_DEF(iemOp_retf)
 {
     IEMOP_MNEMONIC(retf, "retf");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_retf, pVCpu->iem.s.enmEffOpSize, 0);
 }
 
