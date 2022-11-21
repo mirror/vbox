@@ -686,6 +686,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Unknown_File_Not_Found                    = ( 'Unknown',           'File not found' );
     ktReason_Unknown_HalReturnToFirmware               = ( 'Unknown',           'HalReturnToFirmware' );
     ktReason_Unknown_VM_Crash                          = ( 'Unknown',           'VM crash' );
+    ktReason_Unknown_VM_Terminated                     = ( 'Unknown',           'VM terminated' );
     ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
     ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
     ktReason_VMM_kvm_lock_spinning                     = ( 'VMM',               'kvm_lock_spinning' );
@@ -1470,8 +1471,12 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ## Things we search a VBoxSVC log for to figure out why something went bust.
     katSimpleSvcLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
-        ( False, ktReason_Unknown_VM_Crash, re.compile(r'Reaper.* exited normally: -1073741819 \(0xc0000005\)') ),
-        ( False, ktReason_Unknown_VM_Crash, re.compile(r'Reaper.* was signalled: 11 \(0xb\)') ),
+        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* exited normally: -1073741819 \(0xc0000005\)') ),
+        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: 11 \(0xb\)') ), # For VBox <= 6.1.
+        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: SIGABRT') ),    # Since VBox 7.0.
+        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: SIGSEGV') ),
+        ( False, ktReason_Unknown_VM_Terminated, re.compile(r'Reaper.* was signalled: SIGTERM') ),
+        ( False, ktReason_Unknown_VM_Terminated, re.compile(r'Reaper.* was signalled: SIGKILL') ),
     ];
 
     def investigateSvcLogForVMRun(self, oCaseFile, sSvcLog):
