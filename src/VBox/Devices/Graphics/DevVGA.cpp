@@ -1390,8 +1390,8 @@ static VBOXSTRICTRC vga_mem_writeb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
             vgaR3MarkDirty(pThis, addr);
         }
     } else if (!(pThis->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
-        /* odd/even mode (aka text mode mapping) */
-        plane = (pThis->gr[4] & 2) | (addr & 1);
+        /* odd/even mode (aka text mode mapping); GR4 does not affect writes! */
+        plane = addr & 1;
         mask = (1 << plane);
         if (pThis->sr[2] & mask) {
             /* 'addr' is offset in a plane, bit 0 selects the plane.
@@ -3515,7 +3515,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, PVGASTATECC pThisCC, void *pvUse
         while (cItems-- > 0)
             for (i = 0; i < cbItem; i++)
             {
-                unsigned plane = (pThis->gr[4] & 2) | (GCPhysAddr & 1);
+                unsigned plane = GCPhysAddr & 1;
                 if (pThis->sr[2] & (1 << plane)) {
                     RTGCPHYS PhysAddr2 = ((GCPhysAddr & ~1) * 4) | plane;
                     pThisCC->pbVRam[PhysAddr2] = aVal[i];
@@ -4347,11 +4347,13 @@ static DECLCALLBACK(void) vgaR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     int             val, vfreq_hz, hfreq_hz;
     vga_retrace_s   *r = &pThis->retrace_state;
     const char      *clocks[] = { "25.175 MHz", "28.322 MHz", "External", "Reserved?!" };
+    const char      *mem_map[] = { "A000-BFFF", "A000-AFFF", "B000-B7FF", "B800-BFFF" };
     NOREF(pszArgs);
 
     is_graph  = pThis->gr[6] & 1;
     char_dots = (pThis->sr[0x01] & 1) ? 8 : 9;
     double_scan = pThis->cr[9] >> 7;
+    pHlp->pfnPrintf(pHlp, "decoding memory at %s\n", mem_map[(pThis->gr[6] >> 2) & 3]);
     pHlp->pfnPrintf(pHlp, "Misc status reg. MSR:%02X\n", pThis->msr);
     pHlp->pfnPrintf(pHlp, "pixel clock: %s\n", clocks[(pThis->msr >> 2) & 3]);
     pHlp->pfnPrintf(pHlp, "double scanning %s\n", double_scan ? "on" : "off");
