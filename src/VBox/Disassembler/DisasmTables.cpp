@@ -3035,7 +3035,7 @@ const DISOPCODE g_aMapX86_Group7_mod11_rm001[8] =
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
     OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
-    INVALID_OPCODE,
+    OP("rdtscp",             0,                  0,          0,          OP_RDTSCP, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_POTENTIALLY_DANGEROUS ),
 };
 
 const DISOPCODE g_aMapX86_Group8[8] =

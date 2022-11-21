@@ -210,6 +210,7 @@ enum OPCODES
     OP_COMISS,
     OP_WRMSR,
     OP_RDTSC,
+    OP_RDTSCP,
     OP_RDMSR,
     OP_RDPMC,
     OP_SYSENTER,
