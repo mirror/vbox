@@ -1733,8 +1733,8 @@ static void bs3CpuBasic2_RaiseXcpt11Worker(uint8_t bMode, uint8_t *pbBuf, unsign
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
 
                     if (   (pCmn->paEntries[iTest].fOp & MYOP_AC_GP)
-                             && fMisaligned
-                             && (!fAm || iRing != 3 || !fAc || (offMem & 3 /* 10980XE */) == 0) )
+                        && fMisaligned
+                        && (!fAm || iRing != 3 || !fAc || (offMem & 3 /* 10980XE */) == 0) )
                     {
                         if (fAc && bMode == BS3_MODE_RM)
                             TrapCtx.Ctx.rflags.u32 |= X86_EFL_AC;
