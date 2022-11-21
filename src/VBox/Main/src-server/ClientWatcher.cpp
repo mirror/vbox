@@ -212,18 +212,21 @@ uint32_t VirtualBox::ClientWatcher::reapProcesses(void)
                             LogRel(("Reaper: Pid %d (%x) abended: %d (%#x)\n",
                                     pid, pid, Status.iStatus, Status.iStatus));
                             break;
-                        case RTPROCEXITREASON_SIGNAL:
+                    case RTPROCEXITREASON_SIGNAL:
+/** @todo Move this into IPRT to e.g. RTProcSigToStr()? */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-                            LogRel(("Reaper: Pid %d (%x) was signalled: (%d / %#x)\n", pid, pid, Status.iStatus, Status.iStatus));
-#else /** @todo Move this to IPRT? */
+                            const char *pszSig = "";
+#elif defined(RT_OS_DARWIN) /** @todo Move this to IPRT? */
+                            const char *pszSig = strsignal(Status.iStatus); /* Not quite the same, but better than nothing. */
+#else /* Linux / UNIX */
 # if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 32)
                             const char *pszSig = sigabbrev_np(Status.iStatus);
 # else /* glibc < 2.32 */
-                            const char *pszSig = strsignal(Status.iStatus); /* Not quite the same, but better than nothing. */
+                            const char *pszSig = strsignal(Status.iStatus); /* Ditto. */
 # endif /* __GLIBC_PREREQ */
+#endif
                             LogRel(("Reaper: Pid %d (%x) was signalled: %s (%d / %#x)\n",
                                     pid, pid, pszSig, Status.iStatus, Status.iStatus));
-#endif
                             break;
                     }
                 }
