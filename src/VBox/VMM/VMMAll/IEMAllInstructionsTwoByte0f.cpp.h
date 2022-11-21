@@ -1748,7 +1748,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 }
 
 
-/** Opcode 0x0f 0x01 /7. */
+/** Opcode 0x0f 0x01 0xf8. */
 FNIEMOP_DEF(iemOp_Grp7_swapgs)
 {
     IEMOP_MNEMONIC(swapgs, "swapgs");
@@ -1758,7 +1758,7 @@ FNIEMOP_DEF(iemOp_Grp7_swapgs)
 }
 
 
-/** Opcode 0x0f 0x01 /7. */
+/** Opcode 0x0f 0x01 0xf9. */
 FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
     IEMOP_MNEMONIC(rdtscp, "rdtscp");
