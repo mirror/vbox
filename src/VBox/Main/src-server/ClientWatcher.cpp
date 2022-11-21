@@ -216,7 +216,7 @@ uint32_t VirtualBox::ClientWatcher::reapProcesses(void)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
                             LogRel(("Reaper: Pid %d (%x) was signalled: (%d / %#x)\n", pid, pid, Status.iStatus, Status.iStatus));
 #else /** @todo Move this to IPRT? */
-# if __GLIBC_PREREQ(2, 32)
+# if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 32)
                             const char *pszSig = sigabbrev_np(Status.iStatus);
 # else /* glibc < 2.32 */
                             const char *pszSig = strsignal(Status.iStatus); /* Not quite the same, but better than nothing. */
