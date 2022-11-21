@@ -62,6 +62,14 @@ BS3_PROC_BEGIN _bs3CpuBasic2_ud2
 BS3_PROC_END   _bs3CpuBasic2_ud2
 
 
+BS3_PROC_BEGIN _bs3CpuBasic2_stac_ud2
+        stac
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END   _bs3CpuBasic2_stac_ud2
+
+
 BS3_PROC_BEGIN _bs3CpuBasic2_Int80
         int     80h
 .again: ud2
