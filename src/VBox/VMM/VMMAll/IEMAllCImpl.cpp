@@ -7662,7 +7662,8 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
         return rcStrict;
 
     RTGCPHYS GCPhysMem;
-    rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrMem, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
+    /** @todo access size   */
+    rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrMem, 1, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -8429,7 +8430,8 @@ IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff
     if (rcStrict == VINF_SUCCESS)
     {
         RTGCPHYS GCPhysMem;
-        rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrEff, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
+        /** @todo access size.   */
+        rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrEff, 1, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
         if (rcStrict == VINF_SUCCESS)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX

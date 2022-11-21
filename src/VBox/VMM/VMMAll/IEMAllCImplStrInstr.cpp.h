@@ -194,12 +194,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
            )
         {
             RTGCPHYS GCPhysSrc1Mem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc1Addr, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc1Addr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
             RTGCPHYS GCPhysSrc2Mem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc2Addr, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc2Addr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -360,12 +360,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
            )
         {
             RTGCPHYS GCPhysSrc1Mem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc1Addr, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc1Addr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
             RTGCPHYS GCPhysSrc2Mem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc2Addr, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrc2Addr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -513,7 +513,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
            )
         {
             RTGCPHYS GCPhysMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -641,7 +641,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
            )
         {
             RTGCPHYS GCPhysMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -791,12 +791,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
            )
         {
             RTGCPHYS GCPhysSrcMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrcAddr, IEM_ACCESS_DATA_R, &GCPhysSrcMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtSrcAddr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysSrcMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
             RTGCPHYS GCPhysDstMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtDstAddr, IEM_ACCESS_DATA_W, &GCPhysDstMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtDstAddr, OP_SIZE / 8, IEM_ACCESS_DATA_W, &GCPhysDstMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -936,7 +936,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
            )
         {
             RTGCPHYS GCPhysMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, IEM_ACCESS_DATA_W, &GCPhysMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, OP_SIZE / 8, IEM_ACCESS_DATA_W, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -1070,7 +1070,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
            )
         {
             RTGCPHYS GCPhysMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -1352,7 +1352,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
            )
         {
             RTGCPHYS GCPhysMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, IEM_ACCESS_DATA_W, &GCPhysMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, OP_SIZE / 8, IEM_ACCESS_DATA_W, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
@@ -1642,7 +1642,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
            )
         {
             RTGCPHYS GCPhysMem;
-            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, uVirtAddr, OP_SIZE / 8, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
