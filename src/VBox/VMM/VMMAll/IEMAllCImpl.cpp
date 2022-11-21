@@ -2545,7 +2545,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             pVCpu->cpum.GstCtx.ss.u64Base    = 0;
         else
             pVCpu->cpum.GstCtx.ss.u64Base    = X86DESC_BASE(&DescSs.Legacy);
-        if (!pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
+        if (!pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig && pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
             pVCpu->cpum.GstCtx.sp            = (uint16_t)uNewOuterRsp;
         else
             pVCpu->cpum.GstCtx.rsp           = uNewOuterRsp;
