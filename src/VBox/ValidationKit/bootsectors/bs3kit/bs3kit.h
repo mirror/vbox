@@ -1994,6 +1994,34 @@ BS3_CMN_PROTO_STUB(void, Bs3SelSetup16BitCode,(X86DESC BS3_FAR *pDesc, uint32_t 
  */
 BS3_CMN_PROTO_STUB(void, Bs3SelSetup32BitCode,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr, uint32_t uLimit, uint8_t bDpl));
 
+/**
+ * Sets up a 16-bit or 32-bit gate descriptor.
+ *
+ * This can be used both for GDT/LDT and IDT.
+ *
+ * @param   pDesc       Pointer to the descriptor table entry.
+ * @param   bType       The gate type.
+ * @param   bDpl        The gate DPL.
+ * @param   uSel        The gate selector value.
+ * @param   off         The gate IP/EIP value.
+ * @param   cParams     Number of parameters to copy if call-gate.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3SelSetupGate,(X86DESC BS3_FAR *pDesc, uint8_t bType, uint8_t bDpl,
+                                          uint16_t uSel, uint32_t off, uint8_t cParams));
+
+/**
+ * Sets up a 64-bit gate descriptor.
+ *
+ * This can be used both for GDT/LDT and IDT.
+ *
+ * @param   pDescPair   Pointer to the _two_ descriptor table entries.
+ * @param   bType       The gate type.
+ * @param   bDpl        The gate DPL.
+ * @param   uSel        The gate selector value.
+ * @param   off         The gate IP/EIP value.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3SelSetupGate64,(X86DESC BS3_FAR *pDescPair, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off));
+
 
 /**
  * Slab control structure list head.

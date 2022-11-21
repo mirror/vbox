@@ -173,6 +173,8 @@
 #undef Bs3SelSetup16BitCode
 #undef Bs3SelSetup16BitData
 #undef Bs3SelSetup32BitCode
+#undef Bs3SelSetupGate64
+#undef Bs3SelSetupGate
 #undef Bs3Shutdown
 #undef Bs3SlabAlloc
 #undef Bs3SlabAllocEx
