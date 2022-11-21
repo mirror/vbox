@@ -1144,8 +1144,10 @@ endif
 
 # Continue to support Vista w/o any service pack, at least for now.
 VBOX_WITH_VISTA_NO_SP = 1
-# Enable image verification on darwin @bugref{9232}.
-VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION = 1
+ifdef VBOX_WITH_VBOXDRV
+ # Enable image verification on darwin @bugref{9232}.
+ VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION = 1
+endif
 ## @}
 
 
@@ -1666,6 +1668,45 @@ ifdef VBOX_USE_KSUBMIT
  else
   VBOX_USE_KSUBMIT :=
  endif
+endif
+
+#
+# Requested permissions to the host OS (only the entitlements
+# crap on darwin for now).
+#
+ifeq ($(KBUILD_TARGET),darwin)
+ #
+ # The first two entitlements are required to get everything working
+ # on Catalina which we want to keep supported for now.
+ #
+ VBOX_DARWIN_ENTITLEMENTS_LIST := \
+ 	com.apple.security.cs.allow-unsigned-executable-memory \
+ 	com.apple.security.cs.disable-executable-page-protection \
+ 	com.apple.security.device.audio-input \
+ 	com.apple.security.device.camera \
+ 	com.apple.security.device.usb
+
+ #
+ # The hypervisor entitlement is required in adhoc signing mode
+ # to get access to the Hypervisor framework. For release signing
+ # the entitlement is included in our developer certificate.
+ #
+ # The device-access and networking entitlemnents are reserved for
+ # only specific vendors and are only available in release mode signing
+ # (binaries signed with these entitlements in adhoc mode will just crash
+ # with a code signing error).
+ #
+ ifeq ($(VBOX_SIGNING_MODE),adhoc)
+  VBOX_DARWIN_ENTITLEMENTS_LIST += \
+  	com.apple.security.hypervisor
+ else
+  VBOX_DARWIN_ENTITLEMENTS_LIST += \
+  	com.apple.vm.device-access \
+  	com.apple.vm.networking
+ endif
+
+ # Where the dynamic generated entitlements can be found.
+ VBOX_DARWIN_ENTITLEMENTS_FILE := $(PATH_OUT)/Entitlements.plist
 endif
 
 #
@@ -3968,11 +4009,19 @@ endif
 #  - The 'release' mode is tailored for creating builds that are give to other
 #    people, like the ones the build servers create.  As much as possible is
 #    signed and timestamped.
+#  - The 'adhoc' mode is specific to building on macOS and is similar to 'test'
+#    mode but doesn't require any certificates but a host set up for development work.
+#    Binaries are signed in adhoc mode and include required entitlements as appropriate
+#    (something we would only do in the 'packing' target). This seem to be the only working
+#    way with newer versions of macOS (tested with Ventura) with 'test' not working anymore.
 #
 ifdef VBOX_SIGNING_MODE
  VBOX_SIGNING_MODE := $(strip $(VBOX_SIGNING_MODE))
- ifn1of ($(VBOX_SIGNING_MODE), test release)
-  $(error VBOX_SIGNING_MODE must be either 'test' or 'release'. The value '$(VBOX_SIGNING_MODE)' is not recognized.)
+ ifn1of ($(VBOX_SIGNING_MODE), test release adhoc)
+  $(error VBOX_SIGNING_MODE must be either 'test', 'release' or 'adhoc'. The value '$(VBOX_SIGNING_MODE)' is not recognized.)
+ endif
+ if "$(VBOX_SIGNING_MODE)" == "adhoc" && "$(KBUILD_TARGET)" != "darwin"
+  $(error 'adhoc' signing mode is only available on macOS)
  endif
  VBOX_RETRY    ?= $(ASH) $(KBUILD_DEVTOOLS)/bin/retry.sh
  # temporary solution for a $(dir ...) equivalent which assumes that it gets a single path, possibly with spaces.
@@ -4295,6 +4344,33 @@ ifdef VBOX_SIGNING_MODE
   VBOX_LEGACY_TS_CA_FILE = $(VBOX_PATH_SRC_CERTIFICATES)/Timestamp-VBoxLegacyWinCA.crt
 
  else ifeq ($(KBUILD_HOST),darwin)
+
+  ## Sign a VM process binary with the given entitlements
+  # @param 1  The file to sign.
+  # @param 2  Identifier, optional.
+  ifeq ($(VBOX_SIGNING_MODE),adhoc)
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+   ## @todo cannot handle $(2), the identifier.
+   VBOX_SIGN_IMAGE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
+	$(call VBOX_CCS_SIGN_CMD,binary,$(1),,$(subst --entitlements=,-entitlement_file_path ,$(3)) \
+		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))
+  else
+   VBOX_SIGN_IMAGE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
+	--verbose=9 \
+	--force \
+	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
+	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 16,--options 0x10000,--options runtime)) \
+	--file-list - \
+	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
+	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+	--entitlements="$(VBOX_DARWIN_ENTITLEMENTS_FILE)" \
+	"$(1)" \
+	$(if $(2),--identifier "$(2)",)
+  endif
+  else
+    VBOX_SIGN_IMAGE_FN =
+  endif
+
   #
   # Darwin code signing.
   #
@@ -4308,6 +4384,14 @@ ifdef VBOX_SIGNING_MODE
    VBOX_CERTIFICATE_SUBJECT_NAME ?= $(error You need to set VBOX_CERTIFICATE_SUBJECT_NAME in LocalConfig.kmk.)
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
    VBOX_TSA_URL ?= none
+  else ifeq ($(VBOX_SIGNING_MODE), adhoc)
+   ifdef VBOX_CERTIFICATE_SUBJECT_NAME
+    $(error VBOX_CERTIFICATE_SUBJECT_NAME must not be set in 'adhoc' signing mode)
+   endif
+   VBOX_CERTIFICATE_SUBJECT_NAME = -
+   VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
+   VBOX_TSA_URL ?= none
+   VBOX_SIGN_IMAGE_CMDS           ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
   else
    VBOX_CERTIFICATE_SUBJECT_NAME ?= Developer ID Application: Oracle America, Inc.
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
@@ -6189,6 +6273,7 @@ TEMPLATE_VBOXR3EXE_OBJCFLAGS.darwin    = $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
 TEMPLATE_VBOXR3EXE_OBJCXXFLAGS.darwin  = $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
 TEMPLATE_VBOXR3EXE_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -Wl,-headerpad_max_install_names
 TEMPLATE_VBOXR3EXE_LDFLAGS.darwin.x86  = -read_only_relocs suppress
+TEMPLATE_VBOXR3EXE_POST_CMDS.darwin    = $(VBOX_SIGN_IMAGE_CMDS)
   ifdef VBOX_WITH_DTRACE_R3
    TEMPLATE_VBOXR3EXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
   endif
@@ -7331,6 +7416,7 @@ TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin     += -bind_at_load
 TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon -Wl,-headerpad_max_install_names
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBOXMAINEXE_POST_CMDS.darwin    = $(VBOX_SIGN_IMAGE_CMDS)
  else ifeq ($(KBUILD_TARGET),haiku)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) network stdc++ supc++
@@ -7997,6 +8083,7 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin     += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -bind_at_load -Wl,-headerpad_max_install_names
    TEMPLATE_VBOXQTGUIEXE_LIBS +=
    TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
+   TEMPLATE_VBOXQTGUIEXE_POST_CMDS.darwin    = $(VBOX_SIGN_IMAGE_CMDS)
   else
    TEMPLATE_VBOXQTGUIEXE_INCS += \
 	$(VBOX_XCURSOR_INCS)
@@ -9110,11 +9197,29 @@ $(VBOX_LICENSE_VER_KMK): $(VBOX_BRAND_LICENSE_HTML)
 endif
 
 
+ifeq ($(KBUILD_TARGET),darwin)
+$(VBOX_DARWIN_ENTITLEMENTS_FILE):
+	$(call MSG_GENERATE,,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(APPEND) $@.tmp '<?xml version="1.0" encoding="UTF-8"?>'
+	$(QUIET)$(APPEND) $@.tmp '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+	$(QUIET)$(APPEND) $@.tmp '<plist version="1.0">'
+	$(QUIET)$(APPEND) $@.tmp '<dict>'
+	$(QUIET)$(APPEND) -n $@.tmp $(foreach entitlement,$(VBOX_DARWIN_ENTITLEMENTS_LIST), '	<key>$(entitlement)</key><true/>')
+	$(QUIET)$(APPEND) $@.tmp '</dict>'
+	$(QUIET)$(APPEND) $@.tmp '</plist>'
+	$(QUIET)$(MV) -f $@.tmp $@
+endif
+
 ifndef VBOX_NOINC_MISC
 # Force building of the version header file as the first thing anywhere in
 # the tree. This eliminates the need for manual dependencies on it.
 ## @todo there gotta be a better way of doing this.
 Makefile.kmk: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PRODUCT_HEADER) $(VBOX_PACKAGE_HEADER)
+ ifeq ($(KBUILD_TARGET),darwin)
+Makefile.kmk: | $(VBOX_DARWIN_ENTITLEMENTS_FILE)
+ endif
 endif
 
 
