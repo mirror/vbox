@@ -6036,10 +6036,11 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
                     return iemRaiseAlignmentCheckException(pVCpu);
             }
             else if (   (uAlignCtl & IEM_MEMMAP_F_ALIGN_GP_OR_AC)
-                     && iemMemAreAlignmentChecksEnabled(pVCpu)
-/** @todo may only apply to 2, 4 or 8 byte misalignments depending on the CPU
- *        implementation. See FXSAVE/FRSTOR/XSAVE/XRSTOR/++. */
-                    )
+                     && (GCPtrMem & 3) /* The value 4 matches 10980xe's FXSAVE and helps make bs3-cpu-basic2 work. */
+                    /** @todo may only apply to 2, 4 or 8 byte misalignments depending on the CPU
+                     * implementation. See FXSAVE/FRSTOR/XSAVE/XRSTOR/++.  Using 4 for now as
+                     * that's what FXSAVE does on a 10980xe. */
+                     && iemMemAreAlignmentChecksEnabled(pVCpu))
                 return iemRaiseAlignmentCheckException(pVCpu);
             else
                 return iemRaiseGeneralProtectionFault0(pVCpu);
@@ -6337,10 +6338,11 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
                     iemRaiseAlignmentCheckExceptionJmp(pVCpu);
             }
             else if (   (uAlignCtl & IEM_MEMMAP_F_ALIGN_GP_OR_AC)
-                     && iemMemAreAlignmentChecksEnabled(pVCpu)
-/** @todo may only apply to 2, 4 or 8 byte misalignments depending on the CPU
- *        implementation. See FXSAVE/FRSTOR/XSAVE/XRSTOR/++. */
-                    )
+                     && (GCPtrMem & 3) /* The value 4 matches 10980xe's FXSAVE and helps make bs3-cpu-basic2 work. */
+                    /** @todo may only apply to 2, 4 or 8 byte misalignments depending on the CPU
+                     * implementation. See FXSAVE/FRSTOR/XSAVE/XRSTOR/++.  Using 4 for now as
+                     * that's what FXSAVE does on a 10980xe. */
+                     && iemMemAreAlignmentChecksEnabled(pVCpu))
                 iemRaiseAlignmentCheckExceptionJmp(pVCpu);
             else
                 iemRaiseGeneralProtectionFault0Jmp(pVCpu);
