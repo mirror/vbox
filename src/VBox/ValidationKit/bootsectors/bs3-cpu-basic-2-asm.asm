@@ -62,12 +62,18 @@ BS3_PROC_BEGIN _bs3CpuBasic2_ud2
 BS3_PROC_END   _bs3CpuBasic2_ud2
 
 
-BS3_PROC_BEGIN _bs3CpuBasic2_stac_ud2
-        stac
+BS3_PROC_BEGIN _bs3CpuBasic2_salc_ud2
+        salc                            ; #UD in 64-bit mode
 .again:
         ud2
         jmp     .again
-BS3_PROC_END   _bs3CpuBasic2_stac_ud2
+BS3_PROC_END   _bs3CpuBasic2_salc_ud2
+
+BS3_PROC_BEGIN _bs3CpuBasic2_swapgs
+.again:
+        db      00fh, 001h, 0f8h        ; swapgs - #UD when not in 64-bit mode.
+        jmp     .again
+BS3_PROC_END   _bs3CpuBasic2_swapgs
 
 
 BS3_PROC_BEGIN _bs3CpuBasic2_Int80
