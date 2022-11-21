@@ -525,6 +525,36 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_GDT_LIMIT           0x3fd8 /**< The GDT limit. */
 /** @} */
 
+/** @name BS3_SEL_IS_XXX - Predicates for standard selectors.
+ *
+ * Standard selectors are in the range BS3_SEL_R0_FIRST thru BS3_SEL_R3_LAST.
+ *
+ * @{ */
+#define BS3_SEL_IS_CS16(a_uSel)     (((a_uSel) & 0xf8) == 0x00)
+#define BS3_SEL_IS_CS32(a_uSel)     (((a_uSel) & 0xf8) == 0x18)
+#define BS3_SEL_IS_CS64(a_uSel)     (((a_uSel) & 0xf8) == 0x30)
+
+#define BS3_SEL_IS_ANY_CS16(a_uSel) (   ((a_uSel) & 0xf8) == 0x00 \
+                                     || ((a_uSel) & 0xf8) == 0x40 \
+                                     || ((a_uSel) & 0xf8) == 0x48 \
+                                     || ((a_uSel) & 0xf8) == 0x50 )
+#define BS3_SEL_IS_ANY_CS32(a_uSel) (   ((a_uSel) & 0xf8) == 0x18 \
+                                     || ((a_uSel) & 0xf8) == 0x58 \
+                                     || ((a_uSel) & 0xf8) == 0x60 \
+                                     || ((a_uSel) & 0xf8) == 0x68 )
+#define BS3_SEL_IS_ANY_CS64(a_uSel) (   ((a_uSel) & 0xf8) == 0x18 \
+                                     || ((a_uSel) & 0xf8) == 0x58 \
+                                     || ((a_uSel) & 0xf8) == 0x60 \
+                                     || ((a_uSel) & 0xf8) == 0x68 )
+
+#define BS3_SEL_IS_DS16(a_uSel)     (((a_uSel) & 0xf8) == 0x08)
+#define BS3_SEL_IS_DS32(a_uSel)     (((a_uSel) & 0xf8) == 0x20)
+#define BS3_SEL_IS_DS64(a_uSel)     (((a_uSel) & 0xf8) == 0x38)
+
+#define BS3_SEL_IS_SS16(a_uSel)     (((a_uSel) & 0xf8) == 0x10)
+#define BS3_SEL_IS_SS32(a_uSel)     (((a_uSel) & 0xf8) == 0x28)
+/** @} */
+
 
 /** @def BS3_FAR
  * For indicating far pointers in 16-bit code.
