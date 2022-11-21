@@ -1923,24 +1923,19 @@ static void biosfn_write_teletype(uint8_t car, uint8_t page, uint8_t attr, uint8
 // --------------------------------------------------------------------------------------------
 static void get_font_access(void)
 {
-    outw(VGAREG_SEQU_ADDRESS, 0x0100);
-    outw(VGAREG_SEQU_ADDRESS, 0x0402);
-    outw(VGAREG_SEQU_ADDRESS, 0x0704);
-    outw(VGAREG_SEQU_ADDRESS, 0x0300);
-    outw(VGAREG_GRDC_ADDRESS, 0x0204);
     outw(VGAREG_GRDC_ADDRESS, 0x0005);
-    outw(VGAREG_GRDC_ADDRESS, 0x0406);
+    outb(VGAREG_GRDC_ADDRESS, 0x06);
+    outw(VGAREG_GRDC_ADDRESS, (((0x04 | (inb(VGAREG_GRDC_DATA) & 0x01)) << 8) | 0x06));
+    outw(VGAREG_SEQU_ADDRESS, 0x0402);
+    outw(VGAREG_SEQU_ADDRESS, 0x0604);
 }
 
 static void release_font_access(void)
 {
-    outw(VGAREG_SEQU_ADDRESS, 0x0100);
-    outw(VGAREG_SEQU_ADDRESS, 0x0302);
-    outw(VGAREG_SEQU_ADDRESS, 0x0304);
-    outw(VGAREG_SEQU_ADDRESS, 0x0300);
     outw(VGAREG_GRDC_ADDRESS, (((0x0a | ((inb(VGAREG_READ_MISC_OUTPUT) & 0x01) << 2)) << 8) | 0x06));
-    outw(VGAREG_GRDC_ADDRESS, 0x0004);
     outw(VGAREG_GRDC_ADDRESS, 0x1005);
+    outw(VGAREG_SEQU_ADDRESS, 0x0302);
+    outw(VGAREG_SEQU_ADDRESS, 0x0204);
 }
 
 static void set_scan_lines(uint8_t lines)
