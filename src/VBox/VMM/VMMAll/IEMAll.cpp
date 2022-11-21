@@ -6563,7 +6563,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
 
 
     RTGCPHYS GCPhysFirst;
-    rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrMem, cbMem, fAccess, &GCPhysFirst);
+    rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, &GCPhysFirst);
     if (rcStrict == VINF_SUCCESS) { /*likely*/ }
     else IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 
