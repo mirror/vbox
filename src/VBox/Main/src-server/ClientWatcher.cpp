@@ -205,28 +205,16 @@ uint32_t VirtualBox::ClientWatcher::reapProcesses(void)
                     {
                         default:
                         case RTPROCEXITREASON_NORMAL:
-                            LogRel(("Reaper: Pid %d (%x) exited normally: %d (%#x)\n",
+                            LogRel(("Reaper: Pid %d (%#x) exited normally: %d (%#x)\n",
                                     pid, pid, Status.iStatus, Status.iStatus));
                             break;
                         case RTPROCEXITREASON_ABEND:
-                            LogRel(("Reaper: Pid %d (%x) abended: %d (%#x)\n",
+                            LogRel(("Reaper: Pid %d (%#x) abended: %d (%#x)\n",
                                     pid, pid, Status.iStatus, Status.iStatus));
                             break;
-                    case RTPROCEXITREASON_SIGNAL:
-/** @todo Move this into IPRT to e.g. RTProcSigToStr()? */
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-                            const char *pszSig = "";
-#elif defined(RT_OS_DARWIN) /** @todo Move this to IPRT? */
-                            const char *pszSig = strsignal(Status.iStatus); /* Not quite the same, but better than nothing. */
-#else /* Linux / UNIX */
-# if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 32)
-                            const char *pszSig = sigabbrev_np(Status.iStatus);
-# else /* glibc < 2.32 */
-                            const char *pszSig = strsignal(Status.iStatus); /* Ditto. */
-# endif /* __GLIBC_PREREQ */
-#endif
-                            LogRel(("Reaper: Pid %d (%x) was signalled: %s (%d / %#x)\n",
-                                    pid, pid, pszSig, Status.iStatus, Status.iStatus));
+                        case RTPROCEXITREASON_SIGNAL:
+                            LogRel(("Reaper: Pid %d (%#x) was signalled: %s (%d / %#x)\n",
+                                    pid, pid, RTProcSignalName(Status.iStatus), Status.iStatus, Status.iStatus));
                             break;
                     }
                 }
