@@ -779,6 +779,7 @@ RuntimeBaseR3_SOURCES      := \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/RTPathGetCurrentDrive-generic.cpp \
 	generic/RTPathIsSame-generic.cpp \
+	generic/RTProcSignalName-generic.cpp \
 	generic/RTTimerLRCreate-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \
 	generic/mempool-generic.cpp \

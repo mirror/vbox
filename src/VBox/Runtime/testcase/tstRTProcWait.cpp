@@ -67,11 +67,21 @@ DECLCALLBACK(int) SpawnerThread(RTTHREAD Thread, void *pvUser)
 }
 
 
+static int DisplaySignalList(void)
+{
+    for (int iSig = 0; iSig < 128; iSig++)
+        RTPrintf("%4d: %s\n", iSig, RTProcSignalName(iSig));
+    return 0;
+}
+
+
 int main(int argc, char **argv)
 {
     RTR3InitExe(argc, &argv, 0);
     if (argc == 2 && !strcmp(argv[1], "child"))
         return 42;
+    if (argc == 2 && !strcmp(argv[1], "signal-list"))
+        return DisplaySignalList();
 
     RTPrintf("tstRTWait: spawning a child in a separate thread and waits for it in the main thread...\n");
     RTTHREAD  Thread;
@@ -111,6 +121,19 @@ int main(int argc, char **argv)
     }
     else
         RTPrintf("tstRTWait: RTThreadCreate failed with rc=%Rrc!\n", rc);
+
+    /*
+     * Check signal names while we're here (excuse: relevant to reporting wait results).
+     */
+    for (int iSig = 0; iSig < 256; iSig++)
+    {
+        const char *pszSig = RTProcSignalName(iSig);
+        if (!RTStrStartsWith(pszSig, "SIG") || pszSig[3] == '\0')
+        {
+            RTPrintf("tstWait: error: RTProcSignalName(%d) -> '%s'\n", iSig, pszSig);
+            rc = -1;
+        }
+    }
 
     return RT_SUCCESS(rc) ? 0 : 1;
 }

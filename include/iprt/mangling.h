@@ -1851,6 +1851,7 @@
 # define RTProcSelf                                     RT_MANGLER(RTProcSelf)
 # define RTProcSetPriority                              RT_MANGLER(RTProcSetPriority)
 # define RTProcShortName                                RT_MANGLER(RTProcShortName)
+# define RTProcSignalName                               RT_MANGLER(RTProcSignalName)
 # define RTProcTerminate                                RT_MANGLER(RTProcTerminate)
 # define RTProcWait                                     RT_MANGLER(RTProcWait)
 # define RTProcWaitNoResume                             RT_MANGLER(RTProcWaitNoResume)

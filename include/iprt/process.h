@@ -115,6 +115,18 @@ RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void);
 #endif
 
 
+/**
+ * Translate a signal number to a short name on the form SIGXXXX.
+ *
+ * If the signal is not known, it will be formatted as a number into one of
+ * several static buffers.  This means that there could be concurrency issues if
+ * this suddenly happens on multiple threads, though that is unlikely.
+ *
+ * @returns Readonly string naming the signal.
+ * @param   iSignal         The signal to name.
+ */
+RTDECL(const char *) RTProcSignalName(int iSignal);
+
 #ifdef IN_RING3
 
 /**
