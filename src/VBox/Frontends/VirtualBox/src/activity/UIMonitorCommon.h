@@ -36,12 +36,8 @@ struct UIDebuggerMetricData
 {
     UIDebuggerMetricData()
         : m_counter(0){}
-#ifdef VBOX_IS_QT6_OR_LATER
-    UIDebuggerMetricData(const QStringView &strName, quint64 counter)
-#else
-    UIDebuggerMetricData(const QStringRef &strName, quint64 counter)
-#endif
-        : m_strName(strName.toString())
+    UIDebuggerMetricData(const QString &strName, quint64 counter)
+        : m_strName(strName)
         , m_counter(counter){}
     QString m_strName;
     quint64 m_counter;
