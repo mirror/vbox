@@ -714,6 +714,18 @@ class Process(TdTaskBase):
         """
         self.sKindCrashReport = sKindCrashReport;
         self.sKindCrashDump   = sKindCrashDump;
+
+        sOs = utils.getHostOs();
+        if sOs == 'solaris':
+            if sKindCrashDump is not None: # Enable.
+                try:
+                    sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', fTryCreate = False);
+                except:
+                    sCorePath = '/var/cores'; # Use some well-known core path as fallback.
+                subprocess.run([ 'coreadm', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
+            else: # Disable.
+                subprocess.run([ 'coreadm', '-d', 'all' ]);
+
         return True;
 
     def isRunning(self):
