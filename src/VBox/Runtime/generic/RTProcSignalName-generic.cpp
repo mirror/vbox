@@ -49,137 +49,141 @@
 
 RTDECL(const char *) RTProcSignalName(int iSignal)
 {
+#if !defined(IPRT_NO_CRT) || !defined(RT_OS_WINDOWS)
     switch (iSignal)
     {
         /*
          * Typical bsd/xnu ones:
          */
-#ifdef SIGHUP
+# ifdef SIGHUP
         RT_CASE_RET_STR(SIGHUP);
-#endif
-#ifdef SIGINT
-        RT_CASE_RET_STR(SIGINT);
-#endif
-#ifdef SIGQUIT
-        RT_CASE_RET_STR(SIGQUIT);
-#endif
-#ifdef SIGILL
-        RT_CASE_RET_STR(SIGILL);
-#endif
-#ifdef SIGTRAP
-        RT_CASE_RET_STR(SIGTRAP);
-#endif
-#ifdef SIGABRT
-        RT_CASE_RET_STR(SIGABRT);
-#endif
-#ifdef SIGEMT
-        RT_CASE_RET_STR(SIGEMT);
-#endif
-#ifdef SIGPOLL
-        RT_CASE_RET_STR(SIGPOLL);
-#endif
-#ifdef SIGFPE
-        RT_CASE_RET_STR(SIGFPE);
-#endif
-#ifdef SIGKILL
-        RT_CASE_RET_STR(SIGKILL);
-#endif
-#ifdef SIGBUS
-        RT_CASE_RET_STR(SIGBUS);
-#endif
-#ifdef SIGSEGV
-        RT_CASE_RET_STR(SIGSEGV);
-#endif
-#ifdef SIGSYS
-        RT_CASE_RET_STR(SIGSYS);
-#endif
-#ifdef SIGPIPE
-        RT_CASE_RET_STR(SIGPIPE);
-#endif
-#ifdef SIGALRM
-        RT_CASE_RET_STR(SIGALRM);
-#endif
-#ifdef SIGTERM
-        RT_CASE_RET_STR(SIGTERM);
-#endif
-#ifdef SIGURG
-        RT_CASE_RET_STR(SIGURG);
-#endif
-#ifdef SIGSTOP
-        RT_CASE_RET_STR(SIGSTOP);
-#endif
-#ifdef SIGTSTP
-        RT_CASE_RET_STR(SIGTSTP);
-#endif
-#ifdef SIGCONT
-        RT_CASE_RET_STR(SIGCONT);
-#endif
-#ifdef SIGCHLD
-        RT_CASE_RET_STR(SIGCHLD);
-#endif
-#ifdef SIGTTIN
-        RT_CASE_RET_STR(SIGTTIN);
-#endif
-#ifdef SIGTTOU
-        RT_CASE_RET_STR(SIGTTOU);
-#endif
-#ifdef SIGIO
-# if !defined(SIGPOLL) || (SIGPOLL+0) != SIGIO
-        RT_CASE_RET_STR(SIGIO);
 # endif
-#endif
-#ifdef SIGXCPU
+# ifdef SIGINT
+        RT_CASE_RET_STR(SIGINT);
+# endif
+# ifdef SIGQUIT
+        RT_CASE_RET_STR(SIGQUIT);
+# endif
+# ifdef SIGILL
+        RT_CASE_RET_STR(SIGILL);
+# endif
+# ifdef SIGTRAP
+        RT_CASE_RET_STR(SIGTRAP);
+# endif
+# ifdef SIGABRT
+        RT_CASE_RET_STR(SIGABRT);
+# endif
+# ifdef SIGEMT
+        RT_CASE_RET_STR(SIGEMT);
+# endif
+# ifdef SIGPOLL
+        RT_CASE_RET_STR(SIGPOLL);
+# endif
+# ifdef SIGFPE
+        RT_CASE_RET_STR(SIGFPE);
+# endif
+# ifdef SIGKILL
+        RT_CASE_RET_STR(SIGKILL);
+# endif
+# ifdef SIGBUS
+        RT_CASE_RET_STR(SIGBUS);
+# endif
+# ifdef SIGSEGV
+        RT_CASE_RET_STR(SIGSEGV);
+# endif
+# ifdef SIGSYS
+        RT_CASE_RET_STR(SIGSYS);
+# endif
+# ifdef SIGPIPE
+        RT_CASE_RET_STR(SIGPIPE);
+# endif
+# ifdef SIGALRM
+        RT_CASE_RET_STR(SIGALRM);
+# endif
+# ifdef SIGTERM
+        RT_CASE_RET_STR(SIGTERM);
+# endif
+# ifdef SIGURG
+        RT_CASE_RET_STR(SIGURG);
+# endif
+# ifdef SIGSTOP
+        RT_CASE_RET_STR(SIGSTOP);
+# endif
+# ifdef SIGTSTP
+        RT_CASE_RET_STR(SIGTSTP);
+# endif
+# ifdef SIGCONT
+        RT_CASE_RET_STR(SIGCONT);
+# endif
+# ifdef SIGCHLD
+        RT_CASE_RET_STR(SIGCHLD);
+# endif
+# ifdef SIGTTIN
+        RT_CASE_RET_STR(SIGTTIN);
+# endif
+# ifdef SIGTTOU
+        RT_CASE_RET_STR(SIGTTOU);
+# endif
+# ifdef SIGIO
+#  if !defined(SIGPOLL) || (SIGPOLL+0) != SIGIO
+        RT_CASE_RET_STR(SIGIO);
+#  endif
+# endif
+# ifdef SIGXCPU
         RT_CASE_RET_STR(SIGXCPU);
-#endif
-#ifdef SIGXFSZ
+# endif
+# ifdef SIGXFSZ
         RT_CASE_RET_STR(SIGXFSZ);
-#endif
-#ifdef SIGVTALRM
+# endif
+# ifdef SIGVTALRM
         RT_CASE_RET_STR(SIGVTALRM);
-#endif
-#ifdef SIGPROF
+# endif
+# ifdef SIGPROF
         RT_CASE_RET_STR(SIGPROF);
-#endif
-#ifdef SIGWINCH
+# endif
+# ifdef SIGWINCH
         RT_CASE_RET_STR(SIGWINCH);
-#endif
-#ifdef SIGINFO
+# endif
+# ifdef SIGINFO
         RT_CASE_RET_STR(SIGINFO);
-#endif
-#ifdef SIGUSR1
+# endif
+# ifdef SIGUSR1
         RT_CASE_RET_STR(SIGUSR1);
-#endif
-#ifdef SIGUSR2
+# endif
+# ifdef SIGUSR2
         RT_CASE_RET_STR(SIGUSR2);
-#endif
-#ifdef SIGTHR
+# endif
+# ifdef SIGTHR
         RT_CASE_RET_STR(SIGTHR);
-#endif
-#ifdef SIGLIBRT
+# endif
+# ifdef SIGLIBRT
         RT_CASE_RET_STR(SIGLIBRT);
-#endif
+# endif
 
         /*
          * Additional linux ones:
          */
-#ifdef SIGIOT
-# if !defined(SIGABRT) || (SIGABRT+0) != SIGIOT
+# ifdef SIGIOT
+#  if !defined(SIGABRT) || (SIGABRT+0) != SIGIOT
         RT_CASE_RET_STR(SIGIOT);
+#  endif
 # endif
-#endif
-#ifdef SIGSTKFLT
+# ifdef SIGSTKFLT
         RT_CASE_RET_STR(SIGSTKFLT);
-#endif
-#ifdef SIGLOST
+# endif
+# ifdef SIGLOST
         RT_CASE_RET_STR(SIGLOST);
-#endif
-#ifdef SIGPWR
+# endif
+# ifdef SIGPWR
         RT_CASE_RET_STR(SIGPWR);
-#endif
-#ifdef SIGUNUSED
+# endif
+# ifdef SIGUNUSED
+#  if !defined(SIGSYS) || (SIGSYS+0) != SIGUNUSED
         RT_CASE_RET_STR(SIGUNUSED);
-#endif
+#  endif
+# endif
     }
+#endif
 
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
     /*
