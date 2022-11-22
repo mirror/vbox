@@ -397,7 +397,10 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
 {
     RT_NOREF(fFileCopyFlags);
 
-    BOOL fCanceled = FALSE;
+    if (!cbSize) /* Nothing to copy, i.e. empty file? Bail out. */
+        return VINF_SUCCESS;
+
+    BOOL     fCanceled      = FALSE;
     uint64_t cbWrittenTotal = 0;
     uint64_t cbToRead       = cbSize;
 
@@ -453,7 +456,8 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
             && fCanceled)
             break;
 
-        vrc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
+        AssertBreakStmt(cbSize, vrc = VERR_INTERNAL_ERROR);
+        vrc = setProgress(((double)cbWrittenTotal / (double)cbSize) * 100);
         if (RT_FAILURE(vrc))
             break;
     }
@@ -469,8 +473,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
      * Even if we succeeded until here make sure to check whether we really transferred
      * everything.
      */
-    if (   cbSize > 0
-        && cbWrittenTotal == 0)
+    if (cbWrittenTotal == 0)
     {
         /* If nothing was transferred but the file size was > 0 then "vbox_cat" wasn't able to write
          * to the destination -> access denied. */
@@ -727,7 +730,10 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
 {
     RT_NOREF(fFileCopyFlags);
 
-    BOOL fCanceled = FALSE;
+    if (!cbSize) /* Nothing to copy, i.e. empty file? Bail out. */
+        return VINF_SUCCESS;
+
+    BOOL     fCanceled      = FALSE;
     uint64_t cbWrittenTotal = 0;
     uint64_t cbToRead       = cbSize;
 
@@ -783,7 +789,8 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
             && fCanceled)
             break;
 
-        vrc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
+        AssertBreakStmt(cbSize, vrc = VERR_INTERNAL_ERROR);
+        vrc = setProgress(((double)cbWrittenTotal / (double)cbSize) * 100);
         if (RT_FAILURE(vrc))
             break;
     }
@@ -795,8 +802,7 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
      * Even if we succeeded until here make sure to check whether we really transferred
      * everything.
      */
-    if (   cbSize > 0
-        && cbWrittenTotal == 0)
+    if (cbWrittenTotal == 0)
     {
         /* If nothing was transferred but the file size was > 0 then "vbox_cat" wasn't able to write
          * to the destination -> access denied. */
