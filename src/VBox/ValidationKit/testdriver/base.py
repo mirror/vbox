@@ -722,9 +722,15 @@ class Process(TdTaskBase):
                     sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', fTryCreate = False);
                 except:
                     sCorePath = '/var/cores'; # Use some well-known core path as fallback.
-                subprocess.run([ 'coreadm', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
+                try:
+                    utils.processCall([ 'coreadm', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
+                except:
+                    reporter.logXcpt('sKindCrashDump=%s' % (sKindCrashDump,));
             else: # Disable.
-                subprocess.run([ 'coreadm', '-d', 'all' ]);
+                try:
+                    utils.processCall([ 'coreadm', '-d', 'all' ]);
+                except:
+                    reporter.logXcpt('sKindCrashDump=%s' % (sKindCrashDump,));
 
         return True;
 
