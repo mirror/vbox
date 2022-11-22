@@ -70,11 +70,6 @@ SERVICE="VirtualBox Guest Additions"
 QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
 
-# Prepend PATH for building UEK7 on OL8 distribution.
-case $(uname -r) in
-    5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH"
-esac
-
 # Marker to ignore a particular kernel version which was already installed.
 #
 # This is needed in order to prevent modules rebuild on system start and do
@@ -471,6 +466,11 @@ setup_modules()
     test -d /lib/modules/"$KERN_VER"/build || return 0
     export KERN_VER
     info "Building the modules for kernel $KERN_VER."
+
+    # Prepend PATH for building UEK7 on OL8 distribution.
+    case "$KERN_VER" in
+        5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH";;
+    esac
 
     # Detect if kernel was built with clang.
     unset LLVM

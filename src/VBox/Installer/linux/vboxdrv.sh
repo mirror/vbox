@@ -47,11 +47,6 @@ DEVICE=/dev/vboxdrv
 MODPROBE=/sbin/modprobe
 SCRIPTNAME=vboxdrv.sh
 
-# Prepend PATH for building UEK7 on OL8 distribution.
-case $(uname -r) in
-    5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH"
-esac
-
 # The below is GNU-specific.  See VBox.sh for the longer Solaris/OS X version.
 TARGET=`readlink -e -- "${0}"` || exit 1
 SCRIPT_DIR="${TARGET%/[!/]*}"
@@ -102,6 +97,12 @@ else
 fi
 
 KERN_VER=`uname -r`
+
+# Prepend PATH for building UEK7 on OL8 distribution.
+case "$KERN_VER" in
+    5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH";;
+esac
+
 if test -e "${MODULE_SRC}/vboxpci"; then
     MODULE_LIST="vboxdrv vboxnetflt vboxnetadp vboxpci"
 else
