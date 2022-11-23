@@ -6093,7 +6093,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
 # endif
-            return iemRaisePageFault(pVCpu, GCPtrMem, cbMem, fAccess, rc);
+            return iemRaisePageFault(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, rc);
         }
 
         Assert(Walk.fSucceeded);
@@ -6122,7 +6122,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
 # endif
-            return iemRaisePageFault(pVCpu, GCPtrMem, cbMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
+            return iemRaisePageFault(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
         }
 
         /* Kernel memory accessed by userland? */
@@ -6135,7 +6135,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
 # endif
-            return iemRaisePageFault(pVCpu, GCPtrMem, cbMem, fAccess, VERR_ACCESS_DENIED);
+            return iemRaisePageFault(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, VERR_ACCESS_DENIED);
         }
     }
 
@@ -6420,7 +6420,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
 # endif
-            iemRaisePageFaultJmp(pVCpu, GCPtrMem, cbMem, fAccess, rc);
+            iemRaisePageFaultJmp(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, rc);
         }
 
         Assert(Walk.fSucceeded);
@@ -6464,7 +6464,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
 # endif
-            iemRaisePageFaultJmp(pVCpu, GCPtrMem, cbMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
+            iemRaisePageFaultJmp(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
         }
 
         /* Kernel memory accessed by userland? */
@@ -6475,7 +6475,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
 # endif
-            iemRaisePageFaultJmp(pVCpu, GCPtrMem, cbMem, fAccess, VERR_ACCESS_DENIED);
+            iemRaisePageFaultJmp(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, VERR_ACCESS_DENIED);
         }
 
         /* Set the dirty / access flags.
