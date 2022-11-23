@@ -721,8 +721,10 @@ class Process(TdTaskBase):
             if sKindCrashDump is not None: # Enable.
                 sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', sAlternative = '/var/cores', fTryCreate = False);
                 utils.sudoProcessOutputChecked([ 'coreadm', '-e', 'process', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
+                utils.sudoProcessOutputChecked([ 'coreadm', '-e', 'proc-setid', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
             else: # Disable.
                 utils.sudoProcessOutputChecked([ 'coreadm', '-d', 'process' ]);
+                utils.sudoProcessOutputChecked([ 'coreadm', '-d', 'proc-setid' ]);
 
         if sKindCrashDump is not None:
             assert sCorePath is not None;
