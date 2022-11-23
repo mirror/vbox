@@ -2319,7 +2319,7 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
                 vboxNetFltDumpPacket(pSG, true, "host", (fDst & INTNETTRUNKDIR_WIRE) ? 0 : 1);
                 Log6(("vboxNetFltPortOsXmit: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
                 Log6(("vboxNetFltPortOsXmit: netif_rx_ni(%p)\n", pBuf));
-#if RTLNX_VER_MIN(5,18,0) || RTLNX_RHEL_MIN(9,2)
+#if RTLNX_VER_MIN(5,18,0) || RTLNX_RHEL_MIN(9,1)
                 local_bh_disable();
                 err = netif_rx(pBuf);
                 local_bh_enable();
