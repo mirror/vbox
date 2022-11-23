@@ -728,8 +728,8 @@ class Process(TdTaskBase):
                                                  '-d', 'global', '-d', 'global-setid', '-d', 'process', '-d', 'proc-setid' ]);
 
         if sKindCrashDump is not None:
-            assert sCorePath is not None;
-            reporter.log('Crash dumps enabled -- Core path is "%s"' % (sCorePath,));
+            if sCorePath is not None:
+                reporter.log('Crash dumps enabled -- path is "%s"' % (sCorePath,));
         else:
             reporter.log('Crash dumps disabled');
 
