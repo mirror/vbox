@@ -1473,10 +1473,10 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* exited normally: -1073741819 \(0xc0000005\)') ),
         ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: 11 \(0xb\)') ), # For VBox <= 6.1.
-        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: SIGABRT') ),    # Since VBox 7.0.
-        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: SIGSEGV') ),
-        ( False, ktReason_Unknown_VM_Terminated, re.compile(r'Reaper.* was signalled: SIGTERM') ),
-        ( False, ktReason_Unknown_VM_Terminated, re.compile(r'Reaper.* was signalled: SIGKILL') ),
+        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: SIGABRT .*') ),    # Since VBox 7.0.
+        ( False, ktReason_Unknown_VM_Crash,      re.compile(r'Reaper.* was signalled: SIGSEGV .*') ),
+        ( False, ktReason_Unknown_VM_Terminated, re.compile(r'Reaper.* was signalled: SIGTERM .*') ),
+        ( False, ktReason_Unknown_VM_Terminated, re.compile(r'Reaper.* was signalled: SIGKILL .*') ),
     ];
 
     def investigateSvcLogForVMRun(self, oCaseFile, sSvcLog):
