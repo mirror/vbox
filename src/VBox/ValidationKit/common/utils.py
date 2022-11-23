@@ -1433,7 +1433,7 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
     elif sOs == 'solaris':
         asDmpDirs = [];
         try:
-            sScratchPath = environ.get('TESTBOX_PATH_SCRATCH', None);
+            sScratchPath = os.environ.get('TESTBOX_PATH_SCRATCH', None);
             asDmpDirs.extend([ sScratchPath ]);
         except:
             pass;
