@@ -715,22 +715,20 @@ class Process(TdTaskBase):
         self.sKindCrashReport = sKindCrashReport;
         self.sKindCrashDump   = sKindCrashDump;
 
-        sOs = utils.getHostOs();
+        sCorePath = None;
+        sOs       = utils.getHostOs();
         if sOs == 'solaris':
             if sKindCrashDump is not None: # Enable.
-                try:
-                    sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', fTryCreate = False);
-                except:
-                    sCorePath = '/var/cores'; # Use some well-known core path as fallback.
-                try:
-                    utils.processCall([ 'coreadm', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
-                except:
-                    reporter.logXcpt('sKindCrashDump=%s' % (sKindCrashDump,));
+                sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', sAlternative = '/var/cores', fTryCreate = False);
+                utils.processOutputChecked([ 'coreadm', '-e', 'process', '-g', os.path.join(sCorePath, 'core.%f.%p') ]);
             else: # Disable.
-                try:
-                    utils.processCall([ 'coreadm', '-d', 'all' ]);
-                except:
-                    reporter.logXcpt('sKindCrashDump=%s' % (sKindCrashDump,));
+                utils.processOutputChecked([ 'coreadm', '-d', 'process' ]);
+
+        if sKindCrashDump is not None:
+            assert sCorePath is not None;
+            reporter.log('Crash dumps enabled -- Core path is "%s"' % (sCorePath,));
+        else:
+            reporter.log('Crash dumps disabled');
 
         return True;
 
