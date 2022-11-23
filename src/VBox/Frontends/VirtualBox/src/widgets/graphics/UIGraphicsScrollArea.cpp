@@ -286,42 +286,6 @@ void UIGraphicsScrollArea::prepareWidgets()
 
 void UIGraphicsScrollArea::layoutWidgets()
 {
-    layoutViewport();
-    layoutScrollBar();
-}
-
-void UIGraphicsScrollArea::layoutViewport()
-{
-    if (m_pViewport)
-    {
-        switch (m_enmOrientation)
-        {
-            case Qt::Horizontal:
-            {
-                /* Align viewport and shift it horizontally: */
-                if (m_fAutoHideMode)
-                    m_pViewport->resize(m_pViewport->minimumSizeHint().width(), size().height());
-                else
-                    m_pViewport->resize(m_pViewport->minimumSizeHint().width(), size().height() - m_pScrollBar->minimumSizeHint().height());
-                m_pViewport->setPos(-m_pScrollBar->value(), 0);
-                break;
-            }
-            case Qt::Vertical:
-            {
-                /* Align viewport and shift it vertically: */
-                if (m_fAutoHideMode)
-                    m_pViewport->resize(size().width(), m_pViewport->minimumSizeHint().height());
-                else
-                    m_pViewport->resize(size().width() - m_pScrollBar->minimumSizeHint().width(), m_pViewport->minimumSizeHint().height());
-                m_pViewport->setPos(0, -m_pScrollBar->value());
-                break;
-            }
-        }
-    }
-}
-
-void UIGraphicsScrollArea::layoutScrollBar()
-{
     switch (m_enmOrientation)
     {
         case Qt::Horizontal:
@@ -360,6 +324,31 @@ void UIGraphicsScrollArea::layoutScrollBar()
         }
     }
 
-    /* Make scroll-bar visible only when there is viewport and maximum less than minimum: */
+    /* Make scroll-bar visible only when there is viewport and maximum more than minimum: */
     m_pScrollBar->setVisible(m_pViewport && m_pScrollBar->maximum() > m_pScrollBar->minimum());
+
+    if (m_pViewport)
+    {
+        switch (m_enmOrientation)
+        {
+            case Qt::Horizontal:
+            {
+                /* Calculate geometry deduction: */
+                const int iDeduction = !m_fAutoHideMode && m_pScrollBar->isVisible() ? m_pScrollBar->minimumSizeHint().height() : 0;
+                /* Align viewport and shift it horizontally: */
+                m_pViewport->resize(m_pViewport->minimumSizeHint().width(), size().height() - iDeduction);
+                m_pViewport->setPos(-m_pScrollBar->value(), 0);
+                break;
+            }
+            case Qt::Vertical:
+            {
+                /* Calculate geometry deduction: */
+                const int iDeduction = !m_fAutoHideMode && m_pScrollBar->isVisible() ? m_pScrollBar->minimumSizeHint().width() : 0;
+                /* Align viewport and shift it vertically: */
+                m_pViewport->resize(size().width() - iDeduction, m_pViewport->minimumSizeHint().height());
+                m_pViewport->setPos(0, -m_pScrollBar->value());
+                break;
+            }
+        }
+    }
 }

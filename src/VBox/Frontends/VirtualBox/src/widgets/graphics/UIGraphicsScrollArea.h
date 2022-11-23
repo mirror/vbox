@@ -91,10 +91,6 @@ private:
 
     /** Layout widgets. */
     void layoutWidgets();
-    /** Layout viewport. */
-    void layoutViewport();
-    /** Layout scroll-bar. */
-    void layoutScrollBar();
 
     /** Holds the orientation. */
     Qt::Orientation  m_enmOrientation;
