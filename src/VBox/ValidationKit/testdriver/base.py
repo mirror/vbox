@@ -722,7 +722,7 @@ class Process(TdTaskBase):
                 sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', sAlternative = '/var/cores', fTryCreate = False);
                 utils.sudoProcessOutputChecked([ 'coreadm', '-e', 'global', '-e', 'global-setid', \
                                                  '-e', 'process', '-e', 'proc-setid', \
-                                                 '-g', os.path.join(sCorePath, 'core.%f.%p')]);
+                                                 '-g', os.path.join(sCorePath, '%f.%p.core')]);
             else: # Disable.
                 utils.sudoProcessOutputChecked([ 'coreadm', \
                                                  '-d', 'global', '-d', 'global-setid', '-d', 'process', '-d', 'proc-setid' ]);
