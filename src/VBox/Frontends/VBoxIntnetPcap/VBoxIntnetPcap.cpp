@@ -47,14 +47,12 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(void) captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame);
-static DECLCALLBACK(void) captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame);
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static IntNetIf     g_net;
+static INTNETIFCTX  g_hIntNetCtx;
 static PRTSTREAM    g_pStrmOut;
 static uint64_t     g_StartNanoTS;
 static bool         g_fPacketBuffered;
@@ -69,6 +67,42 @@ static const RTGETOPTDEF g_aGetOptDef[] =
     { "--packet-buffered",      'U',   RTGETOPT_REQ_NOTHING },
     { "--write",                'w',   RTGETOPT_REQ_STRING },
 };
+
+
+static void checkCaptureLimit(void)
+{
+    if (g_cCountDown > 0)
+    {
+        if (g_cCountDown-- == 1)
+            IntNetR3IfWaitAbort(g_hIntNetCtx);
+    }
+}
+
+
+static DECLCALLBACK(void) captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
+{
+    RT_NOREF(pvUser);
+
+    int rc = PcapStreamFrame(g_pStrmOut, g_StartNanoTS, pvFrame, cbFrame, g_cbSnapLen);
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("write: %Rrf", rc);
+        IntNetR3IfWaitAbort(g_hIntNetCtx);
+    }
+
+    if (g_fPacketBuffered)
+        RTStrmFlush(g_pStrmOut);
+
+    checkCaptureLimit();
+}
+
+
+static DECLCALLBACK(void) captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame)
+{
+    RT_NOREF(pvUser, pcGso, cbFrame);
+
+    checkCaptureLimit();
+}
 
 
 int
@@ -166,24 +200,17 @@ main(int argc, char *argv[])
             return RTMsgErrorExitFailure("%s: %Rrf", pszPcapFile, rc);
     }
 
-    /*
-     * Configure the snooper.
-     */
-    g_net.setInputCallback(captureFrame, NULL);
-    g_net.setInputGSOCallback(captureGSO, NULL);
-
-    /*
-     * NB: There's currently no way to prevent an intnet from being
-     * created when one doesn't exist, so there's no way to catch a
-     * typo...  beware.
-     */
-    rc = g_net.init(pszNetworkName);
+    rc = IntNetR3IfCreate(&g_hIntNetCtx, pszNetworkName);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("%s: %Rrf", pszNetworkName, rc);
+        return RTMsgErrorExitFailure("Opening the internal network '%s' failed with %Rrc\n", pszNetworkName, rc);
 
-    rc = g_net.ifSetPromiscuous();
+    rc = IntNetR3IfSetPromiscuous(g_hIntNetCtx, true /*fPromiscuous*/);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("%s: failed to set promiscuous mode: %Rrf", pszNetworkName, rc);
+        return RTMsgErrorExitFailure("Enabling promiscuous mode on the internal network '%s' failed with %Rrc\n", pszNetworkName, rc);
+
+    rc = IntNetR3IfSetActive(g_hIntNetCtx, true /*fActive*/);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Activating interface on the internal network '%s' failed with %Rrc\n", pszNetworkName, rc);
 
     /*
      * Snoop traffic.
@@ -195,47 +222,12 @@ main(int argc, char *argv[])
     if (g_fPacketBuffered)
         RTStrmFlush(g_pStrmOut);
 
-    g_net.ifPump();
+    rc = IntNetR3IfPumpPkts(g_hIntNetCtx, captureFrame, NULL /*pvUser*/,
+                            captureGSO, NULL /*pvUserGso*/);
 
     RTEXITCODE rcExit = RT_SUCCESS(RTStrmError(g_pStrmOut)) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
     rc = RTStrmClose(g_pStrmOut);
     if (RT_FAILURE(rc))
         rcExit = RTMsgErrorExitFailure("close: %Rrf", rc);
     return rcExit;
-}
-
-
-static void checkCaptureLimit(void)
-{
-    if (g_cCountDown > 0)
-    {
-        if (g_cCountDown-- == 1)
-            g_net.ifAbort();
-    }
-}
-
-
-static DECLCALLBACK(void) captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
-{
-    RT_NOREF(pvUser);
-
-    int rc = PcapStreamFrame(g_pStrmOut, g_StartNanoTS, pvFrame, cbFrame, g_cbSnapLen);
-    if (RT_FAILURE(rc))
-    {
-        RTMsgError("write: %Rrf", rc);
-        g_net.ifAbort();
-    }
-
-    if (g_fPacketBuffered)
-        RTStrmFlush(g_pStrmOut);
-
-    checkCaptureLimit();
-}
-
-
-static DECLCALLBACK(void) captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame)
-{
-    RT_NOREF(pvUser, pcGso, cbFrame);
-
-    checkCaptureLimit();
 }

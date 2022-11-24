@@ -56,6 +56,9 @@ ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_QTGUI
   include $(PATH_SUB_CURRENT)/VirtualBox/Makefile.kmk
  endif
+ ifdef VBOX_WITH_INTNET_PCAP
+  include $(PATH_SUB_CURRENT)/VBoxIntNetPcap/Makefile.kmk
+ endif
  include $(PATH_SUB_CURRENT)/Common/Makefile.kmk
 endif # !VBOX_ONLY_DOCS
 
