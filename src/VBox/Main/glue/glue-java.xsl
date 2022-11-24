@@ -286,13 +286,27 @@
 -->
 <xsl:template match="desc//*">
   <xsl:variable name="tagname" select="local-name()"/>
-  <xsl:value-of select="concat('&lt;', $tagname)"/>
+  <xsl:choose>
+    <xsl:when test="$tagname = 'tt'">
+      <xsl:text>&lt;code</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="concat('&lt;', $tagname)"/>
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:if test="$tagname = 'table'"> <!-- javadoc 8 fudge -->
     <xsl:text> summary=""</xsl:text>
   </xsl:if>
   <xsl:text>&gt;</xsl:text>
   <xsl:apply-templates/>
-  <xsl:value-of select="concat('&lt;/', $tagname, '&gt;')"/>
+  <xsl:choose>
+    <xsl:when test="$tagname = 'tt'">
+      <xsl:text>&lt;/code&gt;</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="concat('&lt;/', $tagname, '&gt;')"/>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template name="emit_refsig">
@@ -498,11 +512,11 @@
 <xsl:template match="desc" mode="interface">
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
-  <xsl:text>&#10;&#10;Interface ID: &lt;tt&gt;{</xsl:text>
+  <xsl:text>&#10;&#10;Interface ID: &lt;code&gt;{</xsl:text>
   <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>
-  <xsl:text>}&lt;/tt&gt;&#10;*/&#10;</xsl:text>
+  <xsl:text>}&lt;/code&gt;&#10;*/&#10;</xsl:text>
 </xsl:template>
 
 <!--
@@ -585,11 +599,11 @@
 <xsl:template match="desc" mode="enum">
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
-  <xsl:text>&#10;Interface ID: &lt;tt&gt;{</xsl:text>
+  <xsl:text>&#10;Interface ID: &lt;code&gt;{</xsl:text>
   <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>
-  <xsl:text>}&lt;/tt&gt;&#10;*/&#10;</xsl:text>
+  <xsl:text>}&lt;/code&gt;&#10;*/&#10;</xsl:text>
 </xsl:template>
 
 <!--
