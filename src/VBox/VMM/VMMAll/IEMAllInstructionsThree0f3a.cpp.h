@@ -919,7 +919,7 @@ FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 3);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT();
-        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(Src.uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_FETCH_MEM_U128(Src.uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_GREG_U32(pu32Ecx, X86_GREG_xCX);
