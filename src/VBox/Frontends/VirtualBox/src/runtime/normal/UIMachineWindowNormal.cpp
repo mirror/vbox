@@ -656,15 +656,17 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
     const int dr = frGeo.right() - geo.right();
     const int db = frGeo.bottom() - geo.bottom();
 
+    /* Get the best size w/o scroll-bars: */
     if (fResizeToGuestDisplay)
     {
-        /* Get the best size w/o scroll-bars: */
+        /* Get widget size-hint: */
         QSize sh = sizeHint();
 
         /* If guest-screen auto-resize is not enabled
-         * or the guest-additions doesn't support graphics
-         * we should take scroll-bars size-hints into account: */
-        if (!machineView()->isGuestAutoresizeEnabled() || !uisession()->isGuestSupportsGraphics())
+         * or guest-additions doesn't support graphics
+         * we should deduce widget's size-hint on visible scroll-bar's hint: */
+        if (   !machineView()->isGuestAutoresizeEnabled()
+            || !uisession()->isGuestSupportsGraphics())
         {
             if (machineView()->verticalScrollBar()->isVisible())
                 sh -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
@@ -678,13 +680,37 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
         frGeo.setBottom(frGeo.bottom() + sh.height());
     }
 
-    /* Adjust position if necessary: */
-    if (fAdjustPosition)
-        frGeo = UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
+    /* Adjust size/position if necessary: */
+    QRect frGeoNew = fAdjustPosition
+                   ? UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion())
+                   : frGeo;
+
+    /* If guest-screen auto-resize is not enabled
+     * or the guest-additions doesn't support graphics
+     * we should take scroll-bars size-hints into account: */
+    if (   frGeoNew != frGeo
+        && (   !machineView()->isGuestAutoresizeEnabled()
+            || !uisession()->isGuestSupportsGraphics()))
+    {
+        /* Determine whether we need additional space for one or both scroll-bars: */
+        QSize addition;
+        if (frGeoNew.height() < frGeo.height())
+            addition += QSize(machineView()->verticalScrollBar()->sizeHint().width() + 1, 0);
+        if (frGeoNew.width() < frGeo.width())
+            addition += QSize(0, machineView()->horizontalScrollBar()->sizeHint().height() + 1);
+
+        /* Resize the frame to fit the contents: */
+        frGeoNew.setRight(frGeoNew.right() + addition.width());
+        frGeoNew.setBottom(frGeoNew.bottom() + addition.height());
+
+        /* Adjust size/position again: */
+        frGeoNew = UIDesktopWidgetWatchdog::normalizeGeometry(frGeoNew, gpDesktop->overallAvailableRegion());
+    }
 
     /* Finally, set the frame geometry: */
-    UIDesktopWidgetWatchdog::setTopLevelGeometry(this, frGeo.left() + dl, frGeo.top() + dt,
-                                    frGeo.width() - dl - dr, frGeo.height() - dt - db);
+    UIDesktopWidgetWatchdog::setTopLevelGeometry(this,
+                                                 frGeoNew.left() + dl, frGeoNew.top() + dt,
+                                                 frGeoNew.width() - dl - dr, frGeoNew.height() - dt - db);
 #else /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     /* Customer request: There should no be
      * machine-window resize/move on machine-view resize: */
