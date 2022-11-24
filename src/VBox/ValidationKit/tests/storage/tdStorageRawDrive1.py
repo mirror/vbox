@@ -1085,7 +1085,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                         return reporter.error("VMDK descriptor contains lines in invalid form");
                     sKey = oMatch.group(1).strip();
                     sValue = oMatch.group(2).strip();
-                    if sKey not in asHeader.keys():
+                    if sKey not in asHeader:
                         return reporter.error("VMDK descriptor has invalid format");
                     sDictValue = asHeader[sKey];
                     if sDictValue == '$':
@@ -1121,7 +1121,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                     return reporter.error("VMDK descriptor contains lines in invalid form");
                 sKey = oMatch.group(1).strip();
                 sValue = oMatch.group(2).strip();
-                if sKey not in asDatabase.keys():
+                if sKey not in asDatabase:
                     return reporter.error("VMDK descriptor has invalid format");
                 sDictValue = asDatabase[sKey];
                 if sDictValue not in ('*', sValue):
@@ -1189,7 +1189,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                         if not fRc:
                             reporter.error('Download vmdktest.vmdk from guest to host failed');
                         else:
-                            with open(sDstFile) as oFile:
+                            with open(sDstFile) as oFile: # pylint: disable=unspecified-encoding
                                 asDescriptor = [row.strip() for row in oFile];
                             if not asDescriptor:
                                 fRc = reporter.error('Reading vmdktest.vmdk from guest filed');
@@ -1578,7 +1578,7 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
         };
         oSet.aoTestVms.extend([oTestVm for oTestVm in self.asTestVmClasses.values() if oTestVm is not None]);
         sOs = self.getBuildOs();
-        if sOs in self.asTestVmClasses.keys():
+        if sOs in self.asTestVmClasses:
             for oTestVM in oSet.aoTestVms:
                 if oTestVM is not None:
                     oTestVM.fSkip = oTestVM != self.asTestVmClasses[sOs];

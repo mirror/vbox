@@ -76,7 +76,7 @@ class WuiTestResultsForSomethingLink(WuiTmLink):
 
     def __init__(self, sGroupedBy, idGroupMember, sName = WuiContentBase.ksShortTestResultsLink,
                  dExtraParams = None, fBracketed = False):
-        dParams = dict(dExtraParams) if dExtraParams else dict();
+        dParams = dict(dExtraParams) if dExtraParams else {};
         dParams[WuiMain.ksParamAction] = sGroupedBy;
         dParams[WuiMain.ksParamGroupMemberId] = idGroupMember;
         WuiTmLink.__init__(self, sName, WuiMain.ksScriptName, dParams, fBracketed = fBracketed);

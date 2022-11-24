@@ -126,10 +126,10 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         #
         # Extract/structure the required data.
         #
-        aoSeries = list();
+        aoSeries = [];
         for j in range(len(aoTable[1].aoValues)):
-            aoSeries.append(list());
-        asNames  = list();
+            aoSeries.append([]);
+        asNames  = [];
         oXRange  = numpy_arange(self._oData.getGroupCount());
         fpMin = self.fpMin;
         fpMax = self.fpMax;
@@ -155,7 +155,7 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         oFigure = self._createFigure();
         oSubPlot = oFigure.add_subplot(1, 1, 1);
 
-        aoBars = list();
+        aoBars = [];
         for i, _ in enumerate(aoSeries):
             sColor = self.calcSeriesColor(i);
             aoBars.append(oSubPlot.bar(oXRange + self.cxBarWidth * i,

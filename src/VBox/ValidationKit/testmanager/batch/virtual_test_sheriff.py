@@ -349,7 +349,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         (self.oConfig, _) = oParser.parse_args();
 
         if self.oConfig.sLogFile:
-            self.oLogFile = open(self.oConfig.sLogFile, "a");   # pylint: disable=consider-using-with
+            self.oLogFile = open(self.oConfig.sLogFile, "a");   # pylint: disable=consider-using-with,unspecified-encoding
             self.oLogFile.write('VirtualTestSheriff: $Revision$ \n');
 
 

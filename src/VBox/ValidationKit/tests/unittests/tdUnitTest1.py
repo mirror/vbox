@@ -1156,7 +1156,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         # Open /dev/null for use as stdin further down.
         try:
-            oDevNull = open(os.path.devnull, 'w+');             # pylint: disable=consider-using-with
+            oDevNull = open(os.path.devnull, 'w+');             # pylint: disable=consider-using-with,unspecified-encoding
         except:
             oDevNull = None;
 

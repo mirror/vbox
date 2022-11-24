@@ -52,10 +52,10 @@ g_kfVBoxSpecific        = True;
 ## @name Used by the TMDatabaseConnection class.
 # @{
 g_ksDatabaseName        = 'testmanager';
-g_ksDatabaseAddress     = None;
-g_ksDatabasePort        = None;
+g_ksDatabaseAddress     = 'localhost';
+g_ksDatabasePort        = 5432;
 g_ksDatabaseUser        = 'postgres';
-g_ksDatabasePassword    = '';
+g_ksDatabasePassword    = 'password';
 ## @}
 
 
@@ -84,9 +84,9 @@ g_ksTmDownloadDir       = os.path.join(g_ksTmHtDocDir, 'download');
 ## The base URL relative path of the TM download directory (g_ksTmDownloadDir).
 g_ksTmDownloadBaseUrlRel = 'htdocs/downloads';
 ## The root of the file area (referred to as TM_FILE_DIR in database docs).
-g_ksFileAreaRootDir     = '/var/tmp/testmanager'
+g_ksFileAreaRootDir     = '/tmp/testmanager'
 ## The root of the file area with the zip files (best put on a big storage server).
-g_ksZipFileAreaRootDir  = '/var/tmp/testmanager2'
+g_ksZipFileAreaRootDir  = '/tmp/testmanager2'
 ## URL prefix for trac log viewer.
 g_ksTracLogUrlPrefix    = 'https://linserv.de.oracle.com/vbox/log/'
 ## URL prefix for trac log viewer.
@@ -258,4 +258,3 @@ g_kfProfileIndex        = False;
 ## When not None,
 g_ksTestBoxDispXpctLog  = '/tmp/testmanager-testboxdisp-xcpt.log'
 ## @}
-

@@ -310,7 +310,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=too-few-public-met
         #
         oData = FailureCategoryData().initFromDbWithId(self._oDb, idFailureCategory);
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
-        if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
+        if oData.tsEffective not in (tsCur, tsCurMinusOne):
             self._historizeEntry(idFailureCategory, tsCurMinusOne);
             self._readdEntry(uidAuthor, oData, tsCurMinusOne);
         self._historizeEntry(idFailureCategory);

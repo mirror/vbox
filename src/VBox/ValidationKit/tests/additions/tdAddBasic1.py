@@ -151,7 +151,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                            '--pop ' \
                           % (uuid.uuid4(), self.sVBoxValidationKitIso, sGaIso);
             reporter.log2('Using VISO combining ValKit and GAs "%s": %s' % (sVisoContent, sGaViso));
-            with open(sGaViso, 'w') as oGaViso:
+            with open(sGaViso, 'w') as oGaViso: # pylint: disable=unspecified-encoding
                 oGaViso.write(sVisoContent);
             sGaIso = sGaViso;
 

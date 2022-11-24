@@ -484,7 +484,7 @@ class Session(TdTaskBase):
         self.fnTask         = fnTask;
         self.aTaskArgs      = aArgs;
         self.oThread        = threading.Thread(target=self.taskThread, args=(), name=('TXS-%s' % (sStatus)));
-        self.oThread.setDaemon(True);
+        self.oThread.setDaemon(True); # pylint: disable=deprecated-method
         self.msStart        = base.timestampMilli();
 
         self.lockTask();

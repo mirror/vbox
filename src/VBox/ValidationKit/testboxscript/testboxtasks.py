@@ -99,7 +99,7 @@ class TestBoxBaseTask(object):
         """
         self._lock();
         self._fRunning = False;
-        self._oCv.notifyAll();
+        self._oCv.notifyAll(); # pylint: disable=deprecated-method
         self._unlock();
 
     def isRunning(self):

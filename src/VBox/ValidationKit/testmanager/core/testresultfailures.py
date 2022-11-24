@@ -454,7 +454,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=too-few-public-m
 
         oData = self.getById(idTestResult)
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
-        if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
+        if oData.tsEffective not in (tsCur, tsCurMinusOne):
             self._historizeEntry(idTestResult, tsCurMinusOne);
             self._readdEntry(uidAuthor, oData, tsCurMinusOne);
             self._historizeEntry(idTestResult);

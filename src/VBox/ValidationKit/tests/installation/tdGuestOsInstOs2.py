@@ -205,7 +205,7 @@ class tdGuestOsInstOs2(vbox.TestDriver):
         oSession.setupVrdp(True)
 
         # Set extra data
-        if self.asExtraData != []:
+        if self.asExtraData:
             for sExtraData in self.asExtraData:
                 try:
                     sKey, sValue = sExtraData.split(':')

@@ -76,7 +76,7 @@ class WuiGlobalResource(WuiContentBase):
 
         oForm = WuiHlpForm('globalresourceform',
                            sFormActionUrl,
-                           dErrors if dErrors is not None else dict())
+                           dErrors if dErrors is not None else {})
 
         if sAction == WuiAdmin.ksActionGlobalRsrcAdd:
             oForm.addIntRO  (GlobalResourceData.ksParam_idGlobalRsrc,    self._oData.idGlobalRsrc,   'Global Resource ID')

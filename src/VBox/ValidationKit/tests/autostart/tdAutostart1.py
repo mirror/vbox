@@ -1317,7 +1317,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         };
         oSet.aoTestVms.extend([oTestVm for oTestVm in self.asTestVmClasses.values() if oTestVm is not None]);
         sOs = self.getBuildOs();
-        if sOs in self.asTestVmClasses.keys():
+        if sOs in self.asTestVmClasses:
             for oTestVM in oSet.aoTestVms:
                 if oTestVM is not None:
                     oTestVM.fSkip = oTestVM != self.asTestVmClasses[sOs];

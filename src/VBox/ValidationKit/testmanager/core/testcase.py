@@ -264,7 +264,7 @@ class TestCaseDependencyData(ModelDataBase):
 
         The dictionary keys are ksParam_*.
         """
-        dErrors = dict()
+        dErrors = {}
 
         self.idTestCase         = self._validateInt(   dErrors, self.ksParam_idTestCase,        self.idTestCase);
         self.idTestCasePreReq   = self._validateInt(   dErrors, self.ksParam_idTestCasePreReq,  self.idTestCasePreReq);

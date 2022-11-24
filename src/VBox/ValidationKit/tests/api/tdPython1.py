@@ -175,7 +175,7 @@ class SubTstDrvPython1(base.SubTestDriverBase):
                 # Create a thread that will interrupt us in 2 seconds.
                 try:
                     oThread = threading.Thread(target=self.interruptWaitEventsThreadProc);
-                    oThread.setDaemon(False);
+                    oThread.setDaemon(False); # pylint: disable=deprecated-method
                 except:
                     reporter.errorXcpt();
                     break;

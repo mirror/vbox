@@ -68,7 +68,7 @@ class WuiHlpForm(object):
     def __init__(self, sId, sAction, dErrors = None, fReadOnly = False, sOnSubmit = None):
         self._fFinalized = False;
         self._fReadOnly  = fReadOnly;
-        self._dErrors    = dErrors if dErrors is not None else dict();
+        self._dErrors    = dErrors if dErrors is not None else {};
 
         if sOnSubmit == self.ksOnSubmit_AddReturnToFieldWithCurrentUrl:
             sOnSubmit = u'return addRedirectToInputFieldWithCurrentUrl(this)';

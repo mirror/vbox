@@ -285,7 +285,7 @@ class TestBoxCommand(object):
         """
         try:
             sCmdName = oResponse.getStringChecked(constants.tbresp.ALL_PARAM_RESULT);
-        except Exception as oXcpt:
+        except:
             oConnection.close();
             return False;
 

@@ -147,7 +147,7 @@ class WebServerGlueBase(object):
         self._fHtmlDebugOutput = fHtmlDebugOutput; # For trace
         self._oDbgFile         = sys.stderr;
         if config.g_ksSrvGlueDebugLogDst is not None and config.g_kfSrvGlueDebug is True:
-            self._oDbgFile = open(config.g_ksSrvGlueDebugLogDst, 'a');  # pylint: disable=consider-using-with
+            self._oDbgFile = open(config.g_ksSrvGlueDebugLogDst, 'a');  # pylint: disable=consider-using-with,unspecified-encoding
             if config.g_kfSrvGlueCgiDumpArgs:
                 self._oDbgFile.write('Arguments: %s\nEnvironment:\n' % (sys.argv,));
             if config.g_kfSrvGlueCgiDumpEnv:
@@ -165,7 +165,7 @@ class WebServerGlueBase(object):
 
         # Body.
         self._sBodyType = None;
-        self._dParams = dict();
+        self._dParams = {};
         self._sHtmlBody = '';
         self._cchCached = 0;
         self._cchBodyWrittenOut = 0;
@@ -191,7 +191,7 @@ class WebServerGlueBase(object):
         parameter is given more than once, the value is appended to the
         existing dictionary entry.
         """
-        return dict();
+        return {};
 
     def getClientAddr(self):
         """
@@ -432,7 +432,7 @@ class WebServerGlueBase(object):
             sBody = webutils.encodeUrlParams(self._dParams);
             self._writeWorker(sBody);
 
-            self._dParams = dict();
+            self._dParams = {};
             self._cchBodyWrittenOut += self._cchCached;
 
         elif self._sBodyType == 'html':
@@ -471,7 +471,7 @@ class WebServerGlueBase(object):
         fSaved = self._fHtmlDebugOutput;
 
         try:
-            with open(sLogFile, 'w') as oFile:
+            with open(sLogFile, 'w') as oFile: # pylint: disable=unspecified-encoding
                 oFile.write(sError + '\n\n');
                 if aXcptInfo[0] is not None:
                     oFile.write(' B a c k t r a c e\n');

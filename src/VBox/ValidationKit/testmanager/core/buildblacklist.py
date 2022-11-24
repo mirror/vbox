@@ -226,7 +226,7 @@ class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=too-few-public-meth
         oData = BuildBlacklistData().initFromDbWithId(self._oDb, idBlacklisting);
 
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
-        if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
+        if oData.tsEffective not in (tsCur, tsCurMinusOne):
             self._historizeEntry(idBlacklisting, tsCurMinusOne);
             self._readdEntry(uidAuthor, oData, tsCurMinusOne);
             self._historizeEntry(idBlacklisting);

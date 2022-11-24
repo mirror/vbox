@@ -172,7 +172,7 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
             if not fNoProxies:
                 oOpener = urllib_build_opener();
             else:
-                oOpener = urllib_build_opener(urllib_ProxyHandler(proxies = dict()));
+                oOpener = urllib_build_opener(urllib_ProxyHandler(proxies = {} ));
             oSrc = oOpener.open(sUrlFile);
             oDst = utils.openNoInherit(sDstFile, 'wb');
             oDst.write(oSrc.read());

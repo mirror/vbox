@@ -107,13 +107,13 @@ class ReCreateQueueData(object):
 
         # Generate a testcase lookup dictionary for use when working on
         # argument variations.
-        self.dTestCases         = dict();
+        self.dTestCases         = {};
         for oTestCase in self.aoTestCases:
             self.dTestCases[oTestCase.idTestCase] = oTestCase;
         assert len(self.dTestCases) <= len(self.aoTestCases); # Note! Can be shorter!
 
         # Generate a testgroup lookup dictionary.
-        self.dTestGroups        = dict();
+        self.dTestGroups        = {};
         for oTestGroup in self.aoTestGroups:
             self.dTestGroups[oTestGroup.idTestGroup] = oTestGroup;
         assert len(self.dTestGroups) == len(self.aoTestGroups);
@@ -124,8 +124,8 @@ class ReCreateQueueData(object):
         if self.aoTestGroups:
             # Prep the test groups.
             for oTestGroup in self.aoTestGroups:
-                oTestGroup.aoTestCases = list();
-                oTestGroup.dTestCases  = dict();
+                oTestGroup.aoTestCases = [];
+                oTestGroup.dTestCases  = {};
 
             # Link testcases to their group, both directions. Prep testcases for
             # argument varation association.
@@ -138,7 +138,7 @@ class ReCreateQueueData(object):
                 oTestGroup.dTestCases[oTestCase.idTestCase] = oTestCase;
                 oTestGroup.aoTestCases.append(oTestCase);
                 oTestCase.oTestGroup       = oTestGroup;
-                oTestCase.aoArgsVariations = list();
+                oTestCase.aoArgsVariations = [];
 
             # Associate testcase argument variations with their testcases (group)
             # in both directions.
@@ -176,11 +176,11 @@ class ReCreateQueueData(object):
         dependencies.
         Returns array of errors (see SchedulderBase.recreateQueue()).
         """
-        aoErrors = list();
+        aoErrors = [];
         for oTestGroup in self.aoTestGroups:
             idPreReq = oTestGroup.idTestGroupPreReq;
             if idPreReq is None:
-                oTestGroup.aidTestGroupPreReqs = list();
+                oTestGroup.aidTestGroupPreReqs = [];
                 continue;
 
             aidChain = [oTestGroup.idTestGroup,];
@@ -213,7 +213,7 @@ class ReCreateQueueData(object):
 
         Returns array of errors (see SchedulderBase.recreateQueue()).
         """
-        aoErrors = list();
+        aoErrors = [];
         for oTestGroup in self.aoTestGroups:
             for oTestCase in oTestGroup.aoTestCases:
                 if not oTestCase.aidPreReqs:
@@ -460,7 +460,7 @@ class SchedulerBase(object):
                 self.oBuild             = oBuild;
                 self._fBlacklisted      = None if fMaybeBlacklisted is True else False;
                 self.fRemoved           = False;
-                self._dPreReqDecisions  = dict();
+                self._dPreReqDecisions  = {};
 
             def remove(self):
                 """
@@ -530,7 +530,7 @@ class SchedulerBase(object):
         self._asMessages    = [];
         self._tsSecStart    = tsSecStart if tsSecStart is not None else utils.timestampSecond();
         self.oBuildCache    = self.BuildCache();
-        self.dTestGroupMembers = dict();
+        self.dTestGroupMembers = {};
 
     @staticmethod
     def _instantiate(oDb, oSchedGrpData, iVerbosity = 0, tsSecStart = None):
@@ -633,7 +633,7 @@ class SchedulerBase(object):
             # involved, test execution will be unchanged (save for maybe just a
             # little for gang gathering).
             #
-            aoItems = list();
+            aoItems = [];
             if not oData.oSchedGroup.fEnabled:
                 self.msgInfo('Disabled.');
             elif not oData.aoArgsVariations:

@@ -219,7 +219,7 @@ class WuiGraphWiz(WuiReportBase):
             return [aoSeries,];
 
         # Split on unit.
-        dUnitSeries = dict();
+        dUnitSeries = {};
         for oSeries in aoSeries:
             if oSeries.iUnit not in dUnitSeries:
                 dUnitSeries[oSeries.iUnit] = [];

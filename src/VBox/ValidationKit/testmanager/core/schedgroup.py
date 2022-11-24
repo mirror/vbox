@@ -908,7 +908,7 @@ LIMIT %s''', (idSchedGroup, aoEntries[0].tsEffective, cMaxRows + 1,));
         # Now the SchedGroups entry.
         #
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
-        if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
+        if oData.tsEffective not in (tsCur, tsCurMinusOne):
             self._historizeEntry(idSchedGroup, tsCurMinusOne);
             self._readdEntry(uidAuthor, oData, tsCurMinusOne);
             self._historizeEntry(idSchedGroup);
@@ -1259,7 +1259,7 @@ LIMIT %s''', (idSchedGroup, aoEntries[0].tsEffective, cMaxRows + 1,));
 
         # Try record who removed it by adding an dummy entry that expires immediately.
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
-        if oMember.tsEffective != tsCur and oMember.tsEffective != tsCurMinusOne:
+        if oMember.tsEffective not in (tsCur, tsCurMinusOne):
             self._historizeSchedGroupMember(oMember, tsCurMinusOne);
             self._addSchedGroupMember(uidAuthor, oMember, tsCurMinusOne); # lazy bird.
             self._historizeSchedGroupMember(oMember);
@@ -1309,7 +1309,7 @@ LIMIT %s''', (idSchedGroup, aoEntries[0].tsEffective, cMaxRows + 1,));
 
         # Try record who removed it by adding an dummy entry that expires immediately.
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
-        if oBoxInGroup.tsEffective != tsCur and oBoxInGroup.tsEffective != tsCurMinusOne:
+        if oBoxInGroup.tsEffective not in (tsCur, tsCurMinusOne):
             self._historizeSchedGroupTestBox(oBoxInGroup, tsCurMinusOne);
             self._addSchedGroupTestBox(uidAuthor, oBoxInGroup, tsCurMinusOne); # lazy bird.
             self._historizeSchedGroupTestBox(oBoxInGroup);

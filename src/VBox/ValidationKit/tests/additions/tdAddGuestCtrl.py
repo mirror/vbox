@@ -3352,7 +3352,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
                                                          args = (oGuestProcess,),
                                                          name = ('threadForTestGuestCtrlSessionReboot'));
-                        oThreadReboot.setDaemon(True);
+                        oThreadReboot.setDaemon(True); # pylint: disable=deprecated-method
                         oThreadReboot.start();
 
                         # Do the reboot.
@@ -4311,7 +4311,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 oFile.setSize(0);
                 oFile.setSize(64);
                 fUseFallback = False;
-            except Exception as oXcpt:
+            except:
                 reporter.logXcpt();
 
             # Grow the file till we hit trouble, typical VERR_DISK_FULL, then
@@ -4322,7 +4322,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     cbBigFile += 16*1024*1024;
                     try:
                         oFile.setSize(cbBigFile);
-                    except Exception as oXcpt:
+                    except Exception:
                         reporter.logXcpt('cbBigFile=%s' % (sBigPath,));
                         try:
                             cbBigFile -= 16*1024*1024;

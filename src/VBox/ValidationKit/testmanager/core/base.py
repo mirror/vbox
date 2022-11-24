@@ -366,7 +366,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         """
         Worker for implementing validateAndConvert().
         """
-        dErrors = dict();
+        dErrors = {};
         for sAttr in self.getDataAttributes():
             oValue      = getattr(self, sAttr);
             sParam      = getattr(self, 'ksParam_' + sAttr);
@@ -412,7 +412,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
             kiMin_iAttr, kiMax_iAttr, klMin_lAttr, klMax_lAttr,
             kasValidValues_enmAttr, and kasAllowNullAttributes.
         """
-        return self._validateAndConvertWorker(getattr(self, 'kasAllowNullAttributes', list()), oDb,
+        return self._validateAndConvertWorker(getattr(self, 'kasAllowNullAttributes', []), oDb,
                                               enmValidateFor = enmValidateFor);
 
     def validateAndConvertEx(self, asAllowNullAttributes, oDb, enmValidateFor = ksValidateFor_Other):
@@ -432,7 +432,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         """
         sPrefix       = self.getHungarianPrefix(sAttr);
         asValidValues = getattr(self, 'kasValidValues_' + sAttr, None);
-        fAllowNull    = sAttr in getattr(self, 'kasAllowNullAttributes', list());
+        fAllowNull    = sAttr in getattr(self, 'kasAllowNullAttributes', []);
         if fStrict:
             if sPrefix == 'f':
                 # HACK ALERT! Checkboxes are only present when checked, so we always have to provide a default.
@@ -1415,7 +1415,7 @@ class ModelFilterBase(ModelBase):
         """ Filters just the parameters relevant to this filter, returning a copy. """
 
         # Collect the parameter names.
-        dWanted = dict();
+        dWanted = {};
         for oCrit in self.aCriteria:
             dWanted[oCrit.sVarNm] = 1;
             if oCrit.sInvVarNm:
@@ -1427,7 +1427,7 @@ class ModelFilterBase(ModelBase):
                 dWanted[sParam] = 1;
 
         # To the straining.
-        dRet = dict();
+        dRet = {};
         for sKey in dParams:
             if sKey in dWanted:
                 dRet[sKey] = dParams[sKey];

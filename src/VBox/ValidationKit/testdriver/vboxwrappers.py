@@ -154,7 +154,7 @@ class VirtualBoxWrapper(object): # pylint: disable=too-few-public-methods
 
         The new instance is returned on success.  None is returned on error.
         """
-        dArgsCopy = dArgs.copy() if dArgs is not None else dict();
+        dArgsCopy = dArgs.copy() if dArgs is not None else {};
         dArgsCopy['oVBox'] = self;
         return oSubClass.registerDerivedEventHandler(self.oVBoxMgr, self.fpApiVer, oSubClass, dArgsCopy,
                                                      self.o, 'IVirtualBox', 'IVirtualBoxCallback');
@@ -2867,7 +2867,7 @@ class SessionWrapper(TdTaskBase):
             reporter.logXcpt("Unable to take screenshot")
             return False
 
-        with open(sFilename, 'wb') as oFile:
+        with open(sFilename, 'wb') as oFile: # pylint: disable=unspecified-encoding
             oFile.write(aPngData)
 
         return True
@@ -3102,7 +3102,7 @@ class SessionWrapper(TdTaskBase):
             return None;
 
         # Add the base class arguments.
-        dArgsCopy = dArgs.copy() if dArgs is not None else dict();
+        dArgsCopy = dArgs.copy() if dArgs is not None else {};
         dArgsCopy['oSession'] = self;
         dArgsCopy['oConsole'] = oConsole;
         sLogSuffix = 'on %s' % (self.sName,)

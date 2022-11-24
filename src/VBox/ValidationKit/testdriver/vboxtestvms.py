@@ -1553,7 +1553,7 @@ class TestVmSet(object):
         sAltName = sVmName if sVmName.startswith('tst-') else 'tst-' + sVmName;
 
         for oTestVm in self.aoTestVms:
-            if oTestVm.sVmName == sVmName or oTestVm.sVmName == sAltName:
+            if oTestVm.sVmName in (sVmName, sAltName):
                 return oTestVm;
         return None;
 

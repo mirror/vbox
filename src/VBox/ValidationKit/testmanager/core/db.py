@@ -268,7 +268,7 @@ class TMDatabaseConnection(object):
             oSrvGlue.registerDebugInfoCallback(self.debugInfoCallback);
 
         # Object caches (used by database logic classes).
-        self.ddCaches = dict();
+        self.ddCaches = {};
 
     def isAutoCommitting(self):
         """ Work around missing autocommit attribute in older versions."""
@@ -373,7 +373,7 @@ class TMDatabaseConnection(object):
         if aoArgs is not None:
             sBound = oCursor.mogrify(unicode(sOperation), aoArgs);
         elif sOperation.find('%') < 0:
-            sBound = oCursor.mogrify(unicode(sOperation), list());
+            sBound = oCursor.mogrify(unicode(sOperation), []);
         else:
             sBound = unicode(sOperation);
 
@@ -425,7 +425,7 @@ class TMDatabaseConnection(object):
         collect data for traceback.
         """
         if aoArgs is None:
-            aoArgs = list();
+            aoArgs = [];
 
         nsStart = utils.timestampNano();
         try:
@@ -587,7 +587,7 @@ class TMDatabaseConnection(object):
         """ Returns the cache dictionary for this data type. """
         dRet = self.ddCaches.get(sType, None);
         if dRet is None:
-            dRet = dict();
+            dRet = {};
             self.ddCaches[sType] = dRet;
         return dRet;
 

@@ -87,7 +87,7 @@ class WuiReportBase(WuiContentBase):
 
         # Additional URL parameters for reports:
         from testmanager.webui.wuimain import WuiMain;
-        self._dExtraParams  = ReportFilter().strainParameters(dict() if oDisp is None else oDisp.getParameters(),
+        self._dExtraParams  = ReportFilter().strainParameters({} if oDisp is None else oDisp.getParameters(),
                                                               (WuiMain.ksParamReportPeriods,
                                                                WuiMain.ksParamReportPeriodInHours,
                                                                WuiMain.ksParamEffectiveDate,));
