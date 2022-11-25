@@ -504,7 +504,7 @@ $(VBOX_JWS_GEN_RAWSRC) \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle jaxws              \
               --stringparam G_vboxDirPrefix org/virtualbox$(VBOX_API_SUFFIX)/ \
-              --stringparam G_vboxFakeTableSummary $(if-expr $(VBOX_JAVA_VERSION) >= 80000 && $(VBOX_JAVA_VERSION) < 110000,1,"") \
+              --stringparam G_vboxFakeTableSummary $(if-expr $(VBOX_JAVA_VERSION) >= 10800 && $(VBOX_JAVA_VERSION) < 110000,1,"") \
               -o $(VBOX_JWS_GEN_RAWSRC) $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
 	$(QUIET)$(MKDIR) -p $(VBOX_JWS_GEN)/java/org/virtualbox$(VBOX_API_SUFFIX)
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JWS_GEN_RAWSRC) $(VBOX_JWS_GEN)/java
