@@ -719,8 +719,8 @@ void UIMiniToolBar::sltAdjust()
     LogRel(("GUI: Adjust mini-toolbar for window #%d\n", m_iWindowIndex));
 
     /* Get corresponding host-screen: */
-    const int iHostScreenCount = gpDesktop->screenCount();
-    int iHostScreen = gpDesktop->screenNumber(m_pParent);
+    const int iHostScreenCount = UIDesktopWidgetWatchdog::screenCount();
+    int iHostScreen = UIDesktopWidgetWatchdog::screenNumber(m_pParent);
     // WORKAROUND:
     // When switching host-screen count, especially in complex cases where RDP client is "replacing" host-screen(s) with own virtual-screen(s),
     // Qt could behave quite arbitrary and laggy, and due to racing there could be a situation when QDesktopWidget::screenNumber() returns -1
@@ -744,8 +744,8 @@ void UIMiniToolBar::sltAdjust()
     QRect workingArea;
     switch (m_geometryType)
     {
-        case GeometryType_Available: workingArea = gpDesktop->availableGeometry(iHostScreen); break;
-        case GeometryType_Full:      workingArea = gpDesktop->screenGeometry(iHostScreen); break;
+        case GeometryType_Available: workingArea = UIDesktopWidgetWatchdog::availableGeometry(iHostScreen); break;
+        case GeometryType_Full:      workingArea = UIDesktopWidgetWatchdog::screenGeometry(iHostScreen); break;
     }
     Q_UNUSED(workingArea);
 
@@ -797,7 +797,7 @@ void UIMiniToolBar::sltAdjust()
         case GeometryType_Available:
         {
             /* Make sure we are located on corresponding host-screen: */
-            if (   gpDesktop->screenCount() > 1
+            if (   UIDesktopWidgetWatchdog::screenCount() > 1
                 && (x() != workingArea.x() || y() != workingArea.y()))
             {
                 // WORKAROUND:
@@ -1078,7 +1078,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 // desktop being changed. We should ignore Move event in such case.
                 /* Skip if parent is outside of full-screen geometry: */
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
-                if (!gpDesktop->screenGeometry(m_pParent).contains(pMoveEvent->pos()))
+                if (!UIDesktopWidgetWatchdog::screenGeometry(m_pParent).contains(pMoveEvent->pos()))
                     break;
                 /* Skip if parent or we are invisible: */
                 if (   !m_pParent->isVisible()

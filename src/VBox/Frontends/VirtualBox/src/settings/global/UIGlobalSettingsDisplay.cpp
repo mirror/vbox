@@ -142,7 +142,7 @@ void UIGlobalSettingsDisplay::getFromCache()
     if (m_pEditorScaleFactor)
     {
         m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
-        m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
+        m_pEditorScaleFactor->setMonitorCount(UIDesktopWidgetWatchdog::screenCount());
     }
     if (m_pEditorGlobalDisplayFeatures)
     {

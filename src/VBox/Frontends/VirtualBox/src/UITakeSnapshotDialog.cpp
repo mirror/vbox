@@ -159,11 +159,11 @@ void UITakeSnapshotDialog::prepare()
 
     /* Invent minimum size: */
     QSize minimumSize;
-    const int iHostScreen = gpDesktop->screenNumber(parentWidget());
-    if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
+    const int iHostScreen = UIDesktopWidgetWatchdog::screenNumber(parentWidget());
+    if (iHostScreen >= 0 && iHostScreen < UIDesktopWidgetWatchdog::screenCount())
     {
         /* On the basis of current host-screen geometry if possible: */
-        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
+        const QRect screenGeometry = UIDesktopWidgetWatchdog::screenGeometry(iHostScreen);
         if (screenGeometry.isValid())
             minimumSize = screenGeometry.size() / 4;
     }

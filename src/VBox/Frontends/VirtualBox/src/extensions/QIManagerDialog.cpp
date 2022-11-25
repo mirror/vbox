@@ -100,11 +100,11 @@ void QIManagerDialog::prepare()
 
     /* Invent initial size: */
     QSize proposedSize;
-    const int iHostScreen = gpDesktop->screenNumber(m_pCenterWidget);
-    if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
+    const int iHostScreen = UIDesktopWidgetWatchdog::screenNumber(m_pCenterWidget);
+    if (iHostScreen >= 0 && iHostScreen < UIDesktopWidgetWatchdog::screenCount())
     {
         /* On the basis of current host-screen geometry if possible: */
-        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
+        const QRect screenGeometry = UIDesktopWidgetWatchdog::screenGeometry(iHostScreen);
         if (screenGeometry.isValid())
             proposedSize = screenGeometry.size() * 7 / 15;
     }

@@ -127,8 +127,8 @@ void UIMachineWindowScale::loadSettings()
         else
         {
             /* Get available geometry, for screen with (x,y) coords if possible: */
-            QRect availableGeo = !geo.isNull() ? gpDesktop->availableGeometry(QPoint(geo.x(), geo.y())) :
-                                                 gpDesktop->availableGeometry(this);
+            QRect availableGeo = !geo.isNull() ? UIDesktopWidgetWatchdog::availableGeometry(QPoint(geo.x(), geo.y())) :
+                                                 UIDesktopWidgetWatchdog::availableGeometry(this);
 
             /* Resize to default size: */
             resize(640, 480);
@@ -206,7 +206,7 @@ void UIMachineWindowScale::normalizeGeometry(bool fAdjustPosition, bool fResizeT
 
     /* Adjust position if necessary: */
     if (fAdjustPosition)
-        frGeo = UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
+        frGeo = UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, UIDesktopWidgetWatchdog::overallAvailableRegion());
 
     /* Finally, set the frame geometry: */
     UIDesktopWidgetWatchdog::setTopLevelGeometry(this, frGeo.left() + dl, frGeo.top() + dt,
@@ -221,7 +221,7 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
         {
 #ifdef VBOX_WS_X11
             /* Prevent handling if fake screen detected: */
-            if (gpDesktop->isFakeScreenDetected())
+            if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 */
 
@@ -245,7 +245,7 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
         {
 #ifdef VBOX_WS_X11
             /* Prevent handling if fake screen detected: */
-            if (gpDesktop->isFakeScreenDetected())
+            if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 */
 

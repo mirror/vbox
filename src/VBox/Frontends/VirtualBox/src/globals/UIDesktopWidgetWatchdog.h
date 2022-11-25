@@ -83,56 +83,56 @@ public:
     static void destroy();
 
     /** Returns overall desktop width. */
-    int overallDesktopWidth() const;
+    static int overallDesktopWidth();
     /** Returns overall desktop height. */
-    int overallDesktopHeight() const;
+    static int overallDesktopHeight();
 
     /** Returns the number of host-screens currently available on the system. */
-    int screenCount() const;
+    static int screenCount();
 
     /** Returns primary screen index. */
-    int primaryScreen() const;
+    static int primaryScreen();
 
     /** Returns the index of the screen which contains contains @a pWidget. */
-    int screenNumber(const QWidget *pWidget) const;
+    static int screenNumber(const QWidget *pWidget);
     /** Returns the index of the screen which contains contains @a point. */
-    int screenNumber(const QPoint &point) const;
+    static int screenNumber(const QPoint &point);
 
     /** Returns the geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
-    const QRect screenGeometry(int iHostScreenIndex = -1) const;
+    static QRect screenGeometry(int iHostScreenIndex = -1);
     /** Returns the geometry of the host-screen which contains @a pWidget. */
-    const QRect screenGeometry(const QWidget *pWidget) const;
+    static QRect screenGeometry(const QWidget *pWidget);
     /** Returns the geometry of the host-screen which contains @a point. */
-    const QRect screenGeometry(const QPoint &point) const;
+    static QRect screenGeometry(const QPoint &point);
 
     /** Returns the available-geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
-    const QRect availableGeometry(int iHostScreenIndex = -1) const;
+    static QRect availableGeometry(int iHostScreenIndex = -1);
     /** Returns the available-geometry of the host-screen which contains @a pWidget. */
-    const QRect availableGeometry(const QWidget *pWidget) const;
+    static QRect availableGeometry(const QWidget *pWidget);
     /** Returns the available-geometry of the host-screen which contains @a point. */
-    const QRect availableGeometry(const QPoint &point) const;
+    static QRect availableGeometry(const QPoint &point);
 
     /** Returns overall region unifying all the host-screen geometries. */
-    const QRegion overallScreenRegion() const;
+    static QRegion overallScreenRegion();
     /** Returns overall region unifying all the host-screen available-geometries. */
-    const QRegion overallAvailableRegion() const;
+    static QRegion overallAvailableRegion();
 
 #ifdef VBOX_WS_X11
     /** Qt5: X11: Returns whether no or fake screen detected. */
-    bool isFakeScreenDetected() const;
+    static bool isFakeScreenDetected();
 #endif
 
     /** Returns device-pixel-ratio of the host-screen with @a iHostScreenIndex. */
-    double devicePixelRatio(int iHostScreenIndex = -1);
+    static double devicePixelRatio(int iHostScreenIndex = -1);
     /** Returns device-pixel-ratio of the host-screen which contains @a pWidget. */
-    double devicePixelRatio(QWidget *pWidget);
+    static double devicePixelRatio(QWidget *pWidget);
 
     /** Returns actual device-pixel-ratio of the host-screen with @a iHostScreenIndex. */
-    double devicePixelRatioActual(int iHostScreenIndex = -1);
+    static double devicePixelRatioActual(int iHostScreenIndex = -1);
     /** Returns actual device-pixel-ratio of the host-screen which contains @a pWidget. */
-    double devicePixelRatioActual(QWidget *pWidget);
+    static double devicePixelRatioActual(QWidget *pWidget);
 
     /** Search position for @a rectangle to make sure it is fully
       * contained within @a boundRegion, performing resize if allowed. */

@@ -72,7 +72,7 @@ protected:
 
 #ifdef VBOX_WS_X11
         /* Prevent further handling if fake screen detected: */
-        if (gpDesktop->isFakeScreenDetected())
+        if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
             return;
 #endif
 
@@ -97,7 +97,7 @@ protected:
 
 #ifdef VBOX_WS_X11
         /* Prevent handling if fake screen detected: */
-        if (gpDesktop->isFakeScreenDetected())
+        if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
             return;
 #endif
 

@@ -4383,7 +4383,7 @@ void UISoftKeyboard::loadSettings()
     float fKeyboardAspectRatio = 1.0f;
     if (m_pKeyboardWidget)
         fKeyboardAspectRatio = m_pKeyboardWidget->layoutAspectRatio();
-    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    const QRect availableGeo = UIDesktopWidgetWatchdog::availableGeometry(this);
     const int iDefaultWidth = availableGeo.width() / 2;
     const int iDefaultHeight = iDefaultWidth * fKeyboardAspectRatio;
     QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);

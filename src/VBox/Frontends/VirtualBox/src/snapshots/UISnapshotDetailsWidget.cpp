@@ -584,7 +584,7 @@ void UIScreenshotViewer::prepare()
 void UIScreenshotViewer::adjustWindowSize()
 {
     /* Acquire current host-screen size, fallback to 1024x768 if failed: */
-    QSize screenSize = gpDesktop->screenGeometry(parentWidget()).size();
+    QSize screenSize = UIDesktopWidgetWatchdog::screenGeometry(parentWidget()).size();
     if (!screenSize.isValid())
         screenSize = QSize(1024, 768);
     const int iInitWidth = screenSize.width() * .50 /* 50% of host-screen width */;

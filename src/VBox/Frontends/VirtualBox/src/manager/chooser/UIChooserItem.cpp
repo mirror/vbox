@@ -225,8 +225,8 @@ void UIChooserDisabledItemEffect::draw(QPainter *pPainter)
     pixmap.convertFromImage(UIImageTools::toGray(resultImage));
     QWidget *pParentWidget = qobject_cast<QWidget*>(parent());
     pixmap.setDevicePixelRatio(  pParentWidget
-                               ? gpDesktop->devicePixelRatioActual(pParentWidget)
-                               : gpDesktop->devicePixelRatioActual());
+                               ? UIDesktopWidgetWatchdog::devicePixelRatioActual(pParentWidget)
+                               : UIDesktopWidgetWatchdog::devicePixelRatioActual());
     /* Use the filtered pixmap: */
     pPainter->drawPixmap(offset, pixmap);
 }

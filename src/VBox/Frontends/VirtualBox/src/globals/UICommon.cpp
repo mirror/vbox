@@ -2493,11 +2493,11 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
      * correct, but as we can't predict on which host screens the user will
      * open the guest windows, this is the best assumption we can do, cause it
      * is the worst case. */
-    const int cHostScreens = gpDesktop->screenCount();
+    const int cHostScreens = UIDesktopWidgetWatchdog::screenCount();
     QVector<int> screenSize(qMax(cMonitors, cHostScreens), 0);
     for (int i = 0; i < cHostScreens; ++i)
     {
-        QRect r = gpDesktop->screenGeometry(i);
+        QRect r = UIDesktopWidgetWatchdog::screenGeometry(i);
         screenSize[i] = r.width() * r.height();
     }
     /* Now sort the vector: */

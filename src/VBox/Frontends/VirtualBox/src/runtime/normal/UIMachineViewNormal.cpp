@@ -228,7 +228,7 @@ QSize UIMachineViewNormal::sizeHint() const
 
 QRect UIMachineViewNormal::workingArea() const
 {
-    return gpDesktop->availableGeometry(this);
+    return UIDesktopWidgetWatchdog::availableGeometry(this);
 }
 
 QSize UIMachineViewNormal::calculateMaxGuestSize() const

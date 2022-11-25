@@ -751,7 +751,7 @@ void UIVisoCreatorDialog::sltsigVisoNameChanged(const QString &strName)
 
 void UIVisoCreatorDialog::loadSettings()
 {
-    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    const QRect availableGeo = UIDesktopWidgetWatchdog::availableGeometry(this);
     int iDefaultWidth = availableGeo.width() / 2;
     int iDefaultHeight = availableGeo.height() * 3 / 4;
     QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);

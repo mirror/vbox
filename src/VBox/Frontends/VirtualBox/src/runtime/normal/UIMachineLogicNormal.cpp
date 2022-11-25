@@ -221,7 +221,7 @@ void UIMachineLogicNormal::sltHostScreenAvailableAreaChange()
 {
 #if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /* Prevent handling if fake screen detected: */
-    if (gpDesktop->isFakeScreenDetected())
+    if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
         return;
 
     /* Make sure all machine-window(s) have previous but normalized geometry: */

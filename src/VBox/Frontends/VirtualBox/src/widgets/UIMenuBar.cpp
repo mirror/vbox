@@ -64,7 +64,7 @@ void UIMenuBar::paintEvent(QPaintEvent *pEvent)
         QSize s = size();
         QPainter painter(this);
         painter.setClipRect(pEvent->rect());
-        const double dDpr = gpDesktop->devicePixelRatio(this);
+        const double dDpr = UIDesktopWidgetWatchdog::devicePixelRatio(this);
         painter.drawPixmap(s.width() - betaLabel.width() / dDpr - 10, (height() - betaLabel.height() / dDpr) / 2, betaLabel);
     }
 }

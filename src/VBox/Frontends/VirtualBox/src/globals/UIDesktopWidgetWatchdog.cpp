@@ -294,7 +294,8 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
     s_pInstance = 0;
 }
 
-int UIDesktopWidgetWatchdog::overallDesktopWidth() const
+/* static */
+int UIDesktopWidgetWatchdog::overallDesktopWidth()
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     /** @todo bird: Not sure if this is entirely correct. */
@@ -305,7 +306,8 @@ int UIDesktopWidgetWatchdog::overallDesktopWidth() const
 #endif
 }
 
-int UIDesktopWidgetWatchdog::overallDesktopHeight() const
+/* static */
+int UIDesktopWidgetWatchdog::overallDesktopHeight()
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     /** @todo bird: Not sure if this is entirely correct. */
@@ -316,7 +318,8 @@ int UIDesktopWidgetWatchdog::overallDesktopHeight() const
 #endif
 }
 
-int UIDesktopWidgetWatchdog::screenCount() const
+/* static */
+int UIDesktopWidgetWatchdog::screenCount()
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     return QGuiApplication::screens().size();
@@ -363,7 +366,8 @@ static QScreen *indexToScreen(int idxScreen)
 
 #endif /* VBOX_IS_QT6_OR_LATER */
 
-int UIDesktopWidgetWatchdog::primaryScreen() const
+/* static */
+int UIDesktopWidgetWatchdog::primaryScreen()
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     return screenToIndex(QGuiApplication::primaryScreen());
@@ -373,7 +377,8 @@ int UIDesktopWidgetWatchdog::primaryScreen() const
 #endif
 }
 
-int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
+/* static */
+int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget)
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     if (pWidget)
@@ -385,7 +390,8 @@ int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
 #endif
 }
 
-int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point) const
+/* static */
+int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point)
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     return screenToIndex(QGuiApplication::screenAt(point));
@@ -395,7 +401,8 @@ int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point) const
 #endif
 }
 
-const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
+/* static */
+QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */)
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     return indexToScreen(iHostScreenIndex)->geometry();
@@ -410,19 +417,22 @@ const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1
 #endif
 }
 
-const QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget) const
+/* static */
+QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget)
 {
     /* Redirect call to wrapper above: */
     return screenGeometry(screenNumber(pWidget));
 }
 
-const QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
+/* static */
+QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point)
 {
     /* Redirect call to wrapper above: */
     return screenGeometry(screenNumber(point));
 }
 
-const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
+/* static */
+QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */)
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     /** @todo needs X11 work, see 5.x version of code! */
@@ -453,7 +463,8 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* =
 #endif /* < 6.0.0 */
 }
 
-const QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) const
+/* static */
+QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget)
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     if (pWidget && pWidget->screen())
@@ -465,7 +476,8 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) c
 #endif
 }
 
-const QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
+/* static */
+QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point)
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     QScreen *pScreen = QGuiApplication::screenAt(point);
@@ -478,14 +490,15 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) cons
 #endif
 }
 
-const QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
+/* static */
+QRegion UIDesktopWidgetWatchdog::overallScreenRegion()
 {
     /* Calculate region: */
     QRegion region;
-    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
+    for (int iScreenIndex = 0; iScreenIndex < screenCount(); ++iScreenIndex)
     {
         /* Get enumerated screen's available area: */
-        QRect rect = gpDesktop->screenGeometry(iScreenIndex);
+        QRect rect = screenGeometry(iScreenIndex);
 #ifdef VBOX_WS_WIN
         /* On Windows host window can exceed the available
          * area in maximized/sticky-borders state: */
@@ -498,14 +511,15 @@ const QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
     return region;
 }
 
-const QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
+/* static */
+QRegion UIDesktopWidgetWatchdog::overallAvailableRegion()
 {
     /* Calculate region: */
     QRegion region;
-    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
+    for (int iScreenIndex = 0; iScreenIndex < screenCount(); ++iScreenIndex)
     {
         /* Get enumerated screen's available area: */
-        QRect rect = gpDesktop->availableGeometry(iScreenIndex);
+        QRect rect = availableGeometry(iScreenIndex);
 #ifdef VBOX_WS_WIN
         /* On Windows host window can exceed the available
          * area in maximized/sticky-borders state: */
@@ -519,7 +533,8 @@ const QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
 }
 
 #ifdef VBOX_WS_X11
-bool UIDesktopWidgetWatchdog::isFakeScreenDetected() const
+/* static */
+bool UIDesktopWidgetWatchdog::isFakeScreenDetected()
 {
     // WORKAROUND:
     // In 5.6.1 Qt devs taught the XCB plugin to silently swap last detached screen
@@ -532,6 +547,7 @@ bool UIDesktopWidgetWatchdog::isFakeScreenDetected() const
 }
 #endif /* VBOX_WS_X11 */
 
+/* static */
 double UIDesktopWidgetWatchdog::devicePixelRatio(int iHostScreenIndex /* = -1 */)
 {
     /* First, we should check whether the screen is valid: */
@@ -544,12 +560,14 @@ double UIDesktopWidgetWatchdog::devicePixelRatio(int iHostScreenIndex /* = -1 */
     return pScreen->devicePixelRatio();
 }
 
+/* static */
 double UIDesktopWidgetWatchdog::devicePixelRatio(QWidget *pWidget)
 {
     /* Redirect call to wrapper above: */
     return devicePixelRatio(screenNumber(pWidget));
 }
 
+/* static */
 double UIDesktopWidgetWatchdog::devicePixelRatioActual(int iHostScreenIndex /* = -1 */)
 {
     /* First, we should check whether the screen is valid: */
@@ -582,6 +600,7 @@ double UIDesktopWidgetWatchdog::devicePixelRatioActual(int iHostScreenIndex /* =
     return pScreen->devicePixelRatio();
 }
 
+/* static */
 double UIDesktopWidgetWatchdog::devicePixelRatioActual(QWidget *pWidget)
 {
     /* Redirect call to wrapper above: */
@@ -751,7 +770,7 @@ void UIDesktopWidgetWatchdog::centerWidget(QWidget *pWidget,
     if (pRelative)
     {
         pRelative = pRelative->window();
-        deskGeo = gpDesktop->availableGeometry(pRelative);
+        deskGeo = availableGeometry(pRelative);
         parentGeo = pRelative->frameGeometry();
         // WORKAROUND:
         // On X11/Gnome, geo/frameGeo.x() and y() are always 0 for top level
@@ -763,7 +782,7 @@ void UIDesktopWidgetWatchdog::centerWidget(QWidget *pWidget,
     }
     else
     {
-        deskGeo = gpDesktop->availableGeometry();
+        deskGeo = availableGeometry();
         parentGeo = deskGeo;
     }
 
@@ -842,7 +861,7 @@ void UIDesktopWidgetWatchdog::setTopLevelGeometry(QWidget *pWidget, int x, int y
         // unconditionally.  By calling ConfigureWindow directly, Qt will see
         // our change request as an externally triggered one on success and not
         // at all if it is rejected.
-        const double dDPR = gpDesktop->devicePixelRatio(pWidget);
+        const double dDPR = devicePixelRatio(pWidget);
         uint16_t fMask =   XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
                          | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
         uint32_t values[] = { (uint32_t)(x * dDPR), (uint32_t)(y * dDPR), (uint32_t)(w * dDPR), (uint32_t)(h * dDPR) };

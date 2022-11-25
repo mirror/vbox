@@ -73,7 +73,7 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     retranslateUi();
 
     /* Limit the minimum size to 33% of screen size: */
-    setMinimumSize(gpDesktop->screenGeometry(this).size() / 3);
+    setMinimumSize(UIDesktopWidgetWatchdog::screenGeometry(this).size() / 3);
 }
 
 const UIPortForwardingDataList UIMachineSettingsPortForwardingDlg::rules() const

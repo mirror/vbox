@@ -86,7 +86,7 @@ void UIMachineLogicScale::sltHostScreenAvailableAreaChange()
 {
 #ifdef VBOX_WS_X11
     /* Prevent handling if fake screen detected: */
-    if (gpDesktop->isFakeScreenDetected())
+    if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
         return;
 
     /* Make sure all machine-window(s) have previous but normalized geometry: */

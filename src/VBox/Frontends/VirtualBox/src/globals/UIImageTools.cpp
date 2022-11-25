@@ -214,7 +214,7 @@ void UIImageTools::blurImageVertical(const QImage &source, QImage &destination, 
 static QImage betaLabelImage(QSize size, QWidget *pHint)
 {
     /* Calculate device pixel ratio: */
-    const double dDpr = pHint ? gpDesktop->devicePixelRatio(pHint) : gpDesktop->devicePixelRatio(-1);
+    const double dDpr = pHint ? UIDesktopWidgetWatchdog::devicePixelRatio(pHint) : UIDesktopWidgetWatchdog::devicePixelRatio(-1);
     if (dDpr > 1.0)
         size *= dDpr;
 

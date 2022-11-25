@@ -150,7 +150,7 @@ void UIMonitorCountEditor::prepare()
         m_pSlider = new QIAdvancedSlider(this);
         if (m_pSlider)
         {
-            const uint cHostScreens = gpDesktop->screenCount();
+            const uint cHostScreens = UIDesktopWidgetWatchdog::screenCount();
             const uint cMinGuestScreens = 1;
             const uint cMaxGuestScreens = comProperties.GetMaxGuestMonitors();
             const uint cMaxGuestScreensForSlider = qMin(cMaxGuestScreens, (uint)8);

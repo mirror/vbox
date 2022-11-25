@@ -4094,7 +4094,7 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
 
         /* Get device-pixel-ratio: */
         bool fDevicePixelRatioMentioned = false;
-        const double dDevicePixelRatioActual = qMin(gpDesktop->devicePixelRatioActual(m_mapHostScreenForGuestScreen.value(iGuestScreenIndex)),
+        const double dDevicePixelRatioActual = qMin(UIDesktopWidgetWatchdog::devicePixelRatioActual(m_mapHostScreenForGuestScreen.value(iGuestScreenIndex)),
                                                     10.0 /* meh, who knows? */);
 
         /* Calculate minimum, maximum and step: */
