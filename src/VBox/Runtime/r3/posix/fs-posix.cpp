@@ -294,12 +294,20 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
             }
 
 #elif defined(RT_OS_SOLARIS)
-            if (!strcmp("zfs", Stat.st_fstype))
-                *penmType = RTFSTYPE_ZFS;
-            else if (!strcmp("ufs", Stat.st_fstype))
-                *penmType = RTFSTYPE_UFS;
-            else if (!strcmp("nfs", Stat.st_fstype))
-                *penmType = RTFSTYPE_NFS;
+            /*
+             * Home directories are normally loopback mounted in Solaris 11 (st_fstype=="lofs")
+             * so statvfs(2) is needed to get the underlying file system information.
+             */
+            struct statvfs statvfsBuf;
+            if (!statvfs(pszNativeFsPath, &statvfsBuf))
+            {
+                if (!strcmp("zfs", statvfsBuf.f_basetype))
+                    *penmType = RTFSTYPE_ZFS;
+                else if (!strcmp("ufs", statvfsBuf.f_basetype))
+                    *penmType = RTFSTYPE_UFS;
+                else if (!strcmp("nfs", statvfsBuf.f_basetype))
+                    *penmType = RTFSTYPE_NFS;
+            }
 
 #elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             struct statfs statfsBuf;
