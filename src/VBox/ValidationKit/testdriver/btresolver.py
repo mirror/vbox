@@ -614,7 +614,7 @@ class BacktraceResolver(object):
                     try:
                         sReportAn, _ = oRTLdrFltProc.communicate(sReport);
                     except:
-                        self.logXcpt('Retrieving annotation report failed (broken pipe / no matching interpreter?)');
+                        self.log('Retrieving annotation report failed (broken pipe / no matching interpreter?)');
                 else:
                     self.log('Error spawning RTLdrFlt process');
             else:
