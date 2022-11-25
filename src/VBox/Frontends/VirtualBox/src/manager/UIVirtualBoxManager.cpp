@@ -290,7 +290,7 @@ void UIAcquirePublicKeyDialog::prepareWidgets()
 
             /* Configure help-viewer: */
             m_pHelpViewer->setHidden(true);
-            m_pHelpViewer->setMinimumTextWidth(UIDesktopWidgetWatchdog::screenGeometry(window()).width() / 5);
+            m_pHelpViewer->setMinimumTextWidth(gpDesktop->screenGeometry(window()).width() / 5);
             m_pHelpViewer->registerPixmap(icon.pixmap(window()->windowHandle(), QSize(iMetric, iMetric)), "manager://copy");
             connect(m_pHelpViewer, &QIRichTextLabel::sigLinkClicked, this, &UIAcquirePublicKeyDialog::sltHandleHelpViewerLinkClick);
             pLayout->addWidget(m_pHelpViewer, 2);

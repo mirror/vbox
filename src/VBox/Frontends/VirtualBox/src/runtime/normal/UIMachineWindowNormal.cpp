@@ -421,7 +421,7 @@ void UIMachineWindowNormal::loadSettings()
 
             /* Move it to the screen-center: */
             m_geometry = geometry();
-            m_geometry.moveCenter(UIDesktopWidgetWatchdog::availableGeometry(this).center());
+            m_geometry.moveCenter(gpDesktop->availableGeometry(this).center());
             UIDesktopWidgetWatchdog::setTopLevelGeometry(this, m_geometry);
         }
 
@@ -682,7 +682,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
 
     /* Adjust size/position if necessary: */
     QRect frGeoNew = fAdjustPosition
-                   ? UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, UIDesktopWidgetWatchdog::overallAvailableRegion())
+                   ? UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion())
                    : frGeo;
 
     /* If guest-screen auto-resize is not enabled
@@ -704,7 +704,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
         frGeoNew.setBottom(frGeoNew.bottom() + addition.height());
 
         /* Adjust size/position again: */
-        frGeoNew = UIDesktopWidgetWatchdog::normalizeGeometry(frGeoNew, UIDesktopWidgetWatchdog::overallAvailableRegion());
+        frGeoNew = UIDesktopWidgetWatchdog::normalizeGeometry(frGeoNew, gpDesktop->overallAvailableRegion());
     }
 
     /* Finally, set the frame geometry: */

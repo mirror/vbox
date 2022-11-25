@@ -188,7 +188,7 @@ void UIVMLogViewerDialog::finalize()
 void UIVMLogViewerDialog::loadDialogGeometry()
 {
 
-    const QRect availableGeo = UIDesktopWidgetWatchdog::availableGeometry(this);
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
     int iDefaultWidth = availableGeo.width() / 2;
     int iDefaultHeight = availableGeo.height() * 3 / 4;
     /* Try obtain the default width of the current logviewer: */

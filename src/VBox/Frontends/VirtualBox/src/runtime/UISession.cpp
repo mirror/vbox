@@ -751,7 +751,7 @@ void UISession::sltCheckIfHostDisplayChanged()
         /* Check if at least one display geometry changed: */
         for (int iScreenIndex = 0; iScreenIndex < UIDesktopWidgetWatchdog::screenCount(); ++iScreenIndex)
         {
-            if (UIDesktopWidgetWatchdog::screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
+            if (gpDesktop->screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
             {
                 /* Reset watchdog: */
                 m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
@@ -2080,7 +2080,7 @@ void UISession::updateHostScreenData()
     /* Rebuild host-screen data vector: */
     m_hostScreens.clear();
     for (int iScreenIndex = 0; iScreenIndex < UIDesktopWidgetWatchdog::screenCount(); ++iScreenIndex)
-        m_hostScreens << UIDesktopWidgetWatchdog::screenGeometry(iScreenIndex);
+        m_hostScreens << gpDesktop->screenGeometry(iScreenIndex);
 
     /* Make sure action-pool knows host-screen count: */
     actionPool()->toRuntime()->setHostScreenCount(m_hostScreens.size());

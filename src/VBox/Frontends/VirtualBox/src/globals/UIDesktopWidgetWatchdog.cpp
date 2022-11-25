@@ -401,8 +401,7 @@ int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point)
 #endif
 }
 
-/* static */
-QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */)
+QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     return indexToScreen(iHostScreenIndex)->geometry();
@@ -417,22 +416,19 @@ QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */)
 #endif
 }
 
-/* static */
-QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget)
+QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget) const
 {
     /* Redirect call to wrapper above: */
     return screenGeometry(screenNumber(pWidget));
 }
 
-/* static */
-QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point)
+QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
 {
     /* Redirect call to wrapper above: */
     return screenGeometry(screenNumber(point));
 }
 
-/* static */
-QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */)
+QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     /** @todo needs X11 work, see 5.x version of code! */
@@ -463,8 +459,7 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */
 #endif /* < 6.0.0 */
 }
 
-/* static */
-QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget)
+QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) const
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     if (pWidget && pWidget->screen())
@@ -476,8 +471,7 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget)
 #endif
 }
 
-/* static */
-QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point)
+QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
 {
 #ifdef VBOX_IS_QT6_OR_LATER
     QScreen *pScreen = QGuiApplication::screenAt(point);
@@ -490,8 +484,7 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point)
 #endif
 }
 
-/* static */
-QRegion UIDesktopWidgetWatchdog::overallScreenRegion()
+QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
 {
     /* Calculate region: */
     QRegion region;
@@ -511,8 +504,7 @@ QRegion UIDesktopWidgetWatchdog::overallScreenRegion()
     return region;
 }
 
-/* static */
-QRegion UIDesktopWidgetWatchdog::overallAvailableRegion()
+QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
 {
     /* Calculate region: */
     QRegion region;
@@ -749,10 +741,9 @@ QRect UIDesktopWidgetWatchdog::getNormalized(const QRect &rectangle,
     return result;
 }
 
-/* static */
 void UIDesktopWidgetWatchdog::centerWidget(QWidget *pWidget,
                                            QWidget *pRelative,
-                                           bool fCanResize /* = true */)
+                                           bool fCanResize /* = true */) const
 {
     /* If necessary, pWidget's position is adjusted to make it fully visible within
      * the available desktop area. If pWidget is bigger then this area, it will also

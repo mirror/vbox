@@ -744,8 +744,8 @@ void UIMiniToolBar::sltAdjust()
     QRect workingArea;
     switch (m_geometryType)
     {
-        case GeometryType_Available: workingArea = UIDesktopWidgetWatchdog::availableGeometry(iHostScreen); break;
-        case GeometryType_Full:      workingArea = UIDesktopWidgetWatchdog::screenGeometry(iHostScreen); break;
+        case GeometryType_Available: workingArea = gpDesktop->availableGeometry(iHostScreen); break;
+        case GeometryType_Full:      workingArea = gpDesktop->screenGeometry(iHostScreen); break;
     }
     Q_UNUSED(workingArea);
 
@@ -1078,7 +1078,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 // desktop being changed. We should ignore Move event in such case.
                 /* Skip if parent is outside of full-screen geometry: */
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
-                if (!UIDesktopWidgetWatchdog::screenGeometry(m_pParent).contains(pMoveEvent->pos()))
+                if (!gpDesktop->screenGeometry(m_pParent).contains(pMoveEvent->pos()))
                     break;
                 /* Skip if parent or we are invisible: */
                 if (   !m_pParent->isVisible()

@@ -88,7 +88,7 @@ void UICloudMachineSettingsDialog::showEvent(QShowEvent *pEvent)
 void UICloudMachineSettingsDialog::polishEvent(QShowEvent*)
 {
     /* Explicit centering according to our parent: */
-    UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
+    gpDesktop->centerWidget(this, parentWidget(), false);
     /* Call for load stuff asynchronously: */
     QMetaObject::invokeMethod(this, "init", Qt::QueuedConnection);
 }

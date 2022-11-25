@@ -222,7 +222,7 @@ void UIBootFailureDialog::sltReset()
 void UIBootFailureDialog::showEvent(QShowEvent *pEvent)
 {
     if (m_pParent)
-        UIDesktopWidgetWatchdog::centerWidget(this, m_pParent, false);
+        gpDesktop->centerWidget(this, m_pParent, false);
     QIWithRetranslateUI<QIMainDialog>::showEvent(pEvent);
 
 }

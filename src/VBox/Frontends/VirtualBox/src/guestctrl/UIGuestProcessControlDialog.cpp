@@ -116,7 +116,7 @@ void UIGuestProcessControlDialog::finalize()
 void UIGuestProcessControlDialog::loadSettings()
 {
     /* Invent default window geometry: */
-    const QRect availableGeo = UIDesktopWidgetWatchdog::availableGeometry(this);
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
     const int iDefaultWidth = availableGeo.width() / 2;
     const int iDefaultHeight = availableGeo.height() * 3 / 4;
     QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);

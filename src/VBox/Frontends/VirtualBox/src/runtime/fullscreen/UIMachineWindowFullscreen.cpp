@@ -358,7 +358,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* Get corresponding host-screen: */
     const int iHostScreen = pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
-    const QRect workingArea = UIDesktopWidgetWatchdog::screenGeometry(iHostScreen);
+    const QRect workingArea = gpDesktop->screenGeometry(iHostScreen);
     Q_UNUSED(workingArea);
 
 #if defined(VBOX_WS_MAC)

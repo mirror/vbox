@@ -197,7 +197,7 @@ void UIMachineWindowSeamless::placeOnScreen()
     /* Get corresponding host-screen: */
     const int iHostScreen = pSeamlessLogic->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
-    const QRect workingArea = UIDesktopWidgetWatchdog::availableGeometry(iHostScreen);
+    const QRect workingArea = gpDesktop->availableGeometry(iHostScreen);
     Q_UNUSED(workingArea);
 
 #ifdef VBOX_WS_X11

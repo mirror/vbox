@@ -776,7 +776,7 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             const int iWantedHostScreenIndex = hostScreenForGuestScreen((int)uScreenID);
             const int iCurrentHostScreenIndex = UIDesktopWidgetWatchdog::screenNumber(pMachineWindow);
             const QSize frameBufferSize((int)uisession()->frameBuffer(uScreenID)->width(), (int)uisession()->frameBuffer(uScreenID)->height());
-            const QSize screenSize = UIDesktopWidgetWatchdog::screenGeometry(iWantedHostScreenIndex).size();
+            const QSize screenSize = gpDesktop->screenGeometry(iWantedHostScreenIndex).size();
 
             /* If that window
              * 1. shouldn't really be shown or

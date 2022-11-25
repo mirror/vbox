@@ -749,7 +749,7 @@ void UIExtraDataManagerWindow::showAndRaise(QWidget*)
     /* Raise: */
     activateWindow();
 //    /* Center according passed widget: */
-//    UIDesktopWidgetWatchdog::centerWidget(this, pCenterWidget, false);
+//    gpDesktop->centerWidget(this, pCenterWidget, false);
 }
 
 void UIExtraDataManagerWindow::sltMachineRegistered(const QUuid &uID, bool fRegistered)
@@ -5102,8 +5102,8 @@ QRect UIExtraDataManager::dialogGeometry(const QString &strKey,
     while (0);
 
     /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? UIDesktopWidgetWatchdog::availableGeometry(QPoint(iX, iY)) :
-                                          UIDesktopWidgetWatchdog::availableGeometry();
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
 
     /* Use geometry (loaded or default): */
     QRect geometry = fOk

@@ -2497,7 +2497,7 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
     QVector<int> screenSize(qMax(cMonitors, cHostScreens), 0);
     for (int i = 0; i < cHostScreens; ++i)
     {
-        QRect r = UIDesktopWidgetWatchdog::screenGeometry(i);
+        QRect r = gpDesktop->screenGeometry(i);
         screenSize[i] = r.width() * r.height();
     }
     /* Now sort the vector: */

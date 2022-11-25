@@ -104,7 +104,7 @@ void QIManagerDialog::prepare()
     if (iHostScreen >= 0 && iHostScreen < UIDesktopWidgetWatchdog::screenCount())
     {
         /* On the basis of current host-screen geometry if possible: */
-        const QRect screenGeometry = UIDesktopWidgetWatchdog::screenGeometry(iHostScreen);
+        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
         if (screenGeometry.isValid())
             proposedSize = screenGeometry.size() * 7 / 15;
     }
@@ -130,7 +130,7 @@ void QIManagerDialog::prepare()
     finalize();
 
     /* Center according requested widget: */
-    UIDesktopWidgetWatchdog::centerWidget(this, m_pCenterWidget, false);
+    gpDesktop->centerWidget(this, m_pCenterWidget, false);
 
     /* Load the dialog's settings from extradata */
     loadSettings();

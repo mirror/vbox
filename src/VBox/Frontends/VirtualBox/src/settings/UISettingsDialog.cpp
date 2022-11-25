@@ -354,7 +354,7 @@ void UISettingsDialog::polishEvent(QShowEvent*)
 #endif /* VBOX_WS_MAC */
 
     /* Explicit centering according to our parent: */
-    UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
+    gpDesktop->centerWidget(this, parentWidget(), false);
 }
 
 void UISettingsDialog::closeEvent(QCloseEvent *pEvent)

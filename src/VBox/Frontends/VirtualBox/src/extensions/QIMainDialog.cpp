@@ -244,7 +244,7 @@ void QIMainDialog::polishEvent(QShowEvent *)
 {
     /* Explicit centering according to our parent: */
     if (m_fIsAutoCentering)
-        UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
+        gpDesktop->centerWidget(this, parentWidget(), false);
 }
 
 void QIMainDialog::resizeEvent(QResizeEvent *pEvent)

@@ -311,9 +311,9 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
     {
         QRect screen;
         if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
-            screen = UIDesktopWidgetWatchdog::availableGeometry(screenLayout.value(iGuestScreen, 0));
+            screen = gpDesktop->availableGeometry(screenLayout.value(iGuestScreen, 0));
         else
-            screen = UIDesktopWidgetWatchdog::screenGeometry(screenLayout.value(iGuestScreen, 0));
+            screen = gpDesktop->screenGeometry(screenLayout.value(iGuestScreen, 0));
         KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
         m_pMachineLogic->display().GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin, monitorStatus);
         usedBits += screen.width() * /* display width */

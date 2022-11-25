@@ -995,7 +995,7 @@ bool UIDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
             return false;
 
     /* Adjust the menu then show it: */
-    const QRect availableGeo = UIDesktopWidgetWatchdog::availableGeometry(pEvent->screenPos());
+    const QRect availableGeo = gpDesktop->availableGeometry(pEvent->screenPos());
     QRect geo(pEvent->screenPos(), m_pContextMenu->minimumSizeHint());
     if (geo.topRight().x() > availableGeo.topRight().x())
         geo.adjust(availableGeo.topRight().x() - geo.topRight().x(), 0,

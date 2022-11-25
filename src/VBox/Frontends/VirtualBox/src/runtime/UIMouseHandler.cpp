@@ -178,7 +178,7 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
         QRect visibleRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
         QPoint visibleRectanglePos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
         visibleRectangle.translate(visibleRectanglePos);
-        visibleRectangle = visibleRectangle.intersected(UIDesktopWidgetWatchdog::availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
+        visibleRectangle = visibleRectangle.intersected(gpDesktop->availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
 
 #ifdef VBOX_WS_WIN
         /* Move the mouse to the center of the visible area: */
@@ -1022,7 +1022,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             // Besides that we have to make sure m_lastMousePos still uses logical coordinates afterwards.
             const double dDprPrimary = UIDesktopWidgetWatchdog::devicePixelRatio(UIDesktopWidgetWatchdog::primaryScreen());
             const double dDprCurrent = UIDesktopWidgetWatchdog::devicePixelRatio(m_windows.value(m_iMouseCaptureViewIndex));
-            const QRect screenGeometry = UIDesktopWidgetWatchdog::screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
+            const QRect screenGeometry = gpDesktop->screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
             QPoint requiredMousePos = (m_viewports[uScreenId]->mapToGlobal(p) - screenGeometry.topLeft()) * dDprCurrent + screenGeometry.topLeft();
             QCursor::setPos(requiredMousePos / dDprPrimary);
             m_lastMousePos = requiredMousePos / dDprCurrent;
@@ -1299,7 +1299,7 @@ void UIMouseHandler::updateMouseCursorClipping()
         viewportRectangle.translate(viewportRectangleGlobalPos);
 
         /* Trim full-viewport-rectangle by available geometry: */
-        viewportRectangle = viewportRectangle.intersected(UIDesktopWidgetWatchdog::availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
+        viewportRectangle = viewportRectangle.intersected(gpDesktop->availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
 
         /* Trim partial-viewport-rectangle by top-most windows: */
         QRegion viewportRegion = QRegion(viewportRectangle) - NativeWindowSubsystem::areaCoveredByTopMostWindows();
@@ -1324,7 +1324,7 @@ void UIMouseHandler::updateMouseCursorClipping()
         // Underlying ClipCursor call requires physical coordinates, not logical upscaled Qt stuff.
         // But we will have to map to relative origin (to make logical=>physical conversion) first.
         const double dDpr = UIDesktopWidgetWatchdog::devicePixelRatio(m_windows.value(m_iMouseCaptureViewIndex));
-        const QRect screenGeometry = UIDesktopWidgetWatchdog::screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
+        const QRect screenGeometry = gpDesktop->screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
         viewportRectangle.moveTo((viewportRectangle.topLeft() - screenGeometry.topLeft()) * dDpr + screenGeometry.topLeft());
         viewportRectangle.setSize(viewportRectangle.size() * dDpr);
         RECT rect = { viewportRectangle.left() + 1, viewportRectangle.top() + 1, viewportRectangle.right(), viewportRectangle.bottom() };
