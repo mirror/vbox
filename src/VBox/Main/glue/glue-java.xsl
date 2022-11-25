@@ -290,11 +290,14 @@
     <xsl:when test="$tagname = 'tt'">
       <xsl:text>&lt;code</xsl:text>
     </xsl:when>
+    <xsl:when test="$tagname = 'h3'">
+      <xsl:text>&lt;h2</xsl:text>
+    </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('&lt;', $tagname)"/>
     </xsl:otherwise>
   </xsl:choose>
-  <xsl:if test="$tagname = 'table'"> <!-- javadoc 8 fudge -->
+  <xsl:if test="$tagname = 'table' and boolean($G_vboxFakeTableSummary)">
     <xsl:text> summary=""</xsl:text>
   </xsl:if>
   <xsl:text>&gt;</xsl:text>
@@ -302,6 +305,9 @@
   <xsl:choose>
     <xsl:when test="$tagname = 'tt'">
       <xsl:text>&lt;/code&gt;</xsl:text>
+    </xsl:when>
+    <xsl:when test="$tagname = 'h3'">
+      <xsl:text>&lt;/h2&gt;</xsl:text>
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('&lt;/', $tagname, '&gt;')"/>
@@ -486,7 +492,11 @@
 <xsl:template match="desc" mode="results">
   <xsl:if test="result">
     <xsl:text>&#10;Expected result codes:&#10;</xsl:text>
-    <xsl:text>&lt;table summary=""&gt;&#10;</xsl:text>
+    <xsl:text>&lt;table</xsl:text>
+    <xsl:if test="boolean($G_vboxFakeTableSummary)">
+      <xsl:text> summary=""</xsl:text>
+    </xsl:if>
+    <xsl:text>&gt;&#10;</xsl:text>
     <xsl:for-each select="result">
       <xsl:text>&lt;tr&gt;</xsl:text>
       <xsl:choose>
