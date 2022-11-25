@@ -611,7 +611,10 @@ class BacktraceResolver(object):
                 oRTLdrFltProc = subprocess.Popen(asArgs, stdin=subprocess.PIPE,         # pylint: disable=consider-using-with
                                                  stdout=subprocess.PIPE, bufsize=0);
                 if oRTLdrFltProc is not None:
-                    sReportAn, _ = oRTLdrFltProc.communicate(sReport);
+                    try:
+                        sReportAn, _ = oRTLdrFltProc.communicate(sReport);
+                    except:
+                        self.logXcpt('Retrieving annotation report failed (broken pipe / no matching interpreter?)');
                 else:
                     self.log('Error spawning RTLdrFlt process');
             else:
