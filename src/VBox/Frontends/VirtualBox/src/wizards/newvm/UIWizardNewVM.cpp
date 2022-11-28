@@ -589,8 +589,7 @@ void UIWizardNewVM::setVirtualDisk(const QUuid &mediumId)
     if (m_virtualDisk.isOk() && m_virtualDisk.GetId() == mediumId)
         return;
     CMedium medium = uiCommon().medium(mediumId).medium();
-    if (!medium.isNull())
-        setVirtualDisk(medium);
+    setVirtualDisk(medium);
 }
 
 const QString &UIWizardNewVM::machineGroup() const

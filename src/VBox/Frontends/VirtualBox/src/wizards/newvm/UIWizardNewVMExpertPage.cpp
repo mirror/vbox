@@ -794,8 +794,13 @@ void UIWizardNewVMExpertPage::sltSelectedDiskSourceChanged()
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     m_userModifiedParameters << "SelectedDiskSource";
+
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
+    {
         pWizard->setDiskSource(SelectedDiskSource_Empty);
+        pWizard->setVirtualDisk(QUuid());
+        pWizard->setMediumPath(QString());
+    }
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
         pWizard->setDiskSource(SelectedDiskSource_Existing);
@@ -803,7 +808,11 @@ void UIWizardNewVMExpertPage::sltSelectedDiskSourceChanged()
         pWizard->setMediumPath(m_pDiskSelector->location());
     }
     else
+    {
         pWizard->setDiskSource(SelectedDiskSource_New);
+        pWizard->setVirtualDisk(QUuid());
+        pWizard->setMediumPath(QString());
+    }
 
     setEnableDiskSelectionWidgets(pWizard->diskSource() == SelectedDiskSource_Existing);
     setEnableNewDiskWidgets(pWizard->diskSource() == SelectedDiskSource_New);
