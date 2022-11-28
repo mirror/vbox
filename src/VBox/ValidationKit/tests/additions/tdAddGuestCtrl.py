@@ -1502,8 +1502,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for fMustSucceed, fnHandler, sShortNm, sTestNm in atTests:
-            reporter.testStart(sTestNm);
 
+            # If for whatever reason the VM object became invalid, bail out.
+            if not oTestVm:
+                reporter.error('Test VM object invalid (VBoxSVC or client process crashed?), aborting tests');
+                fRc = False;
+                break;
+
+            reporter.testStart(sTestNm);
             if sShortNm is None or sShortNm in self.asTests:
                 # Returns (fRc, oTxsSession, oSession) - but only the first one is mandatory.
                 aoResult = fnHandler(oSession, oTxsSession, oTestVm);
