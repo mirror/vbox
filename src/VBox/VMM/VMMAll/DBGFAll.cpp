@@ -30,8 +30,10 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/dbgf.h>
 #include "DBGFInternal.h"
+#include <VBox/vmm/cpum.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
@@ -168,7 +170,101 @@ VMM_INT_DECL(bool) DBGFBpIsInt3Armed(PVM pVM)
 
 
 /**
- * Checks I/O access for guest or hypervisor breakpoints.
+ * Checks instruction boundrary for guest or hypervisor hardware breakpoints.
+ *
+ * @returns Strict VBox status code.  May return DRx register import errors in
+ *          addition to the ones detailed.
+ * @retval  VINF_SUCCESS no breakpoint.
+ * @retval  VINF_EM_DBG_BREAKPOINT hypervisor breakpoint triggered.
+ * @retval  VINF_EM_RAW_GUEST_TRAP caller must trigger \#DB trap, DR6 and DR7
+ *          have been updated appropriately.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtrPC     The unsegmented PC address.
+ */
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrPC)
+{
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR7);
+
+    /*
+     * Check hyper breakpoints first as the VMM debugger has priority over
+     * the guest.
+     */
+    if (pVM->dbgf.s.cEnabledHwIoBreakpoints > 0)
+        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+        {
+            if (   pVM->dbgf.s.aHwBreakpoints[iBp].GCPtr != GCPtrPC
+                || pVM->dbgf.s.aHwBreakpoints[iBp].fType != X86_DR7_RW_EO
+                || pVM->dbgf.s.aHwBreakpoints[iBp].cb    != 1
+                || !pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
+                || pVM->dbgf.s.aHwBreakpoints[iBp].hBp   == NIL_DBGFBP)
+            { /*likely*/ }
+            else
+            {
+                /* (See also DBGFRZTrap01Handler.) */
+                pVCpu->dbgf.s.hBpActive = pVM->dbgf.s.aHwBreakpoints[iBp].hBp;
+                pVCpu->dbgf.s.fSingleSteppingRaw = false;
+
+                LogFlow(("DBGFBpCheckInstruction: hit hw breakpoint %u at %04x:%RGv (%RGv)\n",
+                         iBp, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPtrPC));
+                return VINF_EM_DBG_BREAKPOINT;
+            }
+        }
+
+    /*
+     * Check the guest.
+     */
+    uint32_t const fDr7 = (uint32_t)pVCpu->cpum.GstCtx.dr[7];
+    if (X86_DR7_ANY_EO_ENABLED(fDr7))
+    {
+        /*
+         * The CPU (10980XE & 6700K at least) will set the DR6.BPx bits for any
+         * DRx that matches the current PC and is configured as an execution
+         * breakpoint (RWx=EO, LENx=1byte).  They don't have to be enabled,
+         * however one that is enabled must match for the #DB to be raised and
+         * DR6 to be modified, of course.
+         */
+        CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
+        uint32_t fMatched = 0;
+        uint32_t fEnabled = 0;
+        for (unsigned iBp = 0, iBpMask = 1; iBp < 4; iBp++, iBpMask <<= 1)
+            if (X86_DR7_IS_EO_CFG(fDr7, iBp))
+            {
+                if (fDr7 & X86_DR7_L_G(iBp))
+                    fEnabled |= iBpMask;
+                if (pVCpu->cpum.GstCtx.dr[iBp] == GCPtrPC)
+                    fMatched |= iBpMask;
+            }
+        if (!(fEnabled & fMatched))
+        { /*likely*/ }
+        else if (fEnabled & fMatched)
+        {
+            /*
+             * Update DR6 and DR7.
+             *
+             * See "AMD64 Architecture Programmer's Manual Volume 2", chapter
+             * 13.1.1.3 for details on DR6 bits.  The basics is that the B0..B3
+             * bits are always cleared while the others must be cleared by software.
+             *
+             * The following sub chapters says the GD bit is always cleared when
+             * generating a #DB so the handler can safely access the debug registers.
+             */
+            CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+            pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
+            pVCpu->cpum.GstCtx.dr[6] |= fMatched;    /* All matched  */
+            pVCpu->cpum.GstCtx.dr[7] &= ~X86_DR7_GD;
+            LogFlow(("DBGFBpCheckInstruction: hit hw breakpoints %#x at %04x:%RGv (%RGv)\n",
+                     fMatched, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPtrPC));
+            return VINF_EM_RAW_GUEST_TRAP;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks I/O access for guest or hypervisor hardware breakpoints.
  *
  * @returns Strict VBox status code
  * @retval  VINF_SUCCESS no breakpoint.

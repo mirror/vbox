@@ -1150,6 +1150,22 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR7_RW_ALL_MASKS                UINT32_C(0x33330000)
 
 #ifndef VBOX_FOR_DTRACE_LIB
+/** Checks the RW and LEN fields are set up for an instruction breakpoint.
+ * @note This does not check if it's enabled. */
+# define X86_DR7_IS_EO_CFG(a_uDR7, a_iBp)   ( ((a_uDR7) & (UINT32_C(0x000f0000) << ((a_iBp) * 4))) == 0 )
+/** Checks if an instruction breakpoint is enabled and configured correctly.
+ * @sa X86_DR7_IS_EO_CFG, X86_DR7_ANY_EO_ENABLED */
+# define X86_DR7_IS_EO_ENABLED(a_uDR7, a_iBp) \
+    ( ((a_uDR7) & (UINT32_C(0x03) << ((a_iBp) * 2))) != 0 && X86_DR7_IS_EO_CFG(a_uDR7, a_iBp) )
+/** Checks if there are any instruction fetch breakpoint types configured in the
+ * RW and LEN registers.
+ * @sa X86_DR7_IS_EO_CFG, X86_DR7_IS_EO_ENABLED */
+# define X86_DR7_ANY_EO_ENABLED(a_uDR7) \
+    (   (((a_uDR7) & UINT32_C(0x03)) != 0 && ((a_uDR7) & UINT32_C(0x000f0000)) == 0) \
+     || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00f00000)) == 0) \
+     || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x0f000000)) == 0) \
+     || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0xf0000000)) == 0) )
+
 /** Checks if there are any I/O breakpoint types configured in the RW
  * registers.  Does NOT check if these are enabled, sorry. */
 # define X86_DR7_ANY_RW_IO(uDR7) \
@@ -1164,6 +1180,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00010000)) == 0);
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00020000)) == 1);
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00030000)) == 0);
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
+
 #endif /* !VBOX_FOR_DTRACE_LIB */
 
 /** @name Length values.
