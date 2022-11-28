@@ -545,9 +545,18 @@ typedef struct IEMCPU
     uint8_t                 uCpl;                                                                           /* 0x05 */
 
     /** Whether to bypass access handlers or not. */
-    bool                    fBypassHandlers;                                                                /* 0x06 */
+    bool                    fBypassHandlers : 1;                                                            /* 0x06.0 */
     /** Whether to disregard the lock prefix (implied or not). */
-    bool                    fDisregardLock;                                                                 /* 0x07 */
+    bool                    fDisregardLock : 1;                                                             /* 0x06.1 */
+    /** Whether there are pending hardware instruction breakpoints. */
+    bool                    fPendingInstructionBreakpoints : 1;                                             /* 0x06.2 */
+    /** Whether there are pending hardware data breakpoints. */
+    bool                    fPendingDataBreakpoints : 1;                                                    /* 0x06.3 */
+    /** Whether there are pending hardware I/O breakpoints. */
+    bool                    fPendingIoBreakpoints : 1;                                                      /* 0x06.4 */
+
+    /* Unused/padding */
+    bool                    fUnused;                                                                        /* 0x07 */
 
     /** @name Decoder state.
      * @{ */
@@ -599,7 +608,7 @@ typedef struct IEMCPU
 
     /** The offset of the ModR/M byte relative to the start of the instruction. */
     uint8_t                 offModRm;                                                                       /* 0x2c */
-#else
+#else  /* !IEM_WITH_CODE_TLB */
     /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
     /** The current offset into abOpcode. */
@@ -620,7 +629,7 @@ typedef struct IEMCPU
     /** The extra REX SIB index field bit (REX.X << 3). */
     uint8_t                 uRexIndex;                                                                      /*       0x12 */
 
-#endif
+#endif /* !IEM_WITH_CODE_TLB */
 
     /** The effective operand mode. */
     IEMMODE                 enmEffOpSize;                                                                   /* 0x2d, 0x13 */
@@ -3692,6 +3701,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 
 /** @} */
 
+void                    iemInitPendingBreakpointsSlow(PVMCPUCC pVCpu);
 
 
 /**

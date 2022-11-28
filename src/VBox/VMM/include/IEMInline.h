@@ -182,6 +182,7 @@ DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
+#ifdef VBOX_INCLUDED_vmm_dbgf_h /* dbgf.ro.cEnabledHwBreakpoints */
 /**
  * Initializes the execution state.
  *
@@ -239,26 +240,19 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
     pVCpu->iem.s.cActiveMappings    = 0;
     pVCpu->iem.s.iNextMapping       = 0;
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
-    pVCpu->iem.s.fBypassHandlers    = fBypassHandlers;
-#if 0
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (    CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
-        &&  CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
-    {
-        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-        Assert(pVmcs);
-        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
-        if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
-        {
-           int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
-                                               pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
-                                               NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
-           AssertRC(rc);
-        }
-    }
-#endif
-#endif
+    pVCpu->iem.s.fBypassHandlers                = fBypassHandlers;
+    pVCpu->iem.s.fDisregardLock                 = false;
+    pVCpu->iem.s.fPendingInstructionBreakpoints = false;
+    pVCpu->iem.s.fPendingDataBreakpoints        = false;
+    pVCpu->iem.s.fPendingIoBreakpoints          = false;
+    if (RT_LIKELY(   !(pVCpu->cpum.GstCtx.dr[7] & X86_DR7_ENABLED_MASK)
+                  && pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledHwBreakpoints == 0))
+    { /* likely */ }
+    else
+        iemInitPendingBreakpointsSlow(pVCpu);
 }
+#endif /* VBOX_INCLUDED_vmm_dbgf_h */
+
 
 #if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
 /**
@@ -348,6 +342,122 @@ DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PVMCPUCC pV
     AssertMsgReturn((unsigned)(a_cbInstr) - (unsigned)(a_cbMin) <= (unsigned)15 - (unsigned)(a_cbMin), \
                     ("cbInstr=%u cbMin=%u\n", (a_cbInstr), (a_cbMin)), VERR_IEM_INVALID_INSTR_LENGTH)
 
+
+#ifndef IEM_WITH_SETJMP
+
+/**
+ * Fetches the first opcode byte.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ * @param   pu8                 Where to return the opcode byte.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetFirstU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOEXCEPT
+{
+    /*
+     * Check for hardware instruction breakpoints.
+     */
+    if (RT_LIKELY(!pVCpu->iem.s.fPendingInstructionBreakpoints))
+    { /* likely */ }
+    else
+    {
+        VBOXSTRICTRC rcStrict = DBGFBpCheckInstruction(pVCpu->CTX_SUFF(pVM), pVCpu,
+                                                       pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */ }
+        else if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+            return iemRaiseDebugException(pVCpu);
+        else
+            return rcStrict;
+    }
+
+    /*
+     * Fetch the first opcode byte.
+     */
+    uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
+    {
+        pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
+        *pu8 = pVCpu->iem.s.abOpcode[offOpcode];
+        return VINF_SUCCESS;
+    }
+    return iemOpcodeGetNextU8Slow(pVCpu, pu8);
+}
+
+#else  /* IEM_WITH_SETJMP */
+
+/**
+ * Fetches the first opcode byte, longjmp on error.
+ *
+ * @returns The opcode byte.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ */
+DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    /*
+     * Check for hardware instruction breakpoints.
+     */
+    if (RT_LIKELY(!pVCpu->iem.s.fPendingInstructionBreakpoints))
+    { /* likely */ }
+    else
+    {
+        VBOXSTRICTRC rcStrict = DBGFBpCheckInstruction(pVCpu->CTX_SUFF(pVM), pVCpu,
+                                                       pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */ }
+        else
+        {
+            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+                rcStrict = iemRaiseDebugException(pVCpu);
+            IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
+        }
+    }
+
+    /*
+     * Fetch the first opcode byte.
+     */
+# ifdef IEM_WITH_CODE_TLB
+    uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
+    uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
+    if (RT_LIKELY(   pbBuf != NULL
+                  && offBuf < pVCpu->iem.s.cbInstrBuf))
+    {
+        pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 1;
+        return pbBuf[offBuf];
+    }
+# else
+    uintptr_t offOpcode = pVCpu->iem.s.offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
+    {
+        pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
+        return pVCpu->iem.s.abOpcode[offOpcode];
+    }
+# endif
+    return iemOpcodeGetNextU8SlowJmp(pVCpu);
+}
+
+#endif /* IEM_WITH_SETJMP */
+
+/**
+ * Fetches the first opcode byte, returns/throws automatically on failure.
+ *
+ * @param   a_pu8               Where to return the opcode byte.
+ * @remark Implicitly references pVCpu.
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_OPCODE_GET_FIRST_U8(a_pu8) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetFirstU8(pVCpu, (a_pu8)); \
+        if (rcStrict2 == VINF_SUCCESS) \
+        { /* likely */ } \
+        else \
+            return rcStrict2; \
+    } while (0)
+#else
+# define IEM_OPCODE_GET_FIRST_U8(a_pu8) (*(a_pu8) = iemOpcodeGetFirstU8Jmp(pVCpu))
+#endif /* IEM_WITH_SETJMP */
 
 
 #ifndef IEM_WITH_SETJMP
@@ -1656,6 +1766,7 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu) RT_NOEXCEPT
          * Raise a #DB.
          */
         IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+        pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
         if (pVCpu->cpum.GstCtx.eflags.uBoth & X86_EFL_TF)
             pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS;
         pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
@@ -1717,6 +1828,7 @@ static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu) RT_NOEXCEPT
      * Raise a #DB.
      */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+    pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
     pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS
                              |  (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
     /** @todo Do we set all pending \#DB events, or just one? */
