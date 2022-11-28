@@ -5497,15 +5497,19 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     g_usBs3TestStep++; /* 6 */
 
-                    /* Again with a single globally enabled breakpoint. */
-                    //Bs3TestPrintf("bp 2/g...\n");
-                    Bs3RegSetDr0(0);
-                    //Bs3RegSetDr1(0);
+                    /* Again with a single globally enabled breakpoint and serveral other types of breakpoints configured but not enabled. */
+                    //Bs3TestPrintf("bp 2/g+...\n");
+                    Bs3RegSetDr0(uFlatDst);
+                    Bs3RegSetDr1(uFlatDst);
                     Bs3RegSetDr2(uFlatDst);
-                    //Bs3RegSetDr3(0);
+                    Bs3RegSetDr3(uFlatDst);
                     Bs3RegSetDr6(X86_DR6_INIT_VAL | X86_DR6_BS | X86_DR6_BD | X86_DR6_BT | X86_DR6_B2);
                     Bs3RegSetDr7(X86_DR7_INIT_VAL
-                                 | X86_DR7_RW(2, X86_DR7_RW_EO) | X86_DR7_LEN(2, X86_DR7_LEN_BYTE) | X86_DR7_G(2));
+                                 | X86_DR7_RW(0, X86_DR7_RW_RW) | X86_DR7_LEN(0, X86_DR7_LEN_BYTE)
+                                 | X86_DR7_RW(1, X86_DR7_RW_RW) | X86_DR7_LEN(1, X86_DR7_LEN_BYTE) | X86_DR7_L_G(1)
+                                 | X86_DR7_RW(2, X86_DR7_RW_EO) | X86_DR7_LEN(2, X86_DR7_LEN_BYTE) | X86_DR7_G(2)
+                                 | X86_DR7_RW(3, X86_DR7_RW_WO) | X86_DR7_LEN(3, X86_DR7_LEN_BYTE) | X86_DR7_G(3)
+                                 );
                     bs3CpuBasic2_retf_PrepStack(StkPtr, cbStkItem, s_aSubTests[iSubTest].uDstCs, s_aSubTests[iSubTest].offDst,
                                                 s_aSubTests[iSubTest].fInterPriv, s_aTests[iTest].cbImm,
                                                 s_aSubTests[iSubTest].uDstSs, uDstRspPush);
@@ -5516,7 +5520,6 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                     else
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     g_usBs3TestStep++; /* 7 */
-
 
                     /* Now do single stepping: */
                     //Bs3TestPrintf("stepping...\n");
