@@ -295,53 +295,9 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
 }
 
 /* static */
-int UIDesktopWidgetWatchdog::overallDesktopWidth()
-{
-#ifdef VBOX_IS_QT6_OR_LATER
-    /** @todo bird: Not sure if this is entirely correct. */
-    return QGuiApplication::primaryScreen()->geometry().width();
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->width();
-#endif
-}
-
-/* static */
-int UIDesktopWidgetWatchdog::overallDesktopHeight()
-{
-#ifdef VBOX_IS_QT6_OR_LATER
-    /** @todo bird: Not sure if this is entirely correct. */
-    return QGuiApplication::primaryScreen()->geometry().height();
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->height();
-#endif
-}
-
-/* static */
 int UIDesktopWidgetWatchdog::screenCount()
 {
     return QGuiApplication::screens().size();
-}
-
-/** Helper for generating qt5 screen indexes as best as we can. */
-static int screenToIndex(QScreen *pScreen)
-{
-    if (pScreen)
-    {
-        /** @todo Not at all sure about the sensitibility of this.   */
-        QList<QScreen *> screenList = QGuiApplication::screens();
-        unsigned         iScreen    = 0;
-        foreach (QScreen *pCurScreen, screenList)
-        {
-            if (   pCurScreen == pScreen
-                || (   pCurScreen->geometry() == pScreen->geometry()
-                    && pCurScreen->serialNumber() == pScreen->serialNumber()))
-                return iScreen;
-            iScreen++;
-        }
-    }
-    return -1;
 }
 
 /* static */
@@ -523,6 +479,30 @@ QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
     }
     /* Return region: */
     return region;
+}
+
+/* static */
+int UIDesktopWidgetWatchdog::overallDesktopWidth()
+{
+#ifdef VBOX_IS_QT6_OR_LATER
+    /** @todo bird: Not sure if this is entirely correct. */
+    return QGuiApplication::primaryScreen()->geometry().width();
+#else
+    /* Redirect call to desktop-widget: */
+    return QApplication::desktop()->width();
+#endif
+}
+
+/* static */
+int UIDesktopWidgetWatchdog::overallDesktopHeight()
+{
+#ifdef VBOX_IS_QT6_OR_LATER
+    /** @todo bird: Not sure if this is entirely correct. */
+    return QGuiApplication::primaryScreen()->geometry().height();
+#else
+    /* Redirect call to desktop-widget: */
+    return QApplication::desktop()->height();
+#endif
 }
 
 #ifdef VBOX_WS_X11
@@ -1080,6 +1060,24 @@ void UIDesktopWidgetWatchdog::cleanup()
     /* Cleanup existing workers finally: */
     cleanupExistingWorkers();
 #endif /* VBOX_WS_X11 && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+}
+
+/* static */
+int UIDesktopWidgetWatchdog::screenToIndex(QScreen *pScreen)
+{
+    if (pScreen)
+    {
+        unsigned iScreen = 0;
+        foreach (QScreen *pCurScreen, QGuiApplication::screens())
+        {
+            if (   pCurScreen == pScreen
+                || (   pCurScreen->geometry() == pScreen->geometry()
+                    && pCurScreen->serialNumber() == pScreen->serialNumber()))
+                return iScreen;
+            ++iScreen;
+        }
+    }
+    return -1;
 }
 
 /* static */

@@ -82,11 +82,6 @@ public:
     /** Destroys the static instance of the desktop-widget watchdog. */
     static void destroy();
 
-    /** Returns overall desktop width. */
-    static int overallDesktopWidth();
-    /** Returns overall desktop height. */
-    static int overallDesktopHeight();
-
     /** Returns the number of host-screens currently available on the system. */
     static int screenCount();
 
@@ -122,6 +117,10 @@ public:
     QRegion overallScreenRegion() const;
     /** Returns overall region unifying all the host-screen available-geometries. */
     QRegion overallAvailableRegion() const;
+    /** Returns overall desktop width. */
+    static int overallDesktopWidth();
+    /** Returns overall desktop height. */
+    static int overallDesktopHeight();
 
 #ifdef VBOX_WS_X11
     /** Qt5: X11: Returns whether no or fake screen detected. */
@@ -188,6 +187,9 @@ private:
     void prepare();
     /** Cleanup routine. */
     void cleanup();
+
+    /** Returns index of passed @a pScreen. */
+    static int screenToIndex(QScreen *pScreen);
 
     /** Returns the flipped (transposed) @a region. */
     static QRegion flip(const QRegion &region);
