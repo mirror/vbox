@@ -324,8 +324,6 @@ int UIDesktopWidgetWatchdog::screenCount()
     return QGuiApplication::screens().size();
 }
 
-#ifdef VBOX_IS_QT6_OR_LATER
-
 /** Helper for generating qt5 screen indexes as best as we can. */
 static int screenToIndex(QScreen *pScreen)
 {
@@ -345,21 +343,6 @@ static int screenToIndex(QScreen *pScreen)
     }
     return -1;
 }
-
-/** Helper for converting a qt5 screen index back to a QScreen pointer. */
-static QScreen *indexToScreen(int idxScreen)
-{
-    if (idxScreen < 0)
-        return QGuiApplication::primaryScreen();
-
-    QList<QScreen *> screenList = QGuiApplication::screens();
-    if (idxScreen >= screenList.size())
-        return QGuiApplication::primaryScreen();
-
-    return screenList.value(idxScreen);
-}
-
-#endif /* VBOX_IS_QT6_OR_LATER */
 
 /* static */
 int UIDesktopWidgetWatchdog::primaryScreen()
@@ -442,60 +425,64 @@ QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
 #endif /* Qt < 5.10 */
 }
 
-QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
+QRect UIDesktopWidgetWatchdog::availableGeometry(QScreen *pScreen) const
 {
-#ifdef VBOX_IS_QT6_OR_LATER
-    /** @todo needs X11 work, see 5.x version of code! */
-    return indexToScreen(iHostScreenIndex)->availableGeometry();
-#else /* < 6.0.0 */
-    /* Make sure index is valid: */
-    if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
-        iHostScreenIndex = QApplication::desktop()->primaryScreen();
-    AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
-
-# ifdef VBOX_WS_X11
-#  ifdef VBOX_GUI_WITH_CUSTOMIZATIONS1
+#ifdef VBOX_WS_X11
+# ifdef VBOX_GUI_WITH_CUSTOMIZATIONS1
     // WORKAROUND:
     // For customer WM we don't want Qt to return wrong available geometry,
     // so we are returning fallback screen geometry in any case..
-    return QApplication::desktop()->screenGeometry(iHostScreenIndex);
-#  else /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+    return screenGeometry(pScreen);
+# else /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     /* Get cached available-geometry: */
-    const QRect availableGeometry = m_availableGeometryData.value(iHostScreenIndex);
+    const QRect availableGeometry = m_availableGeometryData.value(screenToIndex(pScreen));
     /* Return cached available-geometry if it's valid or screen-geometry otherwise: */
-    return availableGeometry.isValid() ? availableGeometry :
-           QApplication::desktop()->screenGeometry(iHostScreenIndex);
-#  endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
-# else /* !VBOX_WS_X11 */
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->availableGeometry(iHostScreenIndex);
-# endif /* !VBOX_WS_X11 */
-#endif /* < 6.0.0 */
+    return availableGeometry.isValid() ? availableGeometry : screenGeometry(pScreen);
+# endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+#else /* !VBOX_WS_X11 */
+    /* Just return screen available-geometry: */
+    return pScreen->availableGeometry();
+#endif /* !VBOX_WS_X11 */
+}
+
+QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
+{
+    /* Gather suitable screen, use primary if failed: */
+    QScreen *pScreen = QGuiApplication::screens().value(iHostScreenIndex, QGuiApplication::primaryScreen());
+
+    /* Redirect call to wrapper above: */
+    return availableGeometry(pScreen);
 }
 
 QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) const
 {
-#ifdef VBOX_IS_QT6_OR_LATER
-    if (pWidget && pWidget->screen())
-        return pWidget->screen()->availableGeometry();
-    return QRect();
-#else
+    /* Gather suitable screen, use primary if failed: */
+    QScreen *pScreen = QGuiApplication::primaryScreen();
+    if (pWidget)
+        if (QWindow *pWindow = pWidget->windowHandle())
+            pScreen = pWindow->screen();
+
     /* Redirect call to wrapper above: */
-    return availableGeometry(screenNumber(pWidget));
-#endif
+    return availableGeometry(pScreen);
 }
 
 QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
 {
-#ifdef VBOX_IS_QT6_OR_LATER
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    /* Gather suitable screen, use primary if failed: */
     QScreen *pScreen = QGuiApplication::screenAt(point);
-    if (pScreen)
-        return pScreen->availableGeometry();
-    return QRect();
-#else
+    if (!pScreen)
+        pScreen = QGuiApplication::primaryScreen();
+
     /* Redirect call to wrapper above: */
-    return availableGeometry(screenNumber(point));
-#endif
+    return availableGeometry(pScreen);
+#else /* Qt < 5.10 */
+    /* Gather suitable screen index: */
+    const int iHostScreenIndex = QApplication::desktop()->screenNumber(point);
+
+    /* Redirect call to wrapper above: */
+    return availableGeometry(iHostScreenIndex);
+#endif /* Qt < 5.10 */
 }
 
 QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
@@ -504,7 +491,7 @@ QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
     QRegion region;
     for (int iScreenIndex = 0; iScreenIndex < screenCount(); ++iScreenIndex)
     {
-        /* Get enumerated screen's available area: */
+        /* Get enumerated screen's area: */
         QRect rect = screenGeometry(iScreenIndex);
 #ifdef VBOX_WS_WIN
         /* On Windows host window can exceed the available
