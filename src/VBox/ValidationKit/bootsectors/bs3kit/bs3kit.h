@@ -2220,7 +2220,7 @@ typedef enum BS3MEMKIND
  * @returns Pointer to a chunk on success, NULL if we're out of chunks.
  * @param   enmKind     The kind of addressing constraints imposed on the
  *                      allocation.
- * @param   cb          How much to allocate.  Must be 4KB or less.
+ * @param   cb          How much to allocate.
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb));
 
@@ -2229,7 +2229,7 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb));
  *
  * @param   enmKind     The kind of addressing constraints imposed on the
  *                      allocation.
- * @param   cb          How much to allocate.  Must be 4KB or less.
+ * @param   cb          How much to allocate.
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemAllocZ,(BS3MEMKIND enmKind, size_t cb));
 
