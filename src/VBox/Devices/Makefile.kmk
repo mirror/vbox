@@ -354,7 +354,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
     VBoxDD_SDKS.darwin  += VBOX_DXVK
     VBoxDD_DEFS         += VMSVGA3D_DX_BACKEND
     VBoxDD_SOURCES      += \
-       Graphics/DevVGA-SVGA3d-win-dx.cpp
+       Graphics/DevVGA-SVGA3d-dx-dx11.cpp
    endif
   endif
   VBoxDD_SOURCES       += \
