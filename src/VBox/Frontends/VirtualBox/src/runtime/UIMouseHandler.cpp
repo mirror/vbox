@@ -1020,7 +1020,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             // Underlying QCursor::setPos call requires coordinates, rescaled according to primary screen.
             // For that we have to map logical coordinates to relative origin (to make logical=>physical conversion).
             // Besides that we have to make sure m_lastMousePos still uses logical coordinates afterwards.
-            const double dDprPrimary = UIDesktopWidgetWatchdog::devicePixelRatio(UIDesktopWidgetWatchdog::primaryScreen());
+            const double dDprPrimary = UIDesktopWidgetWatchdog::devicePixelRatio(UIDesktopWidgetWatchdog::primaryScreenNumber());
             const double dDprCurrent = UIDesktopWidgetWatchdog::devicePixelRatio(m_windows.value(m_iMouseCaptureViewIndex));
             const QRect screenGeometry = gpDesktop->screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
             QPoint requiredMousePos = (m_viewports[uScreenId]->mapToGlobal(p) - screenGeometry.topLeft()) * dDprCurrent + screenGeometry.topLeft();

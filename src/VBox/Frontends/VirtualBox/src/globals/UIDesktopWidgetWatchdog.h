@@ -86,8 +86,7 @@ public:
     static int screenCount();
 
     /** Returns primary screen index. */
-    static int primaryScreen();
-
+    static int primaryScreenNumber();
     /** Returns the index of the screen which contains contains @a pWidget. */
     static int screenNumber(const QWidget *pWidget);
     /** Returns the index of the screen which contains contains @a point. */

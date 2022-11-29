@@ -301,38 +301,30 @@ int UIDesktopWidgetWatchdog::screenCount()
 }
 
 /* static */
-int UIDesktopWidgetWatchdog::primaryScreen()
+int UIDesktopWidgetWatchdog::primaryScreenNumber()
 {
-#ifdef VBOX_IS_QT6_OR_LATER
     return screenToIndex(QGuiApplication::primaryScreen());
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->primaryScreen();
-#endif
 }
 
 /* static */
 int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget)
 {
-#ifdef VBOX_IS_QT6_OR_LATER
+    QScreen *pScreen = 0;
     if (pWidget)
-        return screenToIndex(pWidget->screen());
-    return -1;
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->screenNumber(pWidget);
-#endif
+        if (QWindow *pWindow = pWidget->windowHandle())
+            pScreen = pWindow->screen();
+
+    return screenToIndex(pScreen);
 }
 
 /* static */
 int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point)
 {
-#ifdef VBOX_IS_QT6_OR_LATER
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     return screenToIndex(QGuiApplication::screenAt(point));
-#else
-    /* Redirect call to desktop-widget: */
+#else /* Qt < 5.10 */
     return QApplication::desktop()->screenNumber(point);
-#endif
+#endif /* Qt < 5.10 */
 }
 
 QRect UIDesktopWidgetWatchdog::screenGeometry(QScreen *pScreen) const
