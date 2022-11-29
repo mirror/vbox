@@ -492,10 +492,10 @@
       <xsl:text>&lt;dd&gt;&lt;code&gt;</xsl:text>
       <xsl:choose>
         <xsl:when test="ancestor::library/result[@name=current()/@name]">
-          <xsl:value-of select="concat('&lt;td&gt;@link ::', @name, ' ', @name, '&lt;/td&gt;')"/>
+          <xsl:value-of select="concat('@link ::', @name, ' ', @name)"/>
         </xsl:when>
         <xsl:otherwise>
-          <xsl:value-of select="concat('&lt;td&gt;', @name, '&lt;/td&gt;')"/>
+          <xsl:value-of select="@name"/>
         </xsl:otherwise>
       </xsl:choose>
       <xsl:text>&lt;/code&gt; - </xsl:text>
