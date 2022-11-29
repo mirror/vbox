@@ -98,6 +98,8 @@ public:
     /** Returns the index of the screen which contains contains @a point. */
     static int screenNumber(const QPoint &point);
 
+    /** Returns the geometry of the host @a pScreen. */
+    QRect screenGeometry(QScreen *pScreen) const;
     /** Returns the geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
     QRect screenGeometry(int iHostScreenIndex = -1) const;

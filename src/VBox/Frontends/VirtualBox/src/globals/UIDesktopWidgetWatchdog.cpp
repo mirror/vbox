@@ -396,31 +396,42 @@ int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point)
 #endif
 }
 
+QRect UIDesktopWidgetWatchdog::screenGeometry(QScreen *pScreen) const
+{
+    /* Just return screen geometry: */
+    return pScreen->geometry();
+}
+
 QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
-#ifdef VBOX_IS_QT6_OR_LATER
-    return indexToScreen(iHostScreenIndex)->geometry();
-#else
-    /* Make sure index is valid: */
-    if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
-        iHostScreenIndex = QApplication::desktop()->primaryScreen();
-    AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
+    /* Gather suitable screen, use primary if failed: */
+    QScreen *pScreen = QGuiApplication::screens().value(iHostScreenIndex, QGuiApplication::primaryScreen());
 
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->screenGeometry(iHostScreenIndex);
-#endif
+    /* Redirect call to wrapper above: */
+    return screenGeometry(pScreen);
 }
 
 QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget) const
 {
+    /* Gather suitable screen, use primary if failed: */
+    QScreen *pScreen = QGuiApplication::primaryScreen();
+    if (pWidget)
+        if (QWindow *pWindow = pWidget->windowHandle())
+            pScreen = pWindow->screen();
+
     /* Redirect call to wrapper above: */
-    return screenGeometry(screenNumber(pWidget));
+    return screenGeometry(pScreen);
 }
 
 QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
 {
+    /* Gather suitable screen, use primary if failed: */
+    QScreen *pScreen = QGuiApplication::screenAt(point);
+    if (!pScreen)
+        pScreen = QGuiApplication::primaryScreen();
+
     /* Redirect call to wrapper above: */
-    return screenGeometry(screenNumber(point));
+    return screenGeometry(pScreen);
 }
 
 QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
