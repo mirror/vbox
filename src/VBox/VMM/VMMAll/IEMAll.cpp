@@ -931,7 +931,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
              == pVCpu->iem.s.CodeTlb.uTlbPhysRev)
         {
             uint32_t const offPg = (GCPtrFirst & X86_PAGE_OFFSET_MASK);
-            pVCpu->iem.s.cbInstrBufTotal  = offPg + cbMaxRead;
+            pVCpu->iem.s.cbInstrBufTotal = offPg + cbMaxRead;
             if (offBuf == (uint32_t)(int32_t)pVCpu->iem.s.offCurInstrStart)
             {
                 pVCpu->iem.s.cbInstrBuf       = offPg + RT_MIN(15, cbMaxRead);
@@ -940,9 +940,17 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             else
             {
                 uint32_t const cbInstr = offBuf - (uint32_t)(int32_t)pVCpu->iem.s.offCurInstrStart;
-                Assert(cbInstr < cbMaxRead);
-                pVCpu->iem.s.cbInstrBuf       = offPg + RT_MIN(cbMaxRead + cbInstr, 15) - cbInstr;
-                pVCpu->iem.s.offCurInstrStart = (int16_t)(offPg - cbInstr);
+                if (cbInstr + (uint32_t)cbDst <= 15)
+                {
+                    pVCpu->iem.s.cbInstrBuf       = offPg + RT_MIN(cbMaxRead + cbInstr, 15) - cbInstr;
+                    pVCpu->iem.s.offCurInstrStart = (int16_t)(offPg - cbInstr);
+                }
+                else
+                {
+                    Log(("iemOpcodeFetchMoreBytes: %04x:%08RX64 LB %#x + %#zx -> #GP(0)\n",
+                         pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, cbInstr, cbDst));
+                    iemRaiseGeneralProtectionFault0Jmp(pVCpu);
+                }
             }
             if (cbDst <= cbMaxRead)
             {
@@ -957,9 +965,8 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             memcpy(pvDst, &pTlbe->pbMappingR3[offPg], cbMaxRead);
             pVCpu->iem.s.offInstrNextByte = offPg + cbMaxRead;
         }
-        else
-# endif
-#if 0
+# else
+#  error "refactor as needed"
         /*
          * If there is no special read handling, so we can read a bit more and
          * put it in the prefetch buffer.
@@ -987,14 +994,27 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
             }
         }
+# endif
         /*
          * Special read handling, so only read exactly what's needed.
          * This is a highly unlikely scenario.
          */
         else
-#endif
         {
             pVCpu->iem.s.CodeTlb.cTlbSlowReadPath++;
+
+            /* Check instruction length. */
+            uint32_t const cbInstr = offBuf - (uint32_t)(int32_t)pVCpu->iem.s.offCurInstrStart;
+            if (RT_LIKELY(cbInstr + cbDst <= 15))
+            { /* likely */ }
+            else
+            {
+                Log(("iemOpcodeFetchMoreBytes: %04x:%08RX64 LB %#x + %#zx -> #GP(0) [slow]\n",
+                     pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, cbInstr, cbDst));
+                iemRaiseGeneralProtectionFault0Jmp(pVCpu);
+            }
+
+            /* Do the reading. */
             uint32_t const cbToRead = RT_MIN((uint32_t)cbDst, cbMaxRead);
             VBOXSTRICTRC rcStrict = PGMPhysRead(pVCpu->CTX_SUFF(pVM), pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK),
                                                 pvDst, cbToRead, PGMACCESSORIGIN_IEM);
