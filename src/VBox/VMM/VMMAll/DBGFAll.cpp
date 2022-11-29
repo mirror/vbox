@@ -191,7 +191,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RT
      * Check hyper breakpoints first as the VMM debugger has priority over
      * the guest.
      */
-    if (pVM->dbgf.s.cEnabledHwIoBreakpoints > 0)
+    if (pVM->dbgf.s.cEnabledHwBreakpoints > 0)
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
             if (   pVM->dbgf.s.aHwBreakpoints[iBp].GCPtr != GCPtrPC
