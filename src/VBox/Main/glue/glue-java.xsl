@@ -288,19 +288,15 @@
   <xsl:variable name="tagname" select="local-name()"/>
   <xsl:choose>
     <xsl:when test="$tagname = 'tt'">
-      <xsl:text>&lt;code</xsl:text>
+      <xsl:text>&lt;code&gt;</xsl:text>
     </xsl:when>
     <xsl:when test="$tagname = 'h3'">
-      <xsl:text>&lt;h2</xsl:text>
+      <xsl:text>&lt;h2&gt;</xsl:text>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="concat('&lt;', $tagname)"/>
+      <xsl:value-of select="concat('&lt;', $tagname, '&gt;')"/>
     </xsl:otherwise>
   </xsl:choose>
-  <xsl:if test="$tagname = 'table' and boolean($G_vboxFakeTableSummary)">
-    <xsl:text> summary=""</xsl:text>
-  </xsl:if>
-  <xsl:text>&gt;</xsl:text>
   <xsl:apply-templates/>
   <xsl:choose>
     <xsl:when test="$tagname = 'tt'">
@@ -491,14 +487,9 @@
 -->
 <xsl:template match="desc" mode="results">
   <xsl:if test="result">
-    <xsl:text>&#10;Expected result codes:&#10;</xsl:text>
-    <xsl:text>&lt;table</xsl:text>
-    <xsl:if test="boolean($G_vboxFakeTableSummary)">
-      <xsl:text> summary=""</xsl:text>
-    </xsl:if>
-    <xsl:text>&gt;&#10;</xsl:text>
+    <xsl:text>&#10;&lt;p&gt;&lt;dl&gt;&lt;dt&gt;&lt;b&gt;Expected result codes:&lt;/b&gt;&lt;/dt&gt;&#10;</xsl:text>
     <xsl:for-each select="result">
-      <xsl:text>&lt;tr&gt;</xsl:text>
+      <xsl:text>&lt;dd&gt;&lt;code&gt;</xsl:text>
       <xsl:choose>
         <xsl:when test="ancestor::library/result[@name=current()/@name]">
           <xsl:value-of select="concat('&lt;td&gt;@link ::', @name, ' ', @name, '&lt;/td&gt;')"/>
@@ -507,12 +498,12 @@
           <xsl:value-of select="concat('&lt;td&gt;', @name, '&lt;/td&gt;')"/>
         </xsl:otherwise>
       </xsl:choose>
-      <xsl:text>&lt;td&gt;</xsl:text>
+      <xsl:text>&lt;/code&gt; - </xsl:text>
       <xsl:apply-templates select="text() | *[not(self::note or self::see or
                                                   self::result)]"/>
-      <xsl:text>&lt;/td&gt;&lt;/tr&gt;&#10;</xsl:text>
+      <xsl:text>&lt;/dd&gt;&#10;</xsl:text>
     </xsl:for-each>
-    <xsl:text>&lt;/table&gt;&#10;</xsl:text>
+    <xsl:text>&lt;/dl&gt;&lt;/p&gt;&#10;</xsl:text>
   </xsl:if>
 </xsl:template>
 
@@ -573,10 +564,10 @@
 <xsl:template match="desc" mode="method">
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="text() | *[not(self::note or self::see or self::result)]"/>
+  <xsl:apply-templates select="." mode="results"/>
   <xsl:for-each select="../param">
     <xsl:apply-templates select="desc"/>
   </xsl:for-each>
-  <xsl:apply-templates select="." mode="results"/>
   <xsl:apply-templates select="note"/>
   <xsl:apply-templates select="../param/desc/note"/>
   <xsl:apply-templates select="see"/>
