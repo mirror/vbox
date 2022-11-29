@@ -6230,3 +6230,135 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
     return 0;
 }
 
+
+
+/*********************************************************************************************************************************
+*   Instruction Length                                                                                                           *
+*********************************************************************************************************************************/
+
+
+static uint8_t bs3CpuBasic2_instr_len_Worker(uint8_t bMode, uint8_t BS3_FAR *pbCodeBuf)
+{
+    BS3TRAPFRAME    TrapCtx;
+    BS3REGCTX       Ctx;
+    BS3REGCTX       CtxExpected;
+    uint32_t        uEipBase;
+    unsigned        cbInstr;
+    unsigned        off;
+
+    /* Make sure they're allocated and all zeroed. */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&CtxExpected, sizeof(Ctx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+
+    /*
+     * Create a context.
+     *
+     * ASSUMES we're in on the ring-0 stack in ring-0 and using less than 16KB.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 768);
+    Bs3RegCtxSetRipCsFromCurPtr(&Ctx, (FPFNBS3FAR)pbCodeBuf);
+    uEipBase = Ctx.rip.u32;
+
+    Bs3MemCpy(&CtxExpected, &Ctx, sizeof(CtxExpected));
+
+    /*
+     * Simple stuff crossing the page.
+     */
+    for (off = X86_PAGE_SIZE - 32; off <= X86_PAGE_SIZE + 16; off++)
+    {
+        Ctx.rip.u32 = uEipBase + off;
+        for (cbInstr = 0; cbInstr < 24; cbInstr++)
+        {
+            /*
+             * Generate the instructions:
+             *      [es] nop
+             *      ud2
+             */
+            if (cbInstr > 0)
+            {
+                Bs3MemSet(&pbCodeBuf[off], 0x26 /* es */, cbInstr);
+                pbCodeBuf[off + cbInstr - 1] = 0x90; /* nop */
+            }
+            pbCodeBuf[off + cbInstr + 0] = 0x0f; /* ud2 */
+            pbCodeBuf[off + cbInstr + 1] = 0x0b;
+
+            /*
+             * Test it.
+             */
+            if (cbInstr < 16)
+                CtxExpected.rip.u32 = Ctx.rip.u32 + cbInstr;
+            else
+                CtxExpected.rip.u32 = Ctx.rip.u32;
+            g_uBs3TrapEipHint = CtxExpected.rip.u32;
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            if (cbInstr < 16)
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            else
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+        }
+        pbCodeBuf[off] = 0xf1; /* icebp */
+    }
+
+    /*
+     * Pit instruction length violations against the segment limit (#GP).
+     */
+    if (!BS3_MODE_IS_RM_OR_V86(bMode) && bMode != BS3_MODE_LM64)
+    {
+        /** @todo */
+    }
+
+    /*
+     * Pit instruction length violations against an invalid page (#PF).
+     */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+        /** @todo */
+    }
+
+    return 0;
+}
+
+
+/**
+ * Entrypoint for FAR RET tests.
+ *
+ * @returns 0 or BS3TESTDOMODE_SKIPPED.
+ * @param   bMode       The CPU mode we're testing.
+ */
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_instr_len)(uint8_t bMode)
+{
+    /*
+     * Allocate three pages so we can straddle an instruction across the
+     * boundrary for testing special IEM cases, with the last page being
+     * made in accessible and useful for pitting #PF against #GP.
+     */
+    uint8_t BS3_FAR * const pbCodeBuf = (uint8_t BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_REAL, X86_PAGE_SIZE * 3);
+    //Bs3TestPrintf("pbCodeBuf=%p\n", pbCodeBuf);
+    if (pbCodeBuf)
+    {
+        Bs3MemSet(pbCodeBuf, 0xf1, X86_PAGE_SIZE * 3);
+        bs3CpuBasic2_SetGlobals(bMode);
+
+        if (!BS3_MODE_IS_PAGED(bMode))
+            bs3CpuBasic2_instr_len_Worker(bMode, pbCodeBuf);
+        else
+        {
+            uint32_t const uFlatLastPg = Bs3SelPtrToFlat(pbCodeBuf) + X86_PAGE_SIZE * 2;
+            int rc = Bs3PagingProtect(uFlatLastPg, X86_PAGE_SIZE, 0, X86_PTE_P);
+            if (RT_SUCCESS(rc))
+            {
+                bs3CpuBasic2_instr_len_Worker(bMode, pbCodeBuf);
+                Bs3PagingProtect(uFlatLastPg, X86_PAGE_SIZE, X86_PTE_P, 0);
+            }
+            else
+                Bs3TestFailed("Failed to allocate 3 code pages");
+        }
+
+        Bs3MemFree(pbCodeBuf, X86_PAGE_SIZE * 3);
+    }
+    else
+        Bs3TestFailed("Failed to allocate 3 code pages");
+    return 0;
+}
+

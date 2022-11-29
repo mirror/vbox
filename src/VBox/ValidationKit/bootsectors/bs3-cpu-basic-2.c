@@ -58,6 +58,7 @@ FNBS3TESTDOMODE             bs3CpuBasic2_jmp_call_f16;
 FNBS3TESTDOMODE             bs3CpuBasic2_far_jmp_call_f16;
 FNBS3TESTDOMODE             bs3CpuBasic2_near_ret_f16;
 FNBS3TESTDOMODE             bs3CpuBasic2_far_ret_f16;
+FNBS3TESTDOMODE             bs3CpuBasic2_instr_len_f16;
 
 BS3_DECL_CALLBACK(void)     bs3CpuBasic2_Do32BitTests_pe32();
 
@@ -90,6 +91,9 @@ static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
     { "sgdt", bs3CpuBasic2_sgdt_f16, 0 },
     { "lidt", bs3CpuBasic2_lidt_f16, 0 },
     { "lgdt", bs3CpuBasic2_lgdt_f16, 0 },
+#endif
+#if 1
+    { "instr length", bs3CpuBasic2_instr_len_f16, 0 },
 #endif
 };
 
