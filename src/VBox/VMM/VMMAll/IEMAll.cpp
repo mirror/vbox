@@ -1072,21 +1072,26 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
      *
      * First translate CS:rIP to a physical address.
      */
-    uint8_t     cbLeft = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode; Assert(cbLeft < cbMin);
-    uint32_t    cbToTryRead;
-    RTGCPTR     GCPtrNext;
+    uint8_t const   cbOpcode  = pVCpu->iem.s.cbOpcode;
+    uint8_t const   offOpcode = pVCpu->iem.s.offOpcode;
+    uint8_t const   cbLeft    = cbOpcode - offOpcode;
+    Assert(cbLeft < cbMin);
+    Assert(cbOpcode <= sizeof(pVCpu->iem.s.abOpcode));
+
+    uint32_t        cbToTryRead;
+    RTGCPTR         GCPtrNext;
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
     {
-        cbToTryRead = GUEST_PAGE_SIZE;
-        GCPtrNext   = pVCpu->cpum.GstCtx.rip + pVCpu->iem.s.cbOpcode;
+        GCPtrNext   = pVCpu->cpum.GstCtx.rip + cbOpcode;
         if (!IEM_IS_CANONICAL(GCPtrNext))
             return iemRaiseGeneralProtectionFault0(pVCpu);
+        cbToTryRead = GUEST_PAGE_SIZE - (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
     }
     else
     {
         uint32_t GCPtrNext32 = pVCpu->cpum.GstCtx.eip;
         /* Assert(!(GCPtrNext32 & ~(uint32_t)UINT16_MAX) || pVCpu->iem.s.enmCpuMode == IEMMODE_32BIT); - this is allowed */
-        GCPtrNext32 += pVCpu->iem.s.cbOpcode;
+        GCPtrNext32 += cbOpcode;
         if (GCPtrNext32 > pVCpu->cpum.GstCtx.cs.u32Limit)
             /** @todo For CPUs older than the 386, we should not generate \#GP here but wrap around! */
             return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
@@ -1100,17 +1105,27 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
         if (cbToTryRead < cbMin - cbLeft)
             return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         GCPtrNext = (uint32_t)pVCpu->cpum.GstCtx.cs.u64Base + GCPtrNext32;
+
+        uint32_t cbLeftOnPage = GUEST_PAGE_SIZE - (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
+        if (cbToTryRead > cbLeftOnPage)
+            cbToTryRead = cbLeftOnPage;
     }
 
-    /* Only read up to the end of the page, and make sure we don't read more
-       than the opcode buffer can hold. */
-    uint32_t cbLeftOnPage = GUEST_PAGE_SIZE - (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
-    if (cbToTryRead > cbLeftOnPage)
-        cbToTryRead = cbLeftOnPage;
-    if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode) - pVCpu->iem.s.cbOpcode)
-        cbToTryRead = sizeof(pVCpu->iem.s.abOpcode) - pVCpu->iem.s.cbOpcode;
-/** @todo r=bird: Convert assertion into undefined opcode exception? */
-    Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
+    /* Restrict to opcode buffer space.
+
+       We're making ASSUMPTIONS here based on work done previously in
+       iemInitDecoderAndPrefetchOpcodes, where bytes from the first page will
+       be fetched in case of an instruction crossing two pages. */
+    if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode) - cbOpcode)
+        cbToTryRead = sizeof(pVCpu->iem.s.abOpcode) - cbOpcode;
+    if (RT_LIKELY(cbToTryRead + cbLeft >= cbMin))
+    { /* likely */ }
+    else
+    {
+        Log(("iemOpcodeFetchMoreBytes: %04x:%08RX64 LB %#x + %#zx -> #GP(0)\n",
+             pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, offOpcode, cbMin));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
 
     PGMPTWALK Walk;
     int rc = PGMGstGetPage(pVCpu, GCPtrNext, &Walk);
@@ -1142,7 +1157,7 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
         return iemRaisePageFault(pVCpu, GCPtrNext, 1, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
     RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
-    Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pVCpu->iem.s.cbOpcode));
+    Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  cbOpcode));
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
@@ -1156,7 +1171,7 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
      */
     if (!pVCpu->iem.s.fBypassHandlers)
     {
-        VBOXSTRICTRC rcStrict = PGMPhysRead(pVCpu->CTX_SUFF(pVM), GCPhys, &pVCpu->iem.s.abOpcode[pVCpu->iem.s.cbOpcode],
+        VBOXSTRICTRC rcStrict = PGMPhysRead(pVCpu->CTX_SUFF(pVM), GCPhys, &pVCpu->iem.s.abOpcode[cbOpcode],
                                             cbToTryRead, PGMACCESSORIGIN_IEM);
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         { /* likely */ }
@@ -1177,7 +1192,7 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
     }
     else
     {
-        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->iem.s.abOpcode[pVCpu->iem.s.cbOpcode], GCPhys, cbToTryRead);
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->iem.s.abOpcode[cbOpcode], GCPhys, cbToTryRead);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -1186,7 +1201,7 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
             return rc;
         }
     }
-    pVCpu->iem.s.cbOpcode += cbToTryRead;
+    pVCpu->iem.s.cbOpcode = cbOpcode + cbToTryRead;
     Log5(("%.*Rhxs\n", pVCpu->iem.s.cbOpcode, pVCpu->iem.s.abOpcode));
 
     return VINF_SUCCESS;
