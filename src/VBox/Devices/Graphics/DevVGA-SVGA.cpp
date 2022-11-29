@@ -6617,11 +6617,6 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
 
     pSVGAState = pThisCC->svga.pSvgaR3State;
 
-    /* Register the write-protected GBO access handler type (no ring-0 callbacks here). */
-    rc = PDMDevHlpPGMHandlerPhysicalTypeRegister(pDevIns, PGMPHYSHANDLERKIND_WRITE, vmsvgaR3GboAccessHandler,
-                                                 "VMSVGA GBO", &pSVGAState->hGboAccessHandlerType);
-    AssertRCReturn(rc, rc);
-
     /* VRAM tracking is enabled by default during bootup. */
     pThis->svga.fVRAMTracking = true;
 

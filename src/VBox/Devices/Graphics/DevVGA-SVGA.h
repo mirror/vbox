@@ -620,7 +620,7 @@ typedef struct VMSVGAGBO
 } VMSVGAGBO, *PVMSVGAGBO;
 typedef VMSVGAGBO const *PCVMSVGAGBO;
 
-#define VMSVGAGBO_F_WRITE_PROTECTED 0x1
+#define VMSVGAGBO_F_OBSOLETE_0x1    0x1
 #define VMSVGAGBO_F_HOST_BACKED     0x2
 
 #define VMSVGA_IS_GBO_CREATED(a_Gbo) ((a_Gbo)->paDescriptors != NULL)

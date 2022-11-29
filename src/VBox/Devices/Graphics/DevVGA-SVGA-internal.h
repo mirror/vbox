@@ -139,10 +139,7 @@ typedef struct VMSVGAR3STATE
     /** Critical section for accessing the command buffer data. */
     RTCRITSECT              CritSectCmdBuf;
 
-    /** Write protected GBOs (OTables) access handler type handle. */
-    PGMPHYSHANDLERTYPE      hGboAccessHandlerType;
-
-    /**  */
+    /** Object Tables: MOBs, etc. see SVGA_OTABLE_* */
     VMSVGAGBO               aGboOTables[SVGA_OTABLE_MAX];
 
     /** Tree of guest's Memory OBjects. Key is mobid. */
@@ -260,9 +257,6 @@ typedef struct VMSVGAR3STATE
 DECLCALLBACK(int) vmsvgaR3ResetGmrHandlers(PVGASTATE pThis);
 DECLCALLBACK(int) vmsvgaR3DeregisterGmr(PPDMDEVINS pDevIns, uint32_t gmrId);
 #endif
-
-DECLCALLBACK(VBOXSTRICTRC) vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, uint64_t uUser);
 
 void vmsvgaR3ResetScreens(PVGASTATE pThis, PVGASTATECC pThisCC);
 

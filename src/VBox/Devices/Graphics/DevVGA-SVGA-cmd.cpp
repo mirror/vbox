@@ -355,81 +355,9 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
  *
  */
 
-/**
- * HC access handler for GBOs which require write protection, i.e. OTables, etc.
- *
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   uUser           The VMM automatically sets this to the address of
- *                          the device instance.
- */
-DECLCALLBACK(VBOXSTRICTRC)
-vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, uint64_t uUser)
-{
-    RT_NOREF(pVM, pVCpu, pvPhys, enmAccessType);
-
-    if (RT_LIKELY(enmOrigin == PGMACCESSORIGIN_DEVICE || enmOrigin == PGMACCESSORIGIN_DEBUGGER))
-        return VINF_PGM_HANDLER_DO_DEFAULT;
-
-    PPDMDEVINS      pDevIns = (PPDMDEVINS)uUser;
-    AssertPtrReturn(pDevIns, VERR_INTERNAL_ERROR_4);
-    AssertReturn(pDevIns->u32Version == PDM_DEVINSR3_VERSION, VERR_INTERNAL_ERROR_5);
-    PVGASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    PVGASTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
-    PVMSVGAR3STATE  pSvgaR3State = pThisCC->svga.pSvgaR3State;
-
-    /*
-     * The guest is not allowed to access the memory.
-     * Set the error condition.
-     */
-    ASMAtomicWriteBool(&pThis->svga.fBadGuest, true);
-
-    /* Try to find the GBO which the guest is accessing. */
-    char const *pszTarget = NULL;
-    for (uint32_t i = 0; i < RT_ELEMENTS(pSvgaR3State->aGboOTables) && !pszTarget; ++i)
-    {
-        PVMSVGAGBO pGbo = &pSvgaR3State->aGboOTables[i];
-        if (pGbo->cDescriptors)
-        {
-            for (uint32_t j = 0; j < pGbo->cDescriptors; ++j)
-            {
-                if (   GCPhys >= pGbo->paDescriptors[j].GCPhys
-                    && GCPhys < pGbo->paDescriptors[j].GCPhys + pGbo->paDescriptors[j].cPages * GUEST_PAGE_SIZE)
-                {
-                    switch (i)
-                    {
-                        case SVGA_OTABLE_MOB:          pszTarget = "SVGA_OTABLE_MOB";          break;
-                        case SVGA_OTABLE_SURFACE:      pszTarget = "SVGA_OTABLE_SURFACE";      break;
-                        case SVGA_OTABLE_CONTEXT:      pszTarget = "SVGA_OTABLE_CONTEXT";      break;
-                        case SVGA_OTABLE_SHADER:       pszTarget = "SVGA_OTABLE_SHADER";       break;
-                        case SVGA_OTABLE_SCREENTARGET: pszTarget = "SVGA_OTABLE_SCREENTARGET"; break;
-                        case SVGA_OTABLE_DXCONTEXT:    pszTarget = "SVGA_OTABLE_DXCONTEXT";    break;
-                        default:                       pszTarget = "Unknown OTABLE";           break;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    LogRelMax(8, ("VMSVGA: invalid guest access to page %RGp, target %s:\n"
-                  "%.*Rhxd\n",
-                  GCPhys, pszTarget ? pszTarget : "unknown", RT_MIN(cbBuf, 256), pvBuf));
-
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-
 #ifdef VBOX_WITH_VMSVGA3D
 
-static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fWriteProtected, PVMSVGAGBO pGbo)
+static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, PVMSVGAGBO pGbo)
 {
     ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
 
@@ -597,22 +525,8 @@ static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth,
     else
         pGbo->paDescriptors = paDescriptors;
 
-#if 1 /// @todo PGMHandlerPhysicalRegister asserts deep in PGM code with enmKind of a page being out of range.
-fWriteProtected = false;
-#endif
-    if (fWriteProtected)
-    {
-        pGbo->fGboFlags |= VMSVGAGBO_F_WRITE_PROTECTED;
-        for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
-        {
-            rc = PDMDevHlpPGMHandlerPhysicalRegister(pSvgaR3State->pDevIns,
-                                                     pGbo->paDescriptors[i].GCPhys,
-                                                       pGbo->paDescriptors[i].GCPhys
-                                                     + pGbo->paDescriptors[i].cPages * GUEST_PAGE_SIZE - 1,
-                                                     pSvgaR3State->hGboAccessHandlerType, "VMSVGA GBO");
-            AssertRC(rc);
-        }
-    }
+    pGbo->fGboFlags = 0;
+    pGbo->pvHost = NULL;
 
     return VINF_SUCCESS;
 }
@@ -620,18 +534,12 @@ fWriteProtected = false;
 
 static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
 {
+    RT_NOREF(pSvgaR3State);
+
     if (RT_LIKELY(VMSVGA_IS_GBO_CREATED(pGbo)))
     {
-        if (pGbo->fGboFlags & VMSVGAGBO_F_WRITE_PROTECTED)
-        {
-            for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
-            {
-                int rc = PDMDevHlpPGMHandlerPhysicalDeregister(pSvgaR3State->pDevIns, pGbo->paDescriptors[i].GCPhys);
-                AssertRC(rc);
-            }
-        }
         RTMemFree(pGbo->paDescriptors);
-        RT_ZERO(pGbo);
+        RT_ZERO(*pGbo);
     }
 }
 
@@ -820,9 +728,10 @@ static int vmsvgaR3OTableSetOrGrow(PVMSVGAR3STATE pSvgaR3State, SVGAOTableType t
     {
         /* Create a new guest backed object for the object table. */
         VMSVGAGBO gbo;
-        int rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, /* fWriteProtected = */ true, &gbo);
+        int rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, &gbo);
         AssertRCReturn(rc, rc);
 
+        /* If the guest sets a new OTable (fGrow == false), then it has already copied the valid data to the new GBO. */
         if (fGrow && validSizeInBytes)
         {
             /* Copy data from old gbo to the new one. */
@@ -914,7 +823,7 @@ static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
     if (RT_SUCCESS(rc))
     {
         /* Create the corresponding GBO. */
-        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, /* fWriteProtected = */ false, &pMob->Gbo);
+        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, &pMob->Gbo);
         if (RT_SUCCESS(rc))
         {
             /* If a mob with this id already exists, then delete it. */
