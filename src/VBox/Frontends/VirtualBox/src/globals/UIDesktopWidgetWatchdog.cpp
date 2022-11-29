@@ -1106,7 +1106,7 @@ void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenI
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
     {
-        iHostScreenIndex = UIDesktopWidgetWatchdog::primaryScreen();
+        iHostScreenIndex = UIDesktopWidgetWatchdog::primaryScreenNumber();
         AssertReturnVoid(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount());
     }
 
