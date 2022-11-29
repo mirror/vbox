@@ -340,7 +340,7 @@
     <xsl:param name="role" select="../@role"/>
 
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
-    <xsl:if test="$texcmd='\chapter' and name(../preceding-sibling::*[1])='preface'">
+    <xsl:if test="$texcmd='\chapter' and (name(../preceding-sibling::*[1])='preface' or name(../preceding-sibling::*[1])='bookinfo')">
       <xsl:text>\mainmatter&#x0a;</xsl:text>
     </xsl:if>
     <xsl:choose>
