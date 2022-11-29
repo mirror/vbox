@@ -321,12 +321,7 @@ int UIDesktopWidgetWatchdog::overallDesktopHeight()
 /* static */
 int UIDesktopWidgetWatchdog::screenCount()
 {
-#ifdef VBOX_IS_QT6_OR_LATER
     return QGuiApplication::screens().size();
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->screenCount();
-#endif
 }
 
 #ifdef VBOX_IS_QT6_OR_LATER
