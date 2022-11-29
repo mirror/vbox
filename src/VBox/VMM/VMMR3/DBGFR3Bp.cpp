@@ -2298,9 +2298,8 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
     switch (fType)
     {
         case X86_DR7_RW_EO:
-            if (cb == 1)
-                break;
-            AssertMsgFailedReturn(("fType=%#x cb=%d != 1\n", fType, cb), VERR_INVALID_PARAMETER);
+            AssertMsgReturn(cb == 1, ("fType=%#x cb=%d != 1\n", fType, cb), VERR_INVALID_PARAMETER);
+            break;
         case X86_DR7_RW_IO:
         case X86_DR7_RW_RW:
         case X86_DR7_RW_WO:
@@ -2312,6 +2311,9 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
     int rc = dbgfR3BpEnsureInit(pUVM);
     AssertRCReturn(rc, rc);
 
+    /*
+     * Check if we've already got a matching breakpoint for that address.
+     */
     PDBGFBPINT pBp = NULL;
     DBGFBP hBp = dbgfR3BpGetByAddr(pUVM, DBGFBPTYPE_REG, pAddress->FlatPtr, &pBp);
     if (    hBp != NIL_DBGFBP
@@ -2319,8 +2321,9 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
         &&  pBp->Pub.u.Reg.fType == fType)
     {
         rc = VINF_SUCCESS;
-        if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
+        if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub) && (fFlags & DBGF_BP_F_ENABLED))
             rc = dbgfR3BpArm(pUVM, hBp, pBp);
+        /* else: We don't disable it when DBGF_BP_F_ENABLED isn't given. */
         if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
@@ -2330,9 +2333,10 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
         return rc;
     }
 
-    /* Allocate new breakpoint. */
-    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_REG, fFlags,
-                       iHitTrigger, iHitDisable, &hBp, &pBp);
+    /*
+     * Allocate new breakpoint.
+     */
+    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_REG, fFlags, iHitTrigger, iHitDisable, &hBp, &pBp);
     if (RT_SUCCESS(rc))
     {
         pBp->Pub.u.Reg.GCPtr = pAddress->FlatPtr;

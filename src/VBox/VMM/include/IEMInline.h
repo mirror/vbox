@@ -1757,28 +1757,43 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu) RT_NOEXCEPT
     /*
      * Normally we're just here to clear RF and/or interrupt shadow bits.
      */
-    if (RT_LIKELY((pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK)) == 0))
+    if (RT_LIKELY((pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) == 0))
         pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
     else
     {
-#if 1
         /*
-         * Raise a #DB.
+         * Raise a #DB or/and DBGF event.
          */
-        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
-        pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
-        if (pVCpu->cpum.GstCtx.eflags.uBoth & X86_EFL_TF)
-            pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS;
-        pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
-        /** @todo Do we set all pending \#DB events, or just one? */
-        LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64\n",
-                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],
-                     pVCpu->cpum.GstCtx.rflags.uBoth));
-        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
-        return iemRaiseDebugException(pVCpu);
-#else
-        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
-#endif
+        VBOXSTRICTRC rcStrict;
+        if (pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK))
+        {
+            IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+            pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
+            if (pVCpu->cpum.GstCtx.eflags.uBoth & X86_EFL_TF)
+                pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS;
+            pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+            LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64\n",
+                         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],
+                         pVCpu->cpum.GstCtx.rflags.uBoth));
+
+            pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
+            rcStrict = iemRaiseDebugException(pVCpu);
+
+            /* A DBGF event/breakpoint trumps the iemRaiseDebugException informational status code. */
+            if ((pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_DBGF_MASK) && RT_FAILURE(rcStrict))
+            {
+                rcStrict = pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_DBGF_BP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_EVENT;
+                LogFlowFunc(("dbgf at %04X:%016llX: %Rrc\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, VBOXSTRICTRC_VAL(rcStrict)));
+            }
+        }
+        else
+        {
+            Assert(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_DBGF_MASK);
+            rcStrict = pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_DBGF_BP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_EVENT;
+            LogFlowFunc(("dbgf at %04X:%016llX: %Rrc\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, VBOXSTRICTRC_VAL(rcStrict)));
+        }
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~CPUMCTX_DBG_DBGF_MASK;
+        return rcStrict;
     }
     return VINF_SUCCESS;
 }
@@ -1796,7 +1811,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCE
      */
     AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
     if (RT_LIKELY(!(  pVCpu->cpum.GstCtx.eflags.uBoth
-                    & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK)) ))
+                    & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) ))
         return VINF_SUCCESS;
     return iemFinishInstructionWithFlagsSet(pVCpu);
 }
@@ -1835,7 +1850,7 @@ static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu) RT_NOEXCEPT
     LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64 (popf)\n",
                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],
                  pVCpu->cpum.GstCtx.rflags.uBoth));
-    pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK);
+    pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK);
     return iemRaiseDebugException(pVCpu);
 }
 

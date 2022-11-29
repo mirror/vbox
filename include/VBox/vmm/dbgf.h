@@ -1123,6 +1123,7 @@ VMM_INT_DECL(bool)          DBGFBpIsInt3Armed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrPC);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
+VMM_INT_DECL(uint32_t)      DBGFBpCheckIo2(PVMCC pVM, PVMCPUCC pVCpu, RTIOPORT uIoPort, uint8_t cbValue);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckPortIo(PVMCC pVM, PVMCPU pVCpu, RTIOPORT uIoPort,
                                               uint32_t fAccess, uint32_t uValue, bool fBefore);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, DBGFEVENTCTX enmCtx,

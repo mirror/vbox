@@ -7345,25 +7345,22 @@ IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, bool, fImm, uint8_t, cbReg)
         pVCpu->iem.s.cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             iemSetPassUpStatus(pVCpu, rcStrict);
-        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
         /*
-         * Check for I/O breakpoints.
+         * Check for I/O breakpoints before we complete the instruction.
          */
-        /** @todo this should set a internal flag and be raised by
-         *        iemRegAddToRipAndFinishingClearingRF! */
-        uint32_t const uDr7 = pVCpu->cpum.GstCtx.dr[7];
-        if (RT_UNLIKELY(   (   (   (uDr7 & X86_DR7_ENABLED_MASK)
-                                && X86_DR7_ANY_RW_IO(uDr7)
+        uint32_t const fDr7 = pVCpu->cpum.GstCtx.dr[7];
+        if (RT_UNLIKELY(   (   (   (fDr7 & X86_DR7_ENABLED_MASK)
+                                && X86_DR7_ANY_RW_IO(fDr7)
                                 && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_DE))
-                            || DBGFBpIsHwIoArmed(pVM))
+                            || pVM->dbgf.ro.cEnabledHwIoBreakpoints > 0)
                         && rcStrict == VINF_SUCCESS))
         {
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3 | CPUMCTX_EXTRN_DR6);
-            rcStrict = DBGFBpCheckIo(pVM, pVCpu, IEM_GET_CTX(pVCpu), u16Port, cbReg);
-            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
-                rcStrict = iemRaiseDebugException(pVCpu);
+            pVCpu->cpum.GstCtx.eflags.uBoth |= DBGFBpCheckIo2(pVM, pVCpu, u16Port, cbReg);
         }
+
+        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
 
     return rcStrict;
@@ -7457,25 +7454,22 @@ IEM_CIMPL_DEF_3(iemCImpl_out, uint16_t, u16Port, bool, fImm, uint8_t, cbReg)
         pVCpu->iem.s.cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             iemSetPassUpStatus(pVCpu, rcStrict);
-        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
         /*
-         * Check for I/O breakpoints.
+         * Check for I/O breakpoints before we complete the instruction.
          */
-        /** @todo this should set a internal flag and be raised by
-         *        iemRegAddToRipAndFinishingClearingRF! */
-        uint32_t const uDr7 = pVCpu->cpum.GstCtx.dr[7];
-        if (RT_UNLIKELY(   (   (   (uDr7 & X86_DR7_ENABLED_MASK)
-                                && X86_DR7_ANY_RW_IO(uDr7)
+        uint32_t const fDr7 = pVCpu->cpum.GstCtx.dr[7];
+        if (RT_UNLIKELY(   (   (   (fDr7 & X86_DR7_ENABLED_MASK)
+                                && X86_DR7_ANY_RW_IO(fDr7)
                                 && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_DE))
-                            || DBGFBpIsHwIoArmed(pVM))
+                            || pVM->dbgf.ro.cEnabledHwIoBreakpoints > 0)
                         && rcStrict == VINF_SUCCESS))
         {
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3 | CPUMCTX_EXTRN_DR6);
-            rcStrict = DBGFBpCheckIo(pVM, pVCpu, IEM_GET_CTX(pVCpu), u16Port, cbReg);
-            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
-                rcStrict = iemRaiseDebugException(pVCpu);
+            pVCpu->cpum.GstCtx.eflags.uBoth |= DBGFBpCheckIo2(pVM, pVCpu, u16Port, cbReg);
         }
+
+        rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
     }
     return rcStrict;
 }

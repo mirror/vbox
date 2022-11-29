@@ -228,13 +228,13 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RT
         CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
         uint32_t fMatched = 0;
         uint32_t fEnabled = 0;
-        for (unsigned iBp = 0, iBpMask = 1; iBp < 4; iBp++, iBpMask <<= 1)
+        for (unsigned iBp = 0, uBpMask = 1; iBp < 4; iBp++, uBpMask <<= 1)
             if (X86_DR7_IS_EO_CFG(fDr7, iBp))
             {
                 if (fDr7 & X86_DR7_L_G(iBp))
-                    fEnabled |= iBpMask;
+                    fEnabled |= uBpMask;
                 if (pVCpu->cpum.GstCtx.dr[iBp] == GCPtrPC)
-                    fMatched |= iBpMask;
+                    fMatched |= uBpMask;
             }
         if (!(fEnabled & fMatched))
         { /*likely*/ }
@@ -356,6 +356,88 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
         }
     }
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks I/O access for guest or hypervisor hardware breakpoints.
+ *
+ * Caller must make sure DR0-3 and DR7 are present in the CPU context before
+ * calling this function.
+ *
+ * @returns CPUMCTX_DBG_DBGF_BP, CPUMCTX_DBG_HIT_DRX_MASK, or 0 (no match).
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uIoPort     The I/O port being accessed.
+ * @param   cbValue     The size/width of the access, in bytes.
+ */
+VMM_INT_DECL(uint32_t) DBGFBpCheckIo2(PVMCC pVM, PVMCPUCC pVCpu, RTIOPORT uIoPort, uint8_t cbValue)
+{
+    uint32_t const uIoPortFirst = uIoPort;
+    uint32_t const uIoPortLast  = uIoPortFirst + cbValue - 1;
+
+    /*
+     * Check hyper breakpoints first as the VMM debugger has priority over
+     * the guest.
+     */
+    if (pVM->dbgf.s.cEnabledHwIoBreakpoints > 0)
+        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+        {
+            if (   pVM->dbgf.s.aHwBreakpoints[iBp].fType == X86_DR7_RW_IO
+                && pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
+                && pVM->dbgf.s.aHwBreakpoints[iBp].hBp   != NIL_DBGFBP)
+            {
+                uint8_t  cbReg      = pVM->dbgf.s.aHwBreakpoints[iBp].cb; Assert(RT_IS_POWER_OF_TWO(cbReg));
+                uint64_t uDrXFirst  = pVM->dbgf.s.aHwBreakpoints[iBp].GCPtr & ~(uint64_t)(cbReg - 1);
+                uint64_t uDrXLast   = uDrXFirst + cbReg - 1;
+                if (uDrXFirst <= uIoPortLast && uDrXLast >= uIoPortFirst)
+                {
+                    /* (See also DBGFRZTrap01Handler.) */
+                    pVCpu->dbgf.s.hBpActive = pVM->dbgf.s.aHwBreakpoints[iBp].hBp;
+                    pVCpu->dbgf.s.fSingleSteppingRaw = false;
+
+                    LogFlow(("DBGFBpCheckIo2: hit hw breakpoint %d at %04x:%RGv (iop %#x L %u)\n",
+                             iBp, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uIoPort, cbValue));
+                    return CPUMCTX_DBG_DBGF_BP;
+                }
+            }
+        }
+
+    /*
+     * Check the guest.
+     */
+    uint32_t const fDr7 = pVCpu->cpum.GstCtx.dr[7];
+    if (   (fDr7 & X86_DR7_ENABLED_MASK)
+        && X86_DR7_ANY_RW_IO(fDr7)
+        && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_DE) )
+    {
+        uint32_t fEnabled = 0;
+        uint32_t fMatched = 0;
+        for (unsigned iBp = 0, uBpMask = 1; iBp < 4; iBp++, uBpMask <<= 1)
+        {
+            if (fDr7 & X86_DR7_L_G(iBp))
+                fEnabled |= uBpMask;
+            if (X86_DR7_GET_RW(fDr7, iBp) == X86_DR7_RW_IO)
+            {
+                /* ASSUME the breakpoint and the I/O width qualifier uses the same encoding (1 2 x 4). */
+                static uint8_t const s_abInvAlign[4] = { 0, 1, 7, 3 };
+                uint8_t  const cbInvAlign = s_abInvAlign[X86_DR7_GET_LEN(fDr7, iBp)];
+                uint64_t const uDrXFirst  = pVCpu->cpum.GstCtx.dr[iBp] & ~(uint64_t)cbInvAlign;
+                uint64_t const uDrXLast   = uDrXFirst + cbInvAlign;
+                if (uDrXFirst <= uIoPortLast && uDrXLast >= uIoPortFirst)
+                    fMatched |= uBpMask;
+            }
+        }
+        if (fEnabled & fMatched)
+        {
+            LogFlow(("DBGFBpCheckIo2: hit hw breakpoint %#x at %04x:%RGv (iop %#x L %u)\n",
+                     fMatched, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uIoPort, cbValue));
+            return fMatched << CPUMCTX_DBG_HIT_DRX_SHIFT;
+        }
+    }
+
+    return 0;
 }
 
 

@@ -260,8 +260,10 @@ AssertCompileSize(CPUMHWVIRT, 4);
  * runs on Linux/VT-x).  So, unless the results are really wrong and there is
  * clear drop in thruput, it would on the whole make the most sense to use 24
  * here.
+ *
+ * Update: We need more than 8 bits because of DBGF, so using 22 now.
  */
-#define CPUMX86EFLAGS_HW_BITS       24
+#define CPUMX86EFLAGS_HW_BITS       22
 /** Mask for the hardware EFLAGS bits, 64-bit version. */
 #define CPUMX86EFLAGS_HW_MASK_64    (RT_BIT_64(CPUMX86EFLAGS_HW_BITS) - UINT64_C(1))
 /** Mask for the hardware EFLAGS bits, 32-bit version. */
@@ -274,13 +276,17 @@ AssertCompileSize(CPUMHWVIRT, 4);
 #endif
 
 /** Mask of internal flags kept with EFLAGS, 64-bit version.
- * The first 3 available bits are taken by CPUMCTX_INHIBIT_SHADOW_SS,
- * CPUMCTX_INHIBIT_SHADOW_STI and CPUMCTX_INHIBIT_NMI.  The next 4 bits are
- * taken by CPUMCTX_DBG_HIT_DRX_MASK.
+ * Bits 22-24 are taken by CPUMCTX_INHIBIT_SHADOW_SS, CPUMCTX_INHIBIT_SHADOW_STI
+ * and CPUMCTX_INHIBIT_NMI, bits 25-28 are for CPUMCTX_DBG_HIT_DRX_MASK, and
+ * bits 29-30 are for DBGF events and breakpoints.
+ *
+ * @todo The two DBGF bits could be merged.  The NMI inhibiting could move to
+ *       bit 32 or higher as it isn't automatically cleared on instruction
+ *       completion (except for iret).
  */
-#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x000000007f000000)
+#define CPUMX86EFLAGS_INT_MASK_64   UINT64_C(0x00000000ffc00000)
 /** Mask of internal flags kept with EFLAGS, 32-bit version. */
-#define CPUMX86EFLAGS_INT_MASK_32           UINT32_C(0x7f000000)
+#define CPUMX86EFLAGS_INT_MASK_32           UINT32_C(0xffc00000)
 
 
 /**
@@ -1053,8 +1059,16 @@ AssertCompile(CPUMCTX_INHIBIT_ALL_MASK < UINT32_MAX);
 /** Shift for the CPUMCTX_DBG_HIT_DRx bits. */
 #define CPUMCTX_DBG_HIT_DRX_SHIFT       CPUMCTX_DBG_HIT_DR0_BIT
 /** Mask of all guest pending DR0-DR3 breakpoint indicators. */
-#define CPUMCTX_DBG_HIT_DRX_MASK       (CPUMCTX_DBG_HIT_DR0 | CPUMCTX_DBG_HIT_DR1 | CPUMCTX_DBG_HIT_DR2 | CPUMCTX_DBG_HIT_DR3)
-AssertCompile(CPUMCTX_DBG_HIT_DRX_MASK < UINT32_MAX);
+#define CPUMCTX_DBG_HIT_DRX_MASK        (CPUMCTX_DBG_HIT_DR0 | CPUMCTX_DBG_HIT_DR1 | CPUMCTX_DBG_HIT_DR2 | CPUMCTX_DBG_HIT_DR3)
+/** DBGF event/breakpoint pending. */
+#define CPUMCTX_DBG_DBGF_EVENT          RT_BIT_32(CPUMCTX_DBG_DBGF_EVENT_BIT)
+#define CPUMCTX_DBG_DBGF_EVENT_BIT      (7 + CPUMX86EFLAGS_HW_BITS)
+/** DBGF event/breakpoint pending. */
+#define CPUMCTX_DBG_DBGF_BP             RT_BIT_32(CPUMCTX_DBG_DBGF_BP_BIT)
+#define CPUMCTX_DBG_DBGF_BP_BIT         (8 + CPUMX86EFLAGS_HW_BITS)
+/** Mask of all DBGF indicators. */
+#define CPUMCTX_DBG_DBGF_MASK           (CPUMCTX_DBG_DBGF_EVENT | CPUMCTX_DBG_DBGF_BP)
+AssertCompile((CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK) < UINT32_MAX);
 /** @}  */
 
 
