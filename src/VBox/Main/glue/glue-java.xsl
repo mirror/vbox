@@ -487,7 +487,7 @@
 -->
 <xsl:template match="desc" mode="results">
   <xsl:if test="result">
-    <xsl:text>&#10;&lt;p&gt;&lt;dl&gt;&lt;dt&gt;&lt;b&gt;Expected result codes:&lt;/b&gt;&lt;/dt&gt;&#10;</xsl:text>
+    <xsl:text>&#10;&lt;p&gt;&lt;/p&gt;&lt;dl&gt;&lt;dt&gt;&lt;b&gt;Expected result codes:&lt;/b&gt;&lt;/dt&gt;&#10;</xsl:text>
     <xsl:for-each select="result">
       <xsl:text>&lt;dd&gt;&lt;code&gt;</xsl:text>
       <xsl:choose>
@@ -503,7 +503,7 @@
                                                   self::result)]"/>
       <xsl:text>&lt;/dd&gt;&#10;</xsl:text>
     </xsl:for-each>
-    <xsl:text>&lt;/dl&gt;&lt;/p&gt;&#10;</xsl:text>
+    <xsl:text>&lt;/dl&gt;&#10;</xsl:text>
   </xsl:if>
 </xsl:template>
 
