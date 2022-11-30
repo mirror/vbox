@@ -433,34 +433,25 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
 #endif /* Qt < 5.10 */
 }
 
-QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
+/* static */
+QRegion UIDesktopWidgetWatchdog::overallScreenRegion()
 {
     /* Calculate region: */
     QRegion region;
-    for (int iScreenIndex = 0; iScreenIndex < screenCount(); ++iScreenIndex)
-    {
-        /* Get enumerated screen's area: */
-        QRect rect = screenGeometry(iScreenIndex);
-#ifdef VBOX_WS_WIN
-        /* On Windows host window can exceed the available
-         * area in maximized/sticky-borders state: */
-        rect.adjust(-10, -10, 10, 10);
-#endif /* VBOX_WS_WIN */
-        /* Append rectangle: */
-        region += rect;
-    }
-    /* Return region: */
+    foreach (QScreen *pScreen, QGuiApplication::screens())
+        region += gpDesktop->screenGeometry(pScreen);
     return region;
 }
 
-QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
+/* static */
+QRegion UIDesktopWidgetWatchdog::overallAvailableRegion()
 {
     /* Calculate region: */
     QRegion region;
-    for (int iScreenIndex = 0; iScreenIndex < screenCount(); ++iScreenIndex)
+    foreach (QScreen *pScreen, QGuiApplication::screens())
     {
         /* Get enumerated screen's available area: */
-        QRect rect = availableGeometry(iScreenIndex);
+        QRect rect = gpDesktop->availableGeometry(pScreen);
 #ifdef VBOX_WS_WIN
         /* On Windows host window can exceed the available
          * area in maximized/sticky-borders state: */
@@ -476,25 +467,13 @@ QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
 /* static */
 int UIDesktopWidgetWatchdog::overallDesktopWidth()
 {
-#ifdef VBOX_IS_QT6_OR_LATER
-    /** @todo bird: Not sure if this is entirely correct. */
-    return QGuiApplication::primaryScreen()->geometry().width();
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->width();
-#endif
+    return overallScreenRegion().boundingRect().width();
 }
 
 /* static */
 int UIDesktopWidgetWatchdog::overallDesktopHeight()
 {
-#ifdef VBOX_IS_QT6_OR_LATER
-    /** @todo bird: Not sure if this is entirely correct. */
-    return QGuiApplication::primaryScreen()->geometry().height();
-#else
-    /* Redirect call to desktop-widget: */
-    return QApplication::desktop()->height();
-#endif
+    return overallScreenRegion().boundingRect().height();
 }
 
 #ifdef VBOX_WS_X11

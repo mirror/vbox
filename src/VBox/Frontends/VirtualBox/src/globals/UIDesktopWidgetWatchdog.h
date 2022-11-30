@@ -113,9 +113,9 @@ public:
     QRect availableGeometry(const QPoint &point) const;
 
     /** Returns overall region unifying all the host-screen geometries. */
-    QRegion overallScreenRegion() const;
+    static QRegion overallScreenRegion();
     /** Returns overall region unifying all the host-screen available-geometries. */
-    QRegion overallAvailableRegion() const;
+    static QRegion overallAvailableRegion();
     /** Returns overall desktop width. */
     static int overallDesktopWidth();
     /** Returns overall desktop height. */
