@@ -335,6 +335,9 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.appendPointer((void *)strFormats.c_str(), cbFormats);
         Msg.appendUInt32(cbFormats);
 
+        LogRel2(("DnD: Host enters the VM window at %RU32,%RU32 (screen %u, default action is '%s')\n",
+                 aX, aY, aScreenId, DnDActionToStr(dndActionDefault)));
+
         vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
@@ -412,6 +415,9 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.appendPointer((void *)strFormats.c_str(), cbFormats);
         Msg.appendUInt32(cbFormats);
 
+        LogRel2(("DnD: Host moves to %RU32,%RU32 in VM window (screen %u, default action is '%s')\n",
+                 aX, aY, aScreenId, DnDActionToStr(dndActionDefault)));
+
         vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
@@ -446,6 +452,8 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     if (autoCaller.isNotOk()) return autoCaller.rc();
 
     HRESULT hrc = S_OK;
+
+    LogRel2(("DnD: Host left the VM window (screen %u)\n", uScreenId));
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_FN_HG_EVT_LEAVE);
@@ -535,6 +543,9 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.appendPointer((void*)strFormats.c_str(), cbFormats);
         Msg.appendUInt32(cbFormats);
 
+        LogRel2(("DnD: Host drops at %RU32,%RU32 in VM window (screen %u, default action is '%s')\n",
+                 aX, aY, aScreenId, DnDActionToStr(dndActionDefault)));
+
         int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
@@ -542,16 +553,26 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
             if (pState && RT_SUCCESS(pState->waitForGuestResponse()))
             {
                 resAct = GuestDnD::toMainAction(pState->getActionDefault());
-
-                GuestDnDMIMEList lstFormats = pState->formats();
-                if (lstFormats.size() == 1) /* Exactly one format to use specified? */
+                if (resAct != DnDAction_Ignore) /* Does the guest accept a drop at the current position? */
                 {
-                    resFmt = lstFormats.at(0);
+                    GuestDnDMIMEList lstFormats = pState->formats();
+                    if (lstFormats.size() == 1) /* Exactly one format to use specified? */
+                    {
+                        resFmt = lstFormats.at(0);
+                    }
+                    else
+                    {
+                        /** @todo r=bird: This isn't an IPRT error, is it?   */
+                        if (lstFormats.size() == 0)
+                            hr = setError(VBOX_E_IPRT_ERROR, tr("Guest accepted drop, but did not specify the format"));
+                        else
+                            hr = setError(VBOX_E_IPRT_ERROR, tr("Guest accepted drop, but returned more than one drop format (%zu formats)"),
+                                          lstFormats.size());
+                    }
+
+                    LogRel2(("DnD: Guest accepted drop in format '%s' (action %#x, %zu format(s))\n",
+                             resFmt.c_str(), resAct, lstFormats.size()));
                 }
-                else
-                    /** @todo r=bird: This isn't an IPRT error, is it?   */
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Guest returned invalid drop formats (%zu formats)", "",
-                                                        lstFormats.size()), lstFormats.size());
             }
             else
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);
@@ -561,8 +582,6 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     }
     else
         hr = setError(hr, tr("Retrieving drop coordinates failed"));
-
-    LogFlowFunc(("resFmt=%s, resAct=%RU32, vrc=%Rhrc\n", resFmt.c_str(), resAct, hr));
 
     if (SUCCEEDED(hr))
     {
@@ -634,6 +653,8 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
 
         mData.mSendCtx.Meta.strFmt = aFormat;
         mData.mSendCtx.Meta.add(aData);
+
+        LogRel2(("DnD: Host sends data in format '%s'\n", aFormat.c_str()));
 
         pTask = new GuestDnDSendDataTask(this, &mData.mSendCtx);
         if (!pTask->isOk())
