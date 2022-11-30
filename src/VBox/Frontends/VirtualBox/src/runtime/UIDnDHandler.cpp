@@ -172,10 +172,11 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
                                             toVBoxDnDAction(proposedAction),
                                             toVBoxDnDActions(possibleActions),
                                             pMimeData->formats().toVector(), strFormat);
-
-    /* Has the guest accepted the drop event? */
-    if (   m_dndTarget.isOk()
-        && enmResult != KDnDAction_Ignore)
+    if (!m_dndTarget.isOk())
+    {
+        msgCenter().cannotDropDataToGuest(m_dndTarget, m_pParent);
+    }
+    else if (enmResult != KDnDAction_Ignore) /* Has the guest accepted the drop event? */
     {
         LogRel2(("DnD: Guest requested format '%s'\n", strFormat.toUtf8().constData()));
         LogRel2(("DnD: The host offered %d formats:\n", pMimeData->formats().size()));
