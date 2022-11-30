@@ -4460,12 +4460,12 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
         int vrc2 = RTFsQueryType(strFile.c_str(), &enmFsTypeFile);
         AssertMsgRCReturn(vrc2, ("Querying the file type of '%s' failed!\n", strFile.c_str()), vrc2);
 
-        /* Ignore the error code. On error, the file system type is still 'unknown' so
-         * none of the following paths are taken. This can happen for new VMs which
-         * still don't have a snapshot folder. */
+         /* Any VM which hasn't created a snapshot or saved the current state of the VM
+          * won't have a Snapshot folder yet so no need to log anything about the file system
+          * type of the non-existent directory in such cases. */
         RTFSTYPE enmFsTypeSnap = RTFSTYPE_UNKNOWN;
-        (void)RTFsQueryType(strSnap.c_str(), &enmFsTypeSnap);
-        if (!mfSnapshotFolderDiskTypeShown)
+        vrc2 = RTFsQueryType(strSnap.c_str(), &enmFsTypeSnap);
+        if (RT_SUCCESS(vrc2) && !mfSnapshotFolderDiskTypeShown)
         {
             LogRel(("File system of '%s' (snapshots) is %s\n", strSnap.c_str(), RTFsTypeName(enmFsTypeSnap)));
             mfSnapshotFolderDiskTypeShown = true;
