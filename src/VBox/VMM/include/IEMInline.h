@@ -208,7 +208,7 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
 
     pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);
     pVCpu->iem.s.enmCpuMode         = iemCalcCpuMode(pVCpu);
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     pVCpu->iem.s.enmDefAddrMode     = (IEMMODE)0xfe;
     pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xfe;
     pVCpu->iem.s.enmDefOpSize       = (IEMMODE)0xfe;
@@ -224,18 +224,18 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
     pVCpu->iem.s.uVexLength         = 127;
     pVCpu->iem.s.fEvexStuff         = 127;
     pVCpu->iem.s.uFpuOpcode         = UINT16_MAX;
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.offInstrNextByte   = UINT16_MAX;
     pVCpu->iem.s.pbInstrBuf         = NULL;
     pVCpu->iem.s.cbInstrBuf         = UINT16_MAX;
     pVCpu->iem.s.cbInstrBufTotal    = UINT16_MAX;
     pVCpu->iem.s.offCurInstrStart   = INT16_MAX;
     pVCpu->iem.s.uInstrBufPc        = UINT64_C(0xc0ffc0ffcff0c0ff);
-# else
+#  else
     pVCpu->iem.s.offOpcode          = 127;
     pVCpu->iem.s.cbOpcode           = 127;
-# endif
-#endif
+#  endif
+# endif /* VBOX_STRICT */
 
     pVCpu->iem.s.cActiveMappings    = 0;
     pVCpu->iem.s.iNextMapping       = 0;
@@ -284,11 +284,11 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
         pVCpu->iem.s.enmEffOpSize = enmMode;
     }
     pVCpu->iem.s.iEffSeg          = X86_SREG_DS;
-#ifndef IEM_WITH_CODE_TLB
+# ifndef IEM_WITH_CODE_TLB
     /** @todo Shouldn't we be doing this in IEMTlbInvalidateAll()? */
     pVCpu->iem.s.offOpcode        = 0;
     pVCpu->iem.s.cbOpcode         = 0;
-#endif
+# endif
     pVCpu->iem.s.rcPassUp         = VINF_SUCCESS;
 }
 #endif
@@ -640,7 +640,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
  * @remark Implicitly references pVCpu.
  */
 #ifndef IEM_WITH_SETJMP
-#define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) \
+# define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU32(pVCpu, (a_pu32)); \
@@ -818,7 +818,7 @@ DECL_INLINE_THROW(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
         return RT_MAKE_U16(pbBuf[offBuf], pbBuf[offBuf + 1]);
 #  endif
     }
-# else
+# else /* !IEM_WITH_CODE_TLB */
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 2 <= pVCpu->iem.s.cbOpcode))
     {
@@ -829,7 +829,7 @@ DECL_INLINE_THROW(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
         return RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
 #  endif
     }
-# endif
+# endif /* !IEM_WITH_CODE_TLB */
     return iemOpcodeGetNextU16SlowJmp(pVCpu);
 }
 

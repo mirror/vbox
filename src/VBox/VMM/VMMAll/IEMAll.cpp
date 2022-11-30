@@ -437,15 +437,16 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fBypas
 {
     iemInitDecoder(pVCpu, fBypassHandlers, fDisregardLock);
 
-#ifdef IEM_WITH_CODE_TLB
-    /** @todo Do ITLB lookup here. */
-
-#else /* !IEM_WITH_CODE_TLB */
-
+#ifndef IEM_WITH_CODE_TLB
     /*
      * What we're doing here is very similar to iemMemMap/iemMemBounceBufferMap.
      *
      * First translate CS:rIP to a physical address.
+     *
+     * Note! The iemOpcodeFetchMoreBytes code depends on this here code to fetch
+     *       all relevant bytes from the first page, as it ASSUMES it's only ever
+     *       called for dealing with CS.LIM, page crossing and instructions that
+     *       are too long.
      */
     uint32_t    cbToTryRead;
     RTGCPTR     GCPtrPC;
@@ -1046,11 +1047,11 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
         cbDst -= cbMaxRead;
         pvDst  = (uint8_t *)pvDst + cbMaxRead;
     }
-#else
+# else  /* !IN_RING3 */
     RT_NOREF(pvDst, cbDst);
     if (pvDst || cbDst)
         IEM_DO_LONGJMP(pVCpu, VERR_INTERNAL_ERROR);
-#endif
+# endif /* !IN_RING3 */
 }
 
 #else
