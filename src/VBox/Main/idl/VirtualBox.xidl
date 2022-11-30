@@ -457,6 +457,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_DND_ERROR" value="0x80BB0011">
+    <desc>
+      A drag and drop error has occurred.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express

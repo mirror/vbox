@@ -347,7 +347,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     }
 
     if (RT_FAILURE(vrc))
-        hrc = VBOX_E_IPRT_ERROR;
+        hrc = VBOX_E_DND_ERROR;
 
     if (SUCCEEDED(hrc))
     {
@@ -428,7 +428,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     }
 
     if (RT_FAILURE(vrc))
-        hrc = VBOX_E_IPRT_ERROR;
+        hrc = VBOX_E_DND_ERROR;
 
     if (SUCCEEDED(hrc))
     {
@@ -469,7 +469,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     }
 
     if (RT_FAILURE(vrc))
-        hrc = VBOX_E_IPRT_ERROR;
+        hrc = VBOX_E_DND_ERROR;
 
     LogFlowFunc(("hrc=%Rhrc\n", hrc));
     return hrc;
@@ -562,11 +562,10 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                     }
                     else
                     {
-                        /** @todo r=bird: This isn't an IPRT error, is it?   */
                         if (lstFormats.size() == 0)
-                            hr = setError(VBOX_E_IPRT_ERROR, tr("Guest accepted drop, but did not specify the format"));
+                            hr = setError(VBOX_E_DND_ERROR, tr("Guest accepted drop, but did not specify the format"));
                         else
-                            hr = setError(VBOX_E_IPRT_ERROR, tr("Guest accepted drop, but returned more than one drop format (%zu formats)"),
+                            hr = setError(VBOX_E_DND_ERROR, tr("Guest accepted drop, but returned more than one drop format (%zu formats)"),
                                           lstFormats.size());
                     }
 
@@ -575,10 +574,10 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                 }
             }
             else
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);
+                hr = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);
         }
         else
-            hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Sending dropped event to guest failed (%Rrc)"), vrc);
+            hr = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Sending dropped event to guest failed (%Rrc)"), vrc);
     }
     else
         hr = setError(hr, tr("Retrieving drop coordinates failed"));
@@ -1681,7 +1680,7 @@ HRESULT GuestDnDTarget::cancel(BOOL *aVeto)
     if (aVeto)
         *aVeto = FALSE; /** @todo Implement vetoing. */
 
-    HRESULT hrc = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
+    HRESULT hrc = RT_SUCCESS(vrc) ? S_OK : VBOX_E_DND_ERROR;
 
     LogFlowFunc(("hrc=%Rhrc\n", hrc));
     return hrc;

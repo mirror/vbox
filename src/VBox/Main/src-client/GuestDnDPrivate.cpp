@@ -454,7 +454,7 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
 
             if (   !m_pProgress.isNull()
                 && !fCompleted)
-                hr = m_pProgress->i_notifyComplete(VBOX_E_IPRT_ERROR,
+                hr = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR,
                                                    COM_IIDOF(IGuest),
                                                    m_pParent->getComponentName(), strMsg.c_str());
             reset();
@@ -686,7 +686,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
         }
         else
         {
-            LogFlowFunc(("No callback for function %RU32 defined (%zu callbacks total)\n", u32Function, m_mapCallbacks.size()));
+            LogFlowFunc(("No callback for function %RU32 defined\n", u32Function));
             rc = VERR_NOT_SUPPORTED; /* Tell the guest. */
         }
     }
