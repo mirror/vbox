@@ -532,11 +532,9 @@ HRESULT vboxDXFlush(PVBOXDX_DEVICE pDevice, bool fForce);
 
 DECLINLINE(void) vboxDXDeviceSetError(PVBOXDX_DEVICE pDevice, HRESULT hr)
 {
-    if (FAILED(hr))
-    {
-        AssertFailed();
-        pDevice->pUMCallbacks->pfnSetErrorCb(pDevice->hRTCoreLayer, hr);
-    }
+    Assert(SUCCEEDED(hr) || hr == DXGI_DDI_ERR_WASSTILLDRAWING);
+    /* This callback is also used for setting S_OK, etc results, so always call it. */
+    pDevice->pUMCallbacks->pfnSetErrorCb(pDevice->hRTCoreLayer, hr);
 }
 
 DECLINLINE(D3DKMT_HANDLE) vboxDXGetAllocation(PVBOXDX_RESOURCE pResource)
