@@ -745,6 +745,32 @@ static const char *dxbcOperandTypeToString(uint32_t value)
 }
 
 
+static const char *dxbcExtendedOperandTypeToString(uint32_t value)
+{
+    VGPU10_EXTENDED_OPERAND_TYPE enm = (VGPU10_EXTENDED_OPERAND_TYPE)value;
+    switch (enm)
+    {
+        SVGA_CASE_ID2STR(VGPU10_EXTENDED_OPERAND_EMPTY);
+        SVGA_CASE_ID2STR(VGPU10_EXTENDED_OPERAND_MODIFIER);
+    }
+    return NULL;
+}
+
+
+static const char *dxbcOperandModifierToString(uint32_t value)
+{
+    VGPU10_OPERAND_MODIFIER enm = (VGPU10_OPERAND_MODIFIER)value;
+    switch (enm)
+    {
+        SVGA_CASE_ID2STR(VGPU10_OPERAND_MODIFIER_NONE);
+        SVGA_CASE_ID2STR(VGPU10_OPERAND_MODIFIER_NEG);
+        SVGA_CASE_ID2STR(VGPU10_OPERAND_MODIFIER_ABS);
+        SVGA_CASE_ID2STR(VGPU10_OPERAND_MODIFIER_ABSNEG);
+    }
+    return NULL;
+}
+
+
 static const char *dxbcOperandNumComponentsToString(uint32_t value)
 {
     VGPU10_OPERAND_NUM_COMPONENTS enm = (VGPU10_OPERAND_NUM_COMPONENTS)value;
@@ -1414,6 +1440,10 @@ static int dxbcParseOperand(DXBCTokenReader *r, VGPUOperand *paOperand, uint32_t
 
         VGPU10OperandToken1 operand1;
         operand1.value = dxbcTokenReaderRead32(r);
+
+        Log6(("      %s(%d)  %s(%d)\n",
+              dxbcExtendedOperandTypeToString(operand1.extendedOperandType), operand1.extendedOperandType,
+              dxbcOperandModifierToString(operand1.operandModifier), operand1.operandModifier));
     }
 
     ASSERT_GUEST_RETURN(operand0.operandType < VGPU10_NUM_OPERANDS, VERR_INVALID_PARAMETER);

@@ -5682,7 +5682,7 @@ static void vboxDXMatchShaderInput(DXSHADER *pDXShader, DXSHADER *pDXShaderPrior
             DXShaderAttributeSemantic const *pPriorSemantic = &pDXShaderPrior->shaderInfo.aOutputSemantic[iMatch];
 
             Assert(pPriorSignatureEntry->registerIndex == pSignatureEntry->registerIndex);
-            Assert(pPriorSignatureEntry->mask == pSignatureEntry->mask);
+            Assert((pPriorSignatureEntry->mask & pSignatureEntry->mask) == pSignatureEntry->mask);
             RT_NOREF(pPriorSignatureEntry);
 
             pSemantic->SemanticIndex = pPriorSemantic->SemanticIndex;
@@ -6093,7 +6093,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     AssertContinue(RT_SUCCESS(rc));
                 }
 
-                LogFunc(("srv[%d][%d] sid = %u, srvid = %u\n", idxShaderState, idxSR, sid, shaderResourceViewId));
+                LogFunc(("srv[%d][%d] sid = %u, srvid = %u, format = %s(%d)\n", idxShaderState, idxSR, sid, shaderResourceViewId, vmsvgaLookupEnum((int)pSRViewEntry->format, &g_SVGA3dSurfaceFormat2String), pSRViewEntry->format));
 
 #ifdef DUMP_BITMAPS
                 SVGA3dSurfaceImageId image;
@@ -6220,7 +6220,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 AssertReturnVoid(RT_SUCCESS(rc));
             }
 
-            LogFunc(("rtv sid = %u, rtvid = %u\n", pRTViewEntry->sid, viewId));
+            LogFunc(("rtv sid = %u, rtvid = %u, format = %s(%d)\n", pRTViewEntry->sid, viewId, vmsvgaLookupEnum((int)pRTViewEntry->format, &g_SVGA3dSurfaceFormat2String), pRTViewEntry->format));
         }
     }
 
