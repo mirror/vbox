@@ -821,7 +821,7 @@ public:
 public:
 
     int notifyAboutGuestResponse(void) const;
-    int waitForGuestResponse(RTMSINTERVAL msTimeout = 500) const;
+    int waitForGuestResponse(RTMSINTERVAL msTimeout = 3000) const;
 
     void setActionsAllowed(VBOXDNDACTIONLIST a) { m_dndLstActionsAllowed = a; }
     VBOXDNDACTIONLIST getActionsAllowed(void) const { return m_dndLstActionsAllowed; }

@@ -710,9 +710,9 @@ HRESULT GuestDnDState::queryProgressTo(IProgress **ppProgress)
  * Waits for a guest response to happen.
  *
  * @returns VBox status code.
- * @param   msTimeout           Timeout (in ms) for waiting. Optional, waits 500 ms if not specified.
+ * @param   msTimeout           Timeout (in ms) for waiting. Optional, waits 3000 ms if not specified.
  */
-int GuestDnDState::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */) const
+int GuestDnDState::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 3000 */) const
 {
     int rc = RTSemEventWait(m_EventSem, msTimeout);
 #ifdef DEBUG_andy
