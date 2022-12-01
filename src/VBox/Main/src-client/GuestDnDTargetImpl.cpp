@@ -317,11 +317,9 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     m_lstFmtOffered = aFormats;
     Assert(m_lstFmtOffered.size());
 
-    HRESULT hrc = S_OK;
-
     /* Adjust the coordinates in a multi-monitor setup. */
-    int vrc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
-    if (RT_SUCCESS(vrc))
+    HRESULT hrc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    if (SUCCEEDED(hrc))
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_FN_HG_EVT_ENTER);
@@ -335,19 +333,23 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.appendPointer((void *)strFormats.c_str(), cbFormats);
         Msg.appendUInt32(cbFormats);
 
-        LogRel2(("DnD: Host enters the VM window at %RU32,%RU32 (screen %u, default action is '%s')\n",
-                 aX, aY, aScreenId, DnDActionToStr(dndActionDefault)));
-
-        vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
-            if (RT_SUCCESS(m_pState->waitForGuestResponse()))
+            GuestDnDState *pState = GuestDnDInst()->getState();
+            if (pState && RT_SUCCESS(vrc = pState->waitForGuestResponse()))
+            {
                 resAction = GuestDnD::toMainAction(m_pState->getActionDefault());
-        }
-    }
 
-    if (RT_FAILURE(vrc))
-        hrc = VBOX_E_DND_ERROR;
+                LogRel2(("DnD: Host enters the VM window at %RU32,%RU32 (screen %u, default action is '%s') -> guest reported back action '%s'\n",
+                         aX, aY, aScreenId, DnDActionToStr(dndActionDefault), DnDActionToStr(resAction)));
+            }
+            else
+                hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Waiting for response of enter event failed (%Rrc)"), vrc);
+        }
+        else
+            hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Sending enter event to guest failed (%Rrc)"), vrc);
+    }
 
     if (SUCCEEDED(hrc))
     {
@@ -398,10 +400,8 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         return setError(E_INVALIDARG, tr("No or not supported format(s) specified"));
     const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
-    HRESULT hrc = S_OK;
-
-    int vrc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
-    if (RT_SUCCESS(vrc))
+    HRESULT hrc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    if (SUCCEEDED(hrc))
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_FN_HG_EVT_MOVE);
@@ -415,20 +415,25 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.appendPointer((void *)strFormats.c_str(), cbFormats);
         Msg.appendUInt32(cbFormats);
 
-        vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
             GuestDnDState *pState = GuestDnDInst()->getState();
-            if (pState && RT_SUCCESS(pState->waitForGuestResponse()))
+            if (pState && RT_SUCCESS(vrc = pState->waitForGuestResponse()))
+            {
                 resAction = GuestDnD::toMainAction(pState->getActionDefault());
 
-            LogRel2(("DnD: Host moved to %RU32,%RU32 in VM window (screen %u, default action is '%s') -> guest reported back action '%s'\n",
-                     aX, aY, aScreenId, DnDActionToStr(dndActionDefault), DnDActionToStr(resAction)));
+                LogRel2(("DnD: Host moved to %RU32,%RU32 in VM window (screen %u, default action is '%s') -> guest reported back action '%s'\n",
+                         aX, aY, aScreenId, DnDActionToStr(dndActionDefault), DnDActionToStr(resAction)));
+            }
+            else
+                hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Waiting for response of move event failed (%Rrc)"), vrc);
         }
+        else
+            hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Sending move event to guest failed (%Rrc)"), vrc);
     }
-
-    if (RT_FAILURE(vrc))
-        hrc = VBOX_E_DND_ERROR;
+    else
+        hrc = setError(hrc, tr("Retrieving move coordinates failed"));
 
     if (SUCCEEDED(hrc))
     {
@@ -464,12 +469,15 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     if (RT_SUCCESS(vrc))
     {
         GuestDnDState *pState = GuestDnDInst()->getState();
-        if (pState)
-            pState->waitForGuestResponse();
+        if (pState && RT_SUCCESS(vrc = pState->waitForGuestResponse()))
+        {
+            /* Nothing to do here. */
+        }
+        else
+            hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Waiting for response of leave event failed (%Rrc)"), vrc);
     }
-
-    if (RT_FAILURE(vrc))
-        hrc = VBOX_E_DND_ERROR;
+    else
+        hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Sending leave event to guest failed (%Rrc)"), vrc);
 
     LogFlowFunc(("hrc=%Rhrc\n", hrc));
     return hrc;
@@ -528,8 +536,8 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
     /* Adjust the coordinates in a multi-monitor setup. */
-    HRESULT hr = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
-    if (SUCCEEDED(hr))
+    HRESULT hrc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    if (SUCCEEDED(hrc))
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_FN_HG_EVT_DROPPED);
@@ -563,9 +571,9 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                     else
                     {
                         if (lstFormats.size() == 0)
-                            hr = setError(VBOX_E_DND_ERROR, tr("Guest accepted drop, but did not specify the format"));
+                            hrc = setError(VBOX_E_DND_ERROR, tr("Guest accepted drop, but did not specify the format"));
                         else
-                            hr = setError(VBOX_E_DND_ERROR, tr("Guest accepted drop, but returned more than one drop format (%zu formats)"),
+                            hrc = setError(VBOX_E_DND_ERROR, tr("Guest accepted drop, but returned more than one drop format (%zu formats)"),
                                           lstFormats.size());
                     }
 
@@ -574,22 +582,22 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                 }
             }
             else
-                hr = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);
+                hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);
         }
         else
-            hr = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Sending dropped event to guest failed (%Rrc)"), vrc);
+            hrc = setErrorBoth(VBOX_E_DND_ERROR, vrc, tr("Sending dropped event to guest failed (%Rrc)"), vrc);
     }
     else
-        hr = setError(hr, tr("Retrieving drop coordinates failed"));
+        hrc = setError(hrc, tr("Retrieving drop coordinates failed"));
 
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hrc))
     {
         aFormat = resFmt;
         if (aResultAction)
             *aResultAction = resAct;
     }
 
-    return hr;
+    return hrc;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
