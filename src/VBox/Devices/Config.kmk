@@ -44,6 +44,18 @@ VBOX_PATH_VMSVGA_DEVICE_INC := $(VBOX_PATH_DEVICES_SRC)/Graphics/vmsvga_include
 #
 # VBoxBios - Template for building 16-bit BIOS code.
 #
+# Compiler flags:
+#   -q    Quiet
+#   -0    Only use 8086 instruction.
+#   -wx   Max warning level
+#   -zl   Drop default library info.
+#   -zu   The stack segment (SS) is not same as DGROUP.
+#   -s    Drop stack overflow checks.
+#   -oafs Optimize: a=relaxed aliasing, f=stack frames, s=optimize for size.
+#   -ms   Memory model: small
+#   -hc   Generate codeview debug info.
+#   -d1+  Only do line numbers and a bit more, keeping things easily parsable for VBoxDbg.
+#
 # Disabled linker warnings:
 #   W1014: ?
 #   W1023: ?
