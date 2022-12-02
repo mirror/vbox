@@ -352,14 +352,26 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
         /*
          * Copy the command to the parse buffer.
          */
+        char    chQuote = 0;
         char    ch;
         char   *psz = &pDbgc->achInput[pDbgc->iRead];
         char   *pszTrg = &pDbgc->achScratch[0];
-        while ((*pszTrg = ch = *psz++) != ';' && ch != '\n' )
+        AssertCompile(sizeof(pDbgc->achScratch) > sizeof(pDbgc->achInput));
+        while ((ch = *psz++) != '\0')
         {
+            /* ';' and '\n' are termination characters, except for when they are
+               inside quotes.  So, track quoting. */
+            if (ch == '"' || ch == '\'')
+                chQuote = chQuote == ch ? 0 : chQuote == 0 ? ch : chQuote;
+            else if ((ch == ';' || ch == '\n') && chQuote == 0)
+                break;
+
+            *pszTrg = ch;
+
             if (psz == &pDbgc->achInput[sizeof(pDbgc->achInput)])
                 psz = &pDbgc->achInput[0];
 
+            /** @todo r=bird: off by one issue here? */
             if (psz == &pDbgc->achInput[pDbgc->iWrite])
             {
                 AssertMsgFailed(("The buffer contains no commands while cInputLines=%d!\n", pDbgc->cInputLines));
@@ -383,7 +395,7 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
          */
         pDbgc->pszScratch = pszTrg + 1;
         pDbgc->iArg       = 0;
-        rc = dbgcEvalCommand(pDbgc, &pDbgc->achScratch[0], pszTrg - &pDbgc->achScratch[0] - 1, fNoExecute);
+        rc = dbgcEvalCommand(pDbgc, &pDbgc->achScratch[0], pszTrg - &pDbgc->achScratch[0], fNoExecute);
         if (   rc == VERR_DBGC_QUIT
             || rc == VWRN_DBGC_CMD_PENDING)
             break;

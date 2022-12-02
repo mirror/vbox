@@ -421,7 +421,7 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
  * @param   cchFuncNm           The length of the function name.
  * @param   fExternal           Whether it's an external name.
  * @param   pszArgs             The start of the arguments (after parenthesis).
- * @param   cchArgs             The length for the argument (exclusing
+ * @param   cchArgs             The length for the argument (excluding
  *                              parentesis).
  * @param   enmCategory         The desired category of the result (ignored).
  * @param   pResult             The result.
@@ -808,7 +808,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
             rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
     }
     else
-        /* plain expression, qutoed string, or using unary operators perhaps with parentheses. */
+        /* plain expression, quoted string, or using unary operators perhaps with parentheses. */
         rc = dbgcEvalSubUnary(pDbgc, pszExpr, cchExpr, enmCategory, pResult);
 
     return rc;
@@ -1335,6 +1335,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
  */
 int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
 {
+    Assert(RTStrNLen(pszCmd, cchCmd) == cchCmd);
     char *pszCmdInput = pszCmd;
 
     /*
@@ -1349,22 +1350,27 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         pszCmd++, cchCmd--;
 
     /*
-     * Find arguments.
+     * Find the end of the command name.
      */
-    char *pszArgs = pszCmd;
-    while (RT_C_IS_ALNUM(*pszArgs) || *pszArgs == '_')
-        pszArgs++;
-    if (   (*pszArgs && !RT_C_IS_BLANK(*pszArgs))
-        || !RT_C_IS_ALPHA(*pszCmd))
+    size_t cchName = 0;
+    while (cchName < cchCmd)
     {
-        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Invalid command '%s'!\n", pszCmdInput);
-        return pDbgc->rcCmd = VERR_DBGC_PARSE_INVALD_COMMAND_NAME;
+        char const ch = pszCmd[cchName];
+        if (RT_C_IS_ALNUM(ch) || ch == '_')
+            cchName++;
+        else if (RT_C_IS_SPACE(ch))
+            break;
+        else
+        {
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Invalid command '%s'!\n", pszCmdInput);
+            return pDbgc->rcCmd = VERR_DBGC_PARSE_INVALD_COMMAND_NAME;
+        }
     }
 
     /*
      * Find the command.
      */
-    PCDBGCCMD pCmd = dbgcCommandLookup(pDbgc, pszCmd, pszArgs - pszCmd, fExternal);
+    PCDBGCCMD pCmd = dbgcCommandLookup(pDbgc, pszCmd, cchName, fExternal);
     if (!pCmd)
     {
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Unknown command '%s'!\n", pszCmdInput);
@@ -1373,7 +1379,24 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
 
     /*
      * Parse arguments (if any).
+     *
+     * If the input isn't zero terminated, we have to make a copy because the
+     * argument parser code is to crappy to deal with sub-strings at present.
      */
+    size_t offArgs = cchName;
+    while (offArgs < cchCmd && RT_C_IS_SPACE(pszCmd[offArgs]))
+        offArgs++;
+
+    char  szEmpty[]   = "";
+    char *pszArgsFree = NULL;
+    char *pszArgs     = offArgs < cchCmd ? &pszCmd[offArgs] : szEmpty;
+    if (pszArgs[cchCmd - offArgs] != '\0')
+    {
+        /** @todo rewrite the code so it doesn't require modifiable input! */
+        pszArgsFree = pszArgs = (char *)RTMemDupEx(pszArgs, cchCmd - offArgs, 1);
+        AssertReturn(pszArgs, VERR_NO_MEMORY);
+    }
+
     unsigned iArg;
     unsigned cArgs;
     int rc = dbgcProcessArguments(pDbgc,  pCmd->pszCmd,
@@ -1490,7 +1513,77 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         }
     }
 
+    RTMemFree(pszArgsFree);
     return rc;
+}
+
+
+/**
+ * Evaluate one or commands separated by ';' or '\n'.
+ *
+ * @returns VBox status code. This is also stored in DBGC::rcCmd.
+ *
+ * @param   pDbgc       Debugger console instance data.
+ * @param   pszCmd      Pointer to the command.
+ * @param   cchCmd      Length of the command.
+ * @param   fNoExecute  Indicates that no commands should actually be executed.
+ */
+int dbgcEvalCommands(PDBGC pDbgc, char *pszCmds, size_t cchCmds, bool fNoExecute)
+{
+    /*
+     * Trim the input.
+     */
+    while (cchCmds > 0 && RT_C_IS_SPACE(pszCmds[cchCmds]))
+        cchCmds--;
+    while (cchCmds > 0 && RT_C_IS_SPACE(*pszCmds))
+        cchCmds--, pszCmds++;
+
+    /*
+     * Split up the commands and pass them to dbgcEvalCommand.
+     */
+    int    rcRet    = VINF_SUCCESS;
+    char   chQuote  = 0;
+    size_t offStart = 0;
+    size_t off      = 0;
+    while (off < cchCmds)
+    {
+        char const ch = pszCmds[off];
+        if (ch == '"' || ch == '\'')
+            chQuote = ch == chQuote ? 0 : chQuote == 0 ? ch : chQuote;
+        else if (ch == ';' || ch == '\n')
+        {
+            /* Skip leading blanks and ignore empty commands. */
+            while (offStart < off && RT_C_IS_SPACE(pszCmds[offStart]))
+                offStart++;
+            if (off > offStart)
+            {
+                int rc = dbgcEvalCommand(pDbgc, &pszCmds[offStart], off - offStart, fNoExecute);
+                if (rcRet == VINF_SUCCESS || (RT_SUCCESS(rcRet) && RT_FAILURE(rc)))
+                    rcRet = rc;
+                if (   rc == VERR_DBGC_QUIT
+                    || rc == VWRN_DBGC_CMD_PENDING)
+                    break;
+            }
+            offStart = ++off;
+            continue;
+        }
+        off++;
+    }
+
+    /*
+     * Pending command?
+     *
+     * No need to skip leading blanks here in order to check for empty
+     * commands, since we've already trimmed off tailing blanks.)
+     */
+    if (off > offStart)
+    {
+        int rc = dbgcEvalCommand(pDbgc, &pszCmds[offStart], off - offStart, fNoExecute);
+        if (rcRet == VINF_SUCCESS || (RT_SUCCESS(rcRet) && RT_FAILURE(rc)))
+            rcRet = rc;
+    }
+
+    return rcRet;
 }
 
 

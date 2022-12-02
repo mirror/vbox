@@ -1349,7 +1349,7 @@ static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryRcmd(PGDBSTUBCTX pThis, co
         szCmd[cbDecoded] = '\0'; /* Ensure zero termination. */
 
         pThis->fOutput = false;
-        rc = dbgcEvalCommand(&pThis->Dbgc, &szCmd[0], cbDecoded, false /*fNoExecute*/);
+        rc = dbgcEvalCommand(&pThis->Dbgc, &szCmd[0], cbDecoded - 1, false /*fNoExecute*/);
         dbgcGdbStubCtxReplySendOk(pThis);
         if (   rc != VERR_DBGC_QUIT
             && rc != VWRN_DBGC_CMD_PENDING)

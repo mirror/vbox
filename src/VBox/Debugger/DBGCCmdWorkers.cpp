@@ -228,7 +228,7 @@ int dbgcBpExec(PDBGC pDbgc, RTUINT iBp)
 
     /* Execute the command. */
     pDbgc->pszScratch = pDbgc->pszScratch + pBp->cchCmd + 1;
-    int rc = dbgcEvalCommand(pDbgc, pszScratch, pBp->cchCmd, false /* fNoExecute */);
+    int rc = dbgcEvalCommands(pDbgc, pszScratch, pBp->cchCmd, false /* fNoExecute */);
 
     /* Restore the scratch state. */
     pDbgc->iArg         = iArg;
