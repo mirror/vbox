@@ -99,6 +99,8 @@ static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, 
             rc = Msg.cParms.GetUInt32(pcParms); AssertRC(rc);
         }
 
+        LogRel(("DnD: Received message %s (%#x) from host\n", DnDHostMsgToStr(*puMsg), *puMsg));
+
     } while (rc == VERR_INTERRUPTED);
 
     return rc;
@@ -385,6 +387,8 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     if (!cToRecvObjs)
         return VINF_SUCCESS;
 
+    LogRel2(("DnD: Receiving URI data started\n"));
+
     /*
      * Allocate temporary chunk buffer.
      */
@@ -415,7 +419,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 
     do
     {
-        LogFlowFunc(("Wating for new message ...\n"));
+        LogFlowFunc(("Waiting for new message ...\n"));
 
         uint32_t uNextMsg;
         uint32_t cNextParms;
@@ -582,7 +586,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                 }
                 default:
                 {
-                    LogFlowFunc(("Message %RU32 not supported\n", uNextMsg));
+                    LogRel(("DnD: Warning: Message %s (%#x) from host not supported\n", DnDGuestMsgToStr(uNextMsg), uNextMsg));
                     rc = VERR_NOT_SUPPORTED;
                     break;
                 }
@@ -615,11 +619,15 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
      * something else went wrong. */
     if (RT_FAILURE(rc))
     {
+        LogRel(("DnD: Receiving URI data failed with %Rrc\n", rc));
+
         DnDTransferObjectDestroy(&objCur);
         DnDDroppedFilesRollback(pDroppedFiles);
     }
     else
     {
+        LogRel2(("DnD: Receiving URI data finished\n"));
+
         /** @todo Compare the transfer list with the dirs/files we really transferred. */
         /** @todo Implement checksum verification, if any. */
     }
@@ -908,13 +916,13 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
         if (pvData)
             RTMemFree(pvData);
 
-        LogRel(("DnD: Receiving meta data failed with %Rrc\n", rc));
-
         if (rc != VERR_CANCELLED)
         {
+            LogRel(("DnD: Receiving data failed with %Rrc\n", rc));
+
             int rc2 = VbglR3DnDHGSendProgress(pCtx, DND_PROGRESS_ERROR, 100 /* Percent */, rc);
             if (RT_FAILURE(rc2))
-                LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
+                LogRel(("DnD: Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
         }
     }
 
@@ -1177,8 +1185,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
         if (   RT_SUCCESS(rc2)
             && (uSessionID != pCtx->uSessionID))
         {
-            LogFlowFunc(("VM session ID changed to %RU64\n", uSessionID));
-
+            LogRel2(("DnD: VM session ID changed to %RU64\n", uSessionID));
             rc = VbglR3DnDDisconnect(pCtx);
             if (RT_SUCCESS(rc))
                 rc = VbglR3DnDConnect(pCtx);
@@ -1187,8 +1194,9 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
 
     if (rc == VERR_CANCELLED) /* Host service told us that we have to bail out. */
     {
-        pEvent->enmType = VBGLR3DNDEVENTTYPE_QUIT;
+        LogRel2(("DnD: Host service requested termination\n"));
 
+        pEvent->enmType = VBGLR3DNDEVENTTYPE_QUIT;
         *ppEvent = pEvent;
 
         return VINF_SUCCESS;
@@ -1311,7 +1319,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
     if (RT_FAILURE(rc))
     {
         VbglR3DnDEventFree(pEvent);
-        LogFlowFunc(("Failed with %Rrc\n", rc));
+        LogRel(("DnD: Handling message %s (%#x) failed with %Rrc\n", DnDHostMsgToStr(uMsg), uMsg, rc));
     }
     else
         *ppEvent = pEvent;
