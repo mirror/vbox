@@ -101,6 +101,8 @@ int DnDDroppedFilesReopen(PDNDDROPPEDFILES pDF);
 int DnDDroppedFilesReset(PDNDDROPPEDFILES pDF, bool fDelete);
 int DnDDroppedFilesRollback(PDNDDROPPEDFILES pDF);
 
+const char *DnDHostMsgToStr(uint32_t uMsg);
+const char *DnDGuestMsgToStr(uint32_t uMsg);
 const char *DnDActionToStr(VBOXDNDACTION uAction);
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);

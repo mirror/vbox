@@ -30,10 +30,71 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/HostServices/DragAndDropSvc.h>
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 
+using namespace DragAndDropSvc;
+
+/**
+ * Converts a host HGCM message to a string.
+ *
+ * @returns Stringified version of the host message.
+ */
+const char *DnDHostMsgToStr(uint32_t uMsg)
+{
+    switch (uMsg)
+    {
+        RT_CASE_RET_STR(HOST_DND_FN_SET_MODE);
+        RT_CASE_RET_STR(HOST_DND_FN_CANCEL);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_EVT_ENTER);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_EVT_MOVE);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_EVT_LEAVE);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_EVT_DROPPED);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_SND_DATA_HDR);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_SND_DATA);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_SND_MORE_DATA);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_SND_DIR);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_SND_FILE_DATA);
+        RT_CASE_RET_STR(HOST_DND_FN_HG_SND_FILE_HDR);
+        RT_CASE_RET_STR(HOST_DND_FN_GH_REQ_PENDING);
+        RT_CASE_RET_STR(HOST_DND_FN_GH_EVT_DROPPED);
+        default:
+            break;
+    }
+    return "unknown";
+}
+
+/**
+ * Converts a guest HGCM message to a string.
+ *
+ * @returns Stringified version of the guest message.
+ */
+const char *DnDGuestMsgToStr(uint32_t uMsg)
+{
+    switch (uMsg)
+    {
+        RT_CASE_RET_STR(GUEST_DND_FN_CONNECT);
+        RT_CASE_RET_STR(GUEST_DND_FN_DISCONNECT);
+        RT_CASE_RET_STR(GUEST_DND_FN_REPORT_FEATURES);
+        RT_CASE_RET_STR(GUEST_DND_FN_QUERY_FEATURES);
+        RT_CASE_RET_STR(GUEST_DND_FN_GET_NEXT_HOST_MSG);
+        RT_CASE_RET_STR(GUEST_DND_FN_HG_ACK_OP);
+        RT_CASE_RET_STR(GUEST_DND_FN_HG_REQ_DATA);
+        RT_CASE_RET_STR(GUEST_DND_FN_HG_EVT_PROGRESS);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_ACK_PENDING);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_SND_DATA_HDR);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_SND_DATA);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_EVT_ERROR);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_SND_DIR);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_SND_FILE_DATA);
+        RT_CASE_RET_STR(GUEST_DND_FN_GH_SND_FILE_HDR);
+        default:
+            break;
+    }
+    return "unknown";
+}
 
 /**
  * Converts a VBOXDNDACTION to a string.
