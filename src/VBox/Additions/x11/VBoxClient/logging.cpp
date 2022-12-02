@@ -28,12 +28,18 @@
 
 #include <sys/wait.h>
 #include <stdlib.h>
+
 #include <iprt/buildconfig.h>
 #include <iprt/file.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/system.h>
+
+#ifdef VBOX_WITH_DBUS
+# include <VBox/dbus.h>
+#endif
 #include <VBox/VBoxGuestLib.h>
+
 #include <package-generated.h>
 #include "VBoxClient.h"
 
@@ -48,14 +54,16 @@ static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. *
 static char          *g_pszCustomLogPrefix;
 
 extern unsigned      g_cRespawn;
-extern unsigned      g_cVerbosity;
+
 
 /**
- * Notifies the desktop environment with a message.
+ * Fallback notification helper using 'notify-send'.
  *
+ * @returns VBox status code.
+ * @returns VERR_NOT_SUPPORTED if 'notify-send' is not available, or there was an error while running 'notify-send'.
  * @param   pszMessage          Message to notify desktop environment with.
  */
-int vbclLogNotify(const char *pszMessage)
+int vbclNotifyFallbackNotifySend(const char *pszMessage)
 {
     AssertPtrReturn(pszMessage, VERR_INVALID_POINTER);
 
@@ -78,9 +86,7 @@ int vbclLogNotify(const char *pszMessage)
                 {
                     status = system(pszCommand);
                     if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
-                    {
-                        RTPrintf("VBoxClient: %s", pszMessage);
-                    }
+                        rc = VERR_NOT_SUPPORTED;
 
                     RTStrFree(pszCommand);
                 }
@@ -94,6 +100,125 @@ int vbclLogNotify(const char *pszMessage)
 
     return rc;
 }
+
+/**
+ * Shows a notification on the desktop.
+ *
+ * @returns VBox status code.
+ * @returns VERR_NOT_SUPPORTED if the current desktop environment is not supported.
+ * @param   pszHeader           Header text to show.
+ * @param   pszBody             Body text to show.
+ *
+ * @note    How this notification will look like depends on the actual desktop environment implementing
+ *          the actual notification service. Currently only D-BUS-compatible environments are supported.
+ *
+ *          Most notification implementations have length limits on their header / body texts, so keep
+ *          the text(s) short.
+ */
+int VBClShowNotify(const char *pszHeader, const char *pszBody)
+{
+    AssertPtrReturn(pszHeader, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszBody,   VERR_INVALID_POINTER);
+
+    int rc;
+# ifdef VBOX_WITH_DBUS
+    rc = RTDBusLoadLib(); /** @todo Does this init / load the lib only once? Need to check this. */
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("D-Bus seems not to be installed; no desktop notifications available\n");
+        return rc;
+    }
+
+    DBusConnection *conn;
+    DBusMessage* msg = NULL;
+    conn = dbus_bus_get(DBUS_BUS_SESSION, NULL);
+    if (conn == NULL)
+    {
+        VBClLogError("Could not retrieve D-BUS session bus\n");
+        rc = VERR_INVALID_HANDLE;
+    }
+    else
+    {
+        msg = dbus_message_new_method_call("org.freedesktop.Notifications",
+                                           "/org/freedesktop/Notifications",
+                                           "org.freedesktop.Notifications",
+                                           "Notify");
+        if (msg == NULL)
+        {
+            VBClLogError("Could not create D-BUS message!\n");
+            rc = VERR_INVALID_HANDLE;
+        }
+        else
+            rc = VINF_SUCCESS;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t msg_replace_id = 0;
+        const char *msg_app = "VBoxClient";
+        const char *msg_icon = "";
+        const char *msg_summary = pszHeader;
+        const char *msg_body = pszBody;
+        int32_t msg_timeout = -1;           /* Let the notification server decide */
+
+        DBusMessageIter iter;
+        DBusMessageIter array;
+        /*DBusMessageIter dict; - unused */
+        /*DBusMessageIter value; - unused */
+        /*DBusMessageIter variant; - unused */
+        /*DBusMessageIter data; - unused */
+
+        /* Format: UINT32 org.freedesktop.Notifications.Notify
+         *         (STRING app_name, UINT32 replaces_id, STRING app_icon, STRING summary, STRING body,
+         *          ARRAY actions, DICT hints, INT32 expire_timeout)
+         */
+        dbus_message_iter_init_append(msg,&iter);
+        dbus_message_iter_append_basic(&iter,DBUS_TYPE_STRING,&msg_app);
+        dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&msg_replace_id);
+        dbus_message_iter_append_basic(&iter,DBUS_TYPE_STRING,&msg_icon);
+        dbus_message_iter_append_basic(&iter,DBUS_TYPE_STRING,&msg_summary);
+        dbus_message_iter_append_basic(&iter,DBUS_TYPE_STRING,&msg_body);
+        dbus_message_iter_open_container(&iter,DBUS_TYPE_ARRAY,DBUS_TYPE_STRING_AS_STRING,&array);
+        dbus_message_iter_close_container(&iter,&array);
+        dbus_message_iter_open_container(&iter,DBUS_TYPE_ARRAY,"{sv}",&array);
+        dbus_message_iter_close_container(&iter,&array);
+        dbus_message_iter_append_basic(&iter,DBUS_TYPE_INT32,&msg_timeout);
+
+        DBusError err;
+        dbus_error_init(&err);
+
+        DBusMessage *reply;
+        reply = dbus_connection_send_with_reply_and_block(conn, msg, 30 * 1000 /* 30 seconds timeout */, &err);
+        if (dbus_error_is_set(&err))
+            VBClLogError("D-BUS returned an error while sending the notification: %s", err.message);
+        else if (reply)
+        {
+            dbus_connection_flush(conn);
+            dbus_message_unref(reply);
+        }
+        if (dbus_error_is_set(&err))
+            dbus_error_free(&err);
+    }
+    if (msg != NULL)
+        dbus_message_unref(msg);
+# else
+    /** @todo Implement me */
+    RT_NOREF(pszHeader, pszBody);
+    rc = VERR_NOT_SUPPORTED;
+# endif /* VBOX_WITH_DBUS */
+
+    /* Try to use a fallback if the stuff above fails or is not available. */
+    if (RT_FAILURE(rc))
+        rc = vbclNotifyFallbackNotifySend(pszBody);
+
+    /* If everything fails, still print out our notification to stdout, in the hope
+     * someone still gets aware of it. */
+    if (RT_FAILURE(rc))
+        VBClLogInfo("*** Notification: %s - %s ***\n", pszHeader, pszBody);
+
+    return rc;
+}
+
+
 
 /**
  * Logs a verbose message.
@@ -129,7 +254,7 @@ void VBClLogFatalError(const char *pszFormat, ...)
     LogFunc(("Fatal Error: %s", psz));
     LogRel(("Fatal Error: %s", psz));
 
-    vbclLogNotify(psz);
+    VBClShowNotify("VBoxClient - Fatal Error", psz);
 
     RTStrFree(psz);
 }

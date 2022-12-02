@@ -43,6 +43,8 @@
 /** Environment variable which contains information about currently running session (X11, Wayland, etc). */
 #define VBCL_ENV_XDG_SESSION_TYPE       "XDG_SESSION_TYPE"
 
+int VBClShowNotify(const char *pszHeader, const char *pszBody);
+
 void VBClLogInfo(const char *pszFormat, ...);
 void VBClLogError(const char *pszFormat, ...);
 void VBClLogFatalError(const char *pszFormat, ...);
@@ -139,6 +141,7 @@ extern VBCLSERVICE g_SvcDragAndDrop;
 extern VBCLSERVICE g_SvcHostVersion;
 extern VBCLSERVICE g_SvcSeamless;
 
+extern unsigned    g_cVerbosity;
 extern bool        g_fDaemonized;
 RT_C_DECLS_END
 
