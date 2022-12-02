@@ -81,6 +81,7 @@ static FNDBGCCMD dbgcCmdSet;
 static FNDBGCCMD dbgcCmdUnset;
 static FNDBGCCMD dbgcCmdLoadVars;
 static FNDBGCCMD dbgcCmdShowVars;
+static FNDBGCCMD dbgcCmdSleep;
 static FNDBGCCMD dbgcCmdLoadPlugIn;
 static FNDBGCCMD dbgcCmdUnloadPlugIn;
 static FNDBGCCMD dbgcCmdHarakiri;
@@ -246,6 +247,13 @@ static const DBGCVARDESC    g_aArgSet[] =
     {  1,           1,          DBGCVAR_CAT_ANY,        0,                              "value",        "Value to assign to the variable." },
 };
 
+/** 'sleep' arguments */
+static const DBGCVARDESC    g_aArgSleep[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "milliseconds", "The sleep interval in milliseconds (max 30000ms)." },
+};
+
 /** 'stop' arguments */
 static const DBGCVARDESC    g_aArgStop[] =
 {
@@ -324,6 +332,7 @@ const DBGCCMD    g_aDbgcCmds[] =
                                                                                                                                         "(after removing blanks) are comment. blank lines are ignored. Stops on failure." },
     { "set",        2,        2,        &g_aArgSet[0],       RT_ELEMENTS(g_aArgSet),       0, dbgcCmdSet,       "<var> <value>",        "Sets a global variable." },
     { "showvars",   0,        0,        NULL,                0,                            0, dbgcCmdShowVars,  "",                     "List all the defined variables." },
+    { "sleep",      1,        1,        &g_aArgSleep[0],     RT_ELEMENTS(g_aArgSleep),     0, dbgcCmdSleep,     "<milliseconds>",       "Sleeps for the given number of milliseconds (max 30000)." },
     { "stop",       0,        1,        &g_aArgStop[0],      RT_ELEMENTS(g_aArgStop),      0, dbgcCmdStop,      "[idCpu]",              "Stop execution either of all or the specified CPU. (The latter is not recommended unless you know exactly what you're doing.)" },
     { "unload",     1,       ~0U,       &g_aArgUnload[0],    RT_ELEMENTS(g_aArgUnload),    0, dbgcCmdUnload,    "<modname1> [modname2..N]", "Unloads one or more modules in the current address space." },
     { "unloadplugin", 1,     ~0U,       &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),    0, dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
@@ -1857,6 +1866,18 @@ static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
     }
 
     NOREF(paArgs); NOREF(cArgs);
+    return 0;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'sleep' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdSleep(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    RT_NOREF(pCmd, pCmdHlp, pUVM, cArgs);
+    /** @todo make this interruptible. For now the command is limited to 30 sec. */
+    RTThreadSleep(RT_MIN((RTMSINTERVAL)paArgs[0].u.u64Number, RT_MS_30SEC));
     return 0;
 }
 
