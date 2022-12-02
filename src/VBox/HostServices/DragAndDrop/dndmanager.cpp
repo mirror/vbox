@@ -59,12 +59,17 @@ int DnDManager::AddMsg(DnDMessage *pMsg, bool fAppend /* = true */)
 {
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("uMsg=%RU32, cParms=%RU32, fAppend=%RTbool\n", pMsg->GetType(), pMsg->GetParamCount(), fAppend));
+    LogFlowFunc(("uMsg=%s (%#x), cParms=%RU32, fAppend=%RTbool\n",
+                 DnDHostMsgToStr(pMsg->GetType()), pMsg->GetType(), pMsg->GetParamCount(), fAppend));
 
     if (fAppend)
         m_queueMsg.append(pMsg);
     else
         m_queueMsg.prepend(pMsg);
+
+#ifdef DEBUG
+    DumpQueue();
+#endif
 
     /** @todo Catch / handle OOM? */
 
@@ -98,6 +103,16 @@ int DnDManager::AddMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]
     return rc;
 }
 
+#ifdef DEBUG
+void DnDManager::DumpQueue(void)
+{
+    LogFunc(("Current queue (%zu items, FIFO) is: %s", m_queueMsg.size(), m_queueMsg.isEmpty() ? "<Empty>" : ""));
+    for (size_t i = 0; i < m_queueMsg.size(); ++i)
+        Log(("%s ", DnDHostMsgToStr(m_queueMsg[i]->GetType())));
+    Log(("\n"));
+}
+#endif /* DEBUG */
+
 /**
  * Retrieves information about the next message in the queue.
  *
@@ -111,6 +126,10 @@ int DnDManager::GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms)
     AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
 
     int rc;
+
+#ifdef DEBUG
+    DumpQueue();
+#endif
 
     if (m_queueMsg.isEmpty())
     {
@@ -127,7 +146,7 @@ int DnDManager::GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms)
         rc = VINF_SUCCESS;
     }
 
-    LogFlowFunc(("Returning puMsg=%RU32, pcParms=%RU32, rc=%Rrc\n", *puType, *pcParms, rc));
+    LogFlowFunc(("Returning uMsg=%s (%#x), cParms=%RU32, rc=%Rrc\n", DnDHostMsgToStr(*puType), *puType, *pcParms, rc));
     return rc;
 }
 
@@ -142,7 +161,7 @@ int DnDManager::GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms)
  */
 int DnDManager::GetNextMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    LogFlowFunc(("uMsg=%RU32, cParms=%RU32\n", uMsg, cParms));
+    LogFlowFunc(("uMsg=%s (%#x), cParms=%RU32\n", DnDHostMsgToStr(uMsg), uMsg, cParms));
 
     /* Check for pending messages in our queue. */
     if (m_queueMsg.isEmpty())

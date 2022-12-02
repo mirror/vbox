@@ -426,7 +426,8 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
                                    uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
 {
     RT_NOREF1(pvClient);
-    LogFlowFunc(("idClient=%RU32, u32Function=%RU32, cParms=%RU32\n", idClient, u32Function, cParms));
+    LogFlowFunc(("idClient=%RU32, u32Function=%s (%#x), cParms=%RU32\n",
+                 idClient, DnDGuestMsgToStr(u32Function), u32Function, cParms));
 
     /* Check if we've the right mode set. */
     int rc = VERR_ACCESS_DENIED; /* Play safe. */
@@ -438,7 +439,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
                 rc = VINF_SUCCESS;
             else
             {
-                LogFlowFunc(("DnD disabled, deferring request\n"));
+                LogRel(("DnD: Feature is disabled, ignoring request from guest\n"));
                 rc = VINF_HGCM_ASYNC_EXECUTE;
             }
             break;
@@ -470,7 +471,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
                 || modeGet() == VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST)
                 rc = VINF_SUCCESS;
             else
-                LogFlowFunc(("Host -> Guest DnD mode disabled, failing request\n"));
+                LogRel(("DnD: Host -> Guest mode disabled, ignoring request from guest\n"));
             break;
         }
 
@@ -488,7 +489,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
                 rc = VINF_SUCCESS;
             else
 #endif
-                LogFlowFunc(("Guest -> Host DnD mode disabled, failing request\n"));
+                LogRel(("DnD: Guest -> Host mode disabled, ignoring request from guest\n"));
             break;
         }
 
@@ -564,7 +565,6 @@ do { \
              */
             case GUEST_DND_FN_GET_NEXT_HOST_MSG:
             {
-                LogFlowFunc(("GUEST_DND_FN_GET_NEXT_HOST_MSG\n"));
                 if (cParms == 3)
                 {
                     rc = m_pManager->GetNextMsgInfo(&paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
@@ -611,8 +611,6 @@ do { \
             }
             case GUEST_DND_FN_CONNECT:
             {
-                LogFlowFunc(("GUEST_DND_FN_CONNECT\n"));
-
                 ASSERT_GUEST_BREAK(cParms >= 2);
 
                 VBOXDNDCBCONNECTDATA data;
@@ -647,7 +645,6 @@ do { \
             }
             case GUEST_DND_FN_REPORT_FEATURES:
             {
-                LogFlowFunc(("GUEST_DND_FN_REPORT_FEATURES\n"));
                 rc = clientReportFeatures(pClient, cParms, paParms);
                 if (RT_SUCCESS(rc))
                 {
@@ -666,14 +663,11 @@ do { \
             }
             case GUEST_DND_FN_QUERY_FEATURES:
             {
-                LogFlowFunc(("GUEST_DND_FN_QUERY_FEATURES"));
                 rc = clientQueryFeatures(cParms, paParms);
                 break;
             }
             case GUEST_DND_FN_HG_ACK_OP:
             {
-                LogFlowFunc(("GUEST_DND_FN_HG_ACK_OP\n"));
-
                 ASSERT_GUEST_BREAK(cParms >= 2);
 
                 VBOXDNDCBHGACKOPDATA data;
@@ -689,8 +683,6 @@ do { \
             }
             case GUEST_DND_FN_HG_REQ_DATA:
             {
-                LogFlowFunc(("GUEST_DND_FN_HG_REQ_DATA\n"));
-
                 VBOXDNDCBHGREQDATADATA data;
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_REQ_DATA;
@@ -723,8 +715,6 @@ do { \
             }
             case GUEST_DND_FN_HG_EVT_PROGRESS:
             {
-                LogFlowFunc(("GUEST_DND_FN_HG_EVT_PROGRESS\n"));
-
                 ASSERT_GUEST_BREAK(cParms >= 3);
 
                 VBOXDNDCBHGEVTPROGRESSDATA data;
@@ -745,8 +735,6 @@ do { \
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
             case GUEST_DND_FN_GH_ACK_PENDING:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_ACK_PENDING\n"));
-
                 VBOXDNDCBGHACKPENDINGDATA data;
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_ACK_PENDING;
@@ -787,8 +775,6 @@ do { \
             /* New since protocol v3. */
             case GUEST_DND_FN_GH_SND_DATA_HDR:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_SND_DATA_HDR\n"));
-
                 ASSERT_GUEST_BREAK(cParms == 12);
 
                 VBOXDNDCBSNDDATAHDRDATA data;
@@ -823,8 +809,6 @@ do { \
             }
             case GUEST_DND_FN_GH_SND_DATA:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_SND_DATA\n"));
-
                 switch (pClient->uProtocolVerDeprecated)
                 {
                     case 3:
@@ -848,6 +832,7 @@ do { \
                     }
 
                     case 2:
+                        RT_FALL_THROUGH();
                     default:
                     {
                         ASSERT_GUEST_BREAK(cParms == 2);
@@ -869,8 +854,6 @@ do { \
             }
             case GUEST_DND_FN_GH_SND_DIR:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_SND_DIR\n"));
-
                 ASSERT_GUEST_BREAK(cParms >= 3);
 
                 VBOXDNDCBSNDDIRDATA data;
@@ -890,8 +873,6 @@ do { \
             /* New since protocol v2 (>= VBox 5.0). */
             case GUEST_DND_FN_GH_SND_FILE_HDR:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_SND_FILE_HDR\n"));
-
                 ASSERT_GUEST_BREAK(cParms == 6);
 
                 VBOXDNDCBSNDFILEHDRDATA data;
@@ -914,8 +895,6 @@ do { \
             }
             case GUEST_DND_FN_GH_SND_FILE_DATA:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_SND_FILE_DATA\n"));
-
                 switch (pClient->uProtocolVerDeprecated)
                 {
                     /* Protocol v3 adds (optional) checksums. */
@@ -981,8 +960,6 @@ do { \
             }
             case GUEST_DND_FN_GH_EVT_ERROR:
             {
-                LogFlowFunc(("GUEST_DND_FN_GH_EVT_ERROR\n"));
-
                 ASSERT_GUEST_BREAK(cParms >= 1);
 
                 VBOXDNDCBEVTERRORDATA data;
@@ -1000,6 +977,8 @@ do { \
 
             default:
             {
+                LogFlowFunc(("u32Function=%s (%#x), cParms=%RU32\n", DnDHostMsgToStr(u32Function), u32Function, cParms));
+
                 /* All other messages are handled by the DnD manager. */
                 rc = m_pManager->GetNextMsg(u32Function, cParms, paParms);
                 if (rc == VERR_NO_DATA) /* Manager has no new messsages? Try asking the host. */
@@ -1081,8 +1060,8 @@ do { \
 int DragAndDropService::hostCall(uint32_t u32Function,
                                  uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
 {
-    LogFlowFunc(("u32Function=%RU32, cParms=%RU32, cClients=%zu, cQueue=%zu\n",
-                 u32Function, cParms, m_clientMap.size(), m_clientQueue.size()));
+    LogFlowFunc(("u32Function=%s (%#x), cParms=%RU32, cClients=%zu, cQueue=%zu\n",
+                 DnDHostMsgToStr(u32Function), u32Function, cParms, m_clientMap.size(), m_clientQueue.size()));
 
     int rc;
     bool fSendToGuest = false; /* Whether to send the message down to the guest side or not. */
@@ -1215,8 +1194,8 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             uint32_t cParmsNext = 0;
             int rcNext = m_pManager->GetNextMsgInfo(&uMsgNext, &cParmsNext);
 
-            LogFlowFunc(("uMsgClient=%RU32, uMsgNext=%RU32, cParmsNext=%RU32, rcNext=%Rrc\n",
-                         uMsgClient, uMsgNext, cParmsNext, rcNext));
+            LogFlowFunc(("uMsgClient=%s (%#x), uMsgNext=%s (%#x), cParmsNext=%RU32, rcNext=%Rrc\n",
+                         DnDGuestMsgToStr(uMsgClient), uMsgClient, DnDHostMsgToStr(uMsgNext), uMsgNext, cParmsNext, rcNext));
 
             if (RT_SUCCESS(rcNext))
             {

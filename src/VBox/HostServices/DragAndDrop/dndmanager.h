@@ -105,6 +105,10 @@ public:
     int AddMsg(DnDMessage *pMessage, bool fAppend = true);
     int AddMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fAppend = true);
 
+#ifdef DEBUG
+    void DumpQueue();
+#endif
+
     int GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms);
     int GetNextMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
