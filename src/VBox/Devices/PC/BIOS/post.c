@@ -30,7 +30,7 @@
 #include "biosint.h"
 #include "inlines.h"
 
-#if DEBUG_POST
+#if DEBUG_POST  || 0
 #  define DPRINT(...) BX_DEBUG(__VA_ARGS__)
 #else
 #  define DPRINT(...)
@@ -80,8 +80,27 @@ static inline uint8_t rom_checksum(uint8_t __far *rom, uint8_t blocks)
 }
 
 /* The ROM init routine might trash register. Give the compiler a heads-up. */
-typedef void (rom_init_rtn)(void);
-#pragma aux rom_init_rtn modify [ax bx cx dx si di es] loadds;
+typedef void __far (rom_init_rtn)(void);
+#pragma aux rom_init_rtn modify [ax bx cx dx si di es /*ignored:*/ bp] /*ignored:*/ loadds;
+
+/* The loadds bit is ignored for rom_init_rtn, the impression from the code
+   generator is that this is due to using a memory model where DS is fixed.
+   If we add DS as a modified register, we'll get run into compiler error
+   E1122 (BAD_REG) because FixedRegs() in cg/intel/386/c/386rgtbl.c returns
+   HW_DS as part of the fixed register set that cannot be modified.
+
+   The problem of the vga bios trashing DS isn't a biggie, except when
+   something goes sideways before we can reload it.  Setting a I/O port
+   breakpoint on port 80h and wait a while before resuming execution
+   (ba i 1 80 "sleep 400 ; g") will usually trigger a keyboard init panic and
+   showcase the issue.  The panic message is garbage because it's read from
+   segment 0c000h instead of 0f000h. */
+static void restore_ds_as_dgroup(void);
+#pragma aux restore_ds_as_dgroup = \
+    "mov ax, 0f000h" \
+    "mov ds, ax" \
+    modify exact [ax];
+
 
 /* Scan for ROMs in the given range and execute their POST code. */
 void rom_scan(uint16_t start_seg, uint16_t end_seg)
@@ -97,12 +116,14 @@ void rom_scan(uint16_t start_seg, uint16_t end_seg)
         if (rom->signature == 0xAA55) {
             DPRINT("Found ROM at segment %04X\n", start_seg);
             if (!rom_checksum((void __far *)rom, rom->num_blks)) {
-                rom_init_rtn    __far *rom_init;
+                rom_init_rtn *rom_init;
 
                 /* Checksum good, initialize ROM. */
-                rom_init = (void __far *)&rom->code;
+                rom_init = (rom_init_rtn *)&rom->code;
                 rom_init();
                 int_disable();
+                restore_ds_as_dgroup();
+                /** @todo BP is not restored. */
                 DPRINT("ROM initialized\n");
 
                 /* Continue scanning past the end of this ROM. */
