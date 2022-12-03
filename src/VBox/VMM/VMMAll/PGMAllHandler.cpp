@@ -33,6 +33,7 @@
 #define VBOX_WITHOUT_PAGING_BIT_FIELDS /* 64-bit bitfields are just asking for trouble. See @bugref{9841} and others. */
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
@@ -735,8 +736,12 @@ DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PVMCC pVM, RTGCPHYS GCPhys, b
  * @param   fDoAccounting   Whether to perform accounting.  (Only set during
  *                          reset where pgmR3PhysRamReset doesn't have the
  *                          handler structure handy.)
+ * @param   fFlushIemTlbs   Whether to perform IEM TLB flushing or not.  This
+ *                          can be cleared only if the caller does the flushing
+ *                          after calling this function.
  */
-void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, PPGMRAMRANGE pRam, bool fDoAccounting)
+void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, PPGMRAMRANGE pRam,
+                                        bool fDoAccounting, bool fFlushIemTlbs)
 {
     Assert(   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
            || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
@@ -762,9 +767,12 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
     PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
     PGM_PAGE_SET_HNDL_PHYS_STATE_ONLY(pPage, PGM_PAGE_HNDL_PHYS_STATE_ALL);
 
-    /* Flush its TLB entry. */
+    /*
+     * Flush its TLB entry.
+     */
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
-    /* Not calling IEMTlbInvalidateAllPhysicalAllCpus here as aliased pages are handled like MMIO by the IEM TLB. */
+    if (fFlushIemTlbs)
+        IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
 
     /*
      * Do accounting for pgmR3PhysRamReset.
@@ -833,7 +841,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVMCC pVM, PPGMPHYSHANDLER pCur)
                 || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO)
             {
                 Assert(pCur->cAliasedPages > 0);
-                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhys, pRamHint, false /*fDoAccounting*/);
+                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhys, pRamHint, false /*fDoAccounting*/, true /*fFlushIemTlbs*/);
                 pCur->cAliasedPages--;
                 fNemNotifiedAlready = true;
             }
@@ -1222,16 +1230,19 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
                      */
                     if (pCur->cAliasedPages)
                     {
-                        PPGMPAGE    pPage      = &pRam->aPages[(pCur->Key - pRam->GCPhys) >> GUEST_PAGE_SHIFT];
-                        RTGCPHYS    GCPhysPage = pCur->Key;
-                        uint32_t    cLeft      = pCur->cPages;
+                        PPGMPAGE    pPage        = &pRam->aPages[(pCur->Key - pRam->GCPhys) >> GUEST_PAGE_SHIFT];
+                        RTGCPHYS    GCPhysPage   = pCur->Key;
+                        uint32_t    cLeft        = pCur->cPages;
+                        bool        fFlushIemTlb = false;
                         while (cLeft-- > 0)
                         {
                             if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
                                 || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO)
                             {
+                                fFlushIemTlb |= PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO;
                                 Assert(pCur->cAliasedPages > 0);
-                                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhysPage, pRam, false /*fDoAccounting*/);
+                                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhysPage, pRam,
+                                                                   false /*fDoAccounting*/, false /*fFlushIemTlbs*/);
                                 --pCur->cAliasedPages;
 #ifndef VBOX_STRICT
                                 if (pCur->cAliasedPages == 0)
@@ -1243,6 +1254,13 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
                             pPage++;
                         }
                         Assert(pCur->cAliasedPages == 0);
+
+                        /*
+                         * Flush IEM TLBs in case they contain any references to aliased pages.
+                         * This is only necessary for MMIO2 aliases.
+                         */
+                        if (fFlushIemTlb)
+                            IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
                     }
                 }
                 else if (pCur->cTmpOffPages > 0)
@@ -1591,8 +1609,14 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
                  */
                 Log(("PGMHandlerPhysicalPageAliasMmio2: GCPhysPage=%RGp (%R[pgmpage]; %RHp -> %RHp\n",
                      GCPhysPage, pPage, PGM_PAGE_GET_HCPHYS(pPage), PGM_PAGE_GET_HCPHYS(pPageRemap)));
-                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhysPage, pRam, false /*fDoAccounting*/);
+                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhysPage, pRam,
+                                                   false /*fDoAccounting*/, false /*fFlushIemTlbs*/);
                 pCur->cAliasedPages--;
+
+                /* Since this may be present in the TLB and now be wrong, invalid
+                   the guest physical address part of the IEM TLBs.  Note, we do
+                   this here as we will not invalid */
+                IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
             }
             Assert(PGM_PAGE_IS_ZERO(pPage));
 
@@ -1610,9 +1634,19 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
             pCur->cAliasedPages++;
             Assert(pCur->cAliasedPages <= pCur->cPages);
 
-            /* Flush its TLB entry. */
+            /*
+             * Flush its TLB entry.
+             *
+             * Not calling IEMTlbInvalidateAllPhysicalAllCpus here to conserve
+             * all the other IEM TLB entires.  When this one is kicked out and
+             * reloaded, it will be using the MMIO2 alias, but till then we'll
+             * continue doing MMIO.
+             */
             pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
-            /* Not calling IEMTlbInvalidateAllPhysicalAllCpus here as aliased pages are handled like MMIO by the IEM TLB. */
+            /** @todo Do some preformance checks of calling
+             *        IEMTlbInvalidateAllPhysicalAllCpus when in IEM mode, to see if it
+             *        actually makes sense or not.  Screen updates are typically massive
+             *        and important when this kind of aliasing is used, so it may pay of... */
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the backing and protection change. */
@@ -1734,9 +1768,13 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
             pCur->cAliasedPages++;
             Assert(pCur->cAliasedPages <= pCur->cPages);
 
-            /* Flush its TLB entry. */
+            /*
+             * Flush its TLB entry.
+             *
+             * Not calling IEMTlbInvalidateAllPhysicalAllCpus here as special
+             * aliased MMIO pages are handled like MMIO by the IEM TLB.
+             */
             pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
-            /* Not calling IEMTlbInvalidateAllPhysicalAllCpus here as aliased pages are handled like MMIO by the IEM TLB. */
 
 #ifdef VBOX_WITH_NATIVE_NEM
             /* Tell NEM about the backing and protection change. */

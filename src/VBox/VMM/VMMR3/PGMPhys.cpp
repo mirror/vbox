@@ -2077,7 +2077,7 @@ int pgmR3PhysRamZeroAll(PVM pVM)
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                     case PGMPAGETYPE_SPECIAL_ALIAS_MMIO: /** @todo perhaps leave the special page alone?  I don't think VT-x copes with this code. */
                         pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT),
-                                                           pRam, true /*fDoAccounting*/);
+                                                           pRam, true /*fDoAccounting*/, false /*fFlushIemTlbs*/);
                         break;
 
                     case PGMPAGETYPE_MMIO2:
@@ -2130,7 +2130,7 @@ int pgmR3PhysRamZeroAll(PVM pVM)
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                     case PGMPAGETYPE_SPECIAL_ALIAS_MMIO: /** @todo perhaps leave the special page alone?  I don't think VT-x copes with this code. */
                         pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT),
-                                                           pRam, true /*fDoAccounting*/);
+                                                           pRam, true /*fDoAccounting*/, false /*fFlushIemTlbs*/);
                         break;
 
                     case PGMPAGETYPE_MMIO2:
@@ -2156,6 +2156,12 @@ int pgmR3PhysRamZeroAll(PVM pVM)
         AssertLogRelRCReturn(rc, rc);
     }
     GMMR3FreePagesCleanup(pReq);
+
+    /*
+     * Flush the IEM TLB, just to be sure it really is done.
+     */
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+
     return VINF_SUCCESS;
 }
 
