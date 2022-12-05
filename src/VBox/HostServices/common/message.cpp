@@ -26,6 +26,7 @@
  */
 
 #include <VBox/HostServices/Service.h>
+#include <VBox/VMMDev.h> /* For VMMDEV_MAX_HGCM_PARMS. */
 
 using namespace HGCM;
 
@@ -98,6 +99,10 @@ int Message::GetData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) c
         LogFlowFunc(("Stored message type (%RU32) does not match request (%RU32)\n", m_uMsg, uMsg));
         return VERR_INVALID_PARAMETER;
     }
+
+    if (m_cParms == 0) /* Nothing to copy, take a shortcut. */
+        return VINF_SUCCESS;
+
     if (m_cParms > cParms)
     {
         LogFlowFunc(("Stored parameter count (%RU32) exceeds request buffer (%RU32)\n", m_cParms, cParms));
@@ -267,10 +272,8 @@ int Message::CopyParms(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
  */
 int Message::initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) RT_NOEXCEPT
 {
-    /** @todo r=bird: There is a define for the max number of HGCM parameters,
-     *        it's way smaller than 256, something like 61 IIRC. */
-    AssertReturn(cParms < 256, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(aParms, VERR_INVALID_PARAMETER);
+    AssertReturn(cParms < VMMDEV_MAX_HGCM_PARMS, VERR_INVALID_PARAMETER);
+    AssertReturn(cParms == 0 || aParms != NULL, VERR_INVALID_POINTER);
 
     /* Cleanup any eventual old stuff. */
     reset();
