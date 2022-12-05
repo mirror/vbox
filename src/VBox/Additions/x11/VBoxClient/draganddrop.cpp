@@ -587,8 +587,8 @@ public:
     int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta);
 
     /* X11 helpers. */
-    int  mouseCursorFakeMove(void) const;
-    int  mouseCursorMove(int iPosX, int iPosY) const;
+    int  mouseCursorFakeMove(void);
+    int  mouseCursorMove(int iPosX, int iPosY);
     void mouseButtonSet(Window wndDest, int rx, int ry, int iButton, bool fPress);
     int proxyWinShow(int *piRootX = NULL, int *piRootY = NULL) const;
     int proxyWinHide(void);
@@ -633,6 +633,12 @@ protected:
     /** The XDnD protocol version the current source/target window is using.
      *  Set to 0 if not available / not set yet. */
     uint8_t                     m_uXdndVer;
+    /** Last mouse X position (in pixels, absolute to root window).
+     *  Set to -1 if not set yet. */
+    int                         m_lastMouseX;
+    /** Last mouse Y position (in pixels, absolute to root window).
+     *  Set to -1 if not set yet. */
+    int                         m_lastMouseY;
     /** List of (Atom) formats the current source/target window supports. */
     VBoxDnDAtomList             m_lstAtomFormats;
     /** List of (Atom) actions the current source/target window supports. */
@@ -806,12 +812,15 @@ void DragInstance::reset(void)
         m_lstAtomFormats.append(xAtom(XA_MULTIPLE));
         /** @todo Support INC (incremental transfers). */
 
-        m_wndCur   = 0;
-        m_uXdndVer = 0;
-        m_enmState = Initialized;
-        m_enmMode  = Unknown;
-        m_eventQueueList.clear();
+        m_wndCur                 = 0;
+        m_uXdndVer               = 0;
+        m_lastMouseX             = -1;
+        m_lastMouseY             = -1;
+        m_enmState               = Initialized;
+        m_enmMode                = Unknown;
         m_cFailedPendingAttempts = 0;
+
+        m_eventQueueList.clear();
 
         /* Reset the selection request buffer. */
         if (m_pvSelReqData)
@@ -2578,7 +2587,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, VBOXDNDACTION dndActionR
  *
  * @returns IPRT status code.
  */
-int DragInstance::mouseCursorFakeMove(void) const
+int DragInstance::mouseCursorFakeMove(void)
 {
     int iScreenID = XDefaultScreen(m_pDisplay);
     /** @todo What about multiple screens? Test this! */
@@ -2626,22 +2635,39 @@ int DragInstance::mouseCursorFakeMove(void) const
  * @param   iPosX                   Absolute X coordinate.
  * @param   iPosY                   Absolute Y coordinate.
  */
-int DragInstance::mouseCursorMove(int iPosX, int iPosY) const
+int DragInstance::mouseCursorMove(int iPosX, int iPosY)
 {
-    int iScreenID = XDefaultScreen(m_pDisplay);
+    int const iScreenID = XDefaultScreen(m_pDisplay);
     /** @todo What about multiple screens? Test this! */
 
-    const int iScrX = XDisplayWidth(m_pDisplay, iScreenID);
-    const int iScrY = XDisplayHeight(m_pDisplay, iScreenID);
+    int const iScreenWidth  = XDisplayWidth (m_pDisplay, iScreenID);
+    int const iScreenHeight = XDisplayHeight(m_pDisplay, iScreenID);
 
-    iPosX = RT_CLAMP(iPosX, 0, iScrX);
-    iPosY = RT_CLAMP(iPosY, 0, iScrY);
+    iPosX = RT_CLAMP(iPosX, 0, iScreenWidth);
+    iPosY = RT_CLAMP(iPosY, 0, iScreenHeight);
 
-    LogFlowThisFunc(("iPosX=%d, iPosY=%d\n", iPosX, iPosY));
+    /* Same mouse position as before? No need to do anything. */
+    if (   m_lastMouseX == iPosX
+        && m_lastMouseY == iPosY)
+    {
+        return VINF_SUCCESS;
+    }
+
+    LogFlowThisFunc(("iPosX=%d, iPosY=%d, m_wndRoot=%#x\n", iPosX, iPosY, m_wndRoot));
 
     /* Move the guest pointer to the DnD position, so we can find the window
      * below that position. */
-    XWarpPointer(m_pDisplay, None, m_wndRoot, 0, 0, 0, 0, iPosX, iPosY);
+    int xRc = XWarpPointer(m_pDisplay, None, m_wndRoot, 0, 0, 0, 0, iPosX, iPosY);
+    if (xRc == Success)
+    {
+        XFlush(m_pDisplay);
+
+        m_lastMouseX = iPosX;
+        m_lastMouseY = iPosY;
+    }
+    else
+        VBClLogError("Moving mouse cursor failed: %s", gX11->xErrorToString(xRc).c_str());
+
     return VINF_SUCCESS;
 }
 
