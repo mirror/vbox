@@ -679,6 +679,7 @@ public:
 
     int  init(void);
     int  worker(bool volatile *pfShutdown);
+    void reset(void);
     void stop(void);
     int  term(void);
 
@@ -3455,6 +3456,47 @@ int DragAndDropService::worker(bool volatile *pfShutdown)
     return rc;
 }
 
+/**
+ * Resets the DnD service' data.
+ */
+void DragAndDropService::reset(void)
+{
+    LogFlowFuncEnter();
+
+    if (m_pCurDnD)
+        m_pCurDnD->reset();
+
+    /*
+     * Clear the event queue.
+     */
+    int rc2 = RTCritSectEnter(&m_eventQueueCS);
+    if (RT_SUCCESS(rc2))
+    {
+        for (size_t i = 0; i < m_eventQueue.size(); i++)
+        {
+            switch (m_eventQueue[i].enmType)
+            {
+                case DNDEVENT::DnDEventType_HGCM:
+                {
+                    VbglR3DnDEventFree(m_eventQueue[i].hgcm);
+                    break;
+                }
+
+                default:
+                    break;
+            }
+
+        }
+
+        m_eventQueue.clear();
+
+        rc2 = RTCritSectLeave(&m_eventQueueCS);
+        AssertRC(rc2);
+    }
+
+    LogFlowFuncLeave();
+}
+
 /** @copydoc VBCLSERVICE::pfnStop */
 void DragAndDropService::stop(void)
 {
@@ -3520,6 +3562,8 @@ int DragAndDropService::term(void)
 
         VBClLogVerbose(2, "HGCM thread terminated\n");
     }
+
+    reset();
 
     if (m_pCurDnD)
     {
