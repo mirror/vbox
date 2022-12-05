@@ -2813,17 +2813,17 @@ int DragInstance::proxyWinHide(void)
  * The returned pointer must be freed using RTStrFree().
  *
  * @returns Pointer to the allocated window name.
+ * @retval  NULL on allocation failure.
+ * @retval  "<No name>" if window name was not found / invalid window handle.
  * @param   wndThis                 Window to retrieve name for.
- *
- * @remark If the window title is not available, the text
- *         "<No name>" will be returned.
  */
 char *DragInstance::wndX11GetNameA(Window wndThis) const
 {
     char *pszName = NULL;
 
     XTextProperty propName;
-    if (XGetWMName(m_pDisplay, wndThis, &propName))
+    if (   wndThis != None
+        && XGetWMName(m_pDisplay, wndThis, &propName))
     {
         if (propName.value)
             pszName = RTStrDup((char *)propName.value); /** @todo UTF8? */
