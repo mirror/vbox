@@ -820,8 +820,6 @@ void DragInstance::reset(void)
         m_enmMode                = Unknown;
         m_cFailedPendingAttempts = 0;
 
-        m_eventQueueList.clear();
-
         /* Reset the selection request buffer. */
         if (m_pvSelReqData)
         {
@@ -830,6 +828,15 @@ void DragInstance::reset(void)
 
             Assert(m_cbSelReqData);
             m_cbSelReqData = 0;
+        }
+
+        rc2 = RTCritSectEnter(&m_eventQueueCS);
+        if (RT_SUCCESS(rc2))
+        {
+            m_eventQueueList.clear();
+
+            rc2 = RTCritSectLeave(&m_eventQueueCS);
+            AssertRC(rc2);
         }
 
         RTCritSectLeave(&m_dataCS);
@@ -2829,8 +2836,6 @@ int DragInstance::proxyWinHide(void)
     XUnmapWindow(m_pDisplay, m_wndProxy.hWnd);
     XFlush(m_pDisplay);
 
-    m_eventQueueList.clear();
-
     return VINF_SUCCESS; /** @todo Add error checking. */
 }
 
@@ -3318,145 +3323,175 @@ int DragAndDropService::worker(bool volatile *pfShutdown)
             DNDEVENT e;
             RT_ZERO(e);
 
-            LogFlowFunc(("Waiting for new event ...\n"));
+            LogFlowFunc(("Waiting for new events ...\n"));
             rc = RTSemEventWait(m_hEventSem, RT_INDEFINITE_WAIT);
             if (RT_FAILURE(rc))
                 break;
 
-            AssertMsg(m_eventQueue.size(), ("Event queue is empty when it shouldn't\n"));
+            size_t cEvents = 0;
 
-            e = m_eventQueue.first();
-            m_eventQueue.removeFirst();
-
-            if (e.enmType == DNDEVENT::DnDEventType_HGCM)
+            int rc2 = RTCritSectEnter(&m_eventQueueCS);
+            if (RT_SUCCESS(rc2))
             {
-                PVBGLR3DNDEVENT pVbglR3Event = e.hgcm;
-                AssertPtrBreak(pVbglR3Event);
+                cEvents = m_eventQueue.size();
 
-                LogFlowThisFunc(("HGCM event, enmType=%RU32\n", pVbglR3Event->enmType));
-                switch (pVbglR3Event->enmType)
+                rc2 = RTCritSectLeave(&m_eventQueueCS);
+                AssertRC(rc2);
+            }
+
+            while (cEvents)
+            {
+                rc2 = RTCritSectEnter(&m_eventQueueCS);
+                if (RT_SUCCESS(rc2))
                 {
-                    case VBGLR3DNDEVENTTYPE_HG_ENTER:
+                    if (m_eventQueue.isEmpty())
                     {
-                        if (pVbglR3Event->u.HG_Enter.cbFormats)
+                        rc2 = RTCritSectLeave(&m_eventQueueCS);
+                        AssertRC(rc2);
+                        break;
+                    }
+
+                    e = m_eventQueue.first();
+                    m_eventQueue.removeFirst();
+
+                    rc2 = RTCritSectLeave(&m_eventQueueCS);
+                    AssertRC(rc2);
+                }
+
+                if (e.enmType == DNDEVENT::DnDEventType_HGCM)
+                {
+                    PVBGLR3DNDEVENT pVbglR3Event = e.hgcm;
+                    AssertPtrBreak(pVbglR3Event);
+
+                    LogFlowThisFunc(("HGCM event enmType=%RU32\n", pVbglR3Event->enmType));
+                    switch (pVbglR3Event->enmType)
+                    {
+                        case VBGLR3DNDEVENTTYPE_HG_ENTER:
                         {
-                            RTCList<RTCString> lstFormats =
-                                RTCString(pVbglR3Event->u.HG_Enter.pszFormats, pVbglR3Event->u.HG_Enter.cbFormats - 1).split("\r\n");
-                            rc = m_pCurDnD->hgEnter(lstFormats, pVbglR3Event->u.HG_Enter.dndLstActionsAllowed);
-                            if (RT_FAILURE(rc))
+                            if (pVbglR3Event->u.HG_Enter.cbFormats)
+                            {
+                                RTCList<RTCString> lstFormats =
+                                    RTCString(pVbglR3Event->u.HG_Enter.pszFormats, pVbglR3Event->u.HG_Enter.cbFormats - 1).split("\r\n");
+                                rc = m_pCurDnD->hgEnter(lstFormats, pVbglR3Event->u.HG_Enter.dndLstActionsAllowed);
+                                if (RT_FAILURE(rc))
+                                    break;
+                                /* Enter is always followed by a move event. */
+                            }
+                            else
+                            {
+                                AssertMsgFailed(("cbFormats is 0\n"));
+                                rc = VERR_INVALID_PARAMETER;
                                 break;
-                            /* Enter is always followed by a move event. */
+                            }
+
+                            /* Note: After HOST_DND_FN_HG_EVT_ENTER there immediately is a move
+                             *       event, so fall through is intentional here. */
+                            RT_FALL_THROUGH();
                         }
-                        else
+
+                        case VBGLR3DNDEVENTTYPE_HG_MOVE:
                         {
-                            AssertMsgFailed(("cbFormats is 0\n"));
-                            rc = VERR_INVALID_PARAMETER;
+                            rc = m_pCurDnD->hgMove(pVbglR3Event->u.HG_Move.uXpos, pVbglR3Event->u.HG_Move.uYpos,
+                                                   pVbglR3Event->u.HG_Move.dndActionDefault);
                             break;
                         }
 
-                        /* Note: After HOST_DND_FN_HG_EVT_ENTER there immediately is a move
-                         *       event, so fall through is intentional here. */
-                        RT_FALL_THROUGH();
-                    }
+                        case VBGLR3DNDEVENTTYPE_HG_LEAVE:
+                        {
+                            rc = m_pCurDnD->hgLeave();
+                            break;
+                        }
 
-                    case VBGLR3DNDEVENTTYPE_HG_MOVE:
-                    {
-                        rc = m_pCurDnD->hgMove(pVbglR3Event->u.HG_Move.uXpos, pVbglR3Event->u.HG_Move.uYpos,
-                                               pVbglR3Event->u.HG_Move.dndActionDefault);
-                        break;
-                    }
+                        case VBGLR3DNDEVENTTYPE_HG_DROP:
+                        {
+                            rc = m_pCurDnD->hgDrop(pVbglR3Event->u.HG_Drop.uXpos, pVbglR3Event->u.HG_Drop.uYpos,
+                                                   pVbglR3Event->u.HG_Drop.dndActionDefault);
+                            break;
+                        }
 
-                    case VBGLR3DNDEVENTTYPE_HG_LEAVE:
-                    {
-                        rc = m_pCurDnD->hgLeave();
-                        break;
-                    }
+                        /* Note: VbglR3DnDRecvNextMsg() will return HOST_DND_FN_HG_SND_DATA_HDR when
+                         *       the host has finished copying over all the data to the guest.
+                         *
+                         *       The actual data transfer (and message processing for it) will be done
+                         *       internally by VbglR3DnDRecvNextMsg() to not duplicate any code for different
+                         *       platforms.
+                         *
+                         *       The data header now will contain all the (meta) data the guest needs in
+                         *       order to complete the DnD operation. */
+                        case VBGLR3DNDEVENTTYPE_HG_RECEIVE:
+                        {
+                            rc = m_pCurDnD->hgDataReceive(&pVbglR3Event->u.HG_Received.Meta);
+                            break;
+                        }
 
-                    case VBGLR3DNDEVENTTYPE_HG_DROP:
-                    {
-                        rc = m_pCurDnD->hgDrop(pVbglR3Event->u.HG_Drop.uXpos, pVbglR3Event->u.HG_Drop.uYpos,
-                                               pVbglR3Event->u.HG_Drop.dndActionDefault);
-                        break;
-                    }
-
-                    /* Note: VbglR3DnDRecvNextMsg() will return HOST_DND_FN_HG_SND_DATA_HDR when
-                     *       the host has finished copying over all the data to the guest.
-                     *
-                     *       The actual data transfer (and message processing for it) will be done
-                     *       internally by VbglR3DnDRecvNextMsg() to not duplicate any code for different
-                     *       platforms.
-                     *
-                     *       The data header now will contain all the (meta) data the guest needs in
-                     *       order to complete the DnD operation. */
-                    case VBGLR3DNDEVENTTYPE_HG_RECEIVE:
-                    {
-                        rc = m_pCurDnD->hgDataReceive(&pVbglR3Event->u.HG_Received.Meta);
-                        break;
-                    }
-
-                    case VBGLR3DNDEVENTTYPE_HG_CANCEL:
-                    {
-                        m_pCurDnD->reset(); /** @todo Test this! */
-                        break;
-                    }
+                        case VBGLR3DNDEVENTTYPE_HG_CANCEL:
+                        {
+                            m_pCurDnD->reset(); /** @todo Test this! */
+                            break;
+                        }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                    case VBGLR3DNDEVENTTYPE_GH_ERROR:
-                    {
-                        m_pCurDnD->reset();
-                        break;
-                    }
+                        case VBGLR3DNDEVENTTYPE_GH_ERROR:
+                        {
+                            m_pCurDnD->reset();
+                            break;
+                        }
 
-                    case VBGLR3DNDEVENTTYPE_GH_REQ_PENDING:
-                    {
-                        rc = m_pCurDnD->ghIsDnDPending();
-                        break;
-                    }
+                        case VBGLR3DNDEVENTTYPE_GH_REQ_PENDING:
+                        {
+                            rc = m_pCurDnD->ghIsDnDPending();
+                            break;
+                        }
 
-                    case VBGLR3DNDEVENTTYPE_GH_DROP:
-                    {
-                        rc = m_pCurDnD->ghDropped(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.dndActionRequested);
-                        break;
-                    }
+                        case VBGLR3DNDEVENTTYPE_GH_DROP:
+                        {
+                            rc = m_pCurDnD->ghDropped(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.dndActionRequested);
+                            break;
+                        }
 #endif
-                    case VBGLR3DNDEVENTTYPE_QUIT:
-                    {
-                        rc = VINF_SUCCESS;
-                        break;
+                        case VBGLR3DNDEVENTTYPE_QUIT:
+                        {
+                            rc = VINF_SUCCESS;
+                            break;
+                        }
+
+                        default:
+                        {
+                            VBClLogError("Received unsupported message type %RU32\n", pVbglR3Event->enmType);
+                            rc = VERR_NOT_SUPPORTED;
+                            break;
+                        }
                     }
 
-                    default:
+                    LogFlowFunc(("Message %RU32 processed with %Rrc\n", pVbglR3Event->enmType, rc));
+                    if (RT_FAILURE(rc))
                     {
-                        VBClLogError("Received unsupported message type %RU32\n", pVbglR3Event->enmType);
-                        rc = VERR_NOT_SUPPORTED;
-                        break;
+                        /* Tell the user. */
+                        VBClLogError("Processing message %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc);
+
+                        /* If anything went wrong, do a reset and start over. */
+                        reset();
                     }
+
+                    const bool fQuit = pVbglR3Event->enmType == VBGLR3DNDEVENTTYPE_QUIT;
+
+                    VbglR3DnDEventFree(e.hgcm);
+                    e.hgcm = NULL;
+
+                    if (fQuit)
+                        break;
                 }
-
-                LogFlowFunc(("Message %RU32 processed with %Rrc\n", pVbglR3Event->enmType, rc));
-                if (RT_FAILURE(rc))
+                else if (e.enmType == DNDEVENT::DnDEventType_X11)
                 {
-                    /* Tell the user. */
-                    VBClLogError("Processing message %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc);
-
-                    /* If anything went wrong, do a reset and start over. */
-                    m_pCurDnD->reset();
+                    LogFlowThisFunc(("X11 event (type %#x)\n", e.x11.type));
+                    m_pCurDnD->onX11Event(e.x11);
                 }
+                else
+                    AssertMsgFailed(("Unknown event queue type %RU32\n", e.enmType));
 
-                const bool fQuit = pVbglR3Event->enmType == VBGLR3DNDEVENTTYPE_QUIT;
+                --cEvents;
 
-                VbglR3DnDEventFree(e.hgcm);
-                e.hgcm = NULL;
-
-                if (fQuit)
-                    break;
-            }
-            else if (e.enmType == DNDEVENT::DnDEventType_X11)
-            {
-                m_pCurDnD->onX11Event(e.x11);
-            }
-            else
-                AssertMsgFailed(("Unknown event queue type %RU32\n", e.enmType));
+            } /* for */
 
             /*
              * Make sure that any X11 requests have actually been sent to the
@@ -3637,7 +3672,17 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
         if (RT_SUCCESS(rc))
         {
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
-            pThis->m_eventQueue.append(e);
+
+            int rc2 = RTCritSectEnter(&pThis->m_eventQueueCS);
+            if (RT_SUCCESS(rc2))
+            {
+                VBClLogVerbose(2, "Received new HGCM message (type %#x)\n", e.hgcm->enmType);
+
+                pThis->m_eventQueue.append(e);
+
+                rc2 = RTCritSectLeave(&pThis->m_eventQueueCS);
+                AssertRC(rc2);
+            }
 
             rc = RTSemEventSignal(pThis->m_hEventSem);
             if (RT_FAILURE(rc))
@@ -3692,6 +3737,9 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
     VBClLogVerbose(2, "X11 thread started\n");
 
     DNDEVENT e;
+    RT_ZERO(e);
+    e.enmType = DNDEVENT::DnDEventType_X11;
+
     do
     {
         /*
@@ -3701,23 +3749,40 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
          * events and if there are not any new one, sleep for a certain amount
          * of time.
          */
-        if (XEventsQueued(pThis->m_pDisplay, QueuedAfterFlush) > 0)
+        unsigned cNewEvents = 0;
+        unsigned cQueued    = XEventsQueued(pThis->m_pDisplay, QueuedAfterFlush);
+        while (cQueued)
         {
-            RT_ZERO(e);
-            e.enmType = DNDEVENT::DnDEventType_X11;
-
             /* XNextEvent will block until a new X event becomes available. */
             XNextEvent(pThis->m_pDisplay, &e.x11);
             {
-                /* At the moment we only have one drag instance. */
-                DragInstance *pInstance = pThis->m_pCurDnD;
-                AssertPtr(pInstance);
+                rc2 = RTCritSectEnter(&pThis->m_eventQueueCS);
+                if (RT_SUCCESS(rc2))
+                {
+                    LogFlowFunc(("Added new X11 event, type=%d\n", e.x11.type));
 
-                pInstance->onX11Event(e.x11);
+                    pThis->m_eventQueue.append(e);
+                    cNewEvents++;
+
+                    rc2 = RTCritSectLeave(&pThis->m_eventQueueCS);
+                    AssertRC(rc2);
+                }
             }
+
+            cQueued--;
         }
-        else
-            RTThreadSleep(25 /* ms */);
+
+        if (cNewEvents)
+        {
+            rc = RTSemEventSignal(pThis->m_hEventSem);
+            if (RT_FAILURE(rc))
+                break;
+
+            continue;
+        }
+
+        /* No new events; wait a bit. */
+        RTThreadSleep(25 /* ms */);
 
     } while (!ASMAtomicReadBool(&pThis->m_fStop));
 
