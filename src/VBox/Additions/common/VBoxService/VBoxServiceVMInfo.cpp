@@ -433,15 +433,12 @@ int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const 
     char *pszName;
     if (pszDomain)
     {
-/** @todo r=bird: RTStrAPrintf returns -1, not zero on failure!   */
-        if (!RTStrAPrintf(&pszName, "%s%s@%s/%s", g_pszPropCacheValUser, pszUser, pszDomain, pszKey))
+        if (RTStrAPrintf(&pszName, "%s%s@%s/%s", g_pszPropCacheValUser, pszUser, pszDomain, pszKey) < 0)
             rc = VERR_NO_MEMORY;
     }
     else
     {
-/** @todo r=bird: RTStrAPrintf returns -1, not zero on failure! You got it
- *        right 5 lines further down... */
-        if (!RTStrAPrintf(&pszName, "%s%s/%s", g_pszPropCacheValUser, pszUser, pszKey))
+        if (RTStrAPrintf(&pszName, "%s%s/%s", g_pszPropCacheValUser, pszUser, pszKey) < 0)
             rc = VERR_NO_MEMORY;
     }
 
