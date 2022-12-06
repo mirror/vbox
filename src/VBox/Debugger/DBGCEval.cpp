@@ -1524,8 +1524,8 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
  * @returns VBox status code. This is also stored in DBGC::rcCmd.
  *
  * @param   pDbgc       Debugger console instance data.
- * @param   pszCmd      Pointer to the command.
- * @param   cchCmd      Length of the command.
+ * @param   pszCmds     Pointer to the command.
+ * @param   cchCmds     Length of the command.
  * @param   fNoExecute  Indicates that no commands should actually be executed.
  */
 int dbgcEvalCommands(PDBGC pDbgc, char *pszCmds, size_t cchCmds, bool fNoExecute)
