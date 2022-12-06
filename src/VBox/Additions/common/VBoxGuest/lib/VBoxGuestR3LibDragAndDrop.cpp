@@ -586,7 +586,8 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                 }
                 default:
                 {
-                    LogRel(("DnD: Warning: Message %s (%#x) from host not supported\n", DnDGuestMsgToStr(uNextMsg), uNextMsg));
+                    LogRel(("DnD: Warning: Message %s (%#x) from host not supported or in wrong order\n",
+                            DnDHostMsgToStr(uNextMsg), uNextMsg));
                     rc = VERR_NOT_SUPPORTED;
                     break;
                 }
@@ -1903,7 +1904,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgGHError Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_FN_GH_EVT_ERROR, 2);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_FN_EVT_ERROR, 2);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
     Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
