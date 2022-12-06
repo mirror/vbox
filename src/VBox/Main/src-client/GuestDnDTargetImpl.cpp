@@ -1254,12 +1254,12 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             }
             break;
         }
-        case GUEST_DND_FN_GH_EVT_ERROR:
+        case GUEST_DND_FN_EVT_ERROR:
         {
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
             pCtx->pState->reset();
 
@@ -1441,7 +1441,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     REGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
     REGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
     REGISTER_CALLBACK(GUEST_DND_FN_GET_NEXT_HOST_MSG);
-    REGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
+    REGISTER_CALLBACK(GUEST_DND_FN_EVT_ERROR);
     /* Host callbacks. */
     REGISTER_CALLBACK(HOST_DND_FN_HG_SND_DIR);
     if (m_pState->m_uProtocolVersion >= 2)
@@ -1536,7 +1536,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     UNREGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
     UNREGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
     UNREGISTER_CALLBACK(GUEST_DND_FN_GET_NEXT_HOST_MSG);
-    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_EVT_ERROR);
     /* Host callbacks. */
     UNREGISTER_CALLBACK(HOST_DND_FN_HG_SND_DIR);
     if (m_pState->m_uProtocolVersion >= 2)
