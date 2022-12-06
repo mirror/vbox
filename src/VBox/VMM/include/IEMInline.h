@@ -182,7 +182,7 @@ DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
-#ifdef VBOX_INCLUDED_vmm_dbgf_h /* dbgf.ro.cEnabledHwBreakpoints */
+#if defined(VBOX_INCLUDED_vmm_dbgf_h) || defined(DOXYGEN_RUNNING) /* dbgf.ro.cEnabledHwBreakpoints */
 /**
  * Initializes the execution state.
  *
@@ -294,7 +294,6 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
 #endif
 
 
-#ifdef VBOX_INCLUDED_vmm_dbgf_h /* dbgf.ro.cEnabledHwBreakpoints */
 /**
  * Counterpart to #iemInitExec that undoes evil strict-build stuff.
  *
@@ -314,7 +313,6 @@ DECLINLINE(void) iemUninitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
     NOREF(pVCpu);
 #endif
 }
-#endif /* VBOX_INCLUDED_vmm_dbgf_h */
 
 
 /**
