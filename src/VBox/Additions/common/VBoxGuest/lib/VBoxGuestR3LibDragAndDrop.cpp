@@ -586,7 +586,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                 }
                 default:
                 {
-                    LogRel(("DnD: Warning: Message %s (%#x) from host not supported\n", DnDGuestMsgToStr(uNextMsg), uNextMsg));
+                    LogRel(("DnD: Warning: Message %s (%#x) from host not supported or in wrong order\n", DnDHostMsgToStr(uNextMsg), uNextMsg));
                     rc = VERR_NOT_SUPPORTED;
                     break;
                 }
