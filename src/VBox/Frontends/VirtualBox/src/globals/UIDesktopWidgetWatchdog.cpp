@@ -27,9 +27,6 @@
 
 /* Qt includes: */
 #include <QApplication>
-#ifndef VBOX_IS_QT6_OR_LATER
-# include <QDesktopWidget>
-#endif
 #include <QWidget>
 #include <QScreen>
 #ifdef VBOX_WS_WIN
