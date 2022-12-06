@@ -120,11 +120,7 @@ private slots:
     void sltFindNextInPage();
     void sltFindPreviousInPage();
     void sltHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
-#ifdef VBOX_IS_QT6_OR_LATER
     void sltLinkHighlighted(const QUrl &url);
-#else
-    void sltLinkHighlighted(const QString &strLink);
-#endif
     void sltMouseOverImage(const QString &strImageName);
 
 private:

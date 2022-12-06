@@ -203,11 +203,7 @@ signals:
     void sigTitleUpdate(const QString &strTitle);
     void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
-#ifdef VBOX_IS_QT6_OR_LATER
     void sigLinkHighlighted(const QUrl &url);
-#else
-    void sigLinkHighlighted(const QString &strLink);
-#endif
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
     void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
     void sigMouseOverImage(const QString &strImageName);
@@ -285,11 +281,7 @@ signals:
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     /** list.first is tab title and list.second is tab's index. */
     void sigTabsListChanged(const QStringList &titleList);
-#ifdef VBOX_IS_QT6_OR_LATER
     void sigLinkHighlighted(const QUrl &url);
-#else
-    void sigLinkHighlighted(const QString &strLink);
-#endif
     void sigZoomPercentageChanged(int iPercentage);
     void sigCopyAvailableChanged(bool fAvailable);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
@@ -713,13 +705,8 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sltHomeAction);
     connect(m_pContentViewer, &UIHelpViewer::sigAddBookmark,
             this, &UIHelpBrowserTab::sltAddBookmarkAction);
-#ifdef VBOX_IS_QT6_OR_LATER
     connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QUrl&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
-#else
-    connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QString&)>(&UIHelpViewer::highlighted),
-            this, &UIHelpBrowserTab::sigLinkHighlighted);
-#endif
     connect(m_pContentViewer, &UIHelpViewer::copyAvailable,
             this, &UIHelpBrowserTab::sigCopyAvailableChanged);
     connect(m_pContentViewer, &UIHelpViewer::sigFindInPageWidgetToogle,
@@ -1960,29 +1947,18 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
         m_pForwardAction->setEnabled(fForwardAvailable);
 }
 
-#ifdef VBOX_IS_QT6_OR_LATER
 void UIHelpBrowserWidget::sltLinkHighlighted(const QUrl &url)
 {
     QString strMessage = url.url();
     if (url.scheme() != "qthelp")
-        strMessage = QString("%1: %2").arg(tr("Click to open this link in an external browser")).arg(url.url());
-
-    emit sigStatusBarMessage(strMessage, 0); /** @todo qt6: ??? */
-}
-#else
-void UIHelpBrowserWidget::sltLinkHighlighted(const QString &strLink)
-{
-    QString strMessage = strLink;
-    if (QUrl(strLink).scheme() != "qthelp")
-        strMessage = QString("%1: %2").arg(tr("Click to open this link in an external browser")).arg(strLink);
+        strMessage = QString("%1: %2").arg(tr("Click to open this link in an external browser")).arg(strMessage);
 
     emit sigStatusBarMessage(strMessage, 0);
 }
-#endif
 
 void UIHelpBrowserWidget::sltMouseOverImage(const QString &strImageName)
 {
-    emit sigStatusBarMessage(QString("%1: %2").arg(tr("Click to enlarge the image")).arg(strImageName) , 3000);
+    emit sigStatusBarMessage(QString("%1: %2").arg(tr("Click to enlarge the image")).arg(strImageName), 3000);
 }
 
 void UIHelpBrowserWidget::sltCopyAvailableChanged(bool fAvailable)
