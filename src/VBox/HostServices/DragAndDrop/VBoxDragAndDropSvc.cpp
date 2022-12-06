@@ -463,6 +463,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
             break;
         }
 
+        /* New since VBOx 7.0.x. See define for details. */
+        case GUEST_DND_FN_EVT_ERROR:
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
         case GUEST_DND_FN_HG_ACK_OP:
         case GUEST_DND_FN_HG_REQ_DATA:
         case GUEST_DND_FN_HG_EVT_PROGRESS:
@@ -481,7 +488,6 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
         case GUEST_DND_FN_GH_SND_DIR:
         case GUEST_DND_FN_GH_SND_FILE_HDR:
         case GUEST_DND_FN_GH_SND_FILE_DATA:
-        case GUEST_DND_FN_GH_EVT_ERROR:
         {
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
@@ -958,13 +964,13 @@ do { \
                 }
                 break;
             }
-            case GUEST_DND_FN_GH_EVT_ERROR:
+            case GUEST_DND_FN_EVT_ERROR:
             {
                 ASSERT_GUEST_BREAK(cParms >= 1);
 
                 VBOXDNDCBEVTERRORDATA data;
                 RT_ZERO(data);
-                data.hdr.uMagic = CB_MAGIC_DND_GH_EVT_ERROR;
+                data.hdr.uMagic = CB_MAGIC_DND_EVT_ERROR;
 
                 GET_CONTEXT_ID_PARM0();
                 rc = HGCMSvcGetU32(&paParms[idxParm], (uint32_t *)&data.rc);

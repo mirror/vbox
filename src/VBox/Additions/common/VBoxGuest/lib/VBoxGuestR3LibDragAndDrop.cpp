@@ -106,6 +106,43 @@ static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, 
     return rc;
 }
 
+
+/**
+ * Sends a DnD error back to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   rcErr               Error (IPRT-style) to send.
+ */
+VBGLR3DECL(int) VbglR3DnDSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMMsgGHError Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_FN_EVT_ERROR, 2);
+    /** @todo Context ID not used yet. */
+    Msg.u.v3.uContext.SetUInt32(0);
+    Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+
+    /*
+     * Never return an error if the host did not accept the error at the current
+     * time.  This can be due to the host not having any appropriate callbacks
+     * set which would handle that error.
+     *
+     * bird: Looks like VERR_NOT_SUPPORTED is what the host will return if it
+     *       doesn't an appropriate callback.  The code used to ignore ALL errors
+     *       the host would return, also relevant ones.
+     */
+    if (RT_FAILURE(rc))
+        LogFlowFunc(("Sending error %Rrc failed with rc=%Rrc\n", rcErr, rc));
+    if (rc == VERR_NOT_SUPPORTED)
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
 /**
  * Host -> Guest
  * Utility function to receive a so-called "action message" from the host.
@@ -1881,48 +1918,11 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszF
 
         if (rc != VERR_CANCELLED)
         {
-            int rc2 = VbglR3DnDGHSendError(pCtx, rc);
+            int rc2 = VbglR3DnDSendError(pCtx, rc);
             if (RT_FAILURE(rc2))
                 LogFlowFunc(("Unable to send error (%Rrc) to host, rc=%Rrc\n", rc, rc2));
         }
     }
-
-    return rc;
-}
-
-/**
- * Guest -> Host
- * Send an error back to the host.
- *
- * @returns IPRT status code.
- * @param   pCtx                DnD context to use.
- * @param   rcErr               Error (IPRT-style) to send.
- */
-VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
-{
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-
-    HGCMMsgGHError Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_FN_GH_EVT_ERROR, 2);
-    /** @todo Context ID not used yet. */
-    Msg.u.v3.uContext.SetUInt32(0);
-    Msg.u.v3.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-
-    /*
-     * Never return an error if the host did not accept the error at the current
-     * time.  This can be due to the host not having any appropriate callbacks
-     * set which would handle that error.
-     *
-     * bird: Looks like VERR_NOT_SUPPORTED is what the host will return if it
-     *       doesn't an appropriate callback.  The code used to ignore ALL errors
-     *       the host would return, also relevant ones.
-     */
-    if (RT_FAILURE(rc))
-        LogFlowFunc(("Sending error %Rrc failed with rc=%Rrc\n", rcErr, rc));
-    if (rc == VERR_NOT_SUPPORTED)
-        rc = VINF_SUCCESS;
 
     return rc;
 }

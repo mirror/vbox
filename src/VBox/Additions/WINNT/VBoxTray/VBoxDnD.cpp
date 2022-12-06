@@ -1418,7 +1418,7 @@ int VBoxDnDWnd::OnGhDrop(const RTCString &strFormat, uint32_t dndActionDefault)
          * send an error to the host in any case so that the host does
          * not wait for the data it expects from the guest.
          */
-        int rc2 = VbglR3DnDGHSendError(&m_cmdCtx, rc);
+        int rc2 = VbglR3DnDSendError(&m_cmdCtx, rc);
         AssertRC(rc2);
     }
 

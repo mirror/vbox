@@ -2565,7 +2565,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, VBOXDNDACTION dndActionR
     /* Inform the host on error. */
     if (RT_FAILURE(rc))
     {
-        int rc2 = VbglR3DnDGHSendError(&m_dndCtx, rc);
+        int rc2 = VbglR3DnDSendError(&m_dndCtx, rc);
         LogFlowThisFunc(("Sending error %Rrc to host resulted in %Rrc\n", rc, rc2)); RT_NOREF(rc2);
         /* This is not fatal for us, just ignore. */
     }

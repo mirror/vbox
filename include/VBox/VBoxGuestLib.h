@@ -1335,6 +1335,7 @@ VBGLR3DECL(int)     VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 
 VBGLR3DECL(int)     VbglR3DnDReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures);
+VBGLR3DECL(int)     VbglR3DnDSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcOp);
 
 VBGLR3DECL(int)     VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3DnDEventFree(PVBGLR3DNDEVENT pEvent);
@@ -1345,7 +1346,6 @@ VBGLR3DECL(int)     VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t
 #  ifdef VBOX_WITH_DRAG_AND_DROP_GH
 VBGLR3DECL(int)     VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx, VBOXDNDACTION dndActionDefault, VBOXDNDACTIONLIST dndLstActionsAllowed, const char* pcszFormats, uint32_t cbFormats);
 VBGLR3DECL(int)     VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszFormat, void *pvData, uint32_t cbData);
-VBGLR3DECL(int)     VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcOp);
 #  endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 /** @} */
 # endif /* VBOX_WITH_DRAG_AND_DROP */

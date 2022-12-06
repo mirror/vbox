@@ -216,6 +216,22 @@ enum eGuestFn
      */
     GUEST_DND_FN_GET_NEXT_HOST_MSG        = 300,
 
+    /** Reports back an error to the host.
+     *
+     *  Note: Don't change the ID to also support older hosts
+     *        (was GUEST_DND_FN_GH_EVT_ERROR before < 7.0, only for G->H transfers).
+     *
+     *        This was changed to GUEST_DND_FN_EVT_ERROR to be a generic event
+     *        that also can be used for H->G transfers.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
+     * @since   7.0.x
+     */
+    GUEST_DND_FN_EVT_ERROR                = 502,
+
     /*
      * Host -> Guest operation messages.
      */
@@ -247,8 +263,6 @@ enum eGuestFn
      * into one.
      */
     GUEST_DND_FN_GH_SND_DATA              = 501,
-    /** The guest reports an error back to the host. */
-    GUEST_DND_FN_GH_EVT_ERROR             = 502,
     /** The guest sends a directory entry to the host. */
     GUEST_DND_FN_GH_SND_DIR               = 700,
     /** The guest sends file data to the host.
@@ -935,6 +949,7 @@ enum eDnDCallbackMagics
 {
     CB_MAGIC_DND_CONNECT                   = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_CONNECT, 0),
     CB_MAGIC_DND_REPORT_FEATURES           = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_REPORT_FEATURES, 0),
+    CB_MAGIC_DND_EVT_ERROR                 = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_EVT_ERROR, 0),
     CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG      = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GET_NEXT_HOST_MSG, 0),
     CB_MAGIC_DND_HG_ACK_OP                 = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_HG_ACK_OP, 0),
     CB_MAGIC_DND_HG_REQ_DATA               = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_HG_REQ_DATA, 0),
@@ -944,8 +959,7 @@ enum eDnDCallbackMagics
     CB_MAGIC_DND_GH_SND_DATA_HDR           = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GH_SND_DATA_HDR, 0),
     CB_MAGIC_DND_GH_SND_DIR                = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GH_SND_DIR, 0),
     CB_MAGIC_DND_GH_SND_FILE_HDR           = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GH_SND_FILE_HDR, 0),
-    CB_MAGIC_DND_GH_SND_FILE_DATA          = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GH_SND_FILE_DATA, 0),
-    CB_MAGIC_DND_GH_EVT_ERROR              = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GH_EVT_ERROR, 0)
+    CB_MAGIC_DND_GH_SND_FILE_DATA          = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_FN_GH_SND_FILE_DATA, 0)
 };
 
 typedef struct VBOXDNDCBHEADERDATA
