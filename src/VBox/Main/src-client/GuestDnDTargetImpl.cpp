@@ -1201,7 +1201,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
     LogFlowFunc(("pThis=%p, pList=%p, uMsg=%RU32\n", pThis, pList, uMsg));
 
     int  vrc      = VINF_SUCCESS;
-    int  vrcGuest = VINF_SUCCESS; /* Contains error code from guest in case of VERR_GSTDND_GUEST_ERROR. */
+    int  vrcGuest = VINF_SUCCESS; /* Contains error code from guest in case of VERR_DND_GUEST_ERROR. */
     bool fNotify  = false;
 
     switch (uMsg)
@@ -1273,7 +1273,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
                                             GuestDnDTarget::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(vrc))
             {
-                vrc      = VERR_GSTDND_GUEST_ERROR;
+                vrc      = VERR_DND_GUEST_ERROR;
                 vrcGuest = pCBData->rc;
             }
             break;
@@ -1357,7 +1357,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             break;
         }
 
-        case VERR_GSTDND_GUEST_ERROR:
+        case VERR_DND_GUEST_ERROR:
         {
             LogRel(("DnD: Guest reported error %Rrc, aborting transfer to guest\n", vrcGuest));
             break;
@@ -1566,7 +1566,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
             /* Cancelling is not an error, just set success here. */
             vrc  = VINF_SUCCESS;
         }
-        else if (vrc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+        else if (vrc != VERR_DND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
             LogRel(("DnD: Sending transfer data to guest failed with vrc=%Rrc\n", vrc));
             int vrc2 = pCtx->pState->setProgress(100, DND_PROGRESS_ERROR, vrc,

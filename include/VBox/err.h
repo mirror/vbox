@@ -2924,7 +2924,7 @@
  * @{
  */
 /** Guest side reported an error. */
-#define VERR_GSTDND_GUEST_ERROR                     (-6500)
+#define VERR_DND_GUEST_ERROR                        (-6500)
 /** @} */
 
 

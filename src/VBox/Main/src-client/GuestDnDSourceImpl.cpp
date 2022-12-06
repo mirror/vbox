@@ -1196,7 +1196,7 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
             rc2 = pCtx->pState->setProgress(100, DND_PROGRESS_CANCELLED);
             AssertRC(rc2);
         }
-        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+        else if (rc != VERR_DND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
             int rc2 = pCtx->pState->setProgress(100, DND_PROGRESS_ERROR,
                                                 rc, GuestDnDSource::i_hostErrorToString(rc));
@@ -1337,7 +1337,7 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
             /* Cancelling is not an error, just set success here. */
             rc  = VINF_SUCCESS;
         }
-        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+        else if (rc != VERR_DND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
             rc2 = pCtx->pState->setProgress(100, DND_PROGRESS_ERROR,
                                             rc, GuestDnDSource::i_hostErrorToString(rc));
@@ -1432,7 +1432,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             LogRel3(("DnD: Guest reported data transfer error: %Rrc\n", pCBData->rc));
 
             if (RT_SUCCESS(rc))
-                rcCallback = VERR_GSTDND_GUEST_ERROR;
+                rcCallback = VERR_DND_GUEST_ERROR;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
@@ -1616,7 +1616,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
             LogRel3(("DnD: Guest reported file transfer error: %Rrc\n", pCBData->rc));
 
             if (RT_SUCCESS(rc))
-                rcCallback = VERR_GSTDND_GUEST_ERROR;
+                rcCallback = VERR_DND_GUEST_ERROR;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
