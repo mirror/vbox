@@ -108,7 +108,12 @@ void DnDManager::DumpQueue(void)
 {
     LogFunc(("Current queue (%zu items, FIFO) is: %s", m_queueMsg.size(), m_queueMsg.isEmpty() ? "<Empty>" : ""));
     for (size_t i = 0; i < m_queueMsg.size(); ++i)
-        Log(("%s ", DnDHostMsgToStr(m_queueMsg[i]->GetType())));
+    {
+        if (i > 0)
+            Log((" - "));
+        uint32_t const uType = m_queueMsg[i]->GetType();
+        Log(("%s (%d / %#x)", DnDHostMsgToStr(uType), uType, uType));
+    }
     Log(("\n"));
 }
 #endif /* DEBUG */
