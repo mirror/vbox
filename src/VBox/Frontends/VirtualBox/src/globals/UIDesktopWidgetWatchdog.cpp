@@ -35,6 +35,9 @@
 #ifdef VBOX_WS_X11
 # include <QTimer>
 #endif
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+# include <QDesktopWidget>
+#endif /* Qt < 5.10 */
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
