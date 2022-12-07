@@ -116,3 +116,29 @@ const char *DnDActionToStr(VBOXDNDACTION uAction)
     AssertMsgFailedReturn(("Unknown uAction=%d\n", uAction), "bad");
 }
 
+/**
+ * Converts a VBOXDNDSTATE to a string.
+ *
+ * @returns Stringified version of VBOXDNDSTATE.
+ * @param   enmState            DnD state to convert.
+ */
+const char *DnDStateToStr(VBOXDNDSTATE enmState)
+{
+    switch (enmState)
+    {
+        case VBOXDNDSTATE_UNKNOWN:       return "unknown";
+        case VBOXDNDSTATE_ENTERED:       return "entered VM window";
+        case VBOXDNDSTATE_LEFT:          return "left VM window";
+        case VBOXDNDSTATE_QUERY_FORMATS: return "querying formats";
+        case VBOXDNDSTATE_QUERY_STATUS:  return "querying status";
+        case VBOXDNDSTATE_DRAGGING:      return "dragging";
+        case VBOXDNDSTATE_DROP_STARTED:  return "drop started";
+        case VBOXDNDSTATE_DROP_ENDED:    return "drop ended";
+        case VBOXDNDSTATE_CANCELLED:     return "cancelled";
+        case VBOXDNDSTATE_ERROR:         return "error";
+        default:
+            break;
+    }
+    AssertMsgFailedReturn(("Unknown enmState=%d\n", enmState), "bad");
+}
+

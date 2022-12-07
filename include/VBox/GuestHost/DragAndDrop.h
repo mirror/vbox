@@ -104,6 +104,7 @@ int DnDDroppedFilesRollback(PDNDDROPPEDFILES pDF);
 const char *DnDHostMsgToStr(uint32_t uMsg);
 const char *DnDGuestMsgToStr(uint32_t uMsg);
 const char *DnDActionToStr(VBOXDNDACTION uAction);
+const char *DnDStateToStr(VBOXDNDSTATE enmState);
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);

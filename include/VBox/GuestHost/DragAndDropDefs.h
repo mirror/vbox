@@ -89,5 +89,24 @@ typedef uint32_t VBOXDNDACTIONLIST;
     "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\"", \
     "application/x-openoffice;windows_formatname=\"Bitmap\""
 
+/**
+ * Enumeration for keeping a DnD state.
+ */
+typedef enum
+{
+    VBOXDNDSTATE_UNKNOWN = 0,
+    VBOXDNDSTATE_ENTERED,
+    VBOXDNDSTATE_LEFT,
+    VBOXDNDSTATE_QUERY_FORMATS,
+    VBOXDNDSTATE_QUERY_STATUS,
+    VBOXDNDSTATE_DRAGGING,
+    VBOXDNDSTATE_DROP_STARTED,
+    VBOXDNDSTATE_DROP_ENDED,
+    VBOXDNDSTATE_CANCELLED,
+    VBOXDNDSTATE_ERROR
+} VBOXDNDSTATE;
+/** Pointer to a DnD state. */
+typedef VBOXDNDSTATE *PVBOXDNDSTATE;
+
 #endif /* !VBOX_INCLUDED_GuestHost_DragAndDropDefs_h */
 
