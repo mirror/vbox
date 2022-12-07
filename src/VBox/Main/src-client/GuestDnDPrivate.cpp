@@ -451,8 +451,7 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
         {
             LogRel(("DnD: Guest reported error %Rrc\n", rcOp));
 
-            if (   !fCompleted
-                && !fCanceled)
+            if (!fCompleted)
                 hr = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR,
                                                    COM_IIDOF(IGuest),
                                                    m_pParent->getComponentName(), strMsg.c_str());
@@ -464,11 +463,14 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
         {
             LogRel2(("DnD: Guest cancelled operation\n"));
 
-            if (   !fCompleted
-                && !fCanceled)
+            if (!fCanceled)
             {
                 hr = m_pProgress->Cancel();
                 AssertComRC(hr);
+            }
+
+            if (!fCompleted)
+            {
                 hr = m_pProgress->i_notifyComplete(S_OK);
                 AssertComRC(hr);
             }
