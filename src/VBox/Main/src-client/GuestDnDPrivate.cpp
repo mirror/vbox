@@ -430,21 +430,20 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
 
     HRESULT hr = S_OK;
 
+    if (m_pProgress.isNull())
+        return VINF_SUCCESS;
+
     BOOL fCompleted = FALSE;
+    hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
+    AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
+
     BOOL fCanceled  = FALSE;
+    hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
+    AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
+
+    LogFlowFunc(("Progress fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
 
     int rc = VINF_SUCCESS;
-
-    if (!m_pProgress.isNull())
-    {
-        hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
-        AssertComRC(hr);
-
-        hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
-        AssertComRC(hr);
-
-        LogFlowFunc(("Progress fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
-    }
 
     switch (uStatus)
     {
@@ -452,8 +451,8 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
         {
             LogRel(("DnD: Guest reported error %Rrc\n", rcOp));
 
-            if (   !m_pProgress.isNull()
-                && !fCompleted)
+            if (   !fCompleted
+                && !fCanceled)
                 hr = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR,
                                                    COM_IIDOF(IGuest),
                                                    m_pParent->getComponentName(), strMsg.c_str());
@@ -465,8 +464,8 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
         {
             LogRel2(("DnD: Guest cancelled operation\n"));
 
-            if (   !m_pProgress.isNull()
-                && !fCompleted)
+            if (   !fCompleted
+                && !fCanceled)
             {
                 hr = m_pProgress->Cancel();
                 AssertComRC(hr);
@@ -484,16 +483,16 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
         {
             LogRel2(("DnD: Guest reporting running/completion status with %u%%\n", uPercentage));
 
-            if (   !m_pProgress.isNull()
-                && !fCompleted)
+            if (   !fCompleted
+                && !fCanceled)
             {
                 hr = m_pProgress->SetCurrentOperationProgress(uPercentage);
-                AssertComRC(hr);
+                AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
                 if (   uStatus     == DragAndDropSvc::DND_PROGRESS_COMPLETE
                     || uPercentage >= 100)
                 {
                     hr = m_pProgress->i_notifyComplete(S_OK);
-                    AssertComRC(hr);
+                    AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
                 }
             }
             break;
@@ -501,16 +500,6 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
 
         default:
             break;
-    }
-
-    if (!m_pProgress.isNull())
-    {
-        hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
-        AssertComRC(hr);
-        hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
-        AssertComRC(hr);
-
-        LogFlowFunc(("Progress fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
     }
 
     LogFlowFuncLeaveRC(rc);
