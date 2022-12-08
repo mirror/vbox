@@ -329,7 +329,9 @@ void UIProgressDialog::prepareWidgets()
                     // Based on agreement implemented in r131088 and r131090,
                     // if progress has just one operation with weight equal to 1,
                     // we should make it "infinite" by setting maximum to minimum.
-                    if (m_uCurrentOperation == 1 && m_uCurrentOperationWeight == 1)
+                    // But be aware that this can and will be overridden by
+                    // updated progress percentage if it's changing.
+                    if (m_cOperations == 1 && m_uCurrentOperationWeight == 1)
                         m_pProgressBar->setMaximum(0);
                     else
                         m_pProgressBar->setMaximum(100);
@@ -488,9 +490,17 @@ void UIProgressDialog::updateProgressState()
 
 void UIProgressDialog::updateProgressPercentage(int iPercent /* = -1 */)
 {
-    /* Update operation percentage: */
+    /* Handle default call: */
     if (iPercent == -1)
         iPercent = m_comProgress.GetPercent();
+
+    /* Make sure percentage is reflected properly
+     * if progress was "infinite" initially: */
+    if (   m_pProgressBar->maximum() == 0
+        && iPercent > 0 && iPercent < 100)
+        m_pProgressBar->setMaximum(100);
+
+    /* Update operation percentage: */
     m_pProgressBar->setValue(iPercent);
 
     /* Notify listeners about the operation progress update: */
