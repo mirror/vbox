@@ -613,7 +613,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND a_hWnd, UINT a_uMsg, WPARAM a_wParam, 
                     break;
                 }
 
-                case VBGLR3DNDEVENTTYPE_HG_CANCEL:
+                case VBGLR3DNDEVENTTYPE_CANCEL:
                 {
                     rc = OnHgCancel();
                     break;

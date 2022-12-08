@@ -400,6 +400,7 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
  * This function also will take care of the file creation / locking on the guest.
  *
  * @returns IPRT status code.
+ * @retval  VERR_CANCELLED if the transfer was cancelled by the host.
  * @param   pCtx                DnD context to use.
  * @param   pDataHdr            DnD data header to use. Needed for accounting.
  * @param   pDroppedFiles       Dropped files object to use for maintaining the file creation / locking.
@@ -656,7 +657,10 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
      * something else went wrong. */
     if (RT_FAILURE(rc))
     {
-        LogRel(("DnD: Receiving URI data failed with %Rrc\n", rc));
+        if (rc == VERR_CANCELLED)
+            LogRel2(("DnD: Receiving URI data was cancelled by the host\n"));
+        else
+            LogRel(("DnD: Receiving URI data failed with %Rrc\n", rc));
 
         DnDTransferObjectDestroy(&objCur);
         DnDDroppedFilesRollback(pDroppedFiles);
@@ -863,7 +867,8 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
  * Host -> Guest
  * Main function for receiving the actual DnD data from the host.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
+ * @retval  VERR_CANCELLED if cancelled by the host.
  * @param   pCtx                DnD context to use.
  * @param   pMeta               Where to store the actual meta data received from the host.
  */
@@ -884,7 +889,6 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
 
     void    *pvData = NULL;
     uint64_t cbData = 0;
-
     int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
@@ -943,6 +947,9 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
 
             pMeta->enmType = VBGLR3GUESTDNDMETADATATYPE_RAW;
         }
+
+        if (pvData)
+            RTMemFree(pvData);
     }
 
     if (dataHdr.pvMetaFmt)
@@ -950,9 +957,6 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
 
     if (RT_FAILURE(rc))
     {
-        if (pvData)
-            RTMemFree(pvData);
-
         if (rc != VERR_CANCELLED)
         {
             LogRel(("DnD: Receiving data failed with %Rrc\n", rc));
@@ -1197,7 +1201,7 @@ VBGLR3DECL(int) VbglR3DnDReportFeatures(uint32_t idClient, uint64_t fGuestFeatur
  * the clients -- those only need to react to certain events, regardless of how the underlying
  * protocol actually is working.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pCtx                DnD context to work with.
  * @param   ppEvent             Next DnD event received on success; needs to be free'd by the client calling
  *                              VbglR3DnDEventFree() when done.
@@ -1323,7 +1327,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
             {
                 rc = vbglR3DnDHGRecvCancel(pCtx);
                 if (RT_SUCCESS(rc))
-                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_CANCEL;
+                    rc = VERR_CANCELLED; /* Will emit a cancel event below. */
                 break;
             }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -1355,12 +1359,23 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
 
     if (RT_FAILURE(rc))
     {
-        VbglR3DnDEventFree(pEvent);
-        LogRel(("DnD: Handling message %s (%#x) failed with %Rrc\n", DnDHostMsgToStr(uMsg), uMsg, rc));
+        /* Current operation cancelled? Set / overwrite event type and tell the caller. */
+        if (rc == VERR_CANCELLED)
+        {
+            pEvent->enmType = VBGLR3DNDEVENTTYPE_CANCEL;
+            rc              = VINF_SUCCESS; /* Deliver the event to the caller. */
+        }
+        else
+        {
+            VbglR3DnDEventFree(pEvent);
+            LogRel(("DnD: Handling message %s (%#x) failed with %Rrc\n", DnDHostMsgToStr(uMsg), uMsg, rc));
+        }
     }
-    else
+
+    if (RT_SUCCESS(rc))
         *ppEvent = pEvent;
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

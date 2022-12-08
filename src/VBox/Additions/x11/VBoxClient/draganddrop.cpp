@@ -3424,9 +3424,9 @@ int DragAndDropService::worker(bool volatile *pfShutdown)
                             break;
                         }
 
-                        case VBGLR3DNDEVENTTYPE_HG_CANCEL:
+                        case VBGLR3DNDEVENTTYPE_CANCEL:
                         {
-                            m_pCurDnD->reset(); /** @todo Test this! */
+                            m_pCurDnD->reset();
                             break;
                         }
 
