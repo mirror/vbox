@@ -45,15 +45,6 @@
 #include <libdevinfo.h>
 
 
-/**
- * Determine the type of firmware of a host, i.e. whether it booted using UEFI
- * or BIOS.
- *
- * @param  penmFirmwareType    Where to store the firmware type.
- *
- * @return VINF_SUCCESS, if successfully able to determine the firmware type,
- *         otherwise VERR_NOT_SUPPORTED.
- */
 RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 {
     di_node_t di_node;
