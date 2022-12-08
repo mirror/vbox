@@ -1579,7 +1579,6 @@ RuntimeBaseR3_SOURCES.solaris = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
-	generic/RTSystemFirmware-generic.cpp \
 	r3/generic/allocex-r3-generic.cpp \
 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
@@ -1637,6 +1636,7 @@ RuntimeBaseR3_SOURCES.solaris = \
 	r3/solaris/systemmem-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp \
+	r3/solaris/RTSystemFirmware-solaris.cpp \
 	r3/solaris/RTSystemShutdown-solaris.cpp \
 	r3/solaris/thread-affinity-solaris.cpp
 RuntimeBaseR3_SOURCES.solaris.amd64 = \
@@ -2879,7 +2879,8 @@ VBoxRT_LIBS.haiku              = \
 	iconv
 VBoxRT_LIBS.solaris            = \
 	kstat \
-	contract
+	contract \
+	devinfo
 ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  # SMBIOS not available on Solaris SPARC.
  VBoxRT_LIBS.solaris += smbios
