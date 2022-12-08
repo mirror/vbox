@@ -1069,7 +1069,87 @@ int DragAndDropService::hostCall(uint32_t u32Function,
     LogFlowFunc(("u32Function=%s (%#x), cParms=%RU32, cClients=%zu, cQueue=%zu\n",
                  DnDHostMsgToStr(u32Function), u32Function, cParms, m_clientMap.size(), m_clientQueue.size()));
 
-    int rc;
+    uint32_t const uMode = modeGet();
+
+    /* Check if we've the right mode set. */
+    int rc = VERR_ACCESS_DENIED; /* Play safe. */
+    switch (u32Function)
+    {
+        /*
+         * Host -> Guest mode
+         */
+        case HOST_DND_FN_HG_EVT_ENTER:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_EVT_MOVE:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_EVT_LEAVE:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_EVT_DROPPED:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_SND_DATA_HDR:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_SND_DATA:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_SND_MORE_DATA:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_SND_DIR:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_SND_FILE_DATA:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_HG_SND_FILE_HDR:
+        {
+            if (   uMode == VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST
+                || uMode == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL)
+                rc = VINF_SUCCESS;
+            else
+            {
+                LogRel2(("DnD: Host to guest mode is disabled, ignoring request from host\n"));
+            }
+            break;
+        }
+
+        /*
+         * Guest -> Host mode
+         */
+        case HOST_DND_FN_GH_REQ_PENDING:
+            RT_FALL_THROUGH();
+        case HOST_DND_FN_GH_EVT_DROPPED:
+        {
+            if (   uMode == VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST
+                || uMode == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL)
+                rc = VINF_SUCCESS;
+            else
+            {
+                LogRel2(("DnD: Guest to host mode is disabled, ignoring request from host\n"));
+            }
+            break;
+        }
+
+        /*
+         * Both modes
+         */
+        case HOST_DND_FN_CANCEL:
+            if (uMode != VBOX_DRAG_AND_DROP_MODE_OFF)
+                rc = VINF_SUCCESS;
+            break;
+
+        /*
+         * Functions that always work.
+         */
+        case HOST_DND_FN_SET_MODE:
+            rc = VINF_SUCCESS;
+            break;
+
+        /*
+         * Forbid everything else not explicitly allowed.
+         */
+        default:
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
     bool fSendToGuest = false; /* Whether to send the message down to the guest side or not. */
 
     switch (u32Function)
@@ -1150,13 +1230,6 @@ int DragAndDropService::hostCall(uint32_t u32Function,
     {
         if (fSendToGuest)
         {
-            if (modeGet() == VBOX_DRAG_AND_DROP_MODE_OFF)
-            {
-                /* Tell the host that a wrong drag'n drop mode is set. */
-                rc = VERR_ACCESS_DENIED;
-                break;
-            }
-
             if (m_clientMap.empty()) /* At least one client on the guest connected? */
             {
                 /*
