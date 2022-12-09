@@ -117,6 +117,39 @@ const char *DnDActionToStr(VBOXDNDACTION uAction)
 }
 
 /**
+ * Converts a VBOXDNDACTIONLIST to a string.
+ *
+ * @returns Stringified version of VBOXDNDACTIONLIST. Must be free'd by the caller using RTStrFree().
+ * @retval  NULL on allocation failure.
+ * @retval  "<None>" if no (valid) actions found.
+ * @param   fActionList         DnD action list to convert.
+ */
+char *DnDActionListToStrA(VBOXDNDACTIONLIST fActionList)
+{
+    char *pszList = NULL;
+
+#define HANDLE_ACTION(a_Action) \
+    if (fActionList & a_Action) \
+    { \
+        if (pszList) \
+            AssertRCReturn(RTStrAAppend(&pszList, ", "), NULL); \
+        AssertRCReturn(RTStrAAppend(&pszList, DnDActionToStr(a_Action)), NULL); \
+    }
+
+    HANDLE_ACTION(VBOX_DND_ACTION_IGNORE);
+    HANDLE_ACTION(VBOX_DND_ACTION_COPY);
+    HANDLE_ACTION(VBOX_DND_ACTION_MOVE);
+    HANDLE_ACTION(VBOX_DND_ACTION_LINK);
+
+#undef HANDLE_ACTION
+
+    if (!pszList)
+        AssertRCReturn(RTStrAAppend(&pszList, "<None>"), NULL);
+
+    return pszList;
+}
+
+/**
  * Converts a VBOXDNDSTATE to a string.
  *
  * @returns Stringified version of VBOXDNDSTATE.
