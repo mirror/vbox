@@ -54,6 +54,7 @@ using namespace DragAndDropSvc;
 #include <iprt/cpp/mtlist.h>
 
 #include <VBox/err.h>
+#include <VBox/version.h>
 
 
 /*********************************************************************************************************************************
@@ -64,6 +65,9 @@ using namespace DragAndDropSvc;
 
 /** @todo Merge this with messages from VBoxTray.h. */
 #define WM_VBOXTRAY_DND_MESSAGE       WM_APP + 401
+
+/** The notification header text for hlpShowBalloonTip(). */
+#define VBOX_DND_SHOWBALLOON_HEADER   VBOX_PRODUCT " Drag'n Drop"
 
 
 /*********************************************************************************************************************************
@@ -839,23 +843,6 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &a_lstFormats, VBOXDNDACTIONL
     if (RT_FAILURE(rc))
         return rc;
 
-    if (g_cVerbosity)
-    {
-        RTCString strMsg("Enter: Host -> Guest\n\n");
-        strMsg += RTCStringFmt("Allowed actions: %#x\n", a_fDndLstActionsAllowed);
-        strMsg += "Formats:\n";
-        for (size_t i = 0; i < this->m_lstFmtSup.size(); i++)
-        {
-            if (i > 0)
-                strMsg += "\n";
-            strMsg += this->m_lstFmtSup.at(i);
-        }
-
-        hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
-                          strMsg.c_str(), "VirtualBox Drag'n Drop",
-                          15 * 1000 /* Time to display in msec */, NIIF_INFO);
-    }
-
     /* Save all allowed actions. */
     this->m_lstActionsAllowed = a_fDndLstActionsAllowed;
 
@@ -921,6 +908,27 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &a_lstFormats, VBOXDNDACTIONL
         }
 
         LogRel2(("DnD: \t%s: %RTbool\n", a_lstFormats.at(i).c_str(), fSupported));
+    }
+
+    if (g_cVerbosity)
+    {
+        RTCString strMsg("Enter: Host -> Guest\n");
+        strMsg += RTCStringFmt("Allowed actions: ");
+        char *pszActions = DnDActionListToStrA(a_fDndLstActionsAllowed);
+        AssertPtrReturn(pszActions, VERR_NO_STR_MEMORY);
+        strMsg += pszActions;
+        RTStrFree(pszActions);
+        strMsg += "\nFormats: ";
+        for (size_t i = 0; i < this->m_lstFmtActive.size(); i++)
+        {
+            if (i > 0)
+                strMsg += ", ";
+            strMsg += this->m_lstFmtActive[i];
+        }
+
+        hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                          strMsg.c_str(), VBOX_DND_SHOWBALLOON_HEADER,
+                          15 * 1000 /* Time to display in msec */, NIIF_INFO);
     }
 
     /*
@@ -1044,7 +1052,7 @@ int VBoxDnDWnd::OnHgLeave(void)
 
     if (g_cVerbosity)
         hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
-                          "Leave: Host -> Guest", "VirtualBox Drag'n Drop",
+                          "Leave: Host -> Guest", VBOX_DND_SHOWBALLOON_HEADER,
                           15 * 1000 /* Time to display in msec */, NIIF_INFO);
 
     int rc = Abort();
@@ -1071,7 +1079,7 @@ int VBoxDnDWnd::OnHgDrop(void)
     {
         if (g_cVerbosity)
             hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
-                              "Drop: Host -> Guest", "VirtualBox Drag'n Drop",
+                              "Drop: Host -> Guest", VBOX_DND_SHOWBALLOON_HEADER,
                               15 * 1000 /* Time to display in msec */, NIIF_INFO);
 
         if (m_lstFmtActive.size() >= 1)
@@ -1373,7 +1381,7 @@ int VBoxDnDWnd::OnGhDrop(const RTCString &strFormat, uint32_t dndActionDefault)
             strMsg += RTCStringFmt("Format: %s\n", strFormat.c_str());
 
             hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
-                              strMsg.c_str(), "VirtualBox Drag'n Drop",
+                              strMsg.c_str(), VBOX_DND_SHOWBALLOON_HEADER,
                               15 * 1000 /* Time to display in msec */, NIIF_INFO);
         }
 
@@ -1911,7 +1919,7 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
     if (g_cVerbosity)
         hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
                           RTCStringFmt("Running (worker client ID %RU32)", pCtx->cmdCtx.uClientID).c_str(),
-                          "VirtualBox Drag'n Drop",
+                          VBOX_DND_SHOWBALLOON_HEADER,
                           15 * 1000 /* Time to display in msec */, NIIF_INFO);
 
     /** @todo At the moment we only have one DnD proxy window. */
