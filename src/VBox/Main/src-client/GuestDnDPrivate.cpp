@@ -1002,15 +1002,17 @@ GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats, const co
  *
  * @returns Format list string.
  * @param   lstFormats          GuestDnDMIMEList to convert.
+ * @param   strSep              Separator to use between formats.
+ *                              Uses DND_FORMATS_SEPARATOR_STR as default.
  */
 /* static */
-com::Utf8Str GuestDnD::toFormatString(const GuestDnDMIMEList &lstFormats)
+com::Utf8Str GuestDnD::toFormatString(const GuestDnDMIMEList &lstFormats, const com::Utf8Str &strSep /* = DND_FORMATS_SEPARATOR_STR */)
 {
     com::Utf8Str strFormat;
     for (size_t i = 0; i < lstFormats.size(); i++)
     {
         const com::Utf8Str &f = lstFormats.at(i);
-        strFormat += f + DND_FORMATS_SEPARATOR_STR;
+        strFormat += f + strSep;
     }
 
     return strFormat;
