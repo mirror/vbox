@@ -464,18 +464,6 @@ QRegion UIDesktopWidgetWatchdog::overallAvailableRegion()
     return region;
 }
 
-/* static */
-int UIDesktopWidgetWatchdog::overallDesktopWidth()
-{
-    return overallScreenRegion().boundingRect().width();
-}
-
-/* static */
-int UIDesktopWidgetWatchdog::overallDesktopHeight()
-{
-    return overallScreenRegion().boundingRect().height();
-}
-
 #ifdef VBOX_WS_X11
 /* static */
 bool UIDesktopWidgetWatchdog::isFakeScreenDetected()

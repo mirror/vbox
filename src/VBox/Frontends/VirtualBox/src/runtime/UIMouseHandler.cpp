@@ -173,6 +173,8 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
 
         /* Memorize the host position where the cursor was captured: */
         m_capturedMousePos = QCursor::pos();
+        /* Determine geometry of screen cursor was captured at: */
+        m_capturedScreenGeo = gpDesktop->screenGeometry(m_capturedMousePos);
 
         /* Acquiring visible viewport rectangle in global coodrinates: */
         QRect visibleRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
@@ -1033,18 +1035,23 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             m_lastMousePos = globalPos;
             m_fCursorPositionReseted = false;
         }
-#else /* VBOX_WS_WIN */
-        int iWe = UIDesktopWidgetWatchdog::overallDesktopWidth() - 1;
-        int iHe = UIDesktopWidgetWatchdog::overallDesktopHeight() - 1;
+#else /* !VBOX_WS_WIN */
+        /* Compose boundaries: */
+        const int iX1 = m_capturedScreenGeo.left() + 1;
+        const int iY1 = m_capturedScreenGeo.top() + 1;
+        const int iX2 = m_capturedScreenGeo.right() - 1;
+        const int iY2 = m_capturedScreenGeo.bottom() - 1;
+
+        /* Simulate infinite movement: */
         QPoint p = globalPos;
-        if (globalPos.x() == 0)
-            p.setX(iWe - 1);
-        else if (globalPos.x() == iWe)
-            p.setX( 1 );
-        if (globalPos.y() == 0)
-            p.setY(iHe - 1);
-        else if (globalPos.y() == iHe)
-            p.setY(1);
+        if (globalPos.x() <= iX1)
+            p.setX(iX2 - 1);
+        else if (globalPos.x() >= iX2)
+            p.setX(iX1 + 1);
+        if (globalPos.y() <= iY1)
+            p.setY(iY2 - 1);
+        else if (globalPos.y() >= iY2)
+            p.setY(iY1 + 1);
 
         if (p != globalPos)
         {

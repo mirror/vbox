@@ -116,10 +116,6 @@ public:
     static QRegion overallScreenRegion();
     /** Returns overall region unifying all the host-screen available-geometries. */
     static QRegion overallAvailableRegion();
-    /** Returns overall desktop width. */
-    static int overallDesktopWidth();
-    /** Returns overall desktop height. */
-    static int overallDesktopHeight();
 
 #ifdef VBOX_WS_X11
     /** Qt5: X11: Returns whether no or fake screen detected. */

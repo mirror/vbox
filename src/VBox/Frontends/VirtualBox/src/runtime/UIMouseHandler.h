@@ -149,6 +149,7 @@ protected:
     /* Other mouse variables: */
     QPoint m_lastMousePos;
     QPoint m_capturedMousePos;
+    QRect m_capturedScreenGeo;
     int m_iLastMouseWheelDelta;
     int m_iMouseCaptureViewIndex;
 
