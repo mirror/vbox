@@ -1016,7 +1016,7 @@ do { \
                             if (rc == VERR_CANCELLED)
                             {
                                 /* Host indicated that the current operation was cancelled. Tell the guest. */
-                                LogFunc(("Host indicated that operation was cancelled\n", rc));
+                                LogFunc(("Host indicated that operation was cancelled\n"));
                             }
                             else
                             {
