@@ -512,12 +512,15 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_hsubpd_u128            NULL
 #define iemAImpl_sqrtps_u128            NULL
 #define iemAImpl_sqrtpd_u128            NULL
+#define iemAImpl_rsqrtps_u128           NULL
 #define iemAImpl_addsubps_u128          NULL
 #define iemAImpl_addsubpd_u128          NULL
 #define iemAImpl_cvtpd2ps_u128          NULL
 #define iemAImpl_cvtps2pd_u128          NULL
 #define iemAImpl_shufpd_u128            NULL
 #define iemAImpl_shufps_u128            NULL
+#define iemAImpl_roundps_u128           NULL
+#define iemAImpl_roundpd_u128           NULL
 
 #define iemAImpl_cvtdq2ps_u128          NULL
 #define iemAImpl_cvtps2dq_u128          NULL
@@ -540,6 +543,9 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define iemAImpl_maxsd_u128_r64         NULL
 #define iemAImpl_sqrtss_u128_r32        NULL
 #define iemAImpl_sqrtsd_u128_r64        NULL
+#define iemAImpl_roundss_u128_r32       NULL
+#define iemAImpl_roundsd_u128_r64       NULL
+#define iemAImpl_rsqrtss_u128_r32       NULL
 
 #define iemAImpl_cvtss2sd_u128_r32      NULL
 #define iemAImpl_cvtsd2ss_u128_r64      NULL
@@ -739,6 +745,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_SAR_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) >>= (a_cShift); CHK_TYPE(int16_t, a_i16Local);  CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
 #define IEM_MC_SAR_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) >>= (a_cShift); CHK_TYPE(int32_t, a_i32Local);  CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
 #define IEM_MC_SAR_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) >>= (a_cShift); CHK_TYPE(int64_t, a_i64Local);  CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
+#define IEM_MC_SHR_LOCAL_U8(a_u8Local, a_cShift)        do { (a_u8Local)  >>= (a_cShift); CHK_TYPE(uint8_t, a_u8Local);   CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
 #define IEM_MC_SHL_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) <<= (a_cShift); CHK_TYPE(int16_t, a_i16Local);  CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
 #define IEM_MC_SHL_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) <<= (a_cShift); CHK_TYPE(int32_t, a_i32Local);  CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
 #define IEM_MC_SHL_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) <<= (a_cShift); CHK_TYPE(int64_t, a_i64Local);  CHK_CONST(uint8_t,  a_cShift);  (void)fMcBegin; } while (0)
@@ -765,6 +772,7 @@ IEMOPUNARYSIZES g_iemAImpl_not;
 #define IEM_MC_MODIFIED_MREG(a_iMReg)                       do { CHK_MREG_IDX(a_iMReg); (void)fFpuWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_MODIFIED_MREG_BY_REF(a_pu64Dst)              do { AssertCompile(sizeof(*a_pu64Dst) <= sizeof(uint64_t)); (void)fFpuWrite; (void)fMcBegin; } while (0)
 
+#define IEM_MC_CLEAR_XREG_U32_MASK(a_iXReg, a_bMask)        do { CHK_XREG_IDX(a_iXReg); CHK_TYPE(uint8_t, a_bMask); (void)fSseRead;  (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg)        do { CHK_XREG_IDX(a_iXReg); (a_u128Value) = g_u128Zero; CHK_TYPE(RTUINT128U, a_u128Value); (void)fSseRead;  (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_XMM(a_XmmValue, a_iXReg)          do { CHK_XREG_IDX(a_iXReg); (a_XmmValue) = g_XmmZero; CHK_TYPE(X86XMMREG, a_XmmValue); (void)fSseRead;  (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg, a_iQWord)    do { CHK_XREG_IDX(a_iXReg); (a_u64Value) = 0; CHK_TYPE(uint64_t, a_u64Value); (void)fSseRead; (void)fMcBegin; } while (0)

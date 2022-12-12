@@ -4663,6 +4663,7 @@ IEMIMPL_FP_F2 addsubpd, 3
 ; always in sync with the register where the result might get written
 ; to.
 IEMIMPL_FP_F2 sqrtps,    2
+IEMIMPL_FP_F2 rsqrtps,   2
 IEMIMPL_FP_F2 sqrtpd,    2
 IEMIMPL_FP_F2 cvtdq2ps,  2
 IEMIMPL_FP_F2 cvtps2dq,  2
@@ -4722,6 +4723,7 @@ IEMIMPL_FP_F2_R32 divss
 IEMIMPL_FP_F2_R32 maxss
 IEMIMPL_FP_F2_R32 cvtss2sd
 IEMIMPL_FP_F2_R32 sqrtss
+IEMIMPL_FP_F2_R32 rsqrtss
 
 
 ;;
@@ -6066,6 +6068,57 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmppd
 IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpss
 IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd
+
+;;
+; SSE instructions with 8-bit immediates of the form
+;    xxx xmm1, xmm2, imm8.
+; where the instruction encoding takes up 6 bytes and we need to load and save the MXCSR
+; register.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the MXCSR value (input/output).
+; @param    A1      Pointer to the first media register size operand (output).
+; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
+; @param    A3      The 8-bit immediate (input).
+;
+%macro IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_FXSTATE_MXCSR_ONLY A0
+
+        movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3*2 + A3]        ; sizeof(insn+ret) == 7: 2 * (A3 * 3) + A3
+        lea     T0, [T0*2]
+        lea     T0, [T0 + A3]
+        lea     T1, [T1 + T0]
+        call    T1
+        movdqu  [A1], xmm0
+
+        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*(6+1) == 0x700
+dw 0xf8ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x106ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundps
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundpd
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundss
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundsd
+
 
 ;;
 ; SSE instructions of the form

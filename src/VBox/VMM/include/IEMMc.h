@@ -395,6 +395,8 @@
 #define IEM_MC_SAR_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) >>= (a_cShift);  } while (0)
 #define IEM_MC_SAR_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) >>= (a_cShift);  } while (0)
 
+#define IEM_MC_SHR_LOCAL_U8(a_u8Local, a_cShift)        do { (a_u8Local)  >>= (a_cShift);  } while (0)
+
 #define IEM_MC_SHL_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) <<= (a_cShift);  } while (0)
 #define IEM_MC_SHL_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) <<= (a_cShift);  } while (0)
 #define IEM_MC_SHL_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) <<= (a_cShift);  } while (0)
@@ -473,6 +475,12 @@
 #define IEM_MC_MODIFIED_MREG_BY_REF(a_pu64Dst) \
     do { ((uint32_t *)(a_pu64Dst))[2] = 0xffff; } while (0)
 
+#define IEM_MC_CLEAR_XREG_U32_MASK(a_iXReg, a_bMask) \
+    do { if ((a_bMask) & (1 << 0)) pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[0] = 0; \
+         if ((a_bMask) & (1 << 1)) pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[1] = 0; \
+         if ((a_bMask) & (1 << 2)) pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[2] = 0; \
+         if ((a_bMask) & (1 << 3)) pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[3] = 0; \
+    } while (0)
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg) \
     do { (a_u128Value).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0]; \
          (a_u128Value).au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[1]; \
