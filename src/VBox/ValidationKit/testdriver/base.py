@@ -720,12 +720,15 @@ class Process(TdTaskBase):
         if sOs == 'solaris':
             if sKindCrashDump is not None: # Enable.
                 sCorePath = getDirEnv('TESTBOX_PATH_SCRATCH', sAlternative = '/var/cores', fTryCreate = False);
-                utils.sudoProcessOutputChecked([ 'coreadm', '-e', 'global', '-e', 'global-setid', \
-                                                 '-e', 'process', '-e', 'proc-setid', \
-                                                 '-g', os.path.join(sCorePath, '%f.%p.core')]);
+                (iExitCode, _, sErr) = utils.processOutputUnchecked([ 'coreadm', '-e', 'global', '-e', 'global-setid', \
+                                                                      '-e', 'process', '-e', 'proc-setid', \
+                                                                      '-g', os.path.join(sCorePath, '%f.%p.core')]);
             else: # Disable.
-                utils.sudoProcessOutputChecked([ 'coreadm', \
-                                                 '-d', 'global', '-d', 'global-setid', '-d', 'process', '-d', 'proc-setid' ]);
+                (iExitCode, _, sErr) = utils.processOutputUnchecked([ 'coreadm', \
+                                                                      '-d', 'global', '-d', 'global-setid', \
+                                                                      '-d', 'process', '-d', 'proc-setid' ]);
+            if iExitCode != 0: # Don't report an actual error, just log this.
+                reporter.log('%s coreadm failed: %s' % ('Enabling' if sKindCrashDump else 'Disabling', sErr));
 
         if sKindCrashDump is not None:
             if sCorePath is not None:
