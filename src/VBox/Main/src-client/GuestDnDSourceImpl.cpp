@@ -127,7 +127,10 @@ protected:
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(GuestDnDSource)
+GuestDnDSource::GuestDnDSource(void)
+    : GuestDnDBase(this) { }
+
+GuestDnDSource::~GuestDnDSource(void) { }
 
 HRESULT GuestDnDSource::FinalConstruct(void)
 {

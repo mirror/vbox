@@ -128,7 +128,10 @@ protected:
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(GuestDnDTarget)
+GuestDnDTarget::GuestDnDTarget(void)
+    : GuestDnDBase(this) { }
+
+GuestDnDTarget::~GuestDnDTarget(void) { }
 
 HRESULT GuestDnDTarget::FinalConstruct(void)
 {

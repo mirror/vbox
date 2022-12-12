@@ -1191,8 +1191,9 @@ std::vector<DnDAction_T> GuestDnD::toMainActions(VBOXDNDACTIONLIST dndActionList
  * GuestDnDBase implementation.                                                                                                  *
  ********************************************************************************************************************************/
 
-GuestDnDBase::GuestDnDBase(void)
-    : m_fIsPending(false)
+GuestDnDBase::GuestDnDBase(VirtualBoxBase *pBase)
+    : m_pBase(pBase)
+    , m_fIsPending(false)
 {
     /* Initialize public attributes. */
     m_lstFmtSupported = GuestDnDInst()->defaultFormats();
@@ -1258,6 +1259,101 @@ HRESULT GuestDnDBase::i_removeFormats(const GuestDnDMIMEList &aFormats)
     }
 
     return S_OK;
+}
+
+/**
+ * Prints an error in the release log and sets the COM error info.
+ *
+ * @returns HRESULT
+ * @param   vrc                 IPRT-style error code to print in addition.
+ *                              Will not be printed if set to a non-error (e.g. VINF _ / VWRN_) code.
+ * @param   pcszMsgFmt          Format string.
+ * @param   va                  Format arguments.
+ * @note
+ */
+HRESULT GuestDnDBase::i_setErrorV(int vrc, const char *pcszMsgFmt, va_list va)
+{
+    char *psz = NULL;
+    if (RTStrAPrintfV(&psz, pcszMsgFmt, va) < 0)
+        return E_OUTOFMEMORY;
+    AssertPtrReturn(psz, E_OUTOFMEMORY);
+
+    HRESULT hrc;
+    if (RT_FAILURE(vrc))
+    {
+        LogRel(("DnD: Error: %s (%Rrc)\n", psz, vrc));
+        hrc = m_pBase->setErrorBoth(VBOX_E_DND_ERROR, vrc, "DnD: Error: %s (%Rrc)", psz, vrc);
+    }
+    else
+    {
+        LogRel(("DnD: Error: %s\n", psz));
+        hrc = m_pBase->setErrorBoth(VBOX_E_DND_ERROR, vrc, "DnD: Error: %s", psz);
+    }
+
+    RTStrFree(psz);
+    return hrc;
+}
+
+/**
+ * Prints an error in the release log and sets the COM error info.
+ *
+ * @returns HRESULT
+ * @param   vrc                 IPRT-style error code to print in addition.
+ *                              Will not be printed if set to a non-error (e.g. VINF _ / VWRN_) code.
+ * @param   pcszMsgFmt          Format string.
+ * @param   ...                 Format arguments.
+ * @note
+ */
+HRESULT GuestDnDBase::i_setError(int vrc, const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+    HRESULT const hrc = i_setErrorV(vrc, pcszMsgFmt, va);
+    va_end(va);
+
+    return hrc;
+}
+
+/**
+ * Prints an error in the release log, sets the COM error info and calls the object's reset function.
+ *
+ * @returns HRESULT
+ * @param   pcszMsgFmt          Format string.
+ * @param   va                  Format arguments.
+ * @note
+ */
+HRESULT GuestDnDBase::i_setErrorAndReset(const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+    HRESULT const hrc = i_setErrorV(VINF_SUCCESS, pcszMsgFmt, va);
+    va_end(va);
+
+    i_reset();
+
+    return hrc;
+}
+
+/**
+ * Prints an error in the release log, sets the COM error info and calls the object's reset function.
+ *
+ * @returns HRESULT
+ * @param   vrc                 IPRT-style error code to print in addition.
+ *                              Will not be printed if set to a non-error (e.g. VINF _ / VWRN_) code.
+ * @param   pcszMsgFmt          Format string.
+ * @param   ...                 Format arguments.
+ * @note
+ */
+HRESULT GuestDnDBase::i_setErrorAndReset(int vrc, const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+    HRESULT const hrc = i_setErrorV(vrc, pcszMsgFmt, va);
+    va_end(va);
+
+    i_reset();
+
+    return hrc;
 }
 
 /**

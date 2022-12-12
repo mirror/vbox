@@ -1010,7 +1010,7 @@ class GuestDnDBase
 {
 protected:
 
-    GuestDnDBase(void);
+    GuestDnDBase(VirtualBoxBase *pBase);
 
 protected:
 
@@ -1020,6 +1020,21 @@ protected:
     const GuestDnDMIMEList &i_getFormats(void) const;
     HRESULT i_addFormats(const GuestDnDMIMEList &aFormats);
     HRESULT i_removeFormats(const GuestDnDMIMEList &aFormats);
+    /** @}  */
+
+    /** @name Error handling.
+     * @{ */
+    HRESULT i_setErrorV(int vrc, const char *pcszMsgFmt, va_list va);
+    HRESULT i_setError(int vrc, const char *pcszMsgFmt, ...);
+    HRESULT i_setErrorAndReset(const char *pcszMsgFmt, ...);
+    HRESULT i_setErrorAndReset(int vrc, const char *pcszMsgFmt, ...);
+    /** @}  */
+
+protected:
+
+    /** @name Pure virtual functions needed to be implemented by the actual (derived) implementation.
+     * @{ */
+    virtual void i_reset(void) = 0;
     /** @}  */
 
 protected:
@@ -1038,6 +1053,8 @@ protected:
 
 protected:
 
+    /** Pointer to base class to use for stuff like error handlng. */
+    VirtualBoxBase                 *m_pBase;
     /** @name Public attributes (through getters/setters).
      * @{ */
     /** Pointer to guest implementation. */
