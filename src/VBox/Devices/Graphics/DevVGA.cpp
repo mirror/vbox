@@ -1815,8 +1815,14 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
     /* Evaluate word/byte mode. Need to count by 4 because text is only in plane 0. */
     s_incr = pThis->cr[0x17] & 0x40 ? 4 : 8;
 
+    unsigned addr_mask;
+    if (!(pThis->cr[0x17] & 0x40) && !(pThis->cr[0x17] & 0x20))
+        addr_mask = 0xffff;     /* Wrap at 64K, for CGA and 64K EGA compatibility. */
+    else
+        addr_mask = 0x3ffff;    /* Wrap at 256K, standard VGA. */
+
     line_offset = pThis->line_offset;
-    s1 = pThisCC->pbVRam + (pThis->start_addr * s_incr);
+    s1 = pThisCC->pbVRam + ((pThis->start_addr * s_incr) & addr_mask);
 
     /* double scanning - not for 9-wide modes */
     dscan = (pThis->cr[9] >> 7) & 1;
@@ -1880,7 +1886,7 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
         pThis->cursor_start = pThis->cr[0xa];
         pThis->cursor_end = pThis->cr[0xb];
     }
-    cursor_ptr = pThisCC->pbVRam + (pThis->start_addr + cursor_offset) * s_incr;
+    cursor_ptr = pThisCC->pbVRam + (((pThis->start_addr + cursor_offset) * s_incr) & addr_mask);
     depth_index = vgaR3GetDepthIndex(pDrv->cBits);
     if (cw == 16)
         vga_draw_glyph8 = vga_draw_glyph16_table[depth_index];
@@ -2000,6 +2006,8 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
             }
             d1 += x_incr;
             src += s_incr;  /* Even in text mode, word/byte mode matters. */
+            if (src > (pThisCC->pbVRam + addr_mask))
+                src = pThisCC->pbVRam;
             ch_attr_ptr++;
         }
         if (cx_max != -1) {
@@ -2027,6 +2035,9 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
          * and line compare checked after every line. */
         if ((uint32_t)cy == (pThis->line_compare / cheight))
             s1 = pThisCC->pbVRam;
+
+        if (s1 > (pThisCC->pbVRam + addr_mask))
+            s1 = s1 - (addr_mask + 1);
     }
     if (cy_start >= 0)
         /* Flush any remaining changes to display. */
@@ -4384,13 +4395,16 @@ static DECLCALLBACK(void) vgaR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
 
         uint32_t cbLine;
         uint32_t offStart;
+        uint32_t offCursr;
         uint32_t uLineCompareIgn;
         vgaR3GetOffsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
         if (!cbLine)
             cbLine = 80 * ch_stride;
         offStart *= ch_stride;
+        offCursr = ((pThis->cr[0x0e] << 8) | pThis->cr[0x0f]) * ch_stride;
         pHlp->pfnPrintf(pHlp, "cbLine:   %#x\n", cbLine);
         pHlp->pfnPrintf(pHlp, "offStart: %#x (line %#x)\n", offStart, offStart / cbLine);
+        pHlp->pfnPrintf(pHlp, "offCursr: %#x\n", offCursr);
     }
     if (pThis->fRealRetrace)
     {
