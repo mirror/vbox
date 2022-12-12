@@ -820,8 +820,12 @@ public:
 
 public:
 
-    int notifyAboutGuestResponse(void) const;
-    int waitForGuestResponse(RTMSINTERVAL msTimeout = 3000) const;
+    /** @name Guest response handling.
+     * @{ */
+    int notifyAboutGuestResponse(int rcGuest = VINF_SUCCESS);
+    int waitForGuestResponseEx(RTMSINTERVAL msTimeout = 3000, int *prcGuest = NULL);
+    int waitForGuestResponse(int *prcGuest = NULL);
+    /** @} */
 
     void setActionsAllowed(VBOXDNDACTIONLIST a) { m_dndLstActionsAllowed = a; }
     VBOXDNDACTIONLIST getActionsAllowed(void) const { return m_dndLstActionsAllowed; }
@@ -859,6 +863,9 @@ public:
     uint64_t              m_fGuestFeatures0;
     /** Event for waiting for response. */
     RTSEMEVENT            m_EventSem;
+    /** Last error reported from guest.
+     *  Set to VERR_IPE_UNINITIALIZED_STATUS if not set yet. */
+    int                   m_rcGuest;
     /** Default action to perform in case of a
      *  successful drop. */
     VBOXDNDACTION         m_dndActionDefault;

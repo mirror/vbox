@@ -303,6 +303,7 @@ GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
     : m_uProtocolVersion(0)
     , m_fGuestFeatures0(VBOX_DND_GF_NONE)
     , m_EventSem(NIL_RTSEMEVENT)
+    , m_rcGuest(VERR_IPE_UNINITIALIZED_STATUS)
     , m_dndActionDefault(0)
     , m_dndLstActionsAllowed(0)
     , m_pParent(pGuest)
@@ -322,9 +323,14 @@ GuestDnDState::~GuestDnDState(void)
 
 /**
  * Notifies the waiting side about a guest notification response.
+ *
+ * @returns VBox status code.
+ * @param   rcGuest             Guest rc to set for the response.
+ *                              Defaults to VINF_SUCCESS (for success).
  */
-int GuestDnDState::notifyAboutGuestResponse(void) const
+int GuestDnDState::notifyAboutGuestResponse(int rcGuest /* = VINF_SUCCESS */)
 {
+    m_rcGuest = rcGuest;
     return RTSemEventSignal(m_EventSem);
 }
 
@@ -339,6 +345,8 @@ void GuestDnDState::reset(void)
     m_dndLstActionsAllowed = 0;
 
     m_lstFormats.clear();
+
+    m_rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 }
 
 /**
@@ -618,7 +626,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
 
             rc = setProgress(pCBData->uPercentage, pCBData->uStatus, pCBData->rc);
             if (RT_SUCCESS(rc))
-                rc = notifyAboutGuestResponse();
+                rc = notifyAboutGuestResponse(pCBData->rc);
             break;
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -698,18 +706,40 @@ HRESULT GuestDnDState::queryProgressTo(IProgress **ppProgress)
 }
 
 /**
+ * Waits for a guest response to happen, extended version.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_TIMEOUT when waiting has timed out.
+ * @retval  VERR_DND_GUEST_ERROR on an error reported back from the guest.
+ * @param   msTimeout           Timeout (in ms) for waiting. Optional, waits 3000 ms if not specified.
+ * @param   prcGuest            Where to return the guest error when VERR_DND_GUEST_ERROR is returned. Optional.
+ */
+int GuestDnDState::waitForGuestResponseEx(RTMSINTERVAL msTimeout /* = 3000 */, int *prcGuest /* = NULL */)
+{
+    int vrc = RTSemEventWait(m_EventSem, msTimeout);
+    if (RT_SUCCESS(vrc))
+    {
+        if (RT_FAILURE(m_rcGuest))
+            vrc = VERR_DND_GUEST_ERROR;
+        if (prcGuest)
+            *prcGuest = m_rcGuest;
+    }
+    return vrc;
+}
+
+/**
  * Waits for a guest response to happen.
  *
  * @returns VBox status code.
- * @param   msTimeout           Timeout (in ms) for waiting. Optional, waits 3000 ms if not specified.
+ * @retval  VERR_TIMEOUT when waiting has timed out.
+ * @retval  VERR_DND_GUEST_ERROR on an error reported back from the guest.
+ * @param   prcGuest            Where to return the guest error when VERR_DND_GUEST_ERROR is returned. Optional.
+ *
+ * @note    Uses the default timeout of 3000 ms.
  */
-int GuestDnDState::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 3000 */) const
+int GuestDnDState::waitForGuestResponse(int *prcGuest /* = NULL */)
 {
-    int rc = RTSemEventWait(m_EventSem, msTimeout);
-#ifdef DEBUG_andy
-    LogFlowFunc(("msTimeout=%RU32, rc=%Rrc\n", msTimeout, rc));
-#endif
-    return rc;
+    return waitForGuestResponseEx(3000 /* ms */, prcGuest);
 }
 
 /*********************************************************************************************************************************

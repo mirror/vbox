@@ -284,7 +284,10 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
     if (aDefaultAction)
         *aDefaultAction = DnDAction_Ignore;
 
-    HRESULT hr = S_OK;
+    GuestDnDState *pState = GuestDnDInst()->getState();
+    AssertPtrReturn(pState, E_POINTER);
+
+    HRESULT hrc = S_OK;
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_FN_GH_REQ_PENDING);
@@ -292,55 +295,52 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
     Msg.appendUInt32(uScreenId);
 
-    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
-    if (RT_SUCCESS(rc))
+    int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    if (RT_SUCCESS(vrc))
     {
-        GuestDnDState *pState = GuestDnDInst()->getState();
-        AssertPtr(pState);
-
-        bool fFetchResult = true;
-
-        rc = pState->waitForGuestResponse(100 /* Timeout in ms */);
-        if (RT_FAILURE(rc))
-            fFetchResult = false;
-
-        if (   fFetchResult
-            && isDnDIgnoreAction(pState->getActionDefault()))
-            fFetchResult = false;
-
-        /* Fetch the default action to use. */
-        if (fFetchResult)
+        int vrcGuest;
+        vrc = pState->waitForGuestResponseEx(100 /* Timeout in ms */, &vrcGuest);
+        if (RT_SUCCESS(vrc))
         {
-            /*
-             * In the GuestDnDSource case the source formats are from the guest,
-             * as GuestDnDSource acts as a target for the guest. The host always
-             * dictates what's supported and what's not, so filter out all formats
-             * which are not supported by the host.
-             */
-            GuestDnDMIMEList lstFiltered  = GuestDnD::toFilteredFormatList(m_lstFmtSupported, pState->formats());
-            if (lstFiltered.size())
+            if (!isDnDIgnoreAction(pState->getActionDefault()))
             {
-                LogRel3(("DnD: Host offered the following formats:\n"));
-                for (size_t i = 0; i < lstFiltered.size(); i++)
-                    LogRel3(("DnD:\tFormat #%zu: %s\n", i, lstFiltered.at(i).c_str()));
+                /*
+                 * In the GuestDnDSource case the source formats are from the guest,
+                 * as GuestDnDSource acts as a target for the guest. The host always
+                 * dictates what's supported and what's not, so filter out all formats
+                 * which are not supported by the host.
+                 */
+                GuestDnDMIMEList lstFiltered  = GuestDnD::toFilteredFormatList(m_lstFmtSupported, pState->formats());
+                if (lstFiltered.size())
+                {
+                    LogRel2(("DnD: Host offered the following formats:\n"));
+                    for (size_t i = 0; i < lstFiltered.size(); i++)
+                        LogRel2(("DnD:\tFormat #%zu: %s\n", i, lstFiltered.at(i).c_str()));
 
-                aFormats            = lstFiltered;
-                aAllowedActions     = GuestDnD::toMainActions(pState->getActionsAllowed());
-                if (aDefaultAction)
-                    *aDefaultAction = GuestDnD::toMainAction(pState->getActionDefault());
+                    aFormats            = lstFiltered;
+                    aAllowedActions     = GuestDnD::toMainActions(pState->getActionsAllowed());
+                    if (aDefaultAction)
+                        *aDefaultAction = GuestDnD::toMainAction(pState->getActionDefault());
 
-                /* Apply the (filtered) formats list. */
-                m_lstFmtOffered     = lstFiltered;
+                    /* Apply the (filtered) formats list. */
+                    m_lstFmtOffered     = lstFiltered;
+                }
+                else
+                    hrc = i_setErrorAndReset(tr("Negotiation of formats between guest and host failed!\n\nHost offers: %s\n\nGuest offers: %s"),
+                                             GuestDnD::toFormatString(m_lstFmtSupported , ",").c_str(),
+                                             GuestDnD::toFormatString(pState->formats() , ",").c_str());
             }
-            else
-                LogRel2(("DnD: Negotiation of formats between guest and host failed, drag and drop to host not possible\n"));
+            /* Note: Don't report an error here when the action is "ignore" -- that only means that the current window on the guest
+                     simply doesn't support the format or drag and drop at all. */
         }
-
-        LogFlowFunc(("fFetchResult=%RTbool, lstActionsAllowed=0x%x\n", fFetchResult, pState->getActionsAllowed()));
+        else
+            hrc = i_setErrorAndReset(vrc == VERR_DND_GUEST_ERROR ? vrcGuest : vrc, tr("Requesting pending data from guest failed"));
     }
+    else
+        hrc = i_setErrorAndReset(vrc, tr("Sending drag pending event to guest failed"));
 
-    LogFlowFunc(("hr=%Rhrc\n", hr));
-    return hr;
+    LogFlowFunc(("hr=%Rhrc\n", hrc));
+    return hrc;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -418,7 +418,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     }
     catch (std::bad_alloc &)
     {
-        hr = setError(E_OUTOFMEMORY);
+        hr = E_OUTOFMEMORY;
     }
     catch (...)
     {
@@ -436,7 +436,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
     }
     else
-        hr = setError(hr, tr("Starting thread for GuestDnDSource failed (%Rhrc)"), hr);
+        hr = i_setErrorAndReset(tr("Starting thread for GuestDnDSource failed (%Rhrc)"), hr);
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
