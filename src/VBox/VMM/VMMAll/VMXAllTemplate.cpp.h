@@ -5215,9 +5215,7 @@ static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
 static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
 #define HMVMX_ERROR_BREAK(err)              { uError = (err); break; }
-#define HMVMX_CHECK_BREAK(expr, err)        do { \
-                                                if (!(expr)) { uError = (err); break; } \
-                                            } while (0)
+#define HMVMX_CHECK_BREAK(expr, err)        if (!(expr)) { uError = (err); break; } else do { } while (0)
 
     PCPUMCTX pCtx   = &pVCpu->cpum.GstCtx;
     uint32_t uError = VMX_IGS_ERROR;
@@ -5306,7 +5304,9 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /* pCtx->rip can be different than the one in the VMCS (e.g. run guest code and VM-exits that don't update it). */
         if (   !fLongModeGuest
             || !pCtx->cs.Attr.n.u1Long)
+        {
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffff00000000)), VMX_IGS_LONGMODE_RIP_INVALID);
+        }
         /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
          *        must be identical if the "IA-32e mode guest" VM-entry
          *        control is 1 and CS.L is 1. No check applies if the
@@ -5331,7 +5331,9 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         rc = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
         AssertRC(rc);
         if (VMX_ENTRY_INT_INFO_IS_EXT_INT(u32EntryInfo))
+        {
             HMVMX_CHECK_BREAK(u32Eflags & X86_EFL_IF, VMX_IGS_RFLAGS_IF_INVALID);
+        }
 
         /*
          * 64-bit checks.
@@ -5450,7 +5452,9 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL), VMX_IGS_SS_ATTR_DPL_RPL_UNEQUAL);
             if (   !(pCtx->cr0 & X86_CR0_PE)
                 || pCtx->cs.Attr.n.u4Type == 3)
+            {
                 HMVMX_CHECK_BREAK(!pCtx->ss.Attr.n.u2Dpl, VMX_IGS_SS_ATTR_DPL_INVALID);
+            }
 
             if (!(pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE))
             {
@@ -5653,7 +5657,9 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 
         if (   u32IntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS
             || u32IntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
+        {
             HMVMX_CHECK_BREAK(u32ActivityState == VMX_VMCS_GUEST_ACTIVITY_ACTIVE, VMX_IGS_ACTIVITY_STATE_ACTIVE_INVALID);
+        }
 
         /** @todo Activity state and injecting interrupts. Left as a todo since we
          *        currently don't use activity states but ACTIVE. */
@@ -5690,7 +5696,9 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                              VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID);
         if (   (pVmcsInfo->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
             && VMX_ENTRY_INT_INFO_IS_XCPT_NMI(u32EntryInfo))
+        {
             HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI), VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID);
+        }
 
         /* Pending debug exceptions. */
         rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &u64Val);
