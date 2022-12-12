@@ -616,7 +616,7 @@ Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
  */
 void GuestDnDSource::i_reset(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogRel2(("DnD: Source reset\n"));
 
     mData.mRecvCtx.reset();
 

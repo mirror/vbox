@@ -203,9 +203,6 @@ GuestDnDSendCtx::GuestDnDSendCtx(void)
  */
 void GuestDnDSendCtx::reset(void)
 {
-    if (pState)
-        pState->reset();
-
     uScreenID  = 0;
 
     Transfer.reset();
@@ -232,9 +229,6 @@ GuestDnDRecvCtx::GuestDnDRecvCtx(void)
  */
 void GuestDnDRecvCtx::reset(void)
 {
-    if (pState)
-        pState->reset();
-
     lstFmtOffered.clear();
     strFmtReq  = "";
     strFmtRecv = "";
@@ -353,8 +347,65 @@ void GuestDnDState::reset(void)
     m_dndLstActionsAllowed = VBOX_DND_ACTION_IGNORE;
 
     m_lstFormats.clear();
+    m_mapCallbacks.clear();
 
     m_rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+}
+
+/**
+ * Default callback handler for guest callbacks.
+ *
+ * This handler acts as a fallback in case important callback messages are not being handled
+ * by the specific callers.
+ *
+ * @returns VBox status code. Will get sent back to the host service.
+ * @retval  VERR_CANCELLED for indicating that the current operation was cancelled.
+ * @param   uMsg                HGCM message ID (function number).
+ * @param   pvParms             Pointer to additional message data. Optional and can be NULL.
+ * @param   cbParms             Size (in bytes) additional message data. Optional and can be 0.
+ * @param   pvUser              User-supplied pointer on callback registration.
+ */
+/* static */
+DECLCALLBACK(int) GuestDnDState::i_defaultCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
+{
+    GuestDnDState *pThis = (GuestDnDState *)pvUser;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("uMsg=%RU32 (%#x)\n", uMsg, uMsg));
+
+    int vrc = VERR_IPE_UNINITIALIZED_STATUS;
+
+    switch (uMsg)
+    {
+        case GUEST_DND_FN_EVT_ERROR:
+        {
+            PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(CB_MAGIC_DND_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
+
+            if (RT_SUCCESS(pCBData->rc))
+            {
+                AssertMsgFailed(("Guest has sent an error event but did not specify an actual error code\n"));
+                pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
+            }
+
+            vrc = pThis->setProgress(100, DND_PROGRESS_ERROR, pCBData->rc,
+                                     Utf8StrFmt("Received error from guest: %Rrc", pCBData->rc));
+            AssertRCBreak(vrc);
+            vrc = pThis->notifyAboutGuestResponse(pCBData->rc);
+            AssertRCBreak(vrc);
+            break;
+        }
+
+        default:
+            AssertMsgBreakStmt(pThis->isProgressCanceled(), ("Transfer not cancelled (yet)!\n"), vrc = VERR_INVALID_STATE);
+            vrc = VERR_CANCELLED;
+            break;
+    }
+
+    LogFlowFunc(("Returning rc=%Rrc\n", vrc));
+    return vrc;
 }
 
 /**
@@ -398,31 +449,32 @@ bool GuestDnDState::isProgressCanceled(void) const
 }
 
 /**
- * Sets a callback for a specific HGCM message.
+ * Sets (registers or unregisters) a callback for a specific HGCM message.
  *
  * @returns VBox status code.
  * @param   uMsg                HGCM message ID to set callback for.
- * @param   pfnCallback         Callback function pointer to use.
+ * @param   pfnCallback         Callback function pointer to use. Pass NULL to unregister.
  * @param   pvUser              User-provided arguments for the callback function. Optional and can be NULL.
  */
 int GuestDnDState::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, void *pvUser /* = NULL */)
 {
     GuestDnDCallbackMap::iterator it = m_mapCallbacks.find(uMsg);
 
-    /* Add. */
+    /* Register. */
     if (pfnCallback)
     {
-        if (it == m_mapCallbacks.end())
+        try
         {
             m_mapCallbacks[uMsg] = GuestDnDCallback(pfnCallback, uMsg, pvUser);
-            return VINF_SUCCESS;
         }
-
-        AssertMsgFailed(("Callback for message %RU32 already registered\n", uMsg));
-        return VERR_ALREADY_EXISTS;
+        catch (std::bad_alloc &)
+        {
+            return VERR_NO_MEMORY;
+        }
+        return VINF_SUCCESS;
     }
 
-    /* Remove. */
+    /* Unregister. */
     if (it != m_mapCallbacks.end())
         m_mapCallbacks.erase(it);
 
@@ -471,7 +523,6 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
                 hr = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR,
                                                    COM_IIDOF(IGuest),
                                                    m_pParent->getComponentName(), strMsg.c_str());
-            reset();
             break;
         }
 
@@ -490,8 +541,6 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
                 hr = m_pProgress->i_notifyComplete(S_OK);
                 AssertComRC(hr);
             }
-
-            reset();
             break;
         }
 
@@ -573,6 +622,9 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             rc = VINF_SUCCESS;
             break;
         }
+
+        /* Note: GUEST_DND_FN_EVT_ERROR is handled in either the state's default callback or in specific
+         *       (overriden) callbacks (e.g. GuestDnDSendCtx / GuestDnDRecvCtx). */
 
         case DragAndDropSvc::GUEST_DND_FN_DISCONNECT:
         {
@@ -693,8 +745,8 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
         }
         else
         {
-            LogFlowFunc(("No callback for function %RU32 defined\n", u32Function));
-            rc = VERR_NOT_SUPPORTED; /* Tell the guest. */
+            /* Invoke the default callback handler in case we don't have any registered callback above. */
+            rc = i_defaultCallback(u32Function, pvParms, cbParms, this /* pvUser */);
         }
     }
 

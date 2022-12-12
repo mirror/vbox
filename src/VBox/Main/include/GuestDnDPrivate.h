@@ -843,11 +843,19 @@ public:
 
     void reset(void);
 
-    bool isProgressCanceled(void) const;
+    /** @name Callback handling.
+     * @{ */
+    static DECLCALLBACK(int) i_defaultCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
     int setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, void *pvUser = NULL);
+    /** @} */
+
+    /** @name Progress handling.
+     * @{ */
+    bool isProgressCanceled(void) const;
     int setProgress(unsigned uPercentage, uint32_t uState, int rcOp = VINF_SUCCESS, const Utf8Str &strMsg = "");
     HRESULT resetProgress(const ComObjPtr<Guest>& pParent);
     HRESULT queryProgressTo(IProgress **ppProgress);
+    /** @} */
 
 public:
 

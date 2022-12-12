@@ -111,8 +111,9 @@ void DnDManager::DumpQueue(void)
     {
         if (i > 0)
             Log((" - "));
-        uint32_t const uType = m_queueMsg[i]->GetType();
-        Log(("%s (%d / %#x)", DnDHostMsgToStr(uType), uType, uType));
+        DnDMessage const *pMsg = m_queueMsg[i];
+        uint32_t const uType = pMsg->GetType();
+        Log(("%s (%d / %#x) cRefS=%RU32", DnDHostMsgToStr(uType), uType, uType, pMsg->RefCount()));
     }
     Log(("\n"));
 }
@@ -122,19 +123,16 @@ void DnDManager::DumpQueue(void)
  * Retrieves information about the next message in the queue.
  *
  * @returns IPRT status code. VERR_NO_DATA if no next message is available.
+ * @param   fAddRef             Set to \c true to increase the message's reference count, or \c false if not.
  * @param   puType              Where to store the message type.
  * @param   pcParms             Where to store the message parameter count.
  */
-int DnDManager::GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms)
+int DnDManager::GetNextMsgInfo(bool fAddRef, uint32_t *puType, uint32_t *pcParms)
 {
     AssertPtrReturn(puType, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
 
     int rc;
-
-#ifdef DEBUG
-    DumpQueue();
-#endif
 
     if (m_queueMsg.isEmpty())
     {
@@ -148,18 +146,26 @@ int DnDManager::GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms)
         *puType  = pMsg->GetType();
         *pcParms = pMsg->GetParamCount();
 
+        if (fAddRef)
+            pMsg->AddRef();
+
         rc = VINF_SUCCESS;
     }
 
-    LogFlowFunc(("Returning uMsg=%s (%#x), cParms=%RU32, rc=%Rrc\n", DnDHostMsgToStr(*puType), *puType, *pcParms, rc));
+#ifdef DEBUG
+    DumpQueue();
+#endif
+
+    LogFlowFunc(("Returning uMsg=%s (%#x), cParms=%RU32, fAddRef=%RTbool, rc=%Rrc\n",
+                 DnDHostMsgToStr(*puType), *puType, *pcParms, fAddRef, rc));
     return rc;
 }
 
 /**
  * Retrieves the next queued up message and removes it from the queue on success.
- * Will return VERR_NO_DATA if no next message is available.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
+ * @retval  VERR_NO_DATA if no next message is available.
  * @param   uMsg                Message type to retrieve.
  * @param   cParms              Number of parameters the \@a paParms array can store.
  * @param   paParms             Where to store the message parameters.
@@ -172,52 +178,28 @@ int DnDManager::GetNextMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPar
     if (m_queueMsg.isEmpty())
         return VERR_NO_DATA;
 
+#ifdef DEBUG
+    DumpQueue();
+#endif
+
     /* Get the current message. */
     DnDMessage *pMsg = m_queueMsg.first();
     AssertPtr(pMsg);
 
-    m_queueMsg.removeFirst(); /* Remove the current message from the queue. */
+    if (pMsg->Release() == 0)     /* Not referenced by any client anymore? */
+        m_queueMsg.removeFirst(); /* Remove the current message from the queue. */
 
     /* Fetch the current message info. */
     int rc = pMsg->GetData(uMsg, cParms, paParms);
 
     /*
      * If there was an error handling the current message or the user has canceled
-     * the operation, we need to cleanup all pending events and inform the progress
-     * callback about our exit.
+     * the operation, we need to cleanup all pending events.
      */
     if (RT_FAILURE(rc))
     {
         /* Clear any pending messages. */
-        Reset();
-
-        /* Create a new cancel message to inform the guest + call
-         * the host whether the current transfer was canceled or aborted
-         * due to an error. */
-        try
-        {
-            if (rc == VERR_CANCELLED)
-                LogFlowFunc(("Operation was cancelled\n"));
-
-            DnDHGCancelMessage *pMsgCancel = new DnDHGCancelMessage();
-
-            int rc2 = AddMsg(pMsgCancel, false /* Prepend */);
-            AssertRC(rc2);
-
-            if (m_pfnProgressCallback)
-            {
-                LogFlowFunc(("Notifying host about aborting operation (%Rrc) ...\n", rc));
-                m_pfnProgressCallback(  rc == VERR_CANCELLED
-                                      ? DragAndDropSvc::DND_PROGRESS_CANCELLED
-                                      : DragAndDropSvc::DND_PROGRESS_ERROR,
-                                      100 /* Percent */, rc,
-                                      m_pvProgressUser);
-            }
-        }
-        catch(std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
-        }
+        Reset(true /* fForce */);
     }
 
     LogFlowFunc(("Message processed with rc=%Rrc\n", rc));
@@ -226,15 +208,26 @@ int DnDManager::GetNextMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPar
 
 /**
  * Resets the manager by clearing the message queue and internal state.
+ *
+ * @param   fForce              Set to \c true to forcefully also remove still referenced messages, or \c false to only
+ *                              remove non-referenced messages.
  */
-void DnDManager::Reset(void)
+void DnDManager::Reset(bool fForce)
 {
     LogFlowFuncEnter();
 
-    while (!m_queueMsg.isEmpty())
+#ifdef DEBUG
+    DumpQueue();
+#endif
+
+    for (size_t i = 0; i < m_queueMsg.size(); i++)
     {
-        delete m_queueMsg.last();
-        m_queueMsg.removeLast();
+        if (   fForce
+            || m_queueMsg[i]->RefCount() == 0)
+        {
+            m_queueMsg.removeAt(i);
+            i = i > 0 ? i - 1 : 0;
+        }
     }
 }
 

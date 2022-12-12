@@ -106,15 +106,7 @@ public:
         if (autoCaller.isNotOk())
             return;
 
-        int vrc = pThis->i_sendData(mpCtx, RT_INDEFINITE_WAIT /* msTimeout */);
-        if (RT_FAILURE(vrc)) /* In case we missed some error handling within i_sendData(). */
-        {
-            if (vrc != VERR_CANCELLED)
-                LogRel(("DnD: Sending data to guest failed with %Rrc\n", vrc));
-
-            /* Make sure to fire a cancel request to the guest side in case something went wrong. */
-            pThis->sendCancel();
-        }
+        /* ignore rc */ pThis->i_sendData(mpCtx, RT_INDEFINITE_WAIT /* msTimeout */);
     }
 
     virtual ~GuestDnDSendDataTask(void) { }
@@ -719,9 +711,6 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     if (m_fIsPending)
         return setError(E_FAIL, tr("Current drop operation to guest still in progress"));
 
-    /* Reset our internal state. */
-    i_reset();
-
     /* At the moment we only support one transfer at a time. */
     if (GuestDnDInst()->getTargetCount())
         return setError(E_INVALIDARG, tr("Another drag and drop operation to the guest already is in progress"));
@@ -877,7 +866,7 @@ Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
  */
 void GuestDnDTarget::i_reset(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogRel2(("DnD: Target reset\n"));
 
     mData.mSendCtx.reset();
 

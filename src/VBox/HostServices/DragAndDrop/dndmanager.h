@@ -49,13 +49,22 @@ class DnDMessage : public HGCM::Message
 public:
 
     DnDMessage(void)
-    {
-    }
+        : m_cRefs(0) { }
 
     DnDMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
-        : Message(uMsg, cParms, aParms) { }
+        : Message(uMsg, cParms, aParms)
+        , m_cRefs(0) { }
 
     virtual ~DnDMessage(void) { }
+
+    uint32_t AddRef(void) { Assert(m_cRefs < 32); return ++m_cRefs; }
+    uint32_t Release(void) { if (m_cRefs) return --m_cRefs; return m_cRefs; }
+    uint32_t RefCount(void) const { return m_cRefs; }
+
+protected:
+
+    /** The message's current reference count. */
+    uint32_t m_cRefs;
 };
 
 /**
@@ -99,7 +108,7 @@ public:
 
     virtual ~DnDManager(void)
     {
-        Reset();
+        Reset(true /* fForce */);
     }
 
     int AddMsg(DnDMessage *pMessage, bool fAppend = true);
@@ -109,10 +118,10 @@ public:
     void DumpQueue();
 #endif
 
-    int GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms);
+    int GetNextMsgInfo(bool fAddRef, uint32_t *puType, uint32_t *pcParms);
     int GetNextMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-    void Reset(void);
+    void Reset(bool fForce);
 
 protected:
 

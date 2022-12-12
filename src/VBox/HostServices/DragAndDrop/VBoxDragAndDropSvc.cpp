@@ -284,11 +284,11 @@ int DragAndDropService::clientConnect(uint32_t idClient, void *pvClient) RT_NOEX
     }
 
     /*
-     * Reset the message queue as soon as a new clients connect
+     * Reset the message queue as soon as a new client connects
      * to ensure that every client has the same state.
      */
     if (m_pManager)
-        m_pManager->Reset();
+        m_pManager->Reset(true /* fForce */);
 
     LogFlowFunc(("Client %RU32 connected (VINF_SUCCESS)\n", idClient));
     return VINF_SUCCESS;
@@ -573,7 +573,10 @@ do { \
             {
                 if (cParms == 3)
                 {
-                    rc = m_pManager->GetNextMsgInfo(&paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
+                    /* Make sure to increase the reference count so that the next message doesn't get removed between
+                     * the guest's GUEST_DND_FN_GET_NEXT_HOST_MSG call and the actual message retrieval call. */
+                    rc = m_pManager->GetNextMsgInfo(true /* fAddRef */,
+                                                    &paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
                     if (RT_FAILURE(rc)) /* No queued messages available? */
                     {
                         if (m_SvcCtx.pfnHostCallback) /* Try asking the host. */
@@ -588,6 +591,8 @@ do { \
                                 paParms[1].u.uint32 = data.cParms; /* cParms */
                                 /* Note: paParms[2] was set by the guest as blocking flag. */
                             }
+
+                            LogFlowFunc(("Host callback returned %Rrc\n", rc));
                         }
                         else /* No host callback in place, so drag and drop is not supported by the host. */
                             rc = VERR_NOT_SUPPORTED;
@@ -1000,8 +1005,7 @@ do { \
                         data.cParms  = cParms;
                         data.paParms = paParms;
 
-                        rc = m_SvcCtx.pfnHostCallback(m_SvcCtx.pvHostData, u32Function,
-                                                      &data, sizeof(data));
+                        rc = m_SvcCtx.pfnHostCallback(m_SvcCtx.pvHostData, u32Function, &data, sizeof(data));
                         if (RT_SUCCESS(rc))
                         {
                             cParms  = data.cParms;
@@ -1009,13 +1013,21 @@ do { \
                         }
                         else
                         {
-                            /*
-                             * In case the guest is too fast asking for the next message
-                             * and the host did not supply it yet, just defer the client's
-                             * return until a response from the host available.
-                             */
-                            LogFlowFunc(("No new messages from the host (yet), deferring request: %Rrc\n", rc));
-                            rc = VINF_HGCM_ASYNC_EXECUTE;
+                            if (rc == VERR_CANCELLED)
+                            {
+                                /* Host indicated that the current operation was cancelled. Tell the guest. */
+                                LogFunc(("Host indicated that operation was cancelled\n", rc));
+                            }
+                            else
+                            {
+                                /*
+                                 * In case the guest is too fast asking for the next message
+                                 * and the host did not supply it yet, just defer the client's
+                                 * return until a response from the host available.
+                                 */
+                                LogFunc(("No new messages from the host (%Rrc), deferring request\n", rc));
+                                rc = VINF_HGCM_ASYNC_EXECUTE;
+                            }
                         }
                     }
                     else /* No host callback in place, so drag and drop is not supported by the host. */
@@ -1035,7 +1047,7 @@ do { \
      */
     if (rc == VINF_HGCM_ASYNC_EXECUTE)
     {
-        LogFlowFunc(("Deferring client %RU32\n", idClient));
+        LogFunc(("Deferring client %RU32\n", idClient));
 
         try
         {
@@ -1060,7 +1072,7 @@ do { \
         rc = VERR_NOT_IMPLEMENTED;
     }
 
-    LogFlowFunc(("Returning rc=%Rrc\n", rc));
+    LogFunc(("Returning %Rrc to guest\n", rc));
 }
 
 int DragAndDropService::hostCall(uint32_t u32Function,
@@ -1169,15 +1181,8 @@ int DragAndDropService::hostCall(uint32_t u32Function,
         {
             LogFlowFunc(("Cancelling all waiting clients ...\n"));
 
-            /* Reset the message queue as the host cancelled the whole operation. */
-            m_pManager->Reset();
-
-            rc = m_pManager->AddMsg(u32Function, cParms, paParms, true /* fAppend */);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgFailed(("Adding new message of type=%RU32 failed with rc=%Rrc\n", u32Function, rc));
-                break;
-            }
+            /* Forcefully reset the message queue, as the host has cancelled the current operation. */
+            m_pManager->Reset(true /* fForce */);
 
             /*
              * Wake up all deferred clients and tell them to process
@@ -1195,7 +1200,10 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_FN_CANCEL,
                                                       /* Protocol v3+ also contains the context ID. */
                                                       pClient->uProtocolVerDeprecated >= 3 ? 1 : 0);
-                pClient->CompleteDeferred(rc2);
+                AssertRC(rc2);
+
+                /* Return VERR_CANCELLED when waking up the guest side. */
+                pClient->CompleteDeferred(VERR_CANCELLED);
 
                 m_clientQueue.erase(itQueue);
                 itQueue = m_clientQueue.begin();
@@ -1211,7 +1219,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
         case HOST_DND_FN_HG_EVT_ENTER:
         {
             /* Reset the message queue as a new DnD operation just began. */
-            m_pManager->Reset();
+            m_pManager->Reset(false /* fForce */);
 
             fSendToGuest = true;
             rc = VINF_SUCCESS;
@@ -1271,7 +1279,8 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
             uint32_t uMsgNext   = 0;
             uint32_t cParmsNext = 0;
-            int rcNext = m_pManager->GetNextMsgInfo(&uMsgNext, &cParmsNext);
+            /* Note: We only want to peek for the next message, hence fAddRef is false. */
+            int rcNext = m_pManager->GetNextMsgInfo(false /* fAddRef */, &uMsgNext, &cParmsNext);
 
             LogFlowFunc(("uMsgClient=%s (%#x), uMsgNext=%s (%#x), cParmsNext=%RU32, rcNext=%Rrc\n",
                          DnDGuestMsgToStr(uMsgClient), uMsgClient, DnDHostMsgToStr(uMsgNext), uMsgNext, cParmsNext, rcNext));
