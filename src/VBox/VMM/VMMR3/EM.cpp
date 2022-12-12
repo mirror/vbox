@@ -2243,8 +2243,16 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
                     if (VM_IS_HM_ENABLED(pVM))
                     {
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
-                        pVCpu->em.s.enmState = EMSTATE_HM;
+                        if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
+                        {
+                            Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
+                            pVCpu->em.s.enmState = EMSTATE_HM;
+                        }
+                        else
+                        {
+                            Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_IEM_THEN_REM)\n", enmOldState, EMSTATE_IEM_THEN_REM));
+                            pVCpu->em.s.enmState = EMSTATE_IEM_THEN_REM;
+                        }
                     }
                     else if (VM_IS_NEM_ENABLED(pVM))
                     {
