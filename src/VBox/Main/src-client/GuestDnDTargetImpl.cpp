@@ -349,6 +349,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
 
                 LogRel2(("DnD: Host enters the VM window at %RU32,%RU32 (screen %u, default action is '%s') -> guest reported back action '%s'\n",
                          aX, aY, aScreenId, DnDActionToStr(dndActionDefault), DnDActionToStr(resAction)));
+
+                pState->set(VBOXDNDSTATE_ENTERED);
             }
             else
                 hrc = i_setErrorAndReset(vrc == VERR_DND_GUEST_ERROR ? vrcGuest : vrc, tr("Entering VM window failed"));
@@ -454,6 +456,8 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
 
                 LogRel2(("DnD: Host moved to %RU32,%RU32 in VM window (screen %u, default action is '%s') -> guest reported back action '%s'\n",
                          aX, aY, aScreenId, DnDActionToStr(dndActionDefault), DnDActionToStr(resAction)));
+
+                pState->set(VBOXDNDSTATE_DRAGGING);
             }
             else
                 hrc = i_setErrorAndReset(vrc == VERR_DND_GUEST_ERROR ? vrcGuest : vrc,
@@ -509,6 +513,9 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     GuestDnDState *pState = GuestDnDInst()->getState();
     AssertPtrReturn(pState, E_POINTER);
 
+    if (pState->get() == VBOXDNDSTATE_DROP_STARTED)
+        return S_OK;
+
     HRESULT hrc = S_OK;
 
     LogRel2(("DnD: Host left the VM window (screen %u)\n", uScreenId));
@@ -524,7 +531,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
         int vrcGuest;
         if (RT_SUCCESS(vrc = pState->waitForGuestResponse(&vrcGuest)))
         {
-            /* Nothing to do here. */
+            pState->set(VBOXDNDSTATE_LEFT);
         }
         else
             hrc = i_setErrorAndReset(vrc == VERR_DND_GUEST_ERROR ? vrcGuest : vrc, tr("Leaving VM window failed"));
@@ -643,6 +650,11 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                     if (lstFormats.size() == 1) /* Exactly one format to use specified? */
                     {
                         resFmt = lstFormats.at(0);
+
+                        LogRel2(("DnD: Guest accepted drop in format '%s' (action %#x, %zu format(s))\n",
+                                 resFmt.c_str(), resAct, lstFormats.size()));
+
+                        pState->set(VBOXDNDSTATE_DROP_STARTED);
                     }
                     else
                     {
@@ -915,9 +927,27 @@ int GuestDnDTarget::i_sendData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
         vrc = i_sendRawData(pCtx, msTimeout);
     }
 
-    if (RT_FAILURE(vrc))
+    GuestDnDState *pState = GuestDnDInst()->getState();
+    AssertPtrReturn(pState, E_POINTER);
+
+    if (RT_SUCCESS(vrc))
     {
-        LogRel(("DnD: Sending data to guest failed with %Rrc\n", vrc));
+        pState->set(VBOXDNDSTATE_DROP_ENDED);
+    }
+    else
+    {
+        if (vrc == VERR_CANCELLED)
+        {
+            LogRel(("DnD: Sending data to guest cancelled by the user\n"));
+            pState->set(VBOXDNDSTATE_CANCELLED);
+        }
+        else
+        {
+            LogRel(("DnD: Sending data to guest failed with %Rrc\n", vrc));
+            pState->set(VBOXDNDSTATE_ERROR);
+        }
+
+        /* Make sure to fire a cancel request to the guest side in any case to prevent any guest side hangs. */
         sendCancel();
     }
 

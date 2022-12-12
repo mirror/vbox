@@ -300,7 +300,8 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
  ********************************************************************************************************************************/
 
 GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
-    : m_uProtocolVersion(0)
+    : m_enmState(VBOXDNDSTATE_UNKNOWN)
+    , m_uProtocolVersion(0)
     , m_fGuestFeatures0(VBOX_DND_GF_NONE)
     , m_EventSem(NIL_RTSEMEVENT)
     , m_rcGuest(VERR_IPE_UNINITIALIZED_STATUS)
@@ -308,7 +309,10 @@ GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
     , m_dndLstActionsAllowed(0)
     , m_pParent(pGuest)
 {
-    int rc = RTSemEventCreate(&m_EventSem);
+    int rc = RTCritSectInit(&m_CritSect);
+    if (RT_FAILURE(rc))
+        throw rc;
+    rc = RTSemEventCreate(&m_EventSem);
     if (RT_FAILURE(rc))
         throw rc;
 }
@@ -318,6 +322,8 @@ GuestDnDState::~GuestDnDState(void)
     reset();
 
     int rc = RTSemEventDestroy(m_EventSem);
+    AssertRC(rc);
+    rc = RTCritSectDelete(&m_CritSect);
     AssertRC(rc);
 }
 
@@ -335,14 +341,16 @@ int GuestDnDState::notifyAboutGuestResponse(int rcGuest /* = VINF_SUCCESS */)
 }
 
 /**
- * Resets a GuestDnDResponse object.
+ * Resets a guest drag'n drop state.
  */
 void GuestDnDState::reset(void)
 {
-    LogFlowThisFuncEnter();
+    LogRel2(("DnD: Reset\n"));
 
-    m_dndActionDefault     = 0;
-    m_dndLstActionsAllowed = 0;
+    m_enmState =  VBOXDNDSTATE_UNKNOWN;
+
+    m_dndActionDefault     = VBOX_DND_ACTION_IGNORE;
+    m_dndLstActionsAllowed = VBOX_DND_ACTION_IGNORE;
 
     m_lstFormats.clear();
 

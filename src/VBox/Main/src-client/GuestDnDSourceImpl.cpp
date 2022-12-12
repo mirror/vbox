@@ -285,7 +285,13 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
         *aDefaultAction = DnDAction_Ignore;
 
     GuestDnDState *pState = GuestDnDInst()->getState();
-    AssertPtrReturn(pState, E_POINTER);
+    AssertPtr(pState);
+
+    /* Check if any operation is active, and if so, bail out, returning an ignore action (see above). */
+    if (pState->get() != VBOXDNDSTATE_UNKNOWN)
+        return S_OK;
+
+    pState->set(VBOXDNDSTATE_QUERY_FORMATS);
 
     HRESULT hrc = S_OK;
 
@@ -338,6 +344,8 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
     }
     else
         hrc = i_setErrorAndReset(vrc, tr("Sending drag pending event to guest failed"));
+
+    pState->set(VBOXDNDSTATE_UNKNOWN);
 
     LogFlowFunc(("hr=%Rhrc\n", hrc));
     return hrc;
