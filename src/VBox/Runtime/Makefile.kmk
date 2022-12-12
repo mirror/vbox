@@ -3032,7 +3032,8 @@ VBoxRT-x86_LIBS.haiku              = \
 	iconv
 VBoxRT-x86_LIBS.solaris            = \
 	kstat \
-	contract
+	contract \
+	devinfo
 ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  # SMBIOS not available on Solaris SPARC.
  VBoxRT-x86_LIBS.solaris += smbios
