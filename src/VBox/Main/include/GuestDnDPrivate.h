@@ -820,7 +820,7 @@ public:
 
 public:
 
-    VBOXDNDSTATE get() { return m_enmState; } const
+    VBOXDNDSTATE get(void) const { return m_enmState; }
     int set(VBOXDNDSTATE enmState) { LogRel3(("DnD: State %s -> %s\n", DnDStateToStr(m_enmState), DnDStateToStr(enmState))); m_enmState = enmState; return 0; }
     void lock() { RTCritSectEnter(&m_CritSect); };
     void unlock() { RTCritSectLeave(&m_CritSect); };
