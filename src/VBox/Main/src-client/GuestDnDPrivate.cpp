@@ -1199,6 +1199,10 @@ GuestDnDBase::GuestDnDBase(VirtualBoxBase *pBase)
     m_lstFmtSupported = GuestDnDInst()->defaultFormats();
 }
 
+GuestDnDBase::~GuestDnDBase(void)
+{
+}
+
 /**
  * Checks whether a given DnD format is supported or not.
  *

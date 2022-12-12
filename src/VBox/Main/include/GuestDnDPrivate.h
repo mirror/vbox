@@ -1012,6 +1012,8 @@ protected:
 
     GuestDnDBase(VirtualBoxBase *pBase);
 
+    virtual ~GuestDnDBase(void);
+
 protected:
 
     /** Shared (internal) IDnDBase method implementations.
