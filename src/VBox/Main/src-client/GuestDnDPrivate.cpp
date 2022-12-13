@@ -294,15 +294,13 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
  ********************************************************************************************************************************/
 
 GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
-    : m_enmState(VBOXDNDSTATE_UNKNOWN)
-    , m_uProtocolVersion(0)
+    : m_uProtocolVersion(0)
     , m_fGuestFeatures0(VBOX_DND_GF_NONE)
     , m_EventSem(NIL_RTSEMEVENT)
-    , m_rcGuest(VERR_IPE_UNINITIALIZED_STATUS)
-    , m_dndActionDefault(0)
-    , m_dndLstActionsAllowed(0)
     , m_pParent(pGuest)
 {
+    reset();
+
     int rc = RTCritSectInit(&m_CritSect);
     if (RT_FAILURE(rc))
         throw rc;
@@ -313,8 +311,6 @@ GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
 
 GuestDnDState::~GuestDnDState(void)
 {
-    reset();
-
     int rc = RTSemEventDestroy(m_EventSem);
     AssertRC(rc);
     rc = RTCritSectDelete(&m_CritSect);
