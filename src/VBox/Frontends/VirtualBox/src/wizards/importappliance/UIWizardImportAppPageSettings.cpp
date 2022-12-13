@@ -550,9 +550,10 @@ bool UIWizardImportAppPageSettings::validatePage()
 
 void UIWizardImportAppPageSettings::sltAsyncInit()
 {
-    /* If we have file name passed,
+    /* If we have local source and file name passed,
      * check if specified file contains valid appliance: */
-    if (   !m_strFileName.isEmpty()
+    if (   !wizard()->isSourceCloudOne()
+        && !m_strFileName.isEmpty()
         && !wizard()->setFile(m_strFileName))
     {
         wizard()->reject();
