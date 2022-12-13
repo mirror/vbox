@@ -1680,7 +1680,8 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFEROBJECT pO
     void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
     if (!pvBuf)
     {
-        DnDTransferObjectClose(pObj);
+        int rc2 = DnDTransferObjectClose(pObj);
+        AssertRC(rc2);
         return VERR_NO_MEMORY;
     }
 
@@ -1752,7 +1753,9 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFEROBJECT pO
     }
 
     RTMemFree(pvBuf);
-    DnDTransferObjectClose(pObj);
+    int rc2 = DnDTransferObjectClose(pObj);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
