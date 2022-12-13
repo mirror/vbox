@@ -84,6 +84,9 @@
 
 /* External includes: */
 #include <math.h>
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include <new> /* For bad_alloc. */
+#endif
 #ifdef VBOX_WS_MAC
 # include <Carbon/Carbon.h>
 #endif
