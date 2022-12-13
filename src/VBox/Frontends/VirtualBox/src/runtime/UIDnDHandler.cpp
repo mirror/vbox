@@ -576,7 +576,7 @@ int UIDnDHandler::init(void)
 
 # define CASE_INTEGRITY_LEVEL(a_Level) \
     case a_Level: \
-        LogRel(("DnD: User Interface Privilege Isolation (UIPI) is running with %s\n", ##a_Level)); \
+        LogRel(("DnD: User Interface Privilege Isolation (UIPI) is running with %s\n", #a_Level)); \
         break;
 
     /*
@@ -637,12 +637,14 @@ int UIDnDHandler::getProcessIntetrityLevel(DWORD *pdwIntegrityLevel)
 {
     AssertPtrReturn(pdwIntegrityLevel, VERR_INVALID_POINTER);
 
-    int   vrc;
+    int vrc = VINF_SUCCESS;
 
 # define PRINT_AND_ASSIGN_LAST_ERROR(a_Msg) \
-    dwLastErr = GetLastError(); \
-    vrc = RTErrConvertFromWin32(dwLastErr); \
-    LogRel(("DnD: %s: %Rrc (%#x)\n", a_Msg, vrc, dwLastErr)); \
+    { \
+        dwLastErr = GetLastError(); \
+        vrc = RTErrConvertFromWin32(dwLastErr); \
+        LogRel(("DnD: %s: %Rrc (%#x)\n", a_Msg, vrc, dwLastErr)); \
+    }
 
     DWORD dwLastErr = 0;
 
