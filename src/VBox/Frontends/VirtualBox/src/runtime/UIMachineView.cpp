@@ -1001,16 +1001,14 @@ int UIMachineView::prepareDnd(void)
 
     int vrc;
 
-    try
+    /* Create the drag and drop handler instance: */
+    m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
+    if (m_pDnDHandler)
     {
-        /* Create the drag and drop handler instance: */
-        m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
         vrc = m_pDnDHandler->init();
     }
-    catch (std::bad_alloc &)
-    {
+    else
         vrc = VERR_NO_MEMORY;
-    }
 
     if (RT_FAILURE(vrc))
         LogRel(("DnD: Initialization failed with %Rrc\n", vrc));
