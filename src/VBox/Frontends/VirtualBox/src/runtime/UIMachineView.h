@@ -176,7 +176,7 @@ protected:
     virtual void prepareFrameBuffer();
     virtual void prepareCommon();
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    virtual void prepareDnd();
+    virtual int  prepareDnd();
 #endif
     virtual void prepareFilters();
     virtual void prepareConnections();

@@ -83,7 +83,9 @@ UIDnDHandler::UIDnDHandler(UISession *pSession, QWidget *pParent)
     : m_pSession(pSession)
     , m_pParent(pParent)
     , m_fDataRetrieved(false)
-#ifndef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
+    , m_dwIntegrityLevel(0)
+#else
     , m_pMIMEData(NULL)
 #endif
 {
@@ -562,12 +564,123 @@ int UIDnDHandler::dragStop(ulong screenID)
     return rc;
 }
 
+/**
+ * Initializes the drag'n drop UI handler.
+ *
+ * @returns VBox status code.
+ */
+int UIDnDHandler::init(void)
+{
+    int vrc;
+#ifdef RT_OS_WINDOWS
+
+# define CASE_INTEGRITY_LEVEL(a_Level) \
+    case a_Level: \
+        LogRel(("DnD: User Interface Privilege Isolation (UIPI) is running with %s\n", ##a_Level)); \
+        break;
+
+    /*
+     * Assign and log the current process integrity interity level, so that we have a better chance of diagnosing issues
+     * when it comes to drag'n drop and UIPI (User Interface Privilege Isolation) -- a lower integrity level process
+     * cannot drag'n drop stuff to a higher integrity level one.
+     */
+    vrc = getProcessIntetrityLevel(&m_dwIntegrityLevel);
+    if (RT_SUCCESS(vrc))
+    {
+        switch (m_dwIntegrityLevel)
+        {
+            CASE_INTEGRITY_LEVEL(SECURITY_MANDATORY_UNTRUSTED_RID);
+            CASE_INTEGRITY_LEVEL(SECURITY_MANDATORY_LOW_RID);
+            CASE_INTEGRITY_LEVEL(SECURITY_MANDATORY_MEDIUM_RID);
+            CASE_INTEGRITY_LEVEL(SECURITY_MANDATORY_HIGH_RID);
+            CASE_INTEGRITY_LEVEL(SECURITY_MANDATORY_SYSTEM_RID);
+            CASE_INTEGRITY_LEVEL(SECURITY_MANDATORY_PROTECTED_PROCESS_RID);
+            default:
+                break;
+        }
+
+        if (m_dwIntegrityLevel > SECURITY_MANDATORY_MEDIUM_RID)
+            LogRel(("DnD: Warning: The VM process' integrity level is higher than most regular processes on the system. "
+                    "This means that drag'n drop most likely will not work with other applications!\n"));
+    }
+    else
+        LogRel(("DnD: Unable to retrieve process integrity level (%Rrc) -- please report this bug!\n", vrc));
+# undef CASE_INTEGRITY_LEVEL
+
+#else /* ! RT_OS_WINDOWS */
+    vrc = VINF_SUCCESS;
+#endif /* RT_OS_WINDOWS */
+
+    return vrc;
+}
+
 void UIDnDHandler::reset(void)
 {
     LogFlowFuncEnter();
 
     m_fDataRetrieved = false;
+
+#ifdef RT_OS_WINDOWS
+    m_dwIntegrityLevel = 0;
+#endif
 }
+
+#ifdef RT_OS_WINDOWS
+/**
+ * Returns the process' current integrity level.
+ *
+ * @returns VBox status code.
+ * @param   pdwIntegrityLevel   Where to return the detected process integrity level on success.
+ */
+/* static */
+int UIDnDHandler::getProcessIntetrityLevel(DWORD *pdwIntegrityLevel)
+{
+    AssertPtrReturn(pdwIntegrityLevel, VERR_INVALID_POINTER);
+
+    int   vrc;
+
+# define PRINT_AND_ASSIGN_LAST_ERROR(a_Msg) \
+    dwLastErr = GetLastError(); \
+    vrc = RTErrConvertFromWin32(dwLastErr); \
+    LogRel(("DnD: %s: %Rrc (%#x)\n", a_Msg, vrc, dwLastErr)); \
+
+    DWORD dwLastErr = 0;
+
+    DWORD  cb;
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+    {
+        PRINT_AND_ASSIGN_LAST_ERROR("OpenProcessToken failed");
+        return vrc;
+    }
+
+    if (   !GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &cb)
+        && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+    {
+        PSID_AND_ATTRIBUTES pSidAndAttr = (PSID_AND_ATTRIBUTES)RTMemAlloc(cb);
+        if (GetTokenInformation(hToken, TokenIntegrityLevel, pSidAndAttr, cb, &cb))
+        {
+            *pdwIntegrityLevel = *GetSidSubAuthority(pSidAndAttr->Sid, *GetSidSubAuthorityCount(pSidAndAttr->Sid) - 1U);
+        }
+        else
+            PRINT_AND_ASSIGN_LAST_ERROR("GetTokenInformation(2) failed");
+        RTMemFree(pSidAndAttr);
+    }
+    else if (   GetLastError() == ERROR_INVALID_PARAMETER
+             || GetLastError() == ERROR_NOT_SUPPORTED)
+    {
+        /* Should never show, as we at least require Windows 7 nowadays on Windows hosts. */
+        PRINT_AND_ASSIGN_LAST_ERROR("Querying process integrity level not supported");
+    }
+    else
+        PRINT_AND_ASSIGN_LAST_ERROR("GetTokenInformation(1) failed");
+
+# undef PRINT_AND_ASSIGN_LAST_ERROR
+
+    CloseHandle(hToken);
+    return vrc;
+}
+#endif /* RT_OS_WINDOWS */
 
 int UIDnDHandler::retrieveData(Qt::DropAction          dropAction,
                                const QString          &strMIMEType,

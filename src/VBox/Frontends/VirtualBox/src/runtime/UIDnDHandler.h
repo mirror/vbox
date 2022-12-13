@@ -73,6 +73,7 @@ public:
 
     } UIDnDDataSource;
 
+    int                        init(void);
     void                       reset(void);
 
     /* Frontend -> Target. */
@@ -125,6 +126,12 @@ protected:
 
 protected:
 
+#ifdef RT_OS_WINDOWS
+    static int                 getProcessIntetrityLevel(DWORD *pdwIntegrityLevel);
+#endif
+
+protected:
+
     /** Pointer to UI session. */
     UISession        *m_pSession;
     /** Pointer to parent widget. */
@@ -144,12 +151,16 @@ protected:
     /** Data received from the guest. */
     QVector<uint8_t>  m_vecData;
 
-#ifndef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
+    /** Process integrity level we're running with. Needed for UIPI detection + logging.
+     *  Set to 0 if not set yet or unavailable. */
+    DWORD             m_dwIntegrityLevel;
+#else /* !RT_OS_WINDOWS */
     /** Pointer to MIMEData instance used for handling
      *  own MIME times on non-Windows host OSes. */
     UIDnDMIMEData    *m_pMIMEData;
     friend class UIDnDMIMEData;
-#endif
+#endif /* RT_OS_WINDOWS */
 };
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIDnDHandler_h */
 

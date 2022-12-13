@@ -164,7 +164,7 @@ UIMachineView* UIMachineView::create(UIMachineWindow *pMachineWindow, ulong uScr
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /* Prepare DnD: */
-    pMachineView->prepareDnd();
+    /* rc ignored */ pMachineView->prepareDnd();
 #endif
 
     /* Prepare event-filters: */
@@ -991,13 +991,27 @@ void UIMachineView::prepareCommon()
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-void UIMachineView::prepareDnd()
+int UIMachineView::prepareDnd(void)
 {
     /* Enable drag & drop: */
     setAcceptDrops(true);
 
-    /* Create the drag and drop handler instance: */
-    m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
+    int vrc;
+
+    try
+    {
+        /* Create the drag and drop handler instance: */
+        m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
+        vrc = m_pDnDHandler->init();
+    }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(vrc))
+        LogRel(("DnD: Initialization failed with %Rrc\n", vrc));
+    return vrc;
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
