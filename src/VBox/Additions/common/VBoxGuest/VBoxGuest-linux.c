@@ -104,6 +104,11 @@
 # define kuid_t uid_t
 #endif
 
+#ifdef VBOXGUEST_WITH_INPUT_DRIVER
+/** The name of input pointing device for mouse integration. */
+# define VBOX_INPUT_DEVICE_NAME  "VirtualBox mouse integration"
+#endif
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -147,9 +152,8 @@ static wait_queue_head_t        g_PollEventQueue;
 /** Asynchronous notification stuff.  */
 static struct fasync_struct    *g_pFAsyncQueue;
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
-/** Pre-allocated mouse status VMMDev request for use in the IRQ
- * handler. */
-static VMMDevReqMouseStatus    *g_pMouseStatusReq;
+/** Pre-allocated mouse status VMMDev requests for use in the IRQ handler. */
+static VMMDevReqMouseStatusEx  *g_pMouseStatusReqEx;
 #endif
 #if RTLNX_VER_MIN(2,6,0)
 /** Whether we've create the logger or not. */
@@ -420,6 +424,15 @@ static void vgdrvLinuxTermISR(void)
 
 
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
+/**
+ * Check if extended mouse pointer state request protocol is currently used by driver.
+ *
+ * @returns True if extended protocol is used, False otherwise.
+ */
+static bool vgdrvLinuxUsesMouseStatusEx(void)
+{
+    return g_pMouseStatusReqEx->Core.header.requestType == VMMDevReq_GetMouseStatusEx;
+}
 
 /**
  * Reports the mouse integration status to the host.
@@ -449,7 +462,9 @@ static int vgdrvLinuxSetMouseStatus(uint32_t fStatus)
  */
 static int vboxguestOpenInputDevice(struct input_dev *pDev)
 {
-    int rc = vgdrvLinuxSetMouseStatus(VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_NEW_PROTOCOL);
+    int rc = vgdrvLinuxSetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                      | VMMDEV_MOUSE_NEW_PROTOCOL
+                                      | (vgdrvLinuxUsesMouseStatusEx() ? VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL : 0));
     if (RT_FAILURE(rc))
         return ENODEV;
     NOREF(pDev);
@@ -470,16 +485,58 @@ static void vboxguestCloseInputDevice(struct input_dev *pDev)
 
 
 /**
+ * Free corresponding mouse status request structure.
+ */
+static void vgdrvLinuxFreeMouseStatusReq(void)
+{
+    VbglR0GRFree(&g_pMouseStatusReqEx->Core.header);
+    g_pMouseStatusReqEx = NULL;
+}
+
+/**
  * Creates the kernel input device.
  */
 static int __init vgdrvLinuxCreateInputDevice(void)
 {
-    int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReq, sizeof(*g_pMouseStatusReq), VMMDevReq_GetMouseStatus);
+    /* Try to allocate legacy request data first, and check if host supports extended protocol. */
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReqEx, sizeof(VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
+    if (RT_SUCCESS(rc))
+    {
+        /* Check if host supports extended mouse state reporting. */
+        g_pMouseStatusReqEx->Core.mouseFeatures = 0;
+        rc = VbglR0GRPerform(&g_pMouseStatusReqEx->Core.header);
+        if (RT_SUCCESS(rc))
+        {
+            if (g_pMouseStatusReqEx->Core.mouseFeatures & VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL)
+            {
+                VMMDevReqMouseStatusEx *pReqEx = NULL;
+                rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pReqEx, sizeof(*pReqEx), VMMDevReq_GetMouseStatusEx);
+                if (RT_SUCCESS(rc))
+                {
+                    /* De-allocate legacy request data, */
+                    VbglR0GRFree(&g_pMouseStatusReqEx->Core.header);
+                    /* ..and switch to extended requests. */
+                    g_pMouseStatusReqEx = pReqEx;
+                    LogRel(("Host supports full mouse state reporting, switching to extended mouse integration protocol\n"));
+                }
+                else
+                    LogRel(("Host supports full mouse state reporting, but feature cannot be initialized, switching to legacy mouse integration protocol\n"));
+            }
+            else
+                LogRel(("Host does not support full mouse state reporting, switching to legacy mouse integration protocol\n"));
+        }
+        else
+            LogRel(("Unable to get host mouse capabilities, switching to legacy mouse integration protocol\n"));
+    }
+    else
+        rc = -ENOMEM;
+
     if (RT_SUCCESS(rc))
     {
         g_pInputDevice = input_allocate_device();
         if (g_pInputDevice)
         {
+            g_pInputDevice->name       = VBOX_INPUT_DEVICE_NAME;
             g_pInputDevice->id.bustype = BUS_PCI;
             g_pInputDevice->id.vendor  = VMMDEV_VENDORID;
             g_pInputDevice->id.product = VMMDEV_DEVICEID;
@@ -491,32 +548,46 @@ static int __init vgdrvLinuxCreateInputDevice(void)
 # else
             g_pInputDevice->dev.parent = &g_pPciDev->dev;
 # endif
+            /* Set up input device capabilities. */
+            ASMBitSet(g_pInputDevice->evbit, EV_ABS);
+# ifdef EV_SYN
+            ASMBitSet(g_pInputDevice->evbit, EV_SYN);
+# endif
+            ASMBitSet(g_pInputDevice->absbit, ABS_X);
+            ASMBitSet(g_pInputDevice->absbit, ABS_Y);
+
+            input_set_abs_params(g_pInputDevice, ABS_X, VMMDEV_MOUSE_RANGE_MIN, VMMDEV_MOUSE_RANGE_MAX, 0, 0);
+            input_set_abs_params(g_pInputDevice, ABS_Y, VMMDEV_MOUSE_RANGE_MIN, VMMDEV_MOUSE_RANGE_MAX, 0, 0);
+
+            /* Report extra capabilities to input layer if extended mouse state protocol
+             * will be used in communication with host. */
+            if (vgdrvLinuxUsesMouseStatusEx())
+            {
+                ASMBitSet(g_pInputDevice->evbit, EV_REL);
+                ASMBitSet(g_pInputDevice->evbit, EV_KEY);
+
+                ASMBitSet(g_pInputDevice->relbit, REL_WHEEL);
+                ASMBitSet(g_pInputDevice->relbit, REL_HWHEEL);
+
+                ASMBitSet(g_pInputDevice->keybit, BTN_LEFT);
+                ASMBitSet(g_pInputDevice->keybit, BTN_RIGHT);
+                ASMBitSet(g_pInputDevice->keybit, BTN_MIDDLE);
+                ASMBitSet(g_pInputDevice->keybit, BTN_SIDE);
+                ASMBitSet(g_pInputDevice->keybit, BTN_EXTRA);
+            }
+
             rc = input_register_device(g_pInputDevice);
             if (rc == 0)
-            {
-                /* Do what one of our competitors apparently does as that works. */
-                ASMBitSet(g_pInputDevice->evbit, EV_ABS);
-                ASMBitSet(g_pInputDevice->evbit, EV_KEY);
-# ifdef EV_SYN
-                ASMBitSet(g_pInputDevice->evbit, EV_SYN);
-# endif
-                input_set_abs_params(g_pInputDevice, ABS_X, VMMDEV_MOUSE_RANGE_MIN, VMMDEV_MOUSE_RANGE_MAX, 0, 0);
-                input_set_abs_params(g_pInputDevice, ABS_Y, VMMDEV_MOUSE_RANGE_MIN, VMMDEV_MOUSE_RANGE_MAX, 0, 0);
-                ASMBitSet(g_pInputDevice->keybit, BTN_MOUSE);
-                /** @todo this string should be in a header file somewhere. */
-                g_pInputDevice->name = "VirtualBox mouse integration";
                 return 0;
-            }
 
             input_free_device(g_pInputDevice);
         }
         else
             rc = -ENOMEM;
-        VbglR0GRFree(&g_pMouseStatusReq->header);
-        g_pMouseStatusReq = NULL;
+
+        vgdrvLinuxFreeMouseStatusReq();
     }
-    else
-        rc = -ENOMEM;
+
     return rc;
 }
 
@@ -526,8 +597,10 @@ static int __init vgdrvLinuxCreateInputDevice(void)
  */
 static void vgdrvLinuxTermInputDevice(void)
 {
-    VbglR0GRFree(&g_pMouseStatusReq->header);
-    g_pMouseStatusReq = NULL;
+    /* Notify host that mouse integration is no longer available. */
+    vgdrvLinuxSetMouseStatus(0);
+
+    vgdrvLinuxFreeMouseStatusReq();
 
     /* See documentation of input_register_device(): input_free_device()
      * should not be called after a device has been registered. */
@@ -1154,10 +1227,74 @@ static ssize_t vgdrvLinuxRead(struct file *pFile, char *pbBuf, size_t cbRead, lo
 }
 
 
+#ifdef VBOXGUEST_WITH_INPUT_DRIVER
+/**
+ * Get host mouse state.
+ *
+ * @returns                 IPRT status code.
+ * @param pfMouseFeatures   Where to store host mouse capabilities.
+ * @param pX                Where to store X axis coordinate.
+ * @param pY                Where to store Y axis coordinate.
+ * @param pDz               Where to store vertical wheel movement offset (only set if in case of VMMDevReq_GetMouseStatusEx request).
+ * @param pDw               Where to store horizontal wheel movement offset (only set if in case of VMMDevReq_GetMouseStatusEx request).
+ * @param pfButtons         Where to store mouse buttons state (only set if in case of VMMDevReq_GetMouseStatusEx request).
+ */
+static int vgdrvLinuxGetHostMouseState(uint32_t *pfMouseFeatures, int32_t *pX, int32_t *pY, int32_t *pDz, int32_t *pDw, uint32_t *pfButtons)
+{
+    int rc = VERR_INVALID_PARAMETER;
+
+    Assert(pfMouseFeatures);
+    Assert(pX);
+    Assert(pY);
+    Assert(pDz);
+    Assert(pDw);
+    Assert(pfButtons);
+
+    /* Initialize legacy request data. */
+    g_pMouseStatusReqEx->Core.mouseFeatures = 0;
+    g_pMouseStatusReqEx->Core.pointerXPos = 0;
+    g_pMouseStatusReqEx->Core.pointerYPos = 0;
+
+    /* Initialize extended request data if VMMDevReq_GetMouseStatusEx is used. */
+    if (vgdrvLinuxUsesMouseStatusEx())
+    {
+        g_pMouseStatusReqEx->dz = 0;
+        g_pMouseStatusReqEx->dw = 0;
+        g_pMouseStatusReqEx->fButtons = 0;
+    }
+
+    /* Get host mouse state - either lagacy or extended version. */
+    rc = VbglR0GRPerform(&g_pMouseStatusReqEx->Core.header);
+    if (RT_SUCCESS(rc))
+    {
+        *pfMouseFeatures = g_pMouseStatusReqEx->Core.mouseFeatures;
+        *pX = g_pMouseStatusReqEx->Core.pointerXPos;
+        *pY = g_pMouseStatusReqEx->Core.pointerYPos;
+
+        /* Get extended mouse state data in case of VMMDevReq_GetMouseStatusEx. */
+        if (vgdrvLinuxUsesMouseStatusEx())
+        {
+            *pDz = g_pMouseStatusReqEx->dz;
+            *pDw = g_pMouseStatusReqEx->dw;
+            *pfButtons = g_pMouseStatusReqEx->fButtons;
+        }
+    }
+
+    return rc;
+}
+#endif /* VBOXGUEST_WITH_INPUT_DRIVER */
+
+
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
     int rc;
+    uint32_t fMouseFeatures = 0;
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t dz = 0;
+    int32_t dw = 0;
+    uint32_t fButtons = 0;
 #endif
     NOREF(pDevExt);
 
@@ -1170,17 +1307,26 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     Log3(("VGDrvNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
-    /* Report events to the kernel input device */
-    g_pMouseStatusReq->mouseFeatures = 0;
-    g_pMouseStatusReq->pointerXPos = 0;
-    g_pMouseStatusReq->pointerYPos = 0;
-    rc = VbglR0GRPerform(&g_pMouseStatusReq->header);
+    rc = vgdrvLinuxGetHostMouseState(&fMouseFeatures, &x, &y, &dz, &dw, &fButtons);
     if (RT_SUCCESS(rc))
     {
-        input_report_abs(g_pInputDevice, ABS_X,
-                         g_pMouseStatusReq->pointerXPos);
-        input_report_abs(g_pInputDevice, ABS_Y,
-                         g_pMouseStatusReq->pointerYPos);
+        input_report_abs(g_pInputDevice, ABS_X, x);
+        input_report_abs(g_pInputDevice, ABS_Y, y);
+
+        if (   vgdrvLinuxUsesMouseStatusEx()
+            && fMouseFeatures & VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL
+            && fMouseFeatures & VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL)
+        {
+            input_report_rel(g_pInputDevice, REL_WHEEL,  dz);
+            input_report_rel(g_pInputDevice, REL_HWHEEL, dw);
+
+            input_report_key(g_pInputDevice, BTN_LEFT,   RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_LEFT));
+            input_report_key(g_pInputDevice, BTN_RIGHT,  RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_RIGHT));
+            input_report_key(g_pInputDevice, BTN_MIDDLE, RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_MIDDLE));
+            input_report_key(g_pInputDevice, BTN_SIDE,   RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_X1));
+            input_report_key(g_pInputDevice, BTN_EXTRA,  RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_X2));
+        }
+
 # ifdef EV_SYN
         input_sync(g_pInputDevice);
 # endif

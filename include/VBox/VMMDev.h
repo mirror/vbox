@@ -202,6 +202,7 @@ typedef enum VMMDevRequestType
     VMMDevReq_HeartbeatConfigure         = 220,
     VMMDevReq_NtBugCheck                 = 221,
     VMMDevReq_VideoUpdateMonitorPositions= 222,
+    VMMDevReq_GetMouseStatusEx           = 223,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -359,6 +360,41 @@ typedef struct
 } VMMDevReqMouseStatus;
 AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 
+
+/** @name Mouse buttons state bits for VMMDevReqMouseStatusEx::fButtons (identical to PDMIMOUSEPORT_BUTTON_XXX).
+ * @{ */
+/** Left mouse button pressed. */
+#define VMMDEV_MOUSE_BUTTON_LEFT   RT_BIT(0)
+/** Right mouse button pressed. */
+#define VMMDEV_MOUSE_BUTTON_RIGHT  RT_BIT(1)
+/** Middle mouse button pressed. */
+#define VMMDEV_MOUSE_BUTTON_MIDDLE RT_BIT(2)
+/** X1 mouse button pressed. */
+#define VMMDEV_MOUSE_BUTTON_X1     RT_BIT(3)
+/** X2 mouse button pressed. */
+#define VMMDEV_MOUSE_BUTTON_X2     RT_BIT(4)
+/** @} */
+
+
+/**
+ * Extended mouse status request structure.
+ *
+ * Used by VMMDevReq_GetMouseStatusEx.
+ */
+typedef struct
+{
+    /** Legacy mouse status request structure. */
+    VMMDevReqMouseStatus Core;
+    /** Mouse wheel vertical mvement. */
+    int32_t dz;
+    /** Mouse wheel horizontal movement. */
+    int32_t dw;
+    /** Mouse buttons state. */
+    uint32_t fButtons;
+} VMMDevReqMouseStatusEx;
+AssertCompileSize(VMMDevReqMouseStatusEx, 24+24);
+
+
 /** @name Mouse capability bits (VMMDevReqMouseStatus::mouseFeatures).
  * @{ */
 /** The guest can (== wants to) handle absolute coordinates.  */
@@ -383,15 +419,19 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 /** The host supplies an absolute pointing device.  The Guest Additions may
  * wish to use this to decide whether to install their own driver */
 #define VMMDEV_MOUSE_HOST_HAS_ABS_DEV                       RT_BIT(6)
+/** The guest can read VMMDev events to find out about full mouse state */
+#define VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL         RT_BIT(7)
+/** The host can provide full mouse state over VMMDev events */
+#define VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL          RT_BIT(8)
 /** The mask of all VMMDEV_MOUSE_* flags */
-#define VMMDEV_MOUSE_MASK                                   UINT32_C(0x0000007f)
+#define VMMDEV_MOUSE_MASK                                   UINT32_C(0x000001ff)
 /** The mask of guest capability changes for which notification events should
  * be sent */
 #define VMMDEV_MOUSE_NOTIFY_HOST_MASK \
       (VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)
 /** The mask of all capabilities which the guest can legitimately change */
 #define VMMDEV_MOUSE_GUEST_MASK \
-      (VMMDEV_MOUSE_NOTIFY_HOST_MASK | VMMDEV_MOUSE_NEW_PROTOCOL)
+      (VMMDEV_MOUSE_NOTIFY_HOST_MASK | VMMDEV_MOUSE_NEW_PROTOCOL | VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL)
 /** The mask of host capability changes for which notification events should
  * be sent */
 #define VMMDEV_MOUSE_NOTIFY_GUEST_MASK \
@@ -401,7 +441,8 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
       (  VMMDEV_MOUSE_NOTIFY_GUEST_MASK \
        | VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER \
        | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR \
-       | VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
+       | VMMDEV_MOUSE_HOST_HAS_ABS_DEV \
+       | VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL)
 /** @} */
 
 /** @name Absolute mouse reporting range
@@ -1737,6 +1778,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
         case VMMDevReq_GetMouseStatus:
         case VMMDevReq_SetMouseStatus:
             return sizeof(VMMDevReqMouseStatus);
+        case VMMDevReq_GetMouseStatusEx:
+            return sizeof(VMMDevReqMouseStatusEx);
         case VMMDevReq_SetPointerShape:
             return sizeof(VMMDevReqMousePointer);
         case VMMDevReq_GetHostVersion:

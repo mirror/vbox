@@ -630,17 +630,16 @@ HRESULT Mouse::i_reportMultiTouchEventToDevice(uint8_t cContacts,
  *
  * @returns   COM status code
  */
-HRESULT Mouse::i_reportAbsEventToVMMDev(int32_t x, int32_t y)
+HRESULT Mouse::i_reportAbsEventToVMMDev(int32_t x, int32_t y, int32_t dz, int32_t dw, uint32_t fButtons)
 {
     VMMDevMouseInterface *pVMMDev = mParent->i_getVMMDevMouseInterface();
     ComAssertRet(pVMMDev, E_FAIL);
     PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
     ComAssertRet(pVMMDevPort, E_FAIL);
 
-    if (x != mcLastX || y != mcLastY)
+    if (x != mcLastX || y != mcLastY || dz || dw || fButtons != mfLastButtons)
     {
-        int vrc = pVMMDevPort->pfnSetAbsoluteMouse(pVMMDevPort,
-                                                   x, y);
+        int vrc = pVMMDevPort->pfnSetAbsoluteMouse(pVMMDevPort, x, y, dz, dw, fButtons);
         if (RT_FAILURE(vrc))
             return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                 tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
@@ -670,18 +669,25 @@ HRESULT Mouse::i_reportAbsEventToInputDevices(int32_t x, int32_t y, int32_t dz, 
         /*
          * Send the absolute mouse position to the VMM device.
          */
-        if (x != mcLastX || y != mcLastY)
+        if (x != mcLastX || y != mcLastY || dz || dw || fButtons != mfLastButtons)
         {
-            hrc = i_reportAbsEventToVMMDev(x, y);
+            hrc = i_reportAbsEventToVMMDev(x, y, dz, dw, fButtons);
             cJiggle = !fUsesVMMDevEvent;
         }
-        hrc = i_reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
+
+        /* If guest cannot yet read full mouse state from DevVMM (i.e.,
+         * only 'x' and 'y' coordinates will be read) we need to pass buttons
+         * state as well as horizontal and vertical wheel movement over ever-present PS/2
+         * emulated mouse device. */
+        if (!(mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL))
+            hrc = i_reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
     }
     else
         hrc = i_reportAbsEventToMouseDev(x, y, dz, dw, fButtons);
 
     mcLastX = x;
     mcLastY = y;
+    mfLastButtons = fButtons;
     return hrc;
 }
 

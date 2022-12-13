@@ -144,10 +144,13 @@ typedef struct VMMDEV
 
     /** mouse capabilities of host and guest */
     uint32_t            fMouseCapabilities;
-    /** @name Absolute mouse position in pixels
+    /** @name Absolute mouse position in pixels, relative wheel movement and buttons state.
      * @{ */
     int32_t             xMouseAbs;
     int32_t             yMouseAbs;
+    int32_t             dzMouse;
+    int32_t             dwMouse;
+    uint32_t            fMouseButtons;
     /** @} */
     /** Does the guest currently want the host pointer to be shown? */
     uint32_t            fHostCursorRequested;
@@ -563,7 +566,9 @@ void VMMDevCtlSetGuestFilterMask(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pT
 
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_DISPLAY_CHANGE_DATA
+#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_VMM_MOUSE_EXTENDED_DATA
+/** The saved state version with VMMDev mouse buttons state and wheel movement data. */
+#define VMMDEV_SAVED_STATE_VERSION_VMM_MOUSE_EXTENDED_DATA      19
 /** The saved state version with display change data state. */
 #define VMMDEV_SAVED_STATE_VERSION_DISPLAY_CHANGE_DATA          18
 /** Updated HGCM commands. */

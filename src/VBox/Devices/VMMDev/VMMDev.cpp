@@ -1146,6 +1146,40 @@ static int vmmdevReqHandler_GetMouseStatus(PVMMDEV pThis, VMMDevRequestHeader *p
 
 
 /**
+ * Handles VMMDevReq_GetMouseStatusEx.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev shared instance data.
+ * @param   pReqHdr         The header of the request to handle.
+ */
+static int vmmdevReqHandler_GetMouseStatusEx(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
+{
+    VMMDevReqMouseStatusEx *pReq = (VMMDevReqMouseStatusEx *)pReqHdr;
+    AssertMsgReturn(pReq->Core.header.size == sizeof(*pReq), ("%u\n", pReq->Core.header.size), VERR_INVALID_PARAMETER);
+
+    /* Main will convert host mouse buttons state obtained from GUI
+     * into PDMIMOUSEPORT_BUTTON_XXX representation. Guest will expect it
+     * to VMMDEV_MOUSE_BUTTON_XXX representaion. Make sure both
+     * representations are identical.  */
+    AssertCompile(VMMDEV_MOUSE_BUTTON_LEFT   == PDMIMOUSEPORT_BUTTON_LEFT);
+    AssertCompile(VMMDEV_MOUSE_BUTTON_RIGHT  == PDMIMOUSEPORT_BUTTON_RIGHT);
+    AssertCompile(VMMDEV_MOUSE_BUTTON_MIDDLE == PDMIMOUSEPORT_BUTTON_MIDDLE);
+    AssertCompile(VMMDEV_MOUSE_BUTTON_X1     == PDMIMOUSEPORT_BUTTON_X1);
+    AssertCompile(VMMDEV_MOUSE_BUTTON_X2     == PDMIMOUSEPORT_BUTTON_X2);
+
+    pReq->Core.mouseFeatures = pThis->fMouseCapabilities & VMMDEV_MOUSE_MASK;
+    pReq->Core.pointerXPos   = pThis->xMouseAbs;
+    pReq->Core.pointerYPos   = pThis->yMouseAbs;
+    pReq->dz                 = pThis->dzMouse;
+    pReq->dw                 = pThis->dwMouse;
+    pReq->fButtons           = pThis->fMouseButtons;
+    LogRel2(("VMMDev: vmmdevReqHandler_GetMouseStatusEx: mouseFeatures=%#x, xAbs=%d, yAbs=%d, zAbs=%d, wMouseRel=%d, fButtons=0x%x\n",
+             pReq->Core.mouseFeatures, pReq->Core.pointerXPos, pReq->Core.pointerYPos, pReq->dz, pReq->dw, pReq->fButtons));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Handles VMMDevReq_SetMouseStatus.
  *
  * @returns VBox status code that the guest should see.
@@ -2799,6 +2833,10 @@ static VBOXSTRICTRC vmmdevReqDispatcher(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMD
             pReqHdr->rc = vmmdevReqHandler_GetMouseStatus(pThis, pReqHdr);
             break;
 
+        case VMMDevReq_GetMouseStatusEx:
+            pReqHdr->rc = vmmdevReqHandler_GetMouseStatusEx(pThis, pReqHdr);
+            break;
+
         case VMMDevReq_SetMouseStatus:
             pReqHdr->rc = vmmdevReqHandler_SetMouseStatus(pThis, pThisCC, pReqHdr);
             break;
@@ -3622,7 +3660,8 @@ static DECLCALLBACK(int) vmmdevIPort_QueryAbsoluteMouse(PPDMIVMMDEVPORT pInterfa
 /**
  * @interface_method_impl{PDMIVMMDEVPORT,pfnSetAbsoluteMouse}
  */
-static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs)
+static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs,
+                                                      int32_t dz, int32_t dw, uint32_t fButtons)
 {
     PVMMDEVCC  pThisCC = RT_FROM_MEMBER(pInterface, VMMDEVCC, IPort);
     PPDMDEVINS pDevIns = pThisCC->pDevIns;
@@ -3631,11 +3670,20 @@ static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface
     AssertRCReturn(rcLock, rcLock);
 
     if (   pThis->xMouseAbs != xAbs
-        || pThis->yMouseAbs != yAbs)
+        || pThis->yMouseAbs != yAbs
+        || dz
+        || dw
+        || pThis->fMouseButtons != fButtons)
     {
-        Log2(("vmmdevIPort_SetAbsoluteMouse : settings absolute position to x = %d, y = %d\n", xAbs, yAbs));
+        Log2(("vmmdevIPort_SetAbsoluteMouse : settings absolute position to x = %d, y = %d, z = %d, w = %d, fButtons = 0x%x\n",
+              xAbs, yAbs, dz, dw, fButtons));
+
         pThis->xMouseAbs = xAbs;
         pThis->yMouseAbs = yAbs;
+        pThis->dzMouse = -dz; /* Inverted! */
+        pThis->dwMouse = -dw; /* Inverted! */
+        pThis->fMouseButtons = fButtons;
+
         VMMDevNotifyGuest(pDevIns, pThis, pThisCC, VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
     }
 
@@ -3671,7 +3719,8 @@ vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAd
     uint32_t fOldCaps = pThis->fMouseCapabilities;
     pThis->fMouseCapabilities &= ~(fCapsRemoved & VMMDEV_MOUSE_HOST_MASK);
     pThis->fMouseCapabilities |= (fCapsAdded & VMMDEV_MOUSE_HOST_MASK)
-                              | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
+                              | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR
+                              | VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL;
     bool fNotify = fOldCaps != pThis->fMouseCapabilities;
 
     LogRelFlow(("VMMDev: vmmdevIPort_UpdateMouseCapabilities: fCapsAdded=0x%x, fCapsRemoved=0x%x, fNotify=%RTbool\n", fCapsAdded,
@@ -4063,6 +4112,9 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutU32(pSSM, pThis->fMouseCapabilities);
     pHlp->pfnSSMPutS32(pSSM, pThis->xMouseAbs);
     pHlp->pfnSSMPutS32(pSSM, pThis->yMouseAbs);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dzMouse);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dwMouse);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fMouseButtons);
 
     pHlp->pfnSSMPutBool(pSSM, pThis->fNewGuestFilterMaskValid);
     pHlp->pfnSSMPutU32(pSSM, pThis->fNewGuestFilterMask);
@@ -4155,6 +4207,12 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     pHlp->pfnSSMGetU32(pSSM, &pThis->fMouseCapabilities);
     pHlp->pfnSSMGetS32(pSSM, &pThis->xMouseAbs);
     pHlp->pfnSSMGetS32(pSSM, &pThis->yMouseAbs);
+    if (uVersion >= VMMDEV_SAVED_STATE_VERSION_VMM_MOUSE_EXTENDED_DATA)
+    {
+        pHlp->pfnSSMGetS32(pSSM, &pThis->dzMouse);
+        pHlp->pfnSSMGetS32(pSSM, &pThis->dwMouse);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->fMouseButtons);
+    }
 
     pHlp->pfnSSMGetBool(pSSM, &pThis->fNewGuestFilterMaskValid);
     pHlp->pfnSSMGetU32(pSSM, &pThis->fNewGuestFilterMask);
@@ -4998,6 +5056,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * changes.
      */
     pThis->fMouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
+
+    /*
+     * In this version of VirtualBox full mouse state can be provided to the guest over DevVMM.
+     */
+    pThis->fMouseCapabilities |= VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL;
 
     /*
      * Statistics.

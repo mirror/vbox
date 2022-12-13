@@ -1536,8 +1536,12 @@ typedef struct PDMIVMMDEVPORT
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   xAbs            New absolute X position
      * @param   yAbs            New absolute Y position
+     * @param   dz              New mouse wheel vertical movement offset
+     * @param   dw              New mouse wheel horizontal movement offset
+     * @param   fButtons        New buttons state
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs));
+    DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs,
+                                                   int32_t dz, int32_t dw, uint32_t fButtons));
 
     /**
      * Return the current mouse capability flags

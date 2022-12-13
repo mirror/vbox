@@ -118,7 +118,7 @@ private:
     HRESULT i_reportMTEventToMouseDev(int32_t x, int32_t z, uint32_t cContact,
                                     uint32_t fContact);
     HRESULT i_reportMultiTouchEventToDevice(uint8_t cContacts, const uint64_t *pau64Contacts, bool fTouchScreen, uint32_t u32ScanTime);
-    HRESULT i_reportAbsEventToVMMDev(int32_t x, int32_t y);
+    HRESULT i_reportAbsEventToVMMDev(int32_t x, int32_t y, int32_t dz, int32_t dw, uint32_t fButtons);
     HRESULT i_reportAbsEventToInputDevices(int32_t x, int32_t y, int32_t dz, int32_t dw, uint32_t fButtons,
                                            bool fUsesVMMDevEvent);
     HRESULT i_reportAbsEventToDisplayDevice(int32_t x, int32_t y);
