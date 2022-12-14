@@ -20,7 +20,6 @@
 
 #ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #include <stdio.h>
-#     include <unistd.h>   /* read(), write(), close(), chown(), unlink() */                            /* VBox */
 #endif                                                                                                  /* VBox */
 #include "zlib.h"
 #ifdef STDC
