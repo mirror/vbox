@@ -355,6 +355,7 @@ void GuestDnDState::reset(void)
  * by the specific callers.
  *
  * @returns VBox status code. Will get sent back to the host service.
+ * @retval  VERR_NO_DATA if no new messages from the host side are available at the moment.
  * @retval  VERR_CANCELLED for indicating that the current operation was cancelled.
  * @param   uMsg                HGCM message ID (function number).
  * @param   pvParms             Pointer to additional message data. Optional and can be NULL.
@@ -394,8 +395,15 @@ DECLCALLBACK(int) GuestDnDState::i_defaultCallback(uint32_t uMsg, void *pvParms,
             break;
         }
 
+        case GUEST_DND_FN_GET_NEXT_HOST_MSG:
+            vrc = VERR_NO_DATA; /* Indicate back to the host service that there are no new messages. */
+            break;
+
         default:
-            AssertMsgBreakStmt(pThis->isProgressCanceled(), ("Transfer not cancelled (yet)!\n"), vrc = VERR_INVALID_STATE);
+            AssertMsgBreakStmt(pThis->isProgressRunning() == false,
+                               ("Progress object not completed / canceld yet! State is '%s' (%#x)\n",
+                                DnDStateToStr(pThis->m_enmState), pThis->m_enmState),
+                               vrc = VERR_INVALID_STATE); /* Please report this! */
             vrc = VERR_CANCELLED;
             break;
     }
@@ -428,20 +436,33 @@ HRESULT GuestDnDState::resetProgress(const ComObjPtr<Guest>& pParent)
 /**
  * Returns whether the progress object has been canceled or not.
  *
- * @returns \c true if canceled, \c false if not.
+ * @returns \c true if canceled or progress does not exist, \c false if not.
  */
 bool GuestDnDState::isProgressCanceled(void) const
 {
-    BOOL fCanceled;
-    if (!m_pProgress.isNull())
-    {
-        HRESULT hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
-        AssertComRC(hr);
-    }
-    else
-        fCanceled = TRUE;
+    if (m_pProgress.isNull())
+        return true;
 
+    BOOL fCanceled;
+    HRESULT hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
+    AssertComRCReturn(hr, false);
     return RT_BOOL(fCanceled);
+}
+
+/**
+ * Returns whether the progress object still is in a running state or not.
+ *
+ * @returns \c true if running, \c false if not.
+ */
+bool GuestDnDState::isProgressRunning(void) const
+{
+    if (m_pProgress.isNull())
+        return false;
+
+    BOOL fRunning;
+    HRESULT hr = m_pProgress->COMGETTER(Completed)(&fRunning);
+    AssertComRCReturn(hr, false);
+    return RT_BOOL(fRunning);
 }
 
 /**
