@@ -20,6 +20,9 @@
 
 #ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #include <stdio.h>
+#ifdef RT_OS_OS2                                                                                        /* VBox */
+#include <unistd.h>   /* read(), write(), close(), chown(), unlink() */                                 /* VBox */
+#  endif                                                                                                /* VBox */
 #endif                                                                                                  /* VBox */
 #include "zlib.h"
 #ifdef STDC
