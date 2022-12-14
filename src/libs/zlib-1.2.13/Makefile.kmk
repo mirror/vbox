@@ -35,6 +35,9 @@ if1of ($(KBUILD_TARGET),os2 win)
 endif
 VBox-zlib_TEMPLATE = VBoxR3RuntimeDllNonPedanticFast
 VBox-zlib_DEFS = verbose=-1 NO_VIZ=1
+ifn1of ($(KBUILD_TARGET), win)
+ VBox-zlib_DEFS = Z_HAVE_UNISTD_H
+endif
 VBox-zlib_SOURCES = \
 	adler32.c \
 	compress.c \
