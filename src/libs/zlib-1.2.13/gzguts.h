@@ -51,8 +51,8 @@
 #ifndef IPRT_NO_CRT                                                                                     /* VBox */
 #if defined(_WIN32)
 #  define WIDECHAR
-#endif                                                                                                  /* VBox */
 #endif
+#endif                                                                                                  /* VBox */
 
 #ifdef WINAPI_FAMILY
 #  define open _open
