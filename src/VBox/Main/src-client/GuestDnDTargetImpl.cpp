@@ -718,7 +718,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     /* Reset progress object. */
     GuestDnDState *pState = GuestDnDInst()->getState();
     AssertPtr(pState);
-    HRESULT hr = pState->resetProgress(m_pGuest);
+    HRESULT hr = pState->resetProgress(m_pGuest, tr("Dropping data to guest"));
     if (FAILED(hr))
         return hr;
 

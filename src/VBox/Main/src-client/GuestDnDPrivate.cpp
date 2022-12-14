@@ -417,16 +417,19 @@ DECLCALLBACK(int) GuestDnDState::i_defaultCallback(uint32_t uMsg, void *pvParms,
  *
  * @returns HRESULT
  * @param   pParent             Parent to set for the progress object.
+ * @param   strDesc             Description of the progress.
  */
-HRESULT GuestDnDState::resetProgress(const ComObjPtr<Guest>& pParent)
+HRESULT GuestDnDState::resetProgress(const ComObjPtr<Guest>& pParent, const Utf8Str &strDesc)
 {
+    AssertReturn(strDesc.isNotEmpty(), E_INVALIDARG);
+
     m_pProgress.setNull();
 
     HRESULT hr = m_pProgress.createObject();
     if (SUCCEEDED(hr))
     {
         hr = m_pProgress->init(static_cast<IGuest *>(pParent),
-                               Bstr(tr("Dropping data")).raw(),
+                               Bstr(strDesc).raw(),
                                TRUE /* aCancelable */);
     }
 

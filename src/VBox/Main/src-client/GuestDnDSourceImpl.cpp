@@ -392,7 +392,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     /* Reset progress object. */
     GuestDnDState *pState = GuestDnDInst()->getState();
     AssertPtr(pState);
-    HRESULT hr = pState->resetProgress(m_pGuest);
+    HRESULT hr = pState->resetProgress(m_pGuest, tr("Dropping data to host"));
     if (FAILED(hr))
         return hr;
 
