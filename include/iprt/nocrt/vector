@@ -154,7 +154,7 @@ namespace std
     inline bool operator!=(const RTCNoCrtVectorIterator<a_TypeLeft,  a_Container> &a_rLeft,
                            const RTCNoCrtVectorIterator<a_TypeRight, a_Container> &a_rRight) RT_NOEXCEPT
     {
-        return a_rLeft.getConst() == a_rRight.getConst();
+        return a_rLeft.getConst() != a_rRight.getConst();
     }
 
     template<typename a_TypeLeft, typename a_TypeRight, class a_Container>
