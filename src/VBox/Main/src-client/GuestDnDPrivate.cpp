@@ -462,10 +462,10 @@ bool GuestDnDState::isProgressRunning(void) const
     if (m_pProgress.isNull())
         return false;
 
-    BOOL fRunning;
-    HRESULT hr = m_pProgress->COMGETTER(Completed)(&fRunning);
+    BOOL fCompleted;
+    HRESULT const hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
     AssertComRCReturn(hr, false);
-    return RT_BOOL(fRunning);
+    return !RT_BOOL(fCompleted);
 }
 
 /**
