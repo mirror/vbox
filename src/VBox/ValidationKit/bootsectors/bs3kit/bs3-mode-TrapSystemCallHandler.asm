@@ -266,6 +266,7 @@ TMPL_BEGIN_TEXT
 .print_str:
 %if TMPL_BITS != 64
         push    es
+        push    ss                      ; Must save and restore SS for supporting 16/32 and 32/16 caller/kernel ring-0 combinations.
 %endif
         ; Convert the incoming pointer to real mode (assuming caller checked
         ; that real mode can access it).
@@ -300,6 +301,7 @@ TMPL_BEGIN_TEXT
 .print_str_end:
 %endif
 %if TMPL_BITS != 64
+        pop     ss
         pop     es
 %endif
         jmp     .return
