@@ -2450,32 +2450,29 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
     /*
      * Allocate buffer and read in the control command
      */
-    PVIRTIONET_CTRL_HDR_T pCtrlPktHdr = (PVIRTIONET_CTRL_HDR_T)RTMemAllocZ(sizeof(VIRTIONET_CTRL_HDR_T));
-
-    AssertPtrReturnVoid(pCtrlPktHdr);
-
     AssertMsgReturnVoid(pVirtqBuf->cbPhysSend >= sizeof(VIRTIONET_CTRL_HDR_T),
                         ("DESC chain too small for CTRL pkt header"));
 
-    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, pCtrlPktHdr,
-                         RT_MIN(pVirtqBuf->cbPhysSend, sizeof(VIRTIONET_CTRL_HDR_T)));
+    VIRTIONET_CTRL_HDR_T CtrlPktHdr; RT_ZERO(CtrlPktHdr);
+    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &CtrlPktHdr,
+                              RT_MIN(pVirtqBuf->cbPhysSend, sizeof(CtrlPktHdr)));
 
-    Log7Func(("[%s] CTRL COMMAND: class=%d command=%d\n", pThis->szInst, pCtrlPktHdr->uClass, pCtrlPktHdr->uCmd));
+    Log7Func(("[%s] CTRL COMMAND: class=%d command=%d\n", pThis->szInst, CtrlPktHdr.uClass, CtrlPktHdr.uCmd));
 
     uint8_t uAck;
-    switch (pCtrlPktHdr->uClass)
+    switch (CtrlPktHdr.uClass)
     {
         case VIRTIONET_CTRL_RX:
-            uAck = virtioNetR3CtrlRx(pThis, pThisCC, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlRx(pThis, pThisCC, &CtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_MAC:
-            uAck = virtioNetR3CtrlMac(pThis, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlMac(pThis, &CtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_VLAN:
-            uAck = virtioNetR3CtrlVlan(pThis, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlVlan(pThis, &CtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_MQ:
-            uAck = virtioNetR3CtrlMultiQueue(pThis, pThisCC, pDevIns, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlMultiQueue(pThis, pThisCC, pDevIns, &CtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_ANNOUNCE:
             uAck = VIRTIONET_OK;
@@ -2485,7 +2482,7 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
                          "VIRTIO_F_STATUS or VIRTIO_F_GUEST_ANNOUNCE feature not enabled\n", pThis->szInst));
                 break;
             }
-            if (pCtrlPktHdr->uCmd != VIRTIONET_CTRL_ANNOUNCE_ACK)
+            if (CtrlPktHdr.uCmd != VIRTIONET_CTRL_ANNOUNCE_ACK)
             {
                 LogFunc(("[%s] Ignoring CTRL class VIRTIONET_CTRL_ANNOUNCE. Unrecognized uCmd\n", pThis->szInst));
                 break;
@@ -2496,44 +2493,17 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
             Log7Func(("[%s] Clearing VIRTIONET_F_ANNOUNCE in config status\n", pThis->szInst));
             break;
         default:
-            LogRelFunc(("Unrecognized CTRL pkt hdr class (%d)\n", pCtrlPktHdr->uClass));
+            LogRelFunc(("Unrecognized CTRL pkt hdr class (%d)\n", CtrlPktHdr.uClass));
             uAck = VIRTIONET_ERROR;
     }
 
-    /* Currently CTRL pkt header just returns ack, but keeping segment logic generic/flexible
-     * in case that changes to make adapting more straightforward
-     */
-    int cSegs = 1;
-
     /* Return CTRL packet Ack byte (result code) to guest driver */
-    PRTSGSEG paReturnSegs = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG));
-    AssertMsgReturnVoid(paReturnSegs, ("Out of memory"));
-
     RTSGSEG aStaticSegs[] = { { &uAck, sizeof(uAck) } };
-    memcpy(paReturnSegs, aStaticSegs, sizeof(RTSGSEG));
+    RTSGBUF SgBuf;
 
-    PRTSGBUF pReturnSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
-    AssertMsgReturnVoid(pReturnSegBuf, ("Out of memory"));
-
-    /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
-    for (int i = 0; i < cSegs; i++)
-    {
-        void *pv = paReturnSegs[i].pvSeg;
-        paReturnSegs[i].pvSeg = RTMemAlloc(aStaticSegs[i].cbSeg);
-        AssertMsgReturnVoid(paReturnSegs[i].pvSeg, ("Out of memory"));
-        memcpy(paReturnSegs[i].pvSeg, pv, aStaticSegs[i].cbSeg);
-    }
-
-    RTSgBufInit(pReturnSegBuf, paReturnSegs, cSegs);
-
-    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, CTRLQIDX, pReturnSegBuf, pVirtqBuf, true /* fFence */);
+    RTSgBufInit(&SgBuf, aStaticSegs, RT_ELEMENTS(aStaticSegs));
+    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, CTRLQIDX, &SgBuf, pVirtqBuf, true /* fFence */);
     virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, CTRLQIDX);
-
-    for (int i = 0; i < cSegs; i++)
-        RTMemFree(paReturnSegs[i].pvSeg);
-
-    RTMemFree(paReturnSegs);
-    RTMemFree(pReturnSegBuf);
 
     LogFunc(("%s Finished processing CTRL command with status %s\n",
              pThis->szInst, uAck == VIRTIONET_OK ? "VIRTIONET_OK" : "VIRTIONET_ERROR"));
