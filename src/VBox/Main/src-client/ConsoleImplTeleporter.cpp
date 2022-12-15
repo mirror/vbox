@@ -1368,7 +1368,8 @@ Console::i_teleporterTrgServeConnection(RTSOCKET hSocket, void *pvUser)
             void *pvUser2 = static_cast<void *>(static_cast<TeleporterState *>(pState));
             vrc = pState->mpVMM->pfnVMR3LoadFromStream(pState->mpUVM,
                                                        &g_teleporterTcpOps, pvUser2,
-                                                       teleporterProgressCallback, pvUser2);
+                                                       teleporterProgressCallback, pvUser2,
+                                                       true /*fTeleporting*/);
 
             RTSocketRelease(pState->mhSocket);
             vrc2 = pState->mpVMM->pfnVMR3AtErrorDeregister(pState->mpUVM, Console::i_genericVMSetErrorCallback, &pState->mErrorText);

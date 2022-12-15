@@ -399,7 +399,7 @@ VMMR3DECL(int)          VMR3Save(PUVM pUVM, const char *pszFilename, PCSSMSTRMOP
 VMMR3DECL(int)          VMR3Teleport(PUVM pUVM, uint32_t cMsDowntime, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended);
 VMMR3DECL(int)          VMR3LoadFromFile(PUVM pUVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 VMMR3DECL(int)          VMR3LoadFromStream(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                           PFNVMPROGRESS pfnProgress, void *pvProgressUser);
+                                           PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting);
 
 VMMR3DECL(int)          VMR3PowerOff(PUVM pUVM);
 VMMR3DECL(int)          VMR3Destroy(PUVM pUVM);

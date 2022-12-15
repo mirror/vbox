@@ -1933,16 +1933,17 @@ VMMR3DECL(int) VMR3LoadFromFile(PUVM pUVM, const char *pszFilename, PFNVMPROGRES
  * @param   pvStreamOpsUser The user argument to the stream methods.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvProgressUser  User argument for the progress callback.
+ * @param   fTeleporting    Flag whether this call is part of a teleportation operation.
  *
  * @thread      Any thread.
  * @vmstate     Created, Suspended
  * @vmstateto   Loading+Suspended
  */
 VMMR3DECL(int) VMR3LoadFromStream(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting)
 {
-    LogFlow(("VMR3LoadFromStream: pUVM=%p pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p\n",
-             pUVM, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
+    LogFlow(("VMR3LoadFromStream: pUVM=%p pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p fTeleporting=%RTbool\n",
+             pUVM, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser, fTeleporting));
 
     /*
      * Validate input.
@@ -1956,7 +1957,7 @@ VMMR3DECL(int) VMR3LoadFromStream(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvSt
      */
     int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
                               pUVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress,
-                              pvProgressUser, true /*fTeleporting*/);
+                              pvProgressUser, fTeleporting);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }

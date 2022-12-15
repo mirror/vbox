@@ -11106,7 +11106,8 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                             vrc = pVMM->pfnVMR3LoadFromStream(pConsole->mpUVM,
                                                               pStreamOps, pvStreamOpsUser,
                                                               Console::i_stateProgressCallback,
-                                                              static_cast<IProgress *>(pTask->mProgress));
+                                                              static_cast<IProgress *>(pTask->mProgress),
+                                                              false /*fTeleporting*/);
                     }
 #else
                     vrc = pVMM->pfnVMR3LoadFromFile(pConsole->mpUVM,
