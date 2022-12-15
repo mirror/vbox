@@ -1416,6 +1416,7 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatReserved);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceivedGso);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentGso);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentR0);
 #ifdef VBOX_WITH_STATISTICS
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
