@@ -191,6 +191,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RT
      * Check hyper breakpoints first as the VMM debugger has priority over
      * the guest.
      */
+    /** @todo we need some kind of resume flag for these. */
     if (pVM->dbgf.s.cEnabledHwBreakpoints > 0)
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
@@ -216,7 +217,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RT
      * Check the guest.
      */
     uint32_t const fDr7 = (uint32_t)pVCpu->cpum.GstCtx.dr[7];
-    if (X86_DR7_ANY_EO_ENABLED(fDr7))
+    if (X86_DR7_ANY_EO_ENABLED(fDr7) && !pVCpu->cpum.GstCtx.eflags.Bits.u1RF)
     {
         /*
          * The CPU (10980XE & 6700K at least) will set the DR6.BPx bits for any
