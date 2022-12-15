@@ -3680,8 +3680,8 @@ static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface
 
         pThis->xMouseAbs = xAbs;
         pThis->yMouseAbs = yAbs;
-        pThis->dzMouse = -dz; /* Inverted! */
-        pThis->dwMouse = -dw; /* Inverted! */
+        pThis->dzMouse = dz;
+        pThis->dwMouse = dw;
         pThis->fMouseButtons = fButtons;
 
         VMMDevNotifyGuest(pDevIns, pThis, pThisCC, VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
