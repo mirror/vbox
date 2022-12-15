@@ -4990,6 +4990,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
 {
     BS3TRAPFRAME            TrapCtx;
     BS3REGCTX               Ctx;
+    BS3REGCTX               Ctx2;
     BS3REGCTX               CtxExpected;
     unsigned                iTest;
     unsigned                iSubTest;
@@ -5005,13 +5006,14 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
-    Bs3MemZero(&CtxExpected, sizeof(Ctx));
+    Bs3MemZero(&Ctx2, sizeof(Ctx2));
+    Bs3MemZero(&CtxExpected, sizeof(CtxExpected));
     Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
 
     bs3CpuBasic2_SetGlobals(bMode);
 
     //if (!BS3_MODE_IS_64BIT_SYS(bMode) && bMode != BS3_MODE_PP32_16) return 0xff;
-    //if (bMode != BS3_MODE_LM64) return 0xff;
+    //if (bMode != BS3_MODE_PE32_16) return 0xff;
 
     /*
      * When dealing retf with 16-bit effective operand size to 32-bit or 64-bit
@@ -5313,6 +5315,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                                              + (s_aSubTests[iSubTest].cDstBits == 64 && !BS3_MODE_IS_64BIT_SYS(bMode));
                     RTSEL    const uDstSs    = s_aSubTests[iSubTest].uDstSs;
                     uint64_t       uDstRspExpect, uDstRspPush;
+                    uint16_t       cErrors;
 
                     Ctx.ss = s_aSubTests[iSubTest].uStartSs;
                     if (Ctx.ss != BS3_SEL_R0_SS32)
@@ -5497,8 +5500,10 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     g_usBs3TestStep++; /* 6 */
 
-                    /* Again with a single globally enabled breakpoint and serveral other types of breakpoints configured but not enabled. */
+                    /* Again with a single globally enabled breakpoint and serveral other types of breakpoints
+                       configured but not enabled. */
                     //Bs3TestPrintf("bp 2/g+...\n");
+                    cErrors = Bs3TestSubErrorCount();
                     Bs3RegSetDr0(uFlatDst);
                     Bs3RegSetDr1(uFlatDst);
                     Bs3RegSetDr2(uFlatDst);
@@ -5521,6 +5526,26 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     g_usBs3TestStep++; /* 7 */
 
+                    /* Now resume it with lots of execution breakpoints configured. */
+                    if (s_aSubTests[iSubTest].iXcpt < 0 && Bs3TestSubErrorCount() == cErrors)
+                    {
+                        Bs3MemCpy(&Ctx2, &TrapCtx.Ctx, sizeof(Ctx2));
+                        Ctx2.rflags.u32 |= X86_EFL_RF;
+                        //Bs3TestPrintf("bp 3/g+rf %04RX16:%04RX64 efl=%RX32 ds=%04RX16...\n", Ctx2.cs, Ctx2.rip.u, Ctx2.rflags.u32, Ctx2.ds);
+                        Bs3RegSetDr6(X86_DR6_INIT_VAL);
+                        Bs3RegSetDr7(X86_DR7_INIT_VAL
+                                     | X86_DR7_RW(0, X86_DR7_RW_EO) | X86_DR7_LEN(0, X86_DR7_LEN_BYTE)
+                                     | X86_DR7_RW(1, X86_DR7_RW_EO) | X86_DR7_LEN(1, X86_DR7_LEN_BYTE) | X86_DR7_L_G(1)
+                                     | X86_DR7_RW(2, X86_DR7_RW_EO) | X86_DR7_LEN(2, X86_DR7_LEN_BYTE) | X86_DR7_G(2)
+                                     | X86_DR7_RW(3, X86_DR7_RW_EO) | X86_DR7_LEN(3, X86_DR7_LEN_BYTE) | X86_DR7_G(3)
+                                     );
+                        Bs3TrapSetJmpAndRestore(&Ctx2, &TrapCtx);
+                        Bs3RegSetDr7(X86_DR7_INIT_VAL);
+                        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+                        bs3CpuBasic2_CheckDr6InitVal();
+                    }
+                    g_usBs3TestStep++; /* 8 */
+
                     /* Now do single stepping: */
                     //Bs3TestPrintf("stepping...\n");
                     Bs3RegSetDr6(X86_DR6_INIT_VAL);
@@ -5541,7 +5566,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     Ctx.rflags.u16        &= ~X86_EFL_TF;
                     CtxExpected.rflags.u16 = Ctx.rflags.u16;
-                    g_usBs3TestStep++; /* 8 */
+                    g_usBs3TestStep++; /* 9 */
 
                     /* Single step with B0-B3 set to check that they're not preserved
                        and with BD & BT to check that they are (checked on Intel 6700K): */
@@ -5559,7 +5584,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     Ctx.rflags.u16        &= ~X86_EFL_TF;
                     CtxExpected.rflags.u16 = Ctx.rflags.u16;
-                    g_usBs3TestStep++; /* 9 */
+                    g_usBs3TestStep++; /* 10 */
 
                 }
             }
