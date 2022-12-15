@@ -63,6 +63,7 @@
       <arg>--revision=<replaceable>IIFF</replaceable></arg>
       <arg>--manufacturer=<replaceable>строка</replaceable></arg>
       <arg>--product=<replaceable>строка</replaceable></arg>
+      <arg>--port=<replaceable>номер</replaceable></arg>
       <arg>--remote=yes | no</arg>
       <arg>--serialnumber=<replaceable>строка</replaceable></arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
@@ -84,6 +85,7 @@
       <arg>--revision=<replaceable>IIFF</replaceable> | ""</arg>
       <arg>--manufacturer=<replaceable>строка</replaceable> | ""</arg>
       <arg>--product=<replaceable>строка</replaceable> | ""</arg>
+      <arg>--port=<replaceable>номер</replaceable></arg>
       <arg>--remote=yes | no</arg>
       <arg>--serialnumber=<replaceable>строка</replaceable> | ""</arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
@@ -177,6 +179,13 @@
           <term><option>--name=<replaceable>имя-фильтра</replaceable></option></term>
           <listitem><para>
               Задает имя фильтра.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--port=<replaceable>номер</replaceable></option></term>
+          <listitem><para>
+              Задает фильтр по номеру USB порта (hub port number). Значение по
+              умолчанию - пустая строка (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
