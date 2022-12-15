@@ -550,6 +550,7 @@ static int __init vgdrvLinuxCreateInputDevice(void)
 # endif
             /* Set up input device capabilities. */
             ASMBitSet(g_pInputDevice->evbit, EV_ABS);
+            ASMBitSet(g_pInputDevice->evbit, EV_KEY);
 # ifdef EV_SYN
             ASMBitSet(g_pInputDevice->evbit, EV_SYN);
 # endif
@@ -558,6 +559,8 @@ static int __init vgdrvLinuxCreateInputDevice(void)
 
             input_set_abs_params(g_pInputDevice, ABS_X, VMMDEV_MOUSE_RANGE_MIN, VMMDEV_MOUSE_RANGE_MAX, 0, 0);
             input_set_abs_params(g_pInputDevice, ABS_Y, VMMDEV_MOUSE_RANGE_MIN, VMMDEV_MOUSE_RANGE_MAX, 0, 0);
+
+            ASMBitSet(g_pInputDevice->keybit, BTN_MOUSE);
 
             /* Report extra capabilities to input layer if extended mouse state protocol
              * will be used in communication with host. */
