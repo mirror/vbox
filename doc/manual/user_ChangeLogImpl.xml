@@ -81,6 +81,19 @@ Rules for adding a changelog entry to make them look more uniform:
        <para>VirtioNet: Fixed broken network after loading saved state (bug #21172)</para>
       </listitem>
 
+      <listitem>
+       <para>Mouse Integration: Provided guest with extended host mouse state</para>
+      </listitem>
+
+      <listitem>
+       <para>Linux Host and Guest: Added initial support for building
+         UEK7 kernel on Oracle Linux 8</para>
+      </listitem>
+
+      <listitem>
+       <para>Linux Host and Guest: Added initial support for RHEL 9.1 kernel</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
