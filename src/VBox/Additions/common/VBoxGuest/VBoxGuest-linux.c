@@ -1320,8 +1320,11 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
             && fMouseFeatures & VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL
             && fMouseFeatures & VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL)
         {
-            input_report_rel(g_pInputDevice, REL_WHEEL,  dz);
-            input_report_rel(g_pInputDevice, REL_HWHEEL, dw);
+            /* Vertical and horizontal scroll values come as-is from GUI.
+             * Invert values here as it is done in PS/2 mouse driver, so
+             * scrolling direction will be exectly the same. */
+            input_report_rel(g_pInputDevice, REL_WHEEL,  -dz);
+            input_report_rel(g_pInputDevice, REL_HWHEEL, -dw);
 
             input_report_key(g_pInputDevice, BTN_LEFT,   RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_LEFT));
             input_report_key(g_pInputDevice, BTN_RIGHT,  RT_BOOL(fButtons & VMMDEV_MOUSE_BUTTON_RIGHT));
