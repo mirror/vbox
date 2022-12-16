@@ -313,6 +313,20 @@ public:
         return format;
     }
 
+    /**
+     * Returns a filtered X11 atom list.
+     *
+     * @returns Filtered list.
+     * @param   formatList      Atom list to convert.
+     * @param   filterList      Atom list to filter out.
+     */
+    inline VBoxDnDAtomList xAtomListFiltered(const VBoxDnDAtomList &formatList, const VBoxDnDAtomList &filterList)
+    {
+        VBoxDnDAtomList tempList = formatList;
+        tempList.filter(filterList);
+        return tempList;
+    }
+
     RTCString xErrorToString(int xRc) const;
     Window applicationWindowBelowCursor(Window parentWin) const;
 
@@ -639,6 +653,9 @@ protected:
     /** Last mouse Y position (in pixels, absolute to root window).
      *  Set to -1 if not set yet. */
     int                         m_lastMouseY;
+    /** List of default (Atom) formats required for X11 Xdnd handling.
+     *  This list will be included by \a m_lstAtomFormats. */
+    VBoxDnDAtomList             m_lstAtomFormatsX11;
     /** List of (Atom) formats the current source/target window supports. */
     VBoxDnDAtomList             m_lstAtomFormats;
     /** List of (Atom) actions the current source/target window supports. */
@@ -734,6 +751,11 @@ DragInstance::DragInstance(Display *pDisplay, DragAndDropService *pParent)
     , m_enmMode(Unknown)
     , m_enmState(Uninitialized)
 {
+    /* Append default targets we support.
+     * Note: The order is sorted by preference; be careful when changing this. */
+    m_lstAtomFormatsX11.append(xAtom(XA_TARGETS));
+    m_lstAtomFormatsX11.append(xAtom(XA_MULTIPLE));
+    /** @todo Support INC (incremental transfers). */
 }
 
 /**
@@ -804,13 +826,10 @@ void DragInstance::reset(void)
 
         m_lstAtomActions.clear();
 
-        /* First, clear the formats list. */
+        /* First, clear the formats list and apply the X11-specific default formats,
+         * required for making Xdnd to work. */
         m_lstAtomFormats.clear();
-        /* Append default targets we support.
-         * Note: The order is sorted by preference; be careful when changing this. */
-        m_lstAtomFormats.append(xAtom(XA_TARGETS));
-        m_lstAtomFormats.append(xAtom(XA_MULTIPLE));
-        /** @todo Support INC (incremental transfers). */
+        m_lstAtomFormats.append(m_lstAtomFormatsX11);
 
         m_wndCur                 = 0;
         m_uXdndVer               = 0;
@@ -2334,16 +2353,29 @@ int DragInstance::ghIsDnDPending(void)
     int rc2 = RTCritSectEnter(&m_dataCS);
     if (RT_SUCCESS(rc2))
     {
-        RTCString strFormatsCur = gX11->xAtomListToString(m_lstAtomFormats);
-        if (!strFormatsCur.isEmpty())
+        /* Filter out the default X11-specific formats (required for Xdnd, 'TARGET' / 'MULTIPLE');
+         * those will not be supported by VirtualBox. */
+        VBoxDnDAtomList const lstAtomFormatsFiltered = gX11->xAtomListFiltered(m_lstAtomFormats, m_lstAtomFormatsX11);
+
+        /* Anything left to report to the host? */
+        if (lstAtomFormatsFiltered.size())
         {
-            strFormats   = strFormatsCur;
+            strFormats       = gX11->xAtomListToString(lstAtomFormatsFiltered);
             dndActionDefault = VBOX_DND_ACTION_COPY; /** @todo Handle default action! */
             dndActionList    = VBOX_DND_ACTION_COPY; /** @todo Ditto. */
             dndActionList   |= toHGCMActions(m_lstAtomActions);
         }
 
         RTCritSectLeave(&m_dataCS);
+    }
+
+    if (g_cVerbosity)
+    {
+        char *pszActions = DnDActionListToStrA(dndActionList);
+        AssertPtrReturn(pszActions, VERR_NO_MEMORY);
+        VBClLogVerbose(1, "Reporting formats '%s' (actions '%s' / %#x, default action is '%s' (%#x)\n",
+                       strFormats.c_str(), pszActions, dndActionList, DnDActionToStr(dndActionDefault), dndActionDefault);
+        RTStrFree(pszActions);
     }
 
     rc2 = VbglR3DnDGHSendAckPending(&m_dndCtx, dndActionDefault, dndActionList,
