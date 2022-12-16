@@ -259,17 +259,17 @@ namespace std
 
         iterator end() RT_NOEXCEPT
         {
-            return iterator(&m_paItems[m_cItems]);
+            return iterator(m_paItems + m_cItems);
         }
 
         const_iterator end() const RT_NOEXCEPT
         {
-            return const_iterator(&m_paItems[m_cItems]);
+            return const_iterator(m_paItems + m_cItems);
         }
 
         const_iterator cend() const RT_NOEXCEPT
         {
-            return const_iterator(&m_paItems[m_cItems]);
+            return const_iterator(m_paItems + m_cItems);
         }
         /** @} */
 
