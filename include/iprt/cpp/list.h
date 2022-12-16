@@ -497,7 +497,6 @@ public:
         /* Prevent self assignment */
         if (RT_LIKELY(this != &other))
         {
-
             other.m_guard.enterRead();
             m_guard.enterWrite();
 
@@ -516,6 +515,53 @@ public:
             other.m_guard.leaveRead();
         }
         return *this;
+    }
+
+    /**
+     * Compares if this list's items match the other list.
+     *
+     * @returns \c true if both lists contain the same items, \c false if not.
+     * @param   other   The list to compare this list with.
+     */
+    bool operator==(const RTCListBase<T, ITYPE, MT>& other)
+    {
+        /* Prevent self comparrison */
+        if (RT_LIKELY(this == &other))
+            return true;
+
+        other.m_guard.enterRead();
+        m_guard.enterRead();
+
+        bool fEqual = true;
+        if (other.m_cElements == m_cElements)
+        {
+            for (size_t i = 0; i < m_cElements; i++)
+            {
+                if (RTCListHelper<T, ITYPE>::at(m_pArray, i) != RTCListHelper<T, ITYPE>::at(other.m_pArray, i))
+                {
+                    fEqual = false;
+                    break;
+                }
+            }
+        }
+        else
+            fEqual = false;
+
+        m_guard.leaveRead();
+        other.m_guard.leaveRead();
+
+        return fEqual;
+    }
+
+    /**
+     * Compares if this list's items do not match the other list.
+     *
+     * @returns \c true if the lists do not match, \c false if otherwise.
+     * @param   other   The list to compare this list with.
+     */
+    bool operator!=(const RTCListBase<T, ITYPE, MT>& other)
+    {
+        return !(*this == other);
     }
 
     /**

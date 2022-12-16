@@ -103,6 +103,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  	tstRTHeapSimple \
  	tstRTInlineAsm \
  	tstIprtList \
+ 	tstIprtMiniList \
  	tstIprtMiniString \
  	tstLdr \
  	tstLdrLoad \
@@ -455,6 +456,9 @@ tstRTInlineAsmPIC3_DEFS = PIC
 
 tstIprtList_TEMPLATE = VBOXR3TSTEXE
 tstIprtList_SOURCES = tstIprtList.cpp
+
+tstIprtMiniList_TEMPLATE = VBOXR3TSTEXE
+tstIprtMiniList_SOURCES = tstIprtMiniList.cpp
 
 tstIprtMiniString_TEMPLATE = VBOXR3TSTEXE
 tstIprtMiniString_SOURCES = tstIprtMiniString.cpp
