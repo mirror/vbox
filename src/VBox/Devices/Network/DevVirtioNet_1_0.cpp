@@ -1091,6 +1091,57 @@ static int virtioNetR3VirtqDestroy(PVIRTIOCORE pVirtio, PVIRTIONETVIRTQ pVirtq)
     return rc;
 }
 
+/**
+ * Takes down the link temporarily if its current status is up.
+ *
+ * This is used during restore and when replumbing the network link.
+ *
+ * The temporary link outage is supposed to indicate to the OS that all network
+ * connections have been lost and that it for instance is appropriate to
+ * renegotiate any DHCP lease.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The virtio-net shared instance data.
+ * @param   pThisCC     The virtio-net ring-3 instance data.
+ */
+static void virtioNetR3TempLinkDown(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC)
+{
+    if (IS_LINK_UP(pThis))
+    {
+        SET_LINK_DOWN(pThis);
+
+        /* Re-establish link in 5 seconds. */
+        int rc = PDMDevHlpTimerSetMillies(pDevIns, pThisCC->hLinkUpTimer, pThis->cMsLinkUpDelay);
+        AssertRC(rc);
+
+        LogFunc(("[%s] Link is down temporarily\n", pThis->szInst));
+    }
+}
+
+
+static void virtioNetConfigurePktHdr(PVIRTIONET pThis, uint32_t fLegacy)
+{
+    /* Calculate network packet header type and size based on what we know now */
+    pThis->cbPktHdr = sizeof(VIRTIONETPKTHDR);
+    if (!fLegacy)
+        /* Modern (e.g. >= VirtIO 1.0) device specification's pkt size rules */
+        if (FEATURE_ENABLED(MRG_RXBUF))
+            pThis->ePktHdrType = kVirtioNetModernPktHdrWithMrgRx;
+        else /* Modern guest driver with MRG_RX feature disabled */
+            pThis->ePktHdrType = kVirtioNetModernPktHdrWithoutMrgRx;
+    else
+    {
+        /* Legacy (e.g. < VirtIO 1.0) device specification's pkt size rules */
+        if (FEATURE_ENABLED(MRG_RXBUF))
+            pThis->ePktHdrType = kVirtioNetLegacyPktHdrWithMrgRx;
+        else /* Legacy guest with MRG_RX feature disabled */
+        {
+            pThis->ePktHdrType = kVirtioNetLegacyPktHdrWithoutMrgRx;
+            pThis->cbPktHdr -= RT_SIZEOFMEMB(VIRTIONETPKTHDR, uNumBuffers);
+        }
+    }
+}
+
 
 /*********************************************************************************************************************************
 *   Saved state                                                                                                                  *
@@ -1234,7 +1285,7 @@ static DECLCALLBACK(int) virtioNetR3LegacyDeviceLoadExec(PPDMDEVINS pDevIns, PSS
  * @note: This loads state saved by a Modern (VirtIO 1.0+) device, of which this transitional device is one,
  *        and thus supports both legacy and modern guest virtio drivers.
  */
-static DECLCALLBACK(int) virtioNetR3ModernDeviceLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) virtioNetR3ModernLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PVIRTIONET     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     PVIRTIONETCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
@@ -1374,8 +1425,31 @@ static DECLCALLBACK(int) virtioNetR3ModernDeviceLoadExec(PPDMDEVINS pDevIns, PSS
     }
     pThis->virtioNetConfig.uStatus = pThis->Virtio.fDeviceStatus; /* reflects state to guest driver */
     pThis->fVirtioReady = pThis->Virtio.fDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
-
+    virtioNetConfigurePktHdr(pThis, pThis->Virtio.fLegacyDriver);
     return rc;
+}
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADDONE, Link status adjustments after
+ *                      loading.}
+ */
+static DECLCALLBACK(int) virtioNetR3ModernLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PVIRTIONET     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
+    PVIRTIONETCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
+    RT_NOREF(pSSM);
+
+    if (pThisCC->pDrv)
+        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, (pThis->fPromiscuous | pThis->fAllMulticast));
+
+    /*
+     * Indicate link down to the guest OS that all network connections have
+     * been lost, unless we've been teleported here.
+     */
+    if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
+        virtioNetR3TempLinkDown(pDevIns, pThis, pThisCC);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2873,33 +2947,6 @@ static DECLCALLBACK(void) virtioNetR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHAND
 }
 
 /**
- * Takes down the link temporarily if its current status is up.
- *
- * This is used during restore and when replumbing the network link.
- *
- * The temporary link outage is supposed to indicate to the OS that all network
- * connections have been lost and that it for instance is appropriate to
- * renegotiate any DHCP lease.
- *
- * @param   pDevIns     The device instance.
- * @param   pThis       The virtio-net shared instance data.
- * @param   pThisCC     The virtio-net ring-3 instance data.
- */
-static void virtioNetR3TempLinkDown(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC)
-{
-    if (IS_LINK_UP(pThis))
-    {
-        SET_LINK_DOWN(pThis);
-
-        /* Re-establish link in 5 seconds. */
-        int rc = PDMDevHlpTimerSetMillies(pDevIns, pThisCC->hLinkUpTimer, pThis->cMsLinkUpDelay);
-        AssertRC(rc);
-
-        LogFunc(("[%s] Link is down temporarily\n", pThis->szInst));
-    }
-}
-
-/**
  * @interface_method_impl{PDMINETWORKCONFIG,pfnSetLinkState}
  */
 static DECLCALLBACK(int) virtioNetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
@@ -2951,7 +2998,6 @@ static DECLCALLBACK(int) virtioNetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFI
             Log(("[%s] Link is up\n", pThis->szInst));
             pThis->fCableConnected = true;
             SET_LINK_UP(pThis);
-            virtioCoreNotifyConfigChanged(&pThis->Virtio);
         }
         else /* Link requested to be brought down */
         {
@@ -2960,7 +3006,6 @@ static DECLCALLBACK(int) virtioNetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFI
             Log(("[%s] Link is down\n", pThis->szInst));
             pThis->fCableConnected = false;
             SET_LINK_DOWN(pThis);
-            virtioCoreNotifyConfigChanged(&pThis->Virtio);
         }
         if (pThisCC->pDrv)
             pThisCC->pDrv->pfnNotifyLinkChanged(pThisCC->pDrv, enmState);
@@ -3079,28 +3124,6 @@ static int virtioNetR3CreateWorkerThreads(PPDMDEVINS pDevIns, PVIRTIONET pThis, 
     return rc;
 }
 
-static void virtioNetConfigurePktHdr(PVIRTIONET pThis, uint32_t fLegacy)
-{
-    /* Calculate network packet header type and size based on what we know now */
-    pThis->cbPktHdr = sizeof(VIRTIONETPKTHDR);
-    if (!fLegacy)
-        /* Modern (e.g. >= VirtIO 1.0) device specification's pkt size rules */
-        if (FEATURE_ENABLED(MRG_RXBUF))
-            pThis->ePktHdrType = kVirtioNetModernPktHdrWithMrgRx;
-        else /* Modern guest driver with MRG_RX feature disabled */
-            pThis->ePktHdrType = kVirtioNetModernPktHdrWithoutMrgRx;
-    else
-    {
-        /* Legacy (e.g. < VirtIO 1.0) device specification's pkt size rules */
-        if (FEATURE_ENABLED(MRG_RXBUF))
-            pThis->ePktHdrType = kVirtioNetLegacyPktHdrWithMrgRx;
-        else /* Legacy guest with MRG_RX feature disabled */
-        {
-            pThis->ePktHdrType = kVirtioNetLegacyPktHdrWithoutMrgRx;
-            pThis->cbPktHdr -= RT_SIZEOFMEMB(VIRTIONETPKTHDR, uNumBuffers);
-        }
-    }
-}
 
 /**
  * @callback_method_impl{FNPDMTHREADDEV}
@@ -3594,8 +3617,10 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     /*
      * Register saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, VIRTIONET_SAVEDSTATE_VERSION, sizeof(*pThis),
-                              virtioNetR3ModernSaveExec, virtioNetR3ModernDeviceLoadExec);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VIRTIONET_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
+                                NULL, NULL, NULL, /** @todo r=aeichner Teleportation? */
+                                NULL, virtioNetR3ModernSaveExec, NULL,
+                                NULL, virtioNetR3ModernLoadExec, virtioNetR3ModernLoadDone);
     AssertRCReturn(rc, rc);
     /*
      * Statistics and debug stuff.
