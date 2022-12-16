@@ -78,6 +78,21 @@ int main()
         RTTESTI_CHECK(spList1 != spList3);
         RTTESTI_CHECK(spList1 != spList4);
 
+        /*
+         * Test filtering.
+         */
+        /* Basics. */
+        RTCList<RTCString> spListFiltered;
+        spListFiltered.filter(RTCString("").split(",")); /* Empty filter. */
+        /* String list. */
+        spListFiltered = RTCString("filter-out1,filter-out2,foo").split(",");
+        spListFiltered.filter(RTCString("filter-out1,filter-out2").split(","));
+        RTTESTI_CHECK(spListFiltered == RTCString("foo").split(","));
+        /* Repeat. */
+        spListFiltered.filter(RTCString("filter-out1,filter-out2").split(","));
+        RTTESTI_CHECK(spListFiltered == RTCString("foo").split(","));
+        RTTESTI_CHECK(spListFiltered != RTCString("bar").split(","));
+
         rcExit = RTTestSummaryAndDestroy(hTest);
     }
     return rcExit;

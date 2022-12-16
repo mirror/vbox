@@ -589,6 +589,33 @@ public:
     }
 
     /**
+     * Applies a filter of type T to this list.
+     *
+     * @param   other           The list which contains the elements to filter out from this list.
+     * @return  a reference to this list.
+     */
+    RTCListBase<T, ITYPE, MT> &filter(const RTCListBase<T, ITYPE, MT> &other)
+    {
+        AssertReturn(this != &other, *this);
+
+        other.m_guard.enterRead();
+        m_guard.enterWrite();
+
+        for (size_t i = 0; i < m_cElements; i++)
+        {
+            for (size_t f = 0; f < other.m_cElements; f++)
+            {
+                if (RTCListHelper<T, ITYPE>::at(m_pArray, i) == RTCListHelper<T, ITYPE>::at(other.m_pArray, f))
+                    removeAtLocked(i);
+            }
+        }
+
+        m_guard.leaveWrite();
+        other.m_guard.leaveRead();
+        return *this;
+    }
+
+    /**
      * Return the first item as constant object.
      *
      * @return   A reference or pointer to the first item.
