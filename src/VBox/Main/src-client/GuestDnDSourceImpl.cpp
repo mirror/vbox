@@ -316,7 +316,8 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
                  * dictates what's supported and what's not, so filter out all formats
                  * which are not supported by the host.
                  */
-                GuestDnDMIMEList lstFiltered  = GuestDnD::toFilteredFormatList(m_lstFmtSupported, pState->formats());
+                GuestDnDMIMEList const &lstGuest     = pState->formats();
+                GuestDnDMIMEList const  lstFiltered  = GuestDnD::toFilteredFormatList(m_lstFmtSupported, lstGuest);
                 if (lstFiltered.size())
                 {
                     LogRel2(("DnD: Host offered the following formats:\n"));
@@ -332,9 +333,31 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
                     m_lstFmtOffered     = lstFiltered;
                 }
                 else
-                    hrc = i_setErrorAndReset(tr("Negotiation of formats between guest and host failed!\n\nHost offers: %s\n\nGuest offers: %s"),
-                                             GuestDnD::toFormatString(m_lstFmtSupported , ",").c_str(),
-                                             GuestDnD::toFormatString(pState->formats() , ",").c_str());
+                {
+                    bool fSetError = true; /* Whether to set an error and reset or not. */
+
+                    /*
+                     * HACK ALERT: As we now expose an error (via i_setErrorAndReset(), see below) back to the API client, we
+                     *             have to add a kludge here. Older X11-based Guest Additions report "TARGETS, MULTIPLE" back
+                     *             to us, even if they don't offer any other *supported* formats of the host. This then in turn
+                     *             would lead to exposing an error, whereas we just should ignore those specific X11-based
+                     *             formats. For anything other we really want to be notified by setting an error though.
+                     */
+                    if (   lstGuest.size() == 2
+                        && GuestDnD::isFormatInFormatList("TARGETS",  lstGuest)
+                        && GuestDnD::isFormatInFormatList("MULTIPLE", lstGuest))
+                    {
+                        fSetError = false;
+                    }
+                    /* HACK ALERT END */
+
+                    if (fSetError)
+                        hrc = i_setErrorAndReset(tr("Negotiation of formats between guest and host failed!\n\nHost offers: %s\n\nGuest offers: %s"),
+                                                 GuestDnD::toFormatString(m_lstFmtSupported , ",").c_str(),
+                                                 GuestDnD::toFormatString(pState->formats() , ",").c_str());
+                    else /* Just silently reset. */
+                        i_reset();
+                }
             }
             /* Note: Don't report an error here when the action is "ignore" -- that only means that the current window on the guest
                      simply doesn't support the format or drag and drop at all. */
