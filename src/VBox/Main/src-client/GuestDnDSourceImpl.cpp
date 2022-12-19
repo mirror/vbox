@@ -366,7 +366,28 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
             hrc = i_setErrorAndReset(vrc == VERR_DND_GUEST_ERROR ? vrcGuest : vrc, tr("Requesting pending data from guest failed"));
     }
     else
-        hrc = i_setErrorAndReset(vrc, tr("Sending drag pending event to guest failed"));
+    {
+        switch (vrc)
+        {
+            case VERR_ACCESS_DENIED:
+            {
+                hrc = i_setErrorAndReset(tr("Dragging from guest to host not allowed -- make sure that the correct drag'n drop mode is set"));
+                break;
+            }
+
+            case VERR_NOT_SUPPORTED:
+            {
+                hrc = i_setErrorAndReset(tr("Dragging from guest to host not supported by guest -- make sure that the Guest Additions are properly installed and running"));
+                break;
+            }
+
+            default:
+            {
+                hrc = i_setErrorAndReset(vrc, tr("Sending drag pending event to guest failed"));
+                break;
+            }
+        }
+    }
 
     pState->set(VBOXDNDSTATE_UNKNOWN);
 
