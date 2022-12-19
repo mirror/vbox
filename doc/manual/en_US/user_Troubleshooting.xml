@@ -1486,7 +1486,7 @@ $ VBoxClient --seamless</screen>
       <para>
         Microsoft Windows uses technologies like UAC (User Account Control) and
         UIPI (User Interface Privilege Isolation) to prevent and/or mitigate
-        security issues. By default, UAC and and UIPI are enabled.
+        security issues. By default, UAC and UIPI are enabled.
       </para>
       <para>
         When a &product-name; VM process is running with a higher so-called
