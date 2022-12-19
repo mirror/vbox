@@ -1067,7 +1067,6 @@ int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList,
         {
             rc = RTStrCopy(szPath, sizeof(szPath), pcszPathRootTmp);
             AssertRCBreak(rc);
-            cchString += RTStrNLen(pcszPathRootTmp, RTPATH_MAX);
         }
 
         rc = RTPathAppend(szPath, sizeof(szPath), pRoot->pszPathRoot);

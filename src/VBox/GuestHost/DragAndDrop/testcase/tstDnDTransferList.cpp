@@ -154,6 +154,20 @@ int main()
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 2);
     RTTEST_CHECK(hTest, RTPathCompare(DnDTransferListGetRootPathAbs(&list), szPathTest) == 0);
 
+    /* Validate returned lengths. */
+    pszBuf = NULL;
+    RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_URI, "/base/", "\r\n", &pszBuf, &cbBuf), VINF_SUCCESS);
+    RTTEST_CHECK_MSG(hTest, RTStrCmp(pszBuf, "file:///base/bin/\r\nfile:///base/lib/\r\n") == 0, (hTest, "Got '%s'", pszBuf));
+    RTTEST_CHECK_MSG(hTest, cbBuf == strlen(pszBuf) + 1, (hTest, "Got %d, expected %d\n", cbBuf, strlen(pszBuf) + 1));
+    RTStrFree(pszBuf);
+
+    pszBuf = NULL;
+    RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "/base/", "\r\n", &pszBuf, &cbBuf), VINF_SUCCESS);
+    RTTEST_CHECK_MSG(hTest, RTStrCmp(pszBuf, "/base/bin/\r\n/base/lib/\r\n") == 0, (hTest, "Got '%s'", pszBuf));
+    RTTEST_CHECK_MSG(hTest, cbBuf == strlen(pszBuf) + 1, (hTest, "Got %d, expected %d\n", cbBuf, strlen(pszBuf) + 1));
+    RTStrFree(pszBuf);
+
+    /* Validate roots with a new base. */
     pszBuf = NULL;
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "/native/base/path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Roots (URI, new base):\n%s\n", pszBuf);
