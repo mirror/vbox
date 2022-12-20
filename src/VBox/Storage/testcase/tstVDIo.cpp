@@ -566,7 +566,6 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
     PVDDISK pDisk = NULL;
     bool fBase = false;
     bool fDynamic = true;
-    bool fSplit = false;
 
     const char *pcszDisk = paScriptArgs[0].psz;
     if (!RTStrICmp(paScriptArgs[1].psz, "base"))
@@ -583,13 +582,6 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
         fDynamic = false;
     else if (!RTStrICmp(paScriptArgs[3].psz, "dynamic"))
         fDynamic = true;
-    else if (!RTStrICmp(paScriptArgs[3].psz, "vmdk-dynamic-split"))
-        fSplit = true;
-    else if (!RTStrICmp(paScriptArgs[3].psz, "vmdk-fixed-split"))
-    {
-        fDynamic = false;
-        fSplit = true;
-    }
     else
     {
         RTPrintf("Invalid image type '%s' given\n", paScriptArgs[3].psz);
@@ -616,9 +608,6 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
 
             if (fHonorSame)
                 fOpenFlags |= VD_OPEN_FLAGS_HONOR_SAME;
-
-            if (fSplit)
-                fImageFlags |= VD_VMDK_IMAGE_FLAGS_SPLIT_2G;
 
             if (fBase)
                 rc = VDCreateBase(pDisk->pVD, pcszBackend, pcszImage, cbSize, fImageFlags, NULL,
@@ -3022,3 +3011,4 @@ int main(int argc, char *argv[])
 
     return RTEXITCODE_SUCCESS;
 }
+
