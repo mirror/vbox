@@ -30,7 +30,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
-  include $(PATH_SUB_CURRENT)/tstDragAndDropQt/Makefile.kmk
+  if defined(VBOX_WITH_QTGUI)
+   include $(PATH_SUB_CURRENT)/tstDragAndDropQt/Makefile.kmk
+  endif
 
   PROGRAMS += tstDnDTransferObject tstDnDTransferList tstDnDPath
   TESTING  += \
