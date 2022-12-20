@@ -78,18 +78,18 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-       <para>VMM: Fixed guru running the FreeBSD loader on older Intel CPUs
+        <para>VMM: Fixed guru running the FreeBSD loader on older Intel CPUs
          without unrestricted guest support (bug #21332)</para>
       </listitem>
 
       <listitem>
-       <para>VirtioNet: Fixed broken network after loading saved state (bug #21172)</para>
+        <para>VirtioNet: Fixed broken network after loading saved state (bug #21172)</para>
       </listitem>
 
       <listitem>
         <para>Storage: Added support for increasing the size of the following VMDK disks: monolithicFlat,
         monolithicSparse, twoGbMaxExtentSparse, twoGbMaxExtentFlat</para>
-      </listitem
+      </listitem>
 
       <listitem>
        <para>Mouse Integration: Provided guest with extended host mouse state</para>
