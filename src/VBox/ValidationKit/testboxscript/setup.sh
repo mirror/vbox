@@ -151,6 +151,9 @@ get_host_arch() {
         arm|armv4l|armv5tel|armv5tejl)
             RETVAL='arm'
             ;;
+        arm64|aarch64)
+            RETVAL='arm64'
+            ;;
         alpha)
             RETVAL='alpha'
             ;;
@@ -666,7 +669,7 @@ if [ -z "${TESTBOXSCRIPT_PYTHON}" ]; then
     set +e
     MY_PYTHON_VER_TEST="\
 import sys;\
-x = sys.version_info[0] == 2 and (sys.version_info[1] >= 6 or (sys.version_info[1] == 5 and sys.version_info[2] >= 1));\
+x = sys.version_info[0] == 3 or (sys.version_info[0] == 2 and (sys.version_info[1] >= 6 or (sys.version_info[1] == 5 and sys.version_info[2] >= 1)));\
 sys.exit(not x);\
 ";
     for python in python2.7 python2.6 python2.5 python;
