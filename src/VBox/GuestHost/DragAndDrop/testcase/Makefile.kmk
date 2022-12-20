@@ -30,6 +30,8 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
+  include $(PATH_SUB_CURRENT)/tstDragAndDropQt/Makefile.kmk
+
   PROGRAMS += tstDnDTransferObject tstDnDTransferList tstDnDPath
   TESTING  += \
   	$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run \
