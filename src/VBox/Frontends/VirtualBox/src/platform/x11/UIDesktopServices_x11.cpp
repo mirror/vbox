@@ -44,7 +44,7 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
     {
         const QString strVBox = QDir::toNativeSeparators(QCoreApplication::applicationDirPath() + "/" + VBOX_GUI_VMRUNNER_IMAGE);
         QTextStream out(&link);
-#ifndef VBOX_IS_QT6_OR_LATER /* defaults to UTF-8 in qt6 */
+#ifndef VBOX_IS_QT6_OR_LATER /* QTextStream defaults to UTF-8 only since qt6 */
         out.setCodec("UTF-8");
 #endif
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)

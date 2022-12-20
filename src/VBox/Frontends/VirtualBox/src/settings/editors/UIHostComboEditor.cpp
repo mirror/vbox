@@ -92,7 +92,7 @@ public:
     {}
 
     /** Handles all native events. */
-# ifdef VBOX_IS_QT6_OR_LATER
+# ifdef VBOX_IS_QT6_OR_LATER /* long replaced with qintptr since 6.0 */
     virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr *pResult) RT_OVERRIDE
 # else
     virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE
@@ -633,7 +633,7 @@ void UIHostComboEditorPrivate::sltClear()
     emit sigDataChanged();
 }
 
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /* long replaced with qintptr since 6.0 */
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult)
 #else
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)

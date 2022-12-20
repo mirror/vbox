@@ -709,7 +709,7 @@ void UIMiniToolBar::resizeEvent(QResizeEvent*)
     adjustGeometry();
 }
 
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /* QWidget::enterEvent uses QEnterEvent since qt6 */
 void UIMiniToolBar::enterEvent(QEnterEvent*)
 #else
 void UIMiniToolBar::enterEvent(QEvent*)

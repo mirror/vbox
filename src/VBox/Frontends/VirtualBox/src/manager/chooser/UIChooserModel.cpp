@@ -438,7 +438,7 @@ void UIChooserModel::makeSureNoItemWithCertainIdSelected(const QUuid &uId)
             matchedItems << pNode->item();
 
     /* If we have at least one of those items currently selected: */
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /* we have to use range constructors since 6.0 */
     {
         QList<UIChooserItem *> selectedItemsList = selectedItems();
         QSet<UIChooserItem *> selectedItemsSet(selectedItemsList.begin(), selectedItemsList.end());

@@ -34,7 +34,7 @@
 
 /* Qt includes: */
 #include <QWidget>
-#ifndef VBOX_IS_QT6_OR_LATER
+#ifndef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
 # include <QMacCocoaViewContainer>
 #endif
 
@@ -48,7 +48,7 @@ ADD_COCOA_NATIVE_REF(NSButton);
 /** QMacCocoaViewContainer extension,
   * used as cocoa button container. */
 class SHARED_LIBRARY_STUFF UICocoaButton
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
     : public QWidget
 #else
     : public QMacCocoaViewContainer

@@ -33,7 +33,7 @@
 #include <QtXml/QDomDocument>
 #include <QtXml/QDomElement>
 #include <QWidget>
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
 # include <QGuiApplication>
 #else
 # include <QX11Info>
@@ -667,7 +667,7 @@ void NativeWindowSubsystem::X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget)
 
 Display *NativeWindowSubsystem::X11GetDisplay(void)
 {
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
     Display *pDisplay = nullptr;
     if (qApp)
     {
@@ -684,7 +684,7 @@ Display *NativeWindowSubsystem::X11GetDisplay(void)
 
 xcb_connection_t *NativeWindowSubsystem::X11GetConnection(void)
 {
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
     if (qApp)
     {
         QNativeInterface::QX11Application *pX11App = qApp->nativeInterface<QNativeInterface::QX11Application>();
@@ -699,7 +699,7 @@ xcb_connection_t *NativeWindowSubsystem::X11GetConnection(void)
 
 uint32_t NativeWindowSubsystem::X11GetAppRootWindow(void)
 {
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
     Window idWindow = 0;
     Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     if (pDisplay)

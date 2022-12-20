@@ -200,7 +200,7 @@ public slots:
 protected:
 
     /** Handles native events. */
-#ifdef VBOX_IS_QT6_OR_LATER
+#ifdef VBOX_IS_QT6_OR_LATER /* long replaced with qintptr since 6.0 */
     virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult) RT_OVERRIDE;
 #else
     virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE;
