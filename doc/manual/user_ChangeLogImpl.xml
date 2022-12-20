@@ -87,6 +87,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>Storage: Added support for increasing the size of the following VMDK disks: monolithicFlat,
+        monolithicSparse, twoGbMaxExtentSparse, twoGbMaxExtentFlat</para>
+      </listitem
+
+      <listitem>
        <para>Mouse Integration: Provided guest with extended host mouse state</para>
       </listitem>
 
