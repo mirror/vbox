@@ -116,6 +116,24 @@ public:
     /** Adjusts geometry. */
     void adjustGeometry();
 
+protected:
+
+    /** Filters @a pEvent if <i>this</i> object has been
+      * installed as an event-filter for the @a pWatched. */
+    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE;
+
+    /** Resize @a pEvent handler. */
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+
+    /** Mouse enter @a pEvent handler. */
+#ifdef VBOX_IS_QT6_OR_LATER
+    virtual void enterEvent(QEnterEvent *pEvent) RT_OVERRIDE;
+#else
+    virtual void enterEvent(QEvent *pEvent) RT_OVERRIDE;
+#endif
+    /** Mouse leave @a pEvent handler. */
+    virtual void leaveEvent(QEvent *pEvent) RT_OVERRIDE;
+
 private slots:
 
     /** Handles internal widget resize event. */
@@ -147,18 +165,6 @@ private:
     void prepare();
     /** Cleanup routine. */
     void cleanup();
-
-    /** Mouse enter @a pEvent handler. */
-    void enterEvent(QEvent *pEvent);
-    /** Mouse leave @a pEvent handler. */
-    void leaveEvent(QEvent *pEvent);
-
-    /** Resize @a pEvent handler. */
-    void resizeEvent(QResizeEvent *pEvent);
-
-    /** Filters @a pEvent if <i>this</i> object has been
-      * installed as an event-filter for the @a pWatched. */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /** Simulates auto-hide animation. */
     void simulateToolbarAutoHiding();

@@ -560,6 +560,194 @@ void UIMiniToolBar::adjustGeometry()
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
+bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* Detect if we have window activation stolen: */
+    if (pWatched == this && pEvent->type() == QEvent::WindowActivate)
+    {
+#if   defined(VBOX_WS_WIN)
+        /* Just call the method asynchronously, after possible popups opened: */
+        QTimer::singleShot(0, this, SLOT(sltCheckWindowActivationSanity()));
+#elif defined(VBOX_WS_X11)
+        // WORKAROUND:
+        // Under certain WMs we can receive stolen activation event too early,
+        // returning activation to initial source immediately makes no sense.
+        // In fact, Qt is not become aware of actual window activation later,
+        // so we are going to check for window activation in let's say 100ms.
+        QTimer::singleShot(100, this, SLOT(sltCheckWindowActivationSanity()));
+#endif /* VBOX_WS_X11 */
+    }
+
+    /* If that's parent window event: */
+    if (pWatched == m_pParent)
+    {
+        switch (pEvent->type())
+        {
+            case QEvent::Hide:
+            {
+                /* Skip if parent or we are minimized: */
+                if (   isParentMinimized()
+                    || isMinimized())
+                    break;
+
+                /* Asynchronously call for sltHide(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent hide event\n"));
+                QMetaObject::invokeMethod(this, "sltHide", Qt::QueuedConnection);
+                break;
+            }
+            case QEvent::Show:
+            {
+                /* Skip if parent or we are minimized: */
+                if (   isParentMinimized()
+                    || isMinimized())
+                    break;
+
+                /* Asynchronously call for sltShow(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent show event\n"));
+                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
+                break;
+            }
+            case QEvent::Move:
+            {
+                // WORKAROUND:
+                // In certain cases there can be that parent is moving outside of
+                // full-screen geometry. That for example can happen if virtual
+                // desktop being changed. We should ignore Move event in such case.
+                /* Skip if parent is outside of full-screen geometry: */
+                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
+                if (!gpDesktop->screenGeometry(m_pParent).contains(pMoveEvent->pos()))
+                    break;
+                /* Skip if parent or we are invisible: */
+                if (   !m_pParent->isVisible()
+                    || !isVisible())
+                    break;
+                /* Skip if parent or we are minimized: */
+                if (   isParentMinimized()
+                    || isMinimized())
+                    break;
+
+                /* Asynchronously call for sltShow(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move event\n"));
+                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
+                break;
+            }
+            case QEvent::Resize:
+            {
+                /* Skip if parent or we are invisible: */
+                if (   !m_pParent->isVisible()
+                    || !isVisible())
+                    break;
+                /* Skip if parent or we are minimized: */
+                if (   isParentMinimized()
+                    || isMinimized())
+                    break;
+
+                /* Asynchronously call for sltShow(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent resize event\n"));
+                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
+                break;
+            }
+#ifdef VBOX_WS_X11
+            case QEvent::WindowStateChange:
+            {
+                /* Watch for parent window state changes: */
+                QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window state changed from %d to %d\n",
+                         (int)pChangeEvent->oldState(), (int)m_pParent->windowState()));
+
+                if (   m_pParent->windowState() & Qt::WindowMinimized
+                    && !m_fIsParentMinimized)
+                {
+                    /* Mark parent window minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
+                    LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is minimized\n"));
+                    m_fIsParentMinimized = true;
+                }
+                else
+                if (m_fIsParentMinimized)
+                {
+                    switch (m_geometryType)
+                    {
+                        case GeometryType_Available:
+                        {
+                            if (   m_pParent->windowState() == Qt::WindowMaximized
+                                && pChangeEvent->oldState() == Qt::WindowNoState)
+                            {
+                                /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
+                                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is maximized\n"));
+                                m_fIsParentMinimized = false;
+                            }
+                            break;
+                        }
+                        case GeometryType_Full:
+                        {
+                            if (   m_pParent->windowState() == Qt::WindowFullScreen
+                                && pChangeEvent->oldState() == Qt::WindowNoState)
+                            {
+                                /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
+                                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is full-screen\n"));
+                                m_fIsParentMinimized = false;
+                            }
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+#endif /* VBOX_WS_X11 */
+            default:
+                break;
+        }
+    }
+
+    /* Call to base-class: */
+    return QWidget::eventFilter(pWatched, pEvent);
+}
+
+void UIMiniToolBar::resizeEvent(QResizeEvent*)
+{
+    /* Adjust geometry: */
+    adjustGeometry();
+}
+
+#ifdef VBOX_IS_QT6_OR_LATER
+void UIMiniToolBar::enterEvent(QEnterEvent*)
+#else
+void UIMiniToolBar::enterEvent(QEvent*)
+#endif
+{
+    /* Stop the hover-leave timer if necessary: */
+    if (m_pHoverLeaveTimer && m_pHoverLeaveTimer->isActive())
+        m_pHoverLeaveTimer->stop();
+
+    /* Start the hover-enter timer: */
+    if (m_pHoverEnterTimer)
+        m_pHoverEnterTimer->start();
+}
+
+void UIMiniToolBar::leaveEvent(QEvent*)
+{
+    // WORKAROUND:
+    // No idea why, but GUI receives mouse leave event
+    // when the mouse cursor is on the border of screen
+    // even if underlying widget is on the border of
+    // screen as well, we should detect and ignore that.
+    // Besides that, this is a good way to keep the
+    // tool-bar visible when the mouse moving through
+    // the desktop strut till the real screen border.
+    const QPoint cursorPosition = QCursor::pos();
+    if (   cursorPosition.y() <= y() + 1
+        || cursorPosition.y() >= y() + height() - 1)
+        return;
+
+    /* Stop the hover-enter timer if necessary: */
+    if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
+        m_pHoverEnterTimer->stop();
+
+    /* Start the hover-leave timer: */
+    if (m_fAutoHide && m_pHoverLeaveTimer)
+        m_pHoverLeaveTimer->start();
+}
+
 void UIMiniToolBar::sltHandleToolbarResize()
 {
     /* Adjust geometry: */
@@ -980,190 +1168,6 @@ void UIMiniToolBar::cleanup()
     /* Destroy toolbar after animation: */
     delete m_pToolbar;
     m_pToolbar = 0;
-}
-
-void UIMiniToolBar::enterEvent(QEvent*)
-{
-    /* Stop the hover-leave timer if necessary: */
-    if (m_pHoverLeaveTimer && m_pHoverLeaveTimer->isActive())
-        m_pHoverLeaveTimer->stop();
-
-    /* Start the hover-enter timer: */
-    if (m_pHoverEnterTimer)
-        m_pHoverEnterTimer->start();
-}
-
-void UIMiniToolBar::leaveEvent(QEvent*)
-{
-    // WORKAROUND:
-    // No idea why, but GUI receives mouse leave event
-    // when the mouse cursor is on the border of screen
-    // even if underlying widget is on the border of
-    // screen as well, we should detect and ignore that.
-    // Besides that, this is a good way to keep the
-    // tool-bar visible when the mouse moving through
-    // the desktop strut till the real screen border.
-    const QPoint cursorPosition = QCursor::pos();
-    if (   cursorPosition.y() <= y() + 1
-        || cursorPosition.y() >= y() + height() - 1)
-        return;
-
-    /* Stop the hover-enter timer if necessary: */
-    if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
-        m_pHoverEnterTimer->stop();
-
-    /* Start the hover-leave timer: */
-    if (m_fAutoHide && m_pHoverLeaveTimer)
-        m_pHoverLeaveTimer->start();
-}
-
-void UIMiniToolBar::resizeEvent(QResizeEvent*)
-{
-    /* Adjust geometry: */
-    adjustGeometry();
-}
-
-bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    /* Detect if we have window activation stolen: */
-    if (pWatched == this && pEvent->type() == QEvent::WindowActivate)
-    {
-#if   defined(VBOX_WS_WIN)
-        /* Just call the method asynchronously, after possible popups opened: */
-        QTimer::singleShot(0, this, SLOT(sltCheckWindowActivationSanity()));
-#elif defined(VBOX_WS_X11)
-        // WORKAROUND:
-        // Under certain WMs we can receive stolen activation event too early,
-        // returning activation to initial source immediately makes no sense.
-        // In fact, Qt is not become aware of actual window activation later,
-        // so we are going to check for window activation in let's say 100ms.
-        QTimer::singleShot(100, this, SLOT(sltCheckWindowActivationSanity()));
-#endif /* VBOX_WS_X11 */
-    }
-
-    /* If that's parent window event: */
-    if (pWatched == m_pParent)
-    {
-        switch (pEvent->type())
-        {
-            case QEvent::Hide:
-            {
-                /* Skip if parent or we are minimized: */
-                if (   isParentMinimized()
-                    || isMinimized())
-                    break;
-
-                /* Asynchronously call for sltHide(): */
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent hide event\n"));
-                QMetaObject::invokeMethod(this, "sltHide", Qt::QueuedConnection);
-                break;
-            }
-            case QEvent::Show:
-            {
-                /* Skip if parent or we are minimized: */
-                if (   isParentMinimized()
-                    || isMinimized())
-                    break;
-
-                /* Asynchronously call for sltShow(): */
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent show event\n"));
-                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
-                break;
-            }
-            case QEvent::Move:
-            {
-                // WORKAROUND:
-                // In certain cases there can be that parent is moving outside of
-                // full-screen geometry. That for example can happen if virtual
-                // desktop being changed. We should ignore Move event in such case.
-                /* Skip if parent is outside of full-screen geometry: */
-                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
-                if (!gpDesktop->screenGeometry(m_pParent).contains(pMoveEvent->pos()))
-                    break;
-                /* Skip if parent or we are invisible: */
-                if (   !m_pParent->isVisible()
-                    || !isVisible())
-                    break;
-                /* Skip if parent or we are minimized: */
-                if (   isParentMinimized()
-                    || isMinimized())
-                    break;
-
-                /* Asynchronously call for sltShow(): */
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move event\n"));
-                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
-                break;
-            }
-            case QEvent::Resize:
-            {
-                /* Skip if parent or we are invisible: */
-                if (   !m_pParent->isVisible()
-                    || !isVisible())
-                    break;
-                /* Skip if parent or we are minimized: */
-                if (   isParentMinimized()
-                    || isMinimized())
-                    break;
-
-                /* Asynchronously call for sltShow(): */
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent resize event\n"));
-                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
-                break;
-            }
-#ifdef VBOX_WS_X11
-            case QEvent::WindowStateChange:
-            {
-                /* Watch for parent window state changes: */
-                QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window state changed from %d to %d\n",
-                         (int)pChangeEvent->oldState(), (int)m_pParent->windowState()));
-
-                if (   m_pParent->windowState() & Qt::WindowMinimized
-                    && !m_fIsParentMinimized)
-                {
-                    /* Mark parent window minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
-                    LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is minimized\n"));
-                    m_fIsParentMinimized = true;
-                }
-                else
-                if (m_fIsParentMinimized)
-                {
-                    switch (m_geometryType)
-                    {
-                        case GeometryType_Available:
-                        {
-                            if (   m_pParent->windowState() == Qt::WindowMaximized
-                                && pChangeEvent->oldState() == Qt::WindowNoState)
-                            {
-                                /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
-                                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is maximized\n"));
-                                m_fIsParentMinimized = false;
-                            }
-                            break;
-                        }
-                        case GeometryType_Full:
-                        {
-                            if (   m_pParent->windowState() == Qt::WindowFullScreen
-                                && pChangeEvent->oldState() == Qt::WindowNoState)
-                            {
-                                /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
-                                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is full-screen\n"));
-                                m_fIsParentMinimized = false;
-                            }
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-#endif /* VBOX_WS_X11 */
-            default:
-                break;
-        }
-    }
-
-    /* Call to base-class: */
-    return QWidget::eventFilter(pWatched, pEvent);
 }
 
 void UIMiniToolBar::simulateToolbarAutoHiding()
