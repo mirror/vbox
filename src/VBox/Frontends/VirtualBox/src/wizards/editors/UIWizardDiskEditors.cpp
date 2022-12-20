@@ -635,13 +635,8 @@ void UIDiskFormatsGroupBox::createFormatWidgets()
     }
 
     setMediumFormat(m_formatList[0].m_comFormat);
-#ifdef VBOX_IS_QT6_OR_LATER
     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
             this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
-#else
-    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
-            this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
-#endif
 }
 
 
