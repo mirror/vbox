@@ -25,10 +25,6 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#include <QApplication>
-#include <QMainWindow>
-#include <QTextEdit>
-#include <QHBoxLayout>
 #include <QtWidgets>
 
 class DnDWin : public QWidget
