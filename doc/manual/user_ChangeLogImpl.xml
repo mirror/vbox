@@ -99,6 +99,10 @@ Rules for adding a changelog entry to make them look more uniform:
        <para>Linux Host and Guest: Added initial support for RHEL 9.1 kernel</para>
       </listitem>
 
+      <listitem>
+       <para>Windows Host: Fixed support for VM autostart (bug#21349)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
