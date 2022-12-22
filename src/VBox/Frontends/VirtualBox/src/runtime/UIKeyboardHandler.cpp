@@ -1752,15 +1752,10 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         if (uCodesCount)
         {
             /* Send prepared scan-codes to the guest: */
-#ifdef VBOX_IS_QT6_OR_LATER
             QVector<LONG> scancodes;
-            for (uint i = 0; i < uCodesCount; i++)
-                scancodes.push_back(pCodes[i]);
+            for (uint i = 0; i < uCodesCount; ++i)
+                scancodes.append(pCodes[i]);
             keyboard().PutScancodes(scancodes);
-#else
-            std::vector<LONG> scancodes(pCodes, &pCodes[uCodesCount]);
-            keyboard().PutScancodes(QVector<LONG>::fromStdVector(scancodes));
-#endif
         }
 
         /* If full host-key sequence was just finalized: */
@@ -1783,11 +1778,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
 
     Q_UNUSED(iHotKey);
     if (pHotKey && pHotKey[0] && !pHotKey[1])
-# ifdef VBOX_IS_QT6_OR_LATER
         fWasProcessed = actionPool()->processHotKey(QKeySequence(QChar(pHotKey[0]).toUpper().unicode()));
-# else
-        fWasProcessed = actionPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
-# endif
 
 #elif defined(VBOX_WS_WIN)
 
@@ -1821,11 +1812,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
         if (symbol)
         {
             QChar qtSymbol = QString::fromLocal8Bit(&symbol, 1)[0];
-# ifdef VBOX_IS_QT6_OR_LATER
             fWasProcessed = actionPool()->processHotKey(QKeySequence(qtSymbol.toUpper().unicode()));
-# else
-            fWasProcessed = actionPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + qtSymbol.toUpper().unicode())));
-# endif
         }
     }
 
