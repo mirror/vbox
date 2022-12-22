@@ -8377,7 +8377,8 @@ static uint64_t vmdkGetNewOverhead(PVMDKEXTENT pExtent, uint64_t cSectorsNew)
  *
  * @returns VBox status code.
  * @param   pImage              VMDK image instance.
- * @param   uLine                Line number of descriptor to change.
+ * @param   pExtent             VMDK extent instance.
+ * @param   uLine               Line number of descriptor to change.
  * @param   cSectorsOld         Existing number of sectors.
  * @param   cSectorsNew         New number of sectors.
  */
