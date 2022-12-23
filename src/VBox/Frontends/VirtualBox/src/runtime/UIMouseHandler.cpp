@@ -789,7 +789,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
                                    pWheelEvent->position().toPoint(),
 #else
-                                   pWheelEvent->pos()
+                                   pWheelEvent->pos(),
 #endif
                                    pWheelEvent->globalPosition().toPoint(),
 #ifdef VBOX_WS_MAC
