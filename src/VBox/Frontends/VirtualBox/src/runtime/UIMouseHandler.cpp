@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QtMath>
 #include <QMouseEvent>
 #include <QTimer>
 #include <QTouchEvent>
@@ -769,14 +770,13 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * over the speed acceleration & enables such devices to send a valid wheel event to our
                      * guest mouse device at all: */
                     int iDelta = 0;
-#ifdef VBOX_IS_QT6_OR_LATER
-                    Qt::Orientation const enmOrientation = RT_ABS(pWheelEvent->pixelDelta().x())
-                                                         > RT_ABS(pWheelEvent->pixelDelta().y()) ? Qt::Horizontal : Qt::Vertical;
+                    const Qt::Orientation enmOrientation = qFabs(pWheelEvent->angleDelta().x())
+                                                         > qFabs(pWheelEvent->angleDelta().y())
+                                                         ? Qt::Horizontal
+                                                         : Qt::Vertical;
                     m_iLastMouseWheelDelta += enmOrientation == Qt::Horizontal
-                                            ? pWheelEvent->pixelDelta().x() : pWheelEvent->pixelDelta().y();
-#else
-                    m_iLastMouseWheelDelta += pWheelEvent->delta();
-#endif
+                                            ? pWheelEvent->angleDelta().x()
+                                            : pWheelEvent->angleDelta().y();
                     if (qAbs(m_iLastMouseWheelDelta) >= 120)
                     {
                         /* Rounding iDelta to the nearest multiple of 120: */
@@ -784,26 +784,25 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         iDelta *= 120;
                         m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
                     }
-                    if (mouseEvent(pWheelEvent->type(), uScreenId,
-#ifdef VBOX_IS_QT6_OR_LATER
-                                   pWheelEvent->position().toPoint(), pWheelEvent->globalPosition().toPoint(),
+                    if (mouseEvent(pWheelEvent->type(),
+                                   uScreenId,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+                                   pWheelEvent->position().toPoint(),
 #else
-                                   pWheelEvent->pos(), pWheelEvent->globalPos(),
+                                   pWheelEvent->pos()
 #endif
+                                   pWheelEvent->globalPosition().toPoint(),
 #ifdef VBOX_WS_MAC
-                                   /* Qt Cocoa is buggy. It always reports a left button pressed when the
-                                    * mouse wheel event occurs. A workaround is to ask the application which
-                                    * buttons are pressed currently: */
+                                   // WORKAROUND:
+                                   // Qt Cocoa is buggy. It always reports a left button pressed when the
+                                   // mouse wheel event occurs. A workaround is to ask the application which
+                                   // buttons are pressed currently:
                                    QApplication::mouseButtons(),
 #else /* !VBOX_WS_MAC */
                                    pWheelEvent->buttons(),
 #endif /* !VBOX_WS_MAC */
                                    iDelta,
-#ifdef VBOX_IS_QT6_OR_LATER
                                    enmOrientation)
-#else
-                                   pWheelEvent->orientation())
-#endif
                                    )
                         return true;
                     break;
