@@ -119,7 +119,6 @@ typedef IMAGE_UNWIND_INFO const *PCIMAGE_UNWIND_INFO;
 
 
 #ifdef RT_ARCH_AMD64
-
 /**
  * The Visual C++ 2019 layout of the GS_HANDLER_DATA data type for AMD64.
  *
@@ -149,13 +148,97 @@ typedef struct _GS_HANDLER_DATA
 } GS_HANDLER_DATA;
 typedef GS_HANDLER_DATA *PGS_HANDLER_DATA;
 typedef GS_HANDLER_DATA const *PCGS_HANDLER_DATA;
-#endif
+#endif /* RT_ARCH_AMD64 */
 
 #ifdef RT_ARCH_X86
 void __fastcall __security_check_cookie(uintptr_t uCookieToCheck);
 #else
 void __cdecl    __security_check_cookie(uintptr_t uCookieToCheck);
 #endif
+
+
+#ifdef RT_ARCH_X86
+
+/**
+ * Exception registration record for _except_handler4 users
+ * (aka EH4_EXCEPTION_REGISTRATION_RECORD).
+ *
+ * This record is emitted immediately following the stack frame setup, i.e.
+ * after doing PUSH EBP and MOV EBP, ESP.  So, EBP equals the address following
+ * this structure.
+ */
+typedef struct EH4_XCPT_REG_REC_T
+{
+    /** The saved ESP after setting up the stack frame and before the __try. */
+    uintptr_t                       uSavedEsp;
+    PEXCEPTION_POINTERS             pXctpPtrs;
+    /** The SEH exception registration record (chained). */
+    EXCEPTION_REGISTRATION_RECORD   XcptRec;
+    uintptr_t                       uEncodedScopeTable;
+    uint32_t                        uTryLevel;
+    /* uintptr_t                    uSavedCallerEbp; */
+} EH4_XCPT_REG_REC_T;
+AssertCompileSize(EH4_XCPT_REG_REC_T, 24);
+/** Pointer to an exception registration record for _except_handler4 (aka
+ *  PEH4_EXCEPTION_REGISTRATION_RECORD). */
+typedef EH4_XCPT_REG_REC_T *PEH4_XCPT_REG_REC_T;
+
+
+/** Exception filter function for _except_handler4 users (aka
+ * PEXCEPTION_FILTER_X86). */
+typedef uint32_t (__cdecl *PFN_EH4_XCPT_FILTER_T)(void);
+/** Exception handler block function for _except_handler4 users (aka
+ * PEXCEPTION_HANDLER_X86). */
+typedef void     (__cdecl *PFN_EH4_XCPT_HANDLER_T)(void);
+/** Exception finally block function for _except_handler4 users (aka
+ * PTERMINATION_HANDLER_X86).
+ */
+typedef void  (__fastcall *PFN_EH4_FINALLY_T)(BOOL fAbend);
+
+/**
+ * Scope table record describing  __try / __except / __finally blocks (aka
+ * EH4_SCOPETABLE_RECORD).
+ */
+typedef struct EH4_SCOPE_TAB_REC_T
+{
+    uint32_t                    uEnclosingLevel;
+    /** Pointer to the filter sub-function if this is a __try/__except, NULL for
+     *  __try/__finally. */
+    PFN_EH4_XCPT_FILTER_T       pfnFilter;
+    union
+    {
+        PFN_EH4_XCPT_HANDLER_T  pfnHandler;
+        PFN_EH4_FINALLY_T       pfnFinally;
+    };
+} EH4_SCOPE_TAB_REC_T;
+AssertCompileSize(EH4_SCOPE_TAB_REC_T, 12);
+/** Pointer to a const _except_handler4 scope table entry. */
+typedef EH4_SCOPE_TAB_REC_T const *PCEH4_SCOPE_TAB_REC_T;
+
+/** Special EH4_SCOPE_TAB_REC_T::uEnclosingLevel used to terminate the chain. */
+#define EH4_TOPMOST_TRY_LEVEL   UINT32_C(0xfffffffe)
+
+/**
+ * Scope table used by _except_handler4 (aka EH4_SCOPETABLE).
+ */
+typedef struct EH4_SCOPE_TAB_T
+{
+    uint32_t                    offGSCookie;
+    uint32_t                    offGSCookieXor;
+    uint32_t                    offEHCookie;
+    uint32_t                    offEHCookieXor;
+    EH4_SCOPE_TAB_REC_T         aScopeRecords[RT_FLEXIBLE_ARRAY];
+} EH4_SCOPE_TAB_T;
+AssertCompileMemberOffset(EH4_SCOPE_TAB_T, aScopeRecords, 16);
+/** Pointer to a const _except_handler4 scope table. */
+typedef EH4_SCOPE_TAB_T const *PCEH4_SCOPE_TAB_T;
+
+/** Special EH4_SCOPE_TAB_T::offGSCookie value. */
+# define EH4_NO_GS_COOKIE       UINT32_C(0xfffffffe)
+
+#endif /* RT_ARCH_X86 */
+
+
 
 #if defined(RT_ARCH_AMD64)
 EXCEPTION_DISPOSITION __C_specific_handler(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec,

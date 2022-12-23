@@ -212,8 +212,10 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   PROGRAMS += \
   	tstNoCrt-1
   if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64) ## Build and test x86 too!
-   PROGRAMS += \
-   	tstRTNoCrt-2
+   PROGRAMS += tstRTNoCrt-2
+  endif
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
+   PROGRAMS += tstRTNoCrt-3 tstRTNoCrt-3r
   endif
  endif
 
@@ -712,6 +714,20 @@ tstRTNoCrt-2_SOURCES += \
 	../common/math/trunc.asm \
 	../common/math/truncf.asm
 endif
+
+#
+# For testing no-CRT exception handling we need to use the static build,
+# assuming ofc that VBOX_WITH_NOCRT_STATIC is in effect.
+#
+TEMPLATE_VBoxR3TstExeStatic         := Testcase for the static (no-CRT) libraries.
+TEMPLATE_VBoxR3TstExeStatic_EXTENDS := VBoxR3Static
+TEMPLATE_VBoxR3TstExeStatic_INST     = $(INST_TESTCASE)
+
+tstRTNoCrt-3_TEMPLATE := VBoxR3TstExeStatic
+tstRTNoCrt-3_SOURCES  := tstRTNoCrt-3.cpp
+
+tstRTNoCrt-3r_TEMPLATE := VBOXR3TSTEXE
+tstRTNoCrt-3r_SOURCES  := tstRTNoCrt-3.cpp
 
 tstRTNtPath-1_TEMPLATE = VBOXR3TSTEXE
 tstRTNtPath-1_SOURCES = tstRTNtPath-1.cpp

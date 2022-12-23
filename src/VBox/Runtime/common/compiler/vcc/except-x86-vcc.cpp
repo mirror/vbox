@@ -40,13 +40,197 @@
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
 
+#include "except-vcc.h"
 
-extern "C" __declspec(guard(suppress))
-DWORD _except_handler4(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, PCONTEXT pCtxRec, PVOID pvCtx)
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+extern "C" uintptr_t __security_cookie;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+DECLASM(LONG)                   rtVccEh4DoFiltering(PFN_EH4_XCPT_FILTER_T pfnFilter, uint8_t const *pbFrame);
+DECLASM(DECL_NO_RETURN(void))   rtVccEh4JumpToHandler(PFN_EH4_XCPT_HANDLER_T pfnHandler, uint8_t const *pbFrame);
+//DECLASM(void)                   rtVccEh4DoLocalUnwind(PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, uint32_t uTargetTryLevel,
+//                                                      uint8_t const *pbFrame, uintptr_t *pSecurityCookie);
+DECLASM(void)                   rtVccEh4DoGlobalUnwind(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec);
+DECLASM(void)                   rtVccEh4DoFinally(PFN_EH4_FINALLY_T pfnFinally, bool fAbend, uint8_t const *pbFrame);
+
+
+static void rtVccEh4DoLocalUnwind(PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, uint32_t uTargetTryLevel,
+                                  uint8_t const *pbFrame, uintptr_t *pSecurityCookie)
 {
-    RT_NOREF(pXcptRec, pXcptRegRec, pCtxRec, pvCtx);
+    /*
+     * Manually set up exception handler.
+     */
+    /** @todo    */
+
+    /*
+     * Do the unwinding.
+     */
+    PEH4_XCPT_REG_REC_T pEh4XcptRegRec = RT_FROM_MEMBER(pXcptRegRec, EH4_XCPT_REG_REC_T, XcptRec);
+    uint32_t            uCurTryLevel   = pEh4XcptRegRec->uTryLevel;
+    while (   uCurTryLevel != EH4_TOPMOST_TRY_LEVEL
+           && (   uCurTryLevel > uTargetTryLevel
+               || uTargetTryLevel == EH4_TOPMOST_TRY_LEVEL /* if we knew what 0xffffffff meant, this could probably be omitted */ ))
+    {
+        PCEH4_SCOPE_TAB_T const pScopeTable = (PCEH4_SCOPE_TAB_T)(pEh4XcptRegRec->uEncodedScopeTable ^ *pSecurityCookie);
+        PCEH4_SCOPE_TAB_REC_T const pEntry  = &pScopeTable->aScopeRecords[uCurTryLevel];
+
+        pEh4XcptRegRec->uTryLevel = uCurTryLevel = pEntry->uEnclosingLevel;
+
+        /* __finally scope table entries have no filter sub-function. */
+        if (!pEntry->pfnFilter)
+        {
+            //RTAssertMsg2("rtVccEh4DoLocalUnwind: Calling %p (level %#x)\n", pEntry->pfnFinally, uCurTryLevel);
+            rtVccEh4DoFinally(pEntry->pfnFinally, true /*fAbend*/, pbFrame);
+
+            /* Read the try level again in case it changed... */
+            uCurTryLevel = pEh4XcptRegRec->uTryLevel;
+        }
+    }
+
+    /*
+     * Deregister exception handler.
+     */
     /** @todo */
-    __debugbreak();
-    return 0;
+}
+
+
+DECLINLINE(void) rtVccValidateExceptionContextRecord(PCONTEXT pCpuCtx)
+{
+    RT_NOREF(pCpuCtx);
+    /** @todo  Implement __exception_validate_context_record .*/
+}
+
+
+DECLINLINE(void) rtVccEh4ValidateCookies(PCEH4_SCOPE_TAB_T pScopeTable, uint8_t const *pbFrame)
+{
+    if (pScopeTable->offGSCookie != EH4_NO_GS_COOKIE)
+    {
+        uintptr_t uGsCookie = *(uintptr_t const *)&pbFrame[pScopeTable->offGSCookie];
+        uGsCookie          ^=          (uintptr_t)&pbFrame[pScopeTable->offGSCookieXor];
+        __security_check_cookie(uGsCookie);
+    }
+
+    uintptr_t uEhCookie = *(uintptr_t const *)&pbFrame[pScopeTable->offEHCookie];
+    uEhCookie          ^=          (uintptr_t)&pbFrame[pScopeTable->offEHCookieXor];
+    __security_check_cookie(uEhCookie);
+}
+
+
+/**
+ * Call exception filters, handlers and unwind code for x86 code.
+ *
+ * This is called for windows' structured exception handling (SEH) in x86 32-bit
+ * code, i.e. the __try/__except/__finally stuff in Visual C++.  The compiler
+ * generate scope records for the __try/__except blocks as well as unwind
+ * records for __finally and probably C++ stack object destructors.
+ *
+ * @returns Exception disposition.
+ * @param   pXcptRec    The exception record.
+ * @param   pXcptRegRec The exception registration record, taken to be the frame
+ *                      address.
+ * @param   pCpuCtx     The CPU context for the exception.
+ * @param   pDispCtx    Dispatcher context.
+ */
+extern "C" __declspec(guard(suppress))
+DWORD _except_handler4(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, PCONTEXT pCpuCtx, PVOID pvCtx)
+{
+    /*
+     * The registration record (probably chained on FS:[0] like in the OS/2 days)
+     * points to a larger structure specific to _except_handler4.  The structure
+     * is planted right after the saved caller EBP value when establishing the
+     * stack frame, so EBP = pXcptRegRec + 1;
+     */
+    PEH4_XCPT_REG_REC_T const pEh4XcptRegRec = RT_FROM_MEMBER(pXcptRegRec, EH4_XCPT_REG_REC_T, XcptRec);
+    uint8_t * const           pbFrame        = (uint8_t *)&pEh4XcptRegRec[1];
+    PCEH4_SCOPE_TAB_T const   pScopeTable    = (PCEH4_SCOPE_TAB_T)(pEh4XcptRegRec->uEncodedScopeTable ^ __security_cookie);
+
+    /*
+     * Validate the stack cookie and exception context.
+     */
+    rtVccEh4ValidateCookies(pScopeTable, pbFrame);
+    rtVccValidateExceptionContextRecord(pCpuCtx);
+
+    /*
+     * If dispatching an exception, call the exception filter functions and jump
+     * to the __except blocks if so directed.
+     */
+    if (IS_DISPATCHING(pXcptRec->ExceptionFlags))
+    {
+        uint32_t uTryLevel = pEh4XcptRegRec->uTryLevel;
+        //RTAssertMsg2("_except_handler4: dispatch: uTryLevel=%#x\n", uTryLevel);
+        while (uTryLevel != EH4_TOPMOST_TRY_LEVEL)
+        {
+            PCEH4_SCOPE_TAB_REC_T const pEntry    = &pScopeTable->aScopeRecords[uTryLevel];
+            PFN_EH4_XCPT_FILTER_T const pfnFilter = pEntry->pfnFilter;
+            if (pfnFilter)
+            {
+                /* Call the __except filtering expression: */
+                //RTAssertMsg2("_except_handler4: Calling pfnFilter=%p\n", pfnFilter);
+                EXCEPTION_POINTERS XcptPtrs = { pXcptRec, pCpuCtx };
+                pEh4XcptRegRec->pXctpPtrs = &XcptPtrs;
+                LONG lRet = rtVccEh4DoFiltering(pfnFilter, pbFrame);
+                pEh4XcptRegRec->pXctpPtrs = NULL;
+                //RTAssertMsg2("_except_handler4: pfnFilter=%p -> %ld\n", pfnFilter, lRet);
+                rtVccEh4ValidateCookies(pScopeTable, pbFrame);
+
+                /* Return if we're supposed to continue execution (the convention
+                   it to match negative values rather than the exact defined value):  */
+                AssertCompile(EXCEPTION_CONTINUE_EXECUTION == -1);
+                if (lRet <= EXCEPTION_CONTINUE_EXECUTION)
+                    return ExceptionContinueExecution;
+
+                /* Similarly, the handler is executed for any positive value. */
+                AssertCompile(EXCEPTION_CONTINUE_SEARCH == 0);
+                AssertCompile(EXCEPTION_EXECUTE_HANDLER == 1);
+                if (lRet >= EXCEPTION_EXECUTE_HANDLER)
+                {
+                    /* We're about to resume execution in the __except block, so unwind
+                       up to it first. */
+                    //RTAssertMsg2("_except_handler4: global unwind\n");
+                    rtVccEh4DoGlobalUnwind(pXcptRec, &pEh4XcptRegRec->XcptRec);
+                    if (pEh4XcptRegRec->uTryLevel != EH4_TOPMOST_TRY_LEVEL)
+                    {
+                        //RTAssertMsg2("_except_handler4: local unwind\n");
+                        rtVccEh4DoLocalUnwind(&pEh4XcptRegRec->XcptRec, uTryLevel, pbFrame, &__security_cookie);
+                    }
+                    rtVccEh4ValidateCookies(pScopeTable, pbFrame);
+
+                    /* Now jump to the __except block.  This will _not_ return. */
+                    //RTAssertMsg2("_except_handler4: jumping to __except block %p (level %#x)\n", pEntry->pfnHandler, pEntry->uEnclosingLevel);
+                    pEh4XcptRegRec->uTryLevel = pEntry->uEnclosingLevel;
+                    rtVccEh4ValidateCookies(pScopeTable, pbFrame); /* paranoia^2 */
+
+                    rtVccEh4JumpToHandler(pEntry->pfnHandler, pbFrame);
+                    /* (not reached) */
+                }
+            }
+
+            /*
+             * Next try level.
+             */
+            uTryLevel = pEntry->uEnclosingLevel;
+        }
+    }
+    /*
+     * If not dispatching we're unwinding, so we call any __finally blocks.
+     */
+    else
+    {
+        //RTAssertMsg2("_except_handler4: unwind: uTryLevel=%#x\n", pEh4XcptRegRec->uTryLevel);
+        if (pEh4XcptRegRec->uTryLevel != EH4_TOPMOST_TRY_LEVEL)
+        {
+            rtVccEh4DoLocalUnwind(&pEh4XcptRegRec->XcptRec, EH4_TOPMOST_TRY_LEVEL, pbFrame, &__security_cookie);
+            rtVccEh4ValidateCookies(pScopeTable, pbFrame);
+        }
+    }
+
+    RT_NOREF(pvCtx);
+    return ExceptionContinueSearch;
 }
 
