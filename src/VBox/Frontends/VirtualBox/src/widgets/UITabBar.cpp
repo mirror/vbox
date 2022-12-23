@@ -611,20 +611,7 @@ void UITabBarItem::leaveEvent(QEvent *pEvent)
 {
     /* Make sure button is hovered: */
     if (!m_fHovered)
-    {
-#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: Code duplication of enterEvent; split out in separate method (complete wast of time to cook up a QEnterEvent here). */
-# ifdef VBOX_WS_MAC
-        m_pLayoutStacked->setCurrentWidget(m_pButtonClose);
-# endif
-        m_fHovered = true;
-        /* And call for repaint: */
-        update();
-        RT_NOREF(pEvent);
-        return;
-#else
-        return QWidget::enterEvent(pEvent);
-#endif
-    }
+        return QWidget::leaveEvent(pEvent);
 
     /* Invert hovered state: */
 #ifdef VBOX_WS_MAC
