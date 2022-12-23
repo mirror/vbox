@@ -54,14 +54,19 @@ extern "C" uintptr_t __security_cookie;
 *********************************************************************************************************************************/
 DECLASM(LONG)                   rtVccEh4DoFiltering(PFN_EH4_XCPT_FILTER_T pfnFilter, uint8_t const *pbFrame);
 DECLASM(DECL_NO_RETURN(void))   rtVccEh4JumpToHandler(PFN_EH4_XCPT_HANDLER_T pfnHandler, uint8_t const *pbFrame);
-//DECLASM(void)                   rtVccEh4DoLocalUnwind(PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, uint32_t uTargetTryLevel,
-//                                                      uint8_t const *pbFrame, uintptr_t *pSecurityCookie);
 DECLASM(void)                   rtVccEh4DoGlobalUnwind(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec);
 DECLASM(void)                   rtVccEh4DoFinally(PFN_EH4_FINALLY_T pfnFinally, bool fAbend, uint8_t const *pbFrame);
 
 
-static void rtVccEh4DoLocalUnwind(PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, uint32_t uTargetTryLevel,
-                                  uint8_t const *pbFrame, uintptr_t *pSecurityCookie)
+/**
+ * Calls the __finally blocks up to @a uTargetTryLevel is reached, starting with
+ * @a pEh4XcptRegRec->uTryLevel.
+ *
+ * @param   pEh4XcptRegRec  The EH4 exception registration record.
+ * @param   uTargetTryLevel The target __try level to stop unwinding at.
+ * @param   pbFrame         The frame pointer (EBP).
+ */
+static void rtVccEh4DoLocalUnwind(PEH4_XCPT_REG_REC_T pEh4XcptRegRec, uint32_t uTargetTryLevel, uint8_t const *pbFrame)
 {
     /*
      * Manually set up exception handler.
@@ -71,13 +76,12 @@ static void rtVccEh4DoLocalUnwind(PEXCEPTION_REGISTRATION_RECORD pXcptRegRec, ui
     /*
      * Do the unwinding.
      */
-    PEH4_XCPT_REG_REC_T pEh4XcptRegRec = RT_FROM_MEMBER(pXcptRegRec, EH4_XCPT_REG_REC_T, XcptRec);
-    uint32_t            uCurTryLevel   = pEh4XcptRegRec->uTryLevel;
+    uint32_t uCurTryLevel = pEh4XcptRegRec->uTryLevel;
     while (   uCurTryLevel != EH4_TOPMOST_TRY_LEVEL
            && (   uCurTryLevel > uTargetTryLevel
                || uTargetTryLevel == EH4_TOPMOST_TRY_LEVEL /* if we knew what 0xffffffff meant, this could probably be omitted */ ))
     {
-        PCEH4_SCOPE_TAB_T const pScopeTable = (PCEH4_SCOPE_TAB_T)(pEh4XcptRegRec->uEncodedScopeTable ^ *pSecurityCookie);
+        PCEH4_SCOPE_TAB_T const pScopeTable = (PCEH4_SCOPE_TAB_T)(pEh4XcptRegRec->uEncodedScopeTable ^ __security_cookie);
         PCEH4_SCOPE_TAB_REC_T const pEntry  = &pScopeTable->aScopeRecords[uCurTryLevel];
 
         pEh4XcptRegRec->uTryLevel = uCurTryLevel = pEntry->uEnclosingLevel;
@@ -107,6 +111,9 @@ DECLINLINE(void) rtVccValidateExceptionContextRecord(PCONTEXT pCpuCtx)
 }
 
 
+/**
+ * Helper that validates stack cookies.
+ */
 DECLINLINE(void) rtVccEh4ValidateCookies(PCEH4_SCOPE_TAB_T pScopeTable, uint8_t const *pbFrame)
 {
     if (pScopeTable->offGSCookie != EH4_NO_GS_COOKIE)
@@ -197,7 +204,7 @@ DWORD _except_handler4(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECOR
                     if (pEh4XcptRegRec->uTryLevel != EH4_TOPMOST_TRY_LEVEL)
                     {
                         //RTAssertMsg2("_except_handler4: local unwind\n");
-                        rtVccEh4DoLocalUnwind(&pEh4XcptRegRec->XcptRec, uTryLevel, pbFrame, &__security_cookie);
+                        rtVccEh4DoLocalUnwind(pEh4XcptRegRec, uTryLevel, pbFrame);
                     }
                     rtVccEh4ValidateCookies(pScopeTable, pbFrame);
 
@@ -225,7 +232,7 @@ DWORD _except_handler4(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECOR
         //RTAssertMsg2("_except_handler4: unwind: uTryLevel=%#x\n", pEh4XcptRegRec->uTryLevel);
         if (pEh4XcptRegRec->uTryLevel != EH4_TOPMOST_TRY_LEVEL)
         {
-            rtVccEh4DoLocalUnwind(&pEh4XcptRegRec->XcptRec, EH4_TOPMOST_TRY_LEVEL, pbFrame, &__security_cookie);
+            rtVccEh4DoLocalUnwind(pEh4XcptRegRec, EH4_TOPMOST_TRY_LEVEL, pbFrame);
             rtVccEh4ValidateCookies(pScopeTable, pbFrame);
         }
     }
