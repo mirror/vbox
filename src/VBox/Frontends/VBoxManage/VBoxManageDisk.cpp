@@ -1004,6 +1004,7 @@ static const RTGETOPTDEF g_aCloneMediumOptions[] =
     { "--existing",     'E', RTGETOPT_REQ_NOTHING },
     { "--variant",      'm', RTGETOPT_REQ_STRING },
     { "-variant",       'm', RTGETOPT_REQ_STRING },
+    { "--resize",       'r', RTGETOPT_REQ_UINT64 },
 };
 
 RTEXITCODE handleCloneMedium(HandlerArg *a)
@@ -1021,6 +1022,8 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
     Bstr format;
     MediumVariant_T enmMediumVariant = MediumVariant_Standard;
     bool fExisting = false;
+    bool fNeedResize = false;
+    uint64_t cbResize = 0;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -1070,6 +1073,11 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
                 vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
                 if (RT_FAILURE(vrc))
                     return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
+                break;
+
+            case 'r':   // --resize
+                fNeedResize = true;
+                cbResize = ValueUnion.u64 * _1M;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1190,7 +1198,15 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
             l_variants [i] = (MediumVariant_T)temp;
         }
 
-        CHECK_ERROR_BREAK(pSrcMedium, CloneTo(pDstMedium, ComSafeArrayAsInParam(l_variants), NULL, pProgress.asOutParam()));
+        if (fNeedResize)
+        {
+            CHECK_ERROR_BREAK(pSrcMedium, ResizeAndCloneTo(pDstMedium, cbResize, ComSafeArrayAsInParam(l_variants), NULL, pProgress.asOutParam()));
+        }
+        else
+        {
+            CHECK_ERROR_BREAK(pSrcMedium, CloneTo(pDstMedium, ComSafeArrayAsInParam(l_variants), NULL, pProgress.asOutParam()));
+        }
+
 
         hrc = showProgress(pProgress);
         CHECK_PROGRESS_ERROR_BREAK(pProgress, (Disk::tr("Failed to clone medium")));

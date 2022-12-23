@@ -63,6 +63,7 @@
         <arg choice="plain">floppy</arg>
       </group>
       <arg>--existing</arg>
+      <arg>--resize=<replaceable>size-in-MB</replaceable></arg>
       <arg>--format=<group choice="plain">
           <arg choice="plain">VDI</arg>
           <arg choice="plain">VMDK</arg>
@@ -130,6 +131,13 @@
           </para><para>
             If the target medium is larger than the source, the
             remaining part of the target medium is unchanged.
+          </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--resize=<replaceable>size-in-MB</replaceable></option></term>
+          <listitem><para>
+            Performs a resize of the target medium to the specified
+            size before performing the clone operation.
           </para></listitem>
       </varlistentry>
       <varlistentry>
