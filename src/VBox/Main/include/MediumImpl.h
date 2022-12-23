@@ -316,11 +316,6 @@ private:
                     const std::vector<MediumVariant_T> &aVariant,
                     const ComPtr<IMedium> &aParent,
                     ComPtr<IProgress> &aProgress);
-    HRESULT resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
-                             const LONG64 aLogicalSize,
-                             const std::vector<MediumVariant_T> &aVariant,
-                             const ComPtr<IMedium> &aParent,
-                             ComPtr<IProgress> &aProgress);
     HRESULT cloneToBase(const ComPtr<IMedium> &aTarget,
                         const std::vector<MediumVariant_T> &aVariant,
                         ComPtr<IProgress> &aProgress);
