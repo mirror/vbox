@@ -97,15 +97,6 @@ namespace NativeWindowSubsystem
     /** X11: Determines and returns current Window Manager type. */
     X11WMType X11WindowManagerType();
 
-#if 0 // unused for now?
-    /** X11: Inits the screen saver save/restore mechanism. */
-    SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsInit();
-    /** X11: Saves screen saver settings. */
-    SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsSave();
-    /** X11: Restores previously saved screen saver settings. */
-    SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsRestore();
-#endif // unused for now?
-
     /** X11: Returns true if XLib extension with name @p extensionName is avaible, false otherwise. */
     bool X11CheckExtension(const char *extensionName);
 
