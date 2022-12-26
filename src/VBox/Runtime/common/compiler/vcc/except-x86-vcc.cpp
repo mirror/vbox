@@ -38,9 +38,35 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 
+#include "internal/compiler-vcc.h"
 #include "except-vcc.h"
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Extended exception registration record used by rtVccEh4DoLocalUnwind
+ * and rtVccEh4DoLocalUnwindHandler.
+ */
+typedef struct EH4_LOCAL_UNWIND_XCPT_REG
+{
+    /** Security cookie. */
+    uintptr_t                       uEHCookieFront;
+    /** The actual registration record.   */
+    EXCEPTION_REGISTRATION_RECORD   XcptRegRec;
+    /** @name rtVccEh4DoLocalUnwind parameters
+     * @{ */
+    PEH4_XCPT_REG_REC_T             pEh4XcptRegRec;
+    uint32_t                        uTargetTryLevel;
+    uint8_t const                  *pbFrame;
+    /** @} */
+    /** Security cookie. */
+    uintptr_t                       uEHCookieBack;
+} EH4_LOCAL_UNWIND_XCPT_REG;
+
 
 
 /*********************************************************************************************************************************
@@ -56,7 +82,14 @@ DECLASM(LONG)                   rtVccEh4DoFiltering(PFN_EH4_XCPT_FILTER_T pfnFil
 DECLASM(DECL_NO_RETURN(void))   rtVccEh4JumpToHandler(PFN_EH4_XCPT_HANDLER_T pfnHandler, uint8_t const *pbFrame);
 DECLASM(void)                   rtVccEh4DoGlobalUnwind(PEXCEPTION_RECORD pXcptRec, PEXCEPTION_REGISTRATION_RECORD pXcptRegRec);
 DECLASM(void)                   rtVccEh4DoFinally(PFN_EH4_FINALLY_T pfnFinally, bool fAbend, uint8_t const *pbFrame);
+extern "C" EXCEPTION_DISPOSITION __stdcall
+rtVccEh4DoLocalUnwindHandler(PEXCEPTION_RECORD pXcptRec, PVOID pvEstFrame, PCONTEXT pCpuCtx, PVOID pvDispCtx);
 
+
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4733)  /* warning C4733: Inline asm assigning to 'FS:0': handler not registered as safe handler */
+#endif
 
 /**
  * Calls the __finally blocks up to @a uTargetTryLevel is reached, starting with
@@ -71,7 +104,19 @@ static void rtVccEh4DoLocalUnwind(PEH4_XCPT_REG_REC_T pEh4XcptRegRec, uint32_t u
     /*
      * Manually set up exception handler.
      */
-    /** @todo    */
+    EH4_LOCAL_UNWIND_XCPT_REG RegRec =
+    {
+        __security_cookie ^ (uintptr_t)&RegRec,
+        {
+            (EXCEPTION_REGISTRATION_RECORD *)__readfsdword(RT_UOFFSETOF(NT_TIB, ExceptionList)),
+            rtVccEh4DoLocalUnwindHandler /* safeseh (.sxdata) entry emitted by except-x86-vcc-asm.asm */
+        },
+        pEh4XcptRegRec,
+        uTargetTryLevel,
+        pbFrame,
+        __security_cookie ^ (uintptr_t)&RegRec
+    };
+    __writefsdword(RT_UOFFSETOF(NT_TIB, ExceptionList), (uintptr_t)&RegRec.XcptRegRec);
 
     /*
      * Do the unwinding.
@@ -100,14 +145,55 @@ static void rtVccEh4DoLocalUnwind(PEH4_XCPT_REG_REC_T pEh4XcptRegRec, uint32_t u
     /*
      * Deregister exception handler.
      */
-    /** @todo */
+    __writefsdword(RT_UOFFSETOF(NT_TIB, ExceptionList), (uintptr_t)RegRec.XcptRegRec.Next);
+}
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
+
+/**
+ * Exception handler for rtVccEh4DoLocalUnwind.
+ */
+EXCEPTION_DISPOSITION __stdcall
+rtVccEh4DoLocalUnwindHandler(PEXCEPTION_RECORD pXcptRec, PVOID pvEstFrame, PCONTEXT pCpuCtx, PVOID pvDispCtx)
+{
+    EH4_LOCAL_UNWIND_XCPT_REG *pMyRegRec = RT_FROM_MEMBER(pvEstFrame, EH4_LOCAL_UNWIND_XCPT_REG, XcptRegRec);
+    __security_check_cookie(pMyRegRec->uEHCookieFront ^ (uintptr_t)pMyRegRec);
+    __security_check_cookie(pMyRegRec->uEHCookieBack  ^ (uintptr_t)pMyRegRec);
+
+    /*
+     * This is a little sketchy as it isn't all that well documented by the OS
+     * vendor, but if invoked while unwinding, we return ExceptionCollidedUnwind
+     * and update the *ppDispCtx value to point to the colliding one.
+     */
+    if (pXcptRec->ExceptionFlags & (EXCEPTION_UNWINDING | EXCEPTION_EXIT_UNWIND))
+    {
+        rtVccEh4DoLocalUnwind(pMyRegRec->pEh4XcptRegRec, pMyRegRec->uTargetTryLevel, pMyRegRec->pbFrame);
+
+        PEXCEPTION_REGISTRATION_RECORD *ppDispCtx = (PEXCEPTION_REGISTRATION_RECORD *)pvDispCtx;
+        *ppDispCtx = &pMyRegRec->XcptRegRec;
+        return ExceptionCollidedUnwind;
+    }
+
+    /*
+     * In all other cases we do nothing special.
+     */
+    RT_NOREF(pCpuCtx);
+    return ExceptionContinueSearch;
 }
 
 
+/**
+ * This validates the CPU context, may terminate the application if invalid.
+ */
 DECLINLINE(void) rtVccValidateExceptionContextRecord(PCONTEXT pCpuCtx)
 {
-    RT_NOREF(pCpuCtx);
-    /** @todo  Implement __exception_validate_context_record .*/
+    if (RT_LIKELY(   !rtVccIsGuardICallChecksActive()
+                  || rtVccIsPointerOnTheStack(pCpuCtx->Esp)))
+    { /* likely */ }
+    else
+        rtVccCheckContextFailed(pCpuCtx);
 }
 
 

@@ -55,7 +55,6 @@ extern uintptr_t    __security_cookie;          /**< nocrt-stack-win.asm */
 extern uintptr_t    __safe_se_handler_table[];  /**< Linker generated. */
 extern uint8_t      __safe_se_handler_count;    /**< Absolute "address" defined by the linker representing the table size. */
 #endif
-extern uintptr_t    __guard_check_icall_fptr;   /**< nocrt-guard-win.asm */
 #ifdef RT_ARCH_AMD64
 extern uintptr_t    __guard_dispatch_icall_fptr;/**< nocrt-guard-win.asm */
 #endif

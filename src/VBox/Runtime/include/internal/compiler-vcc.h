@@ -107,9 +107,49 @@ int  rtVccInitializersRunInit(void) RT_NOEXCEPT;
 void rtVccInitializersRunTerm(void) RT_NOEXCEPT;
 void rtVccTermRunAtExit(void) RT_NOEXCEPT;
 
+struct _CONTEXT;
+void rtVccCheckContextFailed(struct _CONTEXT *pCpuCtx);
+
+#ifdef _CONTROL_FLOW_GUARD
+DECLASM(void)     __guard_check_icall_nop(uintptr_t); /**< nocrt-guard-win.asm */
+#endif
+extern uintptr_t  __guard_check_icall_fptr;           /**< nocrt-guard-win.asm */
 
 RT_C_DECLS_END
 
+
+/**
+ * Checks if CFG is currently active.
+ *
+ * This requires CFG to be enabled at compile time, supported by the host OS
+ * version and activated by the module loader.
+ *
+ * @returns true if CFG is active, false if not.
+ */
+DECLINLINE(bool) rtVccIsGuardICallChecksActive(void)
+{
+#ifdef _CONTROL_FLOW_GUARD
+    return __guard_check_icall_fptr != (uintptr_t)__guard_check_icall_nop;
+#else
+    return false;
+#endif
+}
+
+
+#ifdef IPRT_INCLUDED_nt_nt_h
+/**
+ * Checks if a pointer is on the officially registered stack or not.
+ *
+ * @returns true if on the official stack, false if not.
+ * @param   uStackPtr           The pointer to check.
+ */
+DECLINLINE(bool) rtVccIsPointerOnTheStack(uintptr_t uStackPtr)
+{
+    PNT_TIB const pTib = (PNT_TIB)RTNtCurrentTeb();
+    return uStackPtr <= (uintptr_t)pTib->StackBase
+        && uStackPtr >= (uintptr_t)pTib->StackLimit;
+}
+#endif
 
 #endif /* !IPRT_INCLUDED_INTERNAL_compiler_vcc_h */
 
