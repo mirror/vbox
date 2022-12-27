@@ -121,6 +121,8 @@ typedef struct RTLDRMODPE
     uint32_t                cbImage;
     /** Size of the header (IMAGE_OPTIONAL_HEADER32::SizeOfHeaders). */
     uint32_t                cbHeaders;
+    /** Section alignment (IMAGE_OPTIONAL_HEADER32::SectionAlignment). */
+    uint32_t                uSectionAlign;
     /** The image timestamp. */
     uint32_t                uTimestamp;
     /** The number of imports.  UINT32_MAX if not determined. */
@@ -1671,7 +1673,7 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
     SegInfo.cb          = pModPe->cbHeaders;
     SegInfo.cbFile      = pModPe->cbHeaders;
     SegInfo.cbMapped    = pModPe->cbHeaders;
-    if ((pModPe->paSections[0].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+    if (!(pModPe->paSections[0].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
         SegInfo.cbMapped = pModPe->paSections[0].VirtualAddress;
     int rc = pfnCallback(pMod, &SegInfo, pvUser);
 
@@ -1708,17 +1710,19 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
         SegInfo.Alignment       = (pSh->Characteristics & IMAGE_SCN_ALIGN_MASK) >> IMAGE_SCN_ALIGN_SHIFT;
         if (SegInfo.Alignment > 0)
             SegInfo.Alignment   = RT_BIT_64(SegInfo.Alignment - 1);
+        else
+            SegInfo.Alignment   = pModPe->uSectionAlign;
         if (pSh->Characteristics & IMAGE_SCN_TYPE_NOLOAD)
         {
             SegInfo.LinkAddress = NIL_RTLDRADDR;
             SegInfo.RVA         = NIL_RTLDRADDR;
-            SegInfo.cbMapped    = pSh->Misc.VirtualSize;
+            SegInfo.cbMapped    = 0;
         }
         else
         {
             SegInfo.LinkAddress = pSh->VirtualAddress + pModPe->uImageBase;
             SegInfo.RVA         = pSh->VirtualAddress;
-            SegInfo.cbMapped    = RT_ALIGN(SegInfo.cb, SegInfo.Alignment);
+            SegInfo.cbMapped    = RT_ALIGN(pSh->Misc.VirtualSize, SegInfo.Alignment);
             if (i + 1 < pModPe->cSections && !(pSh[1].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
                 SegInfo.cbMapped = pSh[1].VirtualAddress - pSh->VirtualAddress;
         }
@@ -1807,10 +1811,10 @@ static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t
     /** @todo should validate offSeg here... too lazy right now. */
     if (iSeg == 0)
         *pRva = offSeg;
-    else if (pModPe->paSections[iSeg].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
-        return VERR_LDR_INVALID_SEG_OFFSET;
-    else
+    else if (!(pModPe->paSections[iSeg - 1].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
         *pRva = offSeg + pModPe->paSections[iSeg - 1].VirtualAddress;
+    else
+        return VERR_LDR_INVALID_SEG_OFFSET;
     return VINF_SUCCESS;
 }
 
@@ -4296,6 +4300,12 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT, "BaseOfData=%#x - beyond image size (%#x)", pOptHdr->BaseOfData, cbImage);
     }
 #endif
+    if (!RT_IS_POWER_OF_TWO(pOptHdr->SectionAlignment))
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
+                                   "SectionAlignment=%#x - not a power of two", pOptHdr->SectionAlignment);
+    if (pOptHdr->SectionAlignment < 16 || pOptHdr->SectionAlignment > _128K)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
+                                   "SectionAlignment=%#x - unsupported value, not between 16 and 128KB", pOptHdr->SectionAlignment);
     if (pOptHdr->SizeOfHeaders >= cbImage)
     {
         Log(("rtldrPEOpen: %s: SizeOfHeaders=%#x - beyond image size (%#x)!!!\n",
@@ -5114,6 +5124,7 @@ DECLHIDDEN(int) rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enm
                 pModPe->uImageBase    = (RTUINTPTR)OptHdr.ImageBase;
                 pModPe->cbImage       = OptHdr.SizeOfImage;
                 pModPe->cbHeaders     = OptHdr.SizeOfHeaders;
+                pModPe->uSectionAlign = OptHdr.SectionAlignment;
                 pModPe->uTimestamp    = FileHdr.TimeDateStamp;
                 pModPe->cImports      = UINT32_MAX;
                 pModPe->f64Bit        = FileHdr.SizeOfOptionalHeader == sizeof(OptHdr);
