@@ -49,7 +49,7 @@
   <refsynopsisdiv>
     <!-- Cloud list -->
     <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-instances">
+    <cmdsynopsis id="synopsis-vboxmanage-instances-cloudlist">
       <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -59,7 +59,7 @@
         <arg>--state=<replaceable>string</replaceable></arg>
         <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-images">
+    <cmdsynopsis id="synopsis-vboxmanage-images-cloudlist">
       <command>VBoxManage cloud</command>
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -131,7 +131,7 @@
      </cmdsynopsis>
 
      <!-- Cloud image commands -->
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-create" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <cmdsynopsis id="synopsis-vboxmanage-create-cloudimage" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
         <command>VBoxManage cloud</command>
           <arg choice="req">--provider=<replaceable>name</replaceable></arg>
           <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -143,7 +143,7 @@
           <arg>--object-name=<replaceable>name</replaceable></arg>
           <arg>--instance-id=<replaceable>unique id</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-info" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-info-cloudimage" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -152,7 +152,7 @@
         <arg choice="plain">info</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-delete" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-delete-cloudimage" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -161,7 +161,7 @@
         <arg choice="plain">delete</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-import" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-import-cloudimage" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -172,7 +172,7 @@
         <arg>--bucket-name=<replaceable>name</replaceable></arg>
         <arg>--object-name=<replaceable>name</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-export" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-export-cloudimage" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
@@ -238,7 +238,7 @@
     <title>Description</title>
 
     <!-- Cloud commands common options  -->
-    <refsect2 id="vboxmanage-cloud-common-options">
+    <refsect2 id="vboxmanage-options-cloud-common">
       <title>Common options</title>
       <remark role="help-scope" condition="GLOBAL"/>
       <para>The word "cloud" is an umbrella for all commands related to the interconnection with the Cloud.
@@ -256,7 +256,7 @@
     </refsect2>
 
     <!-- Cloud list commands -->
-    <refsect2 id="vboxmanage-cloudlist-instances">
+    <refsect2 id="vboxmanage-instances-cloudlist">
       <title>cloud list instances</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -282,7 +282,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudlist-images">
+    <refsect2 id="vboxmanage-images-cloudlist">
       <title>cloud list images</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -418,7 +418,7 @@
 
 
     <!-- Cloud image commands -->
-    <refsect2 id="vboxmanage-cloudimage-create">
+    <refsect2 id="vboxmanage-create-cloudimage">
       <title>cloud image create</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -450,7 +450,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-info">
+    <refsect2 id="vboxmanage-info-cloudimage">
       <title>cloud image info</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -463,7 +463,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-delete">
+    <refsect2 id="vboxmanage-delete-cloudimage">
       <title>cloud image delete</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -476,7 +476,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-import">
+    <refsect2 id="vboxmanage-import-cloudimage">
       <title>cloud image import</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -508,7 +508,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-export">
+    <refsect2 id="vboxmanage-export-cloudimage">
       <title>cloud image export</title>
       <remark role="help-copy-synopsis"/>
       <para>
