@@ -304,9 +304,9 @@
 # define SUPDRV_USE_MUTEX_FOR_GIP
 #endif
 
-#if defined(RT_OS_LINUX) /** @todo make everyone do this */
 /** Use the RTR0MemObj API rather than the RTMemExecAlloc for the images.
  * This is a good idea in general, but a necessity for @bugref{9801}. */
+#ifndef RT_OS_SOLARIS /** @todo add support for allocating executabe memory via RTR0MemObj */
 # define SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
 #endif
 
