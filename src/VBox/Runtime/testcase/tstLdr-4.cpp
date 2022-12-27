@@ -237,10 +237,16 @@ static void testLdrOne(const char *pszFilename)
         aLoads[i].cbBits = cbImage = cb;
 
         /* Allocate bits. */
-        aLoads[i].pvBits = RTMemExecAlloc(cb);
+        aLoads[i].pvBits = RTMemPageAlloc(cb);
         if (!aLoads[i].pvBits)
         {
             RTTestIFailed("Out of memory '%s'/%d cbImage=%d. aborting test.", pszFilename, i, cbImage);
+            break;
+        }
+        rc = RTMemProtect(aLoads[i].pvBits, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
+        if (RT_FAILURE(rc))
+        {
+            RTTestIFailed("RTMemProtect/RWX '%s'/%d cbImage=%d, %Rrc. aborting test.", pszFilename, i, cbImage, rc);
             break;
         }
 
@@ -310,7 +316,10 @@ static void testLdrOne(const char *pszFilename)
     for (i = 0; i < RT_ELEMENTS(aLoads); i++)
     {
         if (aLoads[i].pvBits)
-            RTMemExecFree(aLoads[i].pvBits, aLoads[i].cbBits);
+        {
+            RTMemProtect(aLoads[i].pvBits, aLoads[i].cbBits, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+            RTMemPageFree(aLoads[i].pvBits, aLoads[i].cbBits);
+        }
         if (aLoads[i].hLdrMod)
         {
             rc = RTLdrClose(aLoads[i].hLdrMod);
