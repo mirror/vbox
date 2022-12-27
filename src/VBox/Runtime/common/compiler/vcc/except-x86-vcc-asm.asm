@@ -43,6 +43,19 @@
 
 
 ;*********************************************************************************************************************************
+;*  Defined Constants And Macros                                                                                                 *
+;*********************************************************************************************************************************
+
+;; @def WITH_NLG_STUFF
+; Enabled NLG debugger hooks/whatever - no idea how it's used.
+;
+; So far vsdebugeng.manimpl.dll in the VS2019 remote debugger directory is the
+; only component with any _NLG_ strings in it.  Could not find any references
+; to _NLG_ in windbg.
+%define WITH_NLG_STUFF 1
+
+
+;*********************************************************************************************************************************
 ;*  Structures and Typedefs                                                                                                      *
 ;*********************************************************************************************************************************
 
@@ -96,8 +109,96 @@ extern _rtVccEh4DoLocalUnwindHandler@16
 ; This adds the symbol table number of the exception handler to the special .sxdata section.
 safeseh _rtVccEh4DoLocalUnwindHandler@16
 
+%ifdef WITH_NLG_STUFF
+BEGINDATA
+GLOBALNAME_RAW __NLG_Destination, data, hidden
+        dd      019930520h
+        dd      0
+        dd      0
+        dd      0
+%endif
+
 
 BEGINCODE
+
+%ifdef WITH_NLG_STUFF
+
+;;
+; Some VS debugger interface, I think.
+;
+; @param        EDX     Notification code.
+; @uses         EBP, EAX & ECX are preserved.  This differs from other implementation,
+;               but simplifies the calling code.
+;
+ALIGNCODE(32)
+GLOBALNAME_RAW __NLG_Notify, function, hidden
+        ;
+        ; Save registers.
+        ;
+        push    eax
+        push    ecx
+        push    ebp
+        push    ebx
+
+
+        ;
+        ; ECX = notification code.
+        ; EBX = __NLG_Destination
+        ;
+        mov     ecx, edx                    ; Originally held in ECX, so moving it there for now.
+        mov     ebx, __NLG_Destination
+
+__NLG_Go:
+        ;
+        ; Save info to __NLG_Destination and the stack (same layout).
+        ;
+        mov     [ebx + 0ch], ebp
+        push    ebp
+        mov     [ebx + 08h], ecx
+        push    ecx
+        mov     [ebx + 04h], eax
+        push    eax
+
+        ;
+        ; This is presumably the symbol the debugger hooks on to as the string
+        ; "__NLG_Dispatch" was found in vsdebugeng.manimpl.dll in VS2019.
+        ;
+global __NLG_Dispatch
+__NLG_Dispatch:
+
+        ; Drop the info structure from the stack.
+        add     esp, 4*3
+
+        ;
+        ; Restore registers and drop the parameter as we return.
+        ;
+        ; Note! This may sabotage attempts by the debugger to modify the state...
+        ;       But that can be fixed once we know this is a requirement. Just
+        ;       keep things simple for the caller for now.
+        ;
+        pop     ebx
+        pop     ebp
+        pop     ecx
+        pop     eax
+        ret
+
+;;
+; NLG call + return2.
+;
+; The "__NLG_Return2" symbol was observed in several vsdebugeng.manimpl.dll
+; strings in VS2019.
+;
+ALIGNCODE(4)
+GLOBALNAME_RAW __NLG_Call, function, hidden
+        call    eax
+
+global __NLG_Return2
+__NLG_Return2:
+        ret
+
+%endif
+
+
 ;;
 ; Calls the filter sub-function for a __finally statement.
 ;
@@ -107,6 +208,7 @@ BEGINCODE
 ; @param    fAbend      [ebp + 0ch]
 ; @param    pbFrame     [ebp + 10h]
 ;
+ALIGNCODE(64)
 BEGINPROC   rtVccEh4DoFinally
         push    ebp
         mov     ebp, esp
@@ -114,18 +216,26 @@ BEGINPROC   rtVccEh4DoFinally
         push    edi
         push    esi
 
-        ;; @todo we're not calling __NLG_Notify nor NLG_Call, which may perhaps confuse debuggers or something...
-
         xor     edi, edi
         xor     esi, esi
+%ifndef WITH_NLG_STUFF
         xor     edx, edx
+%endif
         xor     ebx, ebx
 
         mov     eax, [ebp + 08h]            ; pfnFilter
         movzx   ecx, byte [ebp + 0ch]       ; fAbend
         mov     ebp, [ebp + 10h]            ; pbFrame
 
+%ifdef WITH_NLG_STUFF
+        mov     edx, 101h
+        call    __NLG_Notify
+        xor     edx, edx
+
+        call    __NLG_Call
+%else
         call    eax
+%endif
 
         pop     esi
         pop     edi
@@ -143,6 +253,7 @@ ENDPROC   rtVccEh4DoFinally
 ; @param    pfnFilter   [ebp + 08h]
 ; @param    pbFrame     [ebp + 0ch]
 ;
+ALIGNCODE(32)
 BEGINPROC   rtVccEh4DoFiltering
         push    ebp
         push    ebx
@@ -174,6 +285,7 @@ ENDPROC   rtVccEh4DoFiltering
 ; @param    pfnHandler  [ebp + 08h]
 ; @param    pbFrame     [ebp + 0ch]
 ;
+ALIGNCODE(32)
 BEGINPROC   rtVccEh4JumpToHandler
         ;
         ; Since we're never returning there is no need to save anything here.  So,
@@ -182,10 +294,13 @@ BEGINPROC   rtVccEh4JumpToHandler
         mov     esi, [esp + 1 * 4 + 0]      ; pfnFilter
         mov     ebp, [esp + 1 * 4 + 4]      ; pbFrame
 
-%if 0
+%ifdef WITH_NLG_STUFF
+        ;
+        ; Notify VS debugger/whatever.
+        ;
         mov     eax, esi
-        push    1
-        call    NAME(_NLG_Notify)
+        mov     edx, 1
+        call    __NLG_Notify
 %endif
 
         ;
@@ -201,7 +316,6 @@ BEGINPROC   rtVccEh4JumpToHandler
 ENDPROC   rtVccEh4JumpToHandler
 
 
-
 ;;
 ; This does global unwinding via RtlUnwind.
 ;
@@ -210,6 +324,7 @@ ENDPROC   rtVccEh4JumpToHandler
 ; @param    pXcptRec    [ebp + 08h]
 ; @param    pXcptRegRec [ebp + 0ch]
 ;
+ALIGNCODE(32)
 BEGINPROC   rtVccEh4DoGlobalUnwind
         push    ebp
         mov     ebp, esp
