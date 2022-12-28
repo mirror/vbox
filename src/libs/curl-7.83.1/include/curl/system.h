@@ -380,7 +380,11 @@
 #    define CURL_SUFFIX_CURL_OFF_T     L
 #    define CURL_SUFFIX_CURL_OFF_TU    UL
 #  endif
+#  ifdef RT_OS_OS2                                  /* VBOX */
+#   define CURL_TYPEOF_CURL_SOCKLEN_T int           /* VBOX */
+#  else                                             /* VBOX */
 #  define CURL_TYPEOF_CURL_SOCKLEN_T socklen_t
+#  endif                                            /* VBOX */
 #  define CURL_PULL_SYS_TYPES_H      1
 #  define CURL_PULL_SYS_SOCKET_H     1
 
