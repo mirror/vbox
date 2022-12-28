@@ -42,7 +42,6 @@ crypto_des_SOURCES = \
 	ecb_enc.c \
 	fcrypt.c \
 	fcrypt_b.c \
-	ncbc_enc.c \
 	ofb64ede.c \
 	ofb64enc.c \
 	ofb_enc.c \
