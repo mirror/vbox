@@ -193,7 +193,9 @@ int main(int argc, char **argv)
     } aSnippets[] =
     {
         { "32-bit",     (uint8_t const *)(uintptr_t)TestProc32, (uintptr_t)&TestProc32_EndProc, DISCPUMODE_32BIT },
+#ifndef RT_OS_OS2
         { "64-bit",     (uint8_t const *)(uintptr_t)TestProc64, (uintptr_t)&TestProc64_EndProc, DISCPUMODE_64BIT },
+#endif
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(aSnippets); i++)

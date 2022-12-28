@@ -36,6 +36,9 @@
 
 BITS 32
 
+%ifndef __YASM_VERSION_ID__
+ %define __YASM_VERSION_ID__ 001010000h ; v1.2.0.0 for OS/2
+%endif
 %if __YASM_VERSION_ID__ >= 001020001h ; v1.2.0.1 and greater, make sure to exclude v1.2.0.0.
  %define pmulhrwa pmulhrw
 %endif
@@ -136,7 +139,9 @@ BEGINPROC   TestProc32
         pfmax       mm3, qword [es:esi+000101010h]
         pfmin       mm1, qword [es:esi+000101010h]
         pfmul       mm5, qword [es:esi+000101000h]
+%ifndef RT_OS_OS2 ; nasm objects to this        
         pmulhrwa    mm3, qword [es:eax+0ffffffffh]
+%endif        
         pfnacc      mm4, qword [es:ebx+000101010h]
         pfpnacc     mm3, qword [es:edx+000102900h]
         pfrcp       mm0, qword [es:ecx+000101020h]
@@ -236,16 +241,22 @@ BEGINPROC   TestProc32
 
         vfmaddsub132pd ymm1, ymm2, ymm3
 
+%ifndef RT_OS_OS2
         blsr eax, ebx
         blsi eax, [ebx]
+%endif        
         db 0c4h, 0e2h, 0f8h, 0f3h, 01bh ;  blsi rax, dword [ebx] - but VEX.W=1 is ignored, so same as previous
+%ifndef RT_OS_OS2
         blsmsk eax, [ebx+edi*2]
         shlx eax, ebx, ecx
+%endif        
 
         pmovmskb eax, mm2
         pmovmskb eax, xmm3
         vpmovmskb eax, xmm3
+%ifndef RT_OS_OS2        
         vpmovmskb eax, ymm3
+%endif        
 
 ENDPROC   TestProc32
 
