@@ -13,7 +13,7 @@
 
 #if defined(OPENSSL_SYS_UNIX) \
     && defined(OPENSSL_THREADS) && !defined(OPENSSL_NO_ASYNC) \
-    && !defined(__ANDROID__) && !defined(__OpenBSD__)
+    && !defined(__ANDROID__) && !defined(__OpenBSD__) /* VBOX: */ && !defined(RT_OS_OS2)
 
 # include <unistd.h>
 

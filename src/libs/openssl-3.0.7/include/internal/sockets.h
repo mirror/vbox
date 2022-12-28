@@ -111,6 +111,11 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #  ifndef INVALID_SOCKET
 #   define INVALID_SOCKET      (-1)
 #  endif
+
+#  ifdef RT_OS_OS2              /* VBOX */
+#   define socklen_t int        /* VBOX */
+#   undef AF_INET6              /* VBOX */
+#  endif                        /* VBOX */
 # endif
 
 /*
