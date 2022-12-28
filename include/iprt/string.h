@@ -1945,6 +1945,8 @@ RTDECL(ssize_t) RTStrFormatR32(char *pszBuf, size_t cbBuf, PCRTFLOAT32U pr32Valu
 RTDECL(ssize_t) RTStrFormatR64(char *pszBuf, size_t cbBuf, PCRTFLOAT64U pr64Value, signed int cchWidth,
                                signed int cchPrecision, uint32_t fFlags);
 
+#if !defined(__IBMCPP__) && !defined(__IBMC__)
+
 /**
  * Formats an 80-bit extended floating point number.
  *
@@ -1973,6 +1975,7 @@ RTDECL(ssize_t) RTStrFormatR80(char *pszBuf, size_t cbBuf, PCRTFLOAT80U pr80Valu
 RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80Value, signed int cchWidth,
                                  signed int cchPrecision, uint32_t fFlags);
 
+#endif /* uint16_t bitfields doesn't work */
 
 
 /**
