@@ -40,10 +40,10 @@
 # pragma once
 #endif
 
-#if !defined(RT_OS_OS2) || defined(__GNUC__)
+#if !defined(RT_OS_OS2) || !defined(__IBMC__) /* IBM VACpp 3.08 doesn't properly eliminate unused inline functions */
 # include <iprt/asm.h>
+# include <iprt/string.h>
 #endif
-#include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/cdefs.h>
 #include <iprt/err.h>
