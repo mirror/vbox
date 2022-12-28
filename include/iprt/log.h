@@ -610,9 +610,7 @@ typedef enum RTLOGDEST
  * Governs the use of variadic macros.
  */
 #ifndef LOG_USE_C99
-# if !defined(RT_OS_OS2)
-#  define LOG_USE_C99
-# endif
+# define LOG_USE_C99
 #endif
 
 
