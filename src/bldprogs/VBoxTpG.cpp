@@ -173,8 +173,8 @@ static const char           g_szAssemblerFmtVal32[]     = "macho32";
 static const char           g_szAssemblerFmtVal64[]     = "macho64";
 static const char           g_szAssemblerOsDef[]        = "RT_OS_DARWIN";
 #elif defined(RT_OS_OS2)
-static const char          *pszAssembler                = "nasm.exe";
-static const char          *pszAssemblerFmtOpt          = "-f";
+static const char          *g_pszAssembler              = "nasm.exe";
+static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "obj";
 static const char           g_szAssemblerFmtVal64[]     = "elf64";
 static const char           g_szAssemblerOsDef[]        = "RT_OS_OS2";
