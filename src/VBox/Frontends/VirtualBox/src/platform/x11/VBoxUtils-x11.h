@@ -129,14 +129,12 @@ namespace NativeWindowSubsystem
       *      focus away from the VM. */
     SHARED_LIBRARY_STUFF void X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget);
 
-    /** X11: Get the X11 display pointer. */
-    SHARED_LIBRARY_STUFF struct _XDisplay *X11GetDisplay(void);
-
-    /** X11: Get the X11 connection.   */
-    SHARED_LIBRARY_STUFF struct xcb_connection_t *X11GetConnection(void);
-
-    /** X11: Get the X11 root (desktop) window. */
-    SHARED_LIBRARY_STUFF uint32_t X11GetAppRootWindow(void);
+    /** X11: Gets the X11 display pointer. */
+    SHARED_LIBRARY_STUFF struct _XDisplay *X11GetDisplay();
+    /** X11: Gets the X11 connection. */
+    SHARED_LIBRARY_STUFF struct xcb_connection_t *X11GetConnection();
+    /** X11: Gets the X11 root (desktop) window. */
+    SHARED_LIBRARY_STUFF uint32_t X11GetAppRootWindow();
 }
 
 #endif /* !FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_x11_h */
