@@ -437,35 +437,6 @@ RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, cons
  */
 RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW_PROTO;
 
-
-
-/**
- * Allocates memory which may contain code (default tag).
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-#define RTMemExecAlloc(cb)              RTMemExecAllocTag((cb), RTMEM_TAG)
-
-/**
- * Allocates memory which may contain code (custom tag).
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- * @param   pszTag  Allocation tag used for statistics and such.
- */
-RTDECL(void *)  RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_PROTO;
-
-/**
- * Free executable/read/write memory allocated by RTMemExecAlloc().
- *
- * @param   pv      Pointer to memory block.
- * @param   cb      The allocation size.
- */
-RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW_PROTO;
-
 /**
  * Allocate page aligned memory with default tag.
  *

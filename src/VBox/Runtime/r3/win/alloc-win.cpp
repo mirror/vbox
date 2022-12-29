@@ -55,55 +55,6 @@
 #endif
 
 
-RTDECL(void *) RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
-{
-    RT_NOREF_PV(pszTag);
-
-    /*
-     * Allocate first.
-     */
-    AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
-#ifdef USE_VIRTUAL_ALLOC
-    cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-    void *pv = VirtualAlloc(NULL, cb, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-    AssertMsg(pv, ("VirtualAlloc(%zx) failed!!!\n", cb));
-#else
-    cb = RT_ALIGN_Z(cb, 32);
-    void *pv = malloc(cb);
-    AssertMsg(pv, ("malloc(%d) failed!!!\n", cb));
-    if (pv)
-    {
-        memset(pv, 0xcc, cb);
-        void   *pvProt = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
-        size_t  cbProt = ((uintptr_t)pv & PAGE_OFFSET_MASK) + cb;
-        cbProt = RT_ALIGN_Z(cbProt, PAGE_SIZE);
-        DWORD fFlags = 0;
-        if (!VirtualProtect(pvProt, cbProt, PAGE_EXECUTE_READWRITE, &fFlags))
-        {
-            AssertMsgFailed(("VirtualProtect(%p, %#x,,) -> lasterr=%d\n", pvProt, cbProt, GetLastError()));
-            free(pv);
-            pv = NULL;
-        }
-    }
-#endif
-    return pv;
-}
-
-
-RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW_DEF
-{
-    RT_NOREF_PV(cb);
-
-    if (pv)
-#ifdef USE_VIRTUAL_ALLOC
-        if (!VirtualFree(pv, 0, MEM_RELEASE))
-            AssertMsgFailed(("pv=%p lasterr=%d\n", pv, GetLastError()));
-#else
-        free(pv);
-#endif
-}
-
-
 RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     RT_NOREF_PV(pszTag);
