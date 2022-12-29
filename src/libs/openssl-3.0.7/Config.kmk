@@ -206,6 +206,9 @@ ifneq ($(KBUILD_TARGET), win)
  TEMPLATE_LIBCRYPTO_ASFLAGS.amd64   = -m64
  TEMPLATE_LIBCRYPTO_ASDEFS          = $(NO_SUCH_VARIABLE)
  TEMPLATE_LIBCRYPTO_ASDEFS.darwin   = OPENSSL_MANGLE_ASM
+ if "$(VBOX_AS_VERSION)" != "" && "$(VBOX_AS_VERSION)" vlt "GNU assembler version 2.20"
+  TEMPLATE_LIBCRYPTO_ASFLAGS.solaris = -include $(VBOX_PATH_OPENSSL)/crypto/old-solaris-asm-trick.h
+ endif
 endif
 
 TEMPLATE_LIBCRYPTO_DEFS = \
