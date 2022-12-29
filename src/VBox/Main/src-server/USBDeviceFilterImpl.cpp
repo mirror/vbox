@@ -61,7 +61,7 @@ static void i_usbFilterFieldToString(PCUSBFILTER aFilter, USBFILTERIDX aIdx, Utf
         int value = USBFilterGetNum(aFilter, aIdx);
         Assert(value >= 0 && value <= 0xffff);
 
-        rstrOut = Utf8StrFmt("%04RX16", (uint16_t)value);
+        rstrOut.printf("%04RX16", (uint16_t)value);
     }
     else if (USBFilterIsMethodString(matchingMethod))
         rstrOut = USBFilterGetString(aFilter, aIdx);
@@ -129,8 +129,7 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
                         u64 = 0xffff;
                     else
                     {
-                        aErrStr = Utf8StrFmt(tr("The %s value '%s' is too big (max 0xFFFF)"),
-                                             i_describeUSBFilterIdx(aIdx), pcszValue);
+                        aErrStr.printf(tr("The %s value '%s' is too big (max 0xFFFF)"), i_describeUSBFilterIdx(aIdx), pcszValue);
                         return E_INVALIDARG;
                     }
                 }
@@ -144,8 +143,8 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
         {
             /* Any wildcard in the string? */
             Assert(USBFilterIsStringField(aIdx));
-            if (    strchr(pcszValue, '*')
-                ||  strchr(pcszValue, '?')
+            if (   strchr(pcszValue, '*')
+                || strchr(pcszValue, '?')
                 /* || strchr (psz, '[') - later */
                 )
                 vrc = USBFilterSetStringPattern(aFilter, aIdx, pcszValue, true /*fMustBePresent*/);
@@ -158,18 +157,18 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
     {
         if (vrc == VERR_INVALID_PARAMETER)
         {
-            aErrStr = Utf8StrFmt(tr("The %s filter expression '%s' is not valid"), i_describeUSBFilterIdx(aIdx), aValue.c_str());
+            aErrStr.printf(tr("The %s filter expression '%s' is not valid"), i_describeUSBFilterIdx(aIdx), aValue.c_str());
             return E_INVALIDARG;
         }
         if (vrc == VERR_BUFFER_OVERFLOW)
         {
-            aErrStr = Utf8StrFmt(tr("Insufficient expression space for the '%s' filter expression '%s'"),
-                                 i_describeUSBFilterIdx(aIdx), aValue.c_str());
+            aErrStr.printf(tr("Insufficient expression space for the '%s' filter expression '%s'"),
+                           i_describeUSBFilterIdx(aIdx), aValue.c_str());
             return E_FAIL;
         }
         AssertRC(vrc);
-        aErrStr = Utf8StrFmt(tr("Encountered unexpected status %Rrc when setting '%s' to '%s'"),
-                             vrc, i_describeUSBFilterIdx(aIdx), aValue.c_str());
+        aErrStr.printf(tr("Encountered unexpected status %Rrc when setting '%s' to '%s'"),
+                       vrc, i_describeUSBFilterIdx(aIdx), aValue.c_str());
         return E_FAIL;
     }
 
@@ -457,9 +456,7 @@ HRESULT USBDeviceFilter::getName(com::Utf8Str &aName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aName = bd->mData.strName;
-
-    return S_OK;
+    return aName.assignEx(bd->mData.strName);
 }
 
 HRESULT USBDeviceFilter::setName(const com::Utf8Str &aName)
