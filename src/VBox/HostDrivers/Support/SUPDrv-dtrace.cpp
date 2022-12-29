@@ -103,6 +103,7 @@
 # define FIX_UEK_RC(a_rc) (-(a_rc))
 #else
 # include <sys/dtrace.h>
+# undef u
 #endif
 
 
@@ -148,7 +149,11 @@ typedef void FNPOPS_ENABLE(void *, dtrace_id_t, void *);
 typedef int  FNPOPS_ENABLE(void *, dtrace_id_t, void *);
 # endif
 #else
+# if !defined(RT_OS_SOLARIS) || defined(DOF_SEC_ISLOADABLE) /* DOF_SEC_ISLOADABLE was added in the next commit after dtps_enable change signature, but it's the simplest check we can do. */
 typedef int  FNPOPS_ENABLE(void *, dtrace_id_t, void *);
+# else
+typedef void FNPOPS_ENABLE(void *, dtrace_id_t, void *);
+# endif
 #endif
 
 /** Caller indicator. */
