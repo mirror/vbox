@@ -51,6 +51,7 @@ if [ ! -f "$DRVFILE.conf" ]; then
 fi
 
 SUDO=sudo
+hash "${SUDO}" 2> /dev/null || SUDO=pfexec
 #set -x
 
 # Disable the zone access service.
