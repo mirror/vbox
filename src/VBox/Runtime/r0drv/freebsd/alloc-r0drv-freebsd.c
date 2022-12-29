@@ -89,75 +89,19 @@ MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "IPRT - contiguous");
 DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     size_t      cbAllocated = cb;
-    PRTMEMHDR   pHdr        = NULL;
-
-#ifdef RT_ARCH_AMD64
-    /*
-     * Things are a bit more complicated on AMD64 for executable memory
-     * because we need to be in the ~2GB..~0 range for code.
-     */
-    if (fFlags & RTMEMHDR_FLAG_EXEC)
+    PRTMEMHDR   pHdr        = (PRTMEMHDR)malloc(cb + sizeof(RTMEMHDR), M_IPRTHEAP,
+                                                fFlags & RTMEMHDR_FLAG_ZEROED ? M_NOWAIT | M_ZERO : M_NOWAIT);
+    if (RT_LIKELY(pHdr))
     {
-        if (fFlags & RTMEMHDR_FLAG_ANY_CTX)
-            return VERR_NOT_SUPPORTED;
+        pHdr->u32Magic   = RTMEMHDR_MAGIC;
+        pHdr->fFlags     = fFlags;
+        pHdr->cb         = cbAllocated;
+        pHdr->cbReq      = cb;
 
-# ifdef USE_KMEM_ALLOC_PROT
-        pHdr = (PRTMEMHDR)kmem_alloc_prot(kernel_map, cb + sizeof(*pHdr),
-                                          VM_PROT_ALL, VM_PROT_ALL, KERNBASE);
-# else
-        vm_object_t pVmObject = NULL;
-        vm_offset_t Addr = KERNBASE;
-        cbAllocated = RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE);
-
-        pVmObject = vm_object_allocate(OBJT_DEFAULT, cbAllocated >> PAGE_SHIFT);
-        if (!pVmObject)
-            return VERR_NO_EXEC_MEMORY;
-
-        /* Addr contains a start address vm_map_find will start searching for suitable space at. */
-#if __FreeBSD_version >= 1000055
-        int rc = vm_map_find(kernel_map, pVmObject, 0, &Addr,
-                             cbAllocated, 0, VMFS_ANY_SPACE, VM_PROT_ALL, VM_PROT_ALL, 0);
-#else
-        int rc = vm_map_find(kernel_map, pVmObject, 0, &Addr,
-                             cbAllocated, TRUE, VM_PROT_ALL, VM_PROT_ALL, 0);
-#endif
-        if (rc == KERN_SUCCESS)
-        {
-            rc = vm_map_wire(kernel_map, Addr, Addr + cbAllocated,
-                             VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
-            if (rc == KERN_SUCCESS)
-            {
-                pHdr = (PRTMEMHDR)Addr;
-
-                if (fFlags & RTMEMHDR_FLAG_ZEROED)
-                    bzero(pHdr, cbAllocated);
-            }
-            else
-                vm_map_remove(kernel_map,
-                              Addr,
-                              Addr + cbAllocated);
-        }
-        else
-            vm_object_deallocate(pVmObject);
-# endif
+        *ppHdr = pHdr;
+        return VINF_SUCCESS;
     }
-    else
-#endif
-    {
-        pHdr = (PRTMEMHDR)malloc(cb + sizeof(RTMEMHDR), M_IPRTHEAP,
-                                 fFlags & RTMEMHDR_FLAG_ZEROED ? M_NOWAIT | M_ZERO : M_NOWAIT);
-    }
-
-    if (RT_UNLIKELY(!pHdr))
-        return VERR_NO_MEMORY;
-
-    pHdr->u32Magic   = RTMEMHDR_MAGIC;
-    pHdr->fFlags     = fFlags;
-    pHdr->cb         = cbAllocated;
-    pHdr->cbReq      = cb;
-
-    *ppHdr = pHdr;
-    return VINF_SUCCESS;
+    return VERR_NO_MEMORY;
 }
 
 

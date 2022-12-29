@@ -56,8 +56,7 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     if (!(fFlags & RTMEMHDR_FLAG_ANY_CTX))
     {
         PRTMEMHDR       pHdr;
-        POOL_TYPE const enmPoolType = !(fFlags & RTMEMHDR_FLAG_EXEC) && g_uRtNtVersion >= RTNT_MAKE_VERSION(8,0)
-                                    ? NonPagedPoolNx : NonPagedPool;
+        POOL_TYPE const enmPoolType = g_uRtNtVersion >= RTNT_MAKE_VERSION(8,0) ? NonPagedPoolNx : NonPagedPool;
         if (g_pfnrtExAllocatePoolWithTag)
             pHdr = (PRTMEMHDR)g_pfnrtExAllocatePoolWithTag(enmPoolType, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
         else
@@ -65,7 +64,7 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
             fFlags |= RTMEMHDR_FLAG_UNTAGGED;
             pHdr = (PRTMEMHDR)ExAllocatePool(enmPoolType, cb + sizeof(*pHdr));
         }
-        if (pHdr)
+        if (RT_LIKELY(pHdr))
         {
             pHdr->u32Magic  = RTMEMHDR_MAGIC;
             pHdr->fFlags    = fFlags;

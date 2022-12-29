@@ -46,160 +46,8 @@
 #include <iprt/errcore.h>
 #include "r0drv/alloc-r0drv.h"
 
-
-#if (defined(RT_ARCH_AMD64) || defined(DOXYGEN_RUNNING)) && !defined(RTMEMALLOC_EXEC_HEAP)
-# if RTLNX_VER_MIN(2,6,23) && RTLNX_VER_MAX(5,8,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
-/**
- * Starting with 2.6.23 we can use __get_vm_area and map_vm_area to allocate
- * memory in the moduel range.  This is preferrable to the exec heap below.
- */
-#  define RTMEMALLOC_EXEC_VM_AREA
-# else
-/**
- * We need memory in the module range (~2GB to ~0) this can only be obtained
- * thru APIs that are not exported (see module_alloc()).
- *
- * So, we'll have to create a quick and dirty heap here using BSS memory.
- * Very annoying and it's going to restrict us!
- */
-#  define RTMEMALLOC_EXEC_HEAP
-# endif
-#endif
-
-#ifdef RTMEMALLOC_EXEC_HEAP
-# include <iprt/heap.h>
-# include <iprt/spinlock.h>
-# include <iprt/errcore.h>
-#endif
-
 #include "internal/initterm.h"
 
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-#ifdef RTMEMALLOC_EXEC_VM_AREA
-/**
- * Extended header used for headers marked with RTMEMHDR_FLAG_EXEC_VM_AREA.
- *
- * This is used with allocating executable memory, for things like generated
- * code and loaded modules.
- */
-typedef struct RTMEMLNXHDREX
-{
-    /** The VM area for this allocation. */
-    struct vm_struct   *pVmArea;
-    void               *pvDummy;
-    /** The header we present to the generic API. */
-    RTMEMHDR            Hdr;
-} RTMEMLNXHDREX;
-AssertCompileSize(RTMEMLNXHDREX, 32);
-/** Pointer to an extended memory header. */
-typedef RTMEMLNXHDREX *PRTMEMLNXHDREX;
-#endif
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-#ifdef RTMEMALLOC_EXEC_HEAP
-/** The heap. */
-static RTHEAPSIMPLE g_HeapExec = NIL_RTHEAPSIMPLE;
-/** Spinlock protecting the heap. */
-static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTSPINLOCK;
-#endif
-
-
-/**
- * API for cleaning up the heap spinlock on IPRT termination.
- * This is as RTMemExecDonate specific to AMD64 Linux/GNU.
- */
-DECLHIDDEN(void) rtR0MemExecCleanup(void)
-{
-#ifdef RTMEMALLOC_EXEC_HEAP
-    RTSpinlockDestroy(g_HeapExecSpinlock);
-    g_HeapExecSpinlock = NIL_RTSPINLOCK;
-#endif
-}
-
-
-#ifdef RTMEMALLOC_EXEC_VM_AREA
-/**
- * Allocate executable kernel memory in the module range.
- *
- * @returns Pointer to a allocation header success.  NULL on failure.
- *
- * @param   cb          The size the user requested.
- */
-static PRTMEMHDR rtR0MemAllocExecVmArea(size_t cb)
-{
-    size_t const        cbAlloc = RT_ALIGN_Z(sizeof(RTMEMLNXHDREX) + cb, PAGE_SIZE);
-    size_t const        cPages  = cbAlloc >> PAGE_SHIFT;
-    struct page       **papPages;
-    struct vm_struct   *pVmArea;
-    size_t              iPage;
-
-    pVmArea = __get_vm_area(cbAlloc, VM_ALLOC, MODULES_VADDR, MODULES_END);
-    if (!pVmArea)
-        return NULL;
-    pVmArea->nr_pages = 0;    /* paranoia? */
-    pVmArea->pages    = NULL; /* paranoia? */
-
-    papPages = (struct page **)kmalloc(cPages * sizeof(papPages[0]), GFP_KERNEL | __GFP_NOWARN);
-    if (!papPages)
-    {
-        vunmap(pVmArea->addr);
-        return NULL;
-    }
-
-    for (iPage = 0; iPage < cPages; iPage++)
-    {
-        papPages[iPage] = alloc_page(GFP_KERNEL | __GFP_HIGHMEM | __GFP_NOWARN);
-        if (!papPages[iPage])
-            break;
-    }
-    if (iPage == cPages)
-    {
-        /*
-         * Map the pages.
-         *
-         * Not entirely sure we really need to set nr_pages and pages here, but
-         * they provide a very convenient place for storing something we need
-         * in the free function, if nothing else...
-         */
-# if RTLNX_VER_MAX(3,17,0)
-        struct page **papPagesIterator = papPages;
-# endif
-        pVmArea->nr_pages = cPages;
-        pVmArea->pages    = papPages;
-        if (!map_vm_area(pVmArea, PAGE_KERNEL_EXEC,
-# if RTLNX_VER_MAX(3,17,0)
-                         &papPagesIterator
-# else
-                         papPages
-# endif
-                         ))
-        {
-            PRTMEMLNXHDREX pHdrEx = (PRTMEMLNXHDREX)pVmArea->addr;
-            pHdrEx->pVmArea     = pVmArea;
-            pHdrEx->pvDummy     = NULL;
-            return &pHdrEx->Hdr;
-        }
-        /* bail out */
-# if RTLNX_VER_MAX(3,17,0)
-        pVmArea->nr_pages = papPagesIterator - papPages;
-# endif
-    }
-
-    vunmap(pVmArea->addr);
-
-    while (iPage-- > 0)
-        __free_page(papPages[iPage]);
-    kfree(papPages);
-
-    return NULL;
-}
-#endif /* RTMEMALLOC_EXEC_VM_AREA */
 
 
 /**
@@ -213,85 +61,45 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     /*
      * Allocate.
      */
-    if (fFlags & RTMEMHDR_FLAG_EXEC)
-    {
-        if (fFlags & RTMEMHDR_FLAG_ANY_CTX)
-            return VERR_NOT_SUPPORTED;
-
-#if defined(RT_ARCH_AMD64)
-# ifdef RTMEMALLOC_EXEC_HEAP
-        if (g_HeapExec != NIL_RTHEAPSIMPLE)
-        {
-            RTSpinlockAcquire(g_HeapExecSpinlock);
-            pHdr = (PRTMEMHDR)RTHeapSimpleAlloc(g_HeapExec, cb + sizeof(*pHdr), 0);
-            RTSpinlockRelease(g_HeapExecSpinlock);
-            fFlags |= RTMEMHDR_FLAG_EXEC_HEAP;
-        }
-        else
-            pHdr = NULL;
-
-# elif defined(RTMEMALLOC_EXEC_VM_AREA)
-        pHdr = rtR0MemAllocExecVmArea(cb);
-        fFlags |= RTMEMHDR_FLAG_EXEC_VM_AREA;
-
-# else  /* !RTMEMALLOC_EXEC_HEAP && !RTMEMALLOC_EXEC_VM_AREA */
-#  error "you do not want to go here..."
-        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM | __GFP_NOWARN, MY_PAGE_KERNEL_EXEC);
-# endif /* !RTMEMALLOC_EXEC_HEAP && !RTMEMALLOC_EXEC_VM_AREA */
-
-#elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
-# if RTLNX_VER_MIN(5,8,0)
-        AssertMsgFailed(("This point should not be reached, please file a bug\n"));
-        pHdr = NULL;
-# else
-        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM | __GFP_NOWARN, MY_PAGE_KERNEL_EXEC);
-# endif
+    if (
+#if 1 /* vmalloc has serious performance issues, avoid it. */
+           cb <= PAGE_SIZE*16 - sizeof(*pHdr)
 #else
-        pHdr = (PRTMEMHDR)vmalloc(cb + sizeof(*pHdr));
+           cb <= PAGE_SIZE
 #endif
+        || (fFlags & RTMEMHDR_FLAG_ANY_CTX)
+       )
+    {
+        fFlags |= RTMEMHDR_FLAG_KMALLOC;
+        pHdr = kmalloc(cb + sizeof(*pHdr),
+                       fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC ? GFP_ATOMIC | __GFP_NOWARN : GFP_KERNEL | __GFP_NOWARN);
+        if (RT_UNLIKELY(   !pHdr
+                        && cb > PAGE_SIZE
+                        && !(fFlags & RTMEMHDR_FLAG_ANY_CTX) ))
+        {
+            fFlags &= ~RTMEMHDR_FLAG_KMALLOC;
+            pHdr = vmalloc(cb + sizeof(*pHdr));
+        }
     }
     else
+        pHdr = vmalloc(cb + sizeof(*pHdr));
+    if (RT_LIKELY(pHdr))
     {
-        if (
-#if 1 /* vmalloc has serious performance issues, avoid it. */
-               cb <= PAGE_SIZE*16 - sizeof(*pHdr)
-#else
-               cb <= PAGE_SIZE
-#endif
-            || (fFlags & RTMEMHDR_FLAG_ANY_CTX)
-           )
-        {
-            fFlags |= RTMEMHDR_FLAG_KMALLOC;
-            pHdr = kmalloc(cb + sizeof(*pHdr),
-                           fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC ? GFP_ATOMIC | __GFP_NOWARN : GFP_KERNEL | __GFP_NOWARN);
-            if (RT_UNLIKELY(   !pHdr
-                            && cb > PAGE_SIZE
-                            && !(fFlags & RTMEMHDR_FLAG_ANY_CTX) ))
-            {
-                fFlags &= ~RTMEMHDR_FLAG_KMALLOC;
-                pHdr = vmalloc(cb + sizeof(*pHdr));
-            }
-        }
-        else
-            pHdr = vmalloc(cb + sizeof(*pHdr));
-    }
-    if (RT_UNLIKELY(!pHdr))
-    {
+        /*
+         * Initialize.
+         */
+        pHdr->u32Magic  = RTMEMHDR_MAGIC;
+        pHdr->fFlags    = fFlags;
+        pHdr->cb        = cb;
+        pHdr->cbReq     = cb;
+
+        *ppHdr = pHdr;
         IPRT_LINUX_RESTORE_EFL_AC();
-        return VERR_NO_MEMORY;
+        return VINF_SUCCESS;
     }
 
-    /*
-     * Initialize.
-     */
-    pHdr->u32Magic  = RTMEMHDR_MAGIC;
-    pHdr->fFlags    = fFlags;
-    pHdr->cb        = cb;
-    pHdr->cbReq     = cb;
-
-    *ppHdr = pHdr;
     IPRT_LINUX_RESTORE_EFL_AC();
-    return VINF_SUCCESS;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -305,29 +113,6 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
     pHdr->u32Magic += 1;
     if (pHdr->fFlags & RTMEMHDR_FLAG_KMALLOC)
         kfree(pHdr);
-#ifdef RTMEMALLOC_EXEC_HEAP
-    else if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC_HEAP)
-    {
-        RTSpinlockAcquire(g_HeapExecSpinlock);
-        RTHeapSimpleFree(g_HeapExec, pHdr);
-        RTSpinlockRelease(g_HeapExecSpinlock);
-    }
-#endif
-#ifdef RTMEMALLOC_EXEC_VM_AREA
-    else if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC_VM_AREA)
-    {
-        PRTMEMLNXHDREX pHdrEx    = RT_FROM_MEMBER(pHdr, RTMEMLNXHDREX, Hdr);
-        size_t         iPage     = pHdrEx->pVmArea->nr_pages;
-        struct page  **papPages  = pHdrEx->pVmArea->pages;
-        void          *pvMapping = pHdrEx->pVmArea->addr;
-
-        vunmap(pvMapping);
-
-        while (iPage-- > 0)
-            __free_page(papPages[iPage]);
-        kfree(papPages);
-    }
-#endif
     else
         vfree(pHdr);
 

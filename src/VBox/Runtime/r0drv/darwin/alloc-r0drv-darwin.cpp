@@ -50,28 +50,6 @@
 #include "r0drv/alloc-r0drv.h"
 
 
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-/**
- * Extended header used for headers marked with RTMEMHDR_FLAG_EXEC.
- *
- * This is used with allocating executable memory, for things like generated
- * code and loaded modules.
- */
-typedef struct RTMEMDARWINHDREX
-{
-    /** The associated memory object. */
-    RTR0MEMOBJ          hMemObj;
-    /** Alignment padding. */
-    uint8_t             abPadding[ARCH_BITS == 32 ? 12 : 8];
-    /** The header we present to the generic API. */
-    RTMEMHDR            Hdr;
-} RTMEMDARWINHDREX;
-AssertCompileSize(RTMEMDARWINHDREX, 32);
-/** Pointer to an extended memory header. */
-typedef RTMEMDARWINHDREX *PRTMEMDARWINHDREX;
-
 
 /**
  * OS specific allocation function.
@@ -79,47 +57,27 @@ typedef RTMEMDARWINHDREX *PRTMEMDARWINHDREX;
 DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
-
-    if (RT_UNLIKELY(fFlags & RTMEMHDR_FLAG_ANY_CTX))
-        return VERR_NOT_SUPPORTED;
-
-    PRTMEMHDR pHdr;
-    if (fFlags & RTMEMHDR_FLAG_EXEC)
+    if (RT_LIKELY(!(fFlags & RTMEMHDR_FLAG_ANY_CTX)))
     {
-        RTR0MEMOBJ hMemObj;
-        int rc = RTR0MemObjAllocPage(&hMemObj, cb + sizeof(RTMEMDARWINHDREX), true /*fExecutable*/);
-        if (RT_FAILURE(rc))
+        PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
+        if (RT_LIKELY(pHdr))
         {
-            IPRT_DARWIN_RESTORE_EFL_AC();
-            return rc;
-        }
-        PRTMEMDARWINHDREX pExHdr = (PRTMEMDARWINHDREX)RTR0MemObjAddress(hMemObj);
-        pExHdr->hMemObj = hMemObj;
-        pHdr = &pExHdr->Hdr;
-#if 1 /*fExecutable isn't currently honored above. */
-        rc = RTR0MemObjProtect(hMemObj, 0, RTR0MemObjSize(hMemObj), RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
-        AssertRC(rc);
-#endif
-    }
-    else
-    {
-        pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
-        if (RT_UNLIKELY(!pHdr))
-        {
-            printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
-            IPRT_DARWIN_RESTORE_EFL_AC();
-            return VERR_NO_MEMORY;
-        }
-    }
+            pHdr->u32Magic  = RTMEMHDR_MAGIC;
+            pHdr->fFlags    = fFlags;
+            pHdr->cb        = cb;
+            pHdr->cbReq     = cb;
+            *ppHdr = pHdr;
 
-    pHdr->u32Magic  = RTMEMHDR_MAGIC;
-    pHdr->fFlags    = fFlags;
-    pHdr->cb        = cb;
-    pHdr->cbReq     = cb;
-    *ppHdr = pHdr;
+            IPRT_DARWIN_RESTORE_EFL_AC();
+            return VINF_SUCCESS;
+        }
 
+        printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
+        IPRT_DARWIN_RESTORE_EFL_AC();
+        return VERR_NO_MEMORY;
+    }
     IPRT_DARWIN_RESTORE_EFL_AC();
-    return VINF_SUCCESS;
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -131,14 +89,7 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
     IPRT_DARWIN_SAVE_EFL_AC();
 
     pHdr->u32Magic += 1;
-    if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
-    {
-        PRTMEMDARWINHDREX pExHdr = RT_FROM_MEMBER(pHdr, RTMEMDARWINHDREX, Hdr);
-        int rc = RTR0MemObjFree(pExHdr->hMemObj, false /*fFreeMappings*/);
-        AssertRC(rc);
-    }
-    else
-        IOFree(pHdr, pHdr->cb + sizeof(*pHdr));
+    IOFree(pHdr, pHdr->cb + sizeof(*pHdr));
 
     IPRT_DARWIN_RESTORE_EFL_AC();
 }

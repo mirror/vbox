@@ -133,8 +133,6 @@ DECLHIDDEN(void) rtR0TermNative(void)
     g_prtR0LnxWorkQueue = NULL;
 #endif
 
-    rtR0MemExecCleanup();
-
     IPRT_LINUX_RESTORE_EFL_AC();
 }
 

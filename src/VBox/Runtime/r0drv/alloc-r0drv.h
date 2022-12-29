@@ -67,21 +67,15 @@ typedef struct RTMEMHDR
  * @{ */
 /** Clear the allocated memory. */
 #define RTMEMHDR_FLAG_ZEROED        RT_BIT(0)
-/** Executable flag. */
-#define RTMEMHDR_FLAG_EXEC          RT_BIT(1)
 /** Use allocation method suitable for any context. */
-#define RTMEMHDR_FLAG_ANY_CTX_ALLOC RT_BIT(2)
+#define RTMEMHDR_FLAG_ANY_CTX_ALLOC RT_BIT(1)
 /** Use allocation method which allow for freeing in any context. */
-#define RTMEMHDR_FLAG_ANY_CTX_FREE  RT_BIT(3)
+#define RTMEMHDR_FLAG_ANY_CTX_FREE  RT_BIT(2)
 /** Both alloc and free in any context (or we're just darn lazy). */
 #define RTMEMHDR_FLAG_ANY_CTX       (RTMEMHDR_FLAG_ANY_CTX_ALLOC | RTMEMHDR_FLAG_ANY_CTX_FREE)
 /** Indicate that it was allocated by rtR0MemAllocExTag. */
-#define RTMEMHDR_FLAG_ALLOC_EX      RT_BIT(4)
+#define RTMEMHDR_FLAG_ALLOC_EX      RT_BIT(3)
 #ifdef RT_OS_LINUX
-/** Linux: Allocated using vm_area hacks. */
-# define RTMEMHDR_FLAG_EXEC_VM_AREA RT_BIT(29)
-/** Linux: Allocated from the special heap for executable memory. */
-# define RTMEMHDR_FLAG_EXEC_HEAP    RT_BIT(30)
 /** Linux: Allocated by kmalloc() instead of vmalloc(). */
 # define RTMEMHDR_FLAG_KMALLOC      RT_BIT(31)
 #elif defined(RT_OS_WINDOWS)

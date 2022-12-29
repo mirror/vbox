@@ -274,7 +274,6 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW_DEF
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
         Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_ALLOC_EX));
-        Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_EXEC));
 #ifdef RTR0MEM_STRICT
         AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                          ("pHdr=%p pv=%p cbReq=%u cb=%u fFlags=%#x\n"
@@ -303,7 +302,6 @@ RTDECL(void) RTMemFreeZ(void *pv, size_t cb) RT_NO_THROW_DEF
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
         Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_ALLOC_EX));
-        Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_EXEC));
 #ifdef RTR0MEM_STRICT
         AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                          ("pHdr=%p pv=%p cbReq=%u cb=%u fFlags=%#x\n"
