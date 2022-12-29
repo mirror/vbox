@@ -295,10 +295,12 @@ static int rtR0SegVBoxSolGetMemId(seg_t *pSeg, caddr_t virtAddr, memid_t *pMemId
 }
 
 
+#ifdef SEGOP_CAPABLE
 static int rtR0SegVBoxSolCapable(seg_t *pSeg, segcapability_t Capab)
 {
     return 0;
 }
+#endif
 
 
 static struct seg_ops s_SegVBoxOps =
@@ -325,7 +327,9 @@ static struct seg_ops s_SegVBoxOps =
     rtR0SegVBoxSolSetPageSize,
     rtR0SegVBoxSolGetMemId,
     NULL,                       /* getpolicy() */
+#ifdef SEGOP_CAPABLE
     rtR0SegVBoxSolCapable
+#endif
 };
 
 #endif /* !IPRT_INCLUDED_SRC_r0drv_solaris_memobj_r0drv_solaris_h */
