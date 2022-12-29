@@ -1,4 +1,4 @@
-* $Id$ */
+/* $Id$ */
 /** @file
  * IPRT - RTMemPage*, POSIX with heap.
  */
