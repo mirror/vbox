@@ -174,37 +174,6 @@ static int force_async_tsc = 0;
 /** The user device name. */
 #define DEVICE_NAME_USR     "vboxdrvu"
 
-#if (defined(RT_ARCH_AMD64) && RTLNX_VER_MAX(2,6,23)) || defined(VBOX_WITH_TEXT_MODMEM_HACK)
-/**
- * Memory for the executable memory heap (in IPRT).
- */
-# ifdef DEBUG
-#  define EXEC_MEMORY_SIZE   10485760   /* 10 MB */
-# else
-#  define EXEC_MEMORY_SIZE   8388608    /* 8 MB */
-# endif
-extern uint8_t g_abExecMemory[EXEC_MEMORY_SIZE];
-# ifndef VBOX_WITH_TEXT_MODMEM_HACK
-__asm__(".section execmemory, \"awx\", @progbits\n\t"
-        ".align 32\n\t"
-        ".globl g_abExecMemory\n"
-        "g_abExecMemory:\n\t"
-        ".zero " RT_XSTR(EXEC_MEMORY_SIZE) "\n\t"
-        ".type g_abExecMemory, @object\n\t"
-        ".size g_abExecMemory, " RT_XSTR(EXEC_MEMORY_SIZE) "\n\t"
-        ".text\n\t");
-# else
-__asm__(".text\n\t"
-        ".align 4096\n\t"
-        ".globl g_abExecMemory\n"
-        "g_abExecMemory:\n\t"
-        ".zero " RT_XSTR(EXEC_MEMORY_SIZE) "\n\t"
-        ".type g_abExecMemory, @object\n\t"
-        ".size g_abExecMemory, " RT_XSTR(EXEC_MEMORY_SIZE) "\n\t"
-        ".text\n\t");
-# endif
-#endif
-
 /** The file_operations structure. */
 static struct file_operations gFileOpsVBoxDrvSys =
 {
@@ -394,21 +363,12 @@ static int __init VBoxDrvLinuxInit(void)
         rc = RTR0Init(0);
         if (RT_SUCCESS(rc))
         {
-#if (defined(RT_ARCH_AMD64) && RTLNX_VER_MAX(2,6,23)) || defined(VBOX_WITH_TEXT_MODMEM_HACK)
-# ifdef VBOX_WITH_TEXT_MODMEM_HACK
-            set_memory_x(&g_abExecMemory[0], sizeof(g_abExecMemory) / PAGE_SIZE);
-            set_memory_rw(&g_abExecMemory[0], sizeof(g_abExecMemory) / PAGE_SIZE);
-# endif
-            rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
-            printk(KERN_DEBUG "VBoxDrv: dbg - g_abExecMemory=%p\n", (void *)&g_abExecMemory[0]);
-#endif
             Log(("VBoxDrv::ModuleInit\n"));
 
             /*
              * Initialize the device extension.
              */
-            if (RT_SUCCESS(rc))
-                rc = supdrvInitDevExt(&g_DevExt, sizeof(SUPDRVSESSION));
+            rc = supdrvInitDevExt(&g_DevExt, sizeof(SUPDRVSESSION));
             if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION

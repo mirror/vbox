@@ -1865,7 +1865,6 @@
 # define RTR0DbgKrnlInfoRetain                          RT_MANGLER(RTR0DbgKrnlInfoRetain)      /* r0drv */
 # define RTR0Init                                       RT_MANGLER(RTR0Init)                   /* r0drv */
 # define RTR0MemAreKrnlAndUsrDifferent                  RT_MANGLER(RTR0MemAreKrnlAndUsrDifferent) /* r0drv */
-# define RTR0MemExecDonate                              RT_MANGLER(RTR0MemExecDonate)          /* r0drv */
 # define RTR0MemKernelIsValidAddr                       RT_MANGLER(RTR0MemKernelIsValidAddr)   /* r0drv */
 # define RTR0MemObjAddress                              RT_MANGLER(RTR0MemObjAddress)          /* r0drv */
 # define RTR0MemObjAddressR3                            RT_MANGLER(RTR0MemObjAddressR3)        /* r0drv */
