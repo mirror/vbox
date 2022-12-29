@@ -193,6 +193,7 @@ typedef enum RTLOGPHASE
 } RTLOGPHASE;
 
 
+#if 0 /* retired */
 /**
  * Logger function.
  *
@@ -202,6 +203,7 @@ typedef enum RTLOGPHASE
 typedef DECLCALLBACKTYPE(void, FNRTLOGGER,(const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(1, 2);
 /** Pointer to logger function. */
 typedef FNRTLOGGER *PFNRTLOGGER;
+#endif
 
 /**
  * Custom buffer flushing function.
@@ -403,6 +405,7 @@ struct RTLOGGER
     uint64_t                u64UserValue2;
     /** User value \#3, initialized to zero. */
     uint64_t                u64UserValue3;
+#if 0
     /** Pointer to the logger function (used in non-C99 mode only).
      *
      * This is actually pointer to a wrapper/stub function which will push a pointer
@@ -411,6 +414,10 @@ struct RTLOGGER
      * support in older C++/C standards.  (The memory is allocated using
      * RTMemExecAlloc(), except for agnostic R0 code.) */
     PFNRTLOGGER             pfnLogger;
+#else
+    /** Unused. */
+    uintptr_t               uUsedToBeNonC99Logger;
+#endif
 #if ARCH_BITS == 32
     /** Explicit padding. */
     uint32_t                uReserved1;

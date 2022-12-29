@@ -1360,7 +1360,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
         pLoggerInt->pBufDesc   = paBufDescs;
         pLoggerInt->idxBufDesc = 0;
 
-# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99) && 0 /* retired */
         /*
          * Emit wrapper code.
          */
@@ -1392,7 +1392,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
 #  endif
         }
         if (RT_SUCCESS(rc))
-# endif /* X86 wrapper code*/
+# endif /* X86 wrapper code */
         {
 # ifdef IN_RING3 /* files and env.vars. are only accessible when in R3 at the present time. */
             /*
@@ -1516,7 +1516,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
 # ifdef IN_RING3
             pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
 # endif
-# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99) && 0 /* retired */
             if (pLoggerInt->Core.pfnLogger)
             {
                 RTMemExecFree(*(void **)&pLoggerInt->Core.pfnLogger, 64);
@@ -1628,7 +1628,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
             rc = rc2;
     }
 
-# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99) && 0 /* retired */
     if (pLoggerInt->Core.pfnLogger)
     {
         RTMemExecFree(*(void **)&pLoggerInt->Core.pfnLogger, 64);
