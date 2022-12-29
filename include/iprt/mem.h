@@ -368,7 +368,9 @@ RTDECL(void)    RTMemFreeZ(void *pv, size_t cb) RT_NO_THROW_PROTO;
  * @{ */
 /** The returned memory should be zeroed. */
 #define RTMEMALLOCEX_FLAGS_ZEROED           RT_BIT(0)
-/** It must be load code into the returned memory block and execute it. */
+/** Allocate memory that can be executed.
+ * @note Only supported in ring-3 for now, use RTR0MemObjAllocPage w/ @a
+ *       fExecutable = @c true for ring-0. */
 #define RTMEMALLOCEX_FLAGS_EXEC             RT_BIT(1)
 /** Allocation from any context.
  * Will return VERR_NOT_SUPPORTED if not supported.  */
