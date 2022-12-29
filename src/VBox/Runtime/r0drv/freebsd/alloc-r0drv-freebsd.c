@@ -108,17 +108,7 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
-
-#ifdef RT_ARCH_AMD64
-    if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
-# ifdef USE_KMEM_ALLOC_PROT
-        kmem_free(kernel_map, (vm_offset_t)pHdr, pHdr->cb);
-# else
-        vm_map_remove(kernel_map, (vm_offset_t)pHdr, ((vm_offset_t)pHdr) + pHdr->cb);
-# endif
-    else
-#endif
-        free(pHdr, M_IPRTHEAP);
+    free(pHdr, M_IPRTHEAP);
 }
 
 
