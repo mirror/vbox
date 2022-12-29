@@ -278,7 +278,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  			"$(2)",) # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
 else # win x11
  if1of ($(KBUILD_TARGET), linux solaris)
-  ifndef VBOX_ONLY_BUILD
+  if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_QTGUI)
    ifneq ($(VBOX_GCC_VERSION_CXX),)
     if $(VBOX_GCC_VERSION_CXX) < 40400
      $(error gcc >= 4.4 required when compiling against Qt5!)
