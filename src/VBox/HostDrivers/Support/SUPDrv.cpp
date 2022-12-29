@@ -5311,11 +5311,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     pImage = (PSUPDRVLDRIMAGE)pv;
     pImage->pvImage         = NULL;
-#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
     pImage->hMemObjImage    = NIL_RTR0MEMOBJ;
-#else
-    pImage->pvImageAlloc    = NULL;
-#endif
     pImage->cbImageWithEverything = pReq->u.In.cbImageWithEverything;
     pImage->cbImageBits     = pReq->u.In.cbImageBits;
     pImage->cSymbols        = 0;
@@ -5343,19 +5339,12 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     rc = supdrvOSLdrOpen(pDevExt, pImage, pReq->u.In.szFilename);
     if (rc == VERR_NOT_SUPPORTED)
     {
-#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
         rc = RTR0MemObjAllocPage(&pImage->hMemObjImage, pImage->cbImageBits, true /*fExecutable*/);
         if (RT_SUCCESS(rc))
         {
             pImage->pvImage = RTR0MemObjAddress(pImage->hMemObjImage);
             pImage->fNative = false;
         }
-#else
-        pImage->pvImageAlloc = RTMemExecAlloc(pImage->cbImageBits + 31);
-        pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
-        pImage->fNative     = false;
-        rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_EXEC_MEMORY;
-#endif
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
     if (RT_SUCCESS(rc))
@@ -5674,7 +5663,6 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage, pReq);
         else
         {
-#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
             uint32_t i;
             memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
 
@@ -5691,9 +5679,6 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                                             i, pImage->paSegments[i].off, pImage->paSegments[i].cb, pImage->paSegments[i].fProt);
                 break;
             }
-#else
-            memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
-#endif
             Log(("vboxdrv: Loaded '%s' at %p\n", pImage->szName, pImage->pvImage));
         }
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5922,11 +5907,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
      * Setup and link in the LDR stuff.
      */
     pImage->pvImage         = (void *)pWrappedModInfo->pvImageStart;
-#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
     pImage->hMemObjImage    = NIL_RTR0MEMOBJ;
-#else
-    pImage->pvImageAlloc    = NULL;
-#endif
     pImage->cbImageWithEverything
         = pImage->cbImageBits = (uintptr_t)pWrappedModInfo->pvImageEnd - (uintptr_t)pWrappedModInfo->pvImageStart;
     pImage->cSymbols        = 0;
@@ -6614,13 +6595,8 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         pImage->pDevExt      = NULL;
         pImage->pNext        = NULL;
         pImage->uState       = SUP_IOCTL_LDR_FREE;
-#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
         RTR0MemObjFree(pImage->hMemObjImage, true /*fMappings*/);
         pImage->hMemObjImage = NIL_RTR0MEMOBJ;
-#else
-        RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
-        pImage->pvImageAlloc = NULL;
-#endif
         pImage->pvImage      = NULL;
         RTMemFree(pImage->pachStrTab);
         pImage->pachStrTab   = NULL;

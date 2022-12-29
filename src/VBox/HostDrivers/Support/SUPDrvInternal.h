@@ -304,10 +304,6 @@
 # define SUPDRV_USE_MUTEX_FOR_GIP
 #endif
 
-/** Use the RTR0MemObj API rather than the RTMemExecAlloc for the images.
- * This is a good idea in general, but a necessity for @bugref{9801}. */
-#define SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
-
 #ifndef SUPR0_EXPORT_SYMBOL
 # define SUPR0_EXPORT_SYMBOL(a_Name) extern int g_supDrvExportSymbolDummyVariable
 #endif
@@ -485,15 +481,8 @@ typedef struct SUPDRVLDRIMAGE
     struct SUPDRVLDRIMAGE * volatile pNext;
     /** Pointer to the image. */
     void                           *pvImage;
-#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
     /** The memory object for the module allocation. */
     RTR0MEMOBJ                      hMemObjImage;
-#else
-    /** Pointer to the allocated image buffer.
-     * pvImage is 32-byte aligned or it may governed by the native loader (this
-     * member is NULL then). */
-    void                           *pvImageAlloc;
-#endif
     /** Magic value (SUPDRVLDRIMAGE_MAGIC). */
     uint32_t                        uMagic;
     /** Size of the image including the tables. This is mainly for verification
