@@ -6311,7 +6311,10 @@ TEMPLATE_VBOXR3EXE_LIBPATH            += \
  else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
-TEMPLATE_VBOXR3EXE_LIBS                = rt socket
+  if $(VBOX_GCC_VERSION_CC) < 30500
+TEMPLATE_VBOXR3EXE_CFLAGS             += -std=gnu99
+  endif
+TEMPLATE_VBOXR3EXE_LIBS                = rt socket 
  else
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.profile    = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.release)
