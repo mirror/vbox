@@ -75,12 +75,13 @@ typedef struct RTR0MEMOBJSOL
     void               *pvHandle;
     /** Access during locking. */
     int                 fAccess;
-    /** Set if large pages are involved in an RTR0MEMOBJTYPE_PHYS
-     *  allocation. */
+    /** Set if large pages are involved in an RTR0MEMOBJTYPE_PHYS allocation. */
     bool                fLargePage;
-    /** Whether we have individual pages or a kernel-mapped virtual memory block in
-     *  an RTR0MEMOBJTYPE_PHYS_NC allocation. */
+    /** Whether we have individual pages or a kernel-mapped virtual memory
+     * block in an RTR0MEMOBJTYPE_PHYS_NC allocation. */
     bool                fIndivPages;
+    /** Set if executable allocation - only RTR0MEMOBJTYPE_PHYS. */
+    bool                fExecutable;
 } RTR0MEMOBJSOL, *PRTR0MEMOBJSOL;
 
 
@@ -629,7 +630,10 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_PAGE:
-            ddi_umem_free(pMemSolaris->Cookie);
+            if (!pMemSolaris->fExecutable)
+                ddi_umem_free(pMemSolaris->Cookie);
+            else
+                segkmem_free(heaptext_arena, pMemSolaris->Core.pv, pMemSolaris->Core.cb);
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
@@ -641,13 +645,11 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
-        {
             if (pMemSolaris->Core.u.ResVirt.R0Process == NIL_RTR0PROCESS)
                 vmem_xfree(heap_arena, pMemSolaris->Core.pv, pMemSolaris->Core.cb);
             else
                 AssertFailed();
             break;
-        }
 
         case RTR0MEMOBJTYPE_CONT: /* we don't use this type here. */
         default:
@@ -665,12 +667,22 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PAGE, NULL, cb, pszTag);
     if (pMemSolaris)
     {
-        void *pvMem = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
-        if (pvMem)
+        void *pvMem;
+        if (!fExecutable)
         {
             pMemSolaris->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
+            pvMem = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
+        }
+        else
+        {
+            pMemSolaris->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC; /** @todo does segkmem_alloc zero the memory? */
+            pvMem = segkmem_alloc(heaptext_arena, cb, KM_SLEEP);
+        }
+        if (pvMem)
+        {
             pMemSolaris->Core.pv  = pvMem;
             pMemSolaris->pvHandle = NULL;
+            pMemSolaris->fExecutable = fExecutable;
             *ppMem = &pMemSolaris->Core;
             return VINF_SUCCESS;
         }
@@ -690,7 +702,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb
 
 DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
-    NOREF(fExecutable);
+    AssertReturn(!fExecutable, VERR_NOT_SUPPORTED);
 
     /* Create the object */
     PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_LOW, NULL, cb, pszTag);
@@ -716,7 +728,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
 
 DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
-    NOREF(fExecutable);
+    AssertReturn(!fExecutable, VERR_NOT_SUPPORTED);
     return rtR0MemObjNativeAllocPhys(ppMem, cb, _4G - 1, PAGE_SIZE /* alignment */, pszTag);
 }
 
