@@ -57,6 +57,9 @@
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/uio.h>
+# ifndef AF_LOCAL
+#   define AF_LOCAL AF_UNIX
+# endif
 #endif /* !RT_OS_WINDOWS */
 #include <limits.h>
 

@@ -66,6 +66,9 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#ifndef AF_LOCAL
+# define AF_LOCAL AF_UNIX
+#endif
 
 #include "internal/magics.h"
 #include "internal/path.h"
@@ -1027,7 +1030,7 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                     PollFd.fd      = RTSocketToNative(pThis->hSocket);
                     PollFd.events  = POLLHUP | POLLERR | POLLIN;
                     Log(("RTLocalIpcSessionWaitForData: Calling poll...\n"));
-                    int cFds = poll(&PollFd, 1, cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies);
+                    int cFds = poll(&PollFd, 1, cMillies == RT_INDEFINITE_WAIT ? -1 : (int)cMillies);
                     if (cFds >= 1)
                     {
                         /* Linux & Darwin sets both POLLIN and POLLHUP when the pipe is
