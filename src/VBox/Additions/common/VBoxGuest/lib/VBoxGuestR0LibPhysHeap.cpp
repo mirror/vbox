@@ -90,7 +90,14 @@
 #define VBGL_PH_BF_ALLOCATED (0x1)
 
 /** Threshold at which to split out a tail free block when allocating.
- * The value is the amount of user space, i.e. excluding the header.  */
+ *
+ * The value gives the amount of user space, i.e. excluding the header.
+ *
+ * Using 32 bytes based on VMMDev.h request sizes.  The smallest requests are 24
+ * bytes, i.e. only the header, at least 4 of these.  There are at least 10 with
+ * size 28 bytes and at least 11 with size 32 bytes.  So, 32 bytes would fit
+ * some 25 requests out of about 60, which is reasonable.
+ */
 #define VBGL_PH_MIN_SPLIT_FREE_BLOCK    32
 
 
@@ -484,12 +491,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
 
         /* We have a free block, either found or allocated. */
 
-#if 1   /** @todo r=bird: This might work okay for medium sizes, but it can't be good for small
-         * allocations (unnecessary extra work) nor for large ones (internal fragmentation). */
-        if (pBlock->cbDataSize > 2 * (cbSize + sizeof(VBGLPHYSHEAPBLOCK)))
-#else
         if (pBlock->cbDataSize >= sizeof(VBGLPHYSHEAPBLOCK) * 2 + VBGL_PH_MIN_SPLIT_FREE_BLOCK + cbSize)
-#endif
         {
             /* Data will occupy less than a half of the block,
              * split off the tail end into a new free list entry.
