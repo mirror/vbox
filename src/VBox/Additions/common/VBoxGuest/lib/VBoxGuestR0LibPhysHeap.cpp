@@ -80,16 +80,23 @@
 #endif
 
 /* Heap block signature */
-#define VBGL_PH_BLOCKSIGNATURE (0xADDBBBBB)
-
+#define VBGL_PH_BLOCKSIGNATURE  UINT32_C(0xADDBBBBB)
 
 /* Heap chunk signature */
-#define VBGL_PH_CHUNKSIGNATURE (0xADDCCCCC)
+#define VBGL_PH_CHUNKSIGNATURE  UINT32_C(0xADDCCCCC)
 /* Heap chunk allocation unit */
-#define VBGL_PH_CHUNKSIZE (0x10000)
+#define VBGL_PH_CHUNKSIZE       (0x10000)
 
-/* Heap block bit flags */
-#define VBGL_PH_BF_ALLOCATED (0x1)
+/** Max number of free nodes to search before just using the best fit.
+ *
+ * This is used to limit the free list walking during allocation and just get
+ * on with the job.  A low number should reduce the cache trashing at the
+ * possible cost of heap fragmentation.
+ *
+ * Picked 16 after comparing the tstVbglR0PhysHeap-1 results w/ uRandSeed=42 for
+ * different max values.
+ */
+#define VBGL_PH_MAX_FREE_SEARCH         16
 
 /** Threshold at which to split out a tail free block when allocating.
  *
@@ -437,8 +444,10 @@ static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
 
 DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
 {
-    VBGLPHYSHEAPBLOCK *pBlock, *pIter;
-    int rc;
+    VBGLPHYSHEAPBLOCK *pBlock;
+    VBGLPHYSHEAPBLOCK *pIter;
+    int32_t            cLeft;
+    int                rc;
 
     /*
      * Align the size to a pointer size to avoid getting misaligned header pointers and whatnot.
@@ -456,15 +465,14 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
      * Search the free list.  We do this in linear fashion as we don't expect
      * there to be many blocks in the heap.
      */
-    /** @todo r=bird: Don't walk these lists for ever, use the block count
-     *        statistics to limit the walking to the first X or something. */
+    cLeft  = VBGL_PH_MAX_FREE_SEARCH;
     pBlock = NULL;
     if (cbSize <= PAGE_SIZE / 4 * 3)
     {
         /* Smaller than 3/4 page:  Prefer a free block that can keep the request within a single page,
            so HGCM processing in VMMDev can use page locks instead of several reads and writes. */
         VBGLPHYSHEAPBLOCK *pFallback = NULL;
-        for (pIter = g_vbgldata.pFreeBlocksHead; pIter != NULL; pIter = pIter->pNext)
+        for (pIter = g_vbgldata.pFreeBlocksHead; pIter != NULL; pIter = pIter->pNext, cLeft--)
         {
             AssertBreak(pIter->u32Signature == VBGL_PH_BLOCKSIGNATURE);
             if (pIter->cbDataSize >= cbSize)
@@ -486,6 +494,11 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
                         if (!pBlock || pIter->cbDataSize < pBlock->cbDataSize)
                             pBlock = pIter;
                 }
+
+                if (cLeft > 0)
+                { /* likely */ }
+                else
+                    break;
             }
         }
 
@@ -495,7 +508,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
     else
     {
         /* Large than 3/4 page:  Find closest free list match. */
-        for (pIter = g_vbgldata.pFreeBlocksHead; pIter != NULL; pIter = pIter->pNext)
+        for (pIter = g_vbgldata.pFreeBlocksHead; pIter != NULL; pIter = pIter->pNext, cLeft--)
         {
             AssertBreak(pIter->u32Signature == VBGL_PH_BLOCKSIGNATURE);
             if (pIter->cbDataSize >= cbSize)
@@ -510,6 +523,11 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
                 /* Looking for a free block with nearest size. */
                 if (!pBlock || pIter->cbDataSize < pBlock->cbDataSize)
                     pBlock = pIter;
+
+                if (cLeft > 0)
+                { /* likely */ }
+                else
+                    break;
             }
         }
     }
@@ -555,12 +573,18 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
 
         dumpheap("post alloc");
 
+        /*
+         * Return success.
+         */
         rc = RTSemFastMutexRelease(g_vbgldata.mutexHeap);
 
         VBGL_PH_dprintf(("VbglR0PhysHeapAlloc: returns %p size %x\n", pBlock + 1, pBlock->cbDataSize));
         return pBlock + 1;
     }
 
+    /*
+     * Return failure.
+     */
     rc = RTSemFastMutexRelease(g_vbgldata.mutexHeap);
     AssertRC(rc);
 

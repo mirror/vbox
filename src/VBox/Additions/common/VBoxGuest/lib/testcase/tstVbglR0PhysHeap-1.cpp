@@ -160,6 +160,20 @@ int main(int argc, char **argv)
     RTTestBanner(hTest);
 
     /*
+     * Arguments are taken to be random seeding.
+     */
+    uint64_t uRandSeed = RTTimeNanoTS();
+    for (int i = 1; i < argc; i++)
+    {
+        rc = RTStrToUInt64Full(argv[i], 0, &uRandSeed);
+        if (rc != VINF_SUCCESS)
+        {
+            RTTestIFailed("Invalid parameter: %Rrc: %s\n", rc, argv[i]);
+            return RTTestSummaryAndDestroy(hTest);
+        }
+    }
+
+    /*
      * Create a heap.
      */
     RTTestSub(hTest, "Basics");
@@ -275,11 +289,8 @@ int main(int argc, char **argv)
     RTTESTI_CHECK_RC(rc = RTRandAdvCreateParkMiller(&hRand), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
-#if 0
-    RTRandAdvSeed(hRand, 42);
-#else
-    RTRandAdvSeed(hRand, RTTimeNanoTS());
-#endif
+    RTRandAdvSeed(hRand, uRandSeed);
+    RTTestValue(hTest, "RandSeed", uRandSeed, RTTESTUNIT_NONE);
 
     static TSTHISTORYENTRY s_aHistory[3072];
     RT_ZERO(s_aHistory);
@@ -363,31 +374,16 @@ int main(int argc, char **argv)
         else if ((iTest % 7777) == 1111)
         {
             /* free all */
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "Free-all-pre:  cFreeBlocks=%u cAllocedBlocks=%u in %u chunk(s)\n",
+                          g_vbgldata.acBlocks[0], g_vbgldata.acBlocks[1], g_cChunks);
             for (i = 0; i < RT_ELEMENTS(s_aHistory); i++)
             {
                 VbglR0PhysHeapFree(s_aHistory[i].pv);
                 s_aHistory[i].pv = NULL;
             }
-            RTTestIPrintf(RTTESTLVL_ALWAYS, "after free-all: cFreeBlocks=%u in %u chunk(s)\n", g_vbgldata.acBlocks[0], g_cChunks);
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "Free-all-post: cFreeBlocks=%u in %u chunk(s)\n", g_vbgldata.acBlocks[0], g_cChunks);
             RTTESTI_CHECK_MSG(g_cChunks == 1, ("g_cChunks=%d\n", g_cChunks));
             RTTESTI_CHECK_MSG(g_vbgldata.acBlocks[1] == 0, ("g_vbgldata.acBlocks[1]=%d\n", g_vbgldata.acBlocks[0]));
-#if 0
-            for (VBGLPHYSHEAPCHUNK *pCurChunk = g_vbgldata.pChunkHead; pCurChunk; pCurChunk = pCurChunk->pNext)
-            {
-                RTTestIPrintf(RTTESTLVL_ALWAYS, "pCurChunk=%p: cAllocatedBlocks=%d\n", pCurChunk, pCurChunk->cAllocatedBlocks);
-                uintptr_t const          uEnd        = (uintptr_t)pCurChunk + pCurChunk->cbSize;
-                const VBGLPHYSHEAPBLOCK *pCurBlock   = (const VBGLPHYSHEAPBLOCK *)(pCurChunk + 1);
-                unsigned                 iCurBlock   = 0;
-                while ((uintptr_t)pCurBlock < uEnd)
-                {
-                    RTTestIPrintf(RTTESTLVL_ALWAYS, "  #%2u/%p: cb=%#x %s byte0=%02x\n",
-                                  iCurBlock, pCurBlock, pCurBlock->cbDataSize, pCurBlock->fu32Flags ? "alloc" : "free",
-                                  *(uint8_t const *)(pCurBlock + 1));
-                    pCurBlock = (const VBGLPHYSHEAPBLOCK *)((uintptr_t)(pCurBlock + 1) + pCurBlock->cbDataSize);
-                    iCurBlock++;
-                }
-            }
-#endif
 
             //size_t cbAfterRand = VbglR0PhysHeapGetFreeSize();
             //RTTESTI_CHECK_MSG(cbAfterRand == cbAfter, ("cbAfterRand=%zu cbAfter=%zu\n", cbAfterRand, cbAfter));
