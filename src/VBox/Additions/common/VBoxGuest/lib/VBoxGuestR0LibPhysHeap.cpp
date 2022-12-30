@@ -35,8 +35,9 @@
 #include "VBoxGuestR0LibInternal.h"
 
 #include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/semaphore.h>
-#include <iprt/alloc.h>
 
 /** @page pg_vbglr0_phys_heap   VBoxGuestLibR0 - Physical memory heap.
  *
@@ -45,21 +46,22 @@
  * are members of allocated (VBGLDATA::pAllocBlocksHead) and free
  * (VBGLDATA::pFreeBlocksHead) doubly linked lists.
  *
- * When allocating a block, we search in Free linked list for a suitable free
- * block.  If there is no such block, a new chunk is allocated and the new block
- * is taken from the new chunk as the only chunk-sized free block. Allocated
- * block is excluded from the Free list and goes to Alloc list.
+ * When allocating a block, we search the free list for a suitable free block.
+ * If there is no such block, a new chunk is allocated and the new block is
+ * taken from the new chunk as the only chunk-sized free block. The allocated
+ * block is unlinked from the free list and goes to alloc list.
  *
- * When freeing block, we check the pointer and then exclude block from Alloc
- * list and move it to free list.
+ * When freeing block, we check the pointer and then unlink the block from the
+ * alloc list and move it to the free list.
  *
- * For each chunk we maintain the allocated blocks counter.  If 2 (or more)
- * entire chunks are free they are immediately deallocated, so we always have at
- * most 1 free chunk.
+ * For each chunk we maintain the allocated blocks counter (as well as a count
+ * of free blocks).  If 2 (or more) entire chunks are free they are immediately
+ * deallocated, so we always have at most 1 free chunk.
  *
  * When freeing blocks, two subsequent free blocks are always merged together.
- * Current implementation merges blocks only when there is a block after the
- * just freed one.
+ * Current implementation merges blocks only when there is a free block after
+ * the just freed one, never when there is one before it as that's too
+ * expensive.
  */
 
 
@@ -297,7 +299,7 @@ static void vbglPhysHeapInsertBlock(VBGLPHYSHEAPBLOCK *pInsertAfter, VBGLPHYSHEA
  *
  * This also update the per-chunk block counts.
  */
-static void vbglPhysHeapExcludeBlock(VBGLPHYSHEAPBLOCK *pBlock)
+static void vbglPhysHeapUnlinkBlock(VBGLPHYSHEAPBLOCK *pBlock)
 {
     bool const fAllocated = pBlock->fAllocated;
 
@@ -400,7 +402,7 @@ static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
 
     VBGL_PH_dprintf(("Deleting chunk %p size %x\n", pChunk, pChunk->cbSize));
 
-    /* first scan the chunk and exclude (unlink) all blocks from the lists */
+    /* first scan the chunk and unlink all blocks from the lists */
 
     uEnd = (uintptr_t)pChunk + pChunk->cbSize;
     uCur = (uintptr_t)(pChunk + 1);
@@ -411,12 +413,12 @@ static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
 
         uCur += pBlock->cbDataSize + sizeof(VBGLPHYSHEAPBLOCK);
 
-        vbglPhysHeapExcludeBlock(pBlock);
+        vbglPhysHeapUnlinkBlock(pBlock);
     }
 
     VBGL_PH_ASSERT_MSG(uCur == uEnd, ("uCur = %p, uEnd = %p, pChunk->cbSize = %08X\n", uCur, uEnd, pChunk->cbSize));
 
-    /* Exclude chunk from the chunk list */
+    /* Unlink the chunk from the chunk list. */
     if (pChunk->pNext)
         pChunk->pNext->pPrev = pChunk->pPrev;
     /* else: we do not maintain tail pointer. */
@@ -547,7 +549,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
          * Unlink the block from the free list, mark it as allocated and insert
          * it in the allocated list.
          */
-        vbglPhysHeapExcludeBlock(pBlock);
+        vbglPhysHeapUnlinkBlock(pBlock);
         pBlock->fAllocated = true;
         vbglPhysHeapInsertBlock(NULL, pBlock);
 
@@ -618,9 +620,9 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
              * Move the block from the allocated list to the free list.
              */
             VBGL_PH_dprintf(("VbglR0PhysHeapFree: %p size %#x\n", pv, pBlock->cbDataSize));
-            vbglPhysHeapExcludeBlock(pBlock);
+            vbglPhysHeapUnlinkBlock(pBlock);
 
-            dumpheap("post exclude");
+            dumpheap("post unlink");
 
             pBlock->fAllocated = false;
             vbglPhysHeapInsertBlock(NULL, pBlock);
@@ -647,7 +649,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
                 pBlock->cbDataSize += pNeighbour->cbDataSize + sizeof(VBGLPHYSHEAPBLOCK);
 
                 /* Unlink the following node and invalid it. */
-                vbglPhysHeapExcludeBlock(pNeighbour);
+                vbglPhysHeapUnlinkBlock(pNeighbour);
 
                 pNeighbour->u32Signature = ~VBGL_PH_BLOCKSIGNATURE;
                 pNeighbour->cbDataSize   = UINT32_MAX / 4;
@@ -672,7 +674,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
                         cUnusedChunks++;
                         if (cUnusedChunks > 1)
                         {
-                            /* Delete current chunk, it will also exclude all free blocks
+                            /* Delete current chunk, it will also unlink all free blocks
                              * remaining in the chunk from the free list, so the pBlock
                              * will also be invalid after this.
                              */
@@ -850,7 +852,7 @@ DECLR0VBGL(int) VbglR0PhysHeapInit(void)
     VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapChunkAlloc(0);
     if (pBlock)
         return RTSemFastMutexCreate(&g_vbgldata.mutexHeap);
-    return VERR_NO_MEMORY;
+    return VERR_NO_CONT_MEMORY;
 }
 
 DECLR0VBGL(void) VbglR0PhysHeapTerminate(void)
