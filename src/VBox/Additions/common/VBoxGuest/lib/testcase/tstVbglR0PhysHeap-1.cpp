@@ -344,7 +344,9 @@ int main(int argc, char **argv)
                 VbglR0PhysHeapFree(s_aHistory[i].pv);
                 s_aHistory[i].pv = NULL;
             }
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "after free-all: cFreeBlocks=%u in %u chunk(s)\n", g_vbgldata.acBlocks[0], g_cChunks);
             RTTESTI_CHECK_MSG(g_cChunks == 1, ("g_cChunks=%d\n", g_cChunks));
+            RTTESTI_CHECK_MSG(g_vbgldata.acBlocks[1] == 0, ("g_vbgldata.acBlocks[1]=%d\n", g_vbgldata.acBlocks[0]));
 #if 0
             for (VBGLPHYSHEAPCHUNK *pCurChunk = g_vbgldata.pChunkHead; pCurChunk; pCurChunk = pCurChunk->pNext)
             {
