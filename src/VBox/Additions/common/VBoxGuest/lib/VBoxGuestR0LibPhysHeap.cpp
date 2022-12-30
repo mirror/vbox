@@ -104,22 +104,35 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/**
+ * A heap block (within a chunk).
+ *
+ * This is used to track a part of a heap chunk that's either free or
+ * allocated.  The VBGLPHYSHEAPBLOCK::fAllocated member indicates which it is.
+ */
 struct VBGLPHYSHEAPBLOCK
 {
     /** Magic value (VBGL_PH_BLOCKSIGNATURE). */
     uint32_t u32Signature;
 
     /** Size of user data in the block. Does not include this block header. */
-    uint32_t cbDataSize;
+    uint32_t cbDataSize : 31;
+    /** The top bit indicates whether it's allocated or free. */
+    uint32_t fAllocated : 1;
 
-    uint32_t fu32Flags;
-
+    /** Pointer to the next block on the list. */
     VBGLPHYSHEAPBLOCK  *pNext;
+    /** Pointer to the previous block on the list. */
     VBGLPHYSHEAPBLOCK  *pPrev;
-
+    /** Pointer back to the chunk. */
     VBGLPHYSHEAPCHUNK  *pChunk;
 };
 
+/**
+ * A chunk of memory used by the heap for sub-allocations.
+ *
+ * There is a list of these.
+ */
 struct VBGLPHYSHEAPCHUNK
 {
     /** Magic value (VBGL_PH_CHUNKSIGNATURE). */
@@ -134,7 +147,9 @@ struct VBGLPHYSHEAPCHUNK
     /** Number of allocated blocks in the chunk */
     int32_t cAllocatedBlocks;
 
+    /** Pointer to the next chunk. */
     VBGLPHYSHEAPCHUNK  *pNext;
+    /** Pointer to the previous chunk. */
     VBGLPHYSHEAPCHUNK  *pPrev;
 };
 
@@ -164,8 +179,9 @@ void dumpheap(const char *pszWhere)
 
    while (pBlock)
    {
-       VBGL_PH_dprintf(("%p: pNext = %p, pPrev = %p, sign = %08X, size = %8d, flags = %08X, pChunk = %p\n",
-                        pBlock, pBlock->pNext, pBlock->pPrev, pBlock->u32Signature, pBlock->cbDataSize, pBlock->fu32Flags, pBlock->pChunk));
+       VBGL_PH_dprintf(("%p: pNext = %p, pPrev = %p, sign = %08X, size = %8d, %s, pChunk = %p\n",
+                        pBlock, pBlock->pNext, pBlock->pPrev, pBlock->u32Signature, pBlock->cbDataSize,
+                        pBlock->fAllocated ? "allocated" : "free", pBlock->pChunk));
 
        pBlock = pBlock->pNext;
    }
@@ -176,8 +192,9 @@ void dumpheap(const char *pszWhere)
 
    while (pBlock)
    {
-       VBGL_PH_dprintf(("%p: pNext = %p, pPrev = %p, sign = %08X, size = %8d, flags = %08X, pChunk = %p\n",
-                        pBlock, pBlock->pNext, pBlock->pPrev, pBlock->u32Signature, pBlock->cbDataSize, pBlock->fu32Flags, pBlock->pChunk));
+       VBGL_PH_dprintf(("%p: pNext = %p, pPrev = %p, sign = %08X, size = %8d, %s, pChunk = %p\n",
+                        pBlock, pBlock->pNext, pBlock->pPrev, pBlock->u32Signature, pBlock->cbDataSize,
+                        pBlock->fAllocated ? "allocated" : "free", pBlock->pChunk));
 
        pBlock = pBlock->pNext;
    }
@@ -232,7 +249,7 @@ static void vbglPhysHeapInitBlock(VBGLPHYSHEAPBLOCK *pBlock, VBGLPHYSHEAPCHUNK *
 
     pBlock->u32Signature = VBGL_PH_BLOCKSIGNATURE;
     pBlock->cbDataSize   = cbDataSize;
-    pBlock->fu32Flags    = 0;
+    pBlock->fAllocated   = false;
     pBlock->pNext        = NULL;
     pBlock->pPrev        = NULL;
     pBlock->pChunk       = pChunk;
@@ -259,7 +276,7 @@ static void vbglPhysHeapInsertBlock(VBGLPHYSHEAPBLOCK *pInsertAfter, VBGLPHYSHEA
         /* inserting to head of list */
         pBlock->pPrev = NULL;
 
-        if (pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
+        if (pBlock->fAllocated)
         {
             pBlock->pNext = g_vbgldata.pAllocBlocksHead;
 
@@ -292,7 +309,7 @@ static void vbglPhysHeapExcludeBlock(VBGLPHYSHEAPBLOCK *pBlock)
 
     if (pBlock->pPrev)
         pBlock->pPrev->pNext = pBlock->pNext;
-    else if (pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
+    else if (pBlock->fAllocated)
     {
         Assert(g_vbgldata.pAllocBlocksHead == pBlock);
         g_vbgldata.pAllocBlocksHead = pBlock->pNext;
@@ -486,8 +503,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
     {
         VBGL_PH_ASSERT_MSG(pBlock->u32Signature == VBGL_PH_BLOCKSIGNATURE,
                            ("pBlock = %p, pBlock->u32Signature = %08X\n", pBlock, pBlock->u32Signature));
-        VBGL_PH_ASSERT_MSG((pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED) == 0,
-                           ("pBlock = %p, pBlock->fu32Flags = %08X\n", pBlock, pBlock->fu32Flags));
+        VBGL_PH_ASSERT_MSG(!pBlock->fAllocated, ("pBlock = %p\n", pBlock));
 
         /* We have a free block, either found or allocated. */
 
@@ -511,7 +527,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
         vbglPhysHeapExcludeBlock(pBlock);
 
         /* Mark as allocated */
-        pBlock->fu32Flags |= VBGL_PH_BF_ALLOCATED;
+        pBlock->fAllocated = true;
 
         /* Insert to allocated list */
         vbglPhysHeapInsertBlock(NULL, pBlock);
@@ -535,10 +551,9 @@ DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr(void *pv)
 
     if (pBlock)
     {
-        VBGL_PH_ASSERT_MSG((pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED) != 0,
-                           ("pBlock = %p, pBlock->fu32Flags = %08X\n", pBlock, pBlock->fu32Flags));
+        VBGL_PH_ASSERT_MSG(pBlock->fAllocated, ("pBlock = %p\n", pBlock));
 
-        if (pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
+        if (pBlock->fAllocated)
             physAddr = pBlock->pChunk->physAddr + (uint32_t)((uintptr_t)pv - (uintptr_t)pBlock->pChunk);
     }
 
@@ -565,8 +580,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
         return;
     }
 
-    VBGL_PH_ASSERT_MSG((pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED) != 0,
-                       ("pBlock = %p, pBlock->fu32Flags = %08X\n", pBlock, pBlock->fu32Flags));
+    VBGL_PH_ASSERT_MSG(pBlock->fAllocated, ("pBlock = %p\n", pBlock));
 
     /* Exclude from allocated list */
     vbglPhysHeapExcludeBlock(pBlock);
@@ -576,7 +590,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
     VBGL_PH_dprintf(("VbglR0PhysHeapFree %p size %x\n", pv, pBlock->cbDataSize));
 
     /* Mark as free */
-    pBlock->fu32Flags &= ~VBGL_PH_BF_ALLOCATED;
+    pBlock->fAllocated = false;
 
     /* Insert to free list */
     vbglPhysHeapInsertBlock(NULL, pBlock);
@@ -602,7 +616,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
     pNeighbour = (VBGLPHYSHEAPBLOCK *)((uintptr_t)(pBlock + 1) + pBlock->cbDataSize);
 
     if (   (uintptr_t)pNeighbour < (uintptr_t)pChunk + pChunk->cbSize
-        && (pNeighbour->fu32Flags & VBGL_PH_BF_ALLOCATED) == 0)
+        && !pNeighbour->fAllocated)
     {
         /* The next block is free as well. */
 
@@ -700,10 +714,7 @@ static int vbglR0PhysHeapCheckLocked(PRTERRINFO pErrInfo)
                          && RT_ALIGN_32(pCurBlock->cbDataSize, sizeof(void *)) == pCurBlock->cbDataSize,
                          RTErrInfoSetF(pErrInfo, VERR_INTERNAL_ERROR_3,
                                        "pCurBlock=%p: cbDataSize=%#x\n", pCurBlock, pCurBlock->cbDataSize));
-            AssertReturn(   pCurBlock->fu32Flags <= VBGL_PH_BF_ALLOCATED,
-                         RTErrInfoSetF(pErrInfo, VERR_INTERNAL_ERROR_3,
-                                       "pCurBlock=%p: fu32Flags=%#x\n", pCurBlock, pCurBlock->fu32Flags));
-            if (pCurBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
+            if (pCurBlock->fAllocated)
                 cUsedBlocks += 1;
             else
                 cTotalFreeBlocks += 1;
