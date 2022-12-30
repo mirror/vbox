@@ -37,6 +37,8 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+
 #
 # Target config.
 #
