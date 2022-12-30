@@ -50,4 +50,3 @@ tstVbglR0PhysHeap-1_SOURCES  = \
 endif # defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_BUILD)
 include $(FILE_KBUILD_SUB_FOOTER)
 
-
