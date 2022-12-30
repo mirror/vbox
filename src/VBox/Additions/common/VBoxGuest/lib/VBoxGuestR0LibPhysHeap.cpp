@@ -320,7 +320,7 @@ static void vbglPhysHeapInsertBlock(VBGLPHYSHEAPBLOCK *pInsertAfter, VBGLPHYSHEA
     AssertMsg(   (uint32_t)pBlock->pChunk->acBlocks[fAllocated]
               <= pBlock->pChunk->cbSize / (sizeof(*pBlock) + sizeof(void *)),
               ("pChunk=%p: cbSize=%#x acBlocks[%u]=%d\n",
-               pBlock->pChunk, pBlock->pChunk->cbSize, pBlock->pChunk->acBlocks[fAllocated]));
+               pBlock->pChunk, pBlock->pChunk->cbSize, fAllocated, pBlock->pChunk->acBlocks[fAllocated]));
 }
 
 
@@ -358,7 +358,7 @@ static void vbglPhysHeapExcludeBlock(VBGLPHYSHEAPBLOCK *pBlock)
     pBlock->pChunk->acBlocks[fAllocated] -= 1;
     AssertMsg(pBlock->pChunk->acBlocks[fAllocated] >= 0,
               ("pChunk=%p: cbSize=%#x acBlocks[%u]=%d\n",
-               pBlock->pChunk, pBlock->pChunk->cbSize, pBlock->pChunk->acBlocks[fAllocated]));
+               pBlock->pChunk, pBlock->pChunk->cbSize, fAllocated, pBlock->pChunk->acBlocks[fAllocated]));
     Assert(g_vbgldata.acBlocks[fAllocated] >= 0);
 }
 
