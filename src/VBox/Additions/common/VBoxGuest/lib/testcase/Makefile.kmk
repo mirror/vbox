@@ -36,7 +36,7 @@
 
 SUB_DEPTH = ../../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
-ifdef VBOX_WITH_TESTCASES
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_BUILD)
 
 #
 # Testcase for the physical heap.
@@ -47,7 +47,7 @@ tstVbglR0PhysHeap-1_SOURCES  = \
 	tstVbglR0PhysHeap-1.cpp
 
 
-endif
+endif # defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_BUILD)
 include $(FILE_KBUILD_SUB_FOOTER)
 
 
