@@ -86,7 +86,14 @@ static void *tstMemContAlloc(PRTCCPHYS pPhys, size_t cb)
         {
             g_cChunks++;
             g_cbChunks += cb;
-            *pPhys = (uint32_t)(uintptr_t)pvRet ^ UINT32_C(0xf0f0f000);
+            *pPhys = (uint32_t)(uintptr_t)pvRet ^ (UINT32_C(0xf0f0f0f0) & ~(uint32_t)PAGE_OFFSET_MASK);
+
+            /* Avoid problematic values that won't happen in real life:  */
+            if (!*pPhys)
+                *pPhys = 4U << PAGE_SHIFT;
+            if (UINT32_MAX - *pPhys < cb)
+                *pPhys -= RT_ALIGN_32(cb, PAGE_SIZE);
+
             return pvRet;
         }
     }
@@ -160,6 +167,12 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
 
+#define CHECK_PHYS_ADDR(a_pv) do { \
+        uint32_t const uPhys = VbglR0PhysHeapGetPhysAddr(a_pv); \
+        if (uPhys == 0 || uPhys == UINT32_MAX || (uPhys & PAGE_OFFSET_MASK) != ((uintptr_t)(a_pv) & PAGE_OFFSET_MASK)) \
+            RTTestIFailed("line %u: %s=%p: uPhys=%#x\n", __LINE__, #a_pv, (a_pv), uPhys); \
+    } while (0)
+
     /*
      * Try allocate.
      */
@@ -209,8 +222,8 @@ int main(int argc, char **argv)
         memset(s_aOps[i].pvAlloc, s_szFill[i], s_aOps[i].cb);
         RTTESTI_CHECK_MSG(RT_ALIGN_P(s_aOps[i].pvAlloc, sizeof(void *)) == s_aOps[i].pvAlloc,
                           ("VbglR0PhysHeapAlloc(%#x) -> %p\n", s_aOps[i].cb, i));
-        if (!s_aOps[i].pvAlloc)
-            return RTTestSummaryAndDestroy(hTest);
+
+        CHECK_PHYS_ADDR(s_aOps[i].pvAlloc);
     }
 
     /* free and allocate the same node again. */
@@ -229,6 +242,8 @@ int main(int argc, char **argv)
         RTTESTI_CHECK_MSG(pv, ("VbglR0PhysHeapAlloc(%#x) -> NULL i=%d\n", s_aOps[i].cb, i));
         if (!pv)
             return RTTestSummaryAndDestroy(hTest);
+        CHECK_PHYS_ADDR(pv);
+
         //RTPrintf("debug: i=%d pv=%p cbReal=%#zx cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx \n", i, pv, RTHeapOffsetSize(Heap, pv),
         //         cbBeforeSub, cbAfterSubFree, VbglR0PhysHeapGetFreeSize());
 
@@ -282,7 +297,10 @@ int main(int argc, char **argv)
                 s_aHistory[i].pv = VbglR0PhysHeapAlloc(s_aHistory[i].cb);
             }
             if (s_aHistory[i].pv)
+            {
                 memset(s_aHistory[i].pv, 0xbb, s_aHistory[i].cb);
+                CHECK_PHYS_ADDR(s_aHistory[i].pv);
+            }
         }
         else
         {
@@ -310,7 +328,10 @@ int main(int argc, char **argv)
                     s_aHistory[i].cb = RTRandAdvU32Ex(hRand, VBGL_PH_CHUNKSIZE / 8, VBGL_PH_CHUNKSIZE / 2 + VBGL_PH_CHUNKSIZE / 4);
                     s_aHistory[i].pv = VbglR0PhysHeapAlloc(s_aHistory[i].cb);
                     if (s_aHistory[i].pv)
+                    {
                         memset(s_aHistory[i].pv, 0x55, s_aHistory[i].cb);
+                        CHECK_PHYS_ADDR(s_aHistory[i].pv);
+                    }
                 }
 
             size_t cbFree = VbglR0PhysHeapGetFreeSize();
@@ -326,7 +347,10 @@ int main(int argc, char **argv)
                             s_aHistory[i].pv = VbglR0PhysHeapAlloc(s_aHistory[i].cb);
                         }
                         if (s_aHistory[i].pv)
+                        {
                             memset(s_aHistory[i].pv, 0x55, s_aHistory[i].cb);
+                            CHECK_PHYS_ADDR(s_aHistory[i].pv);
+                        }
 
                         cbFree = VbglR0PhysHeapGetFreeSize();
                         if (!cbFree)

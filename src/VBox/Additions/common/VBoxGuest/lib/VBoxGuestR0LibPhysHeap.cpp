@@ -222,20 +222,6 @@ DECLINLINE(void *) vbglPhysHeapBlock2Data(VBGLPHYSHEAPBLOCK *pBlock)
 }
 
 
-DECLINLINE(VBGLPHYSHEAPBLOCK *) vbglPhysHeapData2Block(void *pv)
-{
-    if (pv)
-    {
-        VBGLPHYSHEAPBLOCK *pBlock = (VBGLPHYSHEAPBLOCK *)pv - 1;
-        AssertMsgReturn(pBlock->u32Signature == VBGL_PH_BLOCKSIGNATURE,
-                        ("pBlock->u32Signature = %08X\n", pBlock->u32Signature),
-                        NULL);
-        return pBlock;
-    }
-    return NULL;
-}
-
-
 DECLINLINE(int) vbglPhysHeapEnter(void)
 {
     int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
@@ -486,6 +472,8 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
      * there to be many blocks in the heap.
      */
 
+    /** @todo r=bird: Don't walk these lists for ever, use the block count
+     *        statistics to limit the walking to the first X or something. */
     pBlock = NULL;
     if (cbSize <= PAGE_SIZE / 4 * 3)
     {
@@ -587,115 +575,130 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
     return vbglPhysHeapBlock2Data(pBlock);
 }
 
+
 DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr(void *pv)
 {
-    uint32_t physAddr = 0;
-    VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapData2Block(pv);
-
-    if (pBlock)
+    /*
+     * Validate the incoming pointer.
+     */
+    if (pv != NULL)
     {
-        VBGL_PH_ASSERT_MSG(pBlock->fAllocated, ("pBlock = %p\n", pBlock));
+        VBGLPHYSHEAPBLOCK *pBlock = (VBGLPHYSHEAPBLOCK *)pv - 1;
+        if (   pBlock->u32Signature == VBGL_PH_BLOCKSIGNATURE
+            && pBlock->fAllocated)
+        {
+            /*
+             * Calculate and return its physical address.
+             */
+            return pBlock->pChunk->physAddr + (uint32_t)((uintptr_t)pv - (uintptr_t)pBlock->pChunk);
+        }
 
-        if (pBlock->fAllocated)
-            physAddr = pBlock->pChunk->physAddr + (uint32_t)((uintptr_t)pv - (uintptr_t)pBlock->pChunk);
+        AssertMsgFailed(("Use after free or corrupt pointer variable: pv=%p pBlock=%p: u32Signature=%#x cb=%#x fAllocated=%d\n",
+                         pv, pBlock, pBlock->u32Signature, pBlock->cbDataSize, pBlock->fAllocated));
     }
-
-    return physAddr;
+    else
+        AssertMsgFailed(("Unexpected NULL pointer\n"));
+    return 0;
 }
 
 
 DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
 {
-    VBGLPHYSHEAPBLOCK *pBlock;
-    VBGLPHYSHEAPBLOCK *pNeighbour;
-    VBGLPHYSHEAPCHUNK *pChunk;
-
-    int rc = vbglPhysHeapEnter();
-    if (RT_FAILURE(rc))
-        return;
-
-    dumpheap("pre free");
-
-    pBlock = vbglPhysHeapData2Block(pv);
-
-    if (!pBlock)
+    if (pv != NULL)
     {
-        vbglPhysHeapLeave();
-        return;
-    }
+        VBGLPHYSHEAPBLOCK *pBlock;
 
-    VBGL_PH_ASSERT_MSG(pBlock->fAllocated, ("pBlock = %p\n", pBlock));
+        int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
+        AssertRCReturnVoid(rc);
 
-    /* Exclude from allocated list */
-    vbglPhysHeapExcludeBlock(pBlock);
+        dumpheap("pre free");
 
-    dumpheap("post exclude");
-
-    VBGL_PH_dprintf(("VbglR0PhysHeapFree %p size %x\n", pv, pBlock->cbDataSize));
-
-    /* Mark as free */
-    pBlock->fAllocated = false;
-
-    /* Insert to free list */
-    vbglPhysHeapInsertBlock(NULL, pBlock);
-
-    dumpheap("post insert");
-
-    pChunk = pBlock->pChunk;
-
-    /* Check if we can merge 2 free blocks. To simplify heap maintenance,
-     * we will look at block after the just freed one.
-     * This will not prevent us from detecting free memory chunks.
-     * Also in most cases blocks are deallocated in reverse allocation order
-     * and in that case the merging will work.
-     */
-    /** @todo r=bird: This simplistic approach is of course not working.
-     *        However, since the heap lists aren't sorted in any way, we cannot
-     *        cheaply determine where the block before us starts. */
-
-    pNeighbour = (VBGLPHYSHEAPBLOCK *)((uintptr_t)(pBlock + 1) + pBlock->cbDataSize);
-
-    if (   (uintptr_t)pNeighbour < (uintptr_t)pChunk + pChunk->cbSize
-        && !pNeighbour->fAllocated)
-    {
-        /* The next block is free as well. */
-
-        /* Adjust size of current memory block */
-        pBlock->cbDataSize += pNeighbour->cbDataSize + sizeof(VBGLPHYSHEAPBLOCK);
-
-        /* Exclude the next neighbour */
-        vbglPhysHeapExcludeBlock(pNeighbour);
-    }
-
-    dumpheap("post merge");
-
-    /* now check if there are 2 or more free (unused) chunks */
-    if (pChunk->acBlocks[1 /*allocated*/] == 0)
-    {
-        VBGLPHYSHEAPCHUNK *pCurChunk;
-
-        uint32_t cUnusedChunks = 0;
-
-        for (pCurChunk = g_vbgldata.pChunkHead; pCurChunk; pCurChunk = pCurChunk->pNext)
+        /*
+         * Validate the block header.
+         */
+        pBlock = (VBGLPHYSHEAPBLOCK *)pv - 1;
+        if (   pBlock->u32Signature == VBGL_PH_BLOCKSIGNATURE
+            && pBlock->fAllocated)
         {
-            Assert(pCurChunk->u32Signature == VBGL_PH_CHUNKSIGNATURE);
-            if (pCurChunk->acBlocks[1 /*allocated*/] == 0)
-                cUnusedChunks++;
-        }
+            VBGLPHYSHEAPCHUNK *pChunk;
+            VBGLPHYSHEAPBLOCK *pNeighbour;
 
-        if (cUnusedChunks > 1)
-        {
-            /* Delete current chunk, it will also exclude all free blocks
-             * remaining in the chunk from the free list, so the pBlock
-             * will also be invalid after this.
+            /*
+             * Move the block from the allocated list to the free list.
              */
-            vbglPhysHeapChunkDelete(pChunk);
+            VBGL_PH_dprintf(("VbglR0PhysHeapFree: %p size %#x\n", pv, pBlock->cbDataSize));
+            vbglPhysHeapExcludeBlock(pBlock);
+
+            dumpheap("post exclude");
+
+            pBlock->fAllocated = false;
+            vbglPhysHeapInsertBlock(NULL, pBlock);
+
+            dumpheap("post insert");
+
+            /*
+             * Check if the block after this one is also free and we can merge it into
+             * this one.
+             *
+             * Because the free list isn't sorted by address we cannot cheaply do the
+             * same for the block before us, so we have to hope for the best for now.
+             */
+            /** @todo When the free:used ration in chunk is too skewed, scan the whole
+             *        chunk and merge adjacent blocks that way every so often.  Always do so
+             *        when this is the last used one and we end up with more than 1 free
+             *        node afterwards. */
+            pChunk = pBlock->pChunk;
+            pNeighbour = (VBGLPHYSHEAPBLOCK *)((uintptr_t)(pBlock + 1) + pBlock->cbDataSize);
+            if (   (uintptr_t)pNeighbour <= (uintptr_t)pChunk + pChunk->cbSize - sizeof(*pNeighbour)
+                && !pNeighbour->fAllocated)
+            {
+                /* Adjust size of current memory block */
+                pBlock->cbDataSize += pNeighbour->cbDataSize + sizeof(VBGLPHYSHEAPBLOCK);
+
+                /* Exclude the next neighbour */
+                vbglPhysHeapExcludeBlock(pNeighbour);
+
+                dumpheap("post merge");
+            }
+
+            /*
+             * If this chunk is now completely unused, delete it if there are
+             * more completely free ones.
+             */
+            if (   pChunk->acBlocks[1 /*allocated*/] == 0
+                && (pChunk->pPrev || pChunk->pNext))
+            {
+                VBGLPHYSHEAPCHUNK *pCurChunk;
+                uint32_t           cUnusedChunks = 0;
+                for (pCurChunk = g_vbgldata.pChunkHead; pCurChunk; pCurChunk = pCurChunk->pNext)
+                {
+                    AssertBreak(pCurChunk->u32Signature == VBGL_PH_CHUNKSIGNATURE);
+                    if (pCurChunk->acBlocks[1 /*allocated*/] == 0)
+                    {
+                        cUnusedChunks++;
+                        if (cUnusedChunks > 1)
+                        {
+                            /* Delete current chunk, it will also exclude all free blocks
+                             * remaining in the chunk from the free list, so the pBlock
+                             * will also be invalid after this.
+                             */
+                            vbglPhysHeapChunkDelete(pChunk);
+                            pNeighbour = pBlock = NULL; /* invalid */
+                            break;
+                        }
+                    }
+                }
+            }
+
+            dumpheap("post free");
         }
+        else
+            AssertMsgFailed(("pBlock: %p: u32Signature=%#x cb=%#x fAllocated=%d - double free?\n",
+                             pBlock, pBlock->u32Signature, pBlock->cbDataSize, pBlock->fAllocated));
+
+        rc = RTSemFastMutexRelease(g_vbgldata.mutexHeap);
+        AssertRC(rc);
     }
-
-    dumpheap("post free");
-
-    vbglPhysHeapLeave();
 }
 
 #ifdef IN_TESTCASE /* For the testcase only */
