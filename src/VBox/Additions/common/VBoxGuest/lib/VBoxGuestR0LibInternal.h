@@ -104,10 +104,10 @@ int VBOXCALL vbglR0IdcNativeClose(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCDISCONNECT 
 # define VBGLDATA_USE_FAST_MUTEX
 #endif
 
-struct _VBGLPHYSHEAPBLOCK;
-typedef struct _VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
+struct VBGLPHYSHEAPBLOCK;
+typedef struct VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
 struct _VBGLPHYSHEAPCHUNK;
-typedef struct _VBGLPHYSHEAPCHUNK VBGLPHYSHEAPCHUNK;
+typedef struct VBGLPHYSHEAPCHUNK VBGLPHYSHEAPCHUNK;
 
 enum VbglLibStatus
 {
@@ -128,16 +128,14 @@ typedef struct VBGLDATA
 
     VMMDevMemory *pVMMDevMemory;
 
-    /**
-     * Physical memory heap data.
+    /** Physical memory heap data.
      * @{
      */
-
     VBGLPHYSHEAPBLOCK *pFreeBlocksHead;
     VBGLPHYSHEAPBLOCK *pAllocBlocksHead;
     VBGLPHYSHEAPCHUNK *pChunkHead;
 
-    RTSEMFASTMUTEX mutexHeap;
+    RTSEMFASTMUTEX     mutexHeap;
     /** @} */
 
     /**
