@@ -507,9 +507,14 @@ DECLR0VBGL(void *)  VbglR0PhysHeapAlloc(uint32_t cbSize);
  *       if the given pointer is a valid one allocated from the heap.
  *
  * @param   pv      Virtual address of memory block.
- * @returns Physical address of the memory block.
+ * @returns Physical address of the memory block.  Zero is returned if @a pv
+ *          isn't valid.
  */
 DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr(void *pv);
+
+# ifdef IN_TESTCASE
+DECLVBGL(size_t)     VbglR0PhysHeapGetFreeSize(void);
+# endif
 
 /**
  * Free a memory block.
