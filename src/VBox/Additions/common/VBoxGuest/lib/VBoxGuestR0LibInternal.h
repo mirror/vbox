@@ -132,11 +132,22 @@ typedef struct VBGLDATA
      * @{
      */
     RTSEMFASTMUTEX     mutexHeap;
-    VBGLPHYSHEAPBLOCK *pFreeBlocksHead;
-    VBGLPHYSHEAPBLOCK *pAllocBlocksHead;
+    /** Block list heads. */
+    union
+    {
+        struct
+        {
+            VBGLPHYSHEAPBLOCK *pFreeBlocksHead;
+            VBGLPHYSHEAPBLOCK *pAllocBlocksHead;
+        } s;
+        /** Indexed by VBGLPHYSHEAPBLOCK::fAllocated, so zero is the free ones
+         * and one the allocated ones. */
+        VBGLPHYSHEAPBLOCK *apHeads[2];
+    } u;
     /** Indexed by VBGLPHYSHEAPBLOCK::fAllocated, so zero is the free ones and
-     *  one the allocated ones. */
+     * one the allocated ones. */
     int32_t            acBlocks[2];
+    /** Chunk    */
     VBGLPHYSHEAPCHUNK *pChunkHead;
     /** @} */
 
