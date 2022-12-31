@@ -496,12 +496,10 @@ public:
               MediumLockList *aTargetMediumLockList,
               bool fKeepSourceMediumLockList = false,
               bool fKeepTargetMediumLockList = false,
-              bool fNotifyAboutChanges = true,
-              LONG64 aTargetLogicalSize = 0)
+              bool fNotifyAboutChanges = true)
         : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
           mTarget(aTarget),
           mParent(aParent),
-          mTargetLogicalSize(aTargetLogicalSize),
           mpSourceMediumLockList(aSourceMediumLockList),
           mpTargetMediumLockList(aTargetMediumLockList),
           mVariant(aVariant),
@@ -511,7 +509,6 @@ public:
           mParentCaller(aParent),
           mfKeepSourceMediumLockList(fKeepSourceMediumLockList),
           mfKeepTargetMediumLockList(fKeepTargetMediumLockList)
-
     {
         AssertReturnVoidStmt(aTarget != NULL, mRC = E_FAIL);
         mRC = mTargetCaller.rc();
@@ -536,7 +533,6 @@ public:
 
     const ComObjPtr<Medium> mTarget;
     const ComObjPtr<Medium> mParent;
-    LONG64 mTargetLogicalSize;
     MediumLockList *mpSourceMediumLockList;
     MediumLockList *mpTargetMediumLockList;
     MediumVariant_T mVariant;
@@ -3023,32 +3019,11 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
                         const ComPtr<IMedium> &aParent,
                         ComPtr<IProgress> &aProgress)
 {
-    return resizeAndCloneTo(aTarget, 0, aVariant, aParent, aProgress);
-}
-
-/**
- * This is a helper function that combines the functionality of
- * Medium::cloneTo() and Medium::resize(). The target medium will take the
- * contents of the calling medium.
- *
- * @param aTarget           Medium to resize and clone to
- * @param aLogicalSize      Desired size for targer medium
- * @param aVariant
- * @param aParent
- * @param aProgress
- * @return HRESULT
- */
-HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
-                                 LONG64 aLogicalSize,
-                                 const std::vector<MediumVariant_T> &aVariant,
-                                 const ComPtr<IMedium> &aParent,
-                                 ComPtr<IProgress> &aProgress)
-{
-    /* Check for valid args */
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     ComAssertRet(aTarget != this, E_INVALIDARG);
-    CheckComArgExpr(aLogicalSize, aLogicalSize >= 0);
 
-    /* Convert args to usable/needed types */
     IMedium *aT = aTarget;
     ComObjPtr<Medium> pTarget = static_cast<Medium*>(aT);
     ComObjPtr<Medium> pParent;
@@ -3058,108 +3033,9 @@ HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
         pParent = static_cast<Medium*>(aP);
     }
 
-    /* Set up variables. Fetch needed data in lockable blocks */
     HRESULT rc = S_OK;
-    ComObjPtr<Progress> pTmpProgress;
-    Medium::Task *pTask = NULL;
-
-    Utf8Str strSourceName;
-    {
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        strSourceName = i_getName();
-    }
-
-    uint64_t uTargetExistingSize = 0;
-    Utf8Str strTargetName;
-    {
-        AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
-        uTargetExistingSize = pTarget->i_getLogicalSize();
-        strTargetName = pTarget->i_getName();
-    }
-
-    /* Set up internal multi-subprocess progress object */
     ComObjPtr<Progress> pProgress;
-    pProgress.createObject();
-    rc = pProgress->init(m->pVirtualBox,
-                static_cast<IMedium*>(this),
-                BstrFmt(tr("Resizing medium and cloning into it")).raw(),
-                TRUE, /* aCancelable */
-                2, /* Number of opearations */
-                BstrFmt(tr("Resizing medium before clone")).raw()
-                );
-
-    if (FAILED(rc))
-        throw rc;
-
-    /* If target does not exist, handle resize. */
-    if (pTarget->m->state != MediumState_NotCreated && aLogicalSize > 0)
-    {
-        if ((LONG64)uTargetExistingSize != aLogicalSize) {
-            if (!i_isMediumFormatFile())
-            {
-                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-                rc = setError(VBOX_E_NOT_SUPPORTED,
-                              tr("Sizes of '%s' and '%s' are different and \
-                                 medium format does not support resing"),
-                              strSourceName.c_str(), strTargetName.c_str());
-                throw rc;
-            }
-
-            /**
-             * Need to lock the target medium as i_resize does do so
-             * automatically.
-             */
-
-            ComPtr<IToken> pToken;
-            rc = pTarget->LockWrite(pToken.asOutParam());
-
-            if (FAILED(rc)) throw rc;
-
-            /**
-             * Have to make own lock list, because "resize" method resizes only
-             * last image in the lock chain.
-             */
-
-            MediumLockList* pMediumLockListForResize = new MediumLockList();
-            pMediumLockListForResize->Append(pTarget, pTarget->m->state == MediumState_LockedWrite);
-
-            rc = pMediumLockListForResize->Lock(true /* fSkipOverLockedMedia */);
-
-            if (FAILED(rc))
-            {
-                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-                rc = setError(rc,
-                                tr("Failed to lock the medium '%s' to resize before merge"),
-                                strTargetName.c_str());
-                delete pMediumLockListForResize;
-                throw rc;
-            }
-
-
-            rc = pTarget->i_resize((uint64_t)aLogicalSize, pMediumLockListForResize, &pProgress, true, false);
-
-            if (FAILED(rc))
-            {
-                /* No need to setError becasue i_resize and i_taskResizeHandler handle this automatically. */
-                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-                delete pMediumLockListForResize;
-                throw rc;
-            }
-
-            delete pMediumLockListForResize;
-
-            pTarget->m->logicalSize = (uint64_t)aLogicalSize;
-
-            pToken->Abandon();
-            pToken.setNull();
-        }
-    }
-
-    /* Report progress to supplied progress argument */
-    if (SUCCEEDED(rc))
-    {
-        pProgress.queryInterfaceTo(aProgress.asOutParam());
-    }
+    Medium::Task *pTask = NULL;
 
     try
     {
@@ -3234,6 +3110,18 @@ HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
                            pTarget->i_getLocationFull().c_str());
         }
 
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Creating clone medium '%s'"), pTarget->m->strLocationFull.c_str()).raw(),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw rc;
+        }
+
         ULONG mediumVariantFlags = 0;
 
         if (aVariant.size())
@@ -3250,25 +3138,11 @@ HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
                            tr("Medium variant 'formatted' applies to floppy images only"));
         }
 
-        if (pTarget->m->state != MediumState_NotCreated || aLogicalSize == 0)
-        {
-            /* setup task object to carry out the operation asynchronously */
-            pTask = new Medium::CloneTask(this, pProgress, pTarget,
-                                          (MediumVariant_T)mediumVariantFlags,
-                                          pParent, UINT32_MAX, UINT32_MAX,
-                                          pSourceMediumLockList, pTargetMediumLockList,
-                                          false, false, true, 0);
-        }
-        else
-        {
-            /* setup task object to carry out the operation asynchronously */
-            pTask = new Medium::CloneTask(this, pProgress, pTarget,
-                                          (MediumVariant_T)mediumVariantFlags,
-                                          pParent, UINT32_MAX, UINT32_MAX,
-                                          pSourceMediumLockList, pTargetMediumLockList,
-                                          false, false, true, aLogicalSize);
-        }
-
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::CloneTask(this, pProgress, pTarget,
+                                      (MediumVariant_T)mediumVariantFlags,
+                                      pParent, UINT32_MAX, UINT32_MAX,
+                                      pSourceMediumLockList, pTargetMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -3286,10 +3160,8 @@ HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
-    else if (pTask != NULL) {
+    else if (pTask != NULL)
         delete pTask;
-        throw rc;
-    }
 
     return rc;
 }
@@ -9774,7 +9646,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                  targetFormat.c_str(),
                                  (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                                  false /* fMoveByRename */,
-                                 (uint64_t) task.mTargetLogicalSize /* cbSize */,
+                                 0 /* cbSize */,
                                  task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
                                  targetId.raw(),
                                  VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
@@ -9790,7 +9662,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                    targetFormat.c_str(),
                                    (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                                    false /* fMoveByRename */,
-                                   (uint64_t) task.mTargetLogicalSize /* cbSize */,
+                                   0 /* cbSize */,
                                    task.midxSrcImageSame,
                                    task.midxDstImageSame,
                                    task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
