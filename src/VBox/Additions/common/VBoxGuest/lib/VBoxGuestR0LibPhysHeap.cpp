@@ -102,6 +102,22 @@
  */
 #define VBGL_PH_MAX_FREE_SEARCH         16
 
+/** Threshold to stop the block search if a free block is at least this much too big.
+ *
+ * May cause more fragmation (depending on usage pattern), but should speed up
+ * allocation and hopefully reduce cache trashing.
+ *
+ * Since we merge adjacent free blocks when we can, free blocks should typically
+ * be a lot larger that what's requested.  So, it is probably a good idea to
+ * just chop up a large block rather than keep searching for a perfect-ish
+ * match.
+ *
+ * Undefine this to disable this trick.
+ */
+#if defined(DOXYGEN_RUNNING) || 1
+# define VBGL_PH_STOP_SEARCH_AT_EXCESS   _4K
+#endif
+
 /** Threshold at which to split out a tail free block when allocating.
  *
  * The value gives the amount of user space, i.e. excluding the header.
@@ -489,6 +505,9 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
     VBGLPHYSHEAPBLOCK *pBlock;
     VBGLPHYSHEAPBLOCK *pIter;
     int32_t            cLeft;
+#ifdef VBGL_PH_STOP_SEARCH_AT_EXCESS
+    uint32_t           cbAlwaysSplit;
+#endif
     int                rc;
 
     /*
@@ -496,7 +515,6 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
      */
     cbSize = RT_ALIGN_32(cbSize, sizeof(void *));
     AssertStmt(cbSize > 0, cbSize = sizeof(void *));  /* avoid allocating zero bytes */
-
 
     rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
     AssertRCReturn(rc, NULL);
@@ -507,8 +525,11 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
      * Search the free list.  We do this in linear fashion as we don't expect
      * there to be many blocks in the heap.
      */
-    cLeft  = VBGL_PH_MAX_FREE_SEARCH;
-    pBlock = NULL;
+#ifdef VBGL_PH_STOP_SEARCH_AT_EXCESS
+    cbAlwaysSplit = cbSize + VBGL_PH_STOP_SEARCH_AT_EXCESS;
+#endif
+    cLeft         = VBGL_PH_MAX_FREE_SEARCH;
+    pBlock        = NULL;
     if (cbSize <= PAGE_SIZE / 4 * 3)
     {
         /* Smaller than 3/4 page:  Prefer a free block that can keep the request within a single page,
@@ -533,8 +554,17 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
                     if (!pFallback || pIter->cbDataSize < pFallback->cbDataSize)
                         pFallback = pIter;
                     if (PAGE_SIZE - ((uintptr_t)(pIter + 1) & PAGE_OFFSET_MASK) >= cbSize)
+                    {
                         if (!pBlock || pIter->cbDataSize < pBlock->cbDataSize)
                             pBlock = pIter;
+#ifdef VBGL_PH_STOP_SEARCH_AT_EXCESS
+                        else if (pIter->cbDataSize >= cbAlwaysSplit)
+                        {
+                            pBlock = pIter;
+                            break;
+                        }
+#endif
+                    }
                 }
 
                 if (cLeft > 0)
@@ -562,6 +592,14 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
                     break;
                 }
 
+#ifdef VBGL_PH_STOP_SEARCH_AT_EXCESS
+                if (pIter->cbDataSize >= cbAlwaysSplit)
+                {
+                    /* Really big block - no point continue searching! */
+                    pBlock = pIter;
+                    break;
+                }
+#endif
                 /* Looking for a free block with nearest size. */
                 if (!pBlock || pIter->cbDataSize < pBlock->cbDataSize)
                     pBlock = pIter;
