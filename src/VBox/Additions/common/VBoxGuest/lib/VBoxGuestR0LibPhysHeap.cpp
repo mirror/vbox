@@ -59,9 +59,13 @@
  * deallocated, so we always have at most 1 free chunk.
  *
  * When freeing blocks, two subsequent free blocks are always merged together.
- * Current implementation merges blocks only when there is a free block after
- * the just freed one, never when there is one before it as that's too
- * expensive.
+ *
+ * Since the free list isn't sorted by address or anything, it is expensive to
+ * determine whether the block before us is free and we should merge with it.
+ * The current implementation merges blocks only when there is a free block
+ * after the just freed one, never when there is one before it as that's too
+ * expensive.  So, to counter this free list fragmentation, we will occasionally
+ * scan chunks with a majority of free blocks and merge adjacent ones.
  */
 
 
@@ -442,6 +446,44 @@ static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
 }
 
 
+/**
+ * Worker for VbglR0PhysHeapFree that merges adjacent free nodes in @a pChunk.
+ *
+ * The caller has check that there must be 1 or more such.
+ */
+static void vbglR0PhysHeapMergeAdjacentFreeBlocksInChunk(VBGLPHYSHEAPCHUNK *pChunk)
+{
+    uintptr_t const    uEnd       = (uintptr_t)pChunk + pChunk->cbSize;
+    VBGLPHYSHEAPBLOCK *pPrevBlock = NULL;
+    VBGLPHYSHEAPBLOCK *pCurBlock  = (VBGLPHYSHEAPBLOCK *)(pChunk + 1);
+    while ((uintptr_t)pCurBlock < uEnd)
+    {
+        VBGLPHYSHEAPBLOCK * const pNextBlock = (VBGLPHYSHEAPBLOCK *)((uintptr_t)(pCurBlock + 1) + pCurBlock->cbDataSize);
+
+        AssertReturnVoid(pCurBlock->u32Signature == VBGL_PH_BLOCKSIGNATURE);
+        AssertReturnVoid(pCurBlock->pChunk == pChunk);
+        if (   !pCurBlock->fAllocated
+            && pPrevBlock
+            && !pPrevBlock->fAllocated)
+        {
+            /* Adjust size of the previous memory block. */
+            pPrevBlock->cbDataSize += sizeof(*pCurBlock) + pCurBlock->cbDataSize;
+
+            /* Unlink the current block and invalid it. */
+            vbglPhysHeapUnlinkBlock(pCurBlock);
+
+            pCurBlock->u32Signature = ~VBGL_PH_BLOCKSIGNATURE;
+            pCurBlock->cbDataSize   = UINT32_MAX / 4;
+
+            /* The previous node remains the same as we advance to the next one. */
+        }
+        else
+            pPrevBlock = pCurBlock;
+        pCurBlock = pNextBlock;
+    }
+}
+
+
 DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
 {
     VBGLPHYSHEAPBLOCK *pBlock;
@@ -656,14 +698,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
             /*
              * Check if the block after this one is also free and we can merge it into
              * this one.
-             *
-             * Because the free list isn't sorted by address we cannot cheaply do the
-             * same for the block before us, so we have to hope for the best for now.
              */
-            /** @todo When the free:used ration in chunk is too skewed, scan the whole
-             *        chunk and merge adjacent blocks that way every so often.  Always do so
-             *        when this is the last used one and we end up with more than 1 free
-             *        node afterwards. */
             pChunk = pBlock->pChunk;
             pNeighbour = (VBGLPHYSHEAPBLOCK *)((uintptr_t)(pBlock + 1) + pBlock->cbDataSize);
             if (   (uintptr_t)pNeighbour <= (uintptr_t)pChunk + pChunk->cbSize - sizeof(*pNeighbour)
@@ -704,9 +739,30 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
                              */
                             vbglPhysHeapChunkDelete(pChunk);
                             pNeighbour = pBlock = NULL; /* invalid */
+                            pChunk = NULL;
                             break;
                         }
                     }
+                }
+            }
+
+            /*
+             * Hack to counter the lack of merging with the node before us, scan
+             * the chunk and merge adjacent free nodes.
+             */
+            if (pChunk)
+            {
+                int32_t const cAllocBlocks  = pChunk->acBlocks[1 /*alloc*/];
+                int32_t const cApproxExcess = pChunk->acBlocks[0 /*free*/] - cAllocBlocks - 1;
+                if (   cApproxExcess > 0 /* there are too many free nodes */
+                    && cAllocBlocks >= 0 /* sanity check */)
+                {
+                    /* Just do the merging if there aren't that many blocks: */
+                    if (cAllocBlocks <= 4)
+                        vbglR0PhysHeapMergeAdjacentFreeBlocksInChunk(pChunk);
+                    /* Do the merging if we're above a 1:2 ratio: */
+                    else if (cApproxExcess >= cAllocBlocks)
+                        vbglR0PhysHeapMergeAdjacentFreeBlocksInChunk(pChunk);
                 }
             }
 
