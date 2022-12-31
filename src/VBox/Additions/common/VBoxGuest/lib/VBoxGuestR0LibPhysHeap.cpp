@@ -84,12 +84,18 @@
 #endif
 
 /* Heap block signature */
-#define VBGL_PH_BLOCKSIGNATURE  UINT32_C(0xADDBBBBB)
+#define VBGL_PH_BLOCKSIGNATURE          UINT32_C(0xADDBBBBB)
 
 /* Heap chunk signature */
-#define VBGL_PH_CHUNKSIGNATURE  UINT32_C(0xADDCCCCC)
+#define VBGL_PH_CHUNKSIGNATURE          UINT32_C(0xADDCCCCC)
 /* Heap chunk allocation unit */
-#define VBGL_PH_CHUNKSIZE       (0x10000)
+#define VBGL_PH_CHUNKSIZE               (0x10000)
+
+/** The allocation block alignment.
+ *
+ * This is also the the minimum block size.
+ */
+#define VBGL_PH_ALLOC_ALIGN             (sizeof(void *))
 
 /** Max number of free nodes to search before just using the best fit.
  *
@@ -243,12 +249,6 @@ void dumpheap(const char *pszWhere)
 #endif
 
 
-DECLINLINE(void) vbglPhysHeapLeave(void)
-{
-    RTSemFastMutexRelease(g_vbgldata.mutexHeap);
-}
-
-
 static void vbglPhysHeapInitFreeBlock(VBGLPHYSHEAPBLOCK *pBlock, VBGLPHYSHEAPCHUNK *pChunk, uint32_t cbDataSize)
 {
     VBGL_PH_ASSERT(pBlock != NULL);
@@ -315,7 +315,7 @@ static void vbglPhysHeapInsertBlock(VBGLPHYSHEAPBLOCK *pInsertAfter, VBGLPHYSHEA
     g_vbgldata.acBlocks[fAllocated]      += 1;
     pBlock->pChunk->acBlocks[fAllocated] += 1;
     AssertMsg(   (uint32_t)pBlock->pChunk->acBlocks[fAllocated]
-              <= pBlock->pChunk->cbSize / (sizeof(*pBlock) + sizeof(void *)),
+              <= pBlock->pChunk->cbSize / (sizeof(*pBlock) + VBGL_PH_ALLOC_ALIGN),
               ("pChunk=%p: cbSize=%#x acBlocks[%u]=%d\n",
                pBlock->pChunk, pBlock->pChunk->cbSize, fAllocated, pBlock->pChunk->acBlocks[fAllocated]));
 }
@@ -513,8 +513,8 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cbSize)
     /*
      * Align the size to a pointer size to avoid getting misaligned header pointers and whatnot.
      */
-    cbSize = RT_ALIGN_32(cbSize, sizeof(void *));
-    AssertStmt(cbSize > 0, cbSize = sizeof(void *));  /* avoid allocating zero bytes */
+    cbSize = RT_ALIGN_32(cbSize, VBGL_PH_ALLOC_ALIGN);
+    AssertStmt(cbSize > 0, cbSize = VBGL_PH_ALLOC_ALIGN); /* avoid allocating zero bytes */
 
     rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
     AssertRCReturn(rc, NULL);
@@ -875,9 +875,9 @@ static int vbglR0PhysHeapCheckLocked(PRTERRINFO pErrInfo)
             AssertReturn(pCurBlock->pChunk == pCurChunk,
                          RTErrInfoSetF(pErrInfo, VERR_INTERNAL_ERROR_2,
                                        "pCurBlock=%p: pChunk=%p, expected %p", pCurBlock, pCurBlock->pChunk, pCurChunk));
-            AssertReturn(   pCurBlock->cbDataSize >= sizeof(void *)
+            AssertReturn(   pCurBlock->cbDataSize >= VBGL_PH_ALLOC_ALIGN
                          && pCurBlock->cbDataSize < _128M
-                         && RT_ALIGN_32(pCurBlock->cbDataSize, sizeof(void *)) == pCurBlock->cbDataSize,
+                         && RT_ALIGN_32(pCurBlock->cbDataSize, VBGL_PH_ALLOC_ALIGN) == pCurBlock->cbDataSize,
                          RTErrInfoSetF(pErrInfo, VERR_INTERNAL_ERROR_3,
                                        "pCurBlock=%p: cbDataSize=%#x", pCurBlock, pCurBlock->cbDataSize));
             acBlocks[pCurBlock->fAllocated] += 1;
