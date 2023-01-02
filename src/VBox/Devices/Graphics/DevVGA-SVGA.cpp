@@ -1644,13 +1644,12 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
 
 int vmsvgaR3UpdateScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h)
 {
-    VBVACMDHDR cmd;
-
     ASSERT_GUEST_LOGREL_MSG_RETURN(w > 0 && h > 0,
                                    ("vmsvgaR3UpdateScreen: screen %d (%d,%d) %dx%d: Invalid height and/or width supplied.\n",
                                    pScreen->idScreen, x, y, w, h),
                                    VERR_INVALID_PARAMETER);
 
+    VBVACMDHDR cmd;
     cmd.x = (int16_t)(pScreen->xOrigin + x);
     cmd.y = (int16_t)(pScreen->yOrigin + y);
     cmd.w = (uint16_t)w;
