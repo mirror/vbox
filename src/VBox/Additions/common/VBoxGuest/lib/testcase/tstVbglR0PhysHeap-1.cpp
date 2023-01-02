@@ -180,6 +180,7 @@ int main(int argc, char **argv)
     RTTESTI_CHECK_RC(rc = VbglR0PhysHeapInit(), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
+    RTTESTI_CHECK_RC_OK(VbglR0PhysHeapCheck(NULL));
 
 #define CHECK_PHYS_ADDR(a_pv) do { \
         uint32_t const uPhys = VbglR0PhysHeapGetPhysAddr(a_pv); \
@@ -238,6 +239,9 @@ int main(int argc, char **argv)
                           ("VbglR0PhysHeapAlloc(%#x) -> %p\n", s_aOps[i].cb, i));
 
         CHECK_PHYS_ADDR(s_aOps[i].pvAlloc);
+
+        /* Check heap integrity: */
+        RTTESTI_CHECK_RC_OK(VbglR0PhysHeapCheck(NULL));
     }
 
     /* free and allocate the same node again. */
@@ -250,6 +254,7 @@ int main(int argc, char **argv)
         size_t cbBeforeSub = VbglR0PhysHeapGetFreeSize();
         VbglR0PhysHeapFree(s_aOps[i].pvAlloc);
         size_t cbAfterSubFree = VbglR0PhysHeapGetFreeSize();
+        RTTESTI_CHECK_RC_OK(VbglR0PhysHeapCheck(NULL));
 
         void *pv;
         pv = VbglR0PhysHeapAlloc(s_aOps[i].cb);
@@ -257,6 +262,7 @@ int main(int argc, char **argv)
         if (!pv)
             return RTTestSummaryAndDestroy(hTest);
         CHECK_PHYS_ADDR(pv);
+        RTTESTI_CHECK_RC_OK(VbglR0PhysHeapCheck(NULL));
 
         //RTPrintf("debug: i=%d pv=%p cbReal=%#zx cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx \n", i, pv, RTHeapOffsetSize(Heap, pv),
         //         cbBeforeSub, cbAfterSubFree, VbglR0PhysHeapGetFreeSize());
@@ -375,15 +381,16 @@ int main(int argc, char **argv)
         {
             /* free all */
             RTTestIPrintf(RTTESTLVL_ALWAYS, "Free-all-pre:  cFreeBlocks=%u cAllocedBlocks=%u in %u chunk(s)\n",
-                          g_vbgldata.acBlocks[0], g_vbgldata.acBlocks[1], g_cChunks);
+                          g_vbgldata.cFreeBlocks, g_vbgldata.cBlocks - g_vbgldata.cFreeBlocks, g_cChunks);
             for (i = 0; i < RT_ELEMENTS(s_aHistory); i++)
             {
                 VbglR0PhysHeapFree(s_aHistory[i].pv);
                 s_aHistory[i].pv = NULL;
             }
-            RTTestIPrintf(RTTESTLVL_ALWAYS, "Free-all-post: cFreeBlocks=%u in %u chunk(s)\n", g_vbgldata.acBlocks[0], g_cChunks);
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "Free-all-post: cFreeBlocks=%u in %u chunk(s)\n", g_vbgldata.cFreeBlocks, g_cChunks);
             RTTESTI_CHECK_MSG(g_cChunks == 1, ("g_cChunks=%d\n", g_cChunks));
-            RTTESTI_CHECK_MSG(g_vbgldata.acBlocks[1] == 0, ("g_vbgldata.acBlocks[1]=%d\n", g_vbgldata.acBlocks[0]));
+            RTTESTI_CHECK_MSG(g_vbgldata.cFreeBlocks == g_vbgldata.cBlocks,
+                              ("g_vbgldata.cFreeBlocks=%d cBlocks=%d\n", g_vbgldata.cFreeBlocks, g_vbgldata.cBlocks));
 
             //size_t cbAfterRand = VbglR0PhysHeapGetFreeSize();
             //RTTESTI_CHECK_MSG(cbAfterRand == cbAfter, ("cbAfterRand=%zu cbAfter=%zu\n", cbAfterRand, cbAfter));

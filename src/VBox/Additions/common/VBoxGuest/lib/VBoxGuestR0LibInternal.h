@@ -106,7 +106,9 @@ int VBOXCALL vbglR0IdcNativeClose(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCDISCONNECT 
 
 struct VBGLPHYSHEAPBLOCK;
 typedef struct VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
-struct _VBGLPHYSHEAPCHUNK;
+struct VBGLPHYSHEAPFREEBLOCK;
+typedef struct VBGLPHYSHEAPFREEBLOCK VBGLPHYSHEAPFREEBLOCK;
+struct VBGLPHYSHEAPCHUNK;
 typedef struct VBGLPHYSHEAPCHUNK VBGLPHYSHEAPCHUNK;
 
 enum VbglLibStatus
@@ -131,24 +133,21 @@ typedef struct VBGLDATA
     /** Physical memory heap data.
      * @{
      */
-    RTSEMFASTMUTEX     mutexHeap;
-    /** Block list heads. */
-    union
-    {
-        struct
-        {
-            VBGLPHYSHEAPBLOCK *pFreeBlocksHead;
-            VBGLPHYSHEAPBLOCK *pAllocBlocksHead;
-        } s;
-        /** Indexed by VBGLPHYSHEAPBLOCK::fAllocated, so zero is the free ones
-         * and one the allocated ones. */
-        VBGLPHYSHEAPBLOCK *apHeads[2];
-    } u;
-    /** Indexed by VBGLPHYSHEAPBLOCK::fAllocated, so zero is the free ones and
-     * one the allocated ones. */
-    int32_t            acBlocks[2];
-    /** Chunk    */
-    VBGLPHYSHEAPCHUNK *pChunkHead;
+    RTSEMFASTMUTEX          mutexHeap;
+    /** Head of the block list (both free and allocated blocks).
+     * This runs parallel to the chunk list and is sorted by address within each
+     * chunk.  This allows merging with blocks both after and before when
+     * freeing. */
+    VBGLPHYSHEAPBLOCK      *pBlockHead;
+    /** Head of the free list.
+     *  This is not sorted and more on the most recently freed approach. */
+    VBGLPHYSHEAPFREEBLOCK  *pFreeHead;
+    /** Number of block of any kind. */
+    int32_t                 cBlocks;
+    /** Number of free blocks. */
+    int32_t                 cFreeBlocks;
+    /** Head of the chunk list. */
+    VBGLPHYSHEAPCHUNK      *pChunkHead;
     /** @} */
 
     /**
