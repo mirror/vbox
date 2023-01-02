@@ -133,7 +133,7 @@ typedef struct VBGLDATA
     /** Physical memory heap data.
      * @{
      */
-    RTSEMFASTMUTEX          mutexHeap;
+    RTSEMFASTMUTEX          hMtxHeap;
     /** Head of the block list (both free and allocated blocks).
      * This runs parallel to the chunk list and is sorted by address within each
      * chunk.  This allows merging with blocks both after and before when

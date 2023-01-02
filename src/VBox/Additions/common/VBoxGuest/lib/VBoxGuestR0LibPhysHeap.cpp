@@ -35,7 +35,7 @@
  * is similar to @ref grp_rt_heap_simple "RTHeapSimple" and
  * @ref grp_rt_heap_offset "RTHeapOffset" in IPRT, except that this code handles
  * mutiple chunks and has a physical address associated with each chunk and
- * block.
+ * block.  The alignment is fixed (VBGL_PH_ALLOC_ALIGN).
  *
  * When allocating memory, a free block is found that satisfies the request,
  * extending the heap with another chunk if needed.  The block is split if it's
@@ -67,23 +67,23 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define VBGL_PH_ASSERT      Assert
-#define VBGL_PH_ASSERT_MSG  AssertMsg
-
-/*#define DUMPHEAP*/
-
-#ifdef DUMPHEAP
-# define VBGL_PH_dprintf(a) RTAssertMsg2Weak a
-#else
-# define VBGL_PH_dprintf(a)
+/** Enables heap dumping. */
+#if defined(DOXYGEN_RUNNING) || 0
+# define VBGL_PH_DUMPHEAP
 #endif
 
-/* Heap chunk signature */
+#ifdef VBGL_PH_DUMPHEAP
+# define VBGL_PH_DPRINTF(a)             RTAssertMsg2Weak a
+#else
+# define VBGL_PH_DPRINTF(a)             do { } while (0)
+#endif
+
+/** Heap chunk signature */
 #define VBGL_PH_CHUNKSIGNATURE          UINT32_C(0xADDCCCCC)
-/* Heap chunk allocation unit */
+/** Heap chunk allocation unit */
 #define VBGL_PH_CHUNKSIZE               (0x10000)
 
-/* Heap block signature */
+/** Heap block signature */
 #define VBGL_PH_BLOCKSIGNATURE          UINT32_C(0xADDBBBBB)
 
 /** The allocation block alignment.
@@ -227,41 +227,47 @@ AssertCompileSize(VBGLPHYSHEAPCHUNK, 64);
 #endif
 
 
-#ifndef DUMPHEAP
+/**
+ * Debug function that dumps the heap.
+ */
+#ifndef VBGL_PH_DUMPHEAP
 # define dumpheap(pszWhere) do { } while (0)
 #else
-void dumpheap(const char *pszWhere)
+static void dumpheap(const char *pszWhere)
 {
-   VBGL_PH_dprintf(("VBGL_PH dump at '%s'\n", pszWhere));
+   VBGL_PH_DPRINTF(("VBGL_PH dump at '%s'\n", pszWhere));
 
-   VBGL_PH_dprintf(("Chunks:\n"));
+   VBGL_PH_DPRINTF(("Chunks:\n"));
    for (VBGLPHYSHEAPCHUNK *pChunk = g_vbgldata.pChunkHead; pChunk; pChunk = pChunk->pNext)
-       VBGL_PH_dprintf(("%p: pNext = %p, pPrev = %p, sign = %08X, size = %8d, cBlocks = %8d, cFreeBlocks=%8d, phys = %08X\n",
+       VBGL_PH_DPRINTF(("%p: pNext = %p, pPrev = %p, sign = %08X, size = %8d, cBlocks = %8d, cFreeBlocks=%8d, phys = %08X\n",
                         pChunk, pChunk->pNext, pChunk->pPrev, pChunk->u32Signature, pChunk->cbChunk,
                         pChunk->cBlocks, pChunk->cFreeBlocks, pChunk->physAddr));
 
-   VBGL_PH_dprintf(("Allocated blocks:\n"));
+   VBGL_PH_DPRINTF(("Allocated blocks:\n"));
    for (VBGLPHYSHEAPBLOCK *pBlock = g_vbgldata.pBlockHead; pBlock; pBlock = pBlock->pNext)
-       VBGL_PH_dprintf(("%p: pNext = %p, pPrev = %p, size = %05x, sign = %08X, %s, pChunk = %p\n",
+       VBGL_PH_DPRINTF(("%p: pNext = %p, pPrev = %p, size = %05x, sign = %08X, %s, pChunk = %p\n",
                         pBlock, pBlock->pNext, pBlock->pPrev, pBlock->cbUser,
                         pBlock->u32Signature,  pBlock->fAllocated ? "allocated" : "     free", pBlock->pChunk));
 
-   VBGL_PH_dprintf(("Free blocks:\n"));
+   VBGL_PH_DPRINTF(("Free blocks:\n"));
    for (VBGLPHYSHEAPFREEBLOCK *pBlock = g_vbgldata.pFreeHead; pBlock; pBlock = pBlock->pNextFree)
-       VBGL_PH_dprintf(("%p: pNextFree = %p, pPrevFree = %p, size = %05x, sign = %08X, pChunk = %p%s\n",
+       VBGL_PH_DPRINTF(("%p: pNextFree = %p, pPrevFree = %p, size = %05x, sign = %08X, pChunk = %p%s\n",
                         pBlock, pBlock->pNextFree, pBlock->pPrevFree, pBlock->Core.cbUser,
                         pBlock->Core.u32Signature, pBlock->Core.pChunk,
                         !pBlock->Core.fAllocated ? "" : " !!allocated-block-on-freelist!!"));
 
-   VBGL_PH_dprintf(("VBGL_PH dump at '%s' done\n", pszWhere));
+   VBGL_PH_DPRINTF(("VBGL_PH dump at '%s' done\n", pszWhere));
 }
 #endif
 
 
+/**
+ * Initialize a free block
+ */
 static void vbglPhysHeapInitFreeBlock(VBGLPHYSHEAPFREEBLOCK *pBlock, VBGLPHYSHEAPCHUNK *pChunk, uint32_t cbUser)
 {
-    VBGL_PH_ASSERT(pBlock != NULL);
-    VBGL_PH_ASSERT(pChunk != NULL);
+    Assert(pBlock != NULL);
+    Assert(pChunk != NULL);
 
     pBlock->Core.u32Signature = VBGL_PH_BLOCKSIGNATURE;
     pBlock->Core.cbUser       = cbUser;
@@ -293,8 +299,8 @@ DECLINLINE(void) vbglPhysHeapStatsBlockAdded(VBGLPHYSHEAPBLOCK *pBlock)
  */
 static void vbglPhysHeapInsertBlock(VBGLPHYSHEAPBLOCK *pBlock)
 {
-    VBGL_PH_ASSERT_MSG(pBlock->pNext == NULL, ("pBlock->pNext = %p\n", pBlock->pNext));
-    VBGL_PH_ASSERT_MSG(pBlock->pPrev == NULL, ("pBlock->pPrev = %p\n", pBlock->pPrev));
+    AssertMsg(pBlock->pNext == NULL, ("pBlock->pNext = %p\n", pBlock->pNext));
+    AssertMsg(pBlock->pPrev == NULL, ("pBlock->pPrev = %p\n", pBlock->pPrev));
 
     /* inserting to head of list */
     VBGLPHYSHEAPBLOCK *pOldHead = g_vbgldata.pBlockHead;
@@ -318,8 +324,8 @@ static void vbglPhysHeapInsertBlock(VBGLPHYSHEAPBLOCK *pBlock)
  */
 static void vbglPhysHeapInsertBlockAfter(VBGLPHYSHEAPBLOCK *pBlock, VBGLPHYSHEAPBLOCK *pInsertAfter)
 {
-    VBGL_PH_ASSERT_MSG(pBlock->pNext == NULL, ("pBlock->pNext = %p\n", pBlock->pNext));
-    VBGL_PH_ASSERT_MSG(pBlock->pPrev == NULL, ("pBlock->pPrev = %p\n", pBlock->pPrev));
+    AssertMsg(pBlock->pNext == NULL, ("pBlock->pNext = %p\n", pBlock->pNext));
+    AssertMsg(pBlock->pPrev == NULL, ("pBlock->pPrev = %p\n", pBlock->pPrev));
 
     pBlock->pNext = pInsertAfter->pNext;
     pBlock->pPrev = pInsertAfter;
@@ -388,8 +394,8 @@ DECLINLINE(void) vbglPhysHeapStatsFreeBlockAdded(VBGLPHYSHEAPFREEBLOCK *pBlock)
 static void vbglPhysHeapInsertFreeBlock(VBGLPHYSHEAPFREEBLOCK *pBlock)
 {
     Assert(!pBlock->Core.fAllocated);
-    VBGL_PH_ASSERT_MSG(pBlock->pNextFree == NULL, ("pBlock->pNextFree = %p\n", pBlock->pNextFree));
-    VBGL_PH_ASSERT_MSG(pBlock->pPrevFree == NULL, ("pBlock->pPrevFree = %p\n", pBlock->pPrevFree));
+    AssertMsg(pBlock->pNextFree == NULL, ("pBlock->pNextFree = %p\n", pBlock->pNextFree));
+    AssertMsg(pBlock->pPrevFree == NULL, ("pBlock->pPrevFree = %p\n", pBlock->pPrevFree));
 
     /* inserting to head of list */
     VBGLPHYSHEAPFREEBLOCK *pOldHead = g_vbgldata.pFreeHead;
@@ -417,8 +423,8 @@ static void vbglPhysHeapInsertFreeBlock(VBGLPHYSHEAPFREEBLOCK *pBlock)
 static void vbglPhysHeapInsertFreeBlockAfter(VBGLPHYSHEAPFREEBLOCK *pBlock, VBGLPHYSHEAPFREEBLOCK *pInsertAfter)
 {
     Assert(!pBlock->Core.fAllocated);
-    VBGL_PH_ASSERT_MSG(pBlock->pNextFree == NULL, ("pBlock->pNextFree = %p\n", pBlock->pNextFree));
-    VBGL_PH_ASSERT_MSG(pBlock->pPrevFree == NULL, ("pBlock->pPrevFree = %p\n", pBlock->pPrevFree));
+    AssertMsg(pBlock->pNextFree == NULL, ("pBlock->pNextFree = %p\n", pBlock->pNextFree));
+    AssertMsg(pBlock->pPrevFree == NULL, ("pBlock->pPrevFree = %p\n", pBlock->pPrevFree));
 
     /* inserting after the tiven node */
     pBlock->pNextFree = pInsertAfter->pNextFree;
@@ -482,7 +488,7 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
     RTCCPHYS           PhysAddr = NIL_RTHCPHYS;
     VBGLPHYSHEAPCHUNK *pChunk;
     uint32_t           cbChunk;
-    VBGL_PH_dprintf(("Allocating new chunk for %#x byte allocation\n", cbMinBlock));
+    VBGL_PH_DPRINTF(("Allocating new chunk for %#x byte allocation\n", cbMinBlock));
     AssertReturn(cbMinBlock <= VBGL_PH_LARGEST_ALLOC_SIZE, NULL); /* paranoia */
 
     /*
@@ -556,7 +562,7 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
             pOldHeadChunk->pPrev = pChunk;
         g_vbgldata.pChunkHead    = pChunk;
 
-        VBGL_PH_dprintf(("Allocated chunk %p LB %#x, block %p LB %#x\n", pChunk, cbChunk, pBlock, pBlock->Core.cbUser));
+        VBGL_PH_DPRINTF(("Allocated chunk %p LB %#x, block %p LB %#x\n", pChunk, cbChunk, pBlock, pBlock->Core.cbUser));
         return pBlock;
     }
     LogRel(("vbglPhysHeapChunkAlloc: failed to alloc %u (%#x) contiguous bytes.\n", cbChunk, cbChunk));
@@ -569,11 +575,11 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
  */
 static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
 {
-    uintptr_t  uEnd, uCur;
-    VBGL_PH_ASSERT(pChunk != NULL);
-    VBGL_PH_ASSERT_MSG(pChunk->u32Signature == VBGL_PH_CHUNKSIGNATURE, ("pChunk->u32Signature = %08X\n", pChunk->u32Signature));
+    uintptr_t uEnd, uCur;
+    Assert(pChunk != NULL);
+    AssertMsg(pChunk->u32Signature == VBGL_PH_CHUNKSIGNATURE, ("pChunk->u32Signature = %08X\n", pChunk->u32Signature));
 
-    VBGL_PH_dprintf(("Deleting chunk %p size %x\n", pChunk, pChunk->cbChunk));
+    VBGL_PH_DPRINTF(("Deleting chunk %p size %x\n", pChunk, pChunk->cbChunk));
 
     /*
      * First scan the chunk and unlink all blocks from the lists.
@@ -600,7 +606,7 @@ static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
         vbglPhysHeapUnlinkBlock(pBlock);
     }
 
-    VBGL_PH_ASSERT_MSG(uCur == uEnd, ("uCur = %p, uEnd = %p, pChunk->cbChunk = %08X\n", uCur, uEnd, pChunk->cbChunk));
+    AssertMsg(uCur == uEnd, ("uCur = %p, uEnd = %p, pChunk->cbChunk = %08X\n", uCur, uEnd, pChunk->cbChunk));
 
     /*
      * Unlink the chunk from the chunk list.
@@ -642,7 +648,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cb)
     cb = RT_ALIGN_32(cb, VBGL_PH_ALLOC_ALIGN);
     AssertCompile(VBGL_PH_ALLOC_ALIGN <= sizeof(pBlock->Core));
 
-    rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
+    rc = RTSemFastMutexRequest(g_vbgldata.hMtxHeap);
     AssertRCReturn(rc, NULL);
 
     dumpheap("pre alloc");
@@ -748,9 +754,9 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cb)
     if (pBlock)
     {
         /* We have a free block, either found or allocated. */
-        VBGL_PH_ASSERT_MSG(pBlock->Core.u32Signature == VBGL_PH_BLOCKSIGNATURE,
-                           ("pBlock = %p, pBlock->u32Signature = %08X\n", pBlock, pBlock->Core.u32Signature));
-        VBGL_PH_ASSERT_MSG(!pBlock->Core.fAllocated, ("pBlock = %p\n", pBlock));
+        AssertMsg(pBlock->Core.u32Signature == VBGL_PH_BLOCKSIGNATURE,
+                  ("pBlock = %p, pBlock->u32Signature = %08X\n", pBlock, pBlock->Core.u32Signature));
+        AssertMsg(!pBlock->Core.fAllocated, ("pBlock = %p\n", pBlock));
 
         /*
          * If the block is too large, split off a free block with the unused space.
@@ -786,19 +792,19 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cb)
         /*
          * Return success.
          */
-        rc = RTSemFastMutexRelease(g_vbgldata.mutexHeap);
+        rc = RTSemFastMutexRelease(g_vbgldata.hMtxHeap);
 
-        VBGL_PH_dprintf(("VbglR0PhysHeapAlloc: returns %p size %x\n", pBlock + 1, pBlock->Core.cbUser));
+        VBGL_PH_DPRINTF(("VbglR0PhysHeapAlloc: returns %p size %x\n", pBlock + 1, pBlock->Core.cbUser));
         return &pBlock->Core + 1;
     }
 
     /*
      * Return failure.
      */
-    rc = RTSemFastMutexRelease(g_vbgldata.mutexHeap);
+    rc = RTSemFastMutexRelease(g_vbgldata.hMtxHeap);
     AssertRC(rc);
 
-    VBGL_PH_dprintf(("VbglR0PhysHeapAlloc: returns NULL (requested %#x bytes)\n", cb));
+    VBGL_PH_DPRINTF(("VbglR0PhysHeapAlloc: returns NULL (requested %#x bytes)\n", cb));
     return NULL;
 }
 
@@ -836,7 +842,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
     {
         VBGLPHYSHEAPFREEBLOCK *pBlock;
 
-        int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
+        int rc = RTSemFastMutexRequest(g_vbgldata.hMtxHeap);
         AssertRCReturnVoid(rc);
 
         dumpheap("pre free");
@@ -855,7 +861,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
             /*
              * Change the block status to freeed.
              */
-            VBGL_PH_dprintf(("VbglR0PhysHeapFree: %p size %#x\n", pv, pBlock->Core.cbUser));
+            VBGL_PH_DPRINTF(("VbglR0PhysHeapFree: %p size %#x\n", pv, pBlock->Core.cbUser));
 
             pBlock->Core.fAllocated = false;
             pBlock->pNextFree = pBlock->pPrevFree = NULL;
@@ -950,13 +956,12 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
             AssertMsgFailed(("pBlock: %p: u32Signature=%#x cb=%#x fAllocated=%d - double free?\n",
                              pBlock, pBlock->Core.u32Signature, pBlock->Core.cbUser, pBlock->Core.fAllocated));
 
-        rc = RTSemFastMutexRelease(g_vbgldata.mutexHeap);
+        rc = RTSemFastMutexRelease(g_vbgldata.hMtxHeap);
         AssertRC(rc);
     }
 }
 
 #ifdef IN_TESTCASE /* For the testcase only */
-# include <iprt/err.h>
 
 /**
  * Returns the sum of all free heap blocks.
@@ -969,7 +974,7 @@ DECLR0VBGL(void) VbglR0PhysHeapFree(void *pv)
  */
 DECLVBGL(size_t) VbglR0PhysHeapGetFreeSize(void)
 {
-    int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
+    int rc = RTSemFastMutexRequest(g_vbgldata.hMtxHeap);
     AssertRCReturn(rc, 0);
 
     size_t cbTotal = 0;
@@ -980,7 +985,7 @@ DECLVBGL(size_t) VbglR0PhysHeapGetFreeSize(void)
         cbTotal += pCurBlock->Core.cbUser;
     }
 
-    RTSemFastMutexRelease(g_vbgldata.mutexHeap);
+    RTSemFastMutexRelease(g_vbgldata.hMtxHeap);
     return cbTotal;
 }
 
@@ -1104,12 +1109,12 @@ static int vbglR0PhysHeapCheckLocked(PRTERRINFO pErrInfo)
  */
 DECLVBGL(int) VbglR0PhysHeapCheck(PRTERRINFO pErrInfo)
 {
-    int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
+    int rc = RTSemFastMutexRequest(g_vbgldata.hMtxHeap);
     AssertRCReturn(rc, 0);
 
     rc = vbglR0PhysHeapCheckLocked(pErrInfo);
 
-    RTSemFastMutexRelease(g_vbgldata.mutexHeap);
+    RTSemFastMutexRelease(g_vbgldata.hMtxHeap);
     return rc;
 }
 
@@ -1117,12 +1122,12 @@ DECLVBGL(int) VbglR0PhysHeapCheck(PRTERRINFO pErrInfo)
 
 DECLR0VBGL(int) VbglR0PhysHeapInit(void)
 {
-    g_vbgldata.mutexHeap = NIL_RTSEMFASTMUTEX;
+    g_vbgldata.hMtxHeap = NIL_RTSEMFASTMUTEX;
 
     /* Allocate the first chunk of the heap. */
     VBGLPHYSHEAPFREEBLOCK *pBlock = vbglPhysHeapChunkAlloc(0);
     if (pBlock)
-        return RTSemFastMutexCreate(&g_vbgldata.mutexHeap);
+        return RTSemFastMutexCreate(&g_vbgldata.hMtxHeap);
     return VERR_NO_CONT_MEMORY;
 }
 
@@ -1131,7 +1136,7 @@ DECLR0VBGL(void) VbglR0PhysHeapTerminate(void)
     while (g_vbgldata.pChunkHead)
         vbglPhysHeapChunkDelete(g_vbgldata.pChunkHead);
 
-    RTSemFastMutexDestroy(g_vbgldata.mutexHeap);
-    g_vbgldata.mutexHeap = NIL_RTSEMFASTMUTEX;
+    RTSemFastMutexDestroy(g_vbgldata.hMtxHeap);
+    g_vbgldata.hMtxHeap = NIL_RTSEMFASTMUTEX;
 }
 
