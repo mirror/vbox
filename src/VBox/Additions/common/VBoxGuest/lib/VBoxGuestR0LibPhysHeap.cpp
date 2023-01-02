@@ -61,6 +61,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/memobj.h>
 #include <iprt/semaphore.h>
 
 
@@ -146,6 +147,20 @@
                                                     - VBGL_PH_ALLOC_ALIGN, \
                                                     VBGL_PH_ALLOC_ALIGN)
 
+/**
+ * Whether to use the RTR0MemObjAllocCont API or RTMemContAlloc for
+ * allocating chunks.
+ *
+ * This can be enabled on hosts where RTMemContAlloc is more complicated than
+ * RTR0MemObjAllocCont.  This can also be done if we wish to save code space, as
+ * the latter is typically always dragged into the link on guests where the
+ * linker cannot eliminiate functions within objects.  Only drawback is that
+ * RTR0MemObjAllocCont requires another heap allocation for the handle.
+ */
+#if defined(DOXYGEN_RUNNING) || (!defined(IN_TESTCASE) && 0)
+# define VBGL_PH_USE_MEMOBJ
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -206,7 +221,9 @@ struct VBGLPHYSHEAPCHUNK
     /** Physical address of the chunk (contiguous). */
     uint32_t physAddr;
 
+#if !defined(VBGL_PH_USE_MEMOBJ) || ARCH_BITS != 32
     uint32_t uPadding1;
+#endif
 
     /** Number of block of any kind. */
     int32_t  cBlocks;
@@ -217,9 +234,19 @@ struct VBGLPHYSHEAPCHUNK
     VBGLPHYSHEAPCHUNK  *pNext;
     /** Pointer to the previous chunk. */
     VBGLPHYSHEAPCHUNK  *pPrev;
+
+#if defined(VBGL_PH_USE_MEMOBJ)
+    /** The allocation handle. */
+    RTR0MEMOBJ          hMemObj;
+#endif
+
 #if ARCH_BITS == 64
     /** Pad the size up to 64 bytes. */
+# ifdef VBGL_PH_USE_MEMOBJ
+    uintptr_t           auPadding2[2];
+# else
     uintptr_t           auPadding2[3];
+# endif
 #endif
 };
 #if ARCH_BITS == 64
@@ -485,9 +512,14 @@ static void vbglPhysHeapUnlinkFreeBlock(VBGLPHYSHEAPFREEBLOCK *pBlock)
  */
 static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
 {
-    RTCCPHYS           PhysAddr = NIL_RTHCPHYS;
-    VBGLPHYSHEAPCHUNK *pChunk;
-    uint32_t           cbChunk;
+    RTCCPHYS            PhysAddr = NIL_RTHCPHYS;
+    VBGLPHYSHEAPCHUNK  *pChunk;
+    uint32_t            cbChunk;
+#ifdef VBGL_PH_USE_MEMOBJ
+    RTR0MEMOBJ          hMemObj = NIL_RTR0MEMOBJ;
+    int                 rc;
+#endif
+
     VBGL_PH_DPRINTF(("Allocating new chunk for %#x byte allocation\n", cbMinBlock));
     AssertReturn(cbMinBlock <= VBGL_PH_LARGEST_ALLOC_SIZE, NULL); /* paranoia */
 
@@ -508,7 +540,12 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
      * limitation stems from using a 32-bit OUT instruction to pass a block
      * physical address to the host.
      */
+#ifdef VBGL_PH_USE_MEMOBJ
+    rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
+    pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+#else
     pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
+#endif
     if (!pChunk)
     {
         /* If the allocation fail, halv the size till and try again. */
@@ -519,7 +556,12 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
             {
                 cbChunk >>= 2;
                 cbChunk = RT_ALIGN_32(cbChunk, PAGE_SIZE);
+#ifdef VBGL_PH_USE_MEMOBJ
+                rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
+                pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+#else
                 pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
+#endif
             } while (!pChunk && cbChunk > cbMinChunk);
     }
     if (pChunk)
@@ -538,11 +580,20 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
         pChunk->cFreeBlocks      = 0;
         pChunk->pNext            = NULL;
         pChunk->pPrev            = NULL;
+#ifdef VBGL_PH_USE_MEMOBJ
+        pChunk->hMemObj          = hMemObj;
+#endif
+
+        /* Initialize the padding too: */
+#if !defined(VBGL_PH_USE_MEMOBJ) || ARCH_BITS != 32
         pChunk->uPadding1        = UINT32_C(0xADDCAAA1);
+#endif
 #if ARCH_BITS == 64
         pChunk->auPadding2[0]    = UINT64_C(0xADDCAAA3ADDCAAA2);
         pChunk->auPadding2[1]    = UINT64_C(0xADDCAAA5ADDCAAA4);
+# ifndef VBGL_PH_USE_MEMOBJ
         pChunk->auPadding2[2]    = UINT64_C(0xADDCAAA7ADDCAAA6);
+# endif
 #endif
 
         /*
@@ -626,7 +677,11 @@ static void vbglPhysHeapChunkDelete(VBGLPHYSHEAPCHUNK *pChunk)
     /*
      * Finally, free the chunk memory.
      */
+#ifdef VBGL_PH_USE_MEMOBJ
+    RTR0MemObjFree(pChunk->hMemObj, true /*fFreeMappings*/);
+#else
     RTMemContFree(pChunk, pChunk->cbChunk);
+#endif
 }
 
 
