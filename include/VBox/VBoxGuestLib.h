@@ -493,9 +493,9 @@ DECLR0VBGL(void)    VbglR0PhysHeapTerminate(void);
  * Allocate a memory block.
  *
  * @returns Virtual address of the allocated memory block.
- * @param cbSize    Size of block to be allocated.
+ * @param   cb      Number of bytes to allocate.
  */
-DECLR0VBGL(void *)  VbglR0PhysHeapAlloc(uint32_t cbSize);
+DECLR0VBGL(void *)  VbglR0PhysHeapAlloc(uint32_t cb);
 
 /**
  * Get physical address of memory block pointed by the virtual address.
