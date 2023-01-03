@@ -497,11 +497,12 @@ class tdUnitTest1(vbox.TestDriver):
                     self.sUnitTestsPathSrc = sCandidat;
                     break
 
-            if not self.sUnitTestsPathSrc:
+            if self.sUnitTestsPathSrc:
+                reporter.log('Unit test source dir path: ', self.sUnitTestsPathSrc)
+            else:
                 reporter.error('Unable to find unit test source dir. Candidates: %s' % (asCandidates,));
                 return False
-            else:
-                reporter.log('Unit test source dir path: ', self.sUnitTestsPathSrc)
+
         else:
             reporter.log2('Unit test source dir already set to "%s"' % (self.sUnitTestsPathSrc));
 
