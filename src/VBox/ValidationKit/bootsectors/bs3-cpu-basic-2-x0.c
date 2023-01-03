@@ -5301,7 +5301,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
             { false,  true, 14, BS3_SEL_R0_SS16 | 0, 32, BS3_SEL_SPARE_1f | 0,    { .offDst = 0 },                                                BS3_SEL_R0_SS16 | 0, BS3_SEL_SPARE_1f },
         };
 
-        bool const fRmOrV86 = BS3_MODE_IS_RM_OR_V86(bMode);
+        bool const         fRmOrV86     = BS3_MODE_IS_RM_OR_V86(bMode);
+        BS3CPUVENDOR const enmCpuVendor = Bs3GetCpuVendor();
 
         Bs3RegSetDr7(X86_DR7_INIT_VAL);
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
@@ -5481,7 +5482,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                     Bs3RegSetDr7(X86_DR7_INIT_VAL);
                     if (s_aSubTests[iSubTest].iXcpt < 0)
-                        bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B3);
+                        bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected,
+                                                  enmCpuVendor == BS3CPUVENDOR_AMD ? X86_DR6_B1 | X86_DR6_B3 /* 3990x */
+                                                  : X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B3);
                     else
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, s_aSubTests[iSubTest].uErrCd);
                     g_usBs3TestStep++; /* 5 */
