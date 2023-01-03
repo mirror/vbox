@@ -39,6 +39,7 @@
 #include <iprt/assertcompile.h>
 #include <iprt/types.h>
 #ifdef __cplusplus
+# include <iprt/assert.h>
 # include <iprt/errcore.h>
 #endif
 
@@ -517,12 +518,10 @@ typedef struct
 
     int GetUInt32(uint32_t *pu32)
     {
-        if (type == VMMDevHGCMParmType_32bit)
-        {
-            *pu32 = u.value32;
-            return VINF_SUCCESS;
-        }
-        return VERR_INVALID_PARAMETER;
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_32bit, ("type=-%d\n", type),
+                            *pu32 = UINT32_MAX /* shut up gcc */, VERR_INVALID_PARAMETER)
+        *pu32 = u.value32;
+        return VINF_SUCCESS;
     }
 
     void SetUInt64(uint64_t u64)
@@ -533,12 +532,10 @@ typedef struct
 
     int GetUInt64(uint64_t *pu64)
     {
-        if (type == VMMDevHGCMParmType_64bit)
-        {
-            *pu64 = u.value64;
-            return VINF_SUCCESS;
-        }
-        return VERR_INVALID_PARAMETER;
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_64bit, ("type=%d\n", type),
+                            *pu64 = UINT32_MAX /* shut up gcc */, VERR_INVALID_PARAMETER);
+        *pu64 = u.value64;
+        return VINF_SUCCESS;
     }
 
     void SetPtr(void *pv, uint32_t cb)
