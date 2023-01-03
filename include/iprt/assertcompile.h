@@ -66,7 +66,7 @@ typedef int RTASSERTTYPE[1];
  * RTASSERTVAR is the type the AssertCompile() macro redefines.
  * It has no other function and shouldn't be used.
  *
- * GCC and IBM VisualAge C/C++ uses this, though GCC doesn't need this global 
+ * GCC and IBM VisualAge C/C++ uses this, though GCC doesn't need this global
  * scope one as it declares it for each use.
  */
 #ifndef __GNUC__
