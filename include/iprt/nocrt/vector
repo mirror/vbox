@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2022 Oracle and/or its affiliates.
+ * Copyright (C) 2023 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -119,7 +119,7 @@ namespace std
 
         /** @name Item access
          * @{ */
-        typename reference operator*() const RT_NOEXCEPT
+        reference operator*() const RT_NOEXCEPT
         {
             return *m_pItem;
         }
@@ -228,17 +228,8 @@ namespace std
 
         ~vector()
         {
-            size_type i = m_cItems;
-            while (i-- > 0)
-            {
-                m_Allocator.destroy(&m_paItems[i]);
-                m_cItems = i;
-            }
-            m_Allocator.deallocate(m_paItems, m_cAllocated);
-            m_paItems    = NULL;
-            m_cAllocated = 0;
+            clear();
         }
-
 
         /** @name Iterators
          * @{ */
@@ -309,12 +300,12 @@ namespace std
 
         pointer data() RT_NOEXCEPT
         {
-            return m_paItem;
+            return m_paItems;
         }
 
         const_pointer data() const RT_NOEXCEPT
         {
-            return m_paItem;
+            return m_paItems;
         }
 
         /** @}  */
@@ -385,8 +376,20 @@ namespace std
             if (m_cItems > 0)
                 m_cItems -= 1;
         }
-        /** @} */
 
+        void clear() RT_NOEXCEPT
+        {
+            size_type i = m_cItems;
+            while (i-- > 0)
+            {
+                m_Allocator.destroy(&m_paItems[i]);
+                m_cItems = i;
+            }
+            m_Allocator.deallocate(m_paItems, m_cAllocated);
+            m_paItems = NULL;
+            m_cAllocated = 0;
+        }
+        /** @} */
     };
 
 }
