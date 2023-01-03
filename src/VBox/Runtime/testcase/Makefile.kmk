@@ -210,13 +210,12 @@ ifndef VBOX_ONLY_VALIDATIONKIT
 
  if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
   PROGRAMS += \
-  	tstNoCrt-1 \
-  	tstRTNoCrt-4
+  	tstNoCrt-1
   if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64) ## Build and test x86 too!
    PROGRAMS += tstRTNoCrt-2
   endif
   if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
-   PROGRAMS += tstRTNoCrt-3 tstRTNoCrt-3r
+   PROGRAMS += tstRTNoCrt-3 tstRTNoCrt-3r tstRTNoCrt-4
   endif
  endif
 
