@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef GA_INCLUDED_SRC_x11_VBoxClient_display_svga_xf86ctv_h
-#define GA_INCLUDED_SRC_x11_VBoxClient_display_svga_xf86ctv_h
+#ifndef GA_INCLUDED_SRC_x11_VBoxClient_display_svga_xf86cvt_h
+#define GA_INCLUDED_SRC_x11_VBoxClient_display_svga_xf86cvt_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -52,5 +52,5 @@ typedef struct DisplayModeR
 DisplayModeR VBoxClient_xf86CVTMode(int HDisplay, int VDisplay, float VRefresh /* Herz */, bool Reduced, bool Interlaced);
 
 
-#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_display_svga_xf86ctv_h */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_display_svga_xf86cvt_h */
 
