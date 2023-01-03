@@ -135,6 +135,8 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstClipboardMockHGCM': '',            # Ditto.
         'tstClipboardQt': '',                           # Is interactive and needs Qt, needed for Qt clipboard bugfixing.
         'testcase/tstClipboardQt': '',                  # In case it moves here.
+        'tstDragAndDropQt': '',                         # Is interactive and needs Qt, needed for Qt drag'n drop bugfixing.
+        'testcase/tstDragAndDropQt': '',                # In case it moves here.
         'testcase/tstFileLock': '',
         'testcase/tstDisasm-2': '',                     # without parameters it will disassembler 1GB starting from 0
         'testcase/tstFileAppendWin-1': '',
