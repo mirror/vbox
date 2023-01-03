@@ -102,7 +102,11 @@ extern int RTASSERTVAR[1];
  * @param   expr    Expression which should be true.
  */
 #ifdef __GNUC__
-# define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
+# ifdef __cplusplus
+#  define AssertCompileNS(expr)  extern "C" int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
+# else
+#  define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
+# endif
 #elif defined(__IBMC__) || defined(__IBMCPP__)
 # define AssertCompileNS(expr)  extern int RTASSERTVAR[(expr) ? 1 : 0]
 #else
