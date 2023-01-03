@@ -519,7 +519,7 @@ typedef struct
     int GetUInt32(uint32_t *pu32)
     {
         AssertMsgReturnStmt(type == VMMDevHGCMParmType_32bit, ("type=-%d\n", type),
-                            *pu32 = UINT32_MAX /* shut up gcc */, VERR_INVALID_PARAMETER)
+                            *pu32 = UINT32_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE)
         *pu32 = u.value32;
         return VINF_SUCCESS;
     }
@@ -533,7 +533,7 @@ typedef struct
     int GetUInt64(uint64_t *pu64)
     {
         AssertMsgReturnStmt(type == VMMDevHGCMParmType_64bit, ("type=%d\n", type),
-                            *pu64 = UINT32_MAX /* shut up gcc */, VERR_INVALID_PARAMETER);
+                            *pu64 = UINT32_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
         *pu64 = u.value64;
         return VINF_SUCCESS;
     }
