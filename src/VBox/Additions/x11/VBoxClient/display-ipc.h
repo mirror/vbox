@@ -179,7 +179,7 @@ typedef struct VBOX_DRMIPC_CLIENT
 typedef VBOX_DRMIPC_CLIENT *PVBOX_DRMIPC_CLIENT;
 
 /** Static initializer for VBOX_DRMIPC_CLIENT. */
-#define VBOX_DRMIPC_CLIENT_INITIALIZER  { NIL_RTTHREAD, 0, 0, 0, 0, 0, 0 }
+#define VBOX_DRMIPC_CLIENT_INITIALIZER  { NIL_RTTHREAD, 0, { 0 }, { { NULL, NULL },  {0, 0, 0} }, 0, 0, NULL }
 
 /**
  * Initialize IPC client private data.
