@@ -506,7 +506,8 @@ class tdUnitTest1(vbox.TestDriver):
                 return False
 
         else:
-            reporter.log2('Unit test source dir already set to "%s"' % (self.sUnitTestsPathSrc));
+            reporter.log2('Unit test source dir already set to "%s"' % (self.sUnitTestsPathSrc))
+            reporter.log('Unit test source dir path: ', self.sUnitTestsPathSrc)
 
         self.sUnitTestsPathSrc = self._sanitizePath(self.sUnitTestsPathSrc);
 
