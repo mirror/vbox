@@ -4630,6 +4630,7 @@ PROTO_ALL(bs3CpuBasic2_retn__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i24__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i24_opsize__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i760__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i0__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i0_opsize__ud2);
 FNBS3FAR  bs3CpuBasic2_retn_rexw__ud2_c64;
@@ -4687,7 +4688,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
      *
      * ASSUMES we're in on the ring-0 stack in ring-0 and using less than 16KB.
      */
-    Bs3RegCtxSaveEx(&Ctx, bMode, 768);
+    Bs3RegCtxSaveEx(&Ctx, bMode, 1664);
     Ctx.rsp.u = BS3_ADDR_STACK - _16K;
     Bs3MemCpy(&CtxExpected, &Ctx, sizeof(CtxExpected));
 
@@ -4713,6 +4714,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             {  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c16, },
             { false,  0, bs3CpuBasic2_retn_i0__ud2_c16, },
             {  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c16, },
+            { false,760, bs3CpuBasic2_retn_i760__ud2_c16, },
         };
 
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
@@ -4768,6 +4770,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c32, },
             { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c32, },
             { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c32, },
+            { 32, false,760, bs3CpuBasic2_retn_i760__ud2_c32, },
         };
 
         /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
@@ -4851,6 +4854,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             { 32,  true, 24, bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64, },
             { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c64, },
             { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
+            { 32, false,760, bs3CpuBasic2_retn_i760__ud2_c64, },
         };
         BS3CPUVENDOR const enmCpuVendor = Bs3GetCpuVendor();
         bool const         fFix64OpSize = enmCpuVendor == BS3CPUVENDOR_INTEL; /** @todo what does VIA do? */
@@ -4937,6 +4941,7 @@ PROTO_ALL(bs3CpuBasic2_retf_i32_opsize);
 FNBS3FAR  bs3CpuBasic2_retf_i24_rexw_c64;
 FNBS3FAR  bs3CpuBasic2_retf_i24_rexw_opsize_c64;
 FNBS3FAR  bs3CpuBasic2_retf_i24_opsize_rexw_c64;
+PROTO_ALL(bs3CpuBasic2_retf_i888);
 #undef PROTO_ALL
 
 
@@ -5076,7 +5081,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
      *
      * ASSUMES we're in on the ring-0 stack in ring-0 and using less than 16KB.
      */
-    Bs3RegCtxSaveEx(&Ctx, bMode, 768);
+    Bs3RegCtxSaveEx(&Ctx, bMode, 1728);
     Ctx.rsp.u = BS3_ADDR_STACK - _16K;
     Bs3MemCpy(&CtxExpected, &Ctx, sizeof(CtxExpected));
 
@@ -5099,6 +5104,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
             {  true,  0, bs3CpuBasic2_retf_opsize_c16, },
             { false, 32, bs3CpuBasic2_retf_i32_c16, },
             {  true, 32, bs3CpuBasic2_retf_i32_opsize_c16, },
+            { false,888, bs3CpuBasic2_retf_i888_c16, },
         };
 
         static struct
@@ -5606,6 +5612,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
             {  true,  0, bs3CpuBasic2_retf_opsize_c32, },
             { false, 32, bs3CpuBasic2_retf_i32_c32, },
             {  true, 32, bs3CpuBasic2_retf_i32_opsize_c32, },
+            { false,888, bs3CpuBasic2_retf_i888_c32, },
         };
 
         static struct
@@ -5941,6 +5948,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_far_ret)(uint8_t bMode)
             { 2, 24, bs3CpuBasic2_retf_i24_rexw_c64, },
             { 2, 24, bs3CpuBasic2_retf_i24_opsize_rexw_c64, },
             { 1, 24, bs3CpuBasic2_retf_i24_rexw_opsize_c64, },
+            { 0,888, bs3CpuBasic2_retf_i888_c64, },
         };
 
         static struct

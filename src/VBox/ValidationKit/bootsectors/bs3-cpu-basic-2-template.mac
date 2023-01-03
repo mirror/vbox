@@ -1721,6 +1721,14 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i0__ud2, BS3_PBC_NEAR
 AssertCompile(.again - BS3_LAST_LABEL == 3)
 BS3_PROC_END_CMN   bs3CpuBasic2_retn_i0__ud2
 
+BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_i760__ud2
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retn_i760__ud2, BS3_PBC_NEAR
+        ret     760
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_retn_i760__ud2
+
  %if TMPL_BITS == 64
 
 BS3_CPUBAS2_UD_OFF bs3CpuBasic2_retn_rexw__ud2
@@ -1833,6 +1841,10 @@ BS3_PROC_END_CMN   bs3CpuBasic2_retf_i32
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i32_opsize, BS3_PBC_NEAR
         db      066h, 0cah, 20h, 0      ; o32/o16 retf 32
 BS3_PROC_END_CMN   bs3CpuBasic2_retf_i32_opsize
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i888, BS3_PBC_NEAR
+        db      0cah, 78h, 03h          ; retf 888 (0x378)
+BS3_PROC_END_CMN   bs3CpuBasic2_retf_i888
 
  %if TMPL_BITS == 64
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_rexw, BS3_PBC_NEAR
