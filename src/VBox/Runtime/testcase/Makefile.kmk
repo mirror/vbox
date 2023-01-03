@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2022 Oracle and/or its affiliates.
+# Copyright (C) 2006-2023 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -210,7 +210,8 @@ ifndef VBOX_ONLY_VALIDATIONKIT
 
  if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
   PROGRAMS += \
-  	tstNoCrt-1
+  	tstNoCrt-1 \
+  	tstRTNoCrt-4
   if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64) ## Build and test x86 too!
    PROGRAMS += tstRTNoCrt-2
   endif
@@ -728,6 +729,9 @@ tstRTNoCrt-3_SOURCES  := tstRTNoCrt-3.cpp
 
 tstRTNoCrt-3r_TEMPLATE := VBOXR3TSTEXE
 tstRTNoCrt-3r_SOURCES  := tstRTNoCrt-3.cpp
+
+tstRTNoCrt-4_TEMPLATE := VBOXR3TSTEXE
+tstRTNoCrt-4_SOURCES  := tstRTNoCrt-4.cpp
 
 tstRTNtPath-1_TEMPLATE = VBOXR3TSTEXE
 tstRTNtPath-1_SOURCES = tstRTNtPath-1.cpp
