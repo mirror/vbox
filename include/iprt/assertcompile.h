@@ -66,11 +66,21 @@ typedef int RTASSERTTYPE[1];
  * RTASSERTVAR is the type the AssertCompile() macro redefines.
  * It has no other function and shouldn't be used.
  *
- * GCC and IBM VisualAge C/C++ uses this, though GCC doesn't need this global
- * scope one as it declares it for each use.
+ * GCC and IBM VisualAge C/C++ uses this.  GCC doesn't technicaly need this
+ * global scope one as it declares it for each use, however things get
+ * complicated in C++ code where most GCC and clang versions gets upset by mixed
+ * "C" and "C++" versions of the symbol when using inside and outside
+ * RT_C_DECLS_BEGIN/END.  The GCC 3.3.x and 3.4.x versions we use, OTOH will
+ * always complain about unused RTASSERTVAR for each AssertCompileNS use in a
+ * function if we declare it globally, so we don't do it for those, but we do
+ * for 4.x+ to prevent linkage confusion.
  */
-#ifndef __GNUC__
+#if !defined(__cplusplus) || !defined(__GNUC__)
 extern int RTASSERTVAR[1];
+#elif RT_GNUC_PREREQ(4, 0) || defined(__clang_major__) /* Not sure when they fixed the global scoping __unused__/whatever problem. */
+RT_C_DECLS_BEGIN
+extern int RTASSERTVAR[1];
+RT_C_DECLS_END
 #endif
 
 /** @def RTASSERT_HAVE_STATIC_ASSERT
@@ -102,20 +112,9 @@ extern int RTASSERTVAR[1];
  * @param   expr    Expression which should be true.
  */
 #ifdef __GNUC__
-# ifdef __cplusplus /* Hack alert! Some GCC versions and clang gets upset when the macro is used both inside and outside
-                                   extern "C". So, making the variable unqiue by means on __COUNTER__ or __LINE__.
-                                   Note! __COUNTER__ may upset precompiled headers, but this macro only applies to
-                                         gcc 4.2.x and older, so probably not a big issue. */
-#  ifdef __COUNTER__
-#   define AssertCompileNS(expr)            AssertCompileNS2(expr, RT_CONCAT(RTASSERTVAR, __COUNTER__))
-#  else
-#   define AssertCompileNS(expr)            AssertCompileNS2(expr, RT_CONCAT(RTASSERTVAR, __LINE__))
-#  endif
-#  define AssertCompileNS2(expr,a_VarName)  extern int a_VarName[         1    ] __attribute__((__unused__)), \
+# define AssertCompileNS(expr)  AssertCompileNS2(expr,RTASSERTVAR)
+# define AssertCompileNS2(expr,a_VarName)   extern int a_VarName[         1    ] __attribute__((__unused__)), \
                                                        a_VarName[(expr) ? 1 : 0] __attribute__((__unused__))
-# else
-#  define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
-# endif
 #elif defined(__IBMC__) || defined(__IBMCPP__)
 # define AssertCompileNS(expr)  extern int RTASSERTVAR[(expr) ? 1 : 0]
 #else
