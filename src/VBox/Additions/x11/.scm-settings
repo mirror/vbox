@@ -38,6 +38,7 @@
 /vboxvideo/vboxvideo*.c|/vboxvideo/vboxvideo*.h: --license-based-on-mit --no-convert-tabs --dont-set-svn-keywords
 /vboxvideo/edid.c: --license-based-on-mit
 /vboxvideo/setmode.c: --license-based-on-mit
+/VBoxClient/display-svga-xf86cvt.cpp: --license-based-on-mit
 
 # Installer
 /Installer/98vboxadd-xclient: --treat-as .sh

@@ -144,13 +144,14 @@ endif
 ifdef VBOX_WITH_VMSVGA
  VBoxClient_DEFS    += VBOX_WITH_VMSVGA
  VBoxClient_SOURCES += \
-	display.cpp \
-	display-svga-x11.cpp
+ 	display.cpp \
+ 	display-svga-x11.cpp \
+ 	display-svga-xf86cvt.cpp
  VBoxClient_SOURCES.linux += \
-	display-svga-session.cpp \
-	display-ipc.cpp \
-	display-helper-gnome3.cpp \
-	display-helper-generic.cpp
+ 	display-svga-session.cpp \
+ 	display-ipc.cpp \
+ 	display-helper-gnome3.cpp \
+ 	display-helper-generic.cpp
 
 ### include $(PATH_SUB_CURRENT)/helpers/Makefile.kmk
 endif

@@ -1,4 +1,12 @@
+/* $Id$ */
+/** @file
+ * Guest Additions - Our version of xf86CVTMode.
+ */
+
 /*
+ * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * This file is based on x.org server 1.18.0 file xf86cvt.c:
+ *
  * Copyright 2005-2006 Luc Verhaegen.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -20,6 +28,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#if 0
 /*
  * The reason for having this function in a file of its own is
  * so that ../utils/cvt/cvt can link to it, and that xf86CVTMode
@@ -38,8 +47,19 @@
 #include "xf86Modes.h"
 
 #include <string.h>
+#else
+# include "VBoxClient.h"
+# include "display-svga-xf86cvt.h"
+#endif
 
 /*
+ * This is a slightly modified version of the xf86CVTMode function from
+ * xf86cvt.c from the xorg xserver source code.  Computes several parameters
+ * of a display mode out of horizontal and vertical resolutions.  Replicated
+ * here to avoid further dependencies.
+ *
+ *----------------------------------------------------------------------------
+ *
  * Generate a CVT standard mode from HDisplay, VDisplay and VRefresh.
  *
  * These calculations are stolen from the CVT calculation spreadsheet written
@@ -63,11 +83,9 @@
  * want that. -- libv
  *
  */
-DisplayModePtr
-xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
-            Bool Interlaced)
+DisplayModeR VBoxClient_xf86CVTMode(int HDisplay, int VDisplay, float VRefresh /* Herz */, bool Reduced, bool Interlaced)
 {
-    DisplayModeRec *Mode = xnfcalloc(1, sizeof(DisplayModeRec));
+    DisplayModeR Mode;
 
     /* 1) top/bottom margin size (% of height) - default: 1.8 */
 #define CVT_MARGIN_PERCENTAGE 1.8
@@ -84,12 +102,11 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
     /* Pixel Clock step (kHz) */
 #define CVT_CLOCK_STEP 250
 
-    Bool Margins = FALSE;
+    bool Margins = false;
     float VFieldRate, HPeriod;
     int HDisplayRnd, HMargin;
     int VDisplayRnd, VMargin, VSync;
     float Interlace;            /* Please rename this */
-    char *tmp;
 
     /* CVT default is 60.0Hz */
     if (!VRefresh)
@@ -107,14 +124,14 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
     /* 3. Determine left and right borders */
     if (Margins) {
         /* right margin is actually exactly the same as left */
-        HMargin = (((float) HDisplayRnd) * CVT_MARGIN_PERCENTAGE / 100.0);
+        HMargin = (int)((float)HDisplayRnd * CVT_MARGIN_PERCENTAGE / 100.0);
         HMargin -= HMargin % CVT_H_GRANULARITY;
     }
     else
         HMargin = 0;
 
     /* 4. Find total active pixels */
-    Mode->HDisplay = HDisplayRnd + 2 * HMargin;
+    Mode.HDisplay = HDisplayRnd + 2 * HMargin;
 
     /* 5. Find number of lines per field */
     if (Interlaced)
@@ -126,11 +143,11 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
     /* nope. */
     if (Margins)
         /* top and bottom margins are equal again. */
-        VMargin = (((float) VDisplayRnd) * CVT_MARGIN_PERCENTAGE / 100.0);
+        VMargin = (int)((float)VDisplayRnd * CVT_MARGIN_PERCENTAGE / 100.0);
     else
         VMargin = 0;
 
-    Mode->VDisplay = VDisplay + 2 * VMargin;
+    Mode.VDisplay = VDisplay + 2 * VMargin;
 
     /* 7. Interlace */
     if (Interlaced)
@@ -166,23 +183,21 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
         int HBlank;
 
         /* 8. Estimated Horizontal period */
-        HPeriod = ((float) (1000000.0 / VFieldRate - CVT_MIN_VSYNC_BP)) /
-            (VDisplayRnd + 2 * VMargin + CVT_MIN_V_PORCH + Interlace);
+        HPeriod = ((float)(1000000.0 / VFieldRate - CVT_MIN_VSYNC_BP))
+                / (VDisplayRnd + 2 * VMargin + CVT_MIN_V_PORCH + Interlace);
 
         /* 9. Find number of lines in sync + backporch */
-        if (((int) (CVT_MIN_VSYNC_BP / HPeriod) + 1) <
-            (VSync + CVT_MIN_V_PORCH))
+        if ((int)(CVT_MIN_VSYNC_BP / HPeriod) + 1 < VSync + CVT_MIN_V_PORCH)
             VSyncAndBackPorch = VSync + CVT_MIN_V_PORCH;
         else
-            VSyncAndBackPorch = (int) (CVT_MIN_VSYNC_BP / HPeriod) + 1;
+            VSyncAndBackPorch = (int)(CVT_MIN_VSYNC_BP / HPeriod) + 1;
 
         /* 10. Find number of lines in back porch */
         VBackPorch = VSyncAndBackPorch - VSync;
         (void) VBackPorch;
 
         /* 11. Find total number of lines in vertical field */
-        Mode->VTotal = VDisplayRnd + 2 * VMargin + VSyncAndBackPorch + Interlace
-            + CVT_MIN_V_PORCH;
+        Mode.VTotal = VDisplayRnd + 2 * VMargin + VSyncAndBackPorch + Interlace + CVT_MIN_V_PORCH;
 
         /* 5) Definition of Horizontal blanking time limitation */
         /* Gradient (%/kHz) - default 600 */
@@ -197,9 +212,8 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
         /* Scaling factor weighting - default 20 */
 #define CVT_J_FACTOR 20
 
-#define CVT_M_PRIME CVT_M_FACTOR * CVT_K_FACTOR / 256
-#define CVT_C_PRIME (CVT_C_FACTOR - CVT_J_FACTOR) * CVT_K_FACTOR / 256 + \
-        CVT_J_FACTOR
+#define CVT_M_PRIME (CVT_M_FACTOR * CVT_K_FACTOR / 256)
+#define CVT_C_PRIME ((CVT_C_FACTOR - CVT_J_FACTOR) * CVT_K_FACTOR / 256 + CVT_J_FACTOR)
 
         /* 12. Find ideal blanking duty cycle from formula */
         HBlankPercentage = CVT_C_PRIME - CVT_M_PRIME * HPeriod / 1000.0;
@@ -208,23 +222,21 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
         if (HBlankPercentage < 20)
             HBlankPercentage = 20;
 
-        HBlank = Mode->HDisplay * HBlankPercentage / (100.0 - HBlankPercentage);
+        HBlank = (int)(Mode.HDisplay * HBlankPercentage / (100.0 - HBlankPercentage));
         HBlank -= HBlank % (2 * CVT_H_GRANULARITY);
 
         /* 14. Find total number of pixels in a line. */
-        Mode->HTotal = Mode->HDisplay + HBlank;
+        Mode.HTotal = Mode.HDisplay + HBlank;
 
         /* Fill in HSync values */
-        Mode->HSyncEnd = Mode->HDisplay + HBlank / 2;
+        Mode.HSyncEnd = Mode.HDisplay + HBlank / 2;
 
-        Mode->HSyncStart = Mode->HSyncEnd -
-            (Mode->HTotal * CVT_HSYNC_PERCENTAGE) / 100;
-        Mode->HSyncStart += CVT_H_GRANULARITY -
-            Mode->HSyncStart % CVT_H_GRANULARITY;
+        Mode.HSyncStart = Mode.HSyncEnd - (Mode.HTotal * CVT_HSYNC_PERCENTAGE) / 100;
+        Mode.HSyncStart += CVT_H_GRANULARITY - Mode.HSyncStart % CVT_H_GRANULARITY;
 
         /* Fill in VSync values */
-        Mode->VSyncStart = Mode->VDisplay + CVT_MIN_V_PORCH;
-        Mode->VSyncEnd = Mode->VSyncStart + VSync;
+        Mode.VSyncStart = Mode.VDisplay + CVT_MIN_V_PORCH;
+        Mode.VSyncEnd = Mode.VSyncStart + VSync;
 
     }
     else {                      /* Reduced blanking */
@@ -243,47 +255,45 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
         int VBILines;
 
         /* 8. Estimate Horizontal period. */
-        HPeriod = ((float) (1000000.0 / VFieldRate - CVT_RB_MIN_VBLANK)) /
-            (VDisplayRnd + 2 * VMargin);
+        HPeriod = ((float)(1000000.0 / VFieldRate - CVT_RB_MIN_VBLANK)) / (VDisplayRnd + 2 * VMargin);
 
         /* 9. Find number of lines in vertical blanking */
-        VBILines = ((float) CVT_RB_MIN_VBLANK) / HPeriod + 1;
+        VBILines = (int)((float)CVT_RB_MIN_VBLANK / HPeriod + 1);
 
         /* 10. Check if vertical blanking is sufficient */
-        if (VBILines < (CVT_RB_VFPORCH + VSync + CVT_MIN_V_BPORCH))
+        if (VBILines < CVT_RB_VFPORCH + VSync + CVT_MIN_V_BPORCH)
             VBILines = CVT_RB_VFPORCH + VSync + CVT_MIN_V_BPORCH;
 
         /* 11. Find total number of lines in vertical field */
-        Mode->VTotal = VDisplayRnd + 2 * VMargin + Interlace + VBILines;
+        Mode.VTotal = (int)(VDisplayRnd + 2 * VMargin + Interlace + VBILines);
 
         /* 12. Find total number of pixels in a line */
-        Mode->HTotal = Mode->HDisplay + CVT_RB_H_BLANK;
+        Mode.HTotal = (int)(Mode.HDisplay + CVT_RB_H_BLANK);
 
         /* Fill in HSync values */
-        Mode->HSyncEnd = Mode->HDisplay + CVT_RB_H_BLANK / 2;
-        Mode->HSyncStart = Mode->HSyncEnd - CVT_RB_H_SYNC;
+        Mode.HSyncEnd = (int)(Mode.HDisplay + CVT_RB_H_BLANK / 2);
+        Mode.HSyncStart = (int)(Mode.HSyncEnd - CVT_RB_H_SYNC);
 
         /* Fill in VSync values */
-        Mode->VSyncStart = Mode->VDisplay + CVT_RB_VFPORCH;
-        Mode->VSyncEnd = Mode->VSyncStart + VSync;
+        Mode.VSyncStart = Mode.VDisplay + CVT_RB_VFPORCH;
+        Mode.VSyncEnd = Mode.VSyncStart + VSync;
     }
-
     /* 15/13. Find pixel clock frequency (kHz for xf86) */
-    Mode->Clock = Mode->HTotal * 1000.0 / HPeriod;
-    Mode->Clock -= Mode->Clock % CVT_CLOCK_STEP;
+    Mode.Clock = (int)(Mode.HTotal * 1000.0 / HPeriod);
+    Mode.Clock -= Mode.Clock % CVT_CLOCK_STEP;
 
     /* 16/14. Find actual Horizontal Frequency (kHz) */
-    Mode->HSync = ((float) Mode->Clock) / ((float) Mode->HTotal);
+    Mode.HSync = (float)Mode.Clock / (float)Mode.HTotal;
 
     /* 17/15. Find actual Field rate */
-    Mode->VRefresh = (1000.0 * ((float) Mode->Clock)) /
-        ((float) (Mode->HTotal * Mode->VTotal));
+    Mode.VRefresh = (1000.0 * (float)Mode.Clock) / (float)(Mode.HTotal * Mode.VTotal);
 
     /* 18/16. Find actual vertical frame frequency */
     /* ignore - just set the mode flag for interlaced */
     if (Interlaced)
-        Mode->VTotal *= 2;
+        Mode.VTotal *= 2;
 
+#if 0
     XNFasprintf(&tmp, "%dx%d", HDisplay, VDisplay);
     Mode->name = tmp;
 
@@ -294,6 +304,7 @@ xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
 
     if (Interlaced)
         Mode->Flags |= V_INTERLACE;
+#endif
 
     return Mode;
 }
