@@ -1104,7 +1104,7 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
         aPollFds[1].revents = 0;
 
         int rcPsx = 0;
-        int msTimeoutLeft = msTimeout == RT_INDEFINITE_WAIT ? -1 : msTimeout;
+        int msTimeoutLeft = msTimeout == RT_INDEFINITE_WAIT ? -1 : (int)msTimeout;
         while (msTimeoutLeft != 0)
         {
             uint64_t tsPollStart = RTTimeMilliTS();

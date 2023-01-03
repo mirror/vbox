@@ -3113,7 +3113,7 @@ static int kldrModMachODylibDoIndirectSymbols(PRTLDRMODMACHO pThis, void *pvBits
                 case S_NON_LAZY_SYMBOL_POINTERS:
                 case S_LAZY_SYMBOL_POINTERS:
                 {
-                    uint32_t       *pauDstPtrs = (uint32_t *)((uintptr_t)pvBits + pThis->paSections[iSect].RVA);
+                    uint32_t       *pauDstPtrs = (uint32_t *)((uintptr_t)pvBits + (uintptr_t)pThis->paSections[iSect].RVA);
                     uint32_t  const cDstPtrs   = pThis->paSections[iSect].cb / sizeof(pauDstPtrs[0]);
                     uint32_t  const idxSrcSkip = pSect->reserved1;
                     if ((uint64_t)idxSrcSkip + cDstPtrs > cIndirectSymbols)
@@ -3185,7 +3185,7 @@ static int kldrModMachODylibDoIndirectSymbols(PRTLDRMODMACHO pThis, void *pvBits
                 case S_NON_LAZY_SYMBOL_POINTERS:
                 case S_LAZY_SYMBOL_POINTERS:
                 {
-                    uint64_t       *pauDstPtrs = (uint64_t *)((uintptr_t)pvBits + pThis->paSections[iSect].RVA);
+                    uint64_t       *pauDstPtrs = (uint64_t *)((uintptr_t)pvBits + (uintptr_t)pThis->paSections[iSect].RVA);
                     uint32_t  const cDstPtrs   = pThis->paSections[iSect].cb / sizeof(pauDstPtrs[0]);
                     uint32_t  const idxSrcSkip = pSect->reserved1;
                     if ((uint64_t)idxSrcSkip + cDstPtrs > cIndirectSymbols)
