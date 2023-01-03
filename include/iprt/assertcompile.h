@@ -82,7 +82,7 @@ extern int RTASSERTVAR[1];
 # endif
 #endif
 #if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
-# define RTASSERT_HAVE_STATIC_ASSERT
+//# define RTASSERT_HAVE_STATIC_ASSERT
 #endif
 #if RT_CLANG_PREREQ(6, 0)
 # if __has_feature(cxx_static_assert) || __has_feature(c_static_assert)
@@ -103,9 +103,16 @@ extern int RTASSERTVAR[1];
  */
 #ifdef __GNUC__
 # ifdef __cplusplus /* Hack alert! Some GCC versions and clang gets upset when the macro is used both inside and outside
-                                   extern "C". So, making the variable a bit more unique by appending the line number. */
-#  define AssertCompileNS(expr)  extern int RT_CONCAT(RTASSERTVAR,__LINE__)[1] __attribute__((__unused__)), \
-                                            RT_CONCAT(RTASSERTVAR,__LINE__)[(expr) ? 1 : 0] __attribute__((__unused__))
+                                   extern "C". So, making the variable unqiue by means on __COUNTER__ or __LINE__.
+                                   Note! __COUNTER__ may upset precompiled headers, but this macro only applies to
+                                         gcc 4.2.x and older, so probably not a big issue. */
+#  ifdef __COUNTER__
+#   define AssertCompileNS(expr)            AssertCompileNS2(expr, RT_CONCAT(RTASSERTVAR, __COUNTER__))
+#  else
+#   define AssertCompileNS(expr)            AssertCompileNS2(expr, RT_CONCAT(RTASSERTVAR, __LINE__))
+#  endif
+#  define AssertCompileNS2(expr,a_VarName)  extern int a_VarName[         1    ] __attribute__((__unused__)), \
+                                                       a_VarName[(expr) ? 1 : 0] __attribute__((__unused__))
 # else
 #  define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
 # endif
