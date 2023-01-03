@@ -695,8 +695,8 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
                     if (pLeftNode)
                     {
-#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
-                        AssertCompile(kMaxStack > 6);
+#if RT_GNUC_PREREQ_EX(4,7,1) && defined(RTASSERT_HAVE_STATIC_ASSERT) /* 32-bit 4.4.7 has trouble, dunno when it started working */
+                        AssertCompile(kMaxStack > 6);                /* exactly. Seems having static_assert is required. */
 #endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pLeftNode, pNode->idxLeft, apEntries[kMaxStack - 1],
@@ -731,8 +731,8 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
                     if (pRightNode)
                     {
-#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
-                        AssertCompile(kMaxStack > 6);
+#if RT_GNUC_PREREQ_EX(4,7,1) && defined(RTASSERT_HAVE_STATIC_ASSERT) /* 32-bit 4.4.7 has trouble, dunno when it started working */
+                        AssertCompile(kMaxStack > 6);                /* exactly. Seems having static_assert is required. */
 #endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pRightNode, pNode->idxRight, apEntries[kMaxStack - 1],
@@ -805,8 +805,8 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
                     if (pRightNode)
                     {
-#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
-                        AssertCompile(kMaxStack > 6);
+#if RT_GNUC_PREREQ_EX(4,7,1) && defined(RTASSERT_HAVE_STATIC_ASSERT) /* 32-bit 4.4.7 has trouble, dunno when it started working */
+                        AssertCompile(kMaxStack > 6);                /* exactly. Seems having static_assert is required. */
 #endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pRightNode, pNode->idxRight, apEntries[kMaxStack - 1],
@@ -841,8 +841,8 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
                     if (pLeftNode)
                     {
-#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
-                        AssertCompile(kMaxStack > 6);
+#if RT_GNUC_PREREQ_EX(4,7,1) && defined(RTASSERT_HAVE_STATIC_ASSERT) /* 32-bit 4.4.7 has trouble, dunno when it started working */
+                        AssertCompile(kMaxStack > 6);                /* exactly. Seems having static_assert is required. */
 #endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pLeftNode, pNode->idxLeft, apEntries[kMaxStack - 1],
@@ -929,8 +929,8 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
                     if (pLeftNode)
                     {
-#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
-                        AssertCompile(kMaxStack > 6);
+#if RT_GNUC_PREREQ_EX(4,7,1) && defined(RTASSERT_HAVE_STATIC_ASSERT) /* 32-bit 4.4.7 has trouble, dunno when it started working */
+                        AssertCompile(kMaxStack > 6);                /* exactly. Seems having static_assert is required. */
 #endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pLeftNode, pNode->idxLeft, apEntries[kMaxStack - 1],
@@ -959,8 +959,8 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
                     if (pRightNode)
                     {
-#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
-                        AssertCompile(kMaxStack > 6);
+#if RT_GNUC_PREREQ_EX(4,7,1) && defined(RTASSERT_HAVE_STATIC_ASSERT) /* 32-bit 4.4.7 has trouble, dunno when it started working */
+                        AssertCompile(kMaxStack > 6);                /* exactly. Seems having static_assert is required. */
 #endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pRightNode, pNode->idxRight, apEntries[kMaxStack - 1],
