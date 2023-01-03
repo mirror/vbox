@@ -102,8 +102,10 @@ extern int RTASSERTVAR[1];
  * @param   expr    Expression which should be true.
  */
 #ifdef __GNUC__
-# ifdef __cplusplus
-#  define AssertCompileNS(expr)  extern "C" int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
+# ifdef __cplusplus /* Hack alert! Some GCC versions and clang gets upset when the macro is used both inside and outside
+                                   extern "C". So, making the variable a bit more unique by appending the line number. */
+#  define AssertCompileNS(expr)  extern int RT_CONCAT(RTASSERTVAR,__LINE__)[1] __attribute__((__unused__)), \
+                                            RT_CONCAT(RTASSERTVAR,__LINE__)[(expr) ? 1 : 0] __attribute__((__unused__))
 # else
 #  define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((__unused__)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((__unused__))
 # endif
