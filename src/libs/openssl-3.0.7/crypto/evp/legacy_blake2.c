@@ -11,8 +11,15 @@
 #include "prov/blake2.h"        /* diverse BLAKE2 macros */
 #include "legacy_meth.h"
 
+#ifdef OPENSSL_MANGLER                                                                                  /* VBOX */
+# undef  ossl_blake2b_init                                                                              /* VBOX */
+# undef  ossl_blake2s_init                                                                              /* VBOX */
+# define ossl_blake2b_init OPENSSL_MANGLER(ossl_blake2b512_init)                                        /* VBOX */
+# define ossl_blake2s_init OPENSSL_MANGLER(ossl_blake2s256_init)                                        /* VBOX */
+#else                                                                                                   /* VBOX */
 #define ossl_blake2b_init ossl_blake2b512_init
 #define ossl_blake2s_init ossl_blake2s256_init
+#endif                                                                                                  /* VBOX */
 
 IMPLEMENT_LEGACY_EVP_MD_METH_LC(blake2s_int, ossl_blake2s)
 IMPLEMENT_LEGACY_EVP_MD_METH_LC(blake2b_int, ossl_blake2b)
