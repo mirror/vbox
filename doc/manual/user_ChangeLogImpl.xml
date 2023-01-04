@@ -57,11 +57,14 @@ Rules for adding a changelog entry to make them look more uniform:
     1. Begin the entry with an UPPERCASE letter, e.g. "Foo: Fixed" vs. "Foo: fixed"
     2. Use the past form of something, e.g. "Fixed ..." vs. "Fix ..."
     3. No dot (.) after the entry, e.g. "<para>Foo: Bar</para>" vs. "<para>Foo: Bar.</para>"
+    4. Use TWO (2) spaces for indentation
+    5. Use line breaks when hitting column 80
 
     Full example:
 
         <listitem>
-          <para>Foo: Fixed something really important</para>
+          <para>Foo: Fixed something really important, really really long line
+            with lots more text not fitting into 80 columns</para>
         </listitem>
 -->
 <chapter>
@@ -79,33 +82,40 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>VMM: Fixed guru running the FreeBSD loader on older Intel CPUs
-         without unrestricted guest support (bug #21332)</para>
+          without unrestricted guest support (bug #21332)</para>
       </listitem>
 
       <listitem>
-        <para>VirtioNet: Fixed broken network after loading saved state (bug #21172)</para>
+        <para>VirtioNet: Fixed broken network after loading saved state
+          (bug #21172)</para>
       </listitem>
 
       <listitem>
-        <para>Storage: Added support for increasing the size of the following VMDK disks: monolithicFlat,
-        monolithicSparse, twoGbMaxExtentSparse, twoGbMaxExtentFlat</para>
+        <para>Storage: Added support for increasing the size of the following
+          VMDK disks: monolithicFlat, monolithicSparse, twoGbMaxExtentSparse,
+          twoGbMaxExtentFlat</para>
       </listitem>
 
       <listitem>
-       <para>Mouse Integration: Provided guest with extended host mouse state</para>
+        <para>Mouse Integration: Provided guest with extended host mouse state</para>
       </listitem>
 
       <listitem>
-       <para>Linux Host and Guest: Added initial support for building
-         UEK7 kernel on Oracle Linux 8</para>
+        <para>Guest Control: Fixed handling creation mode for temporary directories
+          (bug #21394)</para>
       </listitem>
 
       <listitem>
-       <para>Linux Host and Guest: Added initial support for RHEL 9.1 kernel</para>
+        <para>Linux Host and Guest: Added initial support for building UEK7 kernel on
+          Oracle Linux 8</para>
       </listitem>
 
       <listitem>
-       <para>Windows Host: Fixed support for VM autostart (bug#21349)</para>
+        <para>Linux Host and Guest: Added initial support for RHEL 9.1 kernel</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Host: Fixed support for VM autostart (bug#21349)</para>
       </listitem>
 
     </itemizedlist>
@@ -121,19 +131,19 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-       <para>VMM: Added nested paging support for nested virtualization (Intel hosts only)</para>
+        <para>VMM: Added nested paging support for nested virtualization (Intel hosts only)</para>
       </listitem>
 
       <listitem>
-       <para>VMM: Fixed rare guru meditations with certain guests on macOS 10.15 (Catalina) (bug #21237)</para>
+        <para>VMM: Fixed rare guru meditations with certain guests on macOS 10.15 (Catalina) (bug #21237)</para>
       </listitem>
 
       <listitem>
-       <para>VMM: Fixed possible VM process crash on Windows hosts when Hyper-V is used with certain guests (bug #21174)</para>
+        <para>VMM: Fixed possible VM process crash on Windows hosts when Hyper-V is used with certain guests (bug #21174)</para>
       </listitem>
 
       <listitem>
-       <para>VMM: Fixed Windows XP guest hang or BSOD on AMD CPUs under certain circumstances (bug #21256)</para>
+        <para>VMM: Fixed Windows XP guest hang or BSOD on AMD CPUs under certain circumstances (bug #21256)</para>
       </listitem>
 
       <listitem>
