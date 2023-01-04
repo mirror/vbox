@@ -193,6 +193,23 @@ crypto-headers_SOURCES  := \
 	gen-includes/openssl/x509_vfy.h=>x509_vfy.h \
 	gen-includes/openssl/x509v3.h=>x509v3.h
 
+## Workaround for GCC 3.3.x or older always warning about '\#pragma once' being obsolete.
+#
+# We edit the headers during installation and qualifies the \#pragma once with
+# RT_WITHOUT_PRAGMA_ONCE like we do for our own headers (defined root templates).
+#
+# 1=<src>, 2=<dst>, 3=<target>, 4=<flags>, 5=install|stage
+# context vars: uid, gid, mode
+#
+if "$(VBOX_GCC_VERSION_CC)" < 30400 && "$(KBUILD_TARGET)" != "win"
+ define crypto-headers_INSTALLER
+	$$(RM) -f -- "$(2)"
+	$$(SED) -e 's/^\([#][[:space:]]*\)pragma[[:space:]][[:space:]]*once.*/\1ifndef RT_WITHOUT_PRAGMA_ONCE\n\1 pragma once\n\1endif/' \
+		--output "$(2)" "$(1)"
+	$(if $(mode),$(CHMOD) "$(mode)" -- "$(2)",)
+ endef
+endif
+
 #
 # The templates used for the crypo lib and all its sublibraries.
 #
@@ -301,6 +318,7 @@ endif
 TEMPLATE_LIBCRYPTO_CFLAGS.freebsd = -std=gnu99
 
 TEMPLATE_LIBCRYPTO_INCS := \
+	$(dir $(VBOX_PATH_CRYPTO_HEADERS)) \
 	$(VBOX_PATH_OPENSSL) \
 	$(VBOX_PATH_OPENSSL)/include \
 	$(VBOX_PATH_OPENSSL)/providers/common/include \
