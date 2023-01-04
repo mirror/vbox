@@ -239,6 +239,9 @@ protected:
     /** Stores a guest-screen @a sizeHint to extra-data. */
     void setStoredGuestScreenSizeHint(const QSize &sizeHint);
 
+    /** Retrieves the sent guest-screen size-hint from display or frame-buffer. */
+    QSize requestedGuestScreenSizeHint() const;
+
     /** Retrieves the last guest-screen visibility status from extra-data. */
     bool guestScreenVisibilityStatus() const;
 

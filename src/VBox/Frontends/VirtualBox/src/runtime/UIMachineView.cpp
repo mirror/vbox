@@ -1265,6 +1265,26 @@ void UIMachineView::setStoredGuestScreenSizeHint(const QSize &sizeHint)
     gEDataManager->setLastGuestScreenSizeHint(m_uScreenId, sizeHint, uiCommon().managedVMUuid());
 }
 
+QSize UIMachineView::requestedGuestScreenSizeHint() const
+{
+    /* Acquire last guest-screen size-hint set, if any: */
+    BOOL fEnabled, fChangeOrigin;
+    LONG iOriginX, iOriginY;
+    ULONG uWidth, uHeight, uBitsPerPixel;
+    display().GetVideoModeHint(screenId(), fEnabled, fChangeOrigin,
+                               iOriginX, iOriginY, uWidth, uHeight, uBitsPerPixel);
+
+    /* Acquire effective frame-buffer size otherwise: */
+    if (uWidth == 0 || uHeight == 0)
+    {
+        uWidth = frameBuffer()->width();
+        uHeight = frameBuffer()->height();
+    }
+
+    /* Return result: */
+    return QSize((int)uWidth, (int)uHeight);
+}
+
 bool UIMachineView::guestScreenVisibilityStatus() const
 {
     /* Always 'true' for primary guest-screen: */

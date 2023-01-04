@@ -84,7 +84,7 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 /* Send guest-resize hint only if top window resizing to required dimension: */
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                if (pResizeEvent->size() != workingArea().size())
+                if (pResizeEvent->size() != calculateMaxGuestSize())
                     break;
 
                 /* Recalculate maximum guest size: */
@@ -162,15 +162,15 @@ void UIMachineViewSeamless::adjustGuestScreenSize()
     /* Step 2: Is the guest-screen of another size than necessary? */
     if (!fAdjust)
     {
-        /* Acquire frame-buffer size: */
-        QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
+        /* Acquire requested guest-screen size-hint or at least actual frame-buffer size: */
+        QSize guestScreenSizeHint = requestedGuestScreenSizeHint();
         /* Take the scale-factor(s) into account: */
-        frameBufferSize = scaledForward(frameBufferSize);
+        guestScreenSizeHint = scaledForward(guestScreenSizeHint);
 
-        /* Acquire working-area size: */
-        const QSize workingAreaSize = workingArea().size();
+        /* Calculate maximum possible guest screen size: */
+        const QSize maximumGuestScreenSize = calculateMaxGuestSize();
 
-        if (frameBufferSize != workingAreaSize)
+        if (guestScreenSizeHint != maximumGuestScreenSize)
         {
             LogRel2(("GUI: UIMachineViewSeamless::adjustGuestScreenSize: Guest-screen is of another size than necessary, adjustment is required.\n"));
             fAdjust = true;
@@ -200,9 +200,9 @@ void UIMachineViewSeamless::adjustGuestScreenSize()
     if (fAdjust)
     {
         frameBuffer()->setAutoEnabled(false);
-        sltPerformGuestResize(workingArea().size());
+        sltPerformGuestResize(calculateMaxGuestSize());
         /* And remember the size to know what we are resizing out of when we exit: */
-        uisession()->setLastFullScreenSize(screenId(), scaledForward(scaledBackward(workingArea().size())));
+        uisession()->setLastFullScreenSize(screenId(), scaledForward(scaledBackward(calculateMaxGuestSize())));
     }
 }
 

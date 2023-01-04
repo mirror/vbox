@@ -180,29 +180,17 @@ void UIMachineViewNormal::adjustGuestScreenSize()
 {
     LogRel(("GUI: UIMachineViewNormal::adjustGuestScreenSize: Adjust guest-screen size if necessary\n"));
 
-    /* Get last monitor size set, if any: */
-    BOOL fEnabled, fChangeOrigin;
-    LONG iOriginX, iOriginY;
-    ULONG uWidth, uHeight, uBitsPerPixel;
-    display().GetVideoModeHint(screenId(), fEnabled, fChangeOrigin,
-                               iOriginX, iOriginY, uWidth, uHeight, uBitsPerPixel);
-
-    /* Acquire effective frame-buffer size otherwise: */
-    if (uWidth == 0 || uHeight == 0)
-    {
-        uWidth = frameBuffer()->width();
-        uHeight = frameBuffer()->height();
-    }
-
-    /* Compose frame-buffer size: */
-    QSize frameBufferSize(uWidth, uHeight);
+    /* Acquire requested guest-screen size-hint or at least actual frame-buffer size: */
+    QSize guestScreenSizeHint = requestedGuestScreenSizeHint();
     /* Take the scale-factor(s) into account: */
-    frameBufferSize = scaledForward(frameBufferSize);
+    guestScreenSizeHint = scaledForward(guestScreenSizeHint);
 
-    /* Adjust guest-screen size if the last size hint is too big for the screen: */
-    const QSize maximumGuestSize = calculateMaxGuestSize();
-    if (   maximumGuestSize.width() < frameBufferSize.width()
-        || maximumGuestSize.height() < frameBufferSize.height())
+    /* Calculate maximum possible guest screen size: */
+    const QSize maximumGuestScreenSize = calculateMaxGuestSize();
+
+    /* Adjust guest-screen size if the requested one is too big for the screen: */
+    if (   guestScreenSizeHint.width() > maximumGuestScreenSize.width()
+        || guestScreenSizeHint.height() > maximumGuestScreenSize.height())
         sltPerformGuestResize(machineWindow()->centralWidget()->size());
 }
 
