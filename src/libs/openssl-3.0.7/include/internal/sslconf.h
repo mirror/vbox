@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_SSLCONF_H
 # define OSSL_INTERNAL_SSLCONF_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 typedef struct ssl_conf_cmd_st SSL_CONF_CMD;
 

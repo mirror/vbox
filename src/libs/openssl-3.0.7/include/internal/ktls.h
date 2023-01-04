@@ -22,7 +22,9 @@
 
 #ifndef HEADER_INTERNAL_KTLS
 # define HEADER_INTERNAL_KTLS
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # ifndef OPENSSL_NO_KTLS
 

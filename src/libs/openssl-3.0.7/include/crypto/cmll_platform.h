@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CMLL_PLATFORM_H
 # define OSSL_CMLL_PLATFORM_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # if defined(CMLL_ASM) && (defined(__sparc) || defined(__sparc__))
 

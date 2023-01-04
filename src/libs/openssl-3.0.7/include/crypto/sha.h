@@ -10,7 +10,9 @@
 
 #ifndef OSSL_CRYPTO_SHA_H
 # define OSSL_CRYPTO_SHA_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/sha.h>
 

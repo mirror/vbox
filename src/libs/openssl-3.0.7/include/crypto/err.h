@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_ERR_H
 # define OSSL_CRYPTO_ERR_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 int ossl_err_load_ERR_strings(void);
 int ossl_err_load_crypto_strings(void);

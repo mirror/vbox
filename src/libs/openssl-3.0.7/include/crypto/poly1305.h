@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_POLY1305_H
 # define OSSL_CRYPTO_POLY1305_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 #if defined(VBOX)
 # include <openssl/opensslconf.h>

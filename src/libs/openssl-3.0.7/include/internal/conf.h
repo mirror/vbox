@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_CONF_H
 # define OSSL_INTERNAL_CONF_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/conf.h>
 

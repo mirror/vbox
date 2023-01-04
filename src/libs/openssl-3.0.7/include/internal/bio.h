@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_BIO_H
 # define OSSL_INTERNAL_BIO_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/core.h>
 # include <openssl/bio.h>

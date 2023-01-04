@@ -9,7 +9,9 @@
 
 #ifndef OSSL_PROVIDER_RAND_POOL_H
 # define OSSL_PROVIDER_RAND_POOL_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <stdio.h>
 # include <openssl/rand.h>

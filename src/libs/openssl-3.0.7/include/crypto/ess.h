@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_ESS_H
 # define OSSL_CRYPTO_ESS_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 /*-
  * IssuerSerial ::= SEQUENCE {

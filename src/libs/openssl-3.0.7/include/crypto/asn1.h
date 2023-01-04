@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_ASN1_H
 # define OSSL_CRYPTO_ASN1_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/asn1.h>
 # include <openssl/core_dispatch.h> /* OSSL_FUNC_keymgmt_import() */

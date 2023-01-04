@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_ASN1_H
 # define OSSL_INTERNAL_ASN1_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb);
 

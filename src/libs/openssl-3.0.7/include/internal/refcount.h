@@ -8,7 +8,9 @@
  */
 #ifndef OSSL_INTERNAL_REFCOUNT_H
 # define OSSL_INTERNAL_REFCOUNT_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/e_os2.h>
 # include <openssl/trace.h>

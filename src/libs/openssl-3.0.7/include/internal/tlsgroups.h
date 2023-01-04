@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_TLSGROUPS_H
 # define OSSL_INTERNAL_TLSGROUPS_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # define OSSL_TLS_GROUP_ID_sect163k1        0x0001
 # define OSSL_TLS_GROUP_ID_sect163r1        0x0002

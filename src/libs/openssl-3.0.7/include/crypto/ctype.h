@@ -20,7 +20,9 @@
  */
 #ifndef OSSL_CRYPTO_CTYPE_H
 # define OSSL_CRYPTO_CTYPE_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
 #  include "openssl-mangling.h"

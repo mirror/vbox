@@ -9,7 +9,9 @@
 
 #ifndef OSSL_AES_PLATFORM_H
 # define OSSL_AES_PLATFORM_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/aes.h>
 

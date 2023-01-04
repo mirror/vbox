@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_UNICODE_H
 # define OSSL_INTERNAL_UNICODE_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 typedef enum {
     SURROGATE_MIN = 0xd800UL,

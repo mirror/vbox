@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_ERR_H
 # define OSSL_INTERNAL_ERR_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 void err_free_strings_int(void);
 

@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_X509_H
 # define OSSL_CRYPTO_X509_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include "internal/refcount.h"
 # include <openssl/asn1.h>

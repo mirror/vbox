@@ -11,7 +11,9 @@
 
 #ifndef OSSL_CRYPTO_TYPES_H
 # define OSSL_CRYPTO_TYPES_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # ifdef OPENSSL_NO_DEPRECATED_3_0
 typedef struct rsa_st RSA;

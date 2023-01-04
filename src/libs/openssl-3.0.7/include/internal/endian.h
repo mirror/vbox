@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_ENDIAN_H
 # define OSSL_INTERNAL_ENDIAN_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 /*
  * IS_LITTLE_ENDIAN and IS_BIG_ENDIAN can be used to detect the endiannes

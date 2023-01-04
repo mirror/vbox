@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_PASSPHRASE_H
 # define OSSL_INTERNAL_PASSPHRASE_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 /*
  * This is a passphrase reader bridge with bells and whistles.

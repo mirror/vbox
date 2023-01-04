@@ -10,7 +10,9 @@
 
 #ifndef OSSL_CRYPTO_X509ERR_H
 # define OSSL_CRYPTO_X509ERR_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/opensslconf.h>
 # include <openssl/symhacks.h>

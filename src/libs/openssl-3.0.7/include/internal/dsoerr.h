@@ -10,7 +10,9 @@
 
 #ifndef OSSL_INTERNAL_DSOERR_H
 # define OSSL_INTERNAL_DSOERR_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/opensslconf.h>
 # include <openssl/symhacks.h>

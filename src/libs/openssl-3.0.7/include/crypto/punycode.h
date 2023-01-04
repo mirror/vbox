@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_PUNYCODE_H
 # define OSSL_CRYPTO_PUNYCODE_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 int ossl_punycode_decode (
     const char *pEncoded,

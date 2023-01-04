@@ -17,7 +17,9 @@
 
 #ifndef OSSL_CRYPTO_RAND_H
 # define OSSL_CRYPTO_RAND_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/rand.h>
 # include "crypto/rand_pool.h"

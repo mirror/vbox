@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_NELEM_H
 # define OSSL_INTERNAL_NELEM_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # define OSSL_NELEM(x)    (sizeof(x)/sizeof((x)[0]))
 #endif

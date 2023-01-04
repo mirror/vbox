@@ -38,7 +38,9 @@
 
 #ifndef OSSL_INTERNAL_O_DIR_H
 # define OSSL_INTERNAL_O_DIR_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 typedef struct OPENSSL_dir_context_st OPENSSL_DIR_CTX;
 

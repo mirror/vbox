@@ -12,7 +12,9 @@
 
 #ifndef OSSL_CRYPTO_ARIA_H
 # define OSSL_CRYPTO_ARIA_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/opensslconf.h>
 

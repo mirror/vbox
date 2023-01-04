@@ -9,7 +9,9 @@
 
 #ifndef OSSL_INTERNAL_SIZES_H
 # define OSSL_INTERNAL_SIZES_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 /*
  * Max sizes used to allocate buffers with a fixed sizes, for example for

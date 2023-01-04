@@ -11,7 +11,9 @@
 
 #ifndef OSSL_CRYPTO_ECX_H
 # define OSSL_CRYPTO_ECX_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 # include <openssl/opensslconf.h>
 

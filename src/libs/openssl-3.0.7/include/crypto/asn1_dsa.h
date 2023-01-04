@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_ASN1_DSA_H
 # define OSSL_CRYPTO_ASN1_DSA_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 #include "internal/packet.h"
 

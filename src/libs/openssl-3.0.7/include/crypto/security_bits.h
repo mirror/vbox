@@ -9,7 +9,9 @@
 
 #ifndef OSSL_SECURITY_BITS_H
 # define OSSL_SECURITY_BITS_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 uint16_t ossl_ifc_ffc_compute_security_bits(int n);
 

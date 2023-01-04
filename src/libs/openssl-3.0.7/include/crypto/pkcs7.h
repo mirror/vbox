@@ -9,7 +9,9 @@
 
 #ifndef OSSL_CRYPTO_PKCS7_H
 # define OSSL_CRYPTO_PKCS7_H
+# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
+# endif                                                                                                 /* VBOX */
 
 void ossl_pkcs7_resolve_libctx(PKCS7 *p7);
 
