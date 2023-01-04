@@ -267,6 +267,9 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
      * We'll use the VMMDev readback register if possible, but make do
      * with VGA if not configured.
      */
+# ifdef __WATCOMC__
+#  pragma DISABLE_MESSAGE(201) /* Warning! W201: Unreachable code */
+# endif
     g_usBs3TestStep = 4;
     uStartTick = g_cBs3PitTicks;
     for (iLoop = 0; iLoop < _1M; iLoop++)
@@ -389,6 +392,10 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     }
 
     Bs3PitDisable();
+
+# ifdef __WATCOMC__
+#  pragma ENABLE_MESSAGE(201) /* Warning! W201: Unreachable code */
+# endif
 
     /*
      * Warn if selectors are borked (for real VBox we'll fail and not warn).
