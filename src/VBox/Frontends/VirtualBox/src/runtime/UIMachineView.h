@@ -234,13 +234,13 @@ protected:
      * @sa m_u64MaximumGuestSize. */
     QSize maximumGuestSize();
 
+    /** Retrieves the last guest-screen size-hint from extra-data. */
+    QSize storedGuestScreenSizeHint() const;
+    /** Stores a guest-screen @a sizeHint to extra-data. */
+    void setStoredGuestScreenSizeHint(const QSize &sizeHint);
+
     /** Retrieves the last guest-screen visibility status from extra-data. */
     bool guestScreenVisibilityStatus() const;
-
-    /** Retrieves the last guest-screen size-hint from extra-data. */
-    QSize guestScreenSizeHint() const;
-    /** Stores a guest-screen size-hint to extra-data. */
-    void storeGuestSizeHint(const QSize &sizeHint);
 
     /** Handles machine-view scale changes. */
     void handleScaleChange();

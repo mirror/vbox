@@ -166,7 +166,7 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
 void UIMachineViewScale::resendSizeHint()
 {
     /* Get the last guest-screen size-hint, taking the scale factor into account. */
-    const QSize sizeHint = scaledBackward(guestScreenSizeHint());
+    const QSize sizeHint = scaledBackward(storedGuestScreenSizeHint());
     LogRel(("GUI: UIMachineViewScale::resendSizeHint: Restoring guest size-hint for screen %d to %dx%d\n",
             (int)screenId(), sizeHint.width(), sizeHint.height()));
 

@@ -303,7 +303,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         && (   (int)frameBuffer()->width() != size.width()
             || (int)frameBuffer()->height() != size.height()
             || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
-        storeGuestSizeHint(size);
+        setStoredGuestScreenSizeHint(size);
 
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
     if (gEDataManager->autoMountGuestScreensEnabled(uiCommon().managedVMUuid()))
@@ -430,7 +430,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
             && (   frameBuffer()->width() != uWidth
                 || frameBuffer()->height() != uHeight
                 || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
-            storeGuestSizeHint(QSize(uWidth, uHeight));
+            setStoredGuestScreenSizeHint(QSize(uWidth, uHeight));
 
         /* Send enabling size-hint to the guest: */
         LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenToggle: Enabling guest-screen %d\n", (int)screenId()));
@@ -481,7 +481,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
         && (   (int)frameBuffer()->width() != size.width()
             || (int)frameBuffer()->height() != size.height()
             || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
-        storeGuestSizeHint(size);
+        setStoredGuestScreenSizeHint(size);
 
     /* Send enabling size-hint to the guest: */
     LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenResize: Resizing guest-screen %d\n", (int)screenId()));
@@ -591,7 +591,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     if (   !isFullscreenOrSeamless()
         && uisession()->isGuestSupportsGraphics()
         && (machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA))
-        storeGuestSizeHint(frameBufferSizeNew);
+        setStoredGuestScreenSizeHint(frameBufferSizeNew);
 
     LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",
              (unsigned long)m_uScreenId, frameBufferSizeNew.width(), frameBufferSizeNew.height()));
@@ -951,7 +951,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size.
          * On X11 this will be additional done when the machine state was 'saved'. */
         if (machine().GetState() == KMachineState_Saved || machine().GetState() == KMachineState_AbortedSaved)
-            size = guestScreenSizeHint();
+            size = storedGuestScreenSizeHint();
 #endif /* VBOX_WS_X11 */
 
         /* If there is a preview image saved,
@@ -1239,17 +1239,7 @@ QSize UIMachineView::maximumGuestSize()
     return QSize(int(RT_HI_U32(u64Size)), int(RT_LO_U32(u64Size)));
 }
 
-bool UIMachineView::guestScreenVisibilityStatus() const
-{
-    /* Always 'true' for primary guest-screen: */
-    if (m_uScreenId == 0)
-        return true;
-
-    /* Actual value for other guest-screens: */
-    return gEDataManager->lastGuestScreenVisibilityStatus(m_uScreenId, uiCommon().managedVMUuid());
-}
-
-QSize UIMachineView::guestScreenSizeHint() const
+QSize UIMachineView::storedGuestScreenSizeHint() const
 {
     /* Load guest-screen size-hint: */
     QSize sizeHint = gEDataManager->lastGuestScreenSizeHint(m_uScreenId, uiCommon().managedVMUuid());
@@ -1262,15 +1252,27 @@ QSize UIMachineView::guestScreenSizeHint() const
     sizeHint = scaledForward(sizeHint);
 
     /* Return size-hint: */
+    LogRel2(("GUI: UIMachineView::storedGuestScreenSizeHint: Acquired guest-screen size-hint for screen %d as %dx%d\n",
+             (int)screenId(), sizeHint.width(), sizeHint.height()));
     return sizeHint;
 }
 
-void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
+void UIMachineView::setStoredGuestScreenSizeHint(const QSize &sizeHint)
 {
     /* Save guest-screen size-hint: */
-    LogRel2(("GUI: UIMachineView::storeGuestSizeHint: Storing guest-screen size-hint for screen %d as %dx%d\n",
+    LogRel2(("GUI: UIMachineView::setStoredGuestScreenSizeHint: Storing guest-screen size-hint for screen %d as %dx%d\n",
              (int)screenId(), sizeHint.width(), sizeHint.height()));
     gEDataManager->setLastGuestScreenSizeHint(m_uScreenId, sizeHint, uiCommon().managedVMUuid());
+}
+
+bool UIMachineView::guestScreenVisibilityStatus() const
+{
+    /* Always 'true' for primary guest-screen: */
+    if (m_uScreenId == 0)
+        return true;
+
+    /* Actual value for other guest-screens: */
+    return gEDataManager->lastGuestScreenVisibilityStatus(m_uScreenId, uiCommon().managedVMUuid());
 }
 
 void UIMachineView::handleScaleChange()
@@ -1388,7 +1390,7 @@ void UIMachineView::takePausePixmapSnapshot()
     machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
 
     /* Calculate effective size: */
-    QSize effectiveSize = uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : guestScreenSizeHint();
+    QSize effectiveSize = uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : storedGuestScreenSizeHint();
 
     /* Take the device-pixel-ratio into account: */
     const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
