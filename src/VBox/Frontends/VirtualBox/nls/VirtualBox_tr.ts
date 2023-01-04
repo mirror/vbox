@@ -3221,6 +3221,22 @@
         <source>&amp;Stop</source>
         <translation>&amp;Durdur</translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Sanal Ekran %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Anamakine Ekranı %1 kullan</translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -20164,11 +20180,11 @@ Oturum Panelini kullanın</translation>
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Sanal Ekran %1</translation>
+        <translation type="vanished">Sanal Ekran %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Anamakine Ekranı %1 kullan</translation>
+        <translation type="vanished">Anamakine Ekranı %1 kullan</translation>
     </message>
 </context>
 <context>

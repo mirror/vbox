@@ -3413,6 +3413,22 @@
         <source>&amp;Stop</source>
         <translation>&amp;Ferma</translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Schermo virtuale %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Usa schermo %1 dell&apos;host</translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -21300,11 +21316,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Schermo virtuale %1</translation>
+        <translation type="vanished">Schermo virtuale %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Usa schermo %1 dell&apos;host</translation>
+        <translation type="vanished">Usa schermo %1 dell&apos;host</translation>
     </message>
 </context>
 <context>

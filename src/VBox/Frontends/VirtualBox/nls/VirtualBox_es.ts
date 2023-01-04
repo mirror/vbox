@@ -3208,6 +3208,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Pantalla virtual %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Usar pantalla anfitrión %1</translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -20818,11 +20834,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Pantalla virtual %1</translation>
+        <translation type="vanished">Pantalla virtual %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Usar pantalla anfitrión %1</translation>
+        <translation type="vanished">Usar pantalla anfitrión %1</translation>
     </message>
 </context>
 <context>

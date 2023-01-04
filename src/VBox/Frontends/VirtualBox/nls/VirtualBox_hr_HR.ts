@@ -2390,6 +2390,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtualni Zaslon %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Koristi Domaćinov Zaslon %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -14287,11 +14303,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtualni Zaslon %1</translation>
+        <translation type="vanished">Virtualni Zaslon %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Koristi Domaćinov Zaslon %1</translation>
+        <translation type="vanished">Koristi Domaćinov Zaslon %1</translation>
     </message>
 </context>
 <context>

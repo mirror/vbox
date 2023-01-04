@@ -3074,6 +3074,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Écran virtuel n° %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Utiliser l&apos;écran nº%1 de l&apos;hôte</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
@@ -19009,11 +19025,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Écran virtuel n° %1</translation>
+        <translation type="vanished">Écran virtuel n° %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Utiliser l&apos;écran nº%1 de l&apos;hôte</translation>
+        <translation type="vanished">Utiliser l&apos;écran nº%1 de l&apos;hôte</translation>
     </message>
 </context>
 <context>

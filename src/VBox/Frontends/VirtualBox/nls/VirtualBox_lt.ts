@@ -2757,6 +2757,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtualus ekranas %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Naudoti pagrindinio kompiuterio ekraną %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -17403,11 +17419,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtualus ekranas %1</translation>
+        <translation type="vanished">Virtualus ekranas %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Naudoti pagrindinio kompiuterio ekraną %1</translation>
+        <translation type="vanished">Naudoti pagrindinio kompiuterio ekraną %1</translation>
     </message>
 </context>
 <context>

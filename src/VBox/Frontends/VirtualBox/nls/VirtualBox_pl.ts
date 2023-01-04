@@ -2699,6 +2699,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Ekran wirtualny %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Użyj ekranu %1 gospodarza</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -18317,11 +18333,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Ekran wirtualny %1</translation>
+        <translation type="vanished">Ekran wirtualny %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Użyj ekranu %1 gospodarza</translation>
+        <translation type="vanished">Użyj ekranu %1 gospodarza</translation>
     </message>
 </context>
 <context>

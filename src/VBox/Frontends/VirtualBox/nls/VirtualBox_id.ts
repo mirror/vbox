@@ -3079,6 +3079,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Layar Virtual %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Gunakan Layar Host %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -19203,11 +19219,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Layar Virtual %1</translation>
+        <translation type="vanished">Layar Virtual %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Gunakan Layar Host %1</translation>
+        <translation type="vanished">Gunakan Layar Host %1</translation>
     </message>
 </context>
 <context>

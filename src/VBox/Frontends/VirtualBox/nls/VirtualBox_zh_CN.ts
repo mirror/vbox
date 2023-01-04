@@ -3062,6 +3062,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">虚拟显示屏 %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">使用主机显示屏 %1</translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -18708,11 +18724,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>虚拟显示屏 %1</translation>
+        <translation type="vanished">虚拟显示屏 %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>使用主机显示屏 %1</translation>
+        <translation type="vanished">使用主机显示屏 %1</translation>
     </message>
 </context>
 <context>

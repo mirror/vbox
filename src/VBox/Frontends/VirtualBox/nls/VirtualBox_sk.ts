@@ -2613,6 +2613,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtuálna obrazovka %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Použiť obrazovku hostiteľa %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -14984,11 +15000,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtuálna obrazovka %1</translation>
+        <translation type="vanished">Virtuálna obrazovka %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Použiť obrazovku hostiteľa %1</translation>
+        <translation type="vanished">Použiť obrazovku hostiteľa %1</translation>
     </message>
 </context>
 <context>

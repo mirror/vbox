@@ -2778,6 +2778,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Віртуальний екран %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Використовувати головний екран %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -18084,11 +18100,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Віртуальний екран %1</translation>
+        <translation type="vanished">Віртуальний екран %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Використовувати головний екран %1</translation>
+        <translation type="vanished">Використовувати головний екран %1</translation>
     </message>
 </context>
 <context>

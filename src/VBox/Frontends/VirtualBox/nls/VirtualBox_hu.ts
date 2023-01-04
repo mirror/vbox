@@ -3144,6 +3144,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtuális képernyő %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Gazda képernyő használata %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -20171,11 +20187,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtuális képernyő %1</translation>
+        <translation type="vanished">Virtuális képernyő %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Gazda képernyő használata %1</translation>
+        <translation type="vanished">Gazda képernyő használata %1</translation>
     </message>
 </context>
 <context>

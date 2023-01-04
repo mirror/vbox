@@ -2163,6 +2163,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">ვირტუალური ეკრანი %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">ჰოსტის %1-ე ეკრანის გამოყენება</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -9459,11 +9475,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>ვირტუალური ეკრანი %1</translation>
+        <translation type="vanished">ვირტუალური ეკრანი %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>ჰოსტის %1-ე ეკრანის გამოყენება</translation>
+        <translation type="vanished">ჰოსტის %1-ე ეკრანის გამოყენება</translation>
     </message>
 </context>
 <context>

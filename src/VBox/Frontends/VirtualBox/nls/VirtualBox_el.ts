@@ -2598,6 +2598,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Εικονική Οθόνη %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Χρησιμοποιήστε την Οθόνη Οικοδεσπότη %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -15477,11 +15493,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Εικονική Οθόνη %1</translation>
+        <translation type="vanished">Εικονική Οθόνη %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Χρησιμοποιήστε την Οθόνη Οικοδεσπότη %1</translation>
+        <translation type="vanished">Χρησιμοποιήστε την Οθόνη Οικοδεσπότη %1</translation>
     </message>
 </context>
 <context>

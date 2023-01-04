@@ -2849,6 +2849,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtuální obrazovka %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Použít obrazovku hostitele %1</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
@@ -18774,11 +18790,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtuální obrazovka %1</translation>
+        <translation type="vanished">Virtuální obrazovka %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Použít obrazovku hostitele %1</translation>
+        <translation type="vanished">Použít obrazovku hostitele %1</translation>
     </message>
 </context>
 <context>

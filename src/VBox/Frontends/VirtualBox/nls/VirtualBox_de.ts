@@ -2584,6 +2584,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtueller Monitor %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Benutze Host-Monitor %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -15663,11 +15679,11 @@ a guest session</source>
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtueller Monitor %1</translation>
+        <translation type="vanished">Virtueller Monitor %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Benutze Host-Monitor %1</translation>
+        <translation type="vanished">Benutze Host-Monitor %1</translation>
     </message>
 </context>
 <context>

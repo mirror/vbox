@@ -2248,6 +2248,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">가상 화면 %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">호스트 화면 %1 사용하기</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -12838,11 +12854,11 @@
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>가상 화면 %1</translation>
+        <translation type="vanished">가상 화면 %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>호스트 화면 %1 사용하기</translation>
+        <translation type="vanished">호스트 화면 %1 사용하기</translation>
     </message>
 </context>
 <context>

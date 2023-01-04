@@ -2811,6 +2811,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Virtuell skärm %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Använd värdskärm %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -17954,11 +17970,11 @@ serial ports</comment>
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Virtuell skärm %1</translation>
+        <translation type="vanished">Virtuell skärm %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Använd värdskärm %1</translation>
+        <translation type="vanished">Använd värdskärm %1</translation>
     </message>
 </context>
 <context>

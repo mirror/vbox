@@ -2831,6 +2831,22 @@
         <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Upgrade Guest Additions...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished">Pantalla virtual %1</translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished">Fes servir la pantalla d&apos;amfitrió %1</translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -17901,11 +17917,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation>Pantalla virtual %1</translation>
+        <translation type="vanished">Pantalla virtual %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation>Fes servir la pantalla d&apos;amfitrió %1</translation>
+        <translation type="vanished">Fes servir la pantalla d&apos;amfitrió %1</translation>
     </message>
 </context>
 <context>
