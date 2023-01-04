@@ -3844,7 +3844,7 @@ void UIActionPoolRuntime::updateMenuView()
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
                                                                  ":/virtual_screen_disabled_16px.png"),
-                                             QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+                                             QApplication::translate("UIActionPool", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, &QMenu::aboutToShow, this, &UIActionPoolRuntime::sltPrepareMenuViewScreen);
         }
@@ -3887,7 +3887,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
                                                                  ":/virtual_screen_disabled_16px.png"),
-                                             QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+                                             QApplication::translate("UIActionPool", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, &QMenu::aboutToShow, this, &UIActionPoolRuntime::sltPrepareMenuViewScreen);
         }
@@ -4074,7 +4074,7 @@ void UIActionPoolRuntime::updateMenuViewRemap(QMenu *pMenu)
         for (int iHostScreenIndex = 0; iHostScreenIndex < m_cHostScreens; ++iHostScreenIndex)
         {
             /* Create exclusive 'remap' action: */
-            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIMultiScreenLayout", "Use Host Screen %1")
+            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIActionPool", "Use Host Screen %1")
                                                                                .arg(iHostScreenIndex + 1));
             if (pAction)
             {
