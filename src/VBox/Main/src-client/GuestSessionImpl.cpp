@@ -1167,7 +1167,8 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
  * @param   strPath             Path where to create the temporary directory / file.
  * @param   fDirectory          Whether to create a temporary directory or file.
  * @param   strName             Where to return the created temporary name on success.
- * @param   fMode               File mode to use for creation (octal).
+ * @param   fMode               File mode to use for creation (octal, umask-style).
+ *                              Ignored when \a fSecure is specified.
  * @param   fSecure             Whether to perform a secure creation or not.
  * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
  */
@@ -1175,6 +1176,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
                                  uint32_t fMode, bool fSecure, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
+    AssertReturn(fSecure || !(fMode & ~07777), VERR_INVALID_PARAMETER);
 
     LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool, fMode=%o, fSecure=%RTbool\n",
                      strTemplate.c_str(), strPath.c_str(), fDirectory, fMode, fSecure));
@@ -1201,7 +1203,12 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         else
         {
             procInfo.mArguments.push_back(Utf8Str("--mode"));
-            procInfo.mArguments.push_back(Utf8Str("%o", fMode)); /* Octal mode. */
+
+            /* Note: Pass the mode unmodified down to the guest. See @ticketref{21394}. */
+            char szMode[16];
+            int vrc2 = RTStrPrintf2(szMode, sizeof(szMode), "%d", fMode);
+            AssertRCReturn(vrc2, vrc2);
+            procInfo.mArguments.push_back(szMode);
         }
         procInfo.mArguments.push_back("--"); /* strTemplate could be '--help'. */
         procInfo.mArguments.push_back(strTemplate);
@@ -3787,7 +3794,7 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory name specified"));
     if (!aSecure) /* Ignore what mode is specified when a secure temp thing needs to be created. */
-        if (RT_UNLIKELY(!(aMode & ~07777)))
+        if (RT_UNLIKELY(aMode & ~07777))
             return setError(E_INVALIDARG, tr("Mode invalid (must be specified in octal mode)"));
 
     HRESULT hrc = i_isStartedExternal();
