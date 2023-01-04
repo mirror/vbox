@@ -41,7 +41,7 @@
 BS3_CMN_DEF(uint32_t, Bs3SelLnkPtrToFlat,(void BS3_FAR *pvLnkPtr))
 {
 #if ARCH_BITS == 16
-    return Bs3SelRealModeDataToFlat(pvLnkPtr);
+    return Bs3SelRealModeDataToFlat((uint32_t)pvLnkPtr);
 #else
     return (uint32_t)(uintptr_t)pvLnkPtr;
 #endif
