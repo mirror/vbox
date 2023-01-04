@@ -171,7 +171,7 @@ void UIMachineViewScale::resendSizeHint()
             (int)screenId(), sizeHint.width(), sizeHint.height()));
 
     /* Expand current limitations: */
-    setMaxGuestSize(sizeHint);
+    setMaximumGuestSize(sizeHint);
 
     /* Send saved size-hint to the guest: */
     uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());

@@ -222,16 +222,17 @@ protected:
     int visibleHeight() const;
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
+
     /** Atomically store the maximum guest resolution which we currently wish
-     * to handle for @a maxGuestSize() to read.  Should be called if anything
+     * to handle for @a maximumGuestSize() to read.  Should be called if anything
      * happens (e.g. a screen hotplug) which might cause the value to change.
-     * @sa m_u64MaxGuestSize. */
-    void setMaxGuestSize(const QSize &minimumSizeHint = QSize());
+     * @sa m_u64MaximumGuestSize. */
+    void setMaximumGuestSize(const QSize &minimumSizeHint = QSize());
     /** Atomically read the maximum guest resolution which we currently wish to
      * handle.  This may safely be called from another thread (called by
      * UIFramebuffer on EMT).
-     * @sa m_u64MaxGuestSize. */
-    QSize maxGuestSize();
+     * @sa m_u64MaximumGuestSize. */
+    QSize maximumGuestSize();
 
     /** Retrieves the last guest-screen visibility status from extra-data. */
     bool guestScreenVisibilityStatus() const;
@@ -400,7 +401,7 @@ protected:
      * monitor things in case it changes and update it atomically when it does.
      */
     /** @todo This should be private. */
-    volatile uint64_t m_u64MaxGuestSize;
+    volatile uint64_t m_u64MaximumGuestSize;
 
     /** Holds the pause-pixmap. */
     QPixmap m_pausePixmap;

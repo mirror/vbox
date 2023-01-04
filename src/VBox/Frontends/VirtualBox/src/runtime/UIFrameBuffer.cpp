@@ -1490,7 +1490,7 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
 
     /* Determine if supported: */
     *pfSupported = TRUE;
-    QSize screenSize = m_pMachineView->maxGuestSize();
+    const QSize screenSize = m_pMachineView->maximumGuestSize();
     if (   (screenSize.width() != 0)
         && (uWidth > (ULONG)screenSize.width())
         && (uWidth > (ULONG)width()))

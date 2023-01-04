@@ -65,8 +65,8 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                /* Recalculate max guest size: */
-                setMaxGuestSize();
+                /* Recalculate maximum guest size: */
+                setMaximumGuestSize();
                 /* And resize guest to current window size: */
                 if (m_fGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
@@ -157,7 +157,7 @@ void UIMachineViewNormal::resendSizeHint()
             (int)screenId(), sizeHint.width(), sizeHint.height()));
 
     /* Expand current limitations: */
-    setMaxGuestSize(sizeHint);
+    setMaximumGuestSize(sizeHint);
 
     /* Temporarily restrict the size to prevent a brief resize to the
      * frame-buffer dimensions when we exit full-screen.  This is only
@@ -200,9 +200,9 @@ void UIMachineViewNormal::adjustGuestScreenSize()
     frameBufferSize = scaledForward(frameBufferSize);
 
     /* Adjust guest-screen size if the last size hint is too big for the screen: */
-    const QSize maxGuestSize = calculateMaxGuestSize();
-    if (   maxGuestSize.width() < frameBufferSize.width()
-        || maxGuestSize.height() < frameBufferSize.height())
+    const QSize maximumGuestSize = calculateMaxGuestSize();
+    if (   maximumGuestSize.width() < frameBufferSize.width()
+        || maximumGuestSize.height() < frameBufferSize.height())
         sltPerformGuestResize(machineWindow()->centralWidget()->size());
 }
 

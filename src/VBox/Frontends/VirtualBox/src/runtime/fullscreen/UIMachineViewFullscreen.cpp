@@ -76,8 +76,8 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
                 if (pResizeEvent->size() != workingArea().size())
                     break;
 
-                /* Recalculate max guest size: */
-                setMaxGuestSize();
+                /* Recalculate maximum guest size: */
+                setMaximumGuestSize();
 
                 break;
             }

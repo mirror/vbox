@@ -187,7 +187,7 @@ UIMachineView* UIMachineView::create(UIMachineWindow *pMachineWindow, ulong uScr
      *        so it would not hurt.  Would it hurt for fullscreen? */
 
     /* Set a preliminary maximum size: */
-    pMachineView->setMaxGuestSize();
+    pMachineView->setMaximumGuestSize();
 
     /* Resend the last resize hint finally: */
     pMachineView->resendSizeHint();
@@ -293,7 +293,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     size = scaledBackward(size);
 
     /* Update current window size limitations: */
-    setMaxGuestSize(size);
+    setMaximumGuestSize(size);
 
     /* Record the hint to extra data, needed for guests using VMSVGA:
      * This should be done before the actual hint is sent in case the guest overrides it.
@@ -420,7 +420,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
             uHeight = 600;
 
         /* Update current window size limitations: */
-        setMaxGuestSize(QSize(uWidth, uHeight));
+        setMaximumGuestSize(QSize(uWidth, uHeight));
 
         /* Record the hint to extra data, needed for guests using VMSVGA:
          * This should be done before the actual hint is sent in case the guest overrides it.
@@ -471,7 +471,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
                         ("Size should be valid (%dx%d)!\n", size.width(), size.height()));
 
     /* Update current window size limitations: */
-    setMaxGuestSize(size);
+    setMaximumGuestSize(size);
 
     /* Record the hint to extra data, needed for guests using VMSVGA:
      * This should be done before the actual hint is sent in case the guest overrides it.
@@ -660,7 +660,7 @@ void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
 
 void UIMachineView::sltDesktopResized()
 {
-    setMaxGuestSize();
+    setMaximumGuestSize();
 }
 
 void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
@@ -840,7 +840,7 @@ UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
     , m_previousState(KMachineState_Null)
     , m_iHostScreenNumber(0)
     , m_enmMaximumGuestScreenSizePolicy(MaximumGuestScreenSizePolicy_Automatic)
-    , m_u64MaxGuestSize(0)
+    , m_u64MaximumGuestSize(0)
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     , m_fIsDraggingFromGuest(false)
 #endif
@@ -1214,7 +1214,7 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
-void UIMachineView::setMaxGuestSize(const QSize &minimumSizeHint /* = QSize() */)
+void UIMachineView::setMaximumGuestSize(const QSize &minimumSizeHint /* = QSize() */)
 {
     QSize maxSize;
     switch (m_enmMaximumGuestScreenSizePolicy)
@@ -1229,13 +1229,13 @@ void UIMachineView::setMaxGuestSize(const QSize &minimumSizeHint /* = QSize() */
             /* (0, 0) means any of course. */
             maxSize = QSize(0, 0);
     }
-    ASMAtomicWriteU64(&m_u64MaxGuestSize,
+    ASMAtomicWriteU64(&m_u64MaximumGuestSize,
                       RT_MAKE_U64(maxSize.height(), maxSize.width()));
 }
 
-QSize UIMachineView::maxGuestSize()
+QSize UIMachineView::maximumGuestSize()
 {
-    uint64_t u64Size = ASMAtomicReadU64(&m_u64MaxGuestSize);
+    uint64_t u64Size = ASMAtomicReadU64(&m_u64MaximumGuestSize);
     return QSize(int(RT_HI_U32(u64Size)), int(RT_LO_U32(u64Size)));
 }
 
