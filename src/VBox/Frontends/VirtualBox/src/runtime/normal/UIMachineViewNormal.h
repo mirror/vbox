@@ -66,7 +66,7 @@ private:
     //void cleanupCommon() {}
 
     /** Returns whether the guest-screen auto-resize is enabled. */
-    virtual bool isGuestAutoresizeEnabled() const RT_OVERRIDE { return m_bIsGuestAutoresizeEnabled; }
+    virtual bool isGuestAutoresizeEnabled() const RT_OVERRIDE { return m_fGuestAutoresizeEnabled; }
     /** Defines whether the guest-screen auto-resize is @a fEnabled. */
     virtual void setGuestAutoresizeEnabled(bool bEnabled) RT_OVERRIDE;
 
@@ -82,7 +82,7 @@ private:
     QSize calculateMaxGuestSize() const;
 
     /* Private members: */
-    bool m_bIsGuestAutoresizeEnabled : 1;
+    bool m_fGuestAutoresizeEnabled : 1;
 
     /* Friend classes: */
     friend class UIMachineView;

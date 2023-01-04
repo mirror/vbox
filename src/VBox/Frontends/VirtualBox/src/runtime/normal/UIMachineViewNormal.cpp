@@ -48,7 +48,7 @@
 
 UIMachineViewNormal::UIMachineViewNormal(UIMachineWindow *pMachineWindow, ulong uScreenId)
     : UIMachineView(pMachineWindow, uScreenId)
-    , m_bIsGuestAutoresizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
+    , m_fGuestAutoresizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
 {
 }
 
@@ -68,7 +68,7 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
                 /* Recalculate max guest size: */
                 setMaxGuestSize();
                 /* And resize guest to current window size: */
-                if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+                if (m_fGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;
             }
@@ -136,11 +136,11 @@ void UIMachineViewNormal::prepareConsoleConnections()
 
 void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
 {
-    if (m_bIsGuestAutoresizeEnabled != fEnabled)
+    if (m_fGuestAutoresizeEnabled != fEnabled)
     {
-        m_bIsGuestAutoresizeEnabled = fEnabled;
+        m_fGuestAutoresizeEnabled = fEnabled;
 
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        if (m_fGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
             sltPerformGuestResize();
     }
 }
@@ -214,7 +214,7 @@ QSize UIMachineViewNormal::sizeHint() const
     /* If guest-screen auto-resize is not enabled
      * or the guest-additions doesn't support graphics
      * we should take scroll-bars size-hints into account: */
-    if (!m_bIsGuestAutoresizeEnabled || !uisession()->isGuestSupportsGraphics())
+    if (!m_fGuestAutoresizeEnabled || !uisession()->isGuestSupportsGraphics())
     {
         if (verticalScrollBar()->isVisible())
             size += QSize(verticalScrollBar()->sizeHint().width(), 0);

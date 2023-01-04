@@ -54,7 +54,7 @@
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(UIMachineWindow *pMachineWindow, ulong uScreenId)
     : UIMachineView(pMachineWindow, uScreenId)
-    , m_bIsGuestAutoresizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
+    , m_fGuestAutoresizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
 {
 }
 
@@ -122,11 +122,11 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 {
-    if (m_bIsGuestAutoresizeEnabled != fEnabled)
+    if (m_fGuestAutoresizeEnabled != fEnabled)
     {
-        m_bIsGuestAutoresizeEnabled = fEnabled;
+        m_fGuestAutoresizeEnabled = fEnabled;
 
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        if (m_fGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
             sltPerformGuestResize();
     }
 }
@@ -185,7 +185,7 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
     /* Step 5: Is guest-screen auto-resize enabled? */
     if (fAdjust)
     {
-        if (!m_bIsGuestAutoresizeEnabled)
+        if (!m_fGuestAutoresizeEnabled)
         {
             LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen auto-resize is disabled, adjustment is omitted.\n"));
             fAdjust = false;
