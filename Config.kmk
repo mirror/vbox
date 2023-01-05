@@ -1924,7 +1924,8 @@ endif
 # Temporary measure while kBuild / tools updates their define quoting.
 ifdef KMK_WITH_QUOTING
  if   ("$(VBOX_VCC_TOOL_STEM)" >= "VCC140" && "$(KBUILD_TARGET)" == "win") \
-   || ("$(KBUILD_TARGET)" != "darwin" && "$(KBUILD_TARGET)" != "win" && "$(KMK_REVISION)" >= 3566)
+   || ("$(KBUILD_TARGET)" != "darwin" && "$(KBUILD_TARGET)" != "win" && "$(KMK_REVISION)" >= 3566) \
+   || ("$(KBUILD_TARGET)" == "darwin" &&                                "$(KMK_REVISION)" >= 3579)
   VBOX_WITH_AUTOMATIC_DEFS_QUOTING := 1
  endif
 endif
