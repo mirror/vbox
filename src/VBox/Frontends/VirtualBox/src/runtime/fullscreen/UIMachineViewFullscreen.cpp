@@ -164,16 +164,7 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
         }
     }
 
-    /* Step 3: Is guest-additions supports graphics? */
-    if (fAdjust)
-    {
-        if (!uisession()->isGuestSupportsGraphics())
-        {
-            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-additions are not supporting graphics, adjustment is omitted.\n"));
-            fAdjust = false;
-        }
-    }
-    /* Step 4: Is guest-screen visible? */
+    /* Step 3: Is guest-screen visible? */
     if (fAdjust)
     {
         if (!uisession()->isScreenVisible(screenId()))
@@ -182,10 +173,10 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
             fAdjust = false;
         }
     }
-    /* Step 5: Is guest-screen auto-resize enabled? */
+    /* Step 4: Is guest-screen auto-resize enabled? */
     if (fAdjust)
     {
-        if (!m_fGuestAutoresizeEnabled)
+        if (!isGuestAutoresizeEnabled())
         {
             LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen auto-resize is disabled, adjustment is omitted.\n"));
             fAdjust = false;

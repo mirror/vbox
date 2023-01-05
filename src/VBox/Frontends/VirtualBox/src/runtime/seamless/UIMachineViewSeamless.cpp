@@ -177,16 +177,7 @@ void UIMachineViewSeamless::adjustGuestScreenSize()
         }
     }
 
-    /* Step 3: Is guest-additions supports graphics? */
-    if (fAdjust)
-    {
-        if (!uisession()->isGuestSupportsGraphics())
-        {
-            LogRel2(("GUI: UIMachineViewSeamless::adjustGuestScreenSize: Guest-additions are not supporting graphics, adjustment is omitted.\n"));
-            fAdjust = false;
-        }
-    }
-    /* Step 4: Is guest-screen visible? */
+    /* Step 3: Is guest-screen visible? */
     if (fAdjust)
     {
         if (!uisession()->isScreenVisible(screenId()))
