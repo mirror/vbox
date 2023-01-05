@@ -262,7 +262,7 @@ SUPR3HardenedStatic_SOURCES.amd64 += \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asm/ASMMemFirstMismatchingU8.asm
 
 
-if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of this move up.
+if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && !defined(VBOX_ONLY_VALIDATIONKIT) ## @todo some of this move up.
  SUPR3HardenedStatic_DEFS += \
  	IN_RT_R3 \
  	IN_RT_STATIC \
