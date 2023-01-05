@@ -316,31 +316,32 @@ tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
 tstRTCrPkix-1_TEMPLATE      = VBOXR3TSTEXE
 tstRTCrPkix-1_SOURCES       = tstRTCrPkix-1.cpp
 
-tstRTCrX509-1_TEMPLATE      = VBOXR3TSTEXE
-tstRTCrX509-1_SOURCES       = tstRTCrX509-1.cpp
-tstRTCrX509-1_INCS          = $(tstRTCrX509-1_0_OUTDIR)
-tstRTCrX509-1_CLEAN         = $(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h
-tstRTCrX509-1_INTERMEDIATES = $(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h
-tstRTCrX509-1_VBOX_FILES := \
-	Pem_md4=$(PATH_SUB_CURRENT)/tstRTCrX509-md4.pem \
-	Pem_md5=$(PATH_SUB_CURRENT)/tstRTCrX509-md5.pem \
-	Pem_sha1=$(PATH_SUB_CURRENT)/tstRTCrX509-sha1.pem \
-	Pem_sha224=$(PATH_SUB_CURRENT)/tstRTCrX509-sha224.pem \
-	Pem_sha256=$(PATH_SUB_CURRENT)/tstRTCrX509-sha256.pem \
-	Pem_sha384=$(PATH_SUB_CURRENT)/tstRTCrX509-sha384.pem \
-	Pem_sha512=$(PATH_SUB_CURRENT)/tstRTCrX509-sha512.pem \
-	Pem_cert1=$(PATH_SUB_CURRENT)/tstRTCrX509-cert1.pem \
-       \
-	Der_md4=$(PATH_SUB_CURRENT)/tstRTCrX509-md4-cert.der \
-	Der_md5=$(PATH_SUB_CURRENT)/tstRTCrX509-md5-cert.der \
-	Der_sha1=$(PATH_SUB_CURRENT)/tstRTCrX509-sha1-cert.der \
-	Der_sha224=$(PATH_SUB_CURRENT)/tstRTCrX509-sha224-cert.der \
-	Der_sha256=$(PATH_SUB_CURRENT)/tstRTCrX509-sha256-cert.der \
-	Der_sha384=$(PATH_SUB_CURRENT)/tstRTCrX509-sha384-cert.der \
-	Der_sha512=$(PATH_SUB_CURRENT)/tstRTCrX509-sha512-cert.der \
-	Der_cert1=$(PATH_SUB_CURRENT)/tstRTCrX509-cert1.der \
-       $(NO_SUCH_VARIABLE)
-$$(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h: \
+ifndef VBOX_ONLY_VALIDATIONKIT
+ tstRTCrX509-1_TEMPLATE      = VBOXR3TSTEXE
+ tstRTCrX509-1_SOURCES       = tstRTCrX509-1.cpp
+ tstRTCrX509-1_INCS          = $(tstRTCrX509-1_0_OUTDIR)
+ tstRTCrX509-1_CLEAN         = $(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h
+ tstRTCrX509-1_INTERMEDIATES = $(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h
+ tstRTCrX509-1_VBOX_FILES := \
+ 	Pem_md4=$(PATH_SUB_CURRENT)/tstRTCrX509-md4.pem \
+ 	Pem_md5=$(PATH_SUB_CURRENT)/tstRTCrX509-md5.pem \
+ 	Pem_sha1=$(PATH_SUB_CURRENT)/tstRTCrX509-sha1.pem \
+ 	Pem_sha224=$(PATH_SUB_CURRENT)/tstRTCrX509-sha224.pem \
+ 	Pem_sha256=$(PATH_SUB_CURRENT)/tstRTCrX509-sha256.pem \
+ 	Pem_sha384=$(PATH_SUB_CURRENT)/tstRTCrX509-sha384.pem \
+ 	Pem_sha512=$(PATH_SUB_CURRENT)/tstRTCrX509-sha512.pem \
+ 	Pem_cert1=$(PATH_SUB_CURRENT)/tstRTCrX509-cert1.pem \
+ 	\
+ 	Der_md4=$(PATH_SUB_CURRENT)/tstRTCrX509-md4-cert.der \
+ 	Der_md5=$(PATH_SUB_CURRENT)/tstRTCrX509-md5-cert.der \
+ 	Der_sha1=$(PATH_SUB_CURRENT)/tstRTCrX509-sha1-cert.der \
+ 	Der_sha224=$(PATH_SUB_CURRENT)/tstRTCrX509-sha224-cert.der \
+ 	Der_sha256=$(PATH_SUB_CURRENT)/tstRTCrX509-sha256-cert.der \
+ 	Der_sha384=$(PATH_SUB_CURRENT)/tstRTCrX509-sha384-cert.der \
+ 	Der_sha512=$(PATH_SUB_CURRENT)/tstRTCrX509-sha512-cert.der \
+ 	Der_cert1=$(PATH_SUB_CURRENT)/tstRTCrX509-cert1.der \
+ 	$(NO_SUCH_VARIABLE)
+ $$(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h: \
 		$(foreach file,$(tstRTCrX509-1_VBOX_FILES),$(lastword  $(subst =,$(SP) ,$(file)))) \
 		$(VBOX_BIN2C) \
 		| $$(dir $$@)
@@ -350,6 +351,7 @@ $$(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h: \
 		"$(firstword $(subst =,$(SP) ,$(file)))" \
 		"$(lastword  $(subst =,$(SP) ,$(file)))" \
 		"$@")
+endif # !VBOX_ONLY_VALIDATIONKIT
 
 
 tstRTCType_TEMPLATE = VBOXR3TSTEXE
@@ -547,15 +549,17 @@ tstRTLocalIpc_SOURCES = tstRTLocalIpc.cpp
 tstRTLockValidator_TEMPLATE = VBOXR3TSTEXE
 tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 
-tstLog_TEMPLATE      = VBOXR3TSTEXE
-tstLog_SOURCES       = tstLog.cpp
-tstLog_INCS          = $(tstLog_0_OUTDIR)
-tstLog_INTERMEDIATES = $(tstLog_0_OUTDIR)/tstLogGroups.h
-tstLog_CLEAN         = $(tstLog_0_OUTDIR)/tstLogGroups.h
-$$(tstLog_0_OUTDIR)/tstLogGroups.h: $(PATH_ROOT)/include/VBox/log.h
+ifndef VBOX_ONLY_VALIDATIONKIT
+ tstLog_TEMPLATE      = VBOXR3TSTEXE
+ tstLog_SOURCES       = tstLog.cpp
+ tstLog_INCS          = $(tstLog_0_OUTDIR)
+ tstLog_INTERMEDIATES = $(tstLog_0_OUTDIR)/tstLogGroups.h
+ tstLog_CLEAN         = $(tstLog_0_OUTDIR)/tstLogGroups.h
+ $$(tstLog_0_OUTDIR)/tstLogGroups.h: $(PATH_ROOT)/include/VBox/log.h
 	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(RM) -f -- "$@"
 	$(QUIET)$(SED) -n -e 's/^ *LOG_GROUP_\([A-Z0-9_]*\),.*$(DOLLAR)/{ LOG_GROUP_\1, "\1" },/p' --output "$@" "$<"
+endif # !VBOX_ONLY_VALIDATIONKIT
 
 tstRTMemEf_TEMPLATE = VBOXR3TSTEXE
 tstRTMemEf_SOURCES = tstRTMemEf.cpp
