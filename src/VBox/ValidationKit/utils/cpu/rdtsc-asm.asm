@@ -77,10 +77,10 @@ BEGINPROC DoTscReads
 %ifdef RT_ARCH_AMD64
         mov     rax, 0feedfacecafebabeh
         mov     rdx, 0cafebabefeedfaceh
-        mov     r8,  0deadbeef0deadbeefh
-        mov     r9,  0deadbeef0deadbeefh
-        mov     r10, 0deadbeef0deadbeefh
-        mov     r11, 0deadbeef0deadbeefh
+        mov     r8,  0deadbeefdeadbeefh
+        mov     r9,  0deadbeefdeadbeefh
+        mov     r10, 0deadbeefdeadbeefh
+        mov     r11, 0deadbeefdeadbeefh
         push    rbx
         push    r12
         push    r13
