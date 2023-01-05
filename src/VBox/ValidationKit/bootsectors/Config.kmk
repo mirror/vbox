@@ -344,7 +344,7 @@ TOOL_Bs3Vcc64 := Visual C++ 64-bit
 TOOL_Bs3Vcc64_CC  = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CC)
 TOOL_Bs3Vcc64_CXX = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXX)
 TOOL_Bs3Vcc64_COBJSUFF                 = .o64
-TOOL_Bs3Vcc64_CFLAGS                   = $(filter-out -TC -Zi,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS)) -TC
+TOOL_Bs3Vcc64_CFLAGS                   = $(filter-out -TC -Zi,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS)) -TC -Z7
 TOOL_Bs3Vcc64_CFLAGS.debug             =
 TOOL_Bs3Vcc64_CFLAGS.dbgopt            = -O1
 TOOL_Bs3Vcc64_CFLAGS.profile           = -O1
@@ -377,7 +377,7 @@ $(TOOL_Bs3Vcc64_COMPILE_C_CMDS)
 endef
 
 TOOL_Bs3Vcc64_CXXOBJSUFF               = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXOBJSUFF)
-TOOL_Bs3Vcc64_CXXFLAGS                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXFLAGS) -TP
+TOOL_Bs3Vcc64_CXXFLAGS                 = $(filter-out -Zi,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXFLAGS)) -TP -Z7
 TOOL_Bs3Vcc64_CXXFLAGS.debug           =
 TOOL_Bs3Vcc64_CXXFLAGS.dbgopt          = -O1
 TOOL_Bs3Vcc64_CXXFLAGS.profile         = -O1
