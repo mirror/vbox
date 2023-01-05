@@ -33,6 +33,7 @@
 
 using namespace com;
 
+#include <iprt/assert.h>
 #include <iprt/env.h>
 #include <iprt/rand.h>
 #include <iprt/stream.h>
@@ -124,6 +125,8 @@ int main()
     /*
      * Destination path building testing.
      */
+    bool fQuiet    = RTAssertSetQuiet(true);
+    bool fMayPanic = RTAssertSetMayPanic(false);
     tstPathBuildDestination("", PathStyle_UNIX, "", PathStyle_UNIX, VERR_PATH_ZERO_LENGTH, "");
     tstPathBuildDestination(".", PathStyle_UNIX, ".", PathStyle_UNIX, VINF_SUCCESS, ".");
     tstPathBuildDestination("..", PathStyle_UNIX, "..", PathStyle_UNIX, VERR_INVALID_PARAMETER, "..");
@@ -150,6 +153,8 @@ int main()
     tstPathBuildDestination("/tmp/foo.txt", PathStyle_UNIX, "c:\\temp\\foo.txt", PathStyle_DOS, VINF_SUCCESS, "c:\\temp\\foo.txt");
     tstPathBuildDestination("/tmp/bar/foo.txt", PathStyle_UNIX, "c:\\temp\\foo2.txt", PathStyle_DOS, VINF_SUCCESS, "c:\\temp\\foo2.txt");
     tstPathBuildDestination("/tmp/bar/foo3.txt", PathStyle_UNIX, "c:\\temp\\", PathStyle_DOS, VINF_SUCCESS, "c:\\temp\\foo3.txt");
+    RTAssertSetMayPanic(fMayPanic);
+    RTAssertSetQuiet(fQuiet);
 
     RTTestIPrintf(RTTESTLVL_DEBUG, "Shutting down COM...\n");
     com::Shutdown();
