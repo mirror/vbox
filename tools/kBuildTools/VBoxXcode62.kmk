@@ -189,7 +189,7 @@ define TOOL_VBoxXcode62_COMPILE_C_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(KOBJCACHE) -f $(outbase).koc -d $(PATH_OBJCACHE) -t $(bld_trg).$(bld_trg_arch) -p\
 		--kObjCache-cpp $(outbase).i\
 		$(TOOL_VBoxXcode62_CC) -E -o -\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
@@ -203,7 +203,7 @@ else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_C_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_C_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_CC) -c\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
@@ -233,7 +233,7 @@ define TOOL_VBoxXcode62_COMPILE_CXX_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(KOBJCACHE) -f $(outbase).koc -d $(PATH_OBJCACHE) -t $(bld_trg).$(bld_trg_arch) -p\
 		--kObjCache-cpp $(outbase).ii\
 		$(TOOL_VBoxXcode62_CXX) -E -o -\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep)\
 		-Wp,-MP\
 		$(abspath $(source))\
@@ -248,7 +248,7 @@ else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_CXX_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_CXX_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_CXX) -c\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep)\
 		-Wp,-MP\
 		-o $(obj)\
@@ -279,7 +279,7 @@ define TOOL_VBoxXcode62_COMPILE_OBJC_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(KOBJCACHE) -f $(outbase).koc -d $(PATH_OBJCACHE) -t $(bld_trg).$(bld_trg_arch) -p\
 		--kObjCache-cpp $(outbase).ii\
 		$(TOOL_VBoxXcode62_OBJC) -E -o -\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
@@ -293,7 +293,7 @@ else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_OBJC_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_OBJC_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_OBJC) -c\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
@@ -323,7 +323,7 @@ define TOOL_VBoxXcode62_COMPILE_OBJCXX_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(KOBJCACHE) -f $(outbase).koc -d $(PATH_OBJCACHE) -t $(bld_trg).$(bld_trg_arch) -p\
 		--kObjCache-cpp $(outbase).mii\
 		$(TOOL_VBoxXcode62_OBJCXX) -E -o -\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
@@ -337,7 +337,7 @@ else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_OBJCXX_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_OBJCXX_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_OBJCXX) -c\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
@@ -364,7 +364,7 @@ TOOL_VBoxXcode62_COMPILE_AS_DEPEND =
 TOOL_VBoxXcode62_COMPILE_AS_DEPORD =
 define TOOL_VBoxXcode62_COMPILE_AS_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_AS) -c\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))

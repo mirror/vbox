@@ -89,7 +89,7 @@ TOOL_VBoxXGccX86RedHatLinux_COMPILE_C_DEPEND =
 TOOL_VBoxXGccX86RedHatLinux_COMPILE_C_DEPORD =
 define TOOL_VBoxXGccX86RedHatLinux_COMPILE_C_CMDS
 	$(QUIET)$(TOOL_VBoxXGccX86RedHatLinux_CC) -c \
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs)) \
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs)) \
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP \
 		-o $(obj) \
 		$(abspath $(source))
@@ -100,7 +100,7 @@ TOOL_VBoxXGccX86RedHatLinux_COMPILE_CXX_DEPEND =
 TOOL_VBoxXGccX86RedHatLinux_COMPILE_CXX_DEPORD =
 define TOOL_VBoxXGccX86RedHatLinux_COMPILE_CXX_CMDS
 	$(QUIET)$(TOOL_VBoxXGccX86RedHatLinux_CXX) -c \
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs)) \
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs)) \
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP \
 		-o $(obj) \
 		$(abspath $(source))
@@ -111,7 +111,7 @@ TOOL_VBoxXGccX86RedHatLinux_COMPILE_AS_DEPEND =
 TOOL_VBoxXGccX86RedHatLinux_COMPILE_AS_DEPORD =
 define TOOL_VBoxXGccX86RedHatLinux_COMPILE_AS_CMDS
 	$(QUIET)$(TOOL_VBoxXGccX86RedHatLinux_AS) -c \
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs)) \
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs)) \
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP \
 		-o $(obj) \
 		$(abspath $(source))

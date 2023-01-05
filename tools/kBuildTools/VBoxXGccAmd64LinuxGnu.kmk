@@ -90,7 +90,7 @@ TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_C_DEPEND =
 TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_C_DEPORD =
 define TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_C_CMDS
 	$(QUIET)$(TOOL_VBoxXGccAmd64LinuxGnu_CC) -c \
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs)) \
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs)) \
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP \
 		-o $(obj) \
 		$(abspath $(source))
@@ -101,7 +101,7 @@ TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_CXX_DEPEND =
 TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_CXX_DEPORD =
 define TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_CXX_CMDS
 	$(QUIET)$(TOOL_VBoxXGccAmd64LinuxGnu_CXX) -c \
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs)) \
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs)) \
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP \
 		-o $(obj) \
 		$(abspath $(source))
@@ -112,7 +112,7 @@ TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_AS_DEPEND =
 TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_AS_DEPORD =
 define TOOL_VBoxXGccAmd64LinuxGnu_COMPILE_AS_CMDS
 	$(QUIET)$(TOOL_VBoxXGccAmd64LinuxGnu_AS) -c \
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs)) \
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs)) \
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP \
 		-o $(obj) \
 		$(abspath $(source))
