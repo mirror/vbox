@@ -238,6 +238,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">mktemp</arg>
+      <arg>--directory</arg>
       <arg>--domain=<replaceable>domainname</replaceable></arg>
       <arg>--mode=<replaceable>mode</replaceable></arg>
       <group>

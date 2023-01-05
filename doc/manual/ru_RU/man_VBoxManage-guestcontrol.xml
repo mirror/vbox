@@ -237,6 +237,7 @@
         <arg choice="plain"><replaceable>имя-ВМ</replaceable></arg>
       </group>
       <arg choice="plain">mktemp</arg>
+      <arg>--directory</arg>
       <arg>--domain=<replaceable>имя-домена</replaceable></arg>
       <arg>--mode=<replaceable>режим</replaceable></arg>
       <group>
