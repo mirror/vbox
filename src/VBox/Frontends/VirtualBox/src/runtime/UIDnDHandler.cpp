@@ -584,7 +584,7 @@ int UIDnDHandler::init(void)
      * when it comes to drag'n drop and UIPI (User Interface Privilege Isolation) -- a lower integrity level process
      * cannot drag'n drop stuff to a higher integrity level one.
      */
-    vrc = getProcessIntetrityLevel(&m_dwIntegrityLevel);
+    vrc = getProcessIntegrityLevel(&m_dwIntegrityLevel);
     if (RT_SUCCESS(vrc))
     {
         switch (m_dwIntegrityLevel)
@@ -633,7 +633,7 @@ void UIDnDHandler::reset(void)
  * @param   pdwIntegrityLevel   Where to return the detected process integrity level on success.
  */
 /* static */
-int UIDnDHandler::getProcessIntetrityLevel(DWORD *pdwIntegrityLevel)
+int UIDnDHandler::getProcessIntegrityLevel(DWORD *pdwIntegrityLevel)
 {
     AssertPtrReturn(pdwIntegrityLevel, VERR_INVALID_POINTER);
 

@@ -127,7 +127,7 @@ protected:
 protected:
 
 #ifdef RT_OS_WINDOWS
-    static int                 getProcessIntetrityLevel(DWORD *pdwIntegrityLevel);
+    static int                 getProcessIntegrityLevel(DWORD *pdwIntegrityLevel);
 #endif
 
 protected:
