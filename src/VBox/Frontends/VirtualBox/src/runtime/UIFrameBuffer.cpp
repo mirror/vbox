@@ -290,13 +290,6 @@ public:
       * @note Calls to this and any other EMT callback are synchronized (from GUI side). */
     void setMarkAsUnused(bool fUnused);
 
-    /** Returns whether frame-buffer is <b>auto-enabled</b>.
-      * @note Refer to m_fAutoEnabled for more information. */
-    bool isAutoEnabled() const { return m_fAutoEnabled; }
-    /** Defines whether frame-buffer is <b>auto-enabled</b>.
-      * @note Refer to m_fAutoEnabled for more information. */
-    void setAutoEnabled(bool fAutoEnabled) { m_fAutoEnabled = fAutoEnabled; }
-
     /** Returns the frame-buffer's scaled-size. */
     QSize scaledSize() const { return m_scaledSize; }
     /** Defines host-to-guest scale ratio as @a size. */
@@ -511,13 +504,6 @@ protected:
     /** Defines whether frame-buffer is <b>unused</b>.
       * <b>Unused</b> status determines whether frame-buffer should ignore EMT events or not. */
     bool m_fUnused;
-
-    /** Defines whether frame-buffer is <b>auto-enabled</b>.
-      * <b>Auto-enabled</b> status means that guest-screen corresponding to this frame-buffer
-      * was automatically enabled by the multi-screen layout (auto-mount guest-screen) functionality,
-      * so have potentially incorrect size-hint posted into guest event queue.
-      * Machine-view will try to automatically adjust guest-screen size as soon as possible. */
-    bool m_fAutoEnabled;
 
     /** RTCRITSECT object to protect frame-buffer access. */
     mutable RTCRITSECT m_critSect;
@@ -1101,7 +1087,6 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_iWinId(0)
     , m_fUpdatesAllowed(false)
     , m_fUnused(false)
-    , m_fAutoEnabled(false)
     , m_dScaleFactor(1.0)
     , m_enmScalingOptimizationType(ScalingOptimizationType_None)
     , m_dDevicePixelRatio(1.0)
@@ -2411,16 +2396,6 @@ void UIFrameBuffer::setView(UIMachineView *pMachineView)
 void UIFrameBuffer::setMarkAsUnused(bool fUnused)
 {
     m_pFrameBuffer->setMarkAsUnused(fUnused);
-}
-
-bool UIFrameBuffer::isAutoEnabled() const
-{
-    return m_pFrameBuffer->isAutoEnabled();
-}
-
-void UIFrameBuffer::setAutoEnabled(bool fAutoEnabled)
-{
-    m_pFrameBuffer->setAutoEnabled(fAutoEnabled);
 }
 
 QSize UIFrameBuffer::scaledSize() const

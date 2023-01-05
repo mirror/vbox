@@ -167,7 +167,6 @@ void UIMultiScreenLayout::update()
                     uWidth = pFrameBuffer->width();
                 if (pFrameBuffer->height() > 0)
                     uHeight = pFrameBuffer->height();
-                pFrameBuffer->setAutoEnabled(true);
             }
             /* Re-enable guest-screen with proper resolution: */
             LogRel(("GUI: UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d\n",

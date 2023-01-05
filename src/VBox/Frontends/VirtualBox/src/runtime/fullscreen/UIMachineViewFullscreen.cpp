@@ -137,16 +137,7 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
     LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Adjust guest-screen size if necessary.\n"));
     bool fAdjust = false;
 
-    /* Step 1: Was the guest-screen enabled automatically? */
-    if (!fAdjust)
-    {
-        if (frameBuffer()->isAutoEnabled())
-        {
-            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen was enabled automatically, adjustment is required.\n"));
-            fAdjust = true;
-        }
-    }
-    /* Step 2: Is the guest-screen of another size than necessary? */
+    /* Step 1: Is the guest-screen of another size than necessary? */
     if (!fAdjust)
     {
         /* Acquire requested guest-screen size-hint or at least actual frame-buffer size: */
@@ -164,7 +155,7 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
         }
     }
 
-    /* Step 3: Is guest-screen visible? */
+    /* Step 2: Is guest-screen visible? */
     if (fAdjust)
     {
         if (!uisession()->isScreenVisible(screenId()))
@@ -173,7 +164,7 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
             fAdjust = false;
         }
     }
-    /* Step 4: Is guest-screen auto-resize enabled? */
+    /* Step 3: Is guest-screen auto-resize enabled? */
     if (fAdjust)
     {
         if (!isGuestAutoresizeEnabled())
@@ -186,7 +177,6 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
     /* Final step: Adjust if requested/allowed. */
     if (fAdjust)
     {
-        frameBuffer()->setAutoEnabled(false);
         sltPerformGuestResize(calculateMaxGuestSize());
         /* And remember the size to know what we are resizing out of when we exit: */
         uisession()->setLastFullScreenSize(screenId(), scaledForward(scaledBackward(calculateMaxGuestSize())));

@@ -90,13 +90,6 @@ public:
       * @note Calls to this and any other EMT callback are synchronized (from GUI side). */
     void setMarkAsUnused(bool fUnused);
 
-    /** Returns whether frame-buffer is <b>auto-enabled</b>.
-      * @note Refer to m_fAutoEnabled for more information. */
-    bool isAutoEnabled() const;
-    /** Defines whether frame-buffer is <b>auto-enabled</b>.
-      * @note Refer to m_fAutoEnabled for more information. */
-    void setAutoEnabled(bool fAutoEnabled);
-
     /** Returns the frame-buffer's scaled-size. */
     QSize scaledSize() const;
     /** Defines host-to-guest scale ratio as @a size. */
