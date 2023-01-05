@@ -133,54 +133,44 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
 void UIMachineViewFullscreen::adjustGuestScreenSize()
 {
-    /* Should we adjust guest-screen size? Logging paranoia is required here to reveal the truth. */
-    LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Adjust guest-screen size if necessary.\n"));
-    bool fAdjust = false;
-
-    /* Step 1: Is the guest-screen of another size than necessary? */
-    if (!fAdjust)
+    /* Step 1: Is guest-screen visible? */
+    if (!uisession()->isScreenVisible(screenId()))
     {
-        /* Acquire requested guest-screen size-hint or at least actual frame-buffer size: */
-        QSize guestScreenSizeHint = requestedGuestScreenSizeHint();
-        /* Take the scale-factor(s) into account: */
-        guestScreenSizeHint = scaledForward(guestScreenSizeHint);
-
-        /* Calculate maximum possible guest screen size: */
-        const QSize maximumGuestScreenSize = calculateMaxGuestSize();
-
-        if (guestScreenSizeHint != maximumGuestScreenSize)
-        {
-            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen is of another size than necessary, adjustment is required.\n"));
-            fAdjust = true;
-        }
+        LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: "
+                "Guest-screen #%d is not visible, adjustment is not required.\n",
+                screenId()));
+        return;
+    }
+    /* Step 2: Is guest-screen auto-resize enabled? */
+    if (!isGuestAutoresizeEnabled())
+    {
+        LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: "
+                "Guest-screen #%d auto-resize is disabled, adjustment is not required.\n",
+                screenId()));
+        return;
     }
 
-    /* Step 2: Is guest-screen visible? */
-    if (fAdjust)
+    /* What are the desired and requested hints? */
+    const QSize sizeToApply = calculateMaxGuestSize();
+    const QSize desiredSizeHint = scaledBackward(sizeToApply);
+    const QSize requestedSizeHint = requestedGuestScreenSizeHint();
+
+    /* Step 3: Is the guest-screen of another size than necessary? */
+    if (desiredSizeHint == requestedSizeHint)
     {
-        if (!uisession()->isScreenVisible(screenId()))
-        {
-            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen is not visible, adjustment is omitted.\n"));
-            fAdjust = false;
-        }
-    }
-    /* Step 3: Is guest-screen auto-resize enabled? */
-    if (fAdjust)
-    {
-        if (!isGuestAutoresizeEnabled())
-        {
-            LogRel2(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: Guest-screen auto-resize is disabled, adjustment is omitted.\n"));
-            fAdjust = false;
-        }
+        LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: "
+                "Desired hint %dx%d for guest-screen #%d is already in IDisplay, adjustment is not required.\n",
+                desiredSizeHint.width(), desiredSizeHint.height(), screenId()));
+        return;
     }
 
-    /* Final step: Adjust if requested/allowed. */
-    if (fAdjust)
-    {
-        sltPerformGuestResize(calculateMaxGuestSize());
-        /* And remember the size to know what we are resizing out of when we exit: */
-        uisession()->setLastFullScreenSize(screenId(), scaledForward(scaledBackward(calculateMaxGuestSize())));
-    }
+    /* Final step: Adjust .. */
+    LogRel(("GUI: UIMachineViewFullscreen::adjustGuestScreenSize: "
+            "Desired hint %dx%d for guest-screen #%d differs from the one in IDisplay, adjustment is required.\n",
+            desiredSizeHint.width(), desiredSizeHint.height(), screenId()));
+    sltPerformGuestResize(sizeToApply);
+    /* And remember the size to know what we are resizing out of when we exit: */
+    uisession()->setLastFullScreenSize(screenId(), scaledForward(desiredSizeHint));
 }
 
 QRect UIMachineViewFullscreen::workingArea() const
