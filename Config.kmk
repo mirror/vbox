@@ -2041,9 +2041,9 @@ ifdef VBOX_PATH_SHARED_LIBS
 endif
 ifdef VBOX_PATH_APP_DOCS
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
- CDEFS += RTPATH_APP_DOCS="$(VBOX_PATH_APP_DOCS)"
+  CDEFS += RTPATH_APP_DOCS="$(VBOX_PATH_APP_DOCS)"
  else
- CDEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"
+  CDEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"
  endif
 endif
 if1of ($(KBUILD_TARGET), os2) # The gcc here is too old to grok #pragma once, instead it complains.

@@ -151,10 +151,10 @@ endif
 instmod  :=
 
 ifeq ($(wildcard /usr/share/doc/packages/bash),)
- doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
+ doc_dir := VBOX_PATH_PACKAGE_DOCS="/usr/share/doc/$(verpkg)"
 else
  # Novell (OpenSUSE, SLES)
- doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/packages/$(verpkg)\""
+ doc_dir := VBOX_PATH_PACKAGE_DOCS="/usr/share/doc/packages/$(verpkg)"
 endif
 
 ifeq ($(NOQT),)
