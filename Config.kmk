@@ -3536,9 +3536,6 @@ VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initi
 	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros) \
        $(VBOX_GCC_Wno-c++17-compat-mangling)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
-if "$(VBOX_GCC_Wno-inline)" != "" && $(VBOX_GCC_VERSION_CXX) <= 100000 # Figure "can never be inlined because it uses variable argument lists" version range.
- VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_Wno-inline)
-endif
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
@@ -5820,9 +5817,8 @@ TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_msave-args) \
 	-mno-red-zone -mcmodel=kernel $(if-expr defined(VBOX_GCC_USING_SOLARIS_AS),-Wa$(COMMA)-xmodel=kernel,) \
 	-fno-reorder-blocks -fno-asynchronous-unwind-tables -funit-at-a-time
-TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith -Winline \
-	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
-	-Wformat \
+TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith \
+	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wformat \
 	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
