@@ -144,11 +144,11 @@ public:
 private:
     int i_insert(const IPv4Range &range) RT_NOEXCEPT;
 #if 0
-    int i_insert(IPV4HADDR single) RT_NOEXCEPT                          { return i_insert(IPv4Range(single)); }
+    int i_insert(IPV4HADDR a_Single) RT_NOEXCEPT                          { return i_insert(IPv4Range(a_Single)); }
 #endif
-    int i_insert(IPV4HADDR first, IPV4HADDR last) RT_NOEXCEPT           { return i_insert(IPv4Range(first, last)); }
-    int i_insert(RTNETADDRIPV4 single) RT_NOEXCEPT                      { return i_insert(IPv4Range(single)); }
-    int i_insert(RTNETADDRIPV4 first, RTNETADDRIPV4 last) RT_NOEXCEPT   { return i_insert(IPv4Range(first, last)); }
+    int i_insert(IPV4HADDR a_First, IPV4HADDR a_Last) RT_NOEXCEPT         { return i_insert(IPv4Range(a_First, a_Last)); }
+    int i_insert(RTNETADDRIPV4 a_Single) RT_NOEXCEPT                      { return i_insert(IPv4Range(a_Single)); }
+    int i_insert(RTNETADDRIPV4 a_First, RTNETADDRIPV4 a_Last) RT_NOEXCEPT { return i_insert(IPv4Range(a_First, a_Last)); }
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_IPv4Pool_h */
