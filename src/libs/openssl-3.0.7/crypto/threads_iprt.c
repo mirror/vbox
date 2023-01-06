@@ -102,7 +102,7 @@ void CRYPTO_THREAD_lock_free(CRYPTO_RWLOCK *lock)
 
 int CRYPTO_THREAD_init_local(CRYPTO_THREAD_LOCAL *key, void (*cleanup)(void *))
 {
-    int rc = RTTlsAllocEx(key, cleanup);
+    int rc = RTTlsAllocEx(key, (PFNRTTLSDTOR)cleanup); /* ASSUMES default calling convention is __cdecl, or close enough to it. */
     if (RT_FAILURE(rc))
         return 0;
 
