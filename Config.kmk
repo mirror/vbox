@@ -3535,7 +3535,7 @@ VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initi
 	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros) \
        $(VBOX_GCC_Wno-c++17-compat-mangling)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
-if defined(VBOX_GCC_Wno-inline) && $(VBOX_GCC_VERSION_CXX) <= 100000 # Figure "can never be inlined because it uses variable argument lists" version range.
+if "$(VBOX_GCC_Wno-inline)" != "" && $(VBOX_GCC_VERSION_CXX) <= 100000 # Figure "can never be inlined because it uses variable argument lists" version range.
  VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_Wno-inline)
 endif
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
