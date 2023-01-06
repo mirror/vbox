@@ -93,6 +93,7 @@ ifndef VBOX_ONLY_SDK
 #
 VBoxPythonBase_TEMPLATE = XPCOM
 VBoxPythonBase_CXXFLAGS = -Wno-write-strings
+VBoxPythonBase_CXXFLAGS.solaris = $(VBOX_GCC_Wno-unknown-pragmas) # /usr/include/python[23].[75]*/ceval.h:67: warning: ignoring #pragma no_inline(PyEval_EvalFrameEx)
 VBoxPythonBase_DLLSUFF.darwin = .so
 VBoxPythonBase_DEFS     = \
 	_IMPL_NS_COM \
