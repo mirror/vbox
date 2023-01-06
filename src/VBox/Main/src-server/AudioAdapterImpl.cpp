@@ -191,6 +191,9 @@ void AudioAdapter::uninit(void)
 
 HRESULT AudioAdapter::getEnabled(BOOL *aEnabled)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = mData->fEnabled;
@@ -220,6 +223,9 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
 
 HRESULT AudioAdapter::getEnabledIn(BOOL *aEnabled)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = mData->fEnabledIn;
@@ -250,6 +256,9 @@ HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
 
 HRESULT AudioAdapter::getEnabledOut(BOOL *aEnabled)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = mData->fEnabledOut;
@@ -280,6 +289,9 @@ HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
 
 HRESULT AudioAdapter::getAudioDriver(AudioDriverType_T *aAudioDriver)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAudioDriver = mData->driverType;
@@ -319,6 +331,9 @@ HRESULT AudioAdapter::setAudioDriver(AudioDriverType_T aAudioDriver)
 
 HRESULT AudioAdapter::getAudioController(AudioControllerType_T *aAudioController)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAudioController = mData->controllerType;
@@ -378,6 +393,9 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
 
 HRESULT AudioAdapter::getAudioCodec(AudioCodecType_T *aAudioCodec)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAudioCodec = mData->codecType;
@@ -447,6 +465,9 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
 
 HRESULT AudioAdapter::getPropertiesList(std::vector<com::Utf8Str>& aProperties)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     using namespace settings;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -465,6 +486,9 @@ HRESULT AudioAdapter::getPropertiesList(std::vector<com::Utf8Str>& aProperties)
 
 HRESULT AudioAdapter::getProperty(const com::Utf8Str &aKey, com::Utf8Str &aValue)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     settings::StringsMap::const_iterator cit = mData->properties.find(aKey);
@@ -476,6 +500,9 @@ HRESULT AudioAdapter::getProperty(const com::Utf8Str &aKey, com::Utf8Str &aValue
 
 HRESULT AudioAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str &aValue)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Generic properties processing.
