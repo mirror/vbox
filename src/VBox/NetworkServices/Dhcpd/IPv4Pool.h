@@ -134,11 +134,11 @@ public:
     bool          allocate(RTNETADDRIPV4);
 
     /**
-     * Checks if the pool range includes @a addr (allocation status not considered).
+     * Checks if the pool range includes @a a_Addr (allocation status not considered).
      */
-    bool contains(RTNETADDRIPV4 addr) const RT_NOEXCEPT
+    bool contains(RTNETADDRIPV4 a_Addr) const RT_NOEXCEPT
     {
-        return m_range.contains(addr);
+        return m_range.contains(a_Addr);
     }
 
 private:
