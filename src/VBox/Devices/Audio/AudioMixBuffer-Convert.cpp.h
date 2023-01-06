@@ -60,7 +60,7 @@ static DECLCALLBACK(void) RT_CONCAT(audioMixBufEncodeGeneric,a_Name)(void *pvDst
         uintptr_t idxDst = cDstChannels;
         while (idxDst-- > 0)
         {
-            int8_t idxSrc = pState->aidxChannelMap[idxDst];
+            intptr_t idxSrc = pState->aidxChannelMap[idxDst];
             if (idxSrc >= 0)
                 pDst[idxDst] = RT_CONCAT(audioMixBufSampleTo,a_Name)(pi32Src[idxSrc]);
             else if (idxSrc != -2)
@@ -146,7 +146,7 @@ static DECLCALLBACK(void) RT_CONCAT(audioMixBufDecodeGeneric,a_Name)(int32_t *pi
         uintptr_t idxDst = cDstChannels;
         while (idxDst-- > 0)
         {
-            int8_t idxSrc = pState->aidxChannelMap[idxDst];
+            intptr_t idxSrc = pState->aidxChannelMap[idxDst];
             if (idxSrc >= 0)
                 pi32Dst[idxDst] = RT_CONCAT(audioMixBufSampleFrom,a_Name)(pSrc[idxSrc]);
             else if (idxSrc != -2)
@@ -234,7 +234,7 @@ static DECLCALLBACK(void) RT_CONCAT3(audioMixBufDecodeGeneric,a_Name,Blend)(int3
         uintptr_t idxDst = cDstChannels;
         while (idxDst-- > 0)
         {
-            int8_t idxSrc = pState->aidxChannelMap[idxDst];
+            intptr_t idxSrc = pState->aidxChannelMap[idxDst];
             if (idxSrc >= 0)
                 audioMixBufBlendSample(&pi32Dst[idxDst], RT_CONCAT(audioMixBufSampleFrom,a_Name)(pSrc[idxSrc]));
         }
