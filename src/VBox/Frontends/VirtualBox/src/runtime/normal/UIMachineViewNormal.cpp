@@ -152,18 +152,19 @@ void UIMachineViewNormal::resendSizeHint()
         return;
 
     /* Get the last guest-screen size-hint, taking the scale factor into account. */
-    const QSize sizeHint = scaledBackward(storedGuestScreenSizeHint());
+    const QSize storedSizeHint = storedGuestScreenSizeHint();
+    const QSize effectiveSizeHint = scaledBackward(storedSizeHint);
     LogRel(("GUI: UIMachineViewNormal::resendSizeHint: Restoring guest size-hint for screen %d to %dx%d\n",
-            (int)screenId(), sizeHint.width(), sizeHint.height()));
+            (int)screenId(), effectiveSizeHint.width(), effectiveSizeHint.height()));
 
     /* Expand current limitations: */
-    setMaximumGuestSize(sizeHint);
+    setMaximumGuestSize(effectiveSizeHint);
 
     /* Temporarily restrict the size to prevent a brief resize to the
      * frame-buffer dimensions when we exit full-screen.  This is only
      * applied if the frame-buffer is at full-screen dimensions and
      * until the first machine view resize. */
-    m_sizeHintOverride = QSize(800, 600).expandedTo(sizeHint);
+    m_sizeHintOverride = scaledForward(QSize(640, 480)).expandedTo(storedSizeHint);
 
     /* Restore saved monitor information to the guest.  The guest may not respond
      * until a suitable driver or helper is enabled (or at all).  We do not notify
@@ -173,7 +174,7 @@ void UIMachineViewNormal::resendSizeHint()
     uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
     display().SetVideoModeHint(screenId(),
                                guestScreenVisibilityStatus(),
-                               false, 0, 0, sizeHint.width(), sizeHint.height(), 0, false);
+                               false, 0, 0, effectiveSizeHint.width(), effectiveSizeHint.height(), 0, false);
 }
 
 void UIMachineViewNormal::adjustGuestScreenSize()
