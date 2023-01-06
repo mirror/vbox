@@ -3334,6 +3334,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-cast-function-type         ?= $(call VBOX_GCC_CHECK_CC,-Wno-cast-function-type,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-deprecated-declarations    ?= $(call VBOX_GCC_CHECK_CC,-Wno-deprecated-declarations,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-implicit-fallthrough       ?= $(call VBOX_GCC_CHECK_CC,-Wno-implicit-fallthrough,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-inline                     ?= $(call VBOX_GCC_CHECK_CXX,-Wno-inline,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_m64                   ?= $(call VBOX_GCC_CHECK_CC,-m64,)'
@@ -3534,6 +3535,9 @@ VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initi
 	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros) \
        $(VBOX_GCC_Wno-c++17-compat-mangling)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
+if defined(VBOX_GCC_Wno-inline) && $(VBOX_GCC_VERSION_CXX) <= 100000 # Figure "can never be inlined because it uses variable argument lists" version range.
+ VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_Wno-inline)
+endif
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
