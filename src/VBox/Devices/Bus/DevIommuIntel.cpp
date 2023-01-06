@@ -2192,11 +2192,14 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
     Assert(!(pMemReqAux->GCPhysSlPt & X86_PAGE_4K_OFFSET_MASK));
 
     /* Mask of reserved paging entry bits. */
-    static uint64_t const s_auPtEntityInvMasks[] = { ~VTD_SL_PTE_VALID_MASK,
-                                                     ~VTD_SL_PDE_VALID_MASK,
-                                                     ~VTD_SL_PDPE_VALID_MASK,
-                                                     ~VTD_SL_PML4E_VALID_MASK,
-                                                     ~VTD_SL_PML5E_VALID_MASK };
+    static uint64_t const s_auPtEntityInvMasks[] =
+    {
+        ~VTD_SL_PTE_VALID_MASK,
+        ~VTD_SL_PDE_VALID_MASK,
+        ~VTD_SL_PDPE_VALID_MASK,
+        ~VTD_SL_PML4E_VALID_MASK,
+        ~VTD_SL_PML5E_VALID_MASK
+    };
 
     /* Paranoia. */
     Assert(pMemReqAux->cPagingLevel >= 3 && pMemReqAux->cPagingLevel <= 5);
@@ -2216,96 +2219,99 @@ static DECLCALLBACK(int) dmarDrSecondLevelTranslate(PPDMDEVINS pDevIns, PCDMARME
      * Traverse the I/O page table starting with the SLPTPTR (second-level page table pointer).
      * Unlike AMD IOMMU paging, here there is no feature for "skipping" levels.
      */
-    uint64_t uPtEntity   = pMemReqAux->GCPhysSlPt;
-    for (int8_t idxLevel = pMemReqAux->cPagingLevel - 1; idxLevel >= 0; idxLevel--)
+    if (pMemReqAux->cPagingLevel > 0)
     {
-        /*
-         * Read the paging entry for the current level.
-         */
-        uint8_t const cLevelShift = X86_PAGE_4K_SHIFT + (idxLevel * 9);
+        uint64_t     uPtEntity = pMemReqAux->GCPhysSlPt;
+        for (uint8_t idxLevel  = pMemReqAux->cPagingLevel - 1; /* not needed: idxLevel >= 0 */; idxLevel--)
         {
-            uint16_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
-            uint16_t const offPte         = idxPte << 3;
-            RTGCPHYS const GCPhysPtEntity = (uPtEntity & X86_PAGE_4K_BASE_MASK) | offPte;
-            int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
-            if (RT_SUCCESS(rc))
+            /*
+             * Read the paging entry for the current level.
+             */
+            uint8_t const cLevelShift = X86_PAGE_4K_SHIFT + (idxLevel * 9);
+            {
+                uint16_t const idxPte         = (uAddrIn >> cLevelShift) & UINT64_C(0x1ff);
+                uint16_t const offPte         = idxPte << 3;
+                RTGCPHYS const GCPhysPtEntity = (uPtEntity & X86_PAGE_4K_BASE_MASK) | offPte;
+                int const rc = PDMDevHlpPhysReadMeta(pDevIns, GCPhysPtEntity, &uPtEntity, sizeof(uPtEntity));
+                if (RT_SUCCESS(rc))
+                { /* likely */ }
+                else
+                {
+                    if ((GCPhysPtEntity & X86_PAGE_BASE_MASK) == pMemReqAux->GCPhysSlPt)
+                        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Slpptr_Read_Failed, pMemReqIn, pMemReqAux);
+                    else
+                        dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Read_Pte_Failed, pMemReqIn, pMemReqAux);
+                    break;
+                }
+            }
+
+            /*
+             * Check I/O permissions.
+             * This must be done prior to check reserved bits for properly reporting errors SSL.2 and SSL.3.
+             * See Intel spec. 7.1.3 "Fault conditions and Remapping hardware behavior for various request".
+             */
+            uint8_t const fReqPerm = pMemReqIn->AddrRange.fPerm & pThis->fPermValidMask;
+            uint8_t const fPtPerm  = uPtEntity & pThis->fPermValidMask;
+            Assert(!(fReqPerm & DMAR_PERM_EXE));                        /* No Execute-requests support yet. */
+            Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_SLADS_MASK));  /* No Second-level access/dirty support. */
+            if ((fPtPerm & fReqPerm) == fReqPerm)
             { /* likely */ }
             else
             {
-                if ((GCPhysPtEntity & X86_PAGE_BASE_MASK) == pMemReqAux->GCPhysSlPt)
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Slpptr_Read_Failed, pMemReqIn, pMemReqAux);
+                if ((fPtPerm & (VTD_BF_SL_PTE_R_MASK | VTD_BF_SL_PTE_W_MASK)) == 0)
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Not_Present, pMemReqIn, pMemReqAux);
+                else if ((pMemReqIn->AddrRange.fPerm & DMAR_PERM_READ) != (fPtPerm & VTD_BF_SL_PTE_R_MASK))
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Read_Denied, pMemReqIn, pMemReqAux);
                 else
-                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Read_Pte_Failed, pMemReqIn, pMemReqAux);
+                    dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Write_Denied, pMemReqIn, pMemReqAux);
                 break;
             }
-        }
 
-        /*
-         * Check I/O permissions.
-         * This must be done prior to check reserved bits for properly reporting errors SSL.2 and SSL.3.
-         * See Intel spec. 7.1.3 "Fault conditions and Remapping hardware behavior for various request".
-         */
-        uint8_t const fReqPerm = pMemReqIn->AddrRange.fPerm & pThis->fPermValidMask;
-        uint8_t const fPtPerm  = uPtEntity & pThis->fPermValidMask;
-        Assert(!(fReqPerm & DMAR_PERM_EXE));                        /* No Execute-requests support yet. */
-        Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_SLADS_MASK));  /* No Second-level access/dirty support. */
-        if ((fPtPerm & fReqPerm) == fReqPerm)
-        { /* likely */ }
-        else
-        {
-            if ((fPtPerm & (VTD_BF_SL_PTE_R_MASK | VTD_BF_SL_PTE_W_MASK)) == 0)
-                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Not_Present, pMemReqIn, pMemReqAux);
-            else if ((pMemReqIn->AddrRange.fPerm & DMAR_PERM_READ) != (fPtPerm & VTD_BF_SL_PTE_R_MASK))
-                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Read_Denied, pMemReqIn, pMemReqAux);
+            /*
+             * Validate reserved bits of the current paging entry.
+             */
+            if (!(uPtEntity & s_auPtEntityInvMasks[(uintptr_t)idxLevel]))
+            { /* likely */ }
             else
-                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Perm_Write_Denied, pMemReqIn, pMemReqAux);
-            break;
-        }
-
-        /*
-         * Validate reserved bits of the current paging entry.
-         */
-        if (!(uPtEntity & s_auPtEntityInvMasks[idxLevel]))
-        { /* likely */ }
-        else
-        {
-            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Rsvd, pMemReqIn, pMemReqAux);
-            break;
-        }
-
-        /*
-         * Check if this is a 1GB page or a 2MB page.
-         */
-        AssertCompile(VTD_BF_SL_PDE_PS_MASK == VTD_BF_SL_PDPE_PS_MASK);
-        uint8_t const fLargePage = RT_BF_GET(uPtEntity, VTD_BF_SL_PDE_PS);
-        if (fLargePage && idxLevel > 0)
-        {
-            Assert(idxLevel == 1 || idxLevel == 2);   /* Is guaranteed by the reserved bits check above. */
-            uint8_t const fSllpsMask = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SLLPS);
-            if (fSllpsMask & RT_BIT(idxLevel - 1))
             {
-                /*
-                 * We don't support MTS (asserted below), hence IPAT and EMT fields of the paging entity are ignored.
-                 * All other reserved bits are identical to the regular page-size paging entity which we've already
-                 * checked above.
-                 */
-                Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_MTS_MASK));
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Rsvd, pMemReqIn, pMemReqAux);
+                break;
+            }
 
+            /*
+             * Check if this is a 1GB page or a 2MB page.
+             */
+            AssertCompile(VTD_BF_SL_PDE_PS_MASK == VTD_BF_SL_PDPE_PS_MASK);
+            uint8_t const fLargePage = RT_BF_GET(uPtEntity, VTD_BF_SL_PDE_PS);
+            if (fLargePage && idxLevel > 0)
+            {
+                Assert(idxLevel == 1 || idxLevel == 2);   /* Is guaranteed by the reserved bits check above. */
+                uint8_t const fSllpsMask = RT_BF_GET(pThis->fCapReg, VTD_BF_CAP_REG_SLLPS);
+                if (fSllpsMask & RT_BIT(idxLevel - 1))
+                {
+                    /*
+                     * We don't support MTS (asserted below), hence IPAT and EMT fields of the paging entity are ignored.
+                     * All other reserved bits are identical to the regular page-size paging entity which we've already
+                     * checked above.
+                     */
+                    Assert(!(pThis->fExtCapReg & VTD_BF_ECAP_REG_MTS_MASK));
+
+                    RTGCPHYS const GCPhysBase = uPtEntity & X86_GET_PAGE_BASE_MASK(cLevelShift);
+                    return dmarDrUpdateIoPageOut(pDevIns, GCPhysBase, cLevelShift, fPtPerm, pMemReqIn, pMemReqAux, pIoPageOut);
+                }
+
+                dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Sllps_Invalid, pMemReqIn, pMemReqAux);
+                break;
+            }
+
+            /*
+             * If this is the final PTE, compute the translation address and we're done.
+             */
+            if (idxLevel == 0)
+            {
                 RTGCPHYS const GCPhysBase = uPtEntity & X86_GET_PAGE_BASE_MASK(cLevelShift);
                 return dmarDrUpdateIoPageOut(pDevIns, GCPhysBase, cLevelShift, fPtPerm, pMemReqIn, pMemReqAux, pIoPageOut);
             }
-
-            dmarAtFaultRecord(pDevIns, kDmarDiag_At_Xm_Pte_Sllps_Invalid, pMemReqIn, pMemReqAux);
-            break;
-        }
-
-        /*
-         * If this is the final PTE, compute the translation address and we're done.
-         */
-        if (idxLevel == 0)
-        {
-            RTGCPHYS const GCPhysBase = uPtEntity & X86_GET_PAGE_BASE_MASK(cLevelShift);
-            return dmarDrUpdateIoPageOut(pDevIns, GCPhysBase, cLevelShift, fPtPerm, pMemReqIn, pMemReqAux, pIoPageOut);
         }
     }
 
@@ -3448,8 +3454,7 @@ static DECLCALLBACK(int) dmarR3InvQueueThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
                         DMAR_ASSERT_LOCK_IS_NOT_OWNER(pDevIns, pThisR3);
                         continue;
                     }
-                    else
-                        dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Error, VTDIQEI_FETCH_DESCRIPTOR_ERR);
+                    dmarIqeFaultRecord(pDevIns, kDmarDiag_IqaReg_Dsc_Fetch_Error, VTDIQEI_FETCH_DESCRIPTOR_ERR);
                 }
                 else
                 {
