@@ -295,7 +295,7 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
     if (RT_SUCCESS(rc))
     {
         *total = totalRAM;
-        *available = cb / 1024;
+        *available = (ULONG)RT_MIN(cb / 1024, ~(ULONG)0);
         *used = *total - *available;
     }
     return rc;
@@ -321,7 +321,7 @@ int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
         if (read(h, &psinfo, cb) == cb)
         {
             Assert((pid_t)process == psinfo.pr_pid);
-            *used = psinfo.pr_rssize;
+            *used = (ULONG)RT_MIN(psinfo.pr_rssize, ~(ULONG)0);
         }
         else
         {
@@ -377,13 +377,8 @@ uint64_t CollectorSolaris::wrapCorrection(uint32_t cur, uint64_t prev, const cha
 
 uint64_t CollectorSolaris::wrapDetection(uint64_t cur, uint64_t prev, const char *name)
 {
-    static bool fNotSeen = true;
-
-    if (fNotSeen && cur < prev)
-    {
-        fNotSeen = false;
-        LogRel(("Detected wrap on %s (%llu < %llu).\n", name, cur, prev));
-    }
+    if (cur < prev)
+        LogRelMax(2, ("Detected wrap on %s (%llu < %llu).\n", name, cur, prev));
     return cur;
 }
 
@@ -428,35 +423,45 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
         return VERR_INTERNAL_ERROR;
     }
     kstat_named_t *kn;
-    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes64")) == 0)
+    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes64")) == NULL)
     {
+        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes")) == NULL)
+        {
+            LogRel(("kstat_data_lookup(rbytes) -> %d, name=%s\n", errno, name));
+            return VERR_INTERNAL_ERROR;
+        }
+#if ARCH_BITS == 32
         if (g_fNotReported)
         {
             g_fNotReported = false;
             LogRel(("Failed to locate rbytes64, falling back to 32-bit counters...\n"));
         }
-        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes")) == 0)
-        {
-            LogRel(("kstat_data_lookup(rbytes) -> %d, name=%s\n", errno, name));
-            return VERR_INTERNAL_ERROR;
-        }
         *rx = wrapCorrection(kn->value.ul, *rx, "rbytes");
+#else
+        AssertCompile(sizeof(kn->value.ul) == sizeof(uint64_t));
+        *rx = wrapDetection(kn->value.ul, *rx, "rbytes");
+#endif
     }
     else
         *rx = wrapDetection(kn->value.ull, *rx, "rbytes64");
-    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes64")) == 0)
+    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes64")) == NULL)
     {
+        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes")) == NULL)
+        {
+            LogRel(("kstat_data_lookup(obytes) -> %d\n", errno));
+            return VERR_INTERNAL_ERROR;
+        }
+#if ARCH_BITS == 32
         if (g_fNotReported)
         {
             g_fNotReported = false;
             LogRel(("Failed to locate obytes64, falling back to 32-bit counters...\n"));
         }
-        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes")) == 0)
-        {
-            LogRel(("kstat_data_lookup(obytes) -> %d\n", errno));
-            return VERR_INTERNAL_ERROR;
-        }
         *tx = wrapCorrection(kn->value.ul, *tx, "obytes");
+#else
+        AssertCompile(sizeof(kn->value.ul) == sizeof(uint64_t));
+        *tx = wrapDetection(kn->value.ul, *tx, "obytes");
+#endif
     }
     else
         *tx = wrapDetection(kn->value.ull, *tx, "obytes64");
