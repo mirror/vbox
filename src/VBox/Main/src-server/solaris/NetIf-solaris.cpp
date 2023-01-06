@@ -115,10 +115,10 @@ static uint32_t kstatGet(const char *name)
     else
     {
         kstat_named_t *kn;
-        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"ifspeed")) == 0)
-            LogRel(("kstat_data_lookup(ifspeed) -> %d, name=%s\n", errno, name));
+        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"ifspeed")) != NULL)
+            uSpeed = (uint32_t)(kn->value.ul / 1000000); /* bits -> Mbits */
         else
-            uSpeed = kn->value.ul / 1000000; /* bits -> Mbits */
+            LogRel(("kstat_data_lookup(ifspeed) -> %d, name=%s\n", errno, name));
     }
     kstat_close(kc);
     LogFlow(("kstatGet(%s) -> %u Mbit/s\n", name, uSpeed));
@@ -129,7 +129,7 @@ static void queryIfaceSpeed(PNETIFINFO pInfo)
 {
     /* Don't query interface speed for inactive interfaces (see @bugref{6345}). */
     if (pInfo->enmStatus == NETIF_S_UP)
-        pInfo->uSpeedMbits =  kstatGet(pInfo->szShortName);
+        pInfo->uSpeedMbits = kstatGet(pInfo->szShortName);
     else
         pInfo->uSpeedMbits = 0;
     LogFlow(("queryIfaceSpeed(%s) -> %u\n", pInfo->szShortName, pInfo->uSpeedMbits));
@@ -429,7 +429,7 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
     return DI_WALK_CONTINUE;
 }
 
-int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
+int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 {
     /*
      * Use libdevinfo for determining all physical interfaces.
@@ -464,15 +464,15 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         if (!rc)
         {
             int cIfaces = RT_MIN(1024, IfNum.lifn_count); /* sane limit */
-            int cbIfaces = cIfaces * sizeof(struct lifreq);
-            struct lifreq *Ifaces = (struct lifreq *)RTMemTmpAlloc(cbIfaces);
-            if (Ifaces)
+            size_t cbIfaces = (unsigned)RT_MAX(cIfaces, 1) * sizeof(struct lifreq);
+            struct lifreq *paIfaces = (struct lifreq *)RTMemTmpAlloc(cbIfaces);
+            if (paIfaces)
             {
                 struct lifconf IfConfig;
                 RT_ZERO(IfConfig);
                 IfConfig.lifc_family = AF_INET;
-                IfConfig.lifc_len = cbIfaces;
-                IfConfig.lifc_buf = (caddr_t)Ifaces;
+                IfConfig.lifc_len = (int)cbIfaces;
+                IfConfig.lifc_buf = (caddr_t)paIfaces;
                 rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
                 if (!rc)
                 {
@@ -481,18 +481,18 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                         /*
                          * Skip loopback interfaces.
                          */
-                        if (!strncmp(Ifaces[i].lifr_name, RT_STR_TUPLE("lo")))
+                        if (!strncmp(paIfaces[i].lifr_name, RT_STR_TUPLE("lo")))
                             continue;
 
 #if 0
-                        rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
+                        rc = ioctl(Sock, SIOCGLIFADDR, &(paIfaces[i]));
                         if (rc >= 0)
                         {
-                            memcpy(Info.IPAddress.au8, ((struct sockaddr *)&Ifaces[i].lifr_addr)->sa_data,
+                            memcpy(Info.IPAddress.au8, ((struct sockaddr *)&paIfaces[i].lifr_addr)->sa_data,
                                    sizeof(Info.IPAddress.au8));
                             // SIOCGLIFNETMASK
                             struct arpreq ArpReq;
-                            memcpy(&ArpReq.arp_pa, &Ifaces[i].lifr_addr, sizeof(struct sockaddr_in));
+                            memcpy(&ArpReq.arp_pa, &paIfaces[i].lifr_addr, sizeof(struct sockaddr_in));
 
                             /*
                              * We might fail if the interface has not been assigned an IP address.
@@ -505,18 +505,17 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                                 memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
 
                             char szNICDesc[LIFNAMSIZ + 256];
-                            char *pszIface = Ifaces[i].lifr_name;
+                            char *pszIface = paIfaces[i].lifr_name;
                             strcpy(szNICDesc, pszIface);
 
                             vboxSolarisAddLinkHostIface(pszIface, &list);
                         }
 #endif
 
-                        char *pszIface = Ifaces[i].lifr_name;
-                        vboxSolarisAddLinkHostIface(pszIface, &list);
+                        vboxSolarisAddLinkHostIface(paIfaces[i].lifr_name, &list);
                     }
                 }
-                RTMemTmpFree(Ifaces);
+                RTMemTmpFree(paIfaces);
             }
         }
         close(Sock);
