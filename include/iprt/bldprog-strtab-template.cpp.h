@@ -378,15 +378,17 @@ static void bldProgStrTab_compressorAnalyzeString(PBLDPROGSTRTAB pThis, PBLDPROG
                 char const chSep = psz[cchWord];
                 if (chSep != '\0')
                 {
-                    BLDPROGWORDFREQSTATS NewWord = { 0, 0, chSep };
+                    BLDPROGWORDFREQSTATS const NewWord = { 0, 0, chSep };
                     pThis->Frequencies[strWord] = NewWord;
                 }
                 else
-# endif
                 {
-                    static BLDPROGWORDFREQSTATS s_NewWord = { 0 };
+                    static BLDPROGWORDFREQSTATS const s_NewWord = { 0, 0, 0 };
                     pThis->Frequencies[strWord] = s_NewWord;
                 }
+# else
+                pThis->Frequencies[strWord].cWithoutSep = 0;
+# endif
             }
 
 # if 0 /** @todo need better accounting for overlapping alternatives before this can be enabled. */
