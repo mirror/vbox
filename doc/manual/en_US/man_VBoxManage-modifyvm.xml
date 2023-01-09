@@ -425,17 +425,6 @@ time on documenting it. -->
           <arg choice="plain">off</arg>
           <arg choice="plain"><replaceable>IO-base</replaceable> <replaceable>IRQ</replaceable></arg>
         </group></arg>
-      <arg>--audio=<group choice="plain">
-          <arg choice="plain">none</arg>
-          <arg choice="plain">default</arg>
-          <arg choice="plain">null</arg>
-          <arg choice="plain">dsound</arg>
-          <arg choice="plain">was</arg>
-          <arg choice="plain">oss</arg>
-          <arg choice="plain">alsa</arg>
-          <arg choice="plain">pulse</arg>
-          <arg choice="plain">coreaudio</arg>
-        </group></arg>
       <arg>--audio-controller=<group choice="plain">
           <arg choice="plain">ac97</arg>
           <arg choice="plain">hda</arg>
@@ -446,6 +435,21 @@ time on documenting it. -->
           <arg choice="plain">ad1980</arg>
           <arg choice="plain">stac9221</arg>
           <arg choice="plain">sb16</arg>
+        </group></arg>
+      <arg>--audio-driver=<group choice="plain">
+          <arg choice="plain">none</arg>
+          <arg choice="plain">default</arg>
+          <arg choice="plain">null</arg>
+          <arg choice="plain">dsound</arg>
+          <arg choice="plain">was</arg>
+          <arg choice="plain">oss</arg>
+          <arg choice="plain">alsa</arg>
+          <arg choice="plain">pulse</arg>
+          <arg choice="plain">coreaudio</arg>
+        </group></arg>
+      <arg>--audio-enabled=<group choice="plain">
+          <arg choice="plain">on</arg>
+          <arg choice="plain">off</arg>
         </group></arg>
       <arg>--audio-in=<group choice="plain">
           <arg choice="plain">on</arg>
@@ -1934,23 +1938,6 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--audio=<replaceable>type</replaceable></option></term>
-          <listitem><para>
-              Specifies whether the VM has audio support, and if so,
-              which type. Valid audio type values are:
-              <literal>none</literal>, <literal>default</literal>,
-              <literal>null</literal>, <literal>dsound</literal>,
-              <literal>was</literal>, <literal>oss</literal>,
-              <literal>alsa</literal>, <literal>pulse</literal>, and
-              <literal>coreaudio</literal>.
-            </para><para>
-              Note that the audio types are dependent on the host
-              operating system. Use the <command>VBoxManage
-              modifyvm</command> command usage output to determine the
-              supported audio types for your host system.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term><option>--audio-controller=<replaceable>controller-type</replaceable></option></term>
           <listitem><para>
               Specifies the audio controller to be used with the VM.
@@ -1966,6 +1953,38 @@ it unless this changes. -->
               audio codec type values are: <literal>stac9700</literal>,
               <literal>ad1980</literal>, <literal>stac9221</literal>,
               and <literal>sb16</literal>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--audio-driver=<replaceable>type</replaceable></option></term>
+          <listitem><para>
+              Specifies whether which audio driver (backend) to use.
+              <literal>none</literal>, <literal>default</literal>,
+              <literal>null</literal>, <literal>dsound</literal>,
+              <literal>was</literal>, <literal>oss</literal>,
+              <literal>alsa</literal>, <literal>pulse</literal>, and
+              <literal>coreaudio</literal>.
+            </para><para>
+              Note that the audio driver are dependent on the host
+              operating system. Use the <command>VBoxManage
+              modifyvm</command> command usage output to determine the
+              supported audio types for your host system.
+            </para>
+            <para>
+              For maximum interoperability between hosts, the default
+              audio driver can be used. The VM will then automatically select
+              the most appropriate audio driver for the current host available.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--audio-enabled=on|off</option></term>
+          <listitem><para>
+              Specifies whether to enable or disable audio for the VM.
+            </para>
+            <para>
+              This option has precedence over the --audio-on and --audio-off
+              options, i.e. turning off audio via this option will turn off
+              both, input and output, audio.
             </para></listitem>
         </varlistentry>
         <varlistentry>

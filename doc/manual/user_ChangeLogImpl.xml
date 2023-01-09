@@ -118,6 +118,13 @@ Rules for adding a changelog entry to make them look more uniform:
         <para>Windows Host: Fixed support for VM autostart (bug#21349)</para>
       </listitem>
 
+      <listitem>
+        <para>Audio: The "--audio" option in VBoxManage is now marked as
+          deprecated; please use "--audio-driver" and "--audio-enabled"
+          instead. This will allow more flexibility when changing the driver
+          and/or controlling the audio functionality</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 

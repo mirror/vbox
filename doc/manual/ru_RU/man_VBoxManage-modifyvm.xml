@@ -422,17 +422,6 @@ time on documenting it. -->
           <arg choice="plain">off</arg>
           <arg choice="plain"><replaceable>IO-база</replaceable> <replaceable>IRQ</replaceable></arg>
         </group></arg>
-      <arg>--audio=<group choice="plain">
-          <arg choice="plain">none</arg>
-          <arg choice="plain">default</arg>
-          <arg choice="plain">null</arg>
-          <arg choice="plain">dsound</arg>
-          <arg choice="plain">was</arg>
-          <arg choice="plain">oss</arg>
-          <arg choice="plain">alsa</arg>
-          <arg choice="plain">pulse</arg>
-          <arg choice="plain">coreaudio</arg>
-        </group></arg>
       <arg>--audio-controller=<group choice="plain">
           <arg choice="plain">ac97</arg>
           <arg choice="plain">hda</arg>
@@ -443,6 +432,21 @@ time on documenting it. -->
           <arg choice="plain">ad1980</arg>
           <arg choice="plain">stac9221</arg>
           <arg choice="plain">sb16</arg>
+        </group></arg>
+      <arg>--audio-driver=<group choice="plain">
+          <arg choice="plain">none</arg>
+          <arg choice="plain">default</arg>
+          <arg choice="plain">null</arg>
+          <arg choice="plain">dsound</arg>
+          <arg choice="plain">was</arg>
+          <arg choice="plain">oss</arg>
+          <arg choice="plain">alsa</arg>
+          <arg choice="plain">pulse</arg>
+          <arg choice="plain">coreaudio</arg>
+        </group></arg>
+      <arg>--audio-enabled=<group choice="plain">
+          <arg choice="plain">on</arg>
+          <arg choice="plain">off</arg>
         </group></arg>
       <arg>--audio-in=<group choice="plain">
           <arg choice="plain">on</arg>
@@ -1881,23 +1885,6 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--audio=<replaceable>тип</replaceable></option></term>
-          <listitem><para>
-              Указывает, что ВМ имеет поддержку аудио определенного типа.
-              Допустимые значения:
-              <literal>none</literal>, <literal>default</literal>,
-              <literal>null</literal>, <literal>dsound</literal>,
-              <literal>was</literal>, <literal>oss</literal>,
-              <literal>alsa</literal>, <literal>pulse</literal> и
-              <literal>coreaudio</literal>.
-            </para><para>
-              Заметим, что типы аудио зависят от операционной системы
-              хоста. Вывод справки по команде <command>VBoxManage
-              modifyvm</command> поможет определить поддерживаемые
-              типы аудио для вашей операционной системы.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term><option>--audio-controller=<replaceable>тип-контроллера</replaceable></option></term>
           <listitem><para>
               Задает аудио контроллер, используемый в ВМ.
@@ -1913,6 +1900,41 @@ it unless this changes. -->
               значения: <literal>stac9700</literal>,
               <literal>ad1980</literal>, <literal>stac9221</literal>
               и <literal>sb16</literal>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--audio-driver=<replaceable>тип</replaceable></option></term>
+          <listitem><para>
+              Указывает, что ВМ имеет поддержку аудио определенного типа.
+              Допустимые значения:
+              <literal>none</literal>, <literal>default</literal>,
+              <literal>null</literal>, <literal>dsound</literal>,
+              <literal>was</literal>, <literal>oss</literal>,
+              <literal>alsa</literal>, <literal>pulse</literal> и
+              <literal>coreaudio</literal>.
+            </para><para>
+              Заметим, что типы аудио зависят от операционной системы
+              хоста. Вывод справки по команде <command>VBoxManage
+              modifyvm</command> поможет определить поддерживаемые
+              типы аудио для вашей операционной системы.
+            </para>
+            <para>
+              Для обеспечения максимальной совместимости между хостами можно
+              использовать стандартный можно использовать аудиодрайвер по
+              умолчанию. Затем виртуальная машина автоматически выберет
+              наиболее подходящий аудиодрайвер для текущего доступного хоста.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--audio-enabled=on|off</option></term>
+          <listitem><para>
+              Указывает, следует ли включить или отключить звук для виртуальной
+              машины.
+            </para>
+            <para>
+              Эта опция имеет приоритет над опциями --audio-on и --audio-off
+              т.е. отключение звука с помощью этой опции приведет к отключению
+              как входной, так и выходной звук.
             </para></listitem>
         </varlistentry>
         <varlistentry>

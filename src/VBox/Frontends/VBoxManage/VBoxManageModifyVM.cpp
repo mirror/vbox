@@ -177,7 +177,9 @@ enum
     MODIFYVM_GUESTMEMORYBALLOON,
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIOCODEC,
-    MODIFYVM_AUDIO,
+    MODIFYVM_AUDIODRIVER,
+    MODIFYVM_AUDIOENABLED,
+    MODIFYVM_AUDIO,                   /* Deprecated; remove in the next major version. */
     MODIFYVM_AUDIOIN,
     MODIFYVM_AUDIOOUT,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
@@ -390,6 +392,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     OPT2("--audio-controller",              "--audiocontroller",        MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING),
     OPT2("--audio-codec",                   "--audiocodec",             MODIFYVM_AUDIOCODEC,                RTGETOPT_REQ_STRING),
     OPT1("--audio",                                                     MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING),
+    OPT2("--audio-driver",                  "--audiodriver",            MODIFYVM_AUDIODRIVER,               RTGETOPT_REQ_STRING),
+    OPT2("--audio-enabled",                 "--audioenabled",           MODIFYVM_AUDIOENABLED,              RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--audio-in",                      "--audioin",                MODIFYVM_AUDIOIN,                   RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--audio-out",                     "--audioout",               MODIFYVM_AUDIOOUT,                  RTGETOPT_REQ_BOOL_ONOFF),
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
@@ -2592,86 +2596,74 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_AUDIO:
+            case MODIFYVM_AUDIODRIVER:
+                RT_FALL_THROUGH();
+            case MODIFYVM_AUDIO: /** @todo Deprecated; remove. */
+            {
+                if (c == MODIFYVM_AUDIO)
+                    RTStrmPrintf(g_pStdErr,
+                                 ModifyVM::tr("Warning: --audio is deprecated and will be removed soon. Use --audio-driver instead!\n"));
+
+                ComPtr<IAudioSettings> audioSettings;
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
+                ComPtr<IAudioAdapter> audioAdapter;
+                CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
+                ASSERT(audioAdapter);
+                /* disable? */
+                if (   !RTStrICmp(ValueUnion.psz, "none")
+                    || !RTStrICmp(ValueUnion.psz, "null"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
+                else if (!RTStrICmp(ValueUnion.psz, "default"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Default));
+#ifdef RT_OS_WINDOWS
+# ifdef VBOX_WITH_WINMM
+                else if (!RTStrICmp(ValueUnion.psz, "winmm"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
+# endif
+                else if (!RTStrICmp(ValueUnion.psz, "dsound"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
+                else if (!RTStrICmp(ValueUnion.psz, "was"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WAS));
+#endif /* RT_OS_WINDOWS */
+#ifdef VBOX_WITH_AUDIO_OSS
+                else if (!RTStrICmp(ValueUnion.psz, "oss"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+#endif
+#ifdef VBOX_WITH_AUDIO_ALSA
+                else if (!RTStrICmp(ValueUnion.psz, "alsa"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
+#endif
+#ifdef VBOX_WITH_AUDIO_PULSE
+                else if (!RTStrICmp(ValueUnion.psz, "pulse"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
+#endif
+#ifdef RT_OS_DARWIN
+                else if (!RTStrICmp(ValueUnion.psz, "coreaudio"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
+#endif /* !RT_OS_DARWIN */
+                else
+                {
+                    errorArgument(ModifyVM::tr("Invalid %s argument '%s'"),
+                                  c == MODIFYVM_AUDIO ? "--audio" : "--audio-driver", ValueUnion.psz);
+                    hrc = E_FAIL;
+                }
+
+                if (   SUCCEEDED(hrc)
+                    && c == MODIFYVM_AUDIO) /* To keep the original behavior until we remove the command. */
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(RTStrICmp(ValueUnion.psz, "none") == false ? false : true));
+
+                break;
+            }
+
+            case MODIFYVM_AUDIOENABLED:
             {
                 ComPtr<IAudioSettings> audioSettings;
                 CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioSettings)(audioSettings.asOutParam()));
                 ComPtr<IAudioAdapter> audioAdapter;
                 CHECK_ERROR_BREAK(audioSettings, COMGETTER(Adapter)(audioAdapter.asOutParam()));
                 ASSERT(audioAdapter);
-/** @todo r=klaus: don't unconditionally bolt together setting the audio driver
- * and enabling the device. Doing this more cleverly allows changing the audio
- * driver for VMs in saved state, which can be very useful when moving VMs
- * between systems with different setup. The driver doesn't leave any traces in
- * saved state. The GUI also might learn this trick if it doesn't use it
- * already. */
-                /* disable? */
-                if (!RTStrICmp(ValueUnion.psz, "none"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(false));
-                }
-                else if (!RTStrICmp(ValueUnion.psz, "default"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Default));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-                else if (!RTStrICmp(ValueUnion.psz, "null"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#ifdef RT_OS_WINDOWS
-#ifdef VBOX_WITH_WINMM
-                else if (!RTStrICmp(ValueUnion.psz, "winmm"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif
-                else if (!RTStrICmp(ValueUnion.psz, "dsound"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-                else if (!RTStrICmp(ValueUnion.psz, "was"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WAS));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif /* RT_OS_WINDOWS */
-#ifdef VBOX_WITH_AUDIO_OSS
-                else if (!RTStrICmp(ValueUnion.psz, "oss"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif
-#ifdef VBOX_WITH_AUDIO_ALSA
-                else if (!RTStrICmp(ValueUnion.psz, "alsa"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif
-#ifdef VBOX_WITH_AUDIO_PULSE
-                else if (!RTStrICmp(ValueUnion.psz, "pulse"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif
-#ifdef RT_OS_DARWIN
-                else if (!RTStrICmp(ValueUnion.psz, "coreaudio"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif /* !RT_OS_DARWIN */
-                else
-                {
-                    errorArgument(ModifyVM::tr("Invalid --audio argument '%s'"), ValueUnion.psz);
-                    hrc = E_FAIL;
-                }
+
+                CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(ValueUnion.f));
                 break;
             }
 
