@@ -50,6 +50,12 @@
 
 #include <VBoxVideo.h>
 
+#if RTLNX_VER_MIN(6,2,0)
+# define VBOX_FBDEV_INFO(_helper) _helper.info
+#else
+# define VBOX_FBDEV_INFO(_helper) _helper.fbdev
+#endif
+
 #if RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 /**
  * Tell the host about dirty rectangles to update.
@@ -302,7 +308,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	}
 
 #if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
-	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.resource->num_pages, &bo->kmap);
+	ret = ttm_bo_kmap(&bo->bo, 0, VBOX_BO_RESOURCE_NUM_PAGES(bo->bo.resource), &bo->kmap);
 #elif RTLNX_VER_MIN(5,12,0) || RTLNX_RHEL_MAJ_PREREQ(8,5)
 	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.mem.num_pages, &bo->kmap);
 #else
@@ -315,7 +321,11 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 		return ret;
 	}
 
+#if RTLNX_VER_MIN(6,2,0)
+	info = drm_fb_helper_alloc_info(helper);
+#else
 	info = drm_fb_helper_alloc_fbi(helper);
+#endif
 	if (IS_ERR(info))
 		return -PTR_ERR(info);
 
@@ -395,11 +405,15 @@ void vbox_fbdev_fini(struct drm_device *dev)
 	struct vbox_framebuffer *afb = &fbdev->afb;
 
 #ifdef CONFIG_FB_DEFERRED_IO
-	if (fbdev->helper.fbdev && fbdev->helper.fbdev->fbdefio)
-		fb_deferred_io_cleanup(fbdev->helper.fbdev);
+	if (VBOX_FBDEV_INFO(fbdev->helper) && VBOX_FBDEV_INFO(fbdev->helper)->fbdefio)
+		fb_deferred_io_cleanup(VBOX_FBDEV_INFO(fbdev->helper));
 #endif
 
+#if RTLNX_VER_MIN(6,2,0)
+	drm_fb_helper_unregister_info(&fbdev->helper);
+#else
 	drm_fb_helper_unregister_fbi(&fbdev->helper);
+#endif
 
 	if (afb->obj) {
 		struct vbox_bo *bo = gem_to_vbox_bo(afb->obj);
@@ -482,7 +496,7 @@ err_fini:
 
 void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
 {
-	struct fb_info *fbdev = vbox->fbdev->helper.fbdev;
+	struct fb_info *fbdev = VBOX_FBDEV_INFO(vbox->fbdev->helper);
 
 	fbdev->fix.smem_start = fbdev->apertures->ranges[0].base + gpu_addr;
 	fbdev->fix.smem_len = vbox->available_vram_size - gpu_addr;

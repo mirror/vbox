@@ -242,6 +242,15 @@ static inline void drm_gem_object_put(struct drm_gem_object *obj)
 # define VBOX_DRM_TO_PCI_DEV(_dev) _dev->pdev
 #endif
 
+/** Field "num_pages" of struct ttm_resource was renamed to "size" in 6.2 and
+ * now represents number of bytes. This macro handles this change. Input
+ * argument is a pointer to struct ttm_resource. */
+#if RTLNX_VER_MIN(6,2,0)
+# define VBOX_BO_RESOURCE_NUM_PAGES(_resource) PFN_UP(_resource->size)
+#else
+# define VBOX_BO_RESOURCE_NUM_PAGES(_resource) _resource->num_pages
+#endif
+
 /** How frequently we refresh if the guest is not providing dirty rectangles. */
 #define VBOX_REFRESH_PERIOD (HZ / 2)
 
