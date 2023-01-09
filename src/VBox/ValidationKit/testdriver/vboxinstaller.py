@@ -84,7 +84,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._fAutoInstallPuelExtPack = True;
         self._fKernelDrivers          = True;
         self._fWinForcedInstallTimestampCA = True;
-        self._fInstallMSCRT = False; # By default we don't install any CRT.
+        self._fInstallMsCrt = False; # By default we don't install the Microsoft CRT (only needed once).
 
     #
     # Base method we override
@@ -146,9 +146,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
         elif asArgs[iArg] == '--forced-win-install-timestamp-ca':
             self._fWinForcedInstallTimestampCA = True;
         elif asArgs[iArg] == '--no-win-install-mscrt':
-            self._fInstallMSCRT = False;
+            self._fInstallMsCrt = False;
         elif asArgs[iArg] == '--win-install-mscrt':
-            self._fInstallMSCRT = True;
+            self._fInstallMsCrt = True;
         else:
             return TestDriverBase.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -932,24 +932,22 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
-        #
-        # Install the MS Visual Studio Redistributable, if needed.
-        #
-        # Since VBox 7.0 this is a prerequisite, as we don't ship our own redistributable files anymore.
-        #
-        if self._fInstallMSCRT:
-            reporter.log('Installing MS Visual Studio Redistributable ...');
+        # Install the MS Visual Studio Redistributable, if requested. (VBox 7.0+ needs this installed once.)
+        if self._fInstallMsCrt:
+            reporter.log('Installing MS Visual Studio Redistributable (untested code)...');
+            ## @todo Test this.
+            ## @todo We could cache this on the testrsrc share.
             sName = "vc_redist.x64.exe"
-            ## @todo Can we cache this somewhere, so that we don't need to download this everytime?
             sUrl  = "https://aka.ms/vs/17/release/" + sName # Permalink, according to MS.
-            if webutils.downloadFile(sUrl, sName, self.sBuildPath, reporter.log, reporter.log) is not True:
-                sExe   = os.path.join(self.sBuildPath, sName);
+            sExe  = os.path.join(self.sBuildPath, sName);
+            if webutils.downloadFile(sUrl, sExe, None, reporter.log, reporter.log):
                 asArgs = [ sExe, '/Q' ];
                 fRc2, iRc = self._sudoExecuteSync(asArgs);
                 if fRc2 is False:
-                    reporter.error('Installing MS Visual Studio Redistributable failed, exit code: %s' % (iRc,));
-                    return False;
+                    return reporter.error('Installing MS Visual Studio Redistributable failed, exit code: %s' % (iRc,));
                 reporter.log('Installing MS Visual Studio Redistributable done');
+            else:
+                return False;
 
         # We need the help text to detect supported options below.
         reporter.log('Executing: %s' % ([sExe, '--silent', '--help'], ));
