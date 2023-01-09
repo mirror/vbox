@@ -253,7 +253,10 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RT
              */
             CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR6);
             pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
-            pVCpu->cpum.GstCtx.dr[6] |= fMatched;    /* All matched  */
+            if (pVM->cpum.ro.GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INTEL)
+                pVCpu->cpum.GstCtx.dr[6] |= fMatched & fEnabled;
+            else
+                pVCpu->cpum.GstCtx.dr[6] |= fMatched;    /* Intel: All matched, regardless of whether they're enabled or not  */
             pVCpu->cpum.GstCtx.dr[7] &= ~X86_DR7_GD;
             LogFlow(("DBGFBpCheckInstruction: hit hw breakpoints %#x at %04x:%RGv (%RGv)\n",
                      fMatched, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPtrPC));
