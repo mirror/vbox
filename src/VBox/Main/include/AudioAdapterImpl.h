@@ -84,9 +84,10 @@ private:
     HRESULT getProperty(const com::Utf8Str &aKey, com::Utf8Str &aValue);
     HRESULT setProperty(const com::Utf8Str &aKey, const com::Utf8Str &aValue);
 
-    AudioSettings * const              mParent;
-    const ComObjPtr<AudioAdapter>      mPeer;
-    Backupable<settings::AudioAdapter> mData;
+private:
+
+    struct Data;
+    Data *m;
 };
 
 #endif /* !MAIN_INCLUDED_AudioAdapterImpl_h */

@@ -47,10 +47,10 @@
 struct AudioSettings::Data
 {
     Data()
-        : pParent(NULL)
+        : pMachine(NULL)
     { }
 
-    Machine * const                pParent;
+    Machine * const                pMachine;
     const ComObjPtr<AudioAdapter>  pAdapter;
     const ComObjPtr<AudioSettings> pPeer;
 };
@@ -75,12 +75,11 @@ void AudioSettings::FinalRelease()
 /**
  * Initializes the audio settings object.
  *
- * @param aParent  Handle of the parent object.
+ * @returns HRESULT
+ * @param   aParent             Pointer of the parent object.
  */
 HRESULT AudioSettings::init(Machine *aParent)
 {
-    LogFlowThisFunc(("aParent=%p\n", aParent));
-
     ComAssertRet(aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -90,7 +89,7 @@ HRESULT AudioSettings::init(Machine *aParent)
     m = new Data();
 
     /* share the parent weakly */
-    unconst(m->pParent) = aParent;
+    unconst(m->pMachine) = aParent;
 
     /* create the audio adapter object (always present, default is disabled) */
     unconst(m->pAdapter).createObject();
@@ -108,15 +107,16 @@ HRESULT AudioSettings::init(Machine *aParent)
  * the object passed as an argument.
  *
  * @note This object must be destroyed before the original object
- * it shares data with is destroyed.
+ *       it shares data with is destroyed.
  *
  * @note Locks @a aThat object for reading.
+ *
+ * @returns HRESULT
+ * @param   aParent             Pointer of the parent object.
+ * @param   aThat               Pointer to audio adapter to use settings from.
  */
 HRESULT AudioSettings::init(Machine *aParent, AudioSettings *aThat)
 {
-    LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
-
     ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -125,19 +125,21 @@ HRESULT AudioSettings::init(Machine *aParent, AudioSettings *aThat)
 
     m = new Data();
 
-    unconst(m->pParent) = aParent;
-    unconst(m->pPeer)   = aThat;
+    unconst(m->pMachine) = aParent;
+    unconst(m->pPeer)    = aThat;
 
     AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
-    unconst(m->pAdapter) = aThat->m->pAdapter;
+    HRESULT hrc = unconst(m->pAdapter).createObject();
+    ComAssertComRCRet(hrc, hrc);
+    hrc = m->pAdapter->init(this, aThat->m->pAdapter);
+    ComAssertComRCRet(hrc, hrc);
 
     autoInitSpan.setSucceeded();
 
-    LogFlowThisFuncLeave();
     return S_OK;
 }
 
@@ -147,12 +149,13 @@ HRESULT AudioSettings::init(Machine *aParent, AudioSettings *aThat)
  * of the original object passed as an argument.
  *
  * @note Locks @a aThat object for reading.
+ *
+ * @returns HRESULT
+ * @param   aParent             Pointer of the parent object.
+ * @param   aThat               Pointer to audio adapter to use settings from.
  */
 HRESULT AudioSettings::initCopy(Machine *aParent, AudioSettings *aThat)
 {
-    LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
-
     ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -161,7 +164,7 @@ HRESULT AudioSettings::initCopy(Machine *aParent, AudioSettings *aThat)
 
     m = new Data();
 
-    unconst(m->pParent) = aParent;
+    unconst(m->pMachine) = aParent;
     // pPeer is left null
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
@@ -174,7 +177,6 @@ HRESULT AudioSettings::initCopy(Machine *aParent, AudioSettings *aThat)
 
     autoInitSpan.setSucceeded();
 
-    LogFlowThisFuncLeave();
     return S_OK;
 }
 
@@ -184,12 +186,13 @@ HRESULT AudioSettings::initCopy(Machine *aParent, AudioSettings *aThat)
  */
 void AudioSettings::uninit(void)
 {
-    LogFlowThisFunc(("\n"));
-
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    unconst(m->pPeer)    = NULL;
+    unconst(m->pMachine) = NULL;
 
     delete m;
     m = NULL;
@@ -229,25 +232,13 @@ HRESULT AudioSettings::setHostAudioDevice(const ComPtr<IHostAudioDevice> &aDevic
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Returns the parent object as a weak pointer.
- */
-Machine* AudioSettings::i_getParent(void)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), NULL);
-
-    AssertPtrReturn(m, NULL);
-    return m->pParent;
-}
-
-/**
  * Determines whether the audio settings currently can be changed or not.
  *
  * @returns \c true if the settings can be changed, \c false if not.
  */
 bool AudioSettings::i_canChangeSettings(void)
 {
-    AutoAnyStateDependency adep(m->pParent);
+    AutoAnyStateDependency adep(m->pMachine);
     if (FAILED(adep.rc()))
         return false;
 
@@ -258,32 +249,29 @@ bool AudioSettings::i_canChangeSettings(void)
 /**
  * Gets called when the machine object needs to know that audio adapter settings
  * have been changed.
+ *
+ * @param   pAdapter             Pointer to audio adapter which has changed.
  */
 void AudioSettings::i_onAdapterChanged(IAudioAdapter *pAdapter)
 {
-    LogFlowThisFuncEnter();
-
     AssertPtrReturnVoid(pAdapter);
-
-    m->pParent->i_onAudioAdapterChange(pAdapter); // mParent is const, needs no locking
-
-    LogFlowThisFuncLeave();
+    m->pMachine->i_onAudioAdapterChange(pAdapter); // mParent is const, needs no locking
 }
 
 /**
  * Gets called when the machine object needs to know that a host audio device
  * has been changed.
+ *
+ * @param   pDevice             Host audio device which has changed.
+ * @param   fIsNew              Set to \c true if this is a new device (i.e. has not been present before), \c false if not.
+ * @param   enmState            The current state of the device.
+ * @param   pErrInfo            Additional error information in case of error(s).
  */
 void AudioSettings::i_onHostDeviceChanged(IHostAudioDevice *pDevice,
                                           bool fIsNew, AudioDeviceState_T enmState, IVirtualBoxErrorInfo *pErrInfo)
 {
-    LogFlowThisFuncEnter();
-
     AssertPtrReturnVoid(pDevice);
-
-    m->pParent->i_onHostAudioDeviceChange(pDevice, fIsNew, enmState, pErrInfo); // mParent is const, needs no locking
-
-    LogFlowThisFuncLeave();
+    m->pMachine->i_onHostAudioDeviceChange(pDevice, fIsNew, enmState, pErrInfo); // mParent is const, needs no locking
 }
 
 /**
@@ -292,20 +280,17 @@ void AudioSettings::i_onHostDeviceChanged(IHostAudioDevice *pDevice,
  */
 void AudioSettings::i_onSettingsChanged(void)
 {
-    LogFlowThisFuncEnter();
-
-    AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    m->pParent->i_setModified(Machine::IsModified_AudioSettings);
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_AudioSettings);
     mlock.release();
-
-    LogFlowThisFuncLeave();
 }
 
 /**
  * Loads settings from the given machine node.
  * May be called once right after this object creation.
  *
- * @param data Configuration settings.
+ * @returns HRESULT
+ * @param   data                Audio adapter configuration settings to load from.
  *
  * @note Locks this object for writing.
  */
@@ -323,9 +308,10 @@ HRESULT AudioSettings::i_loadSettings(const settings::AudioAdapter &data)
 }
 
 /**
- * Saves settings to the given node.
+ * Saves audio settings to the given machine node.
  *
- * @param data Configuration settings.
+ * @returns HRESULT
+ * @param   data                Audio configuration settings to save to.
  *
  * @note Locks this object for reading.
  */
@@ -343,8 +329,15 @@ HRESULT AudioSettings::i_saveSettings(settings::AudioAdapter &data)
 }
 
 /**
+ * Copies settings from a given audio settings object.
+ *
+ * This object makes a private copy of data of the original object passed as
+ * an argument.
+ *
  * @note Locks this object for writing, together with the peer object
- * represented by @a aThat (locked for reading).
+ *       represented by @a aThat (locked for reading).
+ *
+ * @param aThat                 Audio settings to load from.
  */
 void AudioSettings::i_copyFrom(AudioSettings *aThat)
 {
@@ -405,6 +398,8 @@ HRESULT AudioSettings::i_applyDefaults(ComObjPtr<GuestOSType> &aGuestOsType)
 }
 
 /**
+ * Rolls back the current configuration to a former state.
+ *
  * @note Locks this object for writing.
  */
 void AudioSettings::i_rollback(void)
@@ -421,8 +416,10 @@ void AudioSettings::i_rollback(void)
 }
 
 /**
+ * Commits the current settings and propagates those to a peer (if assigned).
+ *
  * @note Locks this object for writing, together with the peer object (also
- * for writing) if there is one.
+ *       for writing) if there is one.
  */
 void AudioSettings::i_commit(void)
 {

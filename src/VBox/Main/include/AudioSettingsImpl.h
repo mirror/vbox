@@ -63,7 +63,6 @@ public:
     HRESULT getAdapter(ComPtr<IAudioAdapter> &aAdapter);
 
     // public methods only for internal purposes
-    Machine* i_getParent(void);
     bool     i_canChangeSettings(void);
     void     i_onAdapterChanged(IAudioAdapter *pAdapter);
     void     i_onHostDeviceChanged(IHostAudioDevice *pDevice, bool fIsNew, AudioDeviceState_T enmState, IVirtualBoxErrorInfo *pErrInfo);
