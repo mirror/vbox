@@ -381,8 +381,14 @@ typedef struct IOMCPU
     /** MMIO port registration index for the last IOMR3MmioPhysHandler call.
      * @note pretty static as only used by APIC on AMD-V.  */
     uint16_t                            idxMmioLastPhysHandler;
-    uint16_t                            au16Padding[3];
+    uint16_t                            au16Padding[2];
     /** @} */
+
+    /** MMIO recursion guard (see @bugref{10315}). */
+    uint8_t                             cMmioRecursionDepth;
+    uint8_t                             bPadding;
+    /** The MMIO recursion stack (ring-3 version). */
+    PPDMDEVINSR3                        apMmioRecursionStack[2];
 } IOMCPU;
 /** Pointer to IOM per virtual CPU instance data. */
 typedef IOMCPU *PIOMCPU;
@@ -480,6 +486,7 @@ typedef struct IOM
     STAMCOUNTER                     StatMmioCommitsPgm;
     STAMCOUNTER                     StatMmioStaleMappings;
     STAMCOUNTER                     StatMmioDevLockContentionR0;
+    STAMCOUNTER                     StatMmioTooDeepRecursion;
     /** @} */
 } IOM;
 #ifdef IOM_WITH_CRIT_SECT_RW

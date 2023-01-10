@@ -911,6 +911,36 @@ DECLCALLBACK(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
     }
 
     /*
+     * Guard against device configurations causing recursive MMIO accesses
+     * (see @bugref{10315}).
+     */
+    uint8_t const idxDepth = pVCpu->iom.s.cMmioRecursionDepth;
+    if (RT_LIKELY(idxDepth < RT_ELEMENTS(pVCpu->iom.s.apMmioRecursionStack)))
+    {
+        pVCpu->iom.s.cMmioRecursionDepth  = idxDepth + 1;
+        /** @todo Add iomr0 with a apMmioRecursionStack for ring-0. */
+#ifdef IN_RING3
+        pVCpu->iom.s.apMmioRecursionStack[idxDepth] = pDevIns;
+#endif
+    }
+    else
+    {
+        STAM_REL_COUNTER_INC(&pVM->iom.s.StatMmioTooDeepRecursion);
+#ifdef IN_RING3
+        AssertCompile(RT_ELEMENTS(pVCpu->iom.s.apMmioRecursionStack) == 2);
+        LogRelMax(64, ("iomMmioHandlerNew: Too deep recursion %RGp LB %#zx: %p (%s); %p (%s); %p (%s)\n",
+                       GCPhysFault, cbBuf, pDevIns, pDevIns->pReg->szName,
+                       pVCpu->iom.s.apMmioRecursionStack[1], pVCpu->iom.s.apMmioRecursionStack[1]->pReg->szName,
+                       pVCpu->iom.s.apMmioRecursionStack[0], pVCpu->iom.s.apMmioRecursionStack[0]->pReg->szName));
+#else
+        LogRelMax(64, ("iomMmioHandlerNew: Too deep recursion %RGp LB %#zx!: %p (%s)\n",
+                       GCPhysFault, cbBuf, pDevIns, pDevIns->pReg->szName));
+#endif
+        return VINF_PGM_HANDLER_DO_DEFAULT;
+    }
+
+
+    /*
      * Perform locking and the access.
      *
      * Writes requiring a return to ring-3 are buffered by IOM so IEM can
@@ -918,6 +948,9 @@ DECLCALLBACK(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
      *
      * Note! We may end up locking the device even when the relevant callback is
      *       NULL.  This is supposed to be an unlikely case, so not optimized yet.
+     *
+     * Note! All returns goes thru the one return statement at the end of the
+     *       function in order to correctly maintaint the recursion counter.
      */
     VBOXSTRICTRC rcStrict = PDMCritSectEnter(pVM, pDevIns->CTX_SUFF(pCritSectRo), rcToRing3);
     if (rcStrict == VINF_SUCCESS)
@@ -1018,6 +1051,8 @@ DECLCALLBACK(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
 #endif
     else
         AssertMsg(RT_FAILURE_NP(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    pVCpu->iom.s.cMmioRecursionDepth = idxDepth;
     return rcStrict;
 }
 
