@@ -503,6 +503,10 @@ class tdUnitTest1(vbox.TestDriver):
                 reporter.log('Unit test source dir path: ', self.sUnitTestsPathSrc)
             else:
                 reporter.error('Unable to find unit test source dir. Candidates: %s' % (asCandidates,));
+                if reporter.getVerbosity() >= 2:
+                    reporter.log('Contents of "%s"' % self.sScratchPath);
+                    for paths, dirs, files in os.walk(self.sScratchPath):
+                        reporter.log('{} {} {}'.format(repr(paths), repr(dirs), repr(files)));
                 return False
 
         else:
@@ -669,7 +673,7 @@ class tdUnitTest1(vbox.TestDriver):
             else:
                 self.sExeSuff = '';
         else:
-            self.sExeSuff = '.exe' if utils.getHostOs() in [ 'win', 'dos', 'os2' ] else '';
+            self.sExeSuff = base.exeSuff();
 
         self._testRunUnitTestsSet(oTestVm, r'^tst*', 'testcase');
         self._testRunUnitTestsSet(oTestVm, r'^tst*', '.');
@@ -684,6 +688,7 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log('*********************************************************');
         reporter.log('           Target: %s' % (oTestVm.sVmName if oTestVm else 'local',));
         reporter.log('             Mode: %s' % (self.sMode,));
+        reporter.log('       Exe suffix: %s' % (self.sExeSuff,));
         reporter.log('Unit tests source: %s %s'
                      % (self.sUnitTestsPathSrc, '(on remote)' if self.sMode == 'remote-exec' else '',));
         reporter.log('VBox install root: %s %s'
