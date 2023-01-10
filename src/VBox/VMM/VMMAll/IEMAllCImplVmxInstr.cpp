@@ -9051,7 +9051,7 @@ VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTG
 
         IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
         RTGCUINTPTR64 const GCPtrInvAddr = uDesc.s.Hi;
-        uint8_t       const uVpid        = uDesc.s.Lo & UINT64_C(0xfff);
+        uint16_t      const uVpid        = uDesc.Words.w0;
         uint64_t      const uCr3         = pVCpu->cpum.GstCtx.cr3;
         switch (u64InvvpidType)
         {
