@@ -5498,7 +5498,7 @@ MediumVariant_T Medium::i_getPreferredDiffVariant()
 
     /* m->variant is const, no need to lock */
     ULONG mediumVariantFlags = (ULONG)m->variant;
-    mediumVariantFlags &= ~(ULONG)(MediumVariant_Fixed | MediumVariant_VmdkStreamOptimized);
+    mediumVariantFlags &= ~(ULONG)(MediumVariant_Fixed | MediumVariant_VmdkStreamOptimized | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk);
     mediumVariantFlags |= MediumVariant_Diff;
     return (MediumVariant_T)mediumVariantFlags;
 }
@@ -9061,7 +9061,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
             vrc = VDCreateDiff(hdd,
                                targetFormat.c_str(),
                                targetLocation.c_str(),
-                                 (task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_RawDisk))
+                                 (task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk))
                                | VD_IMAGE_FLAGS_DIFF,
                                NULL,
                                targetId.raw(),
