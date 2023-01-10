@@ -42,7 +42,7 @@
 /* Forward declarations: */
 class UIMultiScreenLayout;
 
-/* Fullscreen machine logic implementation: */
+/** UIMachineLogic subclass used as full-screen machine logic implementation. */
 class UIMachineLogicFullscreen : public UIMachineLogic
 {
     Q_OBJECT;
@@ -56,18 +56,25 @@ signals:
     void sigNotifyAboutNativeFullscreenShouldBeExited(UIMachineWindow *pMachineWindow = 0);
 #endif /* RT_OS_DARWIN */
 
-#ifdef VBOX_WS_MAC
 public:
 
+    /** Constructs full-screen logic passing @a pParent to the base-class.
+      * @param  pSession  Brings the session UI reference. */
+    UIMachineLogicFullscreen(QObject *pParent, UISession *pSession);
+    /** Destructs full-screen logic. */
+    virtual ~UIMachineLogicFullscreen() RT_OVERRIDE;
+
+    /** Returns an index of host-screen for guest-screen with @a iScreenId specified. */
+    int hostScreenForGuestScreen(int iScreenId) const;
+    /** Returns whether there is a host-screen for guest-screen with @a iScreenId specified. */
+    bool hasHostScreenForGuestScreen(int iScreenId) const;
+
+#ifdef VBOX_WS_MAC
     /** Returns whether screens have separate spaces. */
     bool screensHaveSeparateSpaces() const { return m_fScreensHaveSeparateSpaces; }
 #endif /* VBOX_WS_MAC */
 
 protected:
-
-    /* Constructor/destructor: */
-    UIMachineLogicFullscreen(QObject *pParent, UISession *pSession);
-    ~UIMachineLogicFullscreen();
 
     /* Check if this logic is available: */
     bool checkAvailability();
@@ -77,10 +84,6 @@ protected:
 
     /** Adjusts machine-window geometry if necessary for 'Fullscreen'. */
     virtual void adjustMachineWindowsGeometry();
-
-    /* Helpers: Multi-screen stuff: */
-    int hostScreenForGuestScreen(int iScreenId) const;
-    bool hasHostScreenForGuestScreen(int iScreenId) const;
 
 private slots:
 
@@ -171,12 +174,6 @@ private:
     /** Mac OS X: Contains machine-window(s) marked as 'invalid fullscreen'. */
     QSet<UIMachineWindow*> m_invalidFullscreenMachineWindows;
 #endif /* VBOX_WS_MAC */
-
-    /* Friend classes: */
-    friend class UIMachineLogic;
-    friend class UIMachineWindowFullscreen;
-    friend class UIMachineViewFullscreen;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_fullscreen_UIMachineLogicFullscreen_h */
-

@@ -81,4 +81,3 @@ bool UIKeyboardHandlerFullscreen::eventFilter(QObject *pWatchedObject, QEvent *p
     /* Else just propagate to base-class: */
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
-

@@ -122,4 +122,3 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
 #endif /* !VBOX_WS_MAC */
-

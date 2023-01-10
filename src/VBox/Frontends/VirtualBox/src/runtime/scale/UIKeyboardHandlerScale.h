@@ -40,7 +40,7 @@ class UIKeyboardHandlerScale : public UIKeyboardHandler
 {
     Q_OBJECT;
 
-protected:
+public:
 
     /** Scale keyboard-handler constructor. */
     UIKeyboardHandlerScale(UIMachineLogic *pMachineLogic);
@@ -53,9 +53,6 @@ private:
     /** General event-filter. */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 #endif /* !VBOX_WS_MAC */
-
-    /* Friend class: */
-    friend class UIKeyboardHandler;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_scale_UIKeyboardHandlerScale_h */

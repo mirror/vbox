@@ -31,14 +31,15 @@
 # pragma once
 #endif
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMachineView.h"
 
+/** UIMachineView subclass used as normal machine view implementation. */
 class UIMachineViewNormal : public UIMachineView
 {
     Q_OBJECT;
 
-protected:
+public:
 
     /* Normal machine-view constructor: */
     UIMachineViewNormal(UIMachineWindow *pMachineWindow, ulong uScreenId);
@@ -83,10 +84,6 @@ private:
 
     /* Private members: */
     bool m_fGuestAutoresizeEnabled : 1;
-
-    /* Friend classes: */
-    friend class UIMachineView;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_normal_UIMachineViewNormal_h */
-

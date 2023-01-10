@@ -34,13 +34,12 @@
 /* GUI includes: */
 #include "UIMachineWindow.h"
 
-/** UIMachineWindow reimplementation,
-  * providing GUI with machine-window for the scale mode. */
+/** UIMachineWindow subclass used as scaled machine window implementation. */
 class UIMachineWindowScale : public UIMachineWindow
 {
     Q_OBJECT;
 
-protected:
+public:
 
     /** Constructor, passes @a pMachineLogic and @a uScreenId to the UIMachineWindow constructor. */
     UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId);
@@ -86,9 +85,6 @@ private:
     QRect  m_geometry;
     /** Holds the geometry save timer ID. */
     int  m_iGeometrySaveTimerId;
-
-    /** Factory support. */
-    friend class UIMachineWindow;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_scale_UIMachineWindowScale_h */

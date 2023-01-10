@@ -65,6 +65,16 @@ UIMachineLogicSeamless::~UIMachineLogicSeamless()
     delete m_pScreenLayout;
 }
 
+int UIMachineLogicSeamless::hostScreenForGuestScreen(int iScreenId) const
+{
+    return m_pScreenLayout->hostScreenForGuestScreen(iScreenId);
+}
+
+bool UIMachineLogicSeamless::hasHostScreenForGuestScreen(int iScreenId) const
+{
+    return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
+}
+
 bool UIMachineLogicSeamless::checkAvailability()
 {
     /* Check if there is enough physical memory to enter seamless: */
@@ -101,16 +111,6 @@ void UIMachineLogicSeamless::adjustMachineWindowsGeometry()
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->showInNecessaryMode();
-}
-
-int UIMachineLogicSeamless::hostScreenForGuestScreen(int iScreenId) const
-{
-    return m_pScreenLayout->hostScreenForGuestScreen(iScreenId);
-}
-
-bool UIMachineLogicSeamless::hasHostScreenForGuestScreen(int iScreenId) const
-{
-    return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
 }
 
 void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()

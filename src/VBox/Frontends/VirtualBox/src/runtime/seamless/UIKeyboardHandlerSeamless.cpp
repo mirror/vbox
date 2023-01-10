@@ -89,4 +89,3 @@ bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEv
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
 #endif /* !VBOX_WS_MAC */
-

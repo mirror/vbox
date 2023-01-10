@@ -31,18 +31,21 @@
 # pragma once
 #endif
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineLogic.h"
 
-/* Scale machine logic implementation: */
+/** UIMachineLogic subclass used as scaled machine logic implementation. */
 class UIMachineLogicScale : public UIMachineLogic
 {
     Q_OBJECT;
 
-protected:
+public:
 
-    /* Constructor: */
+    /** Constructs scaled logic passing @a pParent to the base-class.
+      * @param  pSession  Brings the session UI reference. */
     UIMachineLogicScale(QObject *pParent, UISession *pSession);
+
+protected:
 
     /* Check if this logic is available: */
     bool checkAvailability();
@@ -82,10 +85,6 @@ private:
     /** Holds the popup-menu instance. */
     QMenu *m_pPopupMenu;
 #endif /* !RT_OS_DARWIN */
-
-    /* Friend classes: */
-    friend class UIMachineLogic;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_scale_UIMachineLogicScale_h */
-

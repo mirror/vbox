@@ -226,4 +226,3 @@ void UIMachineViewScale::updateSliders()
     if (verticalScrollBarPolicy() != Qt::ScrollBarAlwaysOff)
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
-

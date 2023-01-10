@@ -31,14 +31,15 @@
 # pragma once
 #endif
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMachineView.h"
 
+/** UIMachineView subclass used as seamless machine view implementation. */
 class UIMachineViewSeamless : public UIMachineView
 {
     Q_OBJECT;
 
-protected:
+public:
 
     /* Seamless machine-view constructor: */
     UIMachineViewSeamless(UIMachineWindow *pMachineWindow, ulong uScreenId);
@@ -76,10 +77,6 @@ private:
     /* Helpers: Geometry stuff: */
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
-
-    /* Friend classes: */
-    friend class UIMachineView;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_seamless_UIMachineViewSeamless_h */
-

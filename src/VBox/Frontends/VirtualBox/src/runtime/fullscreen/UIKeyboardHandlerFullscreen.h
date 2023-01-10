@@ -40,7 +40,7 @@ class UIKeyboardHandlerFullscreen : public UIKeyboardHandler
 {
     Q_OBJECT;
 
-protected:
+public:
 
     /** Fullscreen keyboard-handler constructor. */
     UIKeyboardHandlerFullscreen(UIMachineLogic *pMachineLogic);
@@ -51,9 +51,6 @@ private:
 
     /** General event-filter. */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
-    /* Friend class: */
-    friend class UIKeyboardHandler;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_fullscreen_UIKeyboardHandlerFullscreen_h */

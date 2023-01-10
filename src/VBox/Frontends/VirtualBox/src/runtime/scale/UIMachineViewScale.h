@@ -31,14 +31,15 @@
 # pragma once
 #endif
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMachineView.h"
 
+/** UIMachineView subclass used as scaled machine view implementation. */
 class UIMachineViewScale : public UIMachineView
 {
     Q_OBJECT;
 
-protected:
+public:
 
     /* Scale machine-view constructor: */
     UIMachineViewScale(UIMachineWindow *pMachineWindow, ulong uScreenId);
@@ -66,10 +67,6 @@ private:
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
     void updateSliders();
-
-    /* Friend classes: */
-    friend class UIMachineView;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_scale_UIMachineViewScale_h */
-

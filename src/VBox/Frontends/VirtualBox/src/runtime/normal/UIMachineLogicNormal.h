@@ -31,18 +31,21 @@
 # pragma once
 #endif
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineLogic.h"
 
-/* Normal machine logic implementation: */
+/** UIMachineLogic subclass used as normal machine logic implementation. */
 class UIMachineLogicNormal : public UIMachineLogic
 {
     Q_OBJECT;
 
-protected:
+public:
 
-    /* Constructor: */
+    /** Constructs normal logic passing @a pParent to the base-class.
+      * @param  pSession  Brings the session UI reference. */
     UIMachineLogicNormal(QObject *pParent, UISession *pSession);
+
+protected:
 
     /* Check if this logic is available: */
     bool checkAvailability();
@@ -100,9 +103,6 @@ private:
     /** Holds the popup-menu instance. */
     QMenu *m_pPopupMenu;
 #endif /* !VBOX_WS_MAC */
-
-    /* Friend classes: */
-    friend class UIMachineLogic;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_normal_UIMachineLogicNormal_h */

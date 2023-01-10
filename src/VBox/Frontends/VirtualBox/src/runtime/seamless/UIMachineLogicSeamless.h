@@ -31,22 +31,31 @@
 # pragma once
 #endif
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineLogic.h"
 
 /* Forward declarations: */
 class UIMultiScreenLayout;
 
-/* Seamless machine logic implementation: */
+/** UIMachineLogic subclass used as seamless machine logic implementation. */
 class UIMachineLogicSeamless : public UIMachineLogic
 {
     Q_OBJECT;
 
-protected:
+public:
 
-    /* Constructor/destructor: */
+    /** Constructs seamless logic passing @a pParent to the base-class.
+      * @param  pSession  Brings the session UI reference. */
     UIMachineLogicSeamless(QObject *pParent, UISession *pSession);
-    ~UIMachineLogicSeamless();
+    /** Destructs seamless logic. */
+    virtual ~UIMachineLogicSeamless() RT_OVERRIDE;
+
+    /** Returns an index of host-screen for guest-screen with @a iScreenId specified. */
+    int hostScreenForGuestScreen(int iScreenId) const;
+    /** Returns whether there is a host-screen for guest-screen with @a iScreenId specified. */
+    bool hasHostScreenForGuestScreen(int iScreenId) const;
+
+protected:
 
     /* Check if this logic is available: */
     bool checkAvailability();
@@ -56,10 +65,6 @@ protected:
 
     /** Adjusts machine-window geometry if necessary for 'Seamless'. */
     virtual void adjustMachineWindowsGeometry();
-
-    /* Helpers: Multi-screen stuff: */
-    int hostScreenForGuestScreen(int iScreenId) const;
-    bool hasHostScreenForGuestScreen(int iScreenId) const;
 
 private slots:
 
@@ -109,12 +114,6 @@ private:
     /** Holds the popup-menu instance. */
     QMenu *m_pPopupMenu;
 #endif /* !RT_OS_DARWIN */
-
-    /* Friend classes: */
-    friend class UIMachineLogic;
-    friend class UIMachineWindowSeamless;
-    friend class UIMachineViewSeamless;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_seamless_UIMachineLogicSeamless_h */
-

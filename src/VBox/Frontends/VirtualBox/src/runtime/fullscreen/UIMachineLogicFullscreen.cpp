@@ -69,6 +69,16 @@ UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
     delete m_pScreenLayout;
 }
 
+int UIMachineLogicFullscreen::hostScreenForGuestScreen(int iScreenId) const
+{
+    return m_pScreenLayout->hostScreenForGuestScreen(iScreenId);
+}
+
+bool UIMachineLogicFullscreen::hasHostScreenForGuestScreen(int iScreenId) const
+{
+    return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
+}
+
 bool UIMachineLogicFullscreen::checkAvailability()
 {
     /* Check if there is enough physical memory to enter fullscreen: */
@@ -127,16 +137,6 @@ void UIMachineLogicFullscreen::adjustMachineWindowsGeometry()
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->showInNecessaryMode();
 #endif /* !VBOX_WS_MAC */
-}
-
-int UIMachineLogicFullscreen::hostScreenForGuestScreen(int iScreenId) const
-{
-    return m_pScreenLayout->hostScreenForGuestScreen(iScreenId);
-}
-
-bool UIMachineLogicFullscreen::hasHostScreenForGuestScreen(int iScreenId) const
-{
-    return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
 }
 
 #ifdef RT_OS_DARWIN

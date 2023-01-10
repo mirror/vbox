@@ -89,4 +89,3 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
 #endif /* !VBOX_WS_MAC */
-
