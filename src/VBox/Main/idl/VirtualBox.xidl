@@ -18128,10 +18128,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="dbe1d807-5fa1-482f-9121-37b8fd855348"
+    uuid="ad47ad09-787b-44ab-b343-a082a3f2dfb1"
     wsmap="managed"
     rest="managed"
-    reservedMethods="8" reservedAttributes="12"
+    reservedMethods="7" reservedAttributes="12"
     >
     <desc>
       The IMedium interface represents virtual storage for a machine's
@@ -19227,36 +19227,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="resizeAndCloneTo">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
-
-      <desc>
-        This is a helper function that combines the functionality of
-        <link to="IMedium::cloneTo"/> and <link to="IMedium::resize"/>. The target medium will take the
-        contents of the calling medium.
-        <result name="E_NOTIMPL">
-          The specified cloning variant is not supported at the moment.
-        </result>
-      </desc>
-
-      <param name="target" type="IMedium" dir="in">
-        <desc>Target medium.</desc>
-      </param>
-      <param name="logicalSize" type="long long" dir="in">
-        <desc>New nominal capacity of the medium in bytes.</desc>
-      </param>
-      <param name="variant" type="MediumVariant" safearray="yes" dir="in">
-        <desc>Exact image variant which should be created (as a combination of
-          <link to="MediumVariant" /> flags).</desc>
-      </param>
-      <param name="parent" type="IMedium" dir="in">
-        <desc>Parent of the cloned medium.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
     <method name="cloneToBase">
       <rest request="post" path="/mediums/{mediumid}/actions/"/>
     <desc>
@@ -19519,6 +19489,40 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="mediumIO" type="IMediumIO" dir="return">
         <desc>Medium I/O object.</desc>
+      </param>
+    </method>
+
+    <method name="resizeAndCloneTo">
+      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+
+      <desc>
+        This is a helper function that combines the functionality of
+        <link to="IMedium::cloneTo"/> and <link to="IMedium::resize"/>. The target medium will take the
+        contents of the calling medium.
+        <result name="E_NOTIMPL">
+          The specified cloning variant is not supported at the moment.
+        </result>
+
+        <note>
+          Method will be moved to appropriate location at the next major API release.
+        </note>
+      </desc>
+
+      <param name="target" type="IMedium" dir="in">
+        <desc>Target medium.</desc>
+      </param>
+      <param name="logicalSize" type="long long" dir="in">
+        <desc>New nominal capacity of the medium in bytes.</desc>
+      </param>
+      <param name="variant" type="MediumVariant" safearray="yes" dir="in">
+        <desc>Exact image variant which should be created (as a combination of
+          <link to="MediumVariant" /> flags).</desc>
+      </param>
+      <param name="parent" type="IMedium" dir="in">
+        <desc>Parent of the cloned medium.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
