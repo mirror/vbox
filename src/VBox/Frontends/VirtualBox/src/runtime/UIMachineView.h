@@ -177,6 +177,11 @@ public:
     /** Performs pre-processing of all the native events. */
     virtual bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
 
+#ifdef VBOX_WS_MAC
+    /** Returns VM contents image. */
+    CGImageRef vmContentImage();
+#endif
+
 public slots:
 
     /** Handles NotifyChange event received from frame-buffer.
@@ -317,7 +322,6 @@ protected:
     void scrollContentsBy(int dx, int dy);
 #ifdef VBOX_WS_MAC
     void updateDockIcon();
-    CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* VBOX_WS_MAC */
     /** Is this a fullscreen-type view? */
