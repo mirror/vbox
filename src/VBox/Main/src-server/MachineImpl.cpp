@@ -11896,6 +11896,9 @@ HRESULT Machine::i_detachDevice(MediumAttachment *pAttach,
  * If cleanupMode is CleanupMode_DetachAllReturnHardDisksOnly, this only
  * adds hard disks to the list. If it is CleanupMode_Full, this adds all
  * media to the list.
+ * CleanupMode_DetachAllReturnHardDisksAndVMRemovable adds hard disk and
+ * also removable medias if they are located in the VM folder and referenced
+ * only by this VM (media prepared by unattended installer).
  *
  * This gets called from Machine::Unregister, both for the actual Machine and
  * the SnapshotMachine objects that might be found in the snapshots.
@@ -11941,8 +11944,18 @@ HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,
             if (FAILED(mac.rc())) return mac.rc();
             AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
             DeviceType_T devType = pMedium->i_getDeviceType();
+            size_t cBackRefs = pMedium->i_getMachineBackRefCount();
+            Utf8Str strMediumLocation = pMedium->i_getLocationFull();
+            strMediumLocation.stripFilename();
+            Utf8Str strMachineFolder =  i_getSettingsFileFull();
+            strMachineFolder.stripFilename();
             if (    (    cleanupMode == CleanupMode_DetachAllReturnHardDisksOnly
                       && devType == DeviceType_HardDisk)
+                 || (    cleanupMode == CleanupMode_DetachAllReturnHardDisksAndVMRemovable
+                      && (    devType == DeviceType_HardDisk
+                           || (    cBackRefs <= 1
+                                && strMediumLocation == strMachineFolder
+                                && *pMedium->i_getFirstMachineBackrefId() == i_getId())))
                  || (cleanupMode == CleanupMode_Full)
                )
             {

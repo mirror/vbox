@@ -106,6 +106,14 @@ static const VDFILEEXTENSION g_aVBoXIsoMakerFileExtensions[] =
     { NULL,             VDTYPE_INVALID      }
 };
 
+/** NULL-terminated array of configuration option. */
+static const VDCONFIGINFO s_aVisoConfigInfo[] =
+{
+    /* Options for VMDK raw disks */
+    { "UnattendedInstall",     NULL,    VDCFGVALUETYPE_STRING,  VD_CFGKEY_EXPERT },
+    /* End of options list */
+    { NULL,                    NULL,    VDCFGVALUETYPE_INTEGER, 0 }
+};
 
 /**
  * Parses the UUID that follows the marker argument.
@@ -514,6 +522,144 @@ static DECLCALLBACK(int) visoOpen(const char *pszFilename, unsigned uOpenFlags, 
     return rc;
 }
 
+/**
+ * Scans the VISO file and removes all references to files
+ * which are in the same folder as the VISO and
+ * whose names begin with "Unattended-".
+ *
+ * @return VBox status code.
+ *
+ * @param pThis Pointer to VISO backend data.
+ */
+static int deleteReferences(PVISOIMAGE pThis)
+{
+    /*
+     * Open the file and read it into memory.
+     */
+    PVDIOSTORAGE pStorage = NULL;
+    int vrc = vdIfIoIntFileOpen(pThis->pIfIo, pThis->pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &pStorage);
+    if (RT_FAILURE(vrc))
+    {
+        LogRel(("VISO: Unable to open file '%s': %Rrc\n", pThis->pszFilename, vrc));
+        return vrc;
+    }
+
+    LogRel(("VISO: Handling file '%s' references\n", pThis->pszFilename));
+
+    /*
+     * Read the file into memory.
+     */
+    uint64_t cbFile = 0;
+    vrc = vdIfIoIntFileGetSize(pThis->pIfIo, pStorage, &cbFile);
+    if (RT_SUCCESS(vrc))
+    {
+        if (cbFile <= VISO_MAX_FILE_SIZE)
+        {
+            char *pszContent = (char *)RTMemTmpAlloc(cbFile + 1);
+            if (pszContent)
+            {
+                vrc = vdIfIoIntFileReadSync(pThis->pIfIo, pStorage, 0 /*off*/, pszContent, (size_t)cbFile);
+                if (RT_SUCCESS(vrc))
+                {
+                    /*
+                     * Check the file marker.
+                     * Ignore leading blanks.
+                     */
+                    pszContent[(size_t)cbFile] = '\0';
+
+                    char *pszReadDst = pszContent;
+                    while (RT_C_IS_SPACE(*pszReadDst))
+                        pszReadDst++;
+                    if (strncmp(pszReadDst, RT_STR_TUPLE("--iprt-iso-maker-file-marker")) == 0)
+                    {
+                        vrc = visoParseUuid(pszReadDst, &pThis->Uuid);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            /*
+                             * Make sure it's valid UTF-8 before letting
+                             */
+                            vrc = RTStrValidateEncodingEx(pszContent, cbFile + 1,
+                                                          RTSTR_VALIDATE_ENCODING_EXACT_LENGTH
+                                                          | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                            if (RT_SUCCESS(vrc))
+                            {
+                                /*
+                                 * Convert it into an argument vector.
+                                 * Free the content afterwards to reduce memory pressure.
+                                 */
+                                uint32_t fGetOpt = strncmp(pszReadDst, RT_STR_TUPLE("--iprt-iso-maker-file-marker-ms")) != 0
+                                                 ? RTGETOPTARGV_CNV_QUOTE_BOURNE_SH : RTGETOPTARGV_CNV_QUOTE_MS_CRT;
+                                fGetOpt |= RTGETOPTARGV_CNV_MODIFY_INPUT;
+                                char **papszArgs;
+                                int    cArgs;
+                                vrc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszContent, fGetOpt, NULL);
+
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    for (int i = 0; i < cArgs; ++i)
+                                    {
+                                        char *pszArg = papszArgs[i];
+                                        char *pszOffset = strrchr(pszArg, '=');
+                                        if (pszOffset != NULL)
+                                            pszArg = pszOffset + 1;
+
+                                        /* if it isn't option */
+                                        if (pszArg[0] != '-')
+                                        {
+                                            char *pszPath = RTPathAbsExDup(pThis->pszCwd, pszArg, 0);
+                                            if (RTStrStartsWith((const char *)pszPath, pThis->pszCwd))
+                                            {
+                                                char *pszFileName = RTPathFilename(pszPath);
+                                                if (   pszFileName != NULL
+                                                    && RTStrStartsWith((const char *)pszFileName, "Unattended-"))
+                                                {
+                                                    vrc = RTFileDelete(pszPath);
+                                                    if (RT_SUCCESS(vrc))
+                                                        LogRel(("VISO: file '%s' deleted\n", pszPath));
+                                                    else
+                                                        LogRel(("VISO: Failed to delete the file '%s' (%Rrc)\n", pszPath, vrc));
+                                                    vrc = VINF_SUCCESS;
+                                                }
+                                            }
+                                            RTStrFree(pszPath);
+                                        }
+                                    }
+                                    RTGetOptArgvFreeEx(papszArgs, fGetOpt);
+                                    papszArgs = NULL;
+                                }
+                                else
+                                    vdIfError(pThis->pIfError, vrc, RT_SRC_POS, "VISO: RTGetOptArgvFromString failed: %Rrc", vrc);
+                            }
+                            else
+                                vdIfError(pThis->pIfError, vrc, RT_SRC_POS, "VISO: Invalid file encoding");
+                        }
+                        else
+                            vdIfError(pThis->pIfError, vrc, RT_SRC_POS, "VISO: Parsing UUID failed: %Rrc", vrc);
+                    }
+                    else
+                        vrc = VERR_VD_GEN_INVALID_HEADER;
+                }
+                else
+                    vdIfError(pThis->pIfError, vrc, RT_SRC_POS, "VISO: Reading file failed: %Rrc", vrc);
+
+                RTMemTmpFree(pszContent);
+            }
+            else
+                vrc = VERR_NO_TMP_MEMORY;
+        }
+        else
+        {
+            LogRel(("visoOpen: VERR_VD_INVALID_SIZE - cbFile=%#RX64 cbMaxFile=%#RX64\n",
+                    cbFile, (uint64_t)VISO_MAX_FILE_SIZE));
+            vrc = VERR_VD_INVALID_SIZE;
+        }
+    }
+    if (RT_FAILURE(vrc))
+        LogRel(("VISO: Handling of file '%s' failed with %Rrc\n", pThis->pszFilename, vrc));
+
+    vdIfIoIntFileClose(pThis->pIfIo, pStorage);
+    return vrc;
+}
 
 /**
  * @interface_method_impl{VDIMAGEBACKEND,pfnClose}
@@ -526,7 +672,21 @@ static DECLCALLBACK(int) visoClose(void *pBackendData, bool fDelete)
     if (pThis)
     {
         if (fDelete)
+        {
+                PVDINTERFACECONFIG pImgCfg = VDIfConfigGet(&pThis->pIfIo->Core);
+
+                bool fUnattendedInstall = false;
+                int vrc = VDCFGQueryBool(pImgCfg, "UnattendedInstall", &fUnattendedInstall);
+
+                /*
+                * The VISO created by unattended installer, so delete all generated files
+                * included in the VISO. the file is considered generated if it is located
+                * in the same folder as VISO and its name begins with "Unattended-"
+                */
+                if (RT_SUCCESS(vrc) && fUnattendedInstall)
+                    deleteReferences(pThis);
             vdIfIoIntFileDelete(pThis->pIfIo, pThis->pszFilename);
+        }
 
         if (pThis->hIsoFile != NIL_RTVFSFILE)
         {
@@ -868,7 +1028,7 @@ const VDIMAGEBACKEND g_VBoxIsoMakerBackend =
     /* paFileExtensions */
     g_aVBoXIsoMakerFileExtensions,
     /* paConfigInfo */
-    NULL,
+    s_aVisoConfigInfo,
     /* pfnProbe */
     visoProbe,
     /* pfnOpen */

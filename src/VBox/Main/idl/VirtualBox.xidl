@@ -6522,17 +6522,20 @@
     >
     <desc>Cleanup mode, used with <link to="IMachine::unregister" />.
     </desc>
-    <const name="UnregisterOnly"                  value="1">
+    <const name="UnregisterOnly"                          value="1">
       <desc>Unregister only the machine, but neither delete snapshots nor detach media.</desc>
     </const>
-    <const name="DetachAllReturnNone"             value="2">
+    <const name="DetachAllReturnNone"                     value="2">
       <desc>Delete all snapshots and detach all media but return none; this will keep all media registered.</desc>
     </const>
-    <const name="DetachAllReturnHardDisksOnly"    value="3">
+    <const name="DetachAllReturnHardDisksOnly"            value="3">
       <desc>Delete all snapshots, detach all media and return hard disks for closing, but not removable media.</desc>
     </const>
-    <const name="Full"                            value="4">
+    <const name="Full"                                    value="4">
       <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
+    </const>
+    <const name="DetachAllReturnHardDisksAndVMRemovable"  value="5">
+      <desc>Delete all snapshots, detach all media and return hard disks and removable locating in the folder of the machine to be deleted and referenced only to this machine, for closing.</desc>
     </const>
   </enum>
 

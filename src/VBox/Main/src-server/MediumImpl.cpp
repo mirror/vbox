@@ -1060,7 +1060,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (FAILED(rc)) return rc;
 
     if (!(m->formatObj->i_getCapabilities() & (  MediumFormatCapabilities_CreateFixed
-                                               | MediumFormatCapabilities_CreateDynamic))
+                                               | MediumFormatCapabilities_CreateDynamic
+                                               | MediumFormatCapabilities_File))
        )
     {
         /* Storage for mediums of this format can neither be explicitly
