@@ -2769,6 +2769,17 @@ void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)
     pHostKeyAction->toggle();
 }
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+void UIMachineLogic::dbgAdjustRelativePos()
+{
+    if (m_pDbgGui)
+    {
+        const QRect rct = activeMachineWindow()->frameGeometry();
+        m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
+    }
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
 void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
 {
     /* Clear contents: */
@@ -3360,15 +3371,6 @@ void UIMachineLogic::dbgDestroy()
         m_pDbgGuiVT->pfnDestroy(m_pDbgGui);
         m_pDbgGui = 0;
         m_pDbgGuiVT = 0;
-    }
-}
-
-void UIMachineLogic::dbgAdjustRelativePos()
-{
-    if (m_pDbgGui)
-    {
-        QRect rct = activeMachineWindow()->frameGeometry();
-        m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */

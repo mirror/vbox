@@ -121,6 +121,12 @@ public:
     virtual void setMask(const QRegion &region);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
+    /** Makes sure window is exposed in required mode/state. */
+    virtual void showInNecessaryMode() = 0;
+
+    /** Updates appearance for specified @a iElement. */
+    virtual void updateAppearanceOf(int iElement);
+
 protected slots:
 
 #ifdef VBOX_WS_X11
@@ -138,9 +144,6 @@ protected:
 
     /* Constructor: */
     UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId);
-
-    /* Show stuff: */
-    virtual void showInNecessaryMode() = 0;
 
     /* Translate stuff: */
     void retranslateUi();
@@ -190,7 +193,6 @@ protected:
     virtual void cleanupSessionConnections();
 
     /* Update stuff: */
-    virtual void updateAppearanceOf(int iElement);
 #ifdef VBOX_WITH_DEBUGGER_GUI
     void updateDbgWindows();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -222,12 +224,6 @@ protected:
     QSpacerItem *m_pBottomSpacer;
     QSpacerItem *m_pLeftSpacer;
     QSpacerItem *m_pRightSpacer;
-
-    /* Friend classes: */
-    friend class UIMachineLogic;
-    friend class UIMachineLogicFullscreen;
-    friend class UIMachineLogicSeamless;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIMachineWindow_h */
-

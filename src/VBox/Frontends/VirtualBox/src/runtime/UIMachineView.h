@@ -108,12 +108,91 @@ public:
     /** Applies machine-view scale-factor. */
     virtual void applyMachineViewScaleFactor();
 
+    /** Returns screen ID for this view. */
+    ulong screenId() const { return m_uScreenId; }
+
+    /** Returns the session UI reference. */
+    UISession *uisession() const;
+    /** Returns the machine-logic reference. */
+    UIMachineLogic *machineLogic() const;
+    /** Returns the machine-window reference. */
+    UIMachineWindow *machineWindow() const { return m_pMachineWindow; }
+    /** Returns view's frame-buffer reference. */
+    UIFrameBuffer *frameBuffer() const { return m_pFrameBuffer; }
+
+    /** Returns actual contents width. */
+    int contentsWidth() const;
+    /** Returns actual contents height. */
+    int contentsHeight() const;
+    /** Returns actual contents x origin. */
+    int contentsX() const;
+    /** Returns actual contents y origin. */
+    int contentsY() const;
+    /** Returns visible contents width. */
+    int visibleWidth() const;
+    /** Returns visible contents height. */
+    int visibleHeight() const;
+    /** Translates viewport point to contents point. */
+    QPoint viewportToContents(const QPoint &viewportPoint) const;
+    /** Scrolls contents by @a iDx x iDy pixels. */
+    void scrollBy(int iDx, int iDy);
+
+    /** What view mode (normal, fullscreen etc.) are we in? */
+    UIVisualStateType visualStateType() const;
+
+    /** Returns cached mouse cursor. */
+    QCursor cursor() const { return m_cursor; }
+
     /* Framebuffer aspect ratio: */
     double aspectRatio() const;
+
+    /** Atomically store the maximum guest resolution which we currently wish
+     * to handle for @a maximumGuestSize() to read.  Should be called if anything
+     * happens (e.g. a screen hotplug) which might cause the value to change.
+     * @sa m_u64MaximumGuestSize. */
+    void setMaximumGuestSize(const QSize &minimumSizeHint = QSize());
+    /** Atomically read the maximum guest resolution which we currently wish to
+     * handle.  This may safely be called from another thread (called by
+     * UIFramebuffer on EMT).
+     * @sa m_u64MaximumGuestSize. */
+    QSize maximumGuestSize();
 
     /** Updates console's display viewport.
       * @remarks Used to update 3D-service overlay viewport as well. */
     void updateViewport();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /** Checks for a pending drag and drop event within the guest and
+      * (optionally) starts a drag and drop operation on the host. */
+    int dragCheckPending();
+    /** Starts a drag and drop operation from guest to the host.
+      * This internally either uses Qt's abstract QDrag methods
+      * or some other OS-dependent implementation. */
+    int dragStart();
+    /** Aborts (and resets) the current (pending)
+      * guest to host drag and drop operation. */
+    int dragStop();
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
+    /** Performs pre-processing of all the native events. */
+    virtual bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
+
+public slots:
+
+    /** Handles NotifyChange event received from frame-buffer.
+      * @todo To make it right, this have to be protected, but
+      *       connection should be moved from frame-buffer to this class. */
+    virtual void sltHandleNotifyChange(int iWidth, int iHeight);
+
+    /** Handles NotifyUpdate event received from frame-buffer.
+      * @todo To make it right, this have to be protected, but
+      *       connection should be moved from frame-buffer to this class. */
+    virtual void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
+
+    /** Handles SetVisibleRegion event received from frame-buffer.
+      * @todo To make it right, this have to be protected, but
+      *       connection should be moved from frame-buffer to this class. */
+    virtual void sltHandleSetVisibleRegion(QRegion region);
 
 protected slots:
 
@@ -135,15 +214,6 @@ protected slots:
       * @param  iScreen  Brings the number of screen being referred.
       * @param  size     Brings the size of screen to be applied. */
     void sltHandleActionTriggerViewScreenResize(int iScreen, const QSize &size);
-
-    /* Handler: Frame-buffer NotifyChange stuff: */
-    virtual void sltHandleNotifyChange(int iWidth, int iHeight);
-
-    /* Handler: Frame-buffer NotifyUpdate stuff: */
-    virtual void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
-
-    /* Handler: Frame-buffer SetVisibleRegion stuff: */
-    virtual void sltHandleSetVisibleRegion(QRegion region);
 
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
@@ -195,9 +265,6 @@ protected:
     virtual void cleanupNativeFilters();
     //virtual void saveMachineViewSettings() {}
 
-    /** Returns the session UI reference. */
-    UISession* uisession() const;
-
     /** Returns the session reference. */
     CSession& session() const;
     /** Returns the session's machine reference. */
@@ -210,29 +277,8 @@ protected:
     CGuest& guest() const;
 
     /* Protected getters: */
-    UIMachineWindow* machineWindow() const { return m_pMachineWindow; }
     UIActionPool* actionPool() const;
-    UIMachineLogic* machineLogic() const;
     QSize sizeHint() const;
-    int contentsX() const;
-    int contentsY() const;
-    int contentsWidth() const;
-    int contentsHeight() const;
-    int visibleWidth() const;
-    int visibleHeight() const;
-    ulong screenId() const { return m_uScreenId; }
-    UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
-
-    /** Atomically store the maximum guest resolution which we currently wish
-     * to handle for @a maximumGuestSize() to read.  Should be called if anything
-     * happens (e.g. a screen hotplug) which might cause the value to change.
-     * @sa m_u64MaximumGuestSize. */
-    void setMaximumGuestSize(const QSize &minimumSizeHint = QSize());
-    /** Atomically read the maximum guest resolution which we currently wish to
-     * handle.  This may safely be called from another thread (called by
-     * UIFramebuffer on EMT).
-     * @sa m_u64MaximumGuestSize. */
-    QSize maximumGuestSize();
 
     /** Retrieves the last guest-screen size-hint from extra-data. */
     QSize storedGuestScreenSizeHint() const;
@@ -261,17 +307,12 @@ protected:
     /** Updates the scaled pause-pixmap. */
     void updateScaledPausePixmap();
 
-    /** Returns cached mouse cursor. */
-    QCursor cursor() const { return m_cursor; }
-
     /** The available area on the current screen for application windows. */
     virtual QRect workingArea() const = 0;
     /** Calculate how big the guest desktop can be while still fitting on one
      * host screen. */
     virtual QSize calculateMaxGuestSize() const = 0;
     virtual void updateSliders();
-    QPoint viewportToContents(const QPoint &vp) const;
-    void scrollBy(int dx, int dy);
     static void dimImage(QImage &img);
     void scrollContentsBy(int dx, int dy);
 #ifdef VBOX_WS_MAC
@@ -279,8 +320,6 @@ protected:
     CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* VBOX_WS_MAC */
-    /** What view mode (normal, fullscreen etc.) are we in? */
-    UIVisualStateType visualStateType() const;
     /** Is this a fullscreen-type view? */
     bool isFullscreenOrSeamless() const;
 
@@ -336,34 +375,12 @@ protected:
     void dragMoveEvent(QDragMoveEvent *pEvent);
 
     /**
-     * Guest -> Host: Checks for a pending drag and drop event within the guest
-     *                and (optionally) starts a drag and drop operation on the host.
-     */
-    int dragCheckPending(void);
-
-    /**
-     * Guest -> Host: Starts a drag and drop operation from guest to the host. This
-     *                internally either uses Qt's abstract QDrag methods or some other
-     *                OS-dependent implementation.
-     */
-    int dragStart(void);
-
-    /**
-     * Guest -> Host: Aborts (and resets) the current (pending) guest to host
-     *                drag and drop operation.
-     */
-    int dragStop(void);
-
-    /**
      * Host -> Guest: Issued when the host drops data into the guest (VM) window.
      *
      * @param pEvent                Related drop event.
      */
     void dropEvent(QDropEvent *pEvent);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
-
-    /** Qt5: Performs pre-processing of all the native events. */
-    virtual bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
 
     /** Scales passed size forward. */
     QSize scaledForward(QSize size) const;
@@ -426,17 +443,6 @@ protected:
 
     /** Holds the native event filter instance. */
     UINativeEventFilter *m_pNativeEventFilter;
-    /** Allows the native event filter to redirect
-      * events directly to nativeEventPreprocessor(). */
-    friend class UINativeEventFilter;
-
-    /* Friend classes: */
-    friend class UIKeyboardHandler;
-    friend class UIMouseHandler;
-    friend class UIMachineLogic;
-    friend class UIFrameBuffer;
-    friend class UIFrameBufferPrivate;
-    friend class VBoxOverlayFrameBuffer;
 };
 
 /* This maintenance class is a part of future roll-back mechanism.
