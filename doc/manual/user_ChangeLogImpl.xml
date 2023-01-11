@@ -101,7 +101,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Storage: Added support for increasing the size of the following
-          VMDK disks: monolithicFlat, monolithicSparse, twoGbMaxExtentSparse,
+          VMDK image variants: monolithicFlat, monolithicSparse, twoGbMaxExtentSparse,
           twoGbMaxExtentFlat</para>
       </listitem>
 
