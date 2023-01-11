@@ -2657,7 +2657,7 @@ static int vmsvga3dCmdDXUpdateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXUpdate
     RT_NOREF(cbCmd);
 
     LogFlowFunc(("sid=%u, subResource=%u, box=%d,%d,%d %ux%ux%u\n",
-                 pCmd->sid, pCmd->subResource, pCmd->box.x, pCmd->box.y, pCmd->box.z, pCmd->box.w, pCmd->box.h, pCmd->box.z));
+                 pCmd->sid, pCmd->subResource, pCmd->box.x, pCmd->box.y, pCmd->box.z, pCmd->box.w, pCmd->box.h, pCmd->box.d));
 
     /* "Inform the device that the guest-contents have been updated." */
     SVGAOTableSurfaceEntry entrySurface;
