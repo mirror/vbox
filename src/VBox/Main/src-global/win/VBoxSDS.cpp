@@ -351,7 +351,7 @@ protected:
     {
         uint32_t const uPrevState = ASMAtomicXchgU32((uint32_t volatile *)&m_Status.dwCurrentState, dwState);
         if (!::SetServiceStatus(m_hServiceStatus, &m_Status))
-            LogRel(("Error: SetServiceStatus(%u) failed: %u (uPrevState=%u)\n",
+            LogRel(("Error: SetServiceStatus(,%u) failed: %u (uPrevState=%u)\n",
                     dwState, GetLastError(), uPrevState));
     }
 
@@ -1030,6 +1030,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             else
                 LogRelFunc(("VBoxSDS: new CComServiceModule::Init failed: %Rhrc\n", hrcExit));
 
+            LogRelFunc(("VBoxSDS: deleting pServiceModule\n"));
             delete pServiceModule;
             pServiceModule = NULL;
         }
