@@ -31,6 +31,8 @@
 # pragma once
 #endif
 
+#include <VBox/AssertGuest.h>
+
 #include "DevVGA-SVGA.h"
 
 
@@ -195,8 +197,17 @@ DECLINLINE(uint32_t) vmsvga3dCalcSubresource(uint32_t iMipLevel, uint32_t iArray
 
 DECLINLINE(void) vmsvga3dCalcMipmapAndFace(uint32_t cMipLevels, uint32_t iSubresource, uint32_t *piMipmap, uint32_t *piFace)
 {
-    *piFace = iSubresource / cMipLevels;
-    *piMipmap = iSubresource % cMipLevels;
+    if (RT_LIKELY(cMipLevels))
+    {
+        *piFace = iSubresource / cMipLevels;
+        *piMipmap = iSubresource % cMipLevels;
+    }
+    else
+    {
+        ASSERT_GUEST_FAILED();
+        *piFace = 0;
+        *piMipmap = 0;
+    }
 }
 
 int vmsvga3dCalcSurfaceMipmapAndFace(PVGASTATECC pThisCC, uint32_t sid, uint32_t iSubresource, uint32_t *piMipmap, uint32_t *piFace);

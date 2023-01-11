@@ -30,7 +30,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
-#include <VBox/AssertGuest.h>
 #include <VBox/vmm/pdmdev.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
