@@ -110,7 +110,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>Mouse Integration: Guest was provided with extended host mouse state</para>
+        <para>Mouse Integration: Guest was provided with extended host mouse state (bug #21139)</para>
       </listitem>
 
       <listitem>
