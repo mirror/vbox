@@ -2516,7 +2516,8 @@ it unless this changes. -->
       <remark role="help-copy-synopsis"/>
       <para>
         The following options enable you to configure a machine as a
-        teleporting target. See <xref linkend="teleporting" />.
+        teleporting target. See <xref linkend="teleporting" /> and the
+        teleporting related entries <xref linkend="pot-insecure" />.
       </para>
       <variablelist>
         <varlistentry>

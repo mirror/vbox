@@ -442,6 +442,11 @@
             considering teleporting a VM over an untrusted network the
             first question to answer is how both VMs can securely access
             the same virtual disk image with a reasonable performance.
+          </para><para>
+            If the network is not sufficiently trusted, the password
+            should be changed for each teleportation as the a 3rd party
+            could snoop up the unecrypted password hash when it is
+            transferred between the target and source host machines.
           </para>
         </listitem>
 
