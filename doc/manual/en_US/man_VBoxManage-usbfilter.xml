@@ -63,7 +63,7 @@
       <arg>--revision=<replaceable>IIFF</replaceable></arg>
       <arg>--manufacturer=<replaceable>string</replaceable></arg>
       <arg>--product=<replaceable>string</replaceable></arg>
-      <arg>--port=<replaceable>number</replaceable></arg>
+      <arg>--port=<replaceable>hex</replaceable></arg>
       <arg>--remote=yes | no</arg>
       <arg>--serialnumber=<replaceable>string</replaceable></arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
@@ -85,7 +85,7 @@
       <arg>--revision=<replaceable>IIFF</replaceable> | ""</arg>
       <arg>--manufacturer=<replaceable>string</replaceable> | ""</arg>
       <arg>--product=<replaceable>string</replaceable> | ""</arg>
-      <arg>--port=<replaceable>number</replaceable></arg>
+      <arg>--port=<replaceable>hex</replaceable></arg>
       <arg>--remote=yes | no</arg>
       <arg>--serialnumber=<replaceable>string</replaceable> | ""</arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
@@ -182,7 +182,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--port=<replaceable>number</replaceable></option></term>
+          <term><option>--port=<replaceable>hex</replaceable></option></term>
           <listitem><para>
               Specifies a hub port number filter as a string. The default
               value is an empty string (<literal>""</literal>).
