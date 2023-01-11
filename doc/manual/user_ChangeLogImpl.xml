@@ -86,6 +86,15 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>GUI: Fixed virtual machines grouping when VM was created or
+          modified in command line (bugs #11500, #20933)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Introduced generic changes in settings dialogs</para>
+      </listitem>
+
+      <listitem>
         <para>VirtioNet: Fixed broken network after loading saved state
           (bug #21172)</para>
       </listitem>
@@ -97,7 +106,15 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>Mouse Integration: Provided guest with extended host mouse state</para>
+        <para>VBoxManage: Added missing --directory switch for guestcontrol mktemp command</para>
+      </listitem>
+
+      <listitem>
+        <para>Mouse Integration: Guest was provided with extended host mouse state</para>
+      </listitem>
+
+      <listitem>
+        <para>DnD: Introduced generic improvements</para>
       </listitem>
 
       <listitem>
@@ -116,6 +133,10 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Windows Host: Fixed support for VM autostart (bug#21349)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Added initial support for kernel 6.2 for vboxvideo</para>
       </listitem>
 
       <listitem>
