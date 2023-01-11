@@ -1290,7 +1290,7 @@ Console::i_teleporterTrgServeConnection(RTSOCKET hSocket, void *pvUser)
     }
 
     /*
-     * Password (includes '\n', see teleporterTrg).
+     * Password (includes '\n', see i_teleporterTrg).
      */
     const char *pszPassword = pState->mstrPassword.c_str();
     unsigned    off = 0;
@@ -1304,7 +1304,17 @@ Console::i_teleporterTrgServeConnection(RTSOCKET hSocket, void *pvUser)
             if (RT_FAILURE(vrc))
                 LogRel(("Teleporter: Password read failure (off=%u): %Rrc\n", off, vrc));
             else
-                LogRel(("Teleporter: Invalid password (off=%u)\n", off));
+            {
+                /* Must read the whole password before NACK'ing it. */
+                size_t const cchMaxRead = RT_ALIGN_Z(pState->mstrPassword.length() * 3, _1K);
+                while (off < cchMaxRead && RT_SUCCESS(vrc) && ch != '\n')
+                {
+                    vrc = RTTcpRead(hSocket, &ch, sizeof(ch), NULL);
+                    off++;
+                }
+                LogRel(("Teleporter: Invalid password\n"));
+            }
+            RTThreadSleep(RTRandU32Ex(64, 1024)); /* stagger retries */
             teleporterTcpWriteNACK(pState, VERR_AUTHENTICATION_FAILURE);
             return VINF_SUCCESS;
         }
