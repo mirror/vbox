@@ -754,7 +754,7 @@ NTSTATUS SvgaSharedSidInsert(VBOXWDDM_EXT_VMSVGA *pSvga,
     AssertPtrReturn(pSO, STATUS_INVALID_PARAMETER);
 
     /* The surface must not be redirected yet. */
-    AssertReturn(SVGAHOSTOBJECTID(&pSO->ho) == pSO->u32SharedSid, STATUS_INVALID_PARAMETER);
+    AssertReturnStmt(SVGAHOSTOBJECTID(&pSO->ho) == pSO->u32SharedSid, SvgaSurfaceObjectRelease(pSO), STATUS_INVALID_PARAMETER);
 
     /* The surface object to be mapped to. Query it to reference it.
      * If the surface id (u32SharedSid) is not in the surface objects, then it is OK.
@@ -779,7 +779,7 @@ NTSTATUS SvgaSharedSidRemove(VBOXWDDM_EXT_VMSVGA *pSvga,
     AssertPtrReturn(pSO, STATUS_INVALID_PARAMETER);
 
     /* The surface must be redirected. */
-    AssertReturn(SVGAHOSTOBJECTID(&pSO->ho) != pSO->u32SharedSid, STATUS_INVALID_PARAMETER);
+    AssertReturnStmt(SVGAHOSTOBJECTID(&pSO->ho) != pSO->u32SharedSid, SvgaSurfaceObjectRelease(pSO), STATUS_INVALID_PARAMETER);
 
     /* The shared surface object, which the u32Sid was mapped to.
      * If the surface id (u32SharedSid) is not in the surface objects, then it is OK.
