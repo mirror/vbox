@@ -2517,7 +2517,7 @@ it unless this changes. -->
       <para>
         The following options enable you to configure a machine as a
         teleporting target. See <xref linkend="teleporting" /> and the
-        teleporting related entries <xref linkend="pot-insecure" />.
+        teleporting related entries in <xref linkend="pot-insecure" />.
       </para>
       <variablelist>
         <varlistentry>
