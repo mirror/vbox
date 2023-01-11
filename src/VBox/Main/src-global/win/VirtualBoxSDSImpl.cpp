@@ -265,7 +265,7 @@ bool VirtualBoxSDS::i_isFeatureEnabled(wchar_t const *a_pwszFeature)
 /* SDS plan B interfaces: */
 STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox)
 {
-    LogRel(("registerVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
+    LogRel(("registerVBoxSVC: aPid=%u (%#x)\n", aPid, aPid));
 
     /*
      * Get the caller PID so we can validate the aPid parameter with the other two.
@@ -513,14 +513,14 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                 aPid, aPid, CallAttribs.ClientPID, CallAttribs.ClientPID));
         hrc = E_INVALIDARG;
     }
-    LogRel2(("VirtualBoxSDS::registerVBoxSVC: returns %Rhrc aExistingVirtualBox=%p\n", hrc, (IUnknown *)aExistingVirtualBox));
+    LogRel2(("VirtualBoxSDS::registerVBoxSVC: returns %Rhrc\n", hrc));
     return hrc;
 }
 
 
 STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid)
 {
-    LogRel(("deregisterVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
+    LogRel(("deregisterVBoxSVC: aPid=%u (%#x)\n", aPid, aPid));
     HRESULT hrc;
     if (RT_VALID_PTR(aVBoxSVC))
     {
@@ -542,8 +542,7 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
                     pUserData->i_unchooseTheOne(false /*fIrregular*/);
                 }
                 else
-                    LogRel(("deregisterVBoxSVC: not the choosen one (%p != %p)\n",
-                            (IVBoxSVCRegistration *)aVBoxSVC, (IVBoxSVCRegistration *)pUserData->m_ptrTheChosenOne));
+                    LogRel(("deregisterVBoxSVC: not the chosen one\n"));
                 pUserData->i_unlock();
                 pUserData->i_release();
 
@@ -956,7 +955,7 @@ typedef struct VBoxSDSWatcher
                         cRemoved++;
                     }
                 if (cRemoved != 1)
-                    LogRel(("i_watcherThreadProc/#%u: Warning! cRemoved=%u pUserData=%p\n", pThis->iWatcher, cRemoved, pUserData));
+                    LogRel(("i_watcherThreadProc/#%u: Warning! cRemoved=%u\n", pThis->iWatcher, cRemoved));
             }
             /* Zap the entry in case we assert and leave further up. */
             pThis->aTodos[i].Data.setNull();
@@ -997,8 +996,8 @@ typedef struct VBoxSDSWatcher
 
             DWORD dwExit = 0;
             GetExitCodeProcess(pThis->aHandles[iHandle], &dwExit);
-            LogRel(("i_watcherThreadProc/#%u: %p/%s: PID %u/%#x termination detected: %d (%#x)  [iRev=%u, cur %u]\n",
-                    pThis->iWatcher, pUserData, pUserData->m_strUsername.c_str(), pid, pid, dwExit, dwExit,
+            LogRel(("i_watcherThreadProc/#%u: %s: PID %u/%#x termination detected: %d (%#x)  [iRev=%u, cur %u]\n",
+                    pThis->iWatcher, pUserData->m_strUsername.c_str(), pid, pid, dwExit, dwExit,
                     iRevision, pUserData->m_iTheChosenOneRevision));
 
             /* Remove it from the handle array. */
@@ -1114,8 +1113,8 @@ bool VirtualBoxSDS::i_watchIt(VBoxSDSPerUserData *pUserData, HANDLE hProcess, RT
                 pUserData->i_retain();
 
                 BOOL fRc = SetEvent(pWatcher->aHandles[0]);
-                AssertLogRelMsg(fRc, ("SetEvent(%p) failed: %u\n", pWatcher->aHandles[0], GetLastError()));
-                LogRel(("i_watchIt: Added %p/%p to watcher #%u: %RTbool\n", pUserData, hProcess, pWatcher->iWatcher, fRc));
+                AssertLogRelMsg(fRc, ("SetEvent() failed: %u\n", GetLastError()));
+                LogRel(("i_watchIt: Added process to watcher #%u: %RTbool\n", pWatcher->iWatcher, fRc));
 
                 i_incrementClientCount();
                 RTCritSectLeave(&m_WatcherCritSect);
@@ -1163,7 +1162,7 @@ bool VirtualBoxSDS::i_watchIt(VBoxSDSPerUserData *pUserData, HANDLE hProcess, RT
                                          RTTHREADFLAGS_WAITABLE, "watcher%u", pWatcher->iWatcher);
                 if (RT_SUCCESS(rc))
                 {
-                    LogRel(("i_watchIt: Created new watcher #%u for %p/%p\n", m_cWatchers, pUserData, hProcess));
+                    LogRel(("i_watchIt: Created new watcher #%u\n", m_cWatchers));
 
                     i_incrementClientCount();
                     RTCritSectLeave(&m_WatcherCritSect);
