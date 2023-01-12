@@ -66,8 +66,10 @@ static const std::string g_ResolvConfFullPath = "/etc/resolv.conf";
 
 class FileDescriptor
 {
-    public:
-    FileDescriptor(int d = -1):fd(d){}
+public:
+    FileDescriptor(int d = -1)
+        : fd(d)
+    {}
 
     virtual ~FileDescriptor() {
         if (fd != -1)
@@ -76,14 +78,14 @@ class FileDescriptor
 
     int fileDescriptor() const {return fd;}
 
-    protected:
+protected:
     int fd;
 };
 
 
-class AutoNotify:public FileDescriptor
+class AutoNotify : public FileDescriptor
 {
-    public:
+public:
     AutoNotify()
     {
         FileDescriptor::fd = inotify_init();
@@ -118,14 +120,39 @@ int HostDnsServiceLinux::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 
 int HostDnsServiceLinux::monitorThreadProc(void)
 {
+    /*
+     * inotify initialization
+     *
+     * Note! Ignoring failures here is safe, because poll will ignore entires
+     *       with negative fd values.
+     */
     AutoNotify a;
+    int wd[2];
+    wd[0] = inotify_add_watch(a.fileDescriptor(),
+                              g_ResolvConfFullPath.c_str(), IN_CLOSE_WRITE | IN_DELETE_SELF);
 
+    /* If /etc/resolv.conf exists we want to listen for movements: because
+       # mv /etc/resolv.conf ...
+       won't arm IN_DELETE_SELF on wd[0] instead it will fire IN_MOVE_FROM on wd[1].
+
+       Because on some distributions /etc/resolv.conf is a symlink, wd[0] can't detect
+       deletion, it's recognizible on directory level (wd[1]) only. */
+    wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
+                              wd[0] == -1 ? IN_MOVED_TO | IN_CREATE : IN_MOVED_FROM | IN_DELETE);
+
+    /*
+     * Create a socket pair for signalling shutdown via (see monitorThreadShutdown).
+     */
     int rc = socketpair(AF_LOCAL, SOCK_DGRAM, 0, g_DnsMonitorStop);
     AssertMsgReturn(rc == 0, ("socketpair: failed (%d: %s)\n", errno, strerror(errno)), E_FAIL);
 
+    /* automatic cleanup tricks */
     FileDescriptor stopper0(g_DnsMonitorStop[0]);
     FileDescriptor stopper1(g_DnsMonitorStop[1]);
 
+    /*
+     * poll initialization:
+     */
     pollfd polls[2];
     RT_ZERO(polls);
 
@@ -137,62 +164,53 @@ int HostDnsServiceLinux::monitorThreadProc(void)
 
     onMonitorThreadInitDone();
 
-    int wd[2];
-    wd[0] = wd[1] = -1;
-    /* inotify inialization */
-    wd[0] = inotify_add_watch(a.fileDescriptor(),
-                              g_ResolvConfFullPath.c_str(), IN_CLOSE_WRITE|IN_DELETE_SELF);
-
-    /**
-     * If /etc/resolv.conf exists we want to listen for movements: because
-     * # mv /etc/resolv.conf ...
-     * won't arm IN_DELETE_SELF on wd[0] instead it will fire IN_MOVE_FROM on wd[1].
-     *
-     * Because on some distributions /etc/resolv.conf is link, wd[0] can't detect deletion,
-     * it's recognizible on directory level (wd[1]) only.
+    /*
+     * The monitoring loop.
      */
-    wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                              wd[0] == -1 ? IN_MOVED_TO|IN_CREATE : IN_MOVED_FROM|IN_DELETE);
-
-    struct InotifyEventWithName combo;
-    while(true)
+    for (;;)
     {
-        rc = poll(polls, 2, -1);
+        rc = poll(polls, RT_ELEMENTS(polls), -1 /*infinite timeout*/);
         if (rc == -1)
             continue;
 
-        AssertMsgReturn(   ((polls[0].revents & (POLLERR|POLLNVAL)) == 0)
-                        && ((polls[1].revents & (POLLERR|POLLNVAL)) == 0),
-                           ("Debug Me"), VERR_INTERNAL_ERROR);
+        AssertMsgReturn(   (polls[0].revents & (POLLERR | POLLNVAL)) == 0
+                        && (polls[1].revents & (POLLERR | POLLNVAL)) == 0, ("Debug Me"), VERR_INTERNAL_ERROR);
 
         if (polls[1].revents & POLLIN)
             return VINF_SUCCESS; /* time to shutdown */
 
         if (polls[0].revents & POLLIN)
         {
+            /*
+             * Read the notification event.
+             */
+            /** @todo r=bird: This is buggy in that it somehow assumes we'll only get
+             *        one event here.  But since we're waiting on two different DELETE
+             *        events for both a specific file and its parent directory, we're likely
+             *        to get two DELETE events at the same time. */
+            struct InotifyEventWithName combo;
             RT_ZERO(combo);
-            ssize_t r = read(polls[0].fd, static_cast<void *>(&combo), sizeof(combo));
+            combo.e.wd = -42; /* avoid confusion on the offchance that wd[0] or wd[1] is zero. */
+
+            ssize_t r = read(polls[0].fd, &combo, sizeof(combo));
             RT_NOREF(r);
 
             if (combo.e.wd == wd[0])
             {
                 if (combo.e.mask & IN_CLOSE_WRITE)
-                {
                     readResolvConf();
-                }
                 else if (combo.e.mask & IN_DELETE_SELF)
                 {
                     inotify_rm_watch(a.fileDescriptor(), wd[0]); /* removes file watcher */
-                    inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                                      IN_MOVED_TO|IN_CREATE); /* alter folder watcher */
+                    int wd2 = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
+                                                IN_MOVED_TO|IN_CREATE); /* alter folder watcher */
+                    Assert(wd2 == wd[1]); RT_NOREF(wd2); /* ASSUMES wd[1] will be updated */
                 }
                 else if (combo.e.mask & IN_IGNORED)
-                {
                     wd[0] = -1; /* we want receive any events on this watch */
-                }
                 else
                 {
-                    /**
+                    /*
                      * It shouldn't happen, in release we will just ignore in debug
                      * we will have to chance to look at into inotify_event
                      */
@@ -201,33 +219,32 @@ int HostDnsServiceLinux::monitorThreadProc(void)
             }
             else if (combo.e.wd == wd[1])
             {
-                if (   combo.e.mask & IN_MOVED_FROM
-                    || combo.e.mask & IN_DELETE)
+                if (combo.e.mask & (IN_DELETE | IN_MOVED_FROM))
                 {
                     if (g_ResolvConf == combo.e.name)
                     {
-                        /**
-                         * Our file has been moved so we should change watching mode.
+                        /*
+                         * Our file has been moved or deleted so we should change watching mode.
                          */
                         inotify_rm_watch(a.fileDescriptor(), wd[0]);
                         wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                                                  IN_MOVED_TO|IN_CREATE);
+                                                  IN_MOVED_TO | IN_CREATE);
                         AssertMsg(wd[1] != -1,
                                   ("It shouldn't happen, further investigation is needed\n"));
                     }
                 }
                 else
                 {
-                    AssertMsg(combo.e.mask & (IN_MOVED_TO|IN_CREATE),
-                              ("%RX32 event isn't expected, we are waiting for IN_MOVED|IN_CREATE\n",
-                               combo.e.mask));
+                    AssertMsg(combo.e.mask & (IN_MOVED_TO | IN_CREATE),
+                              ("%RX32 event isn't expected, we are waiting for IN_MOVED|IN_CREATE\n", combo.e.mask));
                     if (g_ResolvConf == combo.e.name)
                     {
                         AssertMsg(wd[0] == -1, ("We haven't removed file watcher first\n"));
 
-                        /* alter folder watcher*/
-                        wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                                                  IN_MOVED_FROM|IN_DELETE);
+                        /* alter folder watcher: */
+                        wd[1] = inotify_add_watch(a.fileDescriptor(),
+                                                  g_EtcFolder.c_str(),
+                                                  IN_MOVED_FROM | IN_DELETE);
                         AssertMsg(wd[1] != -1, ("It shouldn't happen.\n"));
 
                         wd[0] = inotify_add_watch(a.fileDescriptor(),
