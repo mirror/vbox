@@ -81,6 +81,10 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
+       <para>VMM: Fixed EFLAGS.TF handling for CPUID instructions when Hyper-V is used (bug #17961)</para>
+      </listitem>
+
+      <listitem>
        <para>virtio-net: Follow up fixes for FreeBSD 12.3 and pfSense 2.6.0 (bug #21201)</para>
       </listitem>
 

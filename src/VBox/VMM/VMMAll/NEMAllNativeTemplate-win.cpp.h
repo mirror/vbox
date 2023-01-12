@@ -1778,36 +1778,33 @@ nemR3WinHandleExitCpuId(PVMCC pVM, PVMCPUCC pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
     {
         /*
          * Soak up state and execute the instruction.
-         *
-         * Note! If this grows slightly more complicated, combine into an IEMExecDecodedCpuId
-         *       function and make everyone use it.
          */
-        /** @todo Combine implementations into IEMExecDecodedCpuId as this will
-         *        only get weirder with nested VT-x and AMD-V support. */
         nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
+        VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu,
+                                                                    IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK
+                                                                  | CPUMCTX_EXTRN_CR3, /* May call PGMChangeMode() requiring cr3 (due to cr0 being imported). */
+                                                                  "CPUID");
+        if (rcStrict == VINF_SUCCESS)
+        {
+            /* Copy in the low register values (top is always cleared). */
+            pVCpu->cpum.GstCtx.rax = (uint32_t)pExit->CpuidAccess.Rax;
+            pVCpu->cpum.GstCtx.rcx = (uint32_t)pExit->CpuidAccess.Rcx;
+            pVCpu->cpum.GstCtx.rdx = (uint32_t)pExit->CpuidAccess.Rdx;
+            pVCpu->cpum.GstCtx.rbx = (uint32_t)pExit->CpuidAccess.Rbx;
+            pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX);
 
-        /* Copy in the low register values (top is always cleared). */
-        pVCpu->cpum.GstCtx.rax = (uint32_t)pExit->CpuidAccess.Rax;
-        pVCpu->cpum.GstCtx.rcx = (uint32_t)pExit->CpuidAccess.Rcx;
-        pVCpu->cpum.GstCtx.rdx = (uint32_t)pExit->CpuidAccess.Rdx;
-        pVCpu->cpum.GstCtx.rbx = (uint32_t)pExit->CpuidAccess.Rbx;
-        pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX);
+            /* Execute the decoded instruction. */
+            rcStrict = IEMExecDecodedCpuid(pVCpu, pExit->VpContext.InstructionLength);
 
-        /* Get the correct values. */
-        CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.cs.Attr.n.u1Long,
-                          &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
-
-        Log4(("CpuIdExit/%u: %04x:%08RX64/%s: rax=%08RX64 / rcx=%08RX64 / rdx=%08RX64 / rbx=%08RX64 -> %08RX32 / %08RX32 / %08RX32 / %08RX32 (hv: %08RX64 / %08RX64 / %08RX64 / %08RX64)\n",
-              pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-              pExit->CpuidAccess.Rax,                           pExit->CpuidAccess.Rcx,              pExit->CpuidAccess.Rdx,              pExit->CpuidAccess.Rbx,
-              pVCpu->cpum.GstCtx.eax,                           pVCpu->cpum.GstCtx.ecx,              pVCpu->cpum.GstCtx.edx,              pVCpu->cpum.GstCtx.ebx,
-              pExit->CpuidAccess.DefaultResultRax, pExit->CpuidAccess.DefaultResultRcx, pExit->CpuidAccess.DefaultResultRdx, pExit->CpuidAccess.DefaultResultRbx));
-
-        /* Move RIP and we're done. */
-        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, &pExit->VpContext, 2);
+            Log4(("CpuIdExit/%u: %04x:%08RX64/%s: rax=%08RX64 / rcx=%08RX64 / rdx=%08RX64 / rbx=%08RX64 -> %08RX32 / %08RX32 / %08RX32 / %08RX32 (hv: %08RX64 / %08RX64 / %08RX64 / %08RX64)\n",
+                  pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
+                  pExit->CpuidAccess.Rax,                           pExit->CpuidAccess.Rcx,              pExit->CpuidAccess.Rdx,              pExit->CpuidAccess.Rbx,
+                  pVCpu->cpum.GstCtx.eax,                           pVCpu->cpum.GstCtx.ecx,              pVCpu->cpum.GstCtx.edx,              pVCpu->cpum.GstCtx.ebx,
+                  pExit->CpuidAccess.DefaultResultRax, pExit->CpuidAccess.DefaultResultRcx, pExit->CpuidAccess.DefaultResultRdx, pExit->CpuidAccess.DefaultResultRbx));
+        }
 
         RT_NOREF_PV(pVM);
-        return VINF_SUCCESS;
+        return rcStrict;
     }
 
     /*
