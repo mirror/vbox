@@ -545,7 +545,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_DEFS           += VBOX_WITH_VIRTIO
   VBoxDD_SOURCES        += \
   	VirtIO/VirtioCore.cpp \
- 	Network/DevVirtioNet_1_0.cpp
+ 	Network/DevVirtioNet.cpp
  endif
 
 
@@ -1094,7 +1094,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    VBoxDDRC_DEFS        += VBOX_WITH_VIRTIO
    VBoxDDRC_SOURCES     += \
   	VirtIO/VirtioCore.cpp \
-  	Network/DevVirtioNet_1_0.cpp
+  	Network/DevVirtioNet.cpp
   endif
 
   ifdef VBOX_WITH_HGSMI
@@ -1312,7 +1312,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO
   VBoxDDR0_SOURCES      += \
   	VirtIO/VirtioCore.cpp \
-  	Network/DevVirtioNet_1_0.cpp
+  	Network/DevVirtioNet.cpp
  endif
 
  if 0 #def VBOX_WITH_NETSHAPER - no ring-0 driver support at the moment.
