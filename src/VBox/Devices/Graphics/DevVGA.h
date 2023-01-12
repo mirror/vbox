@@ -361,12 +361,16 @@ typedef struct VGAState
     uint32_t                    cMilliesRefreshInterval;
     /** Bitmap tracking dirty pages. */
     uint64_t                    bmDirtyBitmap[VGA_VRAM_MAX / GUEST_PAGE_SIZE / 64];
-    /** Bitmap tracking remapped pages (only needs 16 bits). */
-    uint64_t                    bmPageMapBitmap;
+    /** Bitmap tracking which VGA memory pages in the 0xa0000-0xbffff region has
+     * been remapped to allow direct access.
+     * @note It's quite possible that mapping in the 0xb0000-0xbffff isn't possible,
+     *       but we're playing safe and cover the whole VGA MMIO region here. */
+    uint32_t                    bmPageRemappedVGA;
 
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHasDirtyBits;
-    /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access. */
+    /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access.
+     * @todo This is just an unnecessary summmary of bmPageMapBitmap.  */
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     bool                        fRenderVRAM;
@@ -380,9 +384,8 @@ typedef struct VGAState
     bool                        fVMSVGA10;
     bool                        fVMSVGAPciId;
     bool                        fVMSVGAPciBarLayout;
-    bool                        Padding4[3];
 #else
-    bool                        Padding4[4+3];
+    bool                        afPadding4[4];
 #endif
 
     struct {
