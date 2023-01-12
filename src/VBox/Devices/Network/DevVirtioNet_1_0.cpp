@@ -1060,7 +1060,7 @@ static DECLCALLBACK(int) virtioNetR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOf
 {
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
-    Log10Func(("[%s] uOffset: %d, cb: %d: %.*Rhxs\n", pThis->szInst, uOffset, cb, RT_MAX(cb, 8) , pv));
+    Log10Func(("[%s] uOffset: %u, cb: %u: %.*Rhxs\n", pThis->szInst, uOffset, cb, cb, pv));
     RT_NOREF(pThis);
     return virtioNetR3DevCfgAccess(PDMDEVINS_2_DATA(pDevIns, PVIRTIONET), uOffset, (void *)pv, cb, true /*fWrite*/);
 }
@@ -3179,36 +3179,36 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
         /*
          * Dispatch to the handler for the queue this worker is set up to drive
          */
-         if (pVirtq->fCtlVirtq)
-         {
-             Log10Func(("[%s] %s worker woken. Fetching desc chain\n", pThis->szInst, pVirtq->szName));
+        if (pVirtq->fCtlVirtq)
+        {
+            Log10Func(("[%s] %s worker woken. Fetching desc chain\n", pThis->szInst, pVirtq->szName));
 #ifdef VIRTIO_VBUF_ON_STACK
             VIRTQBUF_T VirtqBuf;
             PVIRTQBUF pVirtqBuf = &VirtqBuf;
             int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, pVirtq->uIdx, pVirtqBuf, true);
 #else /* !VIRTIO_VBUF_ON_STACK */
-             PVIRTQBUF pVirtqBuf = NULL;
-             int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, pVirtq->uIdx, &pVirtqBuf, true);
+            PVIRTQBUF pVirtqBuf = NULL;
+            int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, pVirtq->uIdx, &pVirtqBuf, true);
 #endif /* !VIRTIO_VBUF_ON_STACK */
-             if (rc == VERR_NOT_AVAILABLE)
-             {
+            if (rc == VERR_NOT_AVAILABLE)
+            {
                 Log10Func(("[%s] %s worker woken. Nothing found in queue\n", pThis->szInst, pVirtq->szName));
                 continue;
-             }
-             virtioNetR3Ctrl(pDevIns, pThis, pThisCC, pVirtqBuf);
+            }
+            virtioNetR3Ctrl(pDevIns, pThis, pThisCC, pVirtqBuf);
 #ifndef VIRTIO_VBUF_ON_STACK
-             virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
+            virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
 #endif /* !VIRTIO_VBUF_ON_STACK */
-         }
-         else /* Must be Tx queue */
-         {
-             Log10Func(("[%s] %s worker woken. Virtq has data to transmit\n",  pThis->szInst, pVirtq->szName));
-             virtioNetR3TransmitPkts(pDevIns, pThis, pThisCC, pVirtq, false /* fOnWorkerThread */);
-         }
-         /* Note: Surprise! Rx queues aren't handled by local worker threads. Instead, the PDM network leaf driver
-          * invokes PDMINETWORKDOWN.pfnWaitReceiveAvail() callback, which waits until woken by virtioNetVirtqNotified()
-          * indicating that guest IN buffers have been added to Rx virt queue.
-          */
+        }
+        else /* Must be Tx queue */
+        {
+            Log10Func(("[%s] %s worker woken. Virtq has data to transmit\n",  pThis->szInst, pVirtq->szName));
+            virtioNetR3TransmitPkts(pDevIns, pThis, pThisCC, pVirtq, false /* fOnWorkerThread */);
+        }
+        /* Note: Surprise! Rx queues aren't handled by local worker threads. Instead, the PDM network leaf driver
+         * invokes PDMINETWORKDOWN.pfnWaitReceiveAvail() callback, which waits until woken by virtioNetVirtqNotified()
+         * indicating that guest IN buffers have been added to Rx virt queue.
+         */
     }
     Log10(("[%s] %s worker thread exiting\n", pThis->szInst, pVirtq->szName));
     return VINF_SUCCESS;
@@ -3253,6 +3253,8 @@ static DECLCALLBACK(void) virtioNetR3StatusChg(PVIRTIOCORE pVirtio, PVIRTIOCOREC
             if (IS_VIRTQ_EMPTY(pThisCC->pDevIns, &pThis->Virtio, pVirtq->uIdx))
                 virtioCoreVirtqEnableNotify(&pThis->Virtio, pVirtq->uIdx, true /* fEnable */);
         }
+
+        virtioNetWakeupRxBufWaiter(pThisCC->pDevIns);
     }
     else
     {
@@ -3375,6 +3377,17 @@ static DECLCALLBACK(void *) virtioNetR3QueryInterface(struct PDMIBASE *pInterfac
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,          &pThisCC->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,      &pThisCC->ILeds);
     return NULL;
+}
+
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnReset}
+ */
+static DECLCALLBACK(void) virtioNetR3Reset(PPDMDEVINS pDevIns)
+{
+    PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
+    PVIRTIONETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
+
+    virtioCoreR3ResetDevice(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
 }
 
 /**
@@ -3701,7 +3714,7 @@ const PDMDEVREG g_DeviceVirtioNet =
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               NULL,
+    /* .pfnReset = */               virtioNetR3Reset,
     /* .pfnSuspend = */             virtioNetWakeupRxBufWaiter,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              virtioNetR3Attach,

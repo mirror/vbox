@@ -548,6 +548,16 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
 void  virtioCoreResetAll(PVIRTIOCORE pVirtio);
 
 /**
+ * Resets the device state upon a VM reset for instance.
+ *
+ * @returns nothing.
+ * @param   pVirtio     Pointer to the virtio state.
+ *
+ * @note Calls back into the upper device when the status changes.
+ */
+DECLHIDDEN(void) virtioCoreR3ResetDevice(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
+
+/**
  * 'Attaches' host device-specific implementation's queue state to host VirtIO core
  * virtqueue management infrastructure, informing the virtio core of the name of the
  * queue to associate with the queue number.

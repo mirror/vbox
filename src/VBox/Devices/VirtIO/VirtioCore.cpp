@@ -589,8 +589,6 @@ int virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtq, const char *pc
     LogFunc(("Attaching %s to VirtIO core\n", pcszName));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
     pVirtq->uVirtq = uVirtq;
-    pVirtq->uAvailIdxShadow = 0;
-    pVirtq->uUsedIdxShadow  = 0;
     pVirtq->fUsedRingEvent = false;
     pVirtq->fAttached = true;
     RTStrCopy(pVirtq->szName, sizeof(pVirtq->szName), pcszName);
@@ -1013,7 +1011,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
                         && pVirtq->GCPhysVirtqDesc),
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    Log6Func(("    Copying device data to %s, [desc:%u → used ring:%u]\n",
+    Log6Func(("    Copying device data to %s, [desc:%u -> used ring:%u]\n",
               VIRTQNAME(pVirtio, uVirtq), pVirtqBuf->uHeadIdx, pVirtq->uUsedIdxShadow));
 
     /* Copy s/g buf (virtual memory) to guest phys mem (VirtIO "IN" direction). */
@@ -1160,7 +1158,7 @@ int virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
         AssertMsgReturn((pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK) && pVirtq->uEnable,
             ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    Log6Func(("    Sync %s used ring (%u → idx)\n",
+    Log6Func(("    Sync %s used ring (%u -> idx)\n",
                         pVirtq->szName, pVirtq->uUsedIdxShadow));
 
     virtioWriteUsedRingIdx(pDevIns, pVirtio, pVirtq, pVirtq->uUsedIdxShadow);
@@ -1352,6 +1350,11 @@ static void virtioGuestR3WasReset(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRT
     /* Let the client know */
     pVirtioCC->pfnStatusChanged(pVirtio, pVirtioCC, 0 /* fDriverOk */);
     virtioResetDevice(pDevIns, pVirtio);
+}
+
+DECLHIDDEN(void) virtioCoreR3ResetDevice(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
+{
+    virtioGuestR3WasReset(pDevIns, pVirtio, pVirtioCC);
 }
 #endif /* IN_RING3 */
 
