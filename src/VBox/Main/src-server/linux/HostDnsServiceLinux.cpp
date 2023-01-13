@@ -25,11 +25,16 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_HOST
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/file.h>
-#include <iprt/log.h>
+#include <VBox/log.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
@@ -52,17 +57,20 @@
 #include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
-#include <iprt/sanitized/string>
-#include <vector>
 #include "../HostDnsService.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static int g_DnsMonitorStop[2];
 
-static const std::string g_EtcFolder = "/etc";
-static const std::string g_ResolvConf = "resolv.conf";
-static const std::string g_ResolvConfFullPath = "/etc/resolv.conf";
+static const char g_szEtcFolder[]          = "/etc";
+static const char g_szResolvConfPath[]     = "/etc/resolv.conf";
+static const char g_szResolvConfFilename[] = "resolv.conf";
+
 
 class FileDescriptor
 {
@@ -93,12 +101,6 @@ public:
     }
 };
 
-struct InotifyEventWithName
-{
-    struct inotify_event e;
-    char name[NAME_MAX];
-};
-
 HostDnsServiceLinux::~HostDnsServiceLinux()
 {
 }
@@ -118,27 +120,115 @@ int HostDnsServiceLinux::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
     return VINF_SUCCESS;
 }
 
+#ifdef LOG_ENABLED
+/**
+ * Format the notifcation event mask into a buffer for logging purposes.
+ */
+static const char *InotifyMaskToStr(char *psz, size_t cb, uint32_t fMask)
+{
+    static struct { const char *pszName; uint32_t cchName, fFlag; } const s_aFlags[] =
+    {
+# define ENTRY(fFlag)   { #fFlag, sizeof(#fFlag) - 1, fFlag }
+        ENTRY(IN_ACCESS),
+        ENTRY(IN_MODIFY),
+        ENTRY(IN_ATTRIB),
+        ENTRY(IN_CLOSE_WRITE),
+        ENTRY(IN_CLOSE_NOWRITE),
+        ENTRY(IN_OPEN),
+        ENTRY(IN_MOVED_FROM),
+        ENTRY(IN_MOVED_TO),
+        ENTRY(IN_CREATE),
+        ENTRY(IN_DELETE),
+        ENTRY(IN_DELETE_SELF),
+        ENTRY(IN_MOVE_SELF),
+        ENTRY(IN_Q_OVERFLOW),
+        ENTRY(IN_IGNORED),
+        ENTRY(IN_UNMOUNT),
+        ENTRY(IN_ISDIR),
+    };
+    size_t offDst = 0;
+    for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
+        if (fMask & s_aFlags[i].fFlag)
+        {
+            if (offDst && offDst < cb)
+                psz[offDst++] = ' ';
+            if (offDst < cb)
+            {
+                size_t cbToCopy = RT_MIN(s_aFlags[i].cchName, cb - offDst);
+                memcpy(&psz[offDst], s_aFlags[i].pszName, cbToCopy);
+                offDst += cbToCopy;
+            }
+
+            fMask &= ~s_aFlags[i].fFlag;
+            if (!fMask)
+                break;
+        }
+    if (fMask && offDst < cb)
+        RTStrPrintf(&psz[offDst], cb - offDst, offDst ? " %#x" : "%#x", fMask);
+    else
+        psz[RT_MIN(offDst, cb - 1)] = '\0';
+    return psz;
+}
+#endif
+
+
+/**
+ * Helper for HostDnsServiceLinux::monitorThreadProc.
+ */
+static int monitorSymlinkedDir(int iInotifyFd, char szRealResolvConf[PATH_MAX], size_t *poffFilename)
+{
+    RT_BZERO(szRealResolvConf, PATH_MAX);
+
+    /* Check that it's a symlink first. */
+    struct stat st;
+    if (   lstat(g_szResolvConfPath, &st) >= 0
+        && S_ISLNK(st.st_mode))
+    {
+        /* If realpath fails, the file must've been deleted while we were busy: */
+        if (   realpath(g_szResolvConfPath, szRealResolvConf)
+            && strchr(szRealResolvConf, '/'))
+        {
+            /* Cut of the filename part. We only need that for deletion checks and such. */
+            size_t const offFilename = strrchr(szRealResolvConf, '/') - &szRealResolvConf[0];
+            *poffFilename = offFilename + 1;
+            szRealResolvConf[offFilename] = '\0';
+
+            /* Try set up directory monitoring. (File monitoring is done via the symlink.) */
+            return inotify_add_watch(iInotifyFd, szRealResolvConf, IN_MOVE | IN_CREATE | IN_DELETE);
+        }
+    }
+
+    *poffFilename = 0;
+    szRealResolvConf[0] = '\0';
+    return -1;
+}
+
 int HostDnsServiceLinux::monitorThreadProc(void)
 {
     /*
-     * inotify initialization
+     * inotify initialization.
+     *
+     * The order here helps keep the descriptor values stable.
      *
      * Note! Ignoring failures here is safe, because poll will ignore entires
      *       with negative fd values.
      */
-    AutoNotify a;
-    int wd[2];
-    wd[0] = inotify_add_watch(a.fileDescriptor(),
-                              g_ResolvConfFullPath.c_str(), IN_CLOSE_WRITE | IN_DELETE_SELF);
+    AutoNotify Notify;
 
-    /* If /etc/resolv.conf exists we want to listen for movements: because
-       # mv /etc/resolv.conf ...
-       won't arm IN_DELETE_SELF on wd[0] instead it will fire IN_MOVE_FROM on wd[1].
+    /* Monitor the /etc directory so we can detect moves, unliking and creations
+       involving /etc/resolv.conf:  */
+    int const iWdDir = inotify_add_watch(Notify.fileDescriptor(), g_szEtcFolder, IN_MOVE | IN_CREATE | IN_DELETE);
 
-       Because on some distributions /etc/resolv.conf is a symlink, wd[0] can't detect
-       deletion, it's recognizible on directory level (wd[1]) only. */
-    wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                              wd[0] == -1 ? IN_MOVED_TO | IN_CREATE : IN_MOVED_FROM | IN_DELETE);
+    /* In case g_szResolvConfPath is a symbolic link, monitor the target directory
+       too for changes to what it links to. */
+    char   szRealResolvConf[PATH_MAX];
+    size_t offRealResolvConfName = 0;
+    int iWdSymDir = ::monitorSymlinkedDir(Notify.fileDescriptor(), szRealResolvConf, &offRealResolvConfName);
+
+    /* Monitor the resolv.conf itself if it exists, following all symlinks. */
+    int iWdFile = inotify_add_watch(Notify.fileDescriptor(), g_szResolvConfPath, IN_CLOSE_WRITE | IN_DELETE_SELF);
+
+    Log5Func(("iWdDir=%d iWdSymDir=%d iWdFile=%d\n", iWdDir, iWdSymDir, iWdFile));
 
     /*
      * Create a socket pair for signalling shutdown via (see monitorThreadShutdown).
@@ -153,14 +243,14 @@ int HostDnsServiceLinux::monitorThreadProc(void)
     /*
      * poll initialization:
      */
-    pollfd polls[2];
-    RT_ZERO(polls);
+    pollfd aFdPolls[2];
+    RT_ZERO(aFdPolls);
 
-    polls[0].fd = a.fileDescriptor();
-    polls[0].events = POLLIN;
+    aFdPolls[0].fd = Notify.fileDescriptor();
+    aFdPolls[0].events = POLLIN;
 
-    polls[1].fd = g_DnsMonitorStop[1];
-    polls[1].events = POLLIN;
+    aFdPolls[1].fd = g_DnsMonitorStop[1];
+    aFdPolls[1].events = POLLIN;
 
     onMonitorThreadInitDone();
 
@@ -169,99 +259,214 @@ int HostDnsServiceLinux::monitorThreadProc(void)
      */
     for (;;)
     {
-        rc = poll(polls, RT_ELEMENTS(polls), -1 /*infinite timeout*/);
+        /*
+         * Wait for something to happen.
+         */
+        rc = poll(aFdPolls, RT_ELEMENTS(aFdPolls), -1 /*infinite timeout*/);
         if (rc == -1)
+        {
+            LogRelMax(32, ("HostDnsServiceLinux::monitorThreadProc: poll failed %d: errno=%d\n", rc, errno));
+            RTThreadSleep(1);
             continue;
+        }
+        Log5Func(("poll returns %d: [0]=%#x [1]=%#x\n", rc, aFdPolls[1].revents, aFdPolls[0].revents));
 
-        AssertMsgReturn(   (polls[0].revents & (POLLERR | POLLNVAL)) == 0
-                        && (polls[1].revents & (POLLERR | POLLNVAL)) == 0, ("Debug Me"), VERR_INTERNAL_ERROR);
+        AssertMsgReturn(   (aFdPolls[0].revents & (POLLERR | POLLNVAL)) == 0
+                        && (aFdPolls[1].revents & (POLLERR | POLLNVAL)) == 0, ("Debug Me"), VERR_INTERNAL_ERROR);
 
-        if (polls[1].revents & POLLIN)
-            return VINF_SUCCESS; /* time to shutdown */
 
-        if (polls[0].revents & POLLIN)
+        /*
+         * Check for shutdown first.
+         */
+        if (aFdPolls[1].revents & POLLIN)
+            return VINF_SUCCESS;
+
+        if (aFdPolls[0].revents & POLLIN)
         {
             /*
              * Read the notification event.
              */
-            /** @todo r=bird: This is buggy in that it somehow assumes we'll only get
-             *        one event here.  But since we're waiting on two different DELETE
-             *        events for both a specific file and its parent directory, we're likely
-             *        to get two DELETE events at the same time. */
-            struct InotifyEventWithName combo;
-            RT_ZERO(combo);
-            combo.e.wd = -42; /* avoid confusion on the offchance that wd[0] or wd[1] is zero. */
-
-            ssize_t r = read(polls[0].fd, &combo, sizeof(combo));
-            RT_NOREF(r);
-
-            if (combo.e.wd == wd[0])
+#define INOTIFY_EVENT_SIZE  (RT_UOFFSETOF(struct inotify_event, name))
+            union
             {
-                if (combo.e.mask & IN_CLOSE_WRITE)
-                    readResolvConf();
-                else if (combo.e.mask & IN_DELETE_SELF)
-                {
-                    inotify_rm_watch(a.fileDescriptor(), wd[0]); /* removes file watcher */
-                    int wd2 = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                                                IN_MOVED_TO|IN_CREATE); /* alter folder watcher */
-                    Assert(wd2 == wd[1]); RT_NOREF(wd2); /* ASSUMES wd[1] will be updated */
-                }
-                else if (combo.e.mask & IN_IGNORED)
-                    wd[0] = -1; /* we want receive any events on this watch */
+                uint8_t     abBuf[(INOTIFY_EVENT_SIZE * 2 - 1 + NAME_MAX) / INOTIFY_EVENT_SIZE * INOTIFY_EVENT_SIZE * 4];
+                uint64_t    uAlignTrick[2];
+            } uEvtBuf;
+
+            ssize_t cbEvents = read(Notify.fileDescriptor(), &uEvtBuf, sizeof(uEvtBuf));
+            Log5Func(("read(inotify) -> %zd\n", cbEvents));
+            if (cbEvents > 0)
+                Log5(("%.*Rhxd\n", cbEvents, &uEvtBuf));
+
+            /*
+             * Process the events.
+             *
+             * We'll keep the old watch descriptor number till after we're done
+             * parsing this block of events.  Even so, the removal of watches
+             * isn't race free, as they'll get automatically removed when what
+             * is being watched is unliked.
+             */
+            int                         iWdFileNew   = iWdFile;
+            int                         iWdSymDirNew = iWdSymDir;
+            bool                        fTryReRead   = false;
+            struct inotify_event const *pCurEvt      = (struct inotify_event const *)&uEvtBuf;
+            while (cbEvents >= (ssize_t)INOTIFY_EVENT_SIZE)
+            {
+#ifdef LOG_ENABLED
+                char szTmp[64];
+                if (pCurEvt->len == 0)
+                    Log5Func(("event: wd=%#x mask=%#x (%s) cookie=%#x\n", pCurEvt->wd, pCurEvt->mask,
+                              InotifyMaskToStr(szTmp, sizeof(szTmp), pCurEvt->mask), pCurEvt->cookie));
                 else
+                    Log5Func(("event: wd=%#x mask=%#x (%s) cookie=%#x len=%#x '%s'\n",
+                              pCurEvt->wd, pCurEvt->mask, InotifyMaskToStr(szTmp, sizeof(szTmp), pCurEvt->mask),
+                              pCurEvt->cookie, pCurEvt->len, pCurEvt->name));
+#endif
+
+                /*
+                 * The file itself (symlinks followed, remember):
+                 */
+                if (pCurEvt->wd == iWdFile)
                 {
-                    /*
-                     * It shouldn't happen, in release we will just ignore in debug
-                     * we will have to chance to look at into inotify_event
-                     */
-                    AssertMsgFailed(("Debug Me!!!"));
-                }
-            }
-            else if (combo.e.wd == wd[1])
-            {
-                if (combo.e.mask & (IN_DELETE | IN_MOVED_FROM))
-                {
-                    if (g_ResolvConf == combo.e.name)
+                    if (pCurEvt->mask & IN_CLOSE_WRITE)
                     {
-                        /*
-                         * Our file has been moved or deleted so we should change watching mode.
-                         */
-                        inotify_rm_watch(a.fileDescriptor(), wd[0]);
-                        wd[1] = inotify_add_watch(a.fileDescriptor(), g_EtcFolder.c_str(),
-                                                  IN_MOVED_TO | IN_CREATE);
-                        AssertMsg(wd[1] != -1,
-                                  ("It shouldn't happen, further investigation is needed\n"));
+                        Log5Func(("file: close-after-write => trigger re-read\n"));
+                        fTryReRead = true;
+                    }
+                    else if (pCurEvt->mask & IN_DELETE_SELF)
+                    {
+                        Log5Func(("file: deleted self\n"));
+                        if (iWdFileNew != -1)
+                        {
+                            rc = inotify_rm_watch(Notify.fileDescriptor(), iWdFileNew);
+                            AssertMsg(rc >= 0, ("%d/%d\n", rc, errno));
+                            iWdFileNew = -1;
+                        }
+                    }
+                    else if (pCurEvt->mask & IN_IGNORED)
+                        iWdFileNew = -1; /* file deleted */
+                    else
+                        AssertMsgFailed(("file: mask=%#x\n", pCurEvt->mask));
+                }
+                /*
+                 * The /etc directory
+                 *
+                 * We only care about events relating to the creation, deletion and
+                 * renaming of 'resolv.conf'.  We'll restablish both the direct file
+                 * watching and the watching of any symlinked directory on all of
+                 * these events, although for the former we'll delay the re-starting
+                 * of the watching till all events have been processed.
+                 */
+                else if (pCurEvt->wd == iWdDir)
+                {
+                    if (   pCurEvt->len > 0
+                        && strcmp(g_szResolvConfFilename, pCurEvt->name) == 0)
+                    {
+                        if (pCurEvt->mask & (IN_MOVE | IN_CREATE | IN_DELETE))
+                        {
+                            if (iWdFileNew >= 0)
+                            {
+                                rc = inotify_rm_watch(Notify.fileDescriptor(), iWdFileNew);
+                                Log5Func(("dir: moved / created / deleted: dropped file watch (%d - rc=%d/err=%d)\n",
+                                          iWdFileNew, rc, errno));
+                                iWdFileNew = -1;
+                            }
+                            if (iWdSymDirNew >= 0)
+                            {
+                                rc = inotify_rm_watch(Notify.fileDescriptor(), iWdSymDirNew);
+                                Log5Func(("dir: moved / created / deleted: dropped symlinked dir watch (%d - %s/%s - rc=%d/err=%d)\n",
+                                          iWdSymDirNew, szRealResolvConf, &szRealResolvConf[offRealResolvConfName], rc, errno));
+                                iWdSymDirNew = -1;
+                                offRealResolvConfName = 0;
+                            }
+                            if (pCurEvt->mask & (IN_MOVED_TO | IN_CREATE))
+                            {
+                                Log5Func(("dir: moved_to / created: trigger re-read\n"));
+                                fTryReRead = true;
+
+                                iWdSymDirNew = ::monitorSymlinkedDir(Notify.fileDescriptor(),
+                                                                     szRealResolvConf, &offRealResolvConfName);
+                                if (iWdSymDirNew < 0)
+                                    Log5Func(("dir: moved_to / created: re-stablished symlinked-directory monitoring: iWdSymDir=%d (%s/%s)\n",
+                                              iWdSymDirNew, szRealResolvConf, &szRealResolvConf[offRealResolvConfName]));
+                            }
+                        }
+                        else
+                            AssertMsgFailed(("dir: %#x\n", pCurEvt->mask));
                     }
                 }
-                else
+                /*
+                 * The directory of a symlinked resolv.conf.
+                 *
+                 * Where we only care when the symlink target is created, moved_to,
+                 * deleted or moved_from - i.e. a minimal version of the /etc event
+                 * processing above.
+                 *
+                 * Note! Since we re-statablish monitoring above, szRealResolvConf
+                 *       might not match the event we're processing.  Fortunately,
+                 *       this shouldn't be important except for debug logging.
+                 */
+                else if (pCurEvt->wd == iWdSymDir)
                 {
-                    AssertMsg(combo.e.mask & (IN_MOVED_TO | IN_CREATE),
-                              ("%RX32 event isn't expected, we are waiting for IN_MOVED|IN_CREATE\n", combo.e.mask));
-                    if (g_ResolvConf == combo.e.name)
+                    if (   pCurEvt->len > 0
+                        && offRealResolvConfName > 0
+                        && strcmp(&szRealResolvConf[offRealResolvConfName], pCurEvt->name) == 0)
                     {
-                        AssertMsg(wd[0] == -1, ("We haven't removed file watcher first\n"));
-
-                        /* alter folder watcher: */
-                        wd[1] = inotify_add_watch(a.fileDescriptor(),
-                                                  g_EtcFolder.c_str(),
-                                                  IN_MOVED_FROM | IN_DELETE);
-                        AssertMsg(wd[1] != -1, ("It shouldn't happen.\n"));
-
-                        wd[0] = inotify_add_watch(a.fileDescriptor(),
-                                                  g_ResolvConfFullPath.c_str(),
-                                                  IN_CLOSE_WRITE | IN_DELETE_SELF);
-                        AssertMsg(wd[0] != -1, ("Adding watcher to file (%s) has been failed!\n",
-                                                g_ResolvConfFullPath.c_str()));
-
-                        /* Notify our listeners */
-                        readResolvConf();
+                        if (iWdFileNew >= 0)
+                        {
+                            rc = inotify_rm_watch(Notify.fileDescriptor(), iWdFileNew);
+                            Log5Func(("symdir: moved / created / deleted: drop file watch (%d - rc=%d/err=%d)\n",
+                                      iWdFileNew, rc, errno));
+                            iWdFileNew = -1;
+                        }
+                        if (pCurEvt->mask & (IN_MOVED_TO | IN_CREATE))
+                        {
+                            Log5Func(("symdir: moved_to / created: trigger re-read\n"));
+                            fTryReRead = true;
+                        }
                     }
                 }
+                /* We can get here it seems if our inotify_rm_watch calls above takes
+                   place after new events relating to the two descriptors happens. */
+                else
+                    Log5Func(("Unknown (obsoleted) wd value: %d (mask=%#x cookie=%#x len=%#x)\n",
+                              pCurEvt->wd, pCurEvt->mask, pCurEvt->cookie, pCurEvt->len));
+
+                /* advance to the next event */
+                Assert(pCurEvt->len / INOTIFY_EVENT_SIZE * INOTIFY_EVENT_SIZE == pCurEvt->len);
+                size_t const cbCurEvt = INOTIFY_EVENT_SIZE + pCurEvt->len;
+                pCurEvt   = (struct inotify_event const *)((uintptr_t)pCurEvt + cbCurEvt);
+                cbEvents -= cbCurEvt;
             }
-            else
+
+            /*
+             * Commit the new watch descriptor numbers now that we're
+             * done processing event using the old ones.
+             */
+            iWdFile   = iWdFileNew;
+            iWdSymDir = iWdSymDirNew;
+
+            /*
+             * If the resolv.conf watch descriptor is -1, try restablish it here.
+             */
+            if (iWdFile == -1)
             {
-                /* It shouldn't happen */
-                AssertMsgFailed(("Shouldn't happen! Please debug me!"));
+                iWdFile = inotify_add_watch(Notify.fileDescriptor(), g_szResolvConfPath, IN_CLOSE_WRITE | IN_DELETE_SELF);
+                if (iWdFile >= 0)
+                {
+                    Log5Func(("Re-established file watcher: iWdFile=%d\n", iWdFile));
+                    fTryReRead = true;
+                }
+            }
+
+            /*
+             * If any of the events indicate that we should re-read the file, we
+             * do so now.  Should reduce number of unnecessary re-reads.
+             */
+            if (fTryReRead)
+            {
+                Log5Func(("Calling readResolvConf()...\n"));
+                readResolvConf();
             }
         }
     }
