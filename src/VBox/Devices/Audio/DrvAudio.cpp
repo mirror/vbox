@@ -102,8 +102,9 @@
 /**
  * Experimental code for destroying all streams in a disabled direction rather
  * than just disabling them.
-
- * Disabled by default for non-Doxygen builds for now.
+ *
+ * Cannot be enabled yet because the code isn't complete and DrvAudio will
+ * behave differently (incorrectly), see @bugref{9558#c5} for details.
  */
 #if defined(DOXYGEN_RUNNING) || 0
 # define DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
