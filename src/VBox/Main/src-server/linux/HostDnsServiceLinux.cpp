@@ -470,6 +470,7 @@ int HostDnsServiceLinux::monitorThreadProc(void)
     }
     close(aiStopPair[1]);
     close(iNotifyFd);
+    LogRel5(("HostDnsServiceLinux::monitorThreadProc: returns %Rrc\n", vrcRet));
     return vrcRet;
 }
 
