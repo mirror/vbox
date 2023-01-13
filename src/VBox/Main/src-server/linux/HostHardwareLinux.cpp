@@ -55,15 +55,15 @@
 
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
-#  include <dlfcn.h>
-#  include <fcntl.h>
+#  include <fcntl.h>        /* O_CLOEXEC */
 #  include <poll.h>
 #  include <signal.h>
 #  include <unistd.h>
+#  include <sys/inotify.h>
 # endif
 #endif
 
-#include <vector>
+//#include <vector>
 
 #include <errno.h>
 #include <dirent.h>
@@ -115,9 +115,12 @@ static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool i
 static int getDriveInfoFromSysfs(DriveInfoList *pList, SysfsWantDevice_T wantDevice, bool *pfSuccess) RT_NOTHROW_PROTO;
 
 
-/** Find the length of a string, ignoring trailing non-ascii or control
+/**
+ * Find the length of a string, ignoring trailing non-ascii or control
  * characters
- * @note Code duplicated in HostHardwareFreeBSD.cpp  */
+ *
+ * @note Code duplicated in HostHardwareFreeBSD.cpp
+ */
 static size_t strLenStripped(const char *pcsz) RT_NOTHROW_DEF
 {
     size_t cch = 0;
@@ -130,6 +133,7 @@ static size_t strLenStripped(const char *pcsz) RT_NOTHROW_DEF
 
 /**
  * Get the name of a floppy drive according to the Linux floppy driver.
+ *
  * @returns true on success, false if the name was not available (i.e. the
  *          device was not readable, or the file name wasn't a PC floppy
  *          device)
@@ -158,9 +162,10 @@ static bool floppyGetName(const char *pcszNode, unsigned Number, floppy_drive_na
 
 /**
  * Create a UDI and a description for a floppy drive based on a number and the
- * driver's name for it.  We deliberately return an ugly sequence of
- * characters as the description rather than an English language string to
- * avoid translation issues.
+ * driver's name for it.
+ *
+ * We deliberately return an ugly sequence of characters as the description
+ * rather than an English language string to avoid translation issues.
  *
  * @returns true if we know the device to be valid, false otherwise
  * @param   pcszName     the floppy driver name for the device (optional)
@@ -349,6 +354,7 @@ static int cdromDoInquiry(const char *pcszNode, uint8_t *pbType, char *pszVendor
 /**
  * Initialise the device strings (description and UDI) for a DVD drive based on
  * vendor and model name strings.
+ *
  * @param pcszVendor  the vendor ID string
  * @param pcszModel   the product ID string
  * @param pszDesc    where to store the description string (optional)
@@ -1017,21 +1023,20 @@ public:
  */
 typedef struct inotifyWatch
 {
-    /** Pointer to the inotify_add_watch() glibc function/Linux API */
-    int (*inotify_add_watch)(int, const char *, uint32_t);
     /** The native handle of the inotify fd. */
     int mhInotify;
 } inotifyWatch;
 
 /** The flags we pass to inotify - modify, create, delete, change permissions
  */
-#define IN_FLAGS 0x306
+#define MY_IN_FLAGS (IN_CREATE | IN_DELETE | IN_MODIFY | IN_ATTRIB)
+AssertCompile(MY_IN_FLAGS == 0x306);
 
 static int iwAddWatch(inotifyWatch *pSelf, const char *pcszPath)
 {
     errno = 0;
-    if (  pSelf->inotify_add_watch(pSelf->mhInotify, pcszPath, IN_FLAGS) >= 0
-        || (errno == EACCES))
+    if (   inotify_add_watch(pSelf->mhInotify, pcszPath, MY_IN_FLAGS) >= 0
+        || errno == EACCES)
         return VINF_SUCCESS;
     /* Other errors listed in the manpage can be treated as fatal */
     return RTErrConvertFromErrno(errno);
@@ -1040,44 +1045,16 @@ static int iwAddWatch(inotifyWatch *pSelf, const char *pcszPath)
 /** Object initialisation */
 static int iwInit(inotifyWatch *pSelf)
 {
-    int (*inotify_init)(void);
-    int fd, flags;
-    int rc = VINF_SUCCESS;
-
     AssertPtr(pSelf);
     pSelf->mhInotify = -1;
-    errno = 0;
-    *(void **)(&inotify_init) = dlsym(RTLD_DEFAULT, "inotify_init");
-    if (!inotify_init)
-        return VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
-    *(void **)(&pSelf->inotify_add_watch)
-                    = dlsym(RTLD_DEFAULT, "inotify_add_watch");
-    if (!pSelf->inotify_add_watch)
-        return VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
-    fd = inotify_init();
-    if (fd < 0)
+    int fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
+    if (fd >= 0)
     {
-        Assert(errno > 0);
-        return RTErrConvertFromErrno(errno);
-    }
-    Assert(errno == 0);
-
-    flags = fcntl(fd, F_GETFL, NULL);
-    if (   flags < 0
-        || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0
-        || fcntl(fd, F_SETFD, FD_CLOEXEC) < 0 /* race here */)
-    {
-        Assert(errno > 0);
-        rc = RTErrConvertFromErrno(errno);
-    }
-    if (RT_FAILURE(rc))
-        close(fd);
-    else
-    {
-        Assert(errno == 0);
         pSelf->mhInotify = fd;
+        return VINF_SUCCESS;
     }
-    return rc;
+    Assert(errno > 0);
+    return RTErrConvertFromErrno(errno);
 }
 
 static void iwTerm(inotifyWatch *pSelf)
@@ -1146,19 +1123,12 @@ public:
     }
     /** Is inotify available and working on this system?  If so we expect that
      * this implementation will be usable. */
-    /** @todo test the "inotify in glibc but not in the kernel" case. */
     static bool Available(void)
     {
-        int (*inotify_init)(void);
-
-        *(void **)(&inotify_init) = dlsym(RTLD_DEFAULT, "inotify_init");
-        if (!inotify_init)
-            return false;
-        int fd = inotify_init();
-        if (fd == -1)
-            return false;
-        close(fd);
-        return true;
+        int const fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
+        if (fd >= 0)
+            close(fd);
+        return fd >= 0;
     }
 
     virtual int getStatus(void)
@@ -1180,18 +1150,11 @@ static int pipeCreateSimple(int *phPipeRead, int *phPipeWrite)
 
     /*
      * Create the pipe and set the close-on-exec flag.
+     * ASSUMES we're building and running on Linux 2.6.27 or later (pipe2).
      */
     int aFds[2] = {-1, -1};
-    if (pipe(aFds))
+    if (pipe2(aFds, O_CLOEXEC))
         return RTErrConvertFromErrno(errno);
-    if (   fcntl(aFds[0], F_SETFD, FD_CLOEXEC) < 0
-        || fcntl(aFds[1], F_SETFD, FD_CLOEXEC) < 0)
-    {
-        int rc = RTErrConvertFromErrno(errno);
-        close(aFds[0]);
-        close(aFds[1]);
-        return rc;
-    }
 
     *phPipeRead  = aFds[0];
     *phPipeWrite = aFds[1];
@@ -1203,9 +1166,9 @@ static int pipeCreateSimple(int *phPipeRead, int *phPipeWrite)
     return VINF_SUCCESS;
 }
 
-hotplugInotifyImpl::hotplugInotifyImpl(const char *pcszDevicesRoot) :
-    mhWakeupPipeR(-1), mhWakeupPipeW(-1), mfWaiting(0),
-    mpcszDevicesRoot(pcszDevicesRoot), mStatus(VERR_WRONG_ORDER)
+hotplugInotifyImpl::hotplugInotifyImpl(const char *pcszDevicesRoot)
+    : mhWakeupPipeR(-1), mhWakeupPipeW(-1), mfWaiting(0)
+    , mpcszDevicesRoot(pcszDevicesRoot), mStatus(VERR_WRONG_ORDER)
 {
 #  ifdef DEBUG
     /* Excercise the code path (term() on a not-fully-initialised object) as
@@ -1216,15 +1179,14 @@ hotplugInotifyImpl::hotplugInotifyImpl(const char *pcszDevicesRoot) :
     /* For now this probing method should only be used if nothing else is
      * available */
 #  endif
-    int rc;
-    do {
-        if (RT_FAILURE(rc = iwInit(&mWatches)))
-            break;
-        if (RT_FAILURE(rc = iwAddWatch(&mWatches, mpcszDevicesRoot)))
-            break;
-        if (RT_FAILURE(rc = pipeCreateSimple(&mhWakeupPipeR, &mhWakeupPipeW)))
-            break;
-    } while (0);
+
+    int rc = iwInit(&mWatches);
+    if (RT_SUCCESS(rc))
+    {
+        rc = iwAddWatch(&mWatches, mpcszDevicesRoot);
+        if (RT_SUCCESS(rc))
+            rc = pipeCreateSimple(&mhWakeupPipeR, &mhWakeupPipeW);
+    }
     mStatus = rc;
     if (RT_FAILURE(rc))
         term();
@@ -1254,9 +1216,9 @@ int hotplugInotifyImpl::drainInotify()
 
     AssertRCReturn(mStatus, VERR_WRONG_ORDER);
     errno = 0;
-    do {
+    do
         cchRead = read(iwGetFD(&mWatches), chBuf, sizeof(chBuf));
-    } while (cchRead > 0);
+    while (cchRead > 0);
     if (cchRead == 0)
         return VINF_SUCCESS;
     if (   cchRead < 0
@@ -1285,23 +1247,27 @@ int hotplugInotifyImpl::drainWakeupPipe(void)
 int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
 {
     int rc;
-    char **ppszEntry;
-    VECTOR_PTR(char *) vecpchDevs;
 
     AssertRCReturn(mStatus, VERR_WRONG_ORDER);
     bool fEntered = ASMAtomicCmpXchgU32(&mfWaiting, 1, 0);
     AssertReturn(fEntered, VERR_WRONG_ORDER);
-    VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
-    do {
-        struct pollfd pollFD[MAX_POLLID];
 
+    VECTOR_PTR(char *) vecpchDevs;
+    VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
+    for (;;)
+    {
         rc = readFilePaths(mpcszDevicesRoot, &vecpchDevs, false);
         if (RT_SUCCESS(rc))
+        {
+            char **ppszEntry;
             VEC_FOR_EACH(&vecpchDevs, char *, ppszEntry)
                 if (RT_FAILURE(rc = iwAddWatch(&mWatches, *ppszEntry)))
                     break;
+        }
         if (RT_FAILURE(rc))
             break;
+
+        struct pollfd pollFD[MAX_POLLID];
         pollFD[RPIPE_ID].fd = mhWakeupPipeR;
         pollFD[RPIPE_ID].events = POLLIN;
         pollFD[INOTIFY_ID].fd = iwGetFD(&mWatches);
@@ -1331,7 +1297,8 @@ int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
         AssertBreakStmt(cPolled == 1, rc = VERR_INTERNAL_ERROR);
         if (RT_FAILURE(rc = drainInotify()))
             break;
-    } while (false);
+    }
+
     mfWaiting = 0;
     VEC_CLEANUP_PTR(&vecpchDevs);
     return rc;
