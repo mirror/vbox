@@ -976,9 +976,13 @@ class tdUnitTest1(vbox.TestDriver):
             os.environ[sName] = sValue;
         return True;
 
-    def _executeTestCase(self, oTestVm, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals,too-many-statements
+    def _executeTestCase(self, oTestVm, sName, sFilePathAbs, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals,too-many-statements
         """
         Executes a test case.
+
+        sFilePathAbs contains the absolute path (including OS-dependent executable suffix) of the testcase.
+
+        Returns @c true if testcase was skipped, or @c if not.
         """
 
         fSkipped = False;
@@ -1004,7 +1008,7 @@ class tdUnitTest1(vbox.TestDriver):
                 self._wrapMkDir(sDstDir);
                 asDirsToRemove.append(sDstDir);
 
-            sSrc = sFullPath + self.sExeSuff;
+            sSrc = sFilePathAbs;
             # If the testcase source does not exist for whatever reason, just mark it as skipped
             # instead of reporting an error.
             if not self._wrapPathExists(sSrc):
@@ -1012,7 +1016,7 @@ class tdUnitTest1(vbox.TestDriver):
                 fSkipped = True;
                 return fSkipped;
 
-            sDst = os.path.join(sDstDir, os.path.basename(sFullPath) + self.sExeSuff);
+            sDst = os.path.join(sDstDir, os.path.basename(sFilePathAbs));
             fModeExe  = 0;
             fModeDeps = 0;
             if not oTestVm or (oTestVm and not oTestVm.isWindows()): ## @todo NT4 does not like the chmod. Investigate this!
@@ -1034,28 +1038,28 @@ class tdUnitTest1(vbox.TestDriver):
 
             # Copy any associated .dll/.so/.dylib.
             for sSuff in [ '.dll', '.so', '.dylib' ]:
-                sSrc = os.path.splitext(sFullPath)[0] + sSuff;
+                sSrc = os.path.splitext(sFilePathAbs)[0] + sSuff;
                 if os.path.exists(sSrc):
                     sDst = os.path.join(sDstDir, os.path.basename(sSrc));
                     self._wrapCopyFile(sSrc, sDst, fModeDeps);
                     asFilesToRemove.append(sDst);
 
             # Copy any associated .r0, .rc and .gc modules.
-            offDriver = sFullPath.rfind('Driver')
+            offDriver = sFilePathAbs.rfind('Driver')
             if offDriver > 0:
                 for sSuff in [ '.r0', 'RC.rc', 'RC.gc' ]:
-                    sSrc = sFullPath[:offDriver] + sSuff;
+                    sSrc = sFilePathAbs[:offDriver] + sSuff;
                     if os.path.exists(sSrc):
                         sDst = os.path.join(sDstDir, os.path.basename(sSrc));
                         self._wrapCopyFile(sSrc, sDst, fModeDeps);
                         asFilesToRemove.append(sDst);
 
-            sFullPath = os.path.join(sDstDir, os.path.basename(sFullPath));
+            sFilePathAbs = os.path.join(sDstDir, os.path.basename(sFilePathAbs));
 
         #
         # Set up arguments and environment.
         #
-        asArgs = [sFullPath + self.sExeSuff,]
+        asArgs = [sFilePathAbs,]
         if sName in self.kdArguments:
             asArgs.extend(self.kdArguments[sName]);
 
@@ -1138,16 +1142,16 @@ class tdUnitTest1(vbox.TestDriver):
                 os.unlink(sXmlFile);
 
         if iRc == 0:
-            reporter.log('*** %s: exit code %d' % (sFullPath, iRc));
+            reporter.log('*** %s: exit code %d' % (sFilePathAbs, iRc));
             self.cPassed += 1;
 
         elif iRc == 4: # RTEXITCODE_SKIPPED
-            reporter.log('*** %s: exit code %d (RTEXITCODE_SKIPPED)' % (sFullPath, iRc));
+            reporter.log('*** %s: exit code %d (RTEXITCODE_SKIPPED)' % (sFilePathAbs, iRc));
             fSkipped = True;
             self.cSkipped += 1;
 
         elif fSkipped:
-            reporter.log('*** %s: exit code %d (Skipped)' % (sFullPath, iRc));
+            reporter.log('*** %s: exit code %d (Skipped)' % (sFilePathAbs, iRc));
             self.cSkipped += 1;
 
         else:
@@ -1159,9 +1163,9 @@ class tdUnitTest1(vbox.TestDriver):
 
             if iRc != 1:
                 reporter.testFailure('Exit status: %d%s' % (iRc, sName));
-                reporter.log(  '!*! %s: exit code %d%s' % (sFullPath, iRc, sName));
+                reporter.log(  '!*! %s: exit code %d%s' % (sFilePathAbs, iRc, sName));
             else:
-                reporter.error('!*! %s: exit code %d%s' % (sFullPath, iRc, sName));
+                reporter.error('!*! %s: exit code %d%s' % (sFilePathAbs, iRc, sName));
             self.cFailed += 1;
 
         return fSkipped;
@@ -1202,6 +1206,10 @@ class tdUnitTest1(vbox.TestDriver):
             asFiles = [os.path.basename(s) for s in asFiles];
 
         for sFilename in asFiles:
+            # When executing in remote execution mode, make sure to append the executable suffix here, as
+            # the (white / black) lists do not contain any OS-specific executable suffixes.
+            if self.sMode in ('remote-exec'):
+                sFilename = sFilename + self.sExeSuff;
             # Separate base and suffix and morph the base into something we
             # can use for reporting and array lookups.
             sBaseName = os.path.basename(sFilename);
@@ -1213,13 +1221,15 @@ class tdUnitTest1(vbox.TestDriver):
                           % (sTestCasePattern, sBaseName, sName, sSuffix, sFilename,));
 
             # Process white list first, if set.
-            if self.fOnlyWhiteList  and  not self._isExcluded(sName, self.kdTestCasesWhiteList):
+            if  self.fOnlyWhiteList \
+            and not self._isExcluded(sName, self.kdTestCasesWhiteList):
                 # (No testStart/Done or accounting here!)
                 reporter.log('%s: SKIPPED (not in white list)' % (sName,));
                 continue;
 
             # Basic exclusion.
-            if  not re.match(sTestCasePattern, sBaseName)  or  sSuffix in self.kasSuffixBlackList:
+            if  not re.match(sTestCasePattern, sBaseName) \
+            or  sSuffix in self.kasSuffixBlackList:
                 reporter.log2('"%s" is not a test case.' % (sName,));
                 continue;
 
@@ -1248,10 +1258,11 @@ class tdUnitTest1(vbox.TestDriver):
                 # Passed the white list check already above.
                 pass;
 
-            sFullPath = os.path.normpath(os.path.join(self.sUnitTestsPathSrc, os.path.join(sTestCaseSubDir, sFilename)));
+            sFilePathAbs = os.path.normpath(os.path.join(self.sUnitTestsPathSrc, os.path.join(sTestCaseSubDir, sFilename)));
+            reporter.log2('sFilePathAbs=%s\n' % (sFilePathAbs,));
             reporter.testStart(sName);
             try:
-                fSkipped = self._executeTestCase(oTestVm, sName, sFullPath, sTestCaseSubDir, oDevNull);
+                fSkipped = self._executeTestCase(oTestVm, sName, sFilePathAbs, sTestCaseSubDir, oDevNull);
             except:
                 reporter.errorXcpt('!*!');
                 self.cFailed += 1;
