@@ -99,6 +99,16 @@
 
 /** @} */
 
+/**
+ * Experimental code for destroying all streams in a disabled direction rather
+ * than just disabling them.
+
+ * Disabled by default for non-Doxygen builds for now.
+ */
+#if defined(DOXYGEN_RUNNING) || 0
+# define DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -431,6 +441,10 @@ typedef DRVAUDIO const *PCDRVAUDIO;
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
+static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx);
+#endif
 static uint32_t drvAudioStreamRetainInternal(PDRVAUDIOSTREAM pStreamEx);
 static uint32_t drvAudioStreamReleaseInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx, bool fMayDestroy);
 static void drvAudioStreamResetInternal(PDRVAUDIOSTREAM pStreamEx);
@@ -596,12 +610,17 @@ DECLINLINE(PDMHOSTAUDIOSTREAMSTATE) drvAudioStreamGetBackendState(PDRVAUDIO pThi
 {
     if (pThis->pHostDrvAudio)
     {
-        PDMHOSTAUDIOSTREAMSTATE enmState = pThis->pHostDrvAudio->pfnStreamGetState(pThis->pHostDrvAudio, pStreamEx->pBackend);
-        Log9Func(("%s: %s\n", pStreamEx->Core.Cfg.szName, PDMHostAudioStreamStateGetName(enmState) ));
-        Assert(   enmState > PDMHOSTAUDIOSTREAMSTATE_INVALID
-               && enmState < PDMHOSTAUDIOSTREAMSTATE_END
-               && (enmState != PDMHOSTAUDIOSTREAMSTATE_DRAINING || pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT));
-        return enmState;
+        /* Don't call if the backend wasn't created for this stream (disabled). */
+        if (pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED)
+        {
+            AssertPtrReturn(pThis->pHostDrvAudio->pfnStreamGetState, PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING);
+            PDMHOSTAUDIOSTREAMSTATE enmState = pThis->pHostDrvAudio->pfnStreamGetState(pThis->pHostDrvAudio, pStreamEx->pBackend);
+            Log9Func(("%s: %s\n", pStreamEx->Core.Cfg.szName, PDMHostAudioStreamStateGetName(enmState) ));
+            Assert(   enmState > PDMHOSTAUDIOSTREAMSTATE_INVALID
+                   && enmState < PDMHOSTAUDIOSTREAMSTATE_END
+                   && (enmState != PDMHOSTAUDIOSTREAMSTATE_DRAINING || pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT));
+            return enmState;
+        }
     }
     Log9Func(("%s: not-working\n", pStreamEx->Core.Cfg.szName));
     return PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
@@ -842,7 +861,7 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
     if (fEnable != *pfEnabled)
     {
         LogRel(("Audio: %s %s for driver '%s'\n",
-                fEnable ? "Enabling" : "Disabling", enmDir == PDMAUDIODIR_IN ? "input" : "output", pThis->BackendCfg.szName));
+                fEnable ? "Enabling" : "Disabling", PDMAudioDirGetName(enmDir), pThis->BackendCfg.szName));
 
         /*
          * When enabling, we must update flag before calling drvAudioStreamControlInternalBackend.
@@ -858,10 +877,14 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
          * know about this.  When disabled playback goes to /dev/null and we capture
          * only silence.  This means pStreamEx->fStatus holds the nominal status
          * and we'll use it to restore the operation.  (See also @bugref{9882}.)
+         *
+         * The DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION build time define
+         * controls how this is implemented.
          */
         PDRVAUDIOSTREAM pStreamEx;
         RTListForEach(&pThis->LstStreams, pStreamEx, DRVAUDIOSTREAM, ListEntry)
         {
+            /** @todo duplex streams   */
             if (pStreamEx->Core.Cfg.enmDir == enmDir)
             {
                 RTCritSectEnter(&pStreamEx->Core.CritSect);
@@ -872,12 +895,24 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
                 if (fEnable)
                     pStreamEx->Core.fWarningsShown &= ~PDMAUDIOSTREAM_WARN_FLAGS_DISABLED;
 
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+                /*
+                 * When enabling, we must make sure the stream has been created with the
+                 * backend before enabling and maybe pausing it. When disabling we must
+                 * destroy the stream. Paused includes enabled, as does draining, but we
+                 * only want the former.
+                 */
+#else
                 /*
                  * We don't need to do anything unless the stream is enabled.
                  * Paused includes enabled, as does draining, but we only want the former.
                  */
+#endif
                 uint32_t const fStatus = pStreamEx->fStatus;
+
+#ifndef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
                 if (fStatus & PDMAUDIOSTREAM_STS_ENABLED)
+#endif
                 {
                     const char *pszOperation;
                     int         rc2;
@@ -885,16 +920,28 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
                     {
                         if (!(fStatus & PDMAUDIOSTREAM_STS_PENDING_DISABLE))
                         {
-                            /** @todo r=bird: We need to redo pre-buffering OR switch to
-                             *        DRVAUDIOPLAYSTATE_PREBUF_SWITCHING playback mode when disabling
-                             *        output streams.  The former is preferred if associated with
-                             *        reporting the stream as INACTIVE. */
-                            rc2 = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_ENABLE);
-                            pszOperation = "enable";
-                            if (RT_SUCCESS(rc2) && (fStatus & PDMAUDIOSTREAM_STS_PAUSED))
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+                            /* The backend shouldn't have been created, so do that before enabling
+                               and possibly pausing the stream. */
+                            if (!(fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED))
+                                rc2 = drvAudioStreamReInitInternal(pThis, pStreamEx);
+                            else
+                                rc2 = VINF_SUCCESS;
+                            pszOperation = "re-init";
+                            if (RT_SUCCESS(rc2) && (fStatus & PDMAUDIOSTREAM_STS_ENABLED))
+#endif
                             {
-                                rc2 = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_PAUSE);
-                                pszOperation = "pause";
+                                /** @todo r=bird: We need to redo pre-buffering OR switch to
+                                 *        DRVAUDIOPLAYSTATE_PREBUF_SWITCHING playback mode when disabling
+                                 *        output streams.  The former is preferred if associated with
+                                 *        reporting the stream as INACTIVE. */
+                                rc2 = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_ENABLE);
+                                pszOperation = "enable";
+                                if (RT_SUCCESS(rc2) && (fStatus & PDMAUDIOSTREAM_STS_PAUSED))
+                                {
+                                    rc2 = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_PAUSE);
+                                    pszOperation = "pause";
+                                }
                             }
                         }
                         else
@@ -905,13 +952,21 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
                     }
                     else
                     {
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+                        if (fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED)
+                            rc2 = drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
+                        else
+                            rc2 = VINF_SUCCESS;
+                        pszOperation = "destroy";
+#else
                         rc2 = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
                         pszOperation = "disable";
+#endif
                     }
                     if (RT_FAILURE(rc2))
                     {
                         LogRel(("Audio: Failed to %s %s stream '%s': %Rrc\n",
-                                pszOperation, enmDir == PDMAUDIODIR_IN ? "input" : "output", pStreamEx->Core.Cfg.szName, rc2));
+                                pszOperation, PDMAudioDirGetName(enmDir), pStreamEx->Core.Cfg.szName, rc2));
                         if (RT_SUCCESS(rc))
                             rc = rc2;  /** @todo r=bird: This isn't entirely helpful to the caller since we'll update the status
                                         * regardless of the status code we return.  And anyway, there is nothing that can be done
@@ -1210,6 +1265,37 @@ static DECLCALLBACK(void) drvAudioStreamConfigHintWorker(PDRVAUDIO pThis, PPDMAU
 
 
 /**
+ * Checks whether a given stream direction is enabled (permitted) or not.
+ *
+ * Currently there are only per-direction enabling/disabling of audio streams.
+ * This lets a user disabling input so it an untrusted VM cannot listen in
+ * without the user explicitly allowing it, or disable output so it won't
+ * disturb your and cannot communicate with other VMs or machines
+ *
+ * See @bugref{9882}.
+ *
+ * @retval  true if the stream configuration is enabled/allowed.
+ * @retval  false if not permitted.
+ * @param   pThis   Pointer to the DrvAudio instance data.
+ * @param   enmDir  The stream direction to check.
+ */
+DECLINLINE(bool) drvAudioStreamIsDirectionEnabled(PDRVAUDIO pThis, PDMAUDIODIR enmDir)
+{
+    switch (enmDir)
+    {
+        case PDMAUDIODIR_IN:
+            return pThis->In.fEnabled;
+        case PDMAUDIODIR_OUT:
+            return pThis->Out.fEnabled;
+        case PDMAUDIODIR_DUPLEX:
+            return pThis->Out.fEnabled && pThis->In.fEnabled;
+        default:
+            AssertFailedReturn(false);
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamConfigHint}
  */
 static DECLCALLBACK(void) drvAudioStreamConfigHint(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfg)
@@ -1227,7 +1313,7 @@ static DECLCALLBACK(void) drvAudioStreamConfigHint(PPDMIAUDIOCONNECTOR pInterfac
     if (   pThis->pHostDrvAudio
         && pThis->pHostDrvAudio->pfnStreamConfigHint)
     {
-        if (pCfg->enmDir == PDMAUDIODIR_OUT ? pThis->Out.fEnabled : pThis->In.fEnabled)
+        if (drvAudioStreamIsDirectionEnabled(pThis, pCfg->enmDir))
         {
             /*
              * Adjust the configuration (applying out settings) then call the backend driver.
@@ -1432,6 +1518,17 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
 {
     AssertMsg((pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED) == 0,
               ("Stream '%s' already initialized in backend\n", pStreamEx->Core.Cfg.szName));
+
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+    /*
+     * Check if the stream direction is enabled (permitted).
+     */
+    if (!drvAudioStreamIsDirectionEnabled(pThis, pStreamEx->Core.Cfg.enmDir))
+    {
+        LogFunc(("Stream direction is disbled, returning w/o doing anything\n"));
+        return VINF_SUCCESS;
+    }
+#endif
 
     /*
      * Adjust the stream config, applying defaults and any overriding settings.
@@ -1842,7 +1939,12 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
                      */
                     if (!pStreamEx->fNeedAsyncInit)
                     {
-                        pStreamEx->fStatus |= PDMAUDIOSTREAM_STS_BACKEND_READY;
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+                        /* drvAudioStreamInitInternal returns success for disable stream directions w/o actually
+                           creating a backend, so we need to check that before marking the backend ready.. */
+                        if (pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED)
+#endif
+                            pStreamEx->fStatus |= PDMAUDIOSTREAM_STS_BACKEND_READY;
                         PDMAUDIOSTREAM_STS_ASSERT_VALID(pStreamEx->fStatus);
                     }
                     else
@@ -2496,8 +2598,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM
      *         than to replicate this in the relevant backends.)  When the backend
      *         finish initializing the stream, we'll update it about the stream state.
      */
-    bool const                     fDirEnabled     = pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_IN
-                                                   ? pThis->In.fEnabled : pThis->Out.fEnabled;
+    bool const                     fDirEnabled     = drvAudioStreamIsDirectionEnabled(pThis, pStreamEx->Core.Cfg.enmDir);
     PDMHOSTAUDIOSTREAMSTATE const  enmBackendState = drvAudioStreamGetBackendState(pThis, pStreamEx);
                                                      /* ^^^ (checks pThis->pHostDrvAudio != NULL too) */
 
@@ -2619,6 +2720,14 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+#ifdef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
+            if (!(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED))
+            {
+                rc = drvAudioStreamReInitInternal(pThis, pStreamEx);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+#endif /* DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION */
             if (!(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_ENABLED))
             {
                 /* Are we still draining this stream? Then we must disable it first. */
@@ -2712,6 +2821,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
             break;
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+#ifndef DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION
             if (pStreamEx->fStatus & PDMAUDIOSTREAM_STS_ENABLED)
             {
                 rc = drvAudioStreamControlInternalBackend(pThis, pStreamEx, PDMAUDIOSTREAMCMD_DISABLE);
@@ -2719,6 +2829,10 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
                 if (RT_SUCCESS(rc)) /** @todo ignore this and reset it anyway? */
                     drvAudioStreamResetOnDisable(pStreamEx);
             }
+#else
+            if (pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED)
+                rc = drvAudioStreamDestroyInternalBackend(pThis, pStreamEx);
+#endif /* DRVAUDIO_WITH_STREAM_DESTRUCTION_IN_DISABLED_DIRECTION */
             break;
 
         case PDMAUDIOSTREAMCMD_PAUSE:
@@ -3253,7 +3367,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTATE) drvAudioStreamGetState(PPDMIAUDIOCONNEC
         if (fStrmStatus & PDMAUDIOSTREAM_STS_BACKEND_CREATED)
         {
             if (   (fStrmStatus & PDMAUDIOSTREAM_STS_ENABLED)
-                && (enmDir == PDMAUDIODIR_IN ? pThis->In.fEnabled : pThis->Out.fEnabled)
+                && drvAudioStreamIsDirectionEnabled(pThis, pStreamEx->Core.Cfg.enmDir)
                 && (   enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY
                     || enmBackendState == PDMHOSTAUDIOSTREAMSTATE_DRAINING
                     || enmBackendState == PDMHOSTAUDIOSTREAMSTATE_INITIALIZING ))
@@ -3968,7 +4082,7 @@ static DECLCALLBACK(void) drvAudioHostPort_NotifyDeviceChanged(PPDMIHOSTAUDIOPOR
 {
     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IHostAudioPort);
     AssertReturnVoid(enmDir == PDMAUDIODIR_IN || enmDir == PDMAUDIODIR_OUT);
-    LogRel(("Audio: The %s device for %s is changing.\n", enmDir == PDMAUDIODIR_IN ? "input" : "output", pThis->BackendCfg.szName));
+    LogRel(("Audio: The %s device for %s is changing.\n", PDMAudioDirGetName(enmDir), pThis->BackendCfg.szName));
 
     /*
      * Grab the list lock in shared mode and do the work.
