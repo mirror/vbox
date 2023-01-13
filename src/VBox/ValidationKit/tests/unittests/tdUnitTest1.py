@@ -1208,7 +1208,7 @@ class tdUnitTest1(vbox.TestDriver):
         for sFilename in asFiles:
             # When executing in remote execution mode, make sure to append the executable suffix here, as
             # the (white / black) lists do not contain any OS-specific executable suffixes.
-            if self.sMode in ('remote-exec'):
+            if self.sMode == 'remote-exec':
                 sFilename = sFilename + self.sExeSuff;
             # Separate base and suffix and morph the base into something we
             # can use for reporting and array lookups.
