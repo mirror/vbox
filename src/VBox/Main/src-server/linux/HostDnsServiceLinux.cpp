@@ -65,44 +65,18 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static int g_DnsMonitorStop[2];
-
 static const char g_szEtcFolder[]          = "/etc";
 static const char g_szResolvConfPath[]     = "/etc/resolv.conf";
 static const char g_szResolvConfFilename[] = "resolv.conf";
 
 
-class FileDescriptor
-{
-public:
-    FileDescriptor(int d = -1)
-        : fd(d)
-    {}
-
-    virtual ~FileDescriptor() {
-        if (fd != -1)
-            close(fd);
-    }
-
-    int fileDescriptor() const {return fd;}
-
-protected:
-    int fd;
-};
-
-
-class AutoNotify : public FileDescriptor
-{
-public:
-    AutoNotify()
-    {
-        FileDescriptor::fd = inotify_init();
-        AssertReturnVoid(FileDescriptor::fd != -1);
-    }
-};
-
 HostDnsServiceLinux::~HostDnsServiceLinux()
 {
+    if (m_fdShutdown >= 0)
+    {
+        close(m_fdShutdown);
+        m_fdShutdown = -1;
+    }
 }
 
 HRESULT HostDnsServiceLinux::init(HostDnsMonitorProxy *pProxy)
@@ -114,13 +88,12 @@ int HostDnsServiceLinux::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 {
     RT_NOREF(uTimeoutMs);
 
-    send(g_DnsMonitorStop[0], "", 1, 0);
+    if (m_fdShutdown >= 0)
+        send(m_fdShutdown, "", 1, MSG_NOSIGNAL);
 
-    /** @todo r=andy Do we have to wait for something here? Can this fail? */
     return VINF_SUCCESS;
 }
 
-#ifdef LOG_ENABLED
 /**
  * Format the notifcation event mask into a buffer for logging purposes.
  */
@@ -169,8 +142,6 @@ static const char *InotifyMaskToStr(char *psz, size_t cb, uint32_t fMask)
         psz[RT_MIN(offDst, cb - 1)] = '\0';
     return psz;
 }
-#endif
-
 
 /**
  * Helper for HostDnsServiceLinux::monitorThreadProc.
@@ -203,42 +174,50 @@ static int monitorSymlinkedDir(int iInotifyFd, char szRealResolvConf[PATH_MAX], 
     return -1;
 }
 
+/** @todo If this code is needed elsewhere, we should abstract it into an IPRT
+ *        thingy that monitors a file (path) for changes.  This code is a little
+ *        bit too complex to be duplicated. */
 int HostDnsServiceLinux::monitorThreadProc(void)
 {
     /*
-     * inotify initialization.
-     *
-     * The order here helps keep the descriptor values stable.
+     * Create a socket pair for signalling shutdown (see monitorThreadShutdown).
+     * ASSUME Linux 2.6.27 or later and that we can use SOCK_CLOEXEC.
+     */
+    int aiStopPair[2];
+    int rc = socketpair(AF_LOCAL, SOCK_DGRAM | SOCK_CLOEXEC, 0, aiStopPair);
+    int iErr = errno;
+    AssertLogRelMsgReturn(rc == 0, ("socketpair: failed (%d: %s)\n", iErr, strerror(iErr)), RTErrConvertFromErrno(iErr));
+
+    m_fdShutdown = aiStopPair[0];
+
+    onMonitorThreadInitDone();
+
+    /*
+     * inotify initialization (using inotify_init1 w/ IN_CLOEXEC introduced
+     * in 2.6.27 shouldn't be a problem any more).
      *
      * Note! Ignoring failures here is safe, because poll will ignore entires
      *       with negative fd values.
      */
-    AutoNotify Notify;
+    int const iNotifyFd = inotify_init1(IN_CLOEXEC);
+    if (iNotifyFd < 0)
+        LogRel(("HostDnsServiceLinux::monitorThreadProc: Warning! inotify_init failed (errno=%d)\n", errno));
 
-    /* Monitor the /etc directory so we can detect moves, unliking and creations
+    /* Monitor the /etc directory so we can detect moves, creating and unlinking
        involving /etc/resolv.conf:  */
-    int const iWdDir = inotify_add_watch(Notify.fileDescriptor(), g_szEtcFolder, IN_MOVE | IN_CREATE | IN_DELETE);
+    int const iWdDir = inotify_add_watch(iNotifyFd, g_szEtcFolder, IN_MOVE | IN_CREATE | IN_DELETE);
 
     /* In case g_szResolvConfPath is a symbolic link, monitor the target directory
-       too for changes to what it links to. */
+       too for changes to what it links to (kept up to date via iWdDir). */
     char   szRealResolvConf[PATH_MAX];
     size_t offRealResolvConfName = 0;
-    int iWdSymDir = ::monitorSymlinkedDir(Notify.fileDescriptor(), szRealResolvConf, &offRealResolvConfName);
+    int iWdSymDir = ::monitorSymlinkedDir(iNotifyFd, szRealResolvConf, &offRealResolvConfName);
 
     /* Monitor the resolv.conf itself if it exists, following all symlinks. */
-    int iWdFile = inotify_add_watch(Notify.fileDescriptor(), g_szResolvConfPath, IN_CLOSE_WRITE | IN_DELETE_SELF);
+    int iWdFile = inotify_add_watch(iNotifyFd, g_szResolvConfPath, IN_CLOSE_WRITE | IN_DELETE_SELF);
 
-    Log5Func(("iWdDir=%d iWdSymDir=%d iWdFile=%d\n", iWdDir, iWdSymDir, iWdFile));
-
-    /*
-     * Create a socket pair for signalling shutdown via (see monitorThreadShutdown).
-     */
-    int rc = socketpair(AF_LOCAL, SOCK_DGRAM, 0, g_DnsMonitorStop);
-    AssertMsgReturn(rc == 0, ("socketpair: failed (%d: %s)\n", errno, strerror(errno)), E_FAIL);
-
-    /* automatic cleanup tricks */
-    FileDescriptor stopper0(g_DnsMonitorStop[0]);
-    FileDescriptor stopper1(g_DnsMonitorStop[1]);
+    LogRel5(("HostDnsServiceLinux::monitorThreadProc: inotify: %d - iWdDir=%d iWdSymDir=%d iWdFile=%d\n",
+             iNotifyFd, iWdDir, iWdSymDir, iWdFile));
 
     /*
      * poll initialization:
@@ -246,17 +225,16 @@ int HostDnsServiceLinux::monitorThreadProc(void)
     pollfd aFdPolls[2];
     RT_ZERO(aFdPolls);
 
-    aFdPolls[0].fd = Notify.fileDescriptor();
+    aFdPolls[0].fd = iNotifyFd;
     aFdPolls[0].events = POLLIN;
 
-    aFdPolls[1].fd = g_DnsMonitorStop[1];
+    aFdPolls[1].fd = aiStopPair[1];
     aFdPolls[1].events = POLLIN;
-
-    onMonitorThreadInitDone();
 
     /*
      * The monitoring loop.
      */
+    int vrcRet = VINF_SUCCESS;
     for (;;)
     {
         /*
@@ -265,21 +243,28 @@ int HostDnsServiceLinux::monitorThreadProc(void)
         rc = poll(aFdPolls, RT_ELEMENTS(aFdPolls), -1 /*infinite timeout*/);
         if (rc == -1)
         {
-            LogRelMax(32, ("HostDnsServiceLinux::monitorThreadProc: poll failed %d: errno=%d\n", rc, errno));
-            RTThreadSleep(1);
+            if (errno != EINTR)
+            {
+                LogRelMax(32, ("HostDnsServiceLinux::monitorThreadProc: poll failed %d: errno=%d\n", rc, errno));
+                RTThreadSleep(1);
+            }
             continue;
         }
         Log5Func(("poll returns %d: [0]=%#x [1]=%#x\n", rc, aFdPolls[1].revents, aFdPolls[0].revents));
 
-        AssertMsgReturn(   (aFdPolls[0].revents & (POLLERR | POLLNVAL)) == 0
-                        && (aFdPolls[1].revents & (POLLERR | POLLNVAL)) == 0, ("Debug Me"), VERR_INTERNAL_ERROR);
-
+        AssertMsgBreakStmt(   (aFdPolls[0].revents & (POLLERR | POLLNVAL)) == 0 /* (ok for fd=-1 too, revents=0 then) */
+                           && (aFdPolls[1].revents & (POLLERR | POLLNVAL)) == 0,
+                              ("Debug Me: [0]=%d,%#x [1]=%d, %#x\n",
+                               aFdPolls[0].fd, aFdPolls[0].revents, aFdPolls[0].fd, aFdPolls[1].revents),
+                           vrcRet = VERR_INTERNAL_ERROR);
 
         /*
          * Check for shutdown first.
          */
         if (aFdPolls[1].revents & POLLIN)
-            return VINF_SUCCESS;
+            break; /** @todo should probably drain aiStopPair[1] here if we're really paranoid.
+                    * we'll be closing our end of the socket/pipe, so any stuck write
+                    * should return too (ECONNRESET, ENOTCONN or EPIPE). */
 
         if (aFdPolls[0].revents & POLLIN)
         {
@@ -293,7 +278,7 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                 uint64_t    uAlignTrick[2];
             } uEvtBuf;
 
-            ssize_t cbEvents = read(Notify.fileDescriptor(), &uEvtBuf, sizeof(uEvtBuf));
+            ssize_t cbEvents = read(iNotifyFd, &uEvtBuf, sizeof(uEvtBuf));
             Log5Func(("read(inotify) -> %zd\n", cbEvents));
             if (cbEvents > 0)
                 Log5(("%.*Rhxd\n", cbEvents, &uEvtBuf));
@@ -312,16 +297,14 @@ int HostDnsServiceLinux::monitorThreadProc(void)
             struct inotify_event const *pCurEvt      = (struct inotify_event const *)&uEvtBuf;
             while (cbEvents >= (ssize_t)INOTIFY_EVENT_SIZE)
             {
-#ifdef LOG_ENABLED
                 char szTmp[64];
                 if (pCurEvt->len == 0)
-                    Log5Func(("event: wd=%#x mask=%#x (%s) cookie=%#x\n", pCurEvt->wd, pCurEvt->mask,
-                              InotifyMaskToStr(szTmp, sizeof(szTmp), pCurEvt->mask), pCurEvt->cookie));
+                    LogRel5(("HostDnsServiceLinux::monitorThreadProc: event: wd=%#x mask=%#x (%s) cookie=%#x\n",
+                             pCurEvt->wd, pCurEvt->mask, InotifyMaskToStr(szTmp, sizeof(szTmp), pCurEvt->mask), pCurEvt->cookie));
                 else
-                    Log5Func(("event: wd=%#x mask=%#x (%s) cookie=%#x len=%#x '%s'\n",
+                    LogRel5(("HostDnsServiceLinux::monitorThreadProc: event: wd=%#x mask=%#x (%s) cookie=%#x len=%#x '%s'\n",
                               pCurEvt->wd, pCurEvt->mask, InotifyMaskToStr(szTmp, sizeof(szTmp), pCurEvt->mask),
                               pCurEvt->cookie, pCurEvt->len, pCurEvt->name));
-#endif
 
                 /*
                  * The file itself (symlinks followed, remember):
@@ -338,7 +321,7 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                         Log5Func(("file: deleted self\n"));
                         if (iWdFileNew != -1)
                         {
-                            rc = inotify_rm_watch(Notify.fileDescriptor(), iWdFileNew);
+                            rc = inotify_rm_watch(iNotifyFd, iWdFileNew);
                             AssertMsg(rc >= 0, ("%d/%d\n", rc, errno));
                             iWdFileNew = -1;
                         }
@@ -366,14 +349,14 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                         {
                             if (iWdFileNew >= 0)
                             {
-                                rc = inotify_rm_watch(Notify.fileDescriptor(), iWdFileNew);
+                                rc = inotify_rm_watch(iNotifyFd, iWdFileNew);
                                 Log5Func(("dir: moved / created / deleted: dropped file watch (%d - rc=%d/err=%d)\n",
                                           iWdFileNew, rc, errno));
                                 iWdFileNew = -1;
                             }
                             if (iWdSymDirNew >= 0)
                             {
-                                rc = inotify_rm_watch(Notify.fileDescriptor(), iWdSymDirNew);
+                                rc = inotify_rm_watch(iNotifyFd, iWdSymDirNew);
                                 Log5Func(("dir: moved / created / deleted: dropped symlinked dir watch (%d - %s/%s - rc=%d/err=%d)\n",
                                           iWdSymDirNew, szRealResolvConf, &szRealResolvConf[offRealResolvConfName], rc, errno));
                                 iWdSymDirNew = -1;
@@ -384,8 +367,7 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                                 Log5Func(("dir: moved_to / created: trigger re-read\n"));
                                 fTryReRead = true;
 
-                                iWdSymDirNew = ::monitorSymlinkedDir(Notify.fileDescriptor(),
-                                                                     szRealResolvConf, &offRealResolvConfName);
+                                iWdSymDirNew = ::monitorSymlinkedDir(iNotifyFd, szRealResolvConf, &offRealResolvConfName);
                                 if (iWdSymDirNew < 0)
                                     Log5Func(("dir: moved_to / created: re-stablished symlinked-directory monitoring: iWdSymDir=%d (%s/%s)\n",
                                               iWdSymDirNew, szRealResolvConf, &szRealResolvConf[offRealResolvConfName]));
@@ -414,7 +396,7 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                     {
                         if (iWdFileNew >= 0)
                         {
-                            rc = inotify_rm_watch(Notify.fileDescriptor(), iWdFileNew);
+                            rc = inotify_rm_watch(iNotifyFd, iWdFileNew);
                             Log5Func(("symdir: moved / created / deleted: drop file watch (%d - rc=%d/err=%d)\n",
                                       iWdFileNew, rc, errno));
                             iWdFileNew = -1;
@@ -451,7 +433,7 @@ int HostDnsServiceLinux::monitorThreadProc(void)
              */
             if (iWdFile == -1)
             {
-                iWdFile = inotify_add_watch(Notify.fileDescriptor(), g_szResolvConfPath, IN_CLOSE_WRITE | IN_DELETE_SELF);
+                iWdFile = inotify_add_watch(iNotifyFd, g_szResolvConfPath, IN_CLOSE_WRITE | IN_DELETE_SELF);
                 if (iWdFile >= 0)
                 {
                     Log5Func(("Re-established file watcher: iWdFile=%d\n", iWdFile));
@@ -466,9 +448,28 @@ int HostDnsServiceLinux::monitorThreadProc(void)
             if (fTryReRead)
             {
                 Log5Func(("Calling readResolvConf()...\n"));
-                readResolvConf();
+                try
+                {
+                    readResolvConf();
+                }
+                catch (...)
+                {
+                    LogRel(("HostDnsServiceLinux::monitorThreadProc: readResolvConf threw exception!\n"));
+                }
             }
         }
     }
+
+    /*
+     * Close file descriptors.
+     */
+    if (aiStopPair[0] == m_fdShutdown) /* paranoia */
+    {
+        m_fdShutdown = -1;
+        close(aiStopPair[0]);
+    }
+    close(aiStopPair[1]);
+    close(iNotifyFd);
+    return vrcRet;
 }
 
