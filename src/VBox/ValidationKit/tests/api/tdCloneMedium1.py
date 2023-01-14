@@ -99,7 +99,7 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
 
         oMediumIOBaseHdd1 = oBaseHdd1.openForIO(True, "")
 
-        if data and len(data):
+        if data:
             cbWritten = oMediumIOBaseHdd1.write(0, data)
 
             if cbWritten != 1:
