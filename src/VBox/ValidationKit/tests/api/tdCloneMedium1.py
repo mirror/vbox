@@ -76,7 +76,7 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
     # Test execution helpers.
     #
 
-    def createTestMedium(self, oVM, sPathSuffix, sFmt = 'VDI', cbSize = 1024*1024, data):
+    def createTestMedium(self, oVM, sPathSuffix, sFmt = 'VDI', cbSize = 1024*1024, data = None):
         assert oVM is not None
 
         oSession = self.oTstDrv.openSession(oVM)
