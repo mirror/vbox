@@ -2831,25 +2831,26 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
      * readAndClearLed() should be thread safe.
      */
 
-    /* Make a roadmap of which DeviceType_T LED types are wanted */
-    DeviceType_T maxWanted = (DeviceType_T)0;
-    bool aWanted[DeviceType_End] = { 0 };
-    Assert(aWanted[1] == false && aWanted[DeviceType_End - 1] == false);
+    /*
+     * Make a roadmap of which DeviceType_T LED types are wanted:
+     */
+    uint32_t fWanted = 0;
+    AssertCompile(DeviceType_End <= 32);
 
     for (size_t iType = 0; iType < aType.size(); ++iType)
     {
         DeviceType_T const enmType = aType[iType];
         AssertReturn(enmType > DeviceType_Null && enmType < DeviceType_End,
                      setError(E_INVALIDARG, tr("Invalid DeviceType for getDeviceActivity in entry #%u: %d"), iType, enmType));
-        aWanted[enmType] = true;
-        if (enmType > maxWanted)
-            maxWanted = enmType;
+        fWanted |= RT_BIT_32((unsigned)enmType);
     }
 
     /* Resize the result vector before making changes (may throw, paranoia). */
     aActivity.resize(aType.size());
 
-    /* Collect all the LEDs in a single sweep through all drivers' sets */
+    /*
+     * Collect all the LEDs in a single sweep through all drivers' sets:
+     */
     PDMLEDCORE aLEDs[DeviceType_End] = { {0} };
     Assert(aLEDs[1].u32 == 0 && aLEDs[DeviceType_End / 2].u32 == 0 && aLEDs[DeviceType_End - 1].u32 == 0); /* paranoia */
     for (uint32_t idxSet = 0; idxSet < mcLedSets; ++idxSet)
@@ -2863,7 +2864,8 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
             for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
             {
                 DeviceType_T const enmType = pLS->paSubTypes[inSet];
-                if (enmType < maxWanted && aWanted[enmType])
+                Assert((unsigned)enmType < (unsigned)DeviceType_End);
+                if (fWanted & RT_BIT_32((unsigned)enmType))
                     aLEDs[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
             }
         }
@@ -2871,13 +2873,16 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
         else
         {
             DeviceType_T const enmType = pLS->enmType;
-            if (enmType < maxWanted && aWanted[enmType])
+            Assert((unsigned)enmType < (unsigned)DeviceType_End);
+            if (fWanted & RT_BIT_32((unsigned)enmType))
                 for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
                     aLEDs[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
         }
     }
 
-    /* Compose the result vector: */
+    /*
+     * Compose the result vector:
+     */
     for (size_t iType = 0; iType < aActivity.size(); ++iType)
     {
         switch (aLEDs[aType[iType]].u32 & (PDMLED_READING | PDMLED_WRITING))
