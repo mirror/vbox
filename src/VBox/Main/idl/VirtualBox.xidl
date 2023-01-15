@@ -1325,6 +1325,9 @@
     <const name="Graphics3D"        value="7">
       <desc>Graphics device 3D activity.</desc>
     </const>
+    <const name="End"               value="8">
+      <desc>End of valid device types (exclusive).  Used for invalid validation and such.</desc>
+    </const>
   </enum>
 
   <enum

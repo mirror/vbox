@@ -2831,25 +2831,27 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
      * readAndClearLed() should be thread safe.
      */
 
-    std::vector<bool> aWanted;
-    std::vector<PDMLEDCORE> aLED;
-    DeviceType_T maxWanted = (DeviceType_T) 0;
-    DeviceType_T enmType;
-
     /* Make a roadmap of which DeviceType_T LED types are wanted */
+    DeviceType_T maxWanted = (DeviceType_T)0;
+    bool aWanted[DeviceType_End] = { 0 };
+    Assert(aWanted[1] == false && aWanted[DeviceType_End - 1] == false);
+
     for (size_t iType = 0; iType < aType.size(); ++iType)
     {
-        enmType = aType[iType];
-        if (enmType > maxWanted)
-        {
-            maxWanted = enmType;
-            aWanted.resize(maxWanted + 1);
-        }
+        DeviceType_T const enmType = aType[iType];
+        AssertReturn(enmType > DeviceType_Null && enmType < DeviceType_End,
+                     setError(E_INVALIDARG, tr("Invalid DeviceType for getDeviceActivity in entry #%u: %d"), iType, enmType));
         aWanted[enmType] = true;
+        if (enmType > maxWanted)
+            maxWanted = enmType;
     }
-    aLED.resize(maxWanted + 1);
+
+    /* Resize the result vector before making changes (may throw, paranoia). */
+    aActivity.resize(aType.size());
 
     /* Collect all the LEDs in a single sweep through all drivers' sets */
+    PDMLEDCORE aLEDs[DeviceType_End] = { {0} };
+    Assert(aLEDs[1].u32 == 0 && aLEDs[DeviceType_End / 2].u32 == 0 && aLEDs[DeviceType_End - 1].u32 == 0); /* paranoia */
     for (uint32_t idxSet = 0; idxSet < mcLedSets; ++idxSet)
     {
         /* Look inside this driver's set of LEDs */
@@ -2860,26 +2862,25 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
         {
             for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
             {
-                enmType = pLS->paSubTypes[inSet];
+                DeviceType_T const enmType = pLS->paSubTypes[inSet];
                 if (enmType < maxWanted && aWanted[enmType])
-                    aLED[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
+                    aLEDs[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
             }
         }
         /* Single-type drivers (e.g. floppy) have the type in ->enmType */
         else
         {
-            enmType = pLS->enmType;
+            DeviceType_T const enmType = pLS->enmType;
             if (enmType < maxWanted && aWanted[enmType])
                 for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
-                    aLED[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
+                    aLEDs[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
         }
     }
 
-    aActivity.resize(aType.size());
+    /* Compose the result vector: */
     for (size_t iType = 0; iType < aActivity.size(); ++iType)
     {
-        /* Compose the result */
-        switch (aLED[aType[iType]].u32 & (PDMLED_READING | PDMLED_WRITING))
+        switch (aLEDs[aType[iType]].u32 & (PDMLED_READING | PDMLED_WRITING))
         {
             case 0:
                 aActivity[iType] = DeviceActivity_Idle;

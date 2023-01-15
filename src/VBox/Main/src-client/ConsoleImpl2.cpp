@@ -670,6 +670,7 @@ uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, Dev
 {
     Assert(cLeds > 0);
     Assert(cLeds < 1024);  /* Adjust if any driver supports >=1024 units! */
+    Assert(enmType > DeviceType_Null && enmType < DeviceType_End);
 
     /* Grab a LED set entry before we start allocating anything so the destructor can do the cleanups. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Caller should have this already. Need protect mcLedSets check and update. */
