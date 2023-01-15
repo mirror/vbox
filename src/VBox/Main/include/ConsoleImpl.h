@@ -809,10 +809,9 @@ private:
     struct LEDSET;
     typedef struct LEDSET *PLEDSET;
     PPDMLED *i_getLedSet(uint32_t iLedSet);
-    uint32_t i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppSubTypes);
-    void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType,
-                              uint32_t uFirst, uint32_t uLast,
-                              DeviceType_T **ppaSubTypes,
+    uint32_t i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceType_T **ppSubTypes);
+    void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType);
+    void i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t cLeds, DeviceType_T **ppaSubTypes,
                               Console::MediumAttachmentMap *pmapMediumAttachments,
                               const char *pcszDevice, unsigned uInstance);
 
@@ -1073,10 +1072,10 @@ private:
     /** LED sets. */
     struct LEDSET
     {
-        PPDMLED      *papLeds;
-        uint32_t      cLeds;
-        DeviceType_T  enmType;
-        DeviceType_T *paSubTypes; /**< Optionally, device types for each individual LED. Runs parallel to papLeds. */
+        PPDMLED        *papLeds;
+        uint32_t        cLeds;
+        uint32_t        fTypes;     /**< Bitmask of possible DeviceType_T values (e.g. RT_BIT_32(DeviceType_Network)). */
+        DeviceType_T   *paSubTypes; /**< Optionally, device types for each individual LED. Runs parallel to papLeds. */
     }                 maLedSets[32];
     /** @} */
 

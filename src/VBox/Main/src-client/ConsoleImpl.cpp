@@ -2856,36 +2856,33 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
      */
     PDMLEDCORE aLEDs[DeviceType_End] = { {0} };
     Assert(aLEDs[1].u32 == 0 && aLEDs[DeviceType_End / 2].u32 == 0 && aLEDs[DeviceType_End - 1].u32 == 0); /* paranoia */
-    for (uint32_t idxSet = 0; idxSet < mcLedSets; ++idxSet)
+    uint32_t idxSet = mcLedSets;
+    while (idxSet-- > 0)
     {
-        /* Look inside this driver's set of LEDs */
+        /* Look inside this driver's set of LEDs and check if the types mask overlap with the request: */
         PLEDSET pLS = &maLedSets[idxSet];
+        if (pLS->fTypes & fWanted)
+        {
+            uint32_t const        cLeds      = pLS->cLeds;
+            PPDMLED const * const papSrcLeds = pLS->papLeds;
 
-        /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
-        if (pLS->paSubTypes)
-        {
-/** @todo r=bird: This needs optimizing as it hurts to scan all units of all
- * storage controllers when getting the activitiy of one or more non-storage
- * devices.
- *
- * Perhaps add a type summary bitmap to the entry, or may just reuse the
- * enmType for these. */
-            for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
+            /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
+            DeviceType_T const *paSubTypes = pLS->paSubTypes;
+            if (paSubTypes)
+                for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
+                {
+                    DeviceType_T const enmType = paSubTypes[idxLed];
+                    Assert((unsigned)enmType < (unsigned)DeviceType_End);
+                    if (fWanted & RT_BIT_32((unsigned)enmType))
+                        aLEDs[enmType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
+                }
+            /* Single-type drivers (e.g. floppy) have the type in ->enmType */
+            else
             {
-                DeviceType_T const enmType = pLS->paSubTypes[inSet];
-                Assert((unsigned)enmType < (unsigned)DeviceType_End);
-                if (fWanted & RT_BIT_32((unsigned)enmType))
-                    aLEDs[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
+                uint32_t const idxType = ASMBitFirstSetU32(pLS->fTypes) - 1;
+                for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
+                    aLEDs[idxType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
             }
-        }
-        /* Single-type drivers (e.g. floppy) have the type in ->enmType */
-        else
-        {
-            DeviceType_T const enmType = pLS->enmType;
-            Assert((unsigned)enmType < (unsigned)DeviceType_End);
-            if (fWanted & RT_BIT_32((unsigned)enmType))
-                for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
-                    aLEDs[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
         }
     }
 

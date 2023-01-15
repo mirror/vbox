@@ -661,16 +661,17 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
  * This grabs a maLedSets entry and populates it with @a cLeds.
  *
  * @returns Index into maLedSets.
- * @param   cLeds        The number of LEDs in the set.
- * @param   enmType      The device type.
- * @param   ppaSubTypes  When not NULL, subtypes for each LED and return the
- *                       array pointer here.
+ * @param   cLeds       The number of LEDs in the set.
+ * @param   fTypes      Bitmask of DeviceType_T values, e.g.
+ *                      RT_BIT_32(DeviceType_Network).
+ * @param   ppaSubTypes When not NULL, subtypes for each LED and return the
+ *                      array pointer here.
  */
-uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppaSubTypes)
+uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceType_T **ppaSubTypes)
 {
     Assert(cLeds > 0);
     Assert(cLeds < 1024);  /* Adjust if any driver supports >=1024 units! */
-    Assert(enmType > DeviceType_Null && enmType < DeviceType_End);
+    Assert(!(fTypes & (RT_BIT_32(DeviceType_Null) | ~(RT_BIT_32(DeviceType_End) - 1))));
 
     /* Grab a LED set entry before we start allocating anything so the destructor can do the cleanups. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Caller should have this already. Need protect mcLedSets check and update. */
@@ -681,15 +682,14 @@ uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, Dev
     pLS->papLeds = (PPDMLED *)RTMemAllocZ(sizeof(PPDMLED) * cLeds);
     AssertStmt(pLS->papLeds, throw E_OUTOFMEMORY);
     pLS->cLeds = cLeds;
-    pLS->enmType = enmType;
+    pLS->fTypes = fTypes;
     pLS->paSubTypes = NULL;
 
     if (ppaSubTypes)
     {
-        *ppaSubTypes = pLS->paSubTypes = (DeviceType_T *)RTMemAlloc(sizeof(DeviceType_T) * cLeds);
+        AssertCompile((unsigned)DeviceType_Null == 0);
+        *ppaSubTypes = pLS->paSubTypes = (DeviceType_T *)RTMemAllocZ(sizeof(DeviceType_T) * cLeds);
         AssertStmt(pLS->paSubTypes, throw E_OUTOFMEMORY);
-        for (size_t idxSub = 0; idxSub < cLeds; ++idxSub)
-            pLS->paSubTypes[idxSub] = DeviceType_Null;
     }
 
     LogRel2(("mcLedSets = %d, RT_ELEMENTS(maLedSets) = %d\n", mcLedSets, RT_ELEMENTS(maLedSets)));
@@ -697,20 +697,16 @@ uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, Dev
 }
 
 
-/** @todo r=bird: Drop uFirst as it's always zero? Then s/uLast/cLeds/g. */
-void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType,
-                                   uint32_t uFirst, uint32_t uLast,
-                                   DeviceType_T **ppaSubTypes,
+void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t cLeds, DeviceType_T **ppaSubTypes,
                                    Console::MediumAttachmentMap *pmapMediumAttachments,
                                    const char *pcszDevice, unsigned uInstance)
 {
-    Assert(uFirst <= uLast);
     PCFGMNODE pLunL0;
     InsertConfigNode(pCtlInst,  "LUN#999", &pLunL0);
     InsertConfigString(pLunL0,  "Driver",               "MainStatus");
     PCFGMNODE pCfg;
     InsertConfigNode(pLunL0,    "Config", &pCfg);
-    uint32_t const iLedSet = i_allocateDriverLeds(uLast - uFirst + 1, enmType, ppaSubTypes);
+    uint32_t const iLedSet = i_allocateDriverLeds(cLeds, fTypes, ppaSubTypes);
     InsertConfigInteger(pCfg,   "iLedSet", iLedSet);
 
     InsertConfigInteger(pCfg,   "HasMediumAttachments", pmapMediumAttachments != NULL);
@@ -720,8 +716,15 @@ void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType,
         Utf8StrFmt deviceInstance("%s/%u", pcszDevice, uInstance);
         InsertConfigString(pCfg,    "DeviceInstance", deviceInstance.c_str());
     }
-    InsertConfigInteger(pCfg,   "First",    uFirst);
-    InsertConfigInteger(pCfg,   "Last",     uLast);
+    InsertConfigInteger(pCfg,   "First",    0);
+    InsertConfigInteger(pCfg,   "Last",     cLeds - 1);
+}
+
+
+void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType)
+{
+    Assert(enmType > DeviceType_Null && enmType < DeviceType_End);
+    i_attachStatusDriver(pCtlInst, RT_BIT_32(enmType), 1, NULL, NULL, NULL, 0);
 }
 
 
@@ -2124,7 +2127,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     /*
                      * Attach the status driver.
                      */
-                    i_attachStatusDriver(pInst, DeviceType_USB, 0, 0, NULL, NULL, NULL, 0);
+                    i_attachStatusDriver(pInst, DeviceType_USB);
                 }
 #ifdef VBOX_WITH_EHCI
                 else if (enmCtrlType == USBControllerType_EHCI)
@@ -2142,7 +2145,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     /*
                      * Attach the status driver.
                      */
-                    i_attachStatusDriver(pInst, DeviceType_USB, 0, 0, NULL, NULL, NULL, 0);
+                    i_attachStatusDriver(pInst, DeviceType_USB);
                 }
 #endif
                 else if (enmCtrlType == USBControllerType_XHCI)
@@ -2164,7 +2167,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     /*
                      * Attach the status driver.
                      */
-                    i_attachStatusDriver(pInst, DeviceType_USB, 0, 1, NULL, NULL, NULL, 0);
+                    i_attachStatusDriver(pInst, RT_BIT_32(DeviceType_USB), 2, NULL, NULL, NULL, 0);
                 }
             } /* for every USB controller. */
 
@@ -2357,8 +2360,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     }
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, 15, &paLedDevType,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD),
+                                         16, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -2379,8 +2382,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     }
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, 15, &paLedDevType,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD),
+                                         16, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -2427,8 +2430,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     }
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, cPorts - 1, &paLedDevType,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD),
+                                         cPorts, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -2441,9 +2444,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                      */
                     hrc = pBusMgr->assignPCIDevice("piix3ide", pCtlInst);                   H();
                     InsertConfigString(pCfg,   "Type", controllerString(enmCtrlType));
+
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, 3, &paLedDevType,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD),
+                                         4, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
 
                     /* IDE flavors */
                     aCtrlNodes[StorageControllerType_PIIX3] = pDev;
@@ -2464,7 +2468,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "IOBase",    0x3f0);
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_Floppy, 0, 1, NULL,
+                    i_attachStatusDriver(pCtlInst, DeviceType_Floppy, 2, NULL,
                                          &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
@@ -2491,8 +2495,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "NumPorts", cPorts);
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, 7, &paLedDevType,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD) /*?*/,
+                                         8, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -2525,8 +2529,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "NamespacesMax", cPorts);
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, cPorts - 1, NULL,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk),
+                                         cPorts, NULL, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -2540,8 +2544,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "Bootable",   fBootable);
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, cPorts - 1, &paLedDevType,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD) /*?*/,
+                                         cPorts, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -2827,7 +2831,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             /*
              * Attach the status driver.
              */
-            i_attachStatusDriver(pInst, DeviceType_Network, 0, 0, NULL, NULL, NULL, 0);
+            i_attachStatusDriver(pInst, DeviceType_Network);
 
             /*
              * Configure the network card now
@@ -3003,7 +3007,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         /*
          * Attach the status driver.
          */
-        i_attachStatusDriver(pInst, DeviceType_SharedFolder, 0, 0, NULL, NULL, NULL, 0);
+        i_attachStatusDriver(pInst, DeviceType_SharedFolder);
 
         /*
          * Audio configuration.
@@ -4291,7 +4295,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         hrc = ptrGraphicsAdapter->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);              H();
         InsertConfigInteger(pCfg,  "3DEnabled",            f3DEnabled);
 
-        i_attachStatusDriver(pInst, DeviceType_Graphics3D, 0, 0, NULL, NULL, NULL, 0);
+        i_attachStatusDriver(pInst, DeviceType_Graphics3D);
 
 #ifdef VBOX_WITH_VMSVGA
         if (   enmGraphicsController == GraphicsControllerType_VMSVGA
@@ -4913,24 +4917,23 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
 
             if (!fHotplug && !fAttachDetach)
             {
-                char aszUuid[RTUUID_STR_LENGTH + 1];
                 USBStorageDevice UsbMsd = USBStorageDevice();
 
-                memset(aszUuid, 0, sizeof(aszUuid));
+                UsbMsd.iPort = uInstance;
                 vrc = RTUuidCreate(&UsbMsd.mUuid);
                 AssertRCReturn(vrc, vrc);
-                vrc = RTUuidToStr(&UsbMsd.mUuid, aszUuid, sizeof(aszUuid));
+
+                char szUuid[RTUUID_STR_LENGTH + 1];
+                vrc = RTUuidToStr(&UsbMsd.mUuid, szUuid, sizeof(szUuid));
                 AssertRCReturn(vrc, vrc);
+                InsertConfigString(pCtlInst, "UUID", szUuid);
 
-                UsbMsd.iPort = uInstance;
-
-                InsertConfigString(pCtlInst, "UUID", aszUuid);
                 mUSBStorageDevices.push_back(UsbMsd);
 
                 /** @todo No LED after hotplugging. */
                 /* Attach the status driver */
-                i_attachStatusDriver(pCtlInst, DeviceType_HardDisk, 0, 7, &paLedDevType,
-                                     &mapMediumAttachments, pcszDevice, 0);
+                i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk),
+                                     8, &paLedDevType, &mapMediumAttachments, pcszDevice, 0);
             }
         }
 
