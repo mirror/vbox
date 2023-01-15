@@ -2830,6 +2830,9 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
      * Note: we don't lock the console object here because
      * readAndClearLed() should be thread safe.
      */
+/** @todo r=bird: readAndClearLed is safe, provided that we're not running at the
+ * same time as Console::i_allocateDriverLeds.  This assumption is not correct
+ * during VM construction. */
 
     /*
      * Make a roadmap of which DeviceType_T LED types are wanted:
@@ -2861,6 +2864,12 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
         /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
         if (pLS->paSubTypes)
         {
+/** @todo r=bird: This needs optimizing as it hurts to scan all units of all
+ * storage controllers when getting the activitiy of one or more non-storage
+ * devices.
+ *
+ * Perhaps add a type summary bitmap to the entry, or may just reuse the
+ * enmType for these. */
             for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
             {
                 DeviceType_T const enmType = pLS->paSubTypes[inSet];
