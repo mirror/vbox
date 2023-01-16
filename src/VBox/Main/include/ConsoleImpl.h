@@ -809,8 +809,10 @@ private:
     struct LEDSET;
     typedef struct LEDSET *PLEDSET;
     PPDMLED volatile *i_getLedSet(uint32_t iLedSet);
+    void i_setLedType(DeviceType_T *penmSubTypeEntry, DeviceType_T enmNewType);
+    HRESULT i_refreshLedTypeArrays(AutoReadLock *pReadLock);
     uint32_t i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceType_T **ppSubTypes);
-    void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType);
+    void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType, uint32_t cLeds = 1);
     void i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t cLeds, DeviceType_T **ppaSubTypes,
                               Console::MediumAttachmentMap *pmapMediumAttachments,
                               const char *pcszDevice, unsigned uInstance);
@@ -1067,8 +1069,14 @@ private:
 
     /** @name LEDs and their management
      * @{ */
-    /** Read/write lock separating LED allocations (write) from queries (read). */
+    /** Read/write lock separating LED allocations and per-type data construction
+     * (write) from queries (read). */
     RWLockHandle            mLedLock;
+    /** LED configuration generation.  This is increased whenever a new set is
+     *  allocated or a sub-device type changes. */
+    uint32_t                muLedGen;
+    /** The LED configuration generation which maLedTypes was constructed for. */
+    uint32_t                muLedTypeGen;
     /** Number of LED sets in use in maLedSets. */
     uint32_t                mcLedSets;
     /** LED sets. */
@@ -1084,6 +1092,21 @@ private:
         /** Optionally, device types for each individual LED. Runs parallel to papLeds. */
         DeviceType_T       *paSubTypes;
     } maLedSets[32];
+    /** LEDs data organized by DeviceType_T.
+     * This is reconstructed by Console::i_refreshLedTypeArrays() when
+     * Console::getDeviceActivity is called and mLedTypeGen doesn't match
+     * muLedGen. */
+    struct
+    {
+        /** Number of possibly valid entries in pappLeds. */
+        uint32_t            cLeds;
+        /** Number of allocated entries. */
+        uint32_t            cAllocated;
+        /** Array of pointer to LEDSET::papLed entries.
+         * The indirection is due to Console::i_drvStatus_UnitChanged() only knowing
+         * about the LEDSET::papLeds. */
+        PPDMLED volatile  **pappLeds;
+    } maLedTypes[DeviceType_End];
     /** @} */
 
     MediumAttachmentMap mapMediumAttachments;

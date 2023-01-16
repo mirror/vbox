@@ -656,6 +656,25 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
 
 
 /**
+ * Updates the device type for a LED.
+ *
+ * @param   penmSubTypeEntry    The sub-type entry to update.
+ * @param   enmNewType          The new type.
+ */
+void Console::i_setLedType(DeviceType_T *penmSubTypeEntry, DeviceType_T enmNewType)
+{
+    /*
+     * ASSUMES no race conditions here wrt concurrent type updating.
+     */
+    if (*penmSubTypeEntry != enmNewType)
+    {
+        *penmSubTypeEntry = enmNewType;
+        ASMAtomicIncU32(&muLedGen);
+    }
+}
+
+
+/**
  * Allocate a set of LEDs.
  *
  * This grabs a maLedSets entry and populates it with @a cLeds.
@@ -737,10 +756,10 @@ void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t
 /**
  * @throws ConfigError and std::bad_alloc.
  */
-void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType)
+void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType, uint32_t cLeds /*= 1*/)
 {
     Assert(enmType > DeviceType_Null && enmType < DeviceType_End);
-    i_attachStatusDriver(pCtlInst, RT_BIT_32(enmType), 1, NULL, NULL, NULL, 0);
+    i_attachStatusDriver(pCtlInst, RT_BIT_32(enmType), cLeds, NULL, NULL, NULL, 0);
 }
 
 
@@ -2183,7 +2202,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     /*
                      * Attach the status driver.
                      */
-                    i_attachStatusDriver(pInst, RT_BIT_32(DeviceType_USB), 2, NULL, NULL, NULL, 0);
+                    i_attachStatusDriver(pInst, DeviceType_USB, 2);
                 }
             } /* for every USB controller. */
 
@@ -2484,8 +2503,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "IOBase",    0x3f0);
 
                     /* Attach the status driver */
-                    i_attachStatusDriver(pCtlInst, DeviceType_Floppy, 2, NULL,
-                                         &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_Floppy),
+                                         2, NULL, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     break;
                 }
 
@@ -5096,7 +5115,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         }
 
         if (paLedDevType)
-            paLedDevType[uLUN] = enmType;
+            i_setLedType(&paLedDevType[uLUN], enmType);
 
         /* Dump the changed LUN if possible, dump the complete device otherwise */
         if (   aMachineState != MachineState_Starting

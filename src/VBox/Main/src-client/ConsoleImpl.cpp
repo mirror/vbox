@@ -427,6 +427,9 @@ Console::Console()
 #endif
     , mBusMgr(NULL)
     , mLedLock(LOCKCLASS_LISTOFOTHEROBJECTS /* must be higher than LOCKCLASS_OTHEROBJECT */)
+    , muLedGen(0)
+    , muLedTypeGen(0)
+    , mcLedSets(0)
     , m_pKeyStore(NULL)
     , mpIfSecKey(NULL)
     , mpIfSecKeyHlp(NULL)
@@ -437,6 +440,8 @@ Console::Console()
     , mcRefsCrypto(0)
     , mpCryptoIf(NULL)
 {
+    RT_ZERO(maLedSets);
+    RT_ZERO(maLedTypes);
 }
 
 Console::~Console()
@@ -445,9 +450,6 @@ Console::~Console()
 HRESULT Console::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
-
-    mcLedSets = 0;
-    RT_ZERO(maLedSets);
 
     MYVMM2USERMETHODS *pVmm2UserMethods = (MYVMM2USERMETHODS *)RTMemAllocZ(sizeof(*mpVmm2UserMethods) + sizeof(Console *));
     if (!pVmm2UserMethods)
@@ -880,8 +882,16 @@ void Console::uninit()
     }
 
     /* Release memory held by the LED sets (no need to take lock). */
+    for (size_t idxType = 0; idxType < RT_ELEMENTS(maLedTypes); idxType++)
+    {
+        maLedTypes[idxType].cLeds = 0;
+        maLedTypes[idxType].cAllocated = 0;
+        RTMemFree(maLedTypes[idxType].pappLeds);
+        maLedTypes[idxType].pappLeds = NULL;
+    }
     for (size_t idxSet = 0; idxSet < mcLedSets; idxSet++)
     {
+        maLedSets[idxSet].cLeds = 0;
         RTMemFree((void *)maLedSets[idxSet].papLeds);
         maLedSets[idxSet].papLeds = NULL;
         maLedSets[idxSet].paSubTypes = NULL;
@@ -2814,6 +2824,73 @@ HRESULT Console::sleepButton()
     return hrc;
 }
 
+/**
+ * Refreshes the maLedTypes and muLedTypeGen members.
+ */
+HRESULT Console::i_refreshLedTypeArrays(AutoReadLock *pReadLock)
+{
+    pReadLock->release();
+    AutoWriteLock alock(mLedLock COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Check that the refresh was already done by someone else while we
+     * acquired the write lock.
+     */
+    if (muLedTypeGen != muLedGen)
+    {
+        /*
+         * Reset the data.
+         */
+        for (size_t idxType = 0; idxType < RT_ELEMENTS(maLedTypes); idxType++)
+            maLedTypes[idxType].cLeds = 0;
+
+        /*
+         * Rebuild the data.
+         */
+        for (uint32_t idxSet = 0; idxSet < mcLedSets; idxSet++)
+        {
+            PLEDSET const            pLS        = &maLedSets[idxSet];
+            uint32_t const           cLeds      = pLS->cLeds;
+            PPDMLED volatile * const papSrcLeds = pLS->papLeds;
+            DeviceType_T * const     paSubTypes = pLS->paSubTypes;
+            for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
+            {
+                /** @todo If we make Console::i_drvStatus_UnitChanged() modify the generation
+                 * too, we could skip NULL entries here and make it a bit more compact.
+                 * OTOH, most unused LED entires have a paSubTypes of DeviceType_Null. */
+                DeviceType_T enmType = paSubTypes ? paSubTypes[idxLed] : (DeviceType_T)(ASMBitFirstSetU32(pLS->fTypes) - 1);
+                if (enmType > DeviceType_Null && enmType < DeviceType_End)
+                {
+                    uint32_t const idxLedType = maLedTypes[enmType].cLeds;
+                    if (idxLedType >= maLedTypes[enmType].cAllocated)
+                    {
+                        void *pvNew = RTMemRealloc(maLedTypes[enmType].pappLeds,
+                                                   sizeof(maLedTypes[0].pappLeds[0]) * (idxLedType + 16));
+                        if (!pvNew)
+                            return E_OUTOFMEMORY;
+                        maLedTypes[enmType].pappLeds   = (PPDMLED volatile  **)pvNew;
+                        maLedTypes[enmType].cAllocated = idxLedType + 16;
+                    }
+                    maLedTypes[enmType].pappLeds[idxLedType] = &papSrcLeds[idxLed];
+                    maLedTypes[enmType].cLeds                = idxLedType + 1;
+                }
+            }
+        }
+        muLedTypeGen = muLedGen;
+    }
+
+    /*
+     * We have to release the write lock before re-acquiring the read-lock.
+     *
+     * This means there is a theoretical race here, however we ASSUME that
+     * LED sets are never removed and therefore we will be just fine
+     * accessing slightly dated per-type data.
+     */
+    alock.release();
+    pReadLock->acquire();
+    return S_OK;
+}
+
 /** read the value of a LED. */
 DECLINLINE(uint32_t) readAndClearLed(PPDMLED pLed)
 {
@@ -2827,62 +2904,54 @@ DECLINLINE(uint32_t) readAndClearLed(PPDMLED pLed)
 HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::vector<DeviceActivity_T> &aActivity)
 {
     /*
-     * Make a roadmap of which DeviceType_T LED types are wanted:
+     * Make a roadmap of which DeviceType_T LED types are wanted.
+     *
+     * Note! This approach means we'll return the same values in aActivity for
+     *       duplicate aType entries.
      */
-    uint32_t fWanted = 0;
+    uint32_t fRequestedTypes = 0;
     AssertCompile(DeviceType_End <= 32);
 
     for (size_t iType = 0; iType < aType.size(); ++iType)
     {
         DeviceType_T const enmType = aType[iType];
+        AssertCompile((unsigned)DeviceType_Null == 0 /* first */);
         AssertReturn(enmType > DeviceType_Null && enmType < DeviceType_End,
                      setError(E_INVALIDARG, tr("Invalid DeviceType for getDeviceActivity in entry #%u: %d"), iType, enmType));
-        fWanted |= RT_BIT_32((unsigned)enmType);
+        fRequestedTypes |= RT_BIT_32((unsigned)enmType);
     }
 
-    /* Resize the result vector before making changes (may throw, paranoia). */
+    /*
+     * Resize the result vector before making changes (may throw, paranoia).
+     */
     aActivity.resize(aType.size());
 
     /*
-     * Collect all the LEDs in a single sweep through all drivers' sets:
-     *
-     * Because this method can be called by the frontend and others while the
-     * VM is being constructed, we use a dedicated lock to prevent stumbling
-     * into the allocator.
+     * Accumulate the per-type data for all the requested types.
+     * We will lazily refresh the per-type data collection here when needed.
      */
     PDMLEDCORE aLEDs[DeviceType_End] = { {0} };
     Assert(aLEDs[1].u32 == 0 && aLEDs[DeviceType_End / 2].u32 == 0 && aLEDs[DeviceType_End - 1].u32 == 0); /* paranoia */
     {
         AutoReadLock alock(mLedLock COMMA_LOCKVAL_SRC_POS);
-        uint32_t idxSet = mcLedSets;
-        while (idxSet-- > 0)
+        if (RT_LIKELY(muLedGen == muLedTypeGen))
+        { /* likely */ }
+        else
         {
-            /* Look inside this driver's set of LEDs and check if the types mask overlap with the request: */
-            PLEDSET pLS = &maLedSets[idxSet];
-            if (pLS->fTypes & fWanted)
-            {
-                uint32_t const           cLeds      = pLS->cLeds;
-                PPDMLED volatile * const papSrcLeds = pLS->papLeds;
-
-                /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
-                DeviceType_T const *paSubTypes = pLS->paSubTypes;
-                if (paSubTypes)
-                    for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
-                    {
-                        DeviceType_T const enmType = paSubTypes[idxLed];
-                        Assert((unsigned)enmType < (unsigned)DeviceType_End);
-                        if (fWanted & RT_BIT_32((unsigned)enmType))
-                            aLEDs[enmType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
-                    }
-                /* Single-type drivers (e.g. floppy) have the type in ->enmType */
-                else
-                {
-                    uint32_t const idxType = ASMBitFirstSetU32(pLS->fTypes) - 1;
-                    for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
-                        aLEDs[idxType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
-                }
-            }
+            HRESULT hrc = i_refreshLedTypeArrays(&alock);
+            if (FAILED(hrc))
+                return hrc;
         }
+
+        AssertCompile((unsigned)DeviceType_Null == 0 /* we skip this one */);
+        for (uint32_t idxType = 1; idxType < RT_ELEMENTS(maLedTypes); idxType++)
+            if (fRequestedTypes & RT_BIT_32(idxType))
+            {
+                uint32_t const            cLeds       = maLedTypes[idxType].cLeds;
+                PPDMLED volatile ** const pappSrcLeds = maLedTypes[idxType].pappLeds;
+                for (size_t iLed = 0; iLed < cLeds; iLed++)
+                    aLEDs[idxType].u32 |= readAndClearLed(*pappSrcLeds[iLed]);
+            }
     }
 
     /*
