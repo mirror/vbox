@@ -687,7 +687,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
             struct inode *pInode = NULL;
 
             RT_ZERO(*pReq);
-            memcpy(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+            VBOX_LINUX_MEMCPY(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
             pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
             pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 

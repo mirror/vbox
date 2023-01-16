@@ -79,6 +79,17 @@
 #endif
 
 
+/* Simmilar workaround for CONFIG_FORTIFY_SOURCE kernel config option as we have for host drivers.
+ * In Linux 5.18-rc1, memcpy became a wrapper which does fortify checks
+ * before triggering __underlying_memcpy() call. We do not pass these checks in some places so
+ * bypass them for now.  */
+#if RTLNX_VER_MIN(5,18,0) && !defined(__NO_FORTIFY) && defined(__OPTIMIZE__) && defined(CONFIG_FORTIFY_SOURCE)
+# define VBOX_LINUX_MEMCPY __underlying_memcpy
+#else
+#define VBOX_LINUX_MEMCPY  memcpy
+#endif
+
+
 /*
  * inode compatibility glue.
  */
