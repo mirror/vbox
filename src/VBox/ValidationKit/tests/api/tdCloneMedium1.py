@@ -226,7 +226,7 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
         if dataHd1 != dataHd2:
             reporter.testFailure("Data read is unexpected.")
 
-        if hd1.logicalSize != hd2.logicalSize and hd2.logicalSize != 1024*1024*2:
+        if hd2.logicalSize not in (hd1.logicalSize, 1024*1024*2):
             reporter.testFailure("Target medium did not resize.")
 
         self.deleteVM(oVM)
