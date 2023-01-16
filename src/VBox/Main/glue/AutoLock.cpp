@@ -173,7 +173,7 @@ RWLockHandle::RWLockHandle(VBoxLockingClass lockClass)
 
     m->lockClass = lockClass;
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
-    m->strDescription = com::Utf8StrFmt("r/w %RCv", this);
+    m->strDescription.printf("r/w %RCv", this);
 #endif
 
 #ifdef GLUE_USE_CRITSECTRW
