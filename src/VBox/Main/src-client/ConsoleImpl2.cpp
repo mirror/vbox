@@ -304,8 +304,8 @@ public:
 /**
  * Helper that calls CFGMR3InsertString and throws an RTCError if that
  * fails (C-string variant).
- * @param   pNode           See CFGMR3InsertStringN.
- * @param   pcszName        See CFGMR3InsertStringN.
+ * @param   pNode           See CFGMR3InsertString.
+ * @param   pcszName        See CFGMR3InsertString.
  * @param   pcszValue       The string value.
  */
 void Console::InsertConfigString(PCFGMNODE pNode, const char *pcszName, const char *pcszValue)
@@ -341,6 +341,24 @@ void Console::InsertConfigString(PCFGMNODE pNode, const char *pcszName, const Bs
 {
     InsertConfigString(pNode, pcszName, Utf8Str(rBstrValue));
 }
+
+/**
+ * Helper that calls CFGMR3InsertStringFV and throws an RTCError if that fails.
+ * @param   pNode           See CFGMR3InsertStringF.
+ * @param   pcszName        See CFGMR3InsertStringF.
+ * @param   pszFormat       See CFGMR3InsertStringF.
+ * @param   ...             See CFGMR3InsertStringF.
+ */
+void Console::InsertConfigStringF(PCFGMNODE pNode, const char *pcszName, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int vrc = mpVMM->pfnCFGMR3InsertStringFV(pNode, pcszName, pszFormat, va);
+    va_end(va);
+    if (RT_FAILURE(vrc))
+        throw ConfigError("CFGMR3InsertStringFV", vrc, pcszName);
+}
+
 
 /**
  * Helper that calls CFGMR3InsertPassword and throws an RTCError if that
@@ -606,29 +624,29 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
 
     for (size_t iDev = 0; iDev < assignments.size(); iDev++)
     {
-        PCIBusAddress HostPCIAddress, GuestPCIAddress;
-        ComPtr<IPCIDeviceAttachment> assignment = assignments[iDev];
-        LONG host, guest;
-        Bstr aDevName;
+        ComPtr<IPCIDeviceAttachment> const assignment = assignments[iDev];
 
+        LONG host;
         hrc = assignment->COMGETTER(HostAddress)(&host);            H();
+        LONG guest;
         hrc = assignment->COMGETTER(GuestAddress)(&guest);          H();
-        hrc = assignment->COMGETTER(Name)(aDevName.asOutParam());   H();
+        Bstr bstrDevName;
+        hrc = assignment->COMGETTER(Name)(bstrDevName.asOutParam());   H();
 
-        InsertConfigNode(pPCIDevs, Utf8StrFmt("%d", iDev).c_str(), &pInst);
+        InsertConfigNodeF(pPCIDevs, &pInst, "%d", iDev);
         InsertConfigInteger(pInst, "Trusted", 1);
 
-        HostPCIAddress.fromLong(host);
+        PCIBusAddress HostPCIAddress(host);
         Assert(HostPCIAddress.valid());
         InsertConfigNode(pInst,        "Config",  &pCfg);
-        InsertConfigString(pCfg,       "DeviceName",  aDevName);
+        InsertConfigString(pCfg,       "DeviceName",  bstrDevName);
 
         InsertConfigInteger(pCfg,      "DetachHostDriver",  1);
         InsertConfigInteger(pCfg,      "HostPCIBusNo",      HostPCIAddress.miBus);
         InsertConfigInteger(pCfg,      "HostPCIDeviceNo",   HostPCIAddress.miDevice);
         InsertConfigInteger(pCfg,      "HostPCIFunctionNo", HostPCIAddress.miFn);
 
-        GuestPCIAddress.fromLong(guest);
+        PCIBusAddress GuestPCIAddress(guest);
         Assert(GuestPCIAddress.valid());
         hrc = pBusMgr->assignHostPCIDevice("pciraw", pInst, HostPCIAddress, GuestPCIAddress, true);
         if (hrc != S_OK)
@@ -646,7 +664,8 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
         /* the Main driver */
         InsertConfigString(pLunL1,     "Driver", "MainPciRaw");
         InsertConfigNode(pLunL1,       "Config", &pCfg);
-        PCIRawDev* pMainDev = new PCIRawDev(this);
+        PCIRawDev *pMainDev = new PCIRawDev(this);
+# error This is not allowed any more
         InsertConfigInteger(pCfg,      "Object", (uintptr_t)pMainDev);
     }
 
@@ -745,8 +764,7 @@ void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t
     if (pmapMediumAttachments)
     {
         AssertPtr(pcszDevice);
-        Utf8StrFmt deviceInstance("%s/%u", pcszDevice, uInstance);
-        InsertConfigString(pCfg,    "DeviceInstance", deviceInstance.c_str());
+        InsertConfigStringF(pCfg, "DeviceInstance", "%s/%u", pcszDevice, uInstance);
     }
     InsertConfigInteger(pCfg,   "First",    0);
     InsertConfigInteger(pCfg,   "Last",     cLeds - 1);
@@ -1051,7 +1069,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     PCFGMNODE pRoot = pVMM->pfnCFGMR3GetRootU(pUVM);
     Assert(pRoot);
 
-    // InsertConfigString throws
+    // catching throws from InsertConfigString and friends.
     try
     {
 
@@ -3327,10 +3345,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             /* Insert dummy audio driver to have the LUN configured. */
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-            AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE",
-                                      !!fAudioEnabledIn, !!fAudioEnabledOut);
-            vrc = mAudioVRDE->InitializeConfig(&DrvCfgVRDE);
-            AssertRCStmt(vrc, throw ConfigError(__FUNCTION__, vrc, "mAudioVRDE->InitializeConfig failed"));
+            {
+                AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE",
+                                          !!fAudioEnabledIn, !!fAudioEnabledOut);
+                vrc = mAudioVRDE->InitializeConfig(&DrvCfgVRDE);
+                AssertRCStmt(vrc, throw ConfigError(__FUNCTION__, vrc, "mAudioVRDE->InitializeConfig failed"));
+            }
             idxAudioLun++;
 #endif
 
@@ -3338,10 +3358,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             /* Insert dummy audio driver to have the LUN configured. */
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-            AudioDriverCfg DrvCfgVideoRec(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVideoRec",
-                                          false /*a_fEnabledIn*/, true /*a_fEnabledOut*/);
-            vrc = mRecording.mAudioRec->InitializeConfig(&DrvCfgVideoRec);
-            AssertRCStmt(vrc, throw ConfigError(__FUNCTION__, vrc, "Recording.mAudioRec->InitializeConfig failed"));
+            {
+                AudioDriverCfg DrvCfgVideoRec(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVideoRec",
+                                              false /*a_fEnabledIn*/, true /*a_fEnabledOut*/);
+                vrc = mRecording.mAudioRec->InitializeConfig(&DrvCfgVideoRec);
+                AssertRCStmt(vrc, throw ConfigError(__FUNCTION__, vrc, "Recording.mAudioRec->InitializeConfig failed"));
+            }
             idxAudioLun++;
 #endif
 
@@ -3539,32 +3561,24 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             {
                 case TpmType_v1_2:
                 case TpmType_v2_0:
-                {
                     InsertConfigString(pLunL0, "Driver",               "TpmEmuTpms");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
                     InsertConfigInteger(pCfg, "TpmVersion", enmTpmType == TpmType_v1_2 ? 1 : 2);
                     InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
                     InsertConfigString(pLunL1, "Driver", "NvramStore");
                     break;
-                }
                 case TpmType_Host:
-                {
 #if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
                     InsertConfigString(pLunL0, "Driver",               "TpmHost");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
 #endif
                     break;
-                }
                 case TpmType_Swtpm:
-                {
-                    Bstr location;
-                    hrc = ptrTpm->COMGETTER(Location)(location.asOutParam());               H();
-
+                    hrc = ptrTpm->COMGETTER(Location)(bstr.asOutParam());                   H();
                     InsertConfigString(pLunL0, "Driver",               "TpmEmu");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigString(pCfg,   "Location", location);
+                    InsertConfigString(pCfg,   "Location", bstr);
                     break;
-                }
                 default:
                     AssertFailedBreak();
             }
@@ -4395,9 +4409,9 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         ULONG logoDisplayTime;
         hrc = ptrBiosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                H();
         InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
-        Bstr logoImagePath;
-        hrc = ptrBiosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());        H();
-        InsertConfigString(pCfg,   "LogoFile", Utf8Str(!logoImagePath.isEmpty() ? logoImagePath : "") );
+        Bstr bstrLogoImagePath;
+        hrc = ptrBiosSettings->COMGETTER(LogoImagePath)(bstrLogoImagePath.asOutParam());    H();
+        InsertConfigString(pCfg,   "LogoFile", bstrLogoImagePath);
 
         /*
          * Boot menu
@@ -4952,16 +4966,13 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
 
             if (!fHotplug && !fAttachDetach)
             {
-                USBStorageDevice UsbMsd = USBStorageDevice();
+                USBStorageDevice UsbMsd;
 
                 UsbMsd.iPort = uInstance;
                 vrc = RTUuidCreate(&UsbMsd.mUuid);
                 AssertRCReturn(vrc, vrc);
 
-                char szUuid[RTUUID_STR_LENGTH + 1];
-                vrc = RTUuidToStr(&UsbMsd.mUuid, szUuid, sizeof(szUuid));
-                AssertRCReturn(vrc, vrc);
-                InsertConfigString(pCtlInst, "UUID", szUuid);
+                InsertConfigStringF(pCtlInst, "UUID", "%RTuuid", &UsbMsd.mUuid);
 
                 mUSBStorageDevices.push_back(UsbMsd);
 
@@ -5276,7 +5287,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     {
                         InsertConfigNode(pCfg, "Plugins", &pCfgPlugins);
                         InsertConfigNode(pCfgPlugins, s_szVDPlugin, &pCfgPlugin);
-                        InsertConfigString(pCfgPlugin, "Path", strPlugin.c_str());
+                        InsertConfigString(pCfgPlugin, "Path", strPlugin);
                     }
                 }
 # endif
@@ -5422,9 +5433,7 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
     /* Pass all custom parameters. */
     SafeArray<BSTR> aNames;
     SafeArray<BSTR> aValues;
-    HRESULT hrc = pMedium->GetProperties(NULL, ComSafeArrayAsOutParam(aNames),
-                                         ComSafeArrayAsOutParam(aValues));
-
+    HRESULT hrc = pMedium->GetProperties(NULL, ComSafeArrayAsOutParam(aNames), ComSafeArrayAsOutParam(aValues));
     if (   SUCCEEDED(hrc)
         && aNames.size() != 0)
     {
@@ -5434,20 +5443,19 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
         {
             if (aValues[ii] && *aValues[ii])
             {
-                Utf8Str name = aNames[ii];
-                Utf8Str value = aValues[ii];
-                size_t offSlash = name.find("/", 0);
-                if (   offSlash != name.npos
-                    && !name.startsWith("Special/"))
+                Utf8Str const strName  = aNames[ii];
+                Utf8Str const strValue = aValues[ii];
+                size_t offSlash = strName.find("/", 0);
+                if (   offSlash != strName.npos
+                    && !strName.startsWith("Special/"))
                 {
                     com::Utf8Str strFilter;
-                    com::Utf8Str strKey;
-
-                    hrc = strFilter.assignEx(name, 0, offSlash);
+                    hrc = strFilter.assignEx(strName, 0, offSlash);
                     if (FAILED(hrc))
                         break;
 
-                    hrc = strKey.assignEx(name, offSlash + 1, name.length() - offSlash - 1); /* Skip slash */
+                    com::Utf8Str strKey;
+                    hrc = strKey.assignEx(strName, offSlash + 1, strName.length() - offSlash - 1); /* Skip slash */
                     if (FAILED(hrc))
                         break;
 
@@ -5455,17 +5463,17 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
                     if (!pCfgFilterConfig)
                         InsertConfigNode(pVDC, strFilter.c_str(), &pCfgFilterConfig);
 
-                    InsertConfigString(pCfgFilterConfig, strKey.c_str(), value);
+                    InsertConfigString(pCfgFilterConfig, strKey.c_str(), strValue);
                 }
                 else
                 {
-                    InsertConfigString(pVDC, name.c_str(), value);
-                    if (    name.compare("HostIPStack") == 0
-                        &&  value.compare("0") == 0)
+                    InsertConfigString(pVDC, strName.c_str(), strValue);
+                    if (    strName.compare("HostIPStack") == 0
+                        &&  strValue.compare("0") == 0)
                         *pfHostIP = false;
                 }
 
-                if (   name.compare("CRYPT/KeyId") == 0
+                if (   strName.compare("CRYPT/KeyId") == 0
                     && pfEncrypted)
                     *pfEncrypted = true;
             }
@@ -5478,6 +5486,7 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
 
 /**
  * Configure proxy parameters the Network configuration tree.
+ *
  * Parameters may differ depending on the IP address being accessed.
  *
  * @returns VBox status code.
@@ -5491,6 +5500,8 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
  */
 int Console::i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const char *pcszPrefix, const com::Utf8Str &strIpAddr)
 {
+/** @todo r=bird: This code doesn't handle cleanup correctly and may leak
+ *        when hitting errors or throwing exceptions (bad_alloc). */
     RTHTTPPROXYINFO ProxyInfo;
     ComPtr<ISystemProperties> systemProperties;
     ProxyMode_T enmProxyMode;
@@ -5622,12 +5633,12 @@ int Console::i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const
         return VERR_INVALID_PARAMETER;
     }
 
-    InsertConfigString(pCfg, Utf8StrFmt("%sProxyType", pcszPrefix).c_str(), pszProxyType);
-    InsertConfigInteger(pCfg, Utf8StrFmt("%sProxyPort", pcszPrefix).c_str(), ProxyInfo.uProxyPort);
+    InsertConfigString(      pCfg, Utf8StrFmt("%sProxyType",     pcszPrefix).c_str(), pszProxyType);
+    InsertConfigInteger(     pCfg, Utf8StrFmt("%sProxyPort",     pcszPrefix).c_str(), ProxyInfo.uProxyPort);
     if (ProxyInfo.pszProxyHost)
-        InsertConfigString(pCfg, Utf8StrFmt("%sProxyHost", pcszPrefix).c_str(), Utf8StrFmt("%RTnaipv4", addr.uAddr.IPv4));
+        InsertConfigStringF( pCfg, Utf8StrFmt("%sProxyHost",     pcszPrefix).c_str(), "%RTnaipv4", addr.uAddr.IPv4);
     if (ProxyInfo.pszProxyUsername)
-        InsertConfigString(pCfg, Utf8StrFmt("%sProxyUser", pcszPrefix).c_str(), ProxyInfo.pszProxyUsername);
+        InsertConfigString(  pCfg, Utf8StrFmt("%sProxyUser",     pcszPrefix).c_str(), ProxyInfo.pszProxyUsername);
     if (ProxyInfo.pszProxyPassword)
         InsertConfigPassword(pCfg, Utf8StrFmt("%sProxyPassword", pcszPrefix).c_str(), ProxyInfo.pszProxyPassword);
 
@@ -5788,9 +5799,9 @@ int Console::i_configNetwork(const char *pszDevice,
                 /* Configure TFTP prefix and boot filename. */
                 hrc = virtualBox->COMGETTER(HomeFolder)(bstr.asOutParam());                 H();
                 if (!bstr.isEmpty())
-                    InsertConfigString(pCfg, "TFTPPrefix", Utf8StrFmt("%ls%c%s", bstr.raw(), RTPATH_DELIMITER, "TFTP"));
+                    InsertConfigStringF(pCfg, "TFTPPrefix", "%ls%c%s", bstr.raw(), RTPATH_DELIMITER, "TFTP");
                 hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                         H();
-                InsertConfigString(pCfg, "BootFile", Utf8StrFmt("%ls.pxe", bstr.raw()));
+                InsertConfigStringF(pCfg, "BootFile", "%ls.pxe", bstr.raw());
 
                 hrc = natEngine->COMGETTER(Network)(bstr.asOutParam());                     H();
                 if (!bstr.isEmpty())
@@ -5799,7 +5810,7 @@ int Console::i_configNetwork(const char *pszDevice,
                 {
                     ULONG uSlot;
                     hrc = aNetworkAdapter->COMGETTER(Slot)(&uSlot);                         H();
-                    InsertConfigString(pCfg, "Network", Utf8StrFmt("10.0.%d.0/24", uSlot+2));
+                    InsertConfigStringF(pCfg, "Network", "10.0.%d.0/24", uSlot+2);
                 }
                 hrc = natEngine->COMGETTER(HostIP)(bstr.asOutParam());                      H();
                 if (!bstr.isEmpty())
@@ -5910,7 +5921,7 @@ int Console::i_configNetwork(const char *pszDevice,
                     if (!fValid)
                         continue;
 
-                    InsertConfigNode(pPFTree, Utf8StrFmt("%u", i).c_str(), &pPF);
+                    InsertConfigNodeF(pPFTree, &pPF, "%u", i);
 
                     if (!strName.isEmpty())
                         InsertConfigString(pPF, "Name", strName);
@@ -6655,9 +6666,9 @@ int Console::i_configNetwork(const char *pszDevice,
                 {
                     if (values[ii] && *values[ii])
                     {
-                        Utf8Str name = names[ii];
-                        Utf8Str value = values[ii];
-                        InsertConfigString(pCfg, name.c_str(), value);
+                        Utf8Str const strName(names[ii]);
+                        Utf8Str const strValue(values[ii]);
+                        InsertConfigString(pCfg, strName.c_str(), strValue);
                     }
                 }
                 break;
@@ -6780,13 +6791,13 @@ int Console::i_configNetwork(const char *pszDevice,
                 {
                     InsertConfigString(pLunL0, "Driver", "VMNet");
                     InsertConfigNode(pLunL0, "Config", &pCfg);
-                    // InsertConfigString(pCfg, "Trunk", Utf8Str(bstr).c_str());
-                    // InsertConfigString(pCfg, "Network", BstrFmt("HostOnlyNetworking-%ls", bstr.raw()));
+                    // InsertConfigString(pCfg, "Trunk", bstr);
+                    // InsertConfigStringF(pCfg, "Network", "HostOnlyNetworking-%ls", bstr.raw());
                     InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
-                    InsertConfigString(pCfg, "Id", Utf8Str(bstrId).c_str());
-                    InsertConfigString(pCfg, "NetworkMask", Utf8Str(bstrNetMask).c_str());
-                    InsertConfigString(pCfg, "LowerIP", Utf8Str(bstrLowerIP).c_str());
-                    InsertConfigString(pCfg, "UpperIP", Utf8Str(bstrUpperIP).c_str());
+                    InsertConfigString(pCfg, "Id", bstrId);
+                    InsertConfigString(pCfg, "NetworkMask", bstrNetMask);
+                    InsertConfigString(pCfg, "LowerIP", bstrLowerIP);
+                    InsertConfigString(pCfg, "UpperIP", bstrUpperIP);
                     // InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
                     networkName.setNull(); // We do not want DHCP server on our network!
                     // trunkType = Bstr(TRUNKTYPE_WHATEVER);
