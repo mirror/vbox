@@ -8925,27 +8925,34 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
     return AudioDriverType_DirectSound;
 
 #elif defined(RT_OS_LINUX)
-    /* On Linux, we need to check at runtime what's actually supported. */
+    /* On Linux, we need to check at runtime what's actually supported.
+     * Descending precedence. */
     static RTCLockMtx s_mtx;
     static AudioDriverType_T s_enmLinuxDriver = AudioDriverType_Null;
     RTCLock lock(s_mtx);
-    if (s_enmLinuxDriver == AudioDriverType_Null)
+    if (s_enmLinuxDriver == AudioDriverType_Null) /* Already determined from a former run? */
     {
 # ifdef VBOX_WITH_AUDIO_PULSE
         /* Check for the pulse library & that the pulse audio daemon is running. */
-        if (RTProcIsRunningByName("pulseaudio") &&
-            RTLdrIsLoadable("libpulse.so.0"))
+        if (   RTProcIsRunningByName("pulseaudio")
+            && RTLdrIsLoadable("libpulse.so.0"))
+        {
             s_enmLinuxDriver = AudioDriverType_Pulse;
-        else
-# endif /* VBOX_WITH_AUDIO_PULSE */
+        }
+#endif /* VBOX_WITH_AUDIO_PULSE */
+
 # ifdef VBOX_WITH_AUDIO_ALSA
+        if (s_enmLinuxDriver == AudioDriverType_Null)
+        {
             /* Check if we can load the ALSA library */
-             if (RTLdrIsLoadable("libasound.so.2"))
+            if (RTLdrIsLoadable("libasound.so.2"))
                 s_enmLinuxDriver = AudioDriverType_ALSA;
+        }
 # endif /* VBOX_WITH_AUDIO_ALSA */
+
 # ifdef VBOX_WITH_AUDIO_OSS
-             else
-                s_enmLinuxDriver = AudioDriverType_OSS;
+        if (s_enmLinuxDriver == AudioDriverType_Null)
+            s_enmLinuxDriver = AudioDriverType_OSS;
 # endif /* VBOX_WITH_AUDIO_OSS */
     }
     return s_enmLinuxDriver;
