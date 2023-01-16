@@ -675,7 +675,8 @@ uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceTy
 
     /* Preallocate the arrays we need, bunching them together. */
     AssertCompile((unsigned)DeviceType_Null == 0);
-    PPDMLED *papLeds = (PPDMLED *)RTMemAllocZ((sizeof(PPDMLED) + (ppaSubTypes ? sizeof(**ppaSubTypes) : 0)) * cLeds);
+    PPDMLED volatile *papLeds = (PPDMLED volatile *)RTMemAllocZ(  (sizeof(PPDMLED) + (ppaSubTypes ? sizeof(**ppaSubTypes) : 0))
+                                                                * cLeds);
     AssertStmt(papLeds, throw E_OUTOFMEMORY);
 
     /* Take the LED lock in allocation mode and see if there are more LED set entries availalbe. */
@@ -700,12 +701,15 @@ uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceTy
         }
     }
 
-    RTMemFree(papLeds);
+    RTMemFree((void *)papLeds);
     AssertFailed();
     throw ConfigError("AllocateDriverPapLeds", VERR_OUT_OF_RANGE, "Too many LED sets");
 }
 
 
+/**
+ * @throws ConfigError and std::bad_alloc.
+ */
 void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t cLeds, DeviceType_T **ppaSubTypes,
                                    Console::MediumAttachmentMap *pmapMediumAttachments,
                                    const char *pcszDevice, unsigned uInstance)
@@ -730,6 +734,9 @@ void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t
 }
 
 
+/**
+ * @throws ConfigError and std::bad_alloc.
+ */
 void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType)
 {
     Assert(enmType > DeviceType_Null && enmType < DeviceType_End);
@@ -4879,14 +4886,14 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         hrc = pMediumAtt->COMGETTER(Device)(&lDev);                                         H();
         LONG lPort;
         hrc = pMediumAtt->COMGETTER(Port)(&lPort);                                          H();
-        DeviceType_T lType;
-        hrc = pMediumAtt->COMGETTER(Type)(&lType);                                          H();
+        DeviceType_T enmType;
+        hrc = pMediumAtt->COMGETTER(Type)(&enmType);                                        H();
         BOOL fNonRotational;
         hrc = pMediumAtt->COMGETTER(NonRotational)(&fNonRotational);                        H();
         BOOL fDiscard;
         hrc = pMediumAtt->COMGETTER(Discard)(&fDiscard);                                    H();
 
-        if (lType == DeviceType_DVD)
+        if (enmType == DeviceType_DVD)
             fInsertDiskIntegrityDrv = false;
 
         unsigned uLUN;
@@ -4947,7 +4954,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         }
 
         vrc = i_removeMediumDriverFromVm(pCtlInst, pcszDevice, uInstance, uLUN, enmBus, fAttachDetach,
-                                         fHotplug, fForceUnmount, pUVM, pVMM, lType, &pLunL0);
+                                         fHotplug, fForceUnmount, pUVM, pVMM, enmType, &pLunL0);
         if (RT_FAILURE(vrc))
             return vrc;
         if (ppLunL0)
@@ -4964,7 +4971,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
          * 2. Only check during VM creation and not later, especially not during
          *    taking an online snapshot!
          */
-        if (   lType == DeviceType_HardDisk
+        if (   enmType == DeviceType_HardDisk
             && (   aMachineState == MachineState_Starting
                 || aMachineState == MachineState_Restoring))
         {
@@ -4978,8 +4985,8 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         {
             BOOL fHostDrive;
             hrc = ptrMedium->COMGETTER(HostDrive)(&fHostDrive);                             H();
-            if (  (   lType == DeviceType_DVD
-                   || lType == DeviceType_Floppy)
+            if (  (   enmType == DeviceType_DVD
+                   || enmType == DeviceType_Floppy)
                 && !fHostDrive)
             {
                 /*
@@ -4991,7 +4998,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                 RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
                 (void)RTFsQueryType(strFile.c_str(), &enmFsTypeFile);
                 LogRel(("File system of '%s' (%s) is %s\n",
-                       strFile.c_str(), lType == DeviceType_DVD ? "DVD" : "Floppy", RTFsTypeName(enmFsTypeFile)));
+                       strFile.c_str(), enmType == DeviceType_DVD ? "DVD" : "Floppy", RTFsTypeName(enmFsTypeFile)));
             }
 
             if (fHostDrive)
@@ -5015,7 +5022,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
          */
         if (   (fHotplug || !fAttachDetach)
             && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB || enmBus == StorageBus_VirtioSCSI)
-                || (enmBus == StorageBus_SATA && lType == DeviceType_DVD && !fPassthrough)))
+                || (enmBus == StorageBus_SATA && enmType == DeviceType_DVD && !fPassthrough)))
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
@@ -5023,7 +5030,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
 
         vrc = i_configMedium(pLunL0,
                              !!fPassthrough,
-                             lType,
+                             enmType,
                              fUseHostIOCache,
                              fBuiltinIOCache,
                              fInsertDiskIntegrityDrv,
@@ -5059,7 +5066,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             }
             else if (   !fHotplug
                      && (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI || enmBus == StorageBus_VirtioSCSI)
-                         || (enmBus == StorageBus_SATA && lType == DeviceType_DVD)))
+                         || (enmBus == StorageBus_SATA && enmType == DeviceType_DVD)))
                 vrc = pVMM->pfnPDMR3DriverAttach(pUVM, pcszDevice, uInstance, uLUN,
                                                  fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             else
@@ -5089,7 +5096,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         }
 
         if (paLedDevType)
-            paLedDevType[uLUN] = lType;
+            paLedDevType[uLUN] = enmType;
 
         /* Dump the changed LUN if possible, dump the complete device otherwise */
         if (   aMachineState != MachineState_Starting

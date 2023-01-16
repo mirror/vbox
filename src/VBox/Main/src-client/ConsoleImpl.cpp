@@ -882,7 +882,7 @@ void Console::uninit()
     /* Release memory held by the LED sets (no need to take lock). */
     for (size_t idxSet = 0; idxSet < mcLedSets; idxSet++)
     {
-        RTMemFree(maLedSets[idxSet].papLeds);
+        RTMemFree((void *)maLedSets[idxSet].papLeds);
         maLedSets[idxSet].papLeds = NULL;
         maLedSets[idxSet].paSubTypes = NULL;
     }
@@ -2861,8 +2861,8 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
             PLEDSET pLS = &maLedSets[idxSet];
             if (pLS->fTypes & fWanted)
             {
-                uint32_t const        cLeds      = pLS->cLeds;
-                PPDMLED const * const papSrcLeds = pLS->papLeds;
+                uint32_t const           cLeds      = pLS->cLeds;
+                PPDMLED volatile * const papSrcLeds = pLS->papLeds;
 
                 /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
                 DeviceType_T const *paSubTypes = pLS->paSubTypes;
@@ -11514,7 +11514,7 @@ Console::i_vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM 
  *
  * @param   iLedSet      Index of LED set to fetch
  */
-PPDMLED *
+PPDMLED volatile *
 Console::i_getLedSet(uint32_t iLedSet)
 {
     AssertReturn(iLedSet < RT_ELEMENTS(maLedSets), NULL);
@@ -11680,7 +11680,7 @@ typedef struct DRVMAINSTATUS
     /** Pointer to the LED ports interface above us. */
     PPDMILEDPORTS       pLedPorts;
     /** Pointer to the array of LED pointers. */
-    PPDMLED            *papLeds;
+    PPDMLED volatile   *papLeds;
     /** The unit number corresponding to the first entry in the LED array. */
     uint32_t            iFirstLUN;
     /** The unit number corresponding to the last entry in the LED array.
@@ -11696,7 +11696,9 @@ typedef struct DRVMAINSTATUS
     char                *pszDeviceInstance;
     /** Pointer to the Console object, for driver triggered activities. */
     Console             *pConsole;
-} DRVMAINSTATUS, *PDRVMAINSTATUS;
+} DRVMAINSTATUS;
+/** Pointer the instance data for a Main status driver. */
+typedef DRVMAINSTATUS *PDRVMAINSTATUS;
 
 
 /**
@@ -11713,16 +11715,18 @@ DECLCALLBACK(void) Console::i_drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterfac
     PDRVMAINSTATUS pThis = RT_FROM_MEMBER(pInterface, DRVMAINSTATUS, ILedConnectors);
     if (iLUN >= pThis->iFirstLUN && iLUN <= pThis->iLastLUN)
     {
+        /*
+         * Query the pointer to the PDMLED field inside the target device
+         * structure (owned by the virtual hardware device).
+         */
         PPDMLED pLed;
         int rc = pThis->pLedPorts->pfnQueryStatusLed(pThis->pLedPorts, iLUN, &pLed);
-        /*
-         * pLed now points directly to the per-unit struct PDMLED field
-         * inside the target device struct owned by the hardware driver.
-         */
         if (RT_FAILURE(rc))
             pLed = NULL;
-        ASMAtomicWritePtr(&pThis->papLeds[iLUN - pThis->iFirstLUN], pLed);
+
         /*
+         * Update the corresponding papLeds[] entry.
+         *
          * papLeds[] points to the struct PDMLED of each of this driver's
          * units.  The entries are initialized here, called out of a loop
          * in Console::i_drvStatus_Construct(), which previously called
@@ -11732,6 +11736,8 @@ DECLCALLBACK(void) Console::i_drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterfac
          * by Console::getDeviceActivity(), which is itself called from
          * src/VBox/Frontends/VirtualBox/src/runtime/UIIndicatorsPool.cpp
          */
+        /** @todo acquire Console::mLedLock here in exclusive mode? */
+        ASMAtomicWritePtr(&pThis->papLeds[iLUN - pThis->iFirstLUN], pLed);
         Log(("drvStatus_UnitChanged: iLUN=%d pLed=%p\n", iLUN, pLed));
     }
 }

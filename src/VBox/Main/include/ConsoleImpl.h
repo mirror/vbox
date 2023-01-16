@@ -808,7 +808,7 @@ private:
     HRESULT i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
     struct LEDSET;
     typedef struct LEDSET *PLEDSET;
-    PPDMLED *i_getLedSet(uint32_t iLedSet);
+    PPDMLED volatile *i_getLedSet(uint32_t iLedSet);
     uint32_t i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceType_T **ppSubTypes);
     void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType);
     void i_attachStatusDriver(PCFGMNODE pCtlInst, uint32_t fTypes, uint32_t cLeds, DeviceType_T **ppaSubTypes,
@@ -1068,17 +1068,22 @@ private:
     /** @name LEDs and their management
      * @{ */
     /** Read/write lock separating LED allocations (write) from queries (read). */
-    RWLockHandle mLedLock;
+    RWLockHandle            mLedLock;
     /** Number of LED sets in use in maLedSets. */
-    uint32_t          mcLedSets;
+    uint32_t                mcLedSets;
     /** LED sets. */
     struct LEDSET
     {
-        PPDMLED        *papLeds;
-        uint32_t        cLeds;
-        uint32_t        fTypes;     /**< Bitmask of possible DeviceType_T values (e.g. RT_BIT_32(DeviceType_Network)). */
-        DeviceType_T   *paSubTypes; /**< Optionally, device types for each individual LED. Runs parallel to papLeds. */
-    }                 maLedSets[32];
+        /** Bitmask of possible DeviceType_T values (e.g. RT_BIT_32(DeviceType_Network)). */
+        uint32_t            fTypes;
+        /** Number of LEDs.   */
+        uint32_t            cLeds;
+        /** Array of PDMLED pointers.  The pointers in the array can be changed at any
+         *  time by Console::i_drvStatus_UnitChanged(). */
+        PPDMLED volatile   *papLeds;
+        /** Optionally, device types for each individual LED. Runs parallel to papLeds. */
+        DeviceType_T       *paSubTypes;
+    } maLedSets[32];
     /** @} */
 
     MediumAttachmentMap mapMediumAttachments;
