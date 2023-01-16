@@ -426,6 +426,7 @@ Console::Console()
     , mUsbCardReader(NULL)
 #endif
     , mBusMgr(NULL)
+    , mLedLock(LOCKCLASS_LISTOFOTHEROBJECTS /* must be higher than LOCKCLASS_OTHEROBJECT */)
     , m_pKeyStore(NULL)
     , mpIfSecKey(NULL)
     , mpIfSecKeyHlp(NULL)
@@ -878,11 +879,10 @@ void Console::uninit()
         mhModVMM = NIL_RTLDRMOD;
     }
 
-    /* Release memory held by the LED sets. */
+    /* Release memory held by the LED sets (no need to take lock). */
     for (size_t idxSet = 0; idxSet < mcLedSets; idxSet++)
     {
         RTMemFree(maLedSets[idxSet].papLeds);
-        RTMemFree(maLedSets[idxSet].paSubTypes);
         maLedSets[idxSet].papLeds = NULL;
         maLedSets[idxSet].paSubTypes = NULL;
     }
@@ -2827,14 +2827,6 @@ DECLINLINE(uint32_t) readAndClearLed(PPDMLED pLed)
 HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::vector<DeviceActivity_T> &aActivity)
 {
     /*
-     * Note: we don't lock the console object here because
-     * readAndClearLed() should be thread safe.
-     */
-/** @todo r=bird: readAndClearLed is safe, provided that we're not running at the
- * same time as Console::i_allocateDriverLeds.  This assumption is not correct
- * during VM construction. */
-
-    /*
      * Make a roadmap of which DeviceType_T LED types are wanted:
      */
     uint32_t fWanted = 0;
@@ -2853,35 +2845,42 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType, std::
 
     /*
      * Collect all the LEDs in a single sweep through all drivers' sets:
+     *
+     * Because this method can be called by the frontend and others while the
+     * VM is being constructed, we use a dedicated lock to prevent stumbling
+     * into the allocator.
      */
     PDMLEDCORE aLEDs[DeviceType_End] = { {0} };
     Assert(aLEDs[1].u32 == 0 && aLEDs[DeviceType_End / 2].u32 == 0 && aLEDs[DeviceType_End - 1].u32 == 0); /* paranoia */
-    uint32_t idxSet = mcLedSets;
-    while (idxSet-- > 0)
     {
-        /* Look inside this driver's set of LEDs and check if the types mask overlap with the request: */
-        PLEDSET pLS = &maLedSets[idxSet];
-        if (pLS->fTypes & fWanted)
+        AutoReadLock alock(mLedLock COMMA_LOCKVAL_SRC_POS);
+        uint32_t idxSet = mcLedSets;
+        while (idxSet-- > 0)
         {
-            uint32_t const        cLeds      = pLS->cLeds;
-            PPDMLED const * const papSrcLeds = pLS->papLeds;
-
-            /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
-            DeviceType_T const *paSubTypes = pLS->paSubTypes;
-            if (paSubTypes)
-                for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
-                {
-                    DeviceType_T const enmType = paSubTypes[idxLed];
-                    Assert((unsigned)enmType < (unsigned)DeviceType_End);
-                    if (fWanted & RT_BIT_32((unsigned)enmType))
-                        aLEDs[enmType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
-                }
-            /* Single-type drivers (e.g. floppy) have the type in ->enmType */
-            else
+            /* Look inside this driver's set of LEDs and check if the types mask overlap with the request: */
+            PLEDSET pLS = &maLedSets[idxSet];
+            if (pLS->fTypes & fWanted)
             {
-                uint32_t const idxType = ASMBitFirstSetU32(pLS->fTypes) - 1;
-                for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
-                    aLEDs[idxType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
+                uint32_t const        cLeds      = pLS->cLeds;
+                PPDMLED const * const papSrcLeds = pLS->papLeds;
+
+                /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
+                DeviceType_T const *paSubTypes = pLS->paSubTypes;
+                if (paSubTypes)
+                    for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
+                    {
+                        DeviceType_T const enmType = paSubTypes[idxLed];
+                        Assert((unsigned)enmType < (unsigned)DeviceType_End);
+                        if (fWanted & RT_BIT_32((unsigned)enmType))
+                            aLEDs[enmType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
+                    }
+                /* Single-type drivers (e.g. floppy) have the type in ->enmType */
+                else
+                {
+                    uint32_t const idxType = ASMBitFirstSetU32(pLS->fTypes) - 1;
+                    for (uint32_t idxLed = 0; idxLed < cLeds; idxLed++)
+                        aLEDs[idxType].u32 |= readAndClearLed(papSrcLeds[idxLed]);
+                }
             }
         }
     }

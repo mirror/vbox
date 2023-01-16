@@ -673,27 +673,36 @@ uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, uint32_t fTypes, DeviceTy
     Assert(cLeds < 1024);  /* Adjust if any driver supports >=1024 units! */
     Assert(!(fTypes & (RT_BIT_32(DeviceType_Null) | ~(RT_BIT_32(DeviceType_End) - 1))));
 
-    /* Grab a LED set entry before we start allocating anything so the destructor can do the cleanups. */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Caller should have this already. Need protect mcLedSets check and update. */
-    AssertStmt(mcLedSets < RT_ELEMENTS(maLedSets),
-               throw ConfigError("AllocateDriverPapLeds", VERR_OUT_OF_RANGE, "Too many LED sets"));
-    uint32_t const idxLedSet = mcLedSets++;
-    PLEDSET pLS = &maLedSets[idxLedSet];
-    pLS->papLeds = (PPDMLED *)RTMemAllocZ(sizeof(PPDMLED) * cLeds);
-    AssertStmt(pLS->papLeds, throw E_OUTOFMEMORY);
-    pLS->cLeds = cLeds;
-    pLS->fTypes = fTypes;
-    pLS->paSubTypes = NULL;
+    /* Preallocate the arrays we need, bunching them together. */
+    AssertCompile((unsigned)DeviceType_Null == 0);
+    PPDMLED *papLeds = (PPDMLED *)RTMemAllocZ((sizeof(PPDMLED) + (ppaSubTypes ? sizeof(**ppaSubTypes) : 0)) * cLeds);
+    AssertStmt(papLeds, throw E_OUTOFMEMORY);
 
-    if (ppaSubTypes)
+    /* Take the LED lock in allocation mode and see if there are more LED set entries availalbe. */
     {
-        AssertCompile((unsigned)DeviceType_Null == 0);
-        *ppaSubTypes = pLS->paSubTypes = (DeviceType_T *)RTMemAllocZ(sizeof(DeviceType_T) * cLeds);
-        AssertStmt(pLS->paSubTypes, throw E_OUTOFMEMORY);
+        AutoWriteLock alock(mLedLock COMMA_LOCKVAL_SRC_POS);
+        uint32_t const idxLedSet = mcLedSets;
+        if (idxLedSet < RT_ELEMENTS(maLedSets))
+        {
+            /* Initialize the set and return the index. */
+            PLEDSET pLS = &maLedSets[idxLedSet];
+            pLS->papLeds = papLeds;
+            pLS->cLeds = cLeds;
+            pLS->fTypes = fTypes;
+            if (ppaSubTypes)
+                 *ppaSubTypes = pLS->paSubTypes = (DeviceType_T *)&papLeds[cLeds];
+            else
+                pLS->paSubTypes = NULL;
+
+            mcLedSets = idxLedSet + 1;
+            LogRel2(("return idxLedSet=%d (mcLedSets=%u out of max %zu)\n", idxLedSet, mcLedSets, RT_ELEMENTS(maLedSets)));
+            return idxLedSet;
+        }
     }
 
-    LogRel2(("mcLedSets = %d, RT_ELEMENTS(maLedSets) = %d\n", mcLedSets, RT_ELEMENTS(maLedSets)));
-    return idxLedSet;
+    RTMemFree(papLeds);
+    AssertFailed();
+    throw ConfigError("AllocateDriverPapLeds", VERR_OUT_OF_RANGE, "Too many LED sets");
 }
 
 

@@ -1067,6 +1067,8 @@ private:
 
     /** @name LEDs and their management
      * @{ */
+    /** Read/write lock separating LED allocations (write) from queries (read). */
+    RWLockHandle mLedLock;
     /** Number of LED sets in use in maLedSets. */
     uint32_t          mcLedSets;
     /** LED sets. */
