@@ -61,7 +61,9 @@
 # include <zlib.h>
 #endif
 #ifdef RTZIP_USE_LZF
-# include <lzf.h>
+ RT_C_DECLS_BEGIN
+#  include <lzf.h>
+ RT_C_DECLS_END
 # include <iprt/crc.h>
 #endif
 #ifdef RTZIP_USE_LZJB

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2000-2008 Marc Alexander Lehmann <schmorp@schmorp.de>
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modifica-
  * tion, are permitted provided that the following conditions are met:
- * 
+ *
  *   1.  Redistributions of source code must retain the above copyright notice,
  *       this list of conditions and the following disclaimer.
- * 
+ *
  *   2.  Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MER-
  * CHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
@@ -37,16 +37,12 @@
 #ifndef LZF_H
 #define LZF_H
 
-#ifdef __cplusplus /* vbox */
-extern "C" {       /* vbox */
-#endif             /* vbox */
-
 /***********************************************************************
 **
-**	lzf -- an extremely fast/free compression/decompression-method
-**	http://liblzf.plan9.de/
+**  lzf -- an extremely fast/free compression/decompression-method
+**  http://liblzf.plan9.de/
 **
-**	This algorithm is believed to be patent-free.
+**  This algorithm is believed to be patent-free.
 **
 ***********************************************************************/
 
@@ -77,7 +73,7 @@ extern "C" {       /* vbox */
  * and lzf_c.c.
  *
  */
-unsigned int 
+unsigned int
 lzf_compress (const void *const in_data,  unsigned int in_len,
               void             *out_data, unsigned int out_len);
 
@@ -96,12 +92,10 @@ lzf_compress (const void *const in_data,  unsigned int in_len,
  *
  * This function is very fast, about as fast as a copying loop.
  */
-unsigned int 
+unsigned int
 lzf_decompress (const void *const in_data,  unsigned int in_len,
                 void             *out_data, unsigned int out_len);
 
-#ifdef __cplusplus /* vbox */
-}                  /* vbox */
-#endif             /* vbox */
 #endif
+
 
