@@ -341,6 +341,9 @@ public:
      */
     HRESULT Unlock();
 
+    /** Introspection. */
+    bool IsLocked(void) const { return mIsLocked; }
+
 private:
     typedef std::map<ComObjPtr<MediumAttachment>, MediumLockList *> Base;
     Base mMediumLocks;
