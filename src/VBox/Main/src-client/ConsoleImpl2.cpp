@@ -5083,7 +5083,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             {
                 if (fHotplug)
                 {
-                    USBStorageDevice UsbMsd = USBStorageDevice();
+                    USBStorageDevice UsbMsd;
                     RTUuidCreate(&UsbMsd.mUuid);
                     UsbMsd.iPort = uInstance;
                     vrc = pVMM->pfnPDMR3UsbCreateEmulatedDevice(pUVM, pcszDevice, pCtlInst, &UsbMsd.mUuid, NULL);

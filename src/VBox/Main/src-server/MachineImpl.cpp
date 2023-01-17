@@ -3872,10 +3872,9 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                         aName.c_str());
 
     bool fSilent = false;
-    Utf8Str strReconfig;
 
     /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
-    strReconfig = i_getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
+    Utf8Str const strReconfig = i_getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
     if (   mData->mMachineState == MachineState_Paused
         && strReconfig == "1")
         fSilent = true;
@@ -3899,11 +3898,11 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
     if (FAILED(rc)) return rc;
 
     /* check if the device slot is already busy */
-    MediumAttachment *pAttachTemp;
-    if ((pAttachTemp = i_findAttachment(*mMediumAttachments.data(),
-                                        aName,
-                                        aControllerPort,
-                                        aDevice)))
+    MediumAttachment *pAttachTemp = i_findAttachment(*mMediumAttachments.data(),
+                                                     aName,
+                                                     aControllerPort,
+                                                     aDevice);
+    if (pAttachTemp)
     {
         Medium *pMedium = pAttachTemp->i_getMedium();
         if (pMedium)
@@ -3931,7 +3930,8 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
 
     AutoWriteLock mediumLock(medium COMMA_LOCKVAL_SRC_POS);
 
-    if (    (pAttachTemp = i_findAttachment(*mMediumAttachments.data(), medium))
+    pAttachTemp = i_findAttachment(*mMediumAttachments.data(), medium);
+    if (    pAttachTemp
          && !medium.isNull()
          && (   medium->i_getType() != MediumType_Readonly
              || medium->i_getDeviceType() != DeviceType_DVD)
@@ -3985,7 +3985,8 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
             /* check if the medium was attached to the VM before we started
              * changing attachments in which case the attachment just needs to
              * be restored */
-            if ((pAttachTemp = i_findAttachment(oldAtts, medium)))
+            pAttachTemp = i_findAttachment(oldAtts, medium);
+            if (pAttachTemp)
             {
                 AssertReturn(!fIndirect, E_FAIL);
 

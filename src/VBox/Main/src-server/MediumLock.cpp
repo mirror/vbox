@@ -297,7 +297,7 @@ bool MediumLockListMap::IsEmpty()
 }
 
 HRESULT MediumLockListMap::Insert(const ComObjPtr<MediumAttachment> &aMediumAttachment,
-                              MediumLockList *aMediumLockList)
+                                  MediumLockList *aMediumLockList)
 {
     if (mIsLocked)
         return VBOX_E_INVALID_OBJECT_STATE;
@@ -306,7 +306,7 @@ HRESULT MediumLockListMap::Insert(const ComObjPtr<MediumAttachment> &aMediumAtta
 }
 
 HRESULT MediumLockListMap::ReplaceKey(const ComObjPtr<MediumAttachment> &aMediumAttachmentOld,
-                                  const ComObjPtr<MediumAttachment> &aMediumAttachmentNew)
+                                      const ComObjPtr<MediumAttachment> &aMediumAttachmentNew)
 {
     MediumLockListMap::Base::iterator it = mMediumLocks.find(aMediumAttachmentOld);
     if (it == mMediumLocks.end())
