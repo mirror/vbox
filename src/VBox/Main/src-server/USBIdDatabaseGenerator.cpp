@@ -257,7 +257,7 @@ static void WriteSourceFile(FILE *pOut, const char *argv0, PBLDPROGSTRTAB pStrTa
             " */\n"
             "\n"
             "/*\n"
-            " * Copyright (C) 2015-2022 Oracle and/or its affiliates.\n"
+            " * Copyright (C) 2015-2023 Oracle and/or its affiliates.\n"
             " *\n"
             " * This file is part of VirtualBox base platform packages, as\n"
             " * available from https://www.virtualbox.org.\n"

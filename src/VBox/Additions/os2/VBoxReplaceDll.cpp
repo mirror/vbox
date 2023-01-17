@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <VBox/version.h>
+
 
 static int usage(const char *argv0)
 {
@@ -52,7 +54,7 @@ static int usage(const char *argv0)
            "Tells the kernel to cache the specified DLLs in memory and close the\n"
            "files on disk, allowing new DLL versions to be installed.\n"
            "\n"
-           "Copyright (C) 2013-2020 Oracle Corporation\n",
+           "Copyright (C) 2013-" VBOX_C_YEAR " Oracle Corporation\n",
            argv0);
     return 0;
 }
