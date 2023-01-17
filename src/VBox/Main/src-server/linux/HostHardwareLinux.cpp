@@ -1254,49 +1254,49 @@ int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
 
     VECTOR_PTR(char *) vecpchDevs;
     VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
-    for (;;)
+    rc = readFilePaths(mpcszDevicesRoot, &vecpchDevs, false);
+    if (RT_SUCCESS(rc))
     {
-        rc = readFilePaths(mpcszDevicesRoot, &vecpchDevs, false);
+        char **ppszEntry;
+        VEC_FOR_EACH(&vecpchDevs, char *, ppszEntry)
+            if (RT_FAILURE(rc = iwAddWatch(&mWatches, *ppszEntry)))
+                break;
+
         if (RT_SUCCESS(rc))
         {
-            char **ppszEntry;
-            VEC_FOR_EACH(&vecpchDevs, char *, ppszEntry)
-                if (RT_FAILURE(rc = iwAddWatch(&mWatches, *ppszEntry)))
-                    break;
+            struct pollfd pollFD[MAX_POLLID];
+            pollFD[RPIPE_ID].fd       = mhWakeupPipeR;
+            pollFD[RPIPE_ID].events   = POLLIN;
+            pollFD[INOTIFY_ID].fd     = iwGetFD(&mWatches);
+            pollFD[INOTIFY_ID].events = POLLIN | POLLERR | POLLHUP;
+            errno = 0;
+            int cPolled = poll(pollFD, RT_ELEMENTS(pollFD), aMillies);
+            if (cPolled < 0)
+            {
+                Assert(errno > 0);
+                rc = RTErrConvertFromErrno(errno);
+            }
+            else if (pollFD[RPIPE_ID].revents)
+            {
+                rc = drainWakeupPipe();
+                if (RT_SUCCESS(rc))
+                    rc = VERR_INTERRUPTED;
+            }
+            else if ((pollFD[INOTIFY_ID].revents))
+            {
+                if (cPolled == 1)
+                    rc = drainInotify();
+                else
+                    AssertFailedStmt(rc = VERR_INTERNAL_ERROR);
+            }
+            else
+            {
+                if (errno == 0 && cPolled == 0)
+                    rc = VERR_TIMEOUT;
+                else
+                    AssertFailedStmt(rc = VERR_INTERNAL_ERROR);
+            }
         }
-        if (RT_FAILURE(rc))
-            break;
-
-        struct pollfd pollFD[MAX_POLLID];
-        pollFD[RPIPE_ID].fd = mhWakeupPipeR;
-        pollFD[RPIPE_ID].events = POLLIN;
-        pollFD[INOTIFY_ID].fd = iwGetFD(&mWatches);
-        pollFD[INOTIFY_ID].events = POLLIN | POLLERR | POLLHUP;
-        errno = 0;
-        int cPolled = poll(pollFD, RT_ELEMENTS(pollFD), aMillies);
-        if (cPolled < 0)
-        {
-            Assert(errno > 0);
-            rc = RTErrConvertFromErrno(errno);
-        }
-        else if (pollFD[RPIPE_ID].revents)
-        {
-            rc = drainWakeupPipe();
-            if (RT_SUCCESS(rc))
-                rc = VERR_INTERRUPTED;
-            break;
-        }
-        else if (!(pollFD[INOTIFY_ID].revents))
-        {
-            AssertBreakStmt(cPolled == 0, rc = VERR_INTERNAL_ERROR);
-            rc = VERR_TIMEOUT;
-        }
-        Assert(errno == 0 || (RT_FAILURE(rc) && rc != VERR_TIMEOUT));
-        if (RT_FAILURE(rc))
-            break;
-        AssertBreakStmt(cPolled == 1, rc = VERR_INTERNAL_ERROR);
-        if (RT_FAILURE(rc = drainInotify()))
-            break;
     }
 
     mfWaiting = 0;
