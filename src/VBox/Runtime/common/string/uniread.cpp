@@ -1041,6 +1041,9 @@ int PrintHeader(const char *argv0, const char *pszBaseDir)
         pszBaseDir = szBuf;
     }
 
+    const char *pszYear = __DATE__;
+    pszYear += strlen(pszYear) - 4;
+
     Stream1Printf("/* $" "Id" "$ */\n"
                   "/** @file\n"
                   " * IPRT - Unicode Tables.\n"
@@ -1050,7 +1053,7 @@ int PrintHeader(const char *argv0, const char *pszBaseDir)
                   " */\n"
                   "\n"
                   "/*\n"
-                  " * Copyright (C) 2006-2022 Oracle and/or its affiliates.\n"
+                  " * Copyright (C) 2006-%s Oracle and/or its affiliates.\n"
                   " *\n"
                   " * This file is part of VirtualBox base platform packages, as\n"
                   " * available from https://www.virtualbox.org.\n"
@@ -1082,7 +1085,7 @@ int PrintHeader(const char *argv0, const char *pszBaseDir)
                   "\n"
                   "#include <iprt/uni.h>\n"
                   "\n",
-                  pszBaseDir, argv0);
+                  pszBaseDir, argv0, pszYear);
     return 0;
 }
 
