@@ -52,7 +52,10 @@
 #
 --filter-out-dirs  ".svn"
 --filter-out-dirs  "/*out*/."
---filter-out-dirs  "/*kBuild*/."
+--filter-out-dirs  "/kBuild/."
+--filter-out-dirs  "/*kBuild_*/."
+--filter-out-dirs  "/*kBuild.*/."
+--filter-out-dirs  "/*_kBuild*/."
 --filter-out-dirs  "/SlickEdit/."
 
 

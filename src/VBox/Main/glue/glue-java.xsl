@@ -68,7 +68,7 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/*
- * Copyright (C) 2010-2022 Oracle and/or its affiliates.
+ * Copyright (C) 2010-2023 Oracle and/or its affiliates.
  *
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General

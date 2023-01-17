@@ -2067,7 +2067,7 @@ VBoxControl sharedfolder list</screen>
 
 <screen>$ VBoxManage guestproperty enumerate "Windows Vista III"
 VirtualBox Command Line Management Interface Version <replaceable>version-number</replaceable>
-Copyright (C) 2005-2022 Oracle and/or its affiliates
+Copyright (C) 2005-2023 Oracle and/or its affiliates
 
 Name: /VirtualBox/GuestInfo/OS/Product, value: Windows Vista Business Edition,
     timestamp: 1229098278843087000, flags:
@@ -2128,7 +2128,7 @@ Name: /VirtualBox/GuestInfo/OS/LoggedInUsersList, value: username,
 
 <screen>$ VBoxManage guestproperty get "Windows Vista III" "/VirtualBox/GuestInfo/OS/Product"
 VirtualBox Command Line Management Interface Version <replaceable>version-number</replaceable>
-Copyright (C) 2005-2022 Oracle and/or its affiliates
+Copyright (C) 2005-2023 Oracle and/or its affiliates
 
 Value: Windows Vista Business Edition</screen>
 
@@ -2141,7 +2141,7 @@ Value: Windows Vista Business Edition</screen>
 
 <screen>$ sudo VBoxControl guestproperty enumerate
 VirtualBox Guest Additions Command Line Management Interface Version <replaceable>version-number</replaceable>
-Copyright (C) 2005-2022 Oracle and/or its affiliates
+Copyright (C) 2005-2023 Oracle and/or its affiliates
 
 Name: /VirtualBox/GuestInfo/OS/Release, value: 2.6.28-18-generic,
     timestamp: 1265813265835667000, flags: &lt;NULL&gt;
