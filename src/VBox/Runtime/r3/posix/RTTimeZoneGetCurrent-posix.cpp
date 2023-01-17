@@ -79,6 +79,8 @@
  * @param   pszTimezone         The time zone database file relative to
  *                              <tzfile.h>:TZDIR (normally /usr/share/zoneinfo),
  *                              e.g. Europe/London, or Etc/UTC, or UTC, or etc.
+ *
+ * @note    File format is documented in RFC-8536.
  */
 static int rtIsValidTimeZoneFile(const char *pszTimeZone)
 {
@@ -217,7 +219,7 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
     /*
      * Older versions of RedHat / OEL don't have /etc/localtime as a symlink or
      * /etc/timezone but instead have /etc/sysconfig/clock which contains a line
-     * of the syntax ZONE=Europe/London amongst other entries.
+     * of the syntax ZONE=Europe/London or ZONE="Europe/London" amongst other entries.
      */
     pszPath = PATH_SYSCONFIG_CLOCK;
     if (RTFileExists(pszPath))
@@ -229,9 +231,20 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
             while (RT_SUCCESS(rc = RTStrmGetLine(pStrm, szBuf, sizeof(szBuf))))
             {
                 static char const s_szVarEq[] = "ZONE=";
-                if (memcmp(szBuf, RT_STR_TUPLE(s_szVarEq)) == 0)
+                char             *pszStart    = RTStrStrip(szBuf);
+                if (memcmp(pszStart, RT_STR_TUPLE(s_szVarEq)) == 0)
                 {
-                    const char *pszTimeZone = &szBuf[sizeof(s_szVarEq) - 1];
+                    char *pszTimeZone = &pszStart[sizeof(s_szVarEq) - 1];
+
+                    /* Drop any quoting before using the value, assuming it is plain stuff: */
+                    if (*pszTimeZone == '\"' || *pszTimeZone == '\'')
+                    {
+                        pszTimeZone++;
+                        size_t const cchTimeZone = strlen(pszTimeZone);
+                        if (cchTimeZone && (pszTimeZone[cchTimeZone - 1] == '"' || pszTimeZone[cchTimeZone - 1] == '\''))
+                            pszTimeZone[cchTimeZone - 1] = '\0';
+                    }
+
                     rc = rtIsValidTimeZoneFile(pszTimeZone);
                     if (RT_SUCCESS(rc))
                     {
