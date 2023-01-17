@@ -47,6 +47,7 @@
   <xsl:variable name="g_sUnderlineRefSect2">
     <xsl:text>-------------------------------------------------------------------------------------------------------------------</xsl:text>
   </xsl:variable>
+  <xsl:variable name="g_sNewLine"><xsl:value-of select="'&#10;'" /></xsl:variable>
 
   <!-- Sub-command style command (true) or single command (false). -->
   <xsl:variable name="g_fSubCommands" select="not(not(//refsect2[@id]))" />
@@ -493,16 +494,28 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     </xsl:choose>
   </xsl:template>
 
+  <!-- Normalizes the current text node taking tailing and leading spaces
+       into account (unlike normalize-space which strips them mercilessly). -->
+  <xsl:template name="my-normalize-space-current">
+    <!-- <xsl:message>dbg0: position=<xsl:value-of select="position()"/> last=<xsl:value-of select="last()"/> .=|<xsl:value-of select="."/>|</xsl:message> -->
+    <xsl:if test="(starts-with(.,' ') or starts-with(., $g_sNewLine)) and position() != 1">
+      <xsl:value-of select="' '"/>
+    </xsl:if>
+    <xsl:value-of select="normalize-space(.)"/>
+    <xsl:if test="((substring(.,string-length(.)) = ' ') or (substring(.,string-length(.)) = $g_sNewLine)) and position() != last()">
+      <xsl:value-of select="' '"/>
+    </xsl:if>
+  </xsl:template>
 
   <!--
     Text escaping for C.
     -->
   <xsl:template match="text()" name="escape_text">
     <!-- Leading whitespace hack! -->
-    <xsl:if test="substring(.,1,1) = ' ' and position() != 1">
+    <xsl:if test="(starts-with(.,' ') or starts-with(.,$g_sNewLine)) and position() != 1">
       <xsl:text> </xsl:text>
       <xsl:if test="boolean($g_fDebugText)">
-        <xsl:message>text: add space</xsl:message>
+        <xsl:message>text: add lead space</xsl:message>
       </xsl:if>
     </xsl:if>
 
@@ -528,23 +541,23 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
         </xsl:variable>
         <xsl:value-of select="$sTmp2"/>
         <xsl:if test="boolean($g_fDebugText)">
-          <xsl:message>text: |<xsl:value-of select="$sTmp2"/>|</xsl:message>
+          <xsl:message>text: |<xsl:value-of select="$sTmp2"/>|(1)</xsl:message>
         </xsl:if>
       </xsl:when>
 
       <xsl:otherwise>
         <xsl:value-of select="normalize-space(.)"/>
         <xsl:if test="boolean($g_fDebugText)">
-          <xsl:message>text: |<xsl:value-of select="normalize-space(.)"/>|</xsl:message>
+          <xsl:message>text: |<xsl:value-of select="normalize-space(.)"/>|(2)</xsl:message>
         </xsl:if>
       </xsl:otherwise>
     </xsl:choose>
 
     <!-- Trailing whitespace hack! -->
-    <xsl:if test="substring(.,string-length(.)) = ' ' and position() != last() and string-length(.) != 1">
+    <xsl:if test="(substring(.,string-length(.)) = ' ' or substring(.,string-length(.)) = $g_sNewLine) and position() != last() and string-length(.) != 1">
       <xsl:text> </xsl:text>
       <xsl:if test="boolean($g_fDebugText)">
-        <xsl:message>text: add space</xsl:message>
+        <xsl:message>text: add tail space</xsl:message>
       </xsl:if>
     </xsl:if>
 
@@ -552,7 +565,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
   <!-- Elements producing non-breaking strings (single line). -->
   <xsl:template match="command/text()|option/text()|computeroutput/text()|arg/text()|filename/text()" name="escape_fixed_text">
-    <xsl:param name="sText" select="normalize-space(.)"/>
+    <xsl:param name="sText"><xsl:call-template name="my-normalize-space-current"/></xsl:param>
     <xsl:choose>
 
       <xsl:when test="contains($sText, '\') or contains($sText, '&quot;')">
