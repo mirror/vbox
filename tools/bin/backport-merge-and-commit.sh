@@ -1,4 +1,4 @@
-# !kmk_ash
+#!/usr/bin/env kmk_ash
 # $Id$
 ## @file
 # Script for merging and commit a backport from trunk.

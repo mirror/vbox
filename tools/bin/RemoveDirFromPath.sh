@@ -1,4 +1,4 @@
-# !kmk_ash
+#!/usr/bin/env kmk_ash
 # $Id$
 ## @file
 # Shell (bash + kmk_ash) function for removing a directory from the PATH.
