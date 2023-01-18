@@ -882,7 +882,6 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         pHlp->pfnPrintf(pHlp, "    VIRTIONETVIRTQ[] .......... %p\n",   pThis->aVirtqs);
         pHlp->pfnPrintf(pHlp, "    pDrvBase .................. %p\n",   pThisCC->pDrvBase);
         pHlp->pfnPrintf(pHlp, "    pDrv ...................... %p\n",   pThisCC->pDrv);
-        pHlp->pfnPrintf(pHlp, "    pDrv ...................... %p\n",   pThisCC->pDrv);
         pHlp->pfnPrintf(pHlp, "\n");
     }
 
@@ -1155,7 +1154,7 @@ static void virtioNetConfigurePktHdr(PVIRTIONET pThis, uint32_t fLegacy)
  *        as a transitional device (see PDM-invoked device constructor comments for more information)
  */
 static DECLCALLBACK(int) virtioNetR3LegacyDeviceLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
-                                                    RTMAC uMacLoaded)
+                                                         RTMAC uMacLoaded)
 {
     PVIRTIONET     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     PVIRTIONETCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
@@ -1971,7 +1970,7 @@ RT_NOREF(cb);
  *
  */
 static int virtioNetR3RxPktMultibufXfer(PPDMDEVINS pDevIns, PVIRTIONET pThis, uint8_t *pvPktBuf, size_t cb,
-                                       PVIRTIONETPKTHDR pRxPktHdr, PVIRTIONETVIRTQ pRxVirtq, PVIRTQBUF pVirtqBuf)
+                                        PVIRTIONETPKTHDR pRxPktHdr, PVIRTIONETVIRTQ pRxVirtq, PVIRTQBUF pVirtqBuf)
 {
 
     size_t cbBufRemaining = pVirtqBuf->cbPhysReturn;
@@ -2118,8 +2117,8 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
 /**
  * @interface_method_impl{PDMINETWORKDOWN,pfnReceiveGso}
  */
-static DECLCALLBACK(int) virtioNetR3NetworkDown_ReceiveGso(
-                                 PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb, PCPDMNETWORKGSO pGso)
+static DECLCALLBACK(int) virtioNetR3NetworkDown_ReceiveGso(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb,
+                                                           PCPDMNETWORKGSO pGso)
 {
     PVIRTIONETCC    pThisCC  = RT_FROM_MEMBER(pInterface, VIRTIONETCC, INetworkDown);
     PPDMDEVINS      pDevIns  = pThisCC->pDevIns;
@@ -2653,7 +2652,7 @@ static int virtioNetR3ReadVirtioTxPktHdr(PVIRTIOCORE pVirtio, PVIRTIONET pThis, 
  * @param pPktHdr       virtio-net pkt header to adapt to PDM semantics
  */
 static int virtioNetR3TransmitFrame(PVIRTIONET pThis, PVIRTIONETCC pThisCC, PPDMSCATTERGATHER pSgBuf,
-                               PPDMNETWORKGSO pGso, PVIRTIONETPKTHDR pPktHdr)
+                                    PPDMNETWORKGSO pGso, PVIRTIONETPKTHDR pPktHdr)
 {
 
     virtioNetR3PacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, "--> Outgoing");
@@ -2716,7 +2715,7 @@ static int virtioNetR3TransmitFrame(PVIRTIONET pThis, PVIRTIONETCC pThisCC, PPDM
  * @param fOnWorkerThread   Flag to PDM whether to use caller's or or PDM transmit worker's thread.
  */
 static int virtioNetR3TransmitPkts(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC,
-                                         PVIRTIONETVIRTQ pTxVirtq, bool fOnWorkerThread)
+                                   PVIRTIONETVIRTQ pTxVirtq, bool fOnWorkerThread)
 {
     PVIRTIOCORE pVirtio = &pThis->Virtio;
 
@@ -3277,7 +3276,8 @@ static DECLCALLBACK(void) virtioNetR3StatusChg(PVIRTIOCORE pVirtio, PVIRTIOCOREC
         memset(pThis->aMacUnicastFilter,    0, sizeof(pThis->aMacUnicastFilter));
         memset(pThis->aVlanFilter,          0, sizeof(pThis->aVlanFilter));
 
-        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
 
         for (uint16_t uVirtqNbr = 0; uVirtqNbr < pThis->cVirtqs; uVirtqNbr++)
         {
@@ -3348,7 +3348,11 @@ static DECLCALLBACK(int) virtioNetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
-                    Log(("[%s] No attached driver!\n", pThis->szInst));
+    {
+        /* This should never happen because this function is not called
+         * if there is no driver to attach! */
+        Log(("[%s] No attached driver!\n", pThis->szInst));
+    }
 
     RT_NOREF2(pThis, fFlags);
     return rc;
@@ -3615,9 +3619,11 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
     {
-                    Log(("[%s] No attached driver!\n", pThis->szInst));
-                    AssertRCReturn(rc, rc);
+        /* No error! */
+        Log(("[%s] No attached driver!\n", pThis->szInst));
     }
+    else
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
     /*
      * Status driver
      */
