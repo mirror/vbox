@@ -84,6 +84,8 @@
 /ipxe/*.S:                       --treat-as .c
 /ipxe/*.lds:                     --treat-as .h
 /ipxe/*.gdb:                     --treat-as .sh --dont-set-svn-executable
+/ipxe/*.ipxe:                    --treat-as shell
+/ipxe/*.travis.yml:              --treat-as plaintext --dont-set-svn-keywords
 /ipxe/*Makefile*:                --treat-as Makefile
 /ipxe/src/util/geniso:           --treat-as .sh
 /ipxe/src/util/genliso:          --treat-as .sh
@@ -92,6 +94,7 @@
 /ipxe/contrib/vm/cow:            --treat-as .sh
 /ipxe/contrib/vm/serial-console: --treat-as .pl
 /ipxe/*:                         --no-fix-header-guards
+
 
 --filter-out-files /ipxe/*.txt
 --filter-out-files /ipxe/COPYING
