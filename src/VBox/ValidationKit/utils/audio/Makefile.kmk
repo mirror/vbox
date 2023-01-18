@@ -195,13 +195,15 @@ vkatadd_LIBS.solaris   = m
 ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
  ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
   ifndef VBOX_ONLY_ADDITIONS
-   vkathost_TEMPLATE  := VBoxR3Static
+   vkathost_TEMPLATE  := VBOXR3EXE
    vkathost_EXTENDS   := vkat
    vkathost_INST      := $(INST_BIN)
    vkathost_NAME      := VBoxAudioTest
    vkathost_SOURCES    = \
    	$(vkat_SOURCES) \
    	$(VBOX_PATH_SRC_DEVICES)/build/VBoxDD.d
+   vkathost_LIBS       = \
+   	$(LIB_RUNTIME)
   endif
  endif
 endif
