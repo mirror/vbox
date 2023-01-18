@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Source code massager settings for the NT credential provider.
+# Source code massager settings for the NT additions.
 #
 
 #
@@ -25,5 +25,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
 
---filter-out-files /*.reg
+# .reg-files uses ';' as comment, so throw them in with linker definition
+# files but with force CRLF ending style.  We also skip the copyright and
+# license requirement for now.
+/*.reg: --treat-as def --del-action force-native-eol --add-action force-crlf --external-copyright
 
