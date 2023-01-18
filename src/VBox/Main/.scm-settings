@@ -66,6 +66,7 @@
 /UnattendedTemplates/*.cfg:             --external-copyright --treat-as .sh
 /UnattendedTemplates/*.sif:             --external-copyright
 /UnattendedTemplates/*.xml:             --dont-set-svn-eol --no-convert-eol
+/UnattendedTemplates/os2_response_files.rsp: --treat-as batch --external-copyright
 
 # The webservice is fun.
 /webservice/Makefile.webtest:           --treat-as Makefile
@@ -89,4 +90,7 @@
 --filter-out-files /testcase/VBoxVBTest/TestForm.frm
 --filter-out-files /testcase/VBoxVBTest/TestForm.frx
 --filter-out-files /testcase/VBoxVBTest/VBoxVBTest.vbp
+
+/testcase/tstUnattendedScript-1.expected: --treat-as plaintext --external-copyright
+/testcase/tstUnattendedScript-1.template: --treat-as plaintext --external-copyright
 
