@@ -52,6 +52,11 @@ endif
 ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
  if defined(VBOX_ONLY_VALIDATIONKIT) || !defined(VBOX_ONLY_BUILD)
   PROGRAMS += vkat
+  ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
+   if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+    PROGRAMS += vkathost
+   endif
+  endif
  endif
  ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
   if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
@@ -174,20 +179,22 @@ vkatadd_SDKS           = VBOX_ZLIB_STATIC
 vkatadd_LDFLAGS.darwin = -framework IOKit
 vkatadd_LIBS.solaris   = m
 
-
 #
-# Copy the valkit vkat to bin so it can be shipped with the host installer too.
+# Build the valkit vkat to bin as VBoxAudioTest, so that it can be shipped with the host installer too.
 #
 # We use the same name as for the GAs, even if the binaries is the same as the
 # validation kit.
 #
+# Note: We also need to have this as a signed binary, so don't just copy the vkat binary from above to
+#       the bin/ directory but built this as an own binary.
+#
 ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
  ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
   ifndef VBOX_ONLY_ADDITIONS
-   INSTALLS += vkathost
-   vkathost_TEMPLATE = VBOXR3EXE
-   vkathost_SOURCES  = $(vkat_1_TARGET)=>VBoxAudioTest$(HOSTSUFF_EXE)
-   vkathost_MODE     = a+rx,u+w
+   vkathost_TEMPLATE   = VBoxR3Static
+   vkathost_EXTENDS    = vkat
+   vkathost_INST       = $(INST_BIN)
+   vkathost_NAME       = VBoxAudioTest
   endif
  endif
 endif
