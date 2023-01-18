@@ -33,6 +33,7 @@
 /*.odg:  --treat-as binary
 /*.sxi:  --treat-as binary
 /*.vpp:  --treat-as binary
+/*.wiki: --treat-as plaintext
 
 # Abusing --external-copyright.
 /*.txvpck:                      --treat-as xml --external-copyright --no-convert-eol
