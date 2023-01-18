@@ -47,6 +47,13 @@ endif
 
 
 #
+# Globals.
+#
+VBOX_PATH_SRC_DEVICES = $(PATH_ROOT)/src/VBox/Devices
+VKAT_PATH_AUDIO       = $(VBOX_PATH_SRC_DEVICES)/Audio
+
+
+#
 # Append what we build here to PROGRAMS (at the top because it's a bit messy).
 #
 ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
@@ -54,7 +61,7 @@ ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
   PROGRAMS += vkat
   ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
    if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
-    PROGRAMS.win += vkathost
+    PROGRAMS += vkathost
    endif
   endif
  endif
@@ -78,18 +85,17 @@ if 0 # Disabled for now; does not work without WinMM.dll import validator files.
  ntPlayToneWaveX_TEMPLATE = VBoxValidationKitR3
  ntPlayToneWaveX_SOURCES  = ntPlayToneWaveX.cpp
  ntPlayToneWaveX_LIBS    += \
-  WinMM.Lib
+ 	WinMM.Lib
 endif
 
 
 #
 # The Validation Kit Audio Test (VKAT) utility.
 #
-VKAT_PATH_AUDIO = $(PATH_ROOT)/src/VBox/Devices/Audio
 vkat_TEMPLATE = VBoxValidationKitR3
 vkat_VBOX_IMPORT_CHECKER.win.x86 = nt4
 vkat_DEFS     = VBOX_AUDIO_VKAT IN_VMM_R3 IN_VMM_STATIC
-vkat_INCS    += \
+vkat_INCS     = \
 	$(PATH_ROOT)/src/VBox/Devices/build \
 	$(PATH_ROOT)/src/VBox/Devices \
 	$(PATH_ROOT)/src/VBox/Devices/Audio
@@ -180,27 +186,22 @@ vkatadd_LDFLAGS.darwin = -framework IOKit
 vkatadd_LIBS.solaris   = m
 
 #
-# Build the valkit vkat to bin as VBoxAudioTest, so that it can be shipped with the host installer too.
+# Build the valkit vkat to bin as VBoxAudioTest, so that it can be shipped with
+# the host installer too.
 #
-# We use the same name as for the GAs, even if the binaries is the same as the
-# validation kit.
+# Note: We also need to have this as a signed binary, so don't just copy the
+#       vkat binary to bin/ directory but built this as an own binary.
 #
 ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
  ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
   ifndef VBOX_ONLY_ADDITIONS
-   ifeq ($(KBUILD_TARGET), win)
-    # We also need to have this as a signed binary, so don't just copy the vkat binary from below to
-    # the bin/ directory but built this as an own binary.
-    #
-    ## @todo Not sure if we can make this more elegant, but works for me now.
-    vkathost_TEMPLATE   = VBoxR3Static
-    vkathost_EXTENDS    = vkat
-    vkathost_NAME       = VBoxAudioTest
-   else # On non-Windows we simply copy the vkat executable already built to save build time.
-    vkathost_TEMPLATE   = VBOXR3EXE
-    vkathost_SOURCES    = $(vkat_1_TARGET)=>VBoxAudioTest$(HOSTSUFF_EXE)
-    vkathost_MODE       = a+rx,u+w
-   endif
+   vkathost_TEMPLATE  := VBoxR3Static
+   vkathost_EXTENDS   := vkat
+   vkathost_INST      := $(INST_BIN)
+   vkathost_NAME      := VBoxAudioTest
+   vkathost_SOURCES    = \
+   	$(vkat_SOURCES) \
+   	$(VBOX_PATH_SRC_DEVICES)/build/VBoxDD.d
   endif
  endif
 endif
@@ -223,3 +224,4 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
