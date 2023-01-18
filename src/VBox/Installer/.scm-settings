@@ -87,6 +87,7 @@
 # Solaris stuff.
 /solaris/vboxconfig.sh:                         --no-convert-tabs
 /solaris/*.xml:                                 --no-convert-eol
+/solaris/vbox-ips.mog:                          --treat-as shell --external-copyright
 
 --filter-out-files /solaris/ips/vbox.mog
 --filter-out-files /solaris/vbox.pkginfo
