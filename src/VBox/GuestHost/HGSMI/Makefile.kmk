@@ -48,7 +48,7 @@ endif
 # HGSMIHostLib - For host devices (R3 only).
 #
 LIBRARIES += HGSMIHostR3Lib
-HGSMIHostR3Lib_TEMPLATE      = VBOXR3
+HGSMIHostR3Lib_TEMPLATE      = VBoxR3Dll
 HGSMIHostR3Lib_DEFS          =
 HGSMIHostR3Lib_INCS          = $(VBOX_GRAPHICS_INCS)
 HGSMIHostR3Lib_SOURCES       = \

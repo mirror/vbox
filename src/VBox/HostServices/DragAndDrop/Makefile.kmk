@@ -35,7 +35,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # The drag and drop service DLL.
 #
 DLLS += VBoxDragAndDropSvc
-VBoxDragAndDropSvc_TEMPLATE  = VBOXR3
+VBoxDragAndDropSvc_TEMPLATE  = VBoxR3Dll
 VBoxDragAndDropSvc_NAME.os2  = VBoxDnD
 VBoxDragAndDropSvc_DEFS      = \
 	VBOX_WITH_HGCM \

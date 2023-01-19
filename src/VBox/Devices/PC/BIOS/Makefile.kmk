@@ -166,7 +166,7 @@ endif # VBOX_WITH_OPEN_WATCOM
 # The library containing the PC BIOS image.
 #
 LIBRARIES += PcBiosBin
-PcBiosBin_TEMPLATE  = VBOXR3
+PcBiosBin_TEMPLATE  = VBoxR3Dll
 PcBiosBin_DEFS      = IN_VBOXDD2
 
 define def_VBoxPcBiosBin

@@ -42,7 +42,7 @@ endif # VBOX_WITH_DEBUGGER
 #
 # Debugger library - linked into VBoxVMM.
 #
-Debugger_TEMPLATE  = VBOXR3
+Debugger_TEMPLATE  = VBoxR3Dll
 Debugger_DEFS      = IN_VMM_R3 IN_DBG_R3 IN_DIS
 ifneq ($(KBUILD_TYPE),release)
  Debugger_DEFS    += VBOX_WITH_DEBUGGER_TCP_BY_DEFAULT
@@ -70,7 +70,7 @@ Debugger_SOURCES   = \
 # The diggers plug-in.
 #
 DLLS += DbgPlugInDiggers
-DbgPlugInDiggers_TEMPLATE = VBOXR3
+DbgPlugInDiggers_TEMPLATE = VBoxR3Dll
 DbgPlugInDiggers_DEFS     = IN_DIS
 DbgPlugInDiggers_SOURCES = \
 	DBGPlugInDiggers.cpp \

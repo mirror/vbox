@@ -35,7 +35,7 @@ endif
 
 
 LIBRARIES              += DisasmR3
-DisasmR3_TEMPLATE       = VBOXR3
+DisasmR3_TEMPLATE       = VBoxR3Dll
 DisasmR3_DEFS           = IN_DIS
 DisasmR3_SOURCES        = \
 	Disasm.cpp \
@@ -57,7 +57,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  DisasmBldProg_EXTENDS   = DisasmR3
 
  LIBRARIES              += DisasmCoreR3
- DisasmCoreR3_TEMPLATE   = VBOXR3
+ DisasmCoreR3_TEMPLATE   = VBoxR3Dll
  DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY
  DisasmCoreR3_SOURCES    = \
  	DisasmCore.cpp \

@@ -115,7 +115,7 @@ endif # VBOX_WITH_OPEN_WATCOM
 # The library containing the VGA BIOS image.
 #
 LIBRARIES += VgaBiosBin
-VgaBiosBin_TEMPLATE  = VBOXR3
+VgaBiosBin_TEMPLATE  = VBoxR3Dll
 VgaBiosBin_DEFS      = IN_VBOXDD2
 VgaBiosBin_SOURCES   =
 VgaBiosBin_DEPS      = $(VgaBiosBin_0_OUTDIR)/vbetables.h
@@ -166,7 +166,7 @@ vbetables-gen_CLEAN    = $(vbetables-gen)
 # The VGA BIOS Logo.
 #
 LIBRARIES += VgaDefBiosLogo
-VgaDefBiosLogo_TEMPLATE  = VBOXR3
+VgaDefBiosLogo_TEMPLATE  = VBoxR3Dll
 VgaDefBiosLogo_INCS      = $(VBOX_PATH_DEVICES_SRC)
 VgaDefBiosLogo_SOURCES   = $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c
 VgaDefBiosLogo_CLEAN     = $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c

@@ -36,7 +36,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # starts VBoxTestOGL.
 #
 LIBRARIES += VBoxOGLTest
-VBoxOGLTest_TEMPLATE         := VBOXR3
+VBoxOGLTest_TEMPLATE         := VBoxR3Dll
 ifneq ($(KBUILD_TARGET),darwin)
  VBoxOGLTest_SOURCES         := OpenGLTest.cpp
 else

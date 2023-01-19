@@ -38,7 +38,7 @@ endif
 #
 # VBoxKeyboard - keyboard library for X11.
 #
-VBoxKeyboard_TEMPLATE = VBOXR3
+VBoxKeyboard_TEMPLATE = VBoxR3Dll
 VBoxKeyboard_SOURCES  = \
 	keyboard.c
 VBoxKeyboard_LIBS     = X11
@@ -63,14 +63,14 @@ VBoxKeyboard-Files_INSTTYPE = stage
 VBoxKeyboard-Files_INST     = misc-staging/VBoxKeyboard/
 VBoxKeyboard-Files_MODE     = a+r,u+w
 VBoxKeyboard-Files_SOURCES  = \
-		COPYING.LIB \
-		keyboard.c \
-		keyboard-layouts.h \
-		keyboard-list.h \
-		keyboard-tables.h \
-		keyboard-types.h \
-		Makefile \
-		../../../../../include/VBox/VBoxKeyboard.h=>VBox/VBoxKeyboard.h
+	COPYING.LIB \
+	keyboard.c \
+	keyboard-layouts.h \
+	keyboard-list.h \
+	keyboard-tables.h \
+	keyboard-types.h \
+	Makefile \
+	../../../../../include/VBox/VBoxKeyboard.h=>VBox/VBoxKeyboard.h
 
 INSTALLS += VBoxKeyboard-Tarball
 VBoxKeyboard-Tarball_INST    = $(INST_BIN)

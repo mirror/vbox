@@ -49,7 +49,7 @@ endif
 #       to their source list.
 #
 LIBRARIES += USBLib
-USBLib_TEMPLATE       = VBOXR3
+USBLib_TEMPLATE       = VBoxR3Dll
 USBLib_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 USBLib_DEFS           = IN_USBLIB
 USBLib_DEFS.os2       = STATIC_USBCALLS

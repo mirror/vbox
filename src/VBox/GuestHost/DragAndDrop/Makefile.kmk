@@ -47,7 +47,6 @@ VBOX_DND_GUESTHOST_FILES := \
 ifdef VBOX_WITH_ADDITIONS
  LIBRARIES += VBoxDnDGuestR3Lib
  VBoxDnDGuestR3Lib_TEMPLATE = VBOXGUESTR3LIB
- VBoxDnDGuestR3Lib_DEFS     =
  VBoxDnDGuestR3Lib_SOURCES  = $(VBOX_DND_GUESTHOST_FILES)
 
 # LIBRARIES.win.amd64 += VBoxDnDGuestR3Lib-x86
@@ -60,8 +59,7 @@ endif
 # and frontends.
 #
 LIBRARIES += VBoxDnDHostR3Lib
-VBoxDnDHostR3Lib_TEMPLATE   = VBOXR3
-VBoxDnDHostR3Lib_DEFS       =
+VBoxDnDHostR3Lib_TEMPLATE   = VBoxR3Dll
 VBoxDnDHostR3Lib_SOURCES    = $(VBOX_DND_GUESTHOST_FILES)
 
 # Include the common host services code.

@@ -39,7 +39,7 @@ VBOX_PATH_IPXE_SRC := $(PATH_SUB_CURRENT)
 #               Will be linked into VBoxDD2.
 #
 LIBRARIES += iPxeBiosBin
-iPxeBiosBin_TEMPLATE = VBOXR3
+iPxeBiosBin_TEMPLATE = VBoxR3Dll
 iPxeBiosBin_DEFS     = IN_VBOXDD2
 iPxeBiosBin_SOURCES  = $(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c
 iPxeBiosBin_CLEAN    = \

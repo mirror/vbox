@@ -33,7 +33,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # VBoxSampleDevice - A sample device module.
 #
 DLLS += VBoxSampleDevice
-VBoxSampleDevice_TEMPLATE = VBOXR3
+VBoxSampleDevice_TEMPLATE = VBoxR3Dll
 VBoxSampleDevice_SOURCES  = \
 	VBoxSampleDevice.cpp
 VBoxSampleDevice_LIBS     = \
@@ -43,7 +43,7 @@ VBoxSampleDevice_LIBS     = \
 # VBoxSampleDriver - A sample driver module.
 #
 DLLS += VBoxSampleDriver
-VBoxSampleDriver_TEMPLATE = VBOXR3
+VBoxSampleDriver_TEMPLATE = VBoxR3Dll
 VBoxSampleDriver_SOURCES  = \
 	DrvStorageFilter.cpp
 VBoxSampleDriver_LIBS     = \
@@ -54,7 +54,7 @@ VBoxSampleDriver_LIBS     = \
 # VBoxPlaygroundDevice - A device module demonstrating some unusual features.
 #
 DLLS += VBoxPlaygroundDevice
-VBoxPlaygroundDevice_TEMPLATE = VBOXR3
+VBoxPlaygroundDevice_TEMPLATE = VBoxR3Dll
 VBoxPlaygroundDevice_SOURCES  = \
 	DevPlayground.cpp
 VBoxPlaygroundDevice_LIBS     = \

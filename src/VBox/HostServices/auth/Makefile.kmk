@@ -34,7 +34,7 @@ ifndef VBOX_ONLY_SDK
   DLLS += VBoxAuth
  endif
 endif
-VBoxAuth_TEMPLATE = VBOXR3
+VBoxAuth_TEMPLATE = VBoxR3Dll
 VBoxAuth_SOURCES.linux = pam/VBoxAuthPAM.c
 VBoxAuth_SOURCES.solaris = pam/VBoxAuthPAM.c
 VBoxAuth_SOURCES.freebsd = pam/VBoxAuthPAM.c

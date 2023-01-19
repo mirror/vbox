@@ -35,7 +35,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 # The shared folder service DLL.
 #
 DLLS += VBoxSharedFolders
-VBoxSharedFolders_TEMPLATE  = VBOXR3
+VBoxSharedFolders_TEMPLATE  = VBoxR3Dll
 VBoxSharedFolders_NAME.os2  = VBoxSFld
 VBoxSharedFolders_DEFS      = VBOX_WITH_HGCM RTSHFL
 VBoxSharedFolders_INCS.win  = \

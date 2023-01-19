@@ -35,7 +35,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 # The guest control service DLL.
 #
 DLLS += VBoxGuestControlSvc
-VBoxGuestControlSvc_TEMPLATE  = VBOXR3
+VBoxGuestControlSvc_TEMPLATE  = VBoxR3Dll
 VBoxGuestControlSvc_NAME.os2  = VBoxGCTL
 VBoxGuestControlSvc_DEFS      = VBOX_WITH_HGCM
 VBoxGuestControlSvc_INCS      = $(PATH_ROOT)/src/VBox/Main/include
