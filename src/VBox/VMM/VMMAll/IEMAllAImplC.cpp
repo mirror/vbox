@@ -14459,6 +14459,7 @@ DECLINLINE(PRTFLOAT64U) iemFpSoftF64ToIprt(PRTFLOAT64U pr64Dst, float64_t const 
         32 /* Rounding precision, not relevant for SIMD. */ \
     }
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 
 /**
  * Helper for transfering exception to MXCSR and setting the result value
@@ -14582,6 +14583,8 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResultNoFz(softfloat_sta
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
 
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
 
 /**
  * Sets the given single precision floating point input value to the given output taking the Denormals-as-zero flag
@@ -14644,6 +14647,7 @@ DECLINLINE(uint32_t) iemSsePrepareValueR64(PRTFLOAT64U pr64Val, uint32_t fMxcsr,
     return 0;
 }
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 
 /**
  * Validates the given input operands returning whether the operation can continue or whether one
@@ -14657,8 +14661,8 @@ DECLINLINE(uint32_t) iemSsePrepareValueR64(PRTFLOAT64U pr64Val, uint32_t fMxcsr,
  */
 DECLINLINE(bool) iemSseBinaryValIsNaNR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2, uint32_t *pfMxcsr)
 {
-    uint8_t cQNan = RTFLOAT32U_IS_QUIET_NAN(pr32Val1) + RTFLOAT32U_IS_QUIET_NAN(pr32Val2);
-    uint8_t cSNan = RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val1) + RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val2);
+    uint8_t const cQNan = RTFLOAT32U_IS_QUIET_NAN(pr32Val1)      + RTFLOAT32U_IS_QUIET_NAN(pr32Val2);
+    uint8_t const cSNan = RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val1) + RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val2);
     if (cSNan + cQNan == 2)
     {
         /* Both values are either SNan or QNan, first operand is placed into the result and converted to a QNan. */
@@ -14667,7 +14671,7 @@ DECLINLINE(bool) iemSseBinaryValIsNaNR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr32V
         *pfMxcsr |= (cSNan ? X86_MXCSR_IE : 0);
         return true;
     }
-    else if (cSNan)
+    if (cSNan)
     {
         /* One operand is an SNan and placed into the result, converting it to a QNan. */
         *pr32Res = RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val1) ? *pr32Val1 : *pr32Val2;
@@ -14675,7 +14679,7 @@ DECLINLINE(bool) iemSseBinaryValIsNaNR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr32V
         *pfMxcsr |= X86_MXCSR_IE;
         return true;
     }
-    else if (cQNan)
+    if (cQNan)
     {
         /* The QNan operand is placed into the result. */
         *pr32Res = RTFLOAT32U_IS_QUIET_NAN(pr32Val1) ? *pr32Val1 : *pr32Val2;
@@ -14699,8 +14703,8 @@ DECLINLINE(bool) iemSseBinaryValIsNaNR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr32V
  */
 DECLINLINE(bool) iemSseBinaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2, uint32_t *pfMxcsr)
 {
-    uint8_t cQNan = RTFLOAT64U_IS_QUIET_NAN(pr64Val1) + RTFLOAT64U_IS_QUIET_NAN(pr64Val2);
-    uint8_t cSNan = RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val1) + RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val2);
+    uint8_t const cQNan = RTFLOAT64U_IS_QUIET_NAN(pr64Val1)      + RTFLOAT64U_IS_QUIET_NAN(pr64Val2);
+    uint8_t const cSNan = RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val1) + RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val2);
     if (cSNan + cQNan == 2)
     {
         /* Both values are either SNan or QNan, first operand is placed into the result and converted to a QNan. */
@@ -14709,7 +14713,7 @@ DECLINLINE(bool) iemSseBinaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64V
         *pfMxcsr |= (cSNan ? X86_MXCSR_IE : 0);
         return true;
     }
-    else if (cSNan)
+    if (cSNan)
     {
         /* One operand is an SNan and placed into the result, converting it to a QNan. */
         *pr64Res = RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val1) ? *pr64Val1 : *pr64Val2;
@@ -14717,7 +14721,7 @@ DECLINLINE(bool) iemSseBinaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64V
         *pfMxcsr |= X86_MXCSR_IE;
         return true;
     }
-    else if (cQNan)
+    if (cQNan)
     {
         /* The QNan operand is placed into the result. */
         *pr64Res = RTFLOAT64U_IS_QUIET_NAN(pr64Val1) ? *pr64Val1 : *pr64Val2;
@@ -14748,7 +14752,7 @@ DECLINLINE(bool) iemSseUnaryValIsNaNR32(PRTFLOAT32U pr32Res, PCRTFLOAT32U pr32Va
         *pfMxcsr |= X86_MXCSR_IE;
         return true;
     }
-    else if (RTFLOAT32U_IS_QUIET_NAN(pr32Val))
+    if (RTFLOAT32U_IS_QUIET_NAN(pr32Val))
     {
         /* The QNan operand is placed into the result. */
         *pr32Res = *pr32Val;
@@ -14778,7 +14782,7 @@ DECLINLINE(bool) iemSseUnaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64Va
         *pfMxcsr |= X86_MXCSR_IE;
         return true;
     }
-    else if (RTFLOAT64U_IS_QUIET_NAN(pr64Val))
+    if (RTFLOAT64U_IS_QUIET_NAN(pr64Val))
     {
         /* The QNan operand is placed into the result. */
         *pr64Res = *pr64Val;
@@ -14788,6 +14792,7 @@ DECLINLINE(bool) iemSseUnaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64Va
     return false;
 }
 
+#endif /* IEM_WITHOUT_ASSEMBLY */
 
 /**
  * ADDPS
@@ -17056,8 +17061,8 @@ static bool iemAImpl_cmp_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src1, PC
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
 
         RTFLOAT64U r64Src1, r64Src2;
-        uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, *pfMxcsr, pr64Src1);
-                 fDe |= iemSsePrepareValueR64(&r64Src2, *pfMxcsr, pr64Src2);
+        uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, *pfMxcsr, pr64Src1)
+                      | iemSsePrepareValueR64(&r64Src2, *pfMxcsr, pr64Src2);
 
         *pfMxcsr |= fDe;
         float64_t f64Src1 = iemFpSoftF64FromIprt(&r64Src1);
