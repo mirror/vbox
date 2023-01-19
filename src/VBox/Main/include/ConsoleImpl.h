@@ -656,7 +656,7 @@ public:
     typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
     typedef std::map<Utf8Str, SharedFolderData> SharedFolderDataMap;
     typedef std::map<Utf8Str, ComPtr<IMediumAttachment> > MediumAttachmentMap;
-    typedef std::list <USBStorageDevice> USBStorageDeviceList;
+    typedef std::list<USBStorageDevice> USBStorageDeviceList;
 
     static void i_powerUpThreadTask(VMPowerUpTask *pTask);
     static void i_powerDownThreadTask(VMPowerDownTask *pTask);

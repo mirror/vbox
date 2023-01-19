@@ -4942,7 +4942,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             if (!fHotplug)
                 pCtlInst = pVMM->pfnCFGMR3GetChildF(pVMM->pfnCFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice);
             else
-                pCtlInst = pVMM->pfnCFGMR3CreateTree(pUVM);
+                pCtlInst = pVMM->pfnCFGMR3CreateTree(pUVM); /** @todo r=bird: Leaked in error paths! */
         }
         AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
@@ -4964,10 +4964,10 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
 
             uInstance = lPort; /* Overwrite uInstance with the correct one. */
 
+            /** @todo No LED after hotplugging. */
             if (!fHotplug && !fAttachDetach)
             {
                 USBStorageDevice UsbMsd;
-
                 UsbMsd.iPort = uInstance;
                 vrc = RTUuidCreate(&UsbMsd.mUuid);
                 AssertRCReturn(vrc, vrc);
@@ -4976,7 +4976,9 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
 
                 mUSBStorageDevices.push_back(UsbMsd);
 
-                /** @todo No LED after hotplugging. */
+                /** @todo This LED set is not freed if the device is unplugged.  We could
+                 *        keep the LED set index in the UsbMsd structure and clean it up in
+                 *        i_detachStorageDevice. */
                 /* Attach the status driver */
                 i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk),
                                      8, &paLedDevType, &mapMediumAttachments, pcszDevice, 0);
@@ -5051,7 +5053,10 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
          * or for SATA if the new device is a CD/DVD drive.
          */
         if (   (fHotplug || !fAttachDetach)
-            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB || enmBus == StorageBus_VirtioSCSI)
+            && (   enmBus == StorageBus_SCSI
+                || enmBus == StorageBus_SAS
+                || enmBus == StorageBus_USB
+                || enmBus == StorageBus_VirtioSCSI
                 || (enmBus == StorageBus_SATA && enmType == DeviceType_DVD && !fPassthrough)))
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");

@@ -4127,7 +4127,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
                                                  IMediumAttachment *pMediumAtt,
                                                  bool fSilent)
 {
-    LogFlowFunc(("pThis=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, pMediumAtt=%p\n",
+    LogRelFlowFunc(("pThis=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, pMediumAtt=%p\n",
                  pThis, uInstance, pcszDevice, pcszDevice, enmBus, pMediumAtt));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
@@ -4142,28 +4142,25 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
     AssertReturn(enmVMState == VMSTATE_SUSPENDED, VERR_INVALID_STATE);
 
     /* Determine the base path for the device instance. */
-    PCFGMNODE pCtlInst;
-    pCtlInst = pVMM->pfnCFGMR3GetChildF(pVMM->pfnCFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
+    PCFGMNODE pCtlInst = pVMM->pfnCFGMR3GetChildF(pVMM->pfnCFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
     AssertReturn(pCtlInst || enmBus == StorageBus_USB, VERR_INTERNAL_ERROR);
 
 #define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
 
     HRESULT hrc;
-    int rc = VINF_SUCCESS;
-    int rcRet = VINF_SUCCESS;
-    unsigned uLUN;
+    int vrc = VINF_SUCCESS;
     LONG lDev;
-    LONG lPort;
-    DeviceType_T lType;
-    PCFGMNODE pLunL0 = NULL;
-
     hrc = pMediumAtt->COMGETTER(Device)(&lDev);                             H();
+    LONG lPort;
     hrc = pMediumAtt->COMGETTER(Port)(&lPort);                              H();
+    DeviceType_T lType;
     hrc = pMediumAtt->COMGETTER(Type)(&lType);                              H();
+    unsigned uLUN;
     hrc = Console::i_storageBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);  H();
 
 #undef H
 
+    PCFGMNODE pLunL0 = NULL;
     if (enmBus != StorageBus_USB)
     {
         /* First check if the LUN really exists. */
@@ -4171,22 +4168,20 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
         if (pLunL0)
         {
             uint32_t fFlags = 0;
-
             if (fSilent)
                 fFlags |= PDM_TACH_FLAGS_NOT_HOT_PLUG;
 
-            rc = pVMM->pfnPDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fFlags);
-            if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                rc = VINF_SUCCESS;
-            AssertRCReturn(rc, rc);
+            vrc = pVMM->pfnPDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fFlags);
+            if (vrc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+                vrc = VINF_SUCCESS;
+            AssertLogRelRCReturn(vrc, vrc);
             pVMM->pfnCFGMR3RemoveNode(pLunL0);
 
             Utf8StrFmt devicePath("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
             pThis->mapMediumAttachments.erase(devicePath);
-
         }
         else
-            AssertFailedReturn(VERR_INTERNAL_ERROR);
+            AssertLogRelFailedReturn(VERR_INTERNAL_ERROR);
 
         pVMM->pfnCFGMR3Dump(pCtlInst);
     }
@@ -4196,20 +4191,18 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
         /* Find the correct USB device in the list. */
         USBStorageDeviceList::iterator it;
         for (it = pThis->mUSBStorageDevices.begin(); it != pThis->mUSBStorageDevices.end(); ++it)
-        {
             if (it->iPort == lPort)
                 break;
-        }
+        AssertLogRelReturn(it != pThis->mUSBStorageDevices.end(), VERR_INTERNAL_ERROR);
 
-        AssertReturn(it != pThis->mUSBStorageDevices.end(), VERR_INTERNAL_ERROR);
-        rc = pVMM->pfnPDMR3UsbDetachDevice(pUVM, &it->mUuid);
-        AssertRCReturn(rc, rc);
+        vrc = pVMM->pfnPDMR3UsbDetachDevice(pUVM, &it->mUuid);
+        AssertLogRelRCReturn(vrc, vrc);
         pThis->mUSBStorageDevices.erase(it);
     }
 #endif
 
-    LogFlowFunc(("Returning %Rrc\n", rcRet));
-    return rcRet;
+    LogFlowFunc(("Returning VINF_SUCCESS\n"));
+    return VINF_SUCCESS;
 }
 
 /**
