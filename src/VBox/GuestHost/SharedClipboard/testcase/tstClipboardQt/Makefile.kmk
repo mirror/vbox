@@ -37,7 +37,7 @@ PROGRAMS += tstClipboardQt
 #
 # tstClipboardQt
 #
-tstClipboardQt_TEMPLATE = VBOXQTGUIEXE
+tstClipboardQt_TEMPLATE = VBoxQtGuiExe
 tstClipboardQt_NAME = tstClipboardQt
 tstClipboardQt_CXXFLAGS = \
 	$(VBOX_GCC_Wno-implicit-fallthrough) \

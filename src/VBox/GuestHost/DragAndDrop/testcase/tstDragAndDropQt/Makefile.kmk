@@ -37,7 +37,7 @@ PROGRAMS.linux += tstDragAndDropQt # Just needed for Linux right now.
 #
 # tstDragAndDropQt
 #
-tstDragAndDropQt_TEMPLATE = VBOXQTGUIEXE
+tstDragAndDropQt_TEMPLATE = VBoxQtGuiExe
 tstDragAndDropQt_DEFS     = UNIT_TEST TESTCASE
 tstDragAndDropQt_NAME     = tstDragAndDropQt
 tstDragAndDropQt_CXXFLAGS = \

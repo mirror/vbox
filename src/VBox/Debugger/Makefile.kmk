@@ -112,7 +112,7 @@ USES += qt5
 USES += qt6
  endif
 DLLS += VBoxDbg
-VBoxDbg_TEMPLATE = VBOXQTGUI
+VBoxDbg_TEMPLATE = VBoxQtGuiDll
 VBoxDbg_DEFS = IN_DBG_R3
 VBoxDbg_INCS = .
 VBoxDbg_QT_MODULES = Core Gui Widgets
