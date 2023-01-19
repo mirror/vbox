@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += MsiHack
-MsiHack_TEMPLATE     = VBOXR3STATIC
+MsiHack_TEMPLATE     = VBoxR3StaticDll
 MsiHack_BLD_TRG_ARCH = x86
 MsiHack_SOURCES      = MsiHack.cpp
 

@@ -28,33 +28,31 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-TEMPLATE_VBOXSTUB = Drop the signing, we will sign it later.
-TEMPLATE_VBOXSTUB_EXTENDS = VBOXR3STATIC
-TEMPLATE_VBOXSTUB_POST_CMDS = $(NO_SUCH_VARIABLE)
+
+#
+# Special template variation.
+#
+TEMPLATE_VBoxStubTemplate          := Drop the signing, we will sign it later.
+TEMPLATE_VBoxStubTemplate_EXTENDS  := VBoxR3Static
+TEMPLATE_VBoxStubTemplate_POST_CMDS = $(NO_SUCH_VARIABLE)
+
 
 #
 # Installer stub program
 #
 PROGRAMS += VBoxStub
-VBoxStub_TEMPLATE= VBOXSTUB
-VBoxStub_BLD_TRG_ARCH = x86
-VBoxStub_DEFS    = _WIN32_WINNT=0x0501 IN_RT_R3
+VBoxStub_TEMPLATE     := VBoxStubTemplate
+VBoxStub_BLD_TRG_ARCH := x86
+VBoxStub_DEFS         := _WIN32_WINNT=0x0501 IN_RT_R3
 
 VBoxStub_SOURCES = \
 	VBoxStub.cpp \
 	VBoxStub.rc
 
-VBoxStub_SDKS += \
+VBoxStub_SDKS = \
 	VBOX_NTDLL
-ifeq ($(KBUILD_TARGET_ARCH),x86)
 VBoxStub_LIBS += \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
-	$(VBOX_LIB_RUNTIME_STATIC)
-else
-VBoxStub_LIBS += \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib \
-	$(PATH_STAGE_LIB)/RuntimeR3-x86.lib
-endif
+	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
 
 VBoxStub_LDFLAGS = -SubSystem:Windows -DelayLoad:comctl32.dll
 VBoxStub_POST_CMDS = $(VBOX_CHECK_IMPORTS) --image $(out) ntdll.dll kernel32.dll
