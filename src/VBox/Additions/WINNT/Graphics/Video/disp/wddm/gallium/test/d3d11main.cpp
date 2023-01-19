@@ -27,7 +27,7 @@
 
 #include "d3d11render.h"
 
-#include <stdio.h>
+#include <iprt/string.h>
 
 class D3D11Test : public D3D11DeviceProvider
 {
@@ -35,7 +35,7 @@ public:
     D3D11Test();
     ~D3D11Test();
 
-    HRESULT Init(HINSTANCE hInstance, LPSTR lpCmdLine, int nCmdShow);
+    HRESULT Init(HINSTANCE hInstance, int argc, char **argv, int nCmdShow);
     int Run();
 
     virtual ID3D11Device *Device();
@@ -46,7 +46,7 @@ public:
 private:
     HRESULT initWindow(HINSTANCE hInstance, int nCmdShow);
     HRESULT initDirect3D11();
-    void parseCmdLine(LPSTR lpCmdLine);
+    void parseCmdLine(int argc, char **argv);
     static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     int miRenderId;
@@ -248,9 +248,9 @@ static HRESULT d3d11TestCreateDevice(ID3D11Device **ppDevice,
 
     if (FeatureLevel != D3D_FEATURE_LEVEL_11_1)
     {
-        char s[128];
-        sprintf(s, "Feature level %x", FeatureLevel);
-        D3DTestShowError(hr, s);
+        char sz[128];
+        RTStrPrintf(sz, sizeof(sz), "Feature level %x", FeatureLevel);
+        D3DTestShowError(hr, sz);
     }
 
     IDXGIDevice *pDxgiDevice = 0;
@@ -378,48 +378,31 @@ HRESULT D3D11Test::initDirect3D11()
     return hr;
 }
 
-void D3D11Test::parseCmdLine(LPSTR lpCmdLine)
+void D3D11Test::parseCmdLine(int argc, char **argv)
 {
     /* Very simple: a test identifier followed by the render mode. */
-    if (!lpCmdLine)
-        return;
-
-    char *p = lpCmdLine;
-
-    while (*p == ' ')
-        ++p;
-
-    if (!*p)
-         return;
 
     /* First number is the render id. */
-    miRenderId = atoi(p);
-
-    while ('0' <= *p && *p <= '9')
-        ++p;
-
-    while (*p == ' ')
-        ++p;
-
-    if (!*p)
-         return;
+    if (argc >= 2)
+        miRenderId = RTStrToInt32(argv[1]);
 
     /* Second number is the render/step mode. */
-    int i = atoi(p);
-    switch (i)
+    if (argc >= 3)
     {
-        default:
-        case 0: miRenderMode = RenderModeStep;       break;
-        case 1: miRenderMode = RenderModeContinuous; break;
-        case 2: miRenderMode = RenderModeFPS;        break;
+        int i = RTStrToInt32(argv[2]);
+        switch (i)
+        {
+            default:
+            case 0: miRenderMode = RenderModeStep;       break;
+            case 1: miRenderMode = RenderModeContinuous; break;
+            case 2: miRenderMode = RenderModeFPS;        break;
+        }
     }
 }
 
-HRESULT D3D11Test::Init(HINSTANCE hInstance,
-                       LPSTR lpCmdLine,
-                       int nCmdShow)
+HRESULT D3D11Test::Init(HINSTANCE hInstance, int argc, char **argv, int nCmdShow)
 {
-    parseCmdLine(lpCmdLine);
+    parseCmdLine(argc, argv);
 
     HRESULT hr = initWindow(hInstance, nCmdShow);
     if (SUCCEEDED(hr))
@@ -822,7 +805,8 @@ int D3D11Test::Run()
                 {
                     float msPerFrame = elapsed * 1000.0f / (float)cFrames;
                     char sz[256];
-                    _snprintf(sz, sizeof(sz), "D3D11 Test FPS %d Frame Time %fms", cFrames, msPerFrame);
+                    RTStrPrintf(sz, sizeof(sz), "D3D11 Test FPS %d Frame Time %u.%03ums",
+                                cFrames, (unsigned)msPerFrame, (unsigned)(msPerFrame * 1000) % 1000);
                     SetWindowTextA(mHwnd, sz);
 
                     cFrames = 0;
@@ -858,21 +842,14 @@ ID3D11DepthStencilView *D3D11Test::DepthStencilView()
     return mRender.pDepthStencilView;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance,
-                   HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine,
-                   int nCmdShow)
+int main(int argc, char **argv)
 {
-    (void)hPrevInstance;
+    int      rcExit = RTEXITCODE_FAILURE;
 
-    int result = 0;
     D3D11Test test;
-
-    HRESULT hr = test.Init(hInstance, lpCmdLine, nCmdShow);
+    HRESULT hr = test.Init(GetModuleHandleW(NULL), argc, argv, SW_SHOWDEFAULT);
     if (SUCCEEDED(hr))
-    {
-        result = test.Run();
-    }
+        rcExit = test.Run();
 
-    return result;
+    return rcExit;
 }

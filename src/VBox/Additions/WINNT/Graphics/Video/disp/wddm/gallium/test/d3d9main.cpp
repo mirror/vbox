@@ -27,7 +27,7 @@
 
 #include "d3d9render.h"
 
-#include <stdio.h>
+#include <iprt/string.h>
 
 #define D3D9TEST_MAX_DEVICES 2
 
@@ -37,7 +37,7 @@ public:
     D3D9Test();
     ~D3D9Test();
 
-    HRESULT Init(HINSTANCE hInstance, LPSTR lpCmdLine, int nCmdShow);
+    HRESULT Init(HINSTANCE hInstance, int argc, char **argv, int nCmdShow);
     int Run();
 
     virtual int DeviceCount();
@@ -46,7 +46,7 @@ public:
 private:
     HRESULT initWindow(HINSTANCE hInstance, int nCmdShow);
     HRESULT initDirect3D9(int cDevices);
-    void parseCmdLine(LPSTR lpCmdLine);
+    void parseCmdLine(int argc, char **argv);
     static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     int miRenderId;
@@ -231,50 +231,33 @@ HRESULT D3D9Test::initDirect3D9(int cDevices)
     return hr;
 }
 
-void D3D9Test::parseCmdLine(LPSTR lpCmdLine)
+void D3D9Test::parseCmdLine(int argc, char **argv)
 {
     /* Very simple: test number followed by step flag.
      * Default is test 0, step mode: 0 1
      */
-    if (!lpCmdLine)
-        return;
-
-    char *p = lpCmdLine;
-
-    while (*p == ' ')
-        ++p;
-
-    if (!*p)
-         return;
 
     /* First number is the render id. */
-    miRenderId = atoi(p);
-
-    while ('0' <= *p && *p <= '9')
-        ++p;
-
-    while (*p == ' ')
-        ++p;
-
-    if (!*p)
-         return;
+    if (argc >= 2)
+        miRenderId = RTStrToInt32(argv[1]);
 
     /* Second number is the render/step mode. */
-    int i = atoi(p);
-    switch (i)
+    if (argc >= 3)
     {
-        default:
-        case 0: miRenderMode = RenderModeStep;       break;
-        case 1: miRenderMode = RenderModeContinuous; break;
-        case 2: miRenderMode = RenderModeFPS;        break;
+        int i = RTStrToInt32(argv[2]);
+        switch (i)
+        {
+            default:
+            case 0: miRenderMode = RenderModeStep;       break;
+            case 1: miRenderMode = RenderModeContinuous; break;
+            case 2: miRenderMode = RenderModeFPS;        break;
+        }
     }
 }
 
-HRESULT D3D9Test::Init(HINSTANCE hInstance,
-                       LPSTR lpCmdLine,
-                       int nCmdShow)
+HRESULT D3D9Test::Init(HINSTANCE hInstance, int argc, char **argv, int nCmdShow)
 {
-    parseCmdLine(lpCmdLine);
+    parseCmdLine(argc, argv);
 
     HRESULT hr = initWindow(hInstance, nCmdShow);
     if (SUCCEEDED(hr))
@@ -375,7 +358,8 @@ int D3D9Test::Run()
                 {
                     float msPerFrame = elapsed * 1000.0f / (float)cFrames;
                     char sz[256];
-                    _snprintf(sz, sizeof(sz), "D3D9 Test FPS %d Frame Time %fms", cFrames, msPerFrame);
+                    RTStrPrintf(sz, sizeof(sz), "D3D9 Test FPS %d Frame Time %u.%03ums",
+                                cFrames, (unsigned)msPerFrame, (unsigned)(msPerFrame * 1000) % 1000);
                     SetWindowTextA(mHwnd, sz);
 
                     cFrames = 0;
@@ -402,21 +386,14 @@ IDirect3DDevice9 *D3D9Test::Device(int index)
     return NULL;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance,
-                   HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine,
-                   int nCmdShow)
+int main(int argc, char **argv)
 {
-    (void)hPrevInstance;
+    int      rcExit = RTEXITCODE_FAILURE;
 
-    int result = 0;
     D3D9Test test;
-
-    HRESULT hr = test.Init(hInstance, lpCmdLine, nCmdShow);
+    HRESULT hr = test.Init(GetModuleHandleW(NULL), argc, argv, SW_SHOWDEFAULT);
     if (SUCCEEDED(hr))
-    {
-        result = test.Run();
-    }
+        rcExit = test.Run();
 
-    return result;
+    return rcExit;
 }
