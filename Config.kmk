@@ -6338,41 +6338,42 @@ TEMPLATE_VBoxR3Exe_CXXFLAGS.kprofile   = $(TEMPLATE_VBoxR3Exe_CXXFLAGS.krelease)
 endif
 
 #
-# Template for building R3 shared objects / DLLs.
+# Template for building R3 shared objects / DLLs - base template, don't use directly.
 # This is mostly identical to the VBoxR3Exe template. (Avoid PIC if possible!)
-#				       -
-TEMPLATE_VBOXR3                        = VBox Ring 3 SO/DLLs
-TEMPLATE_VBOXR3_EXTENDS                = VBoxR3Exe
-TEMPLATE_VBOXR3_DEFS.darwin            = $(TEMPLATE_VBoxR3Exe_DEFS.darwin) PIC
-TEMPLATE_VBOXR3_LDFLAGS.darwin         = $(TEMPLATE_VBoxR3Exe_LDFLAGS.darwin) \
+#
+## @todo Eliminate VBoxR3DllBase in favor of VBoxR3Dll.
+TEMPLATE_VBoxR3DllBase                 = VBox Ring 3 SO/DLLs Base Template - do not use directly!
+TEMPLATE_VBoxR3DllBase_EXTENDS         = VBoxR3Exe
+TEMPLATE_VBoxR3DllBase_DEFS.darwin     = $(TEMPLATE_VBoxR3Exe_DEFS.darwin) PIC
+TEMPLATE_VBoxR3DllBase_LDFLAGS.darwin  = $(TEMPLATE_VBoxR3Exe_LDFLAGS.darwin) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 ifn1of ($(KBUILD_TARGET), darwin win os2)
- TEMPLATE_VBOXR3_DEFS                  = $(TEMPLATE_VBoxR3Exe_DEFS) PIC
- TEMPLATE_VBOXR3_CFLAGS                = $(TEMPLATE_VBoxR3Exe_CFLAGS) -fPIC
- TEMPLATE_VBOXR3_CXXFLAGS              = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -fPIC
- TEMPLATE_VBOXR3_PCHFLAGS              = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fPIC
- TEMPLATE_VBOXR3_LDFLAGS               = $(TEMPLATE_VBoxR3Exe_LDFLAGS) -fPIC
+ TEMPLATE_VBoxR3DllBase_DEFS           = $(TEMPLATE_VBoxR3Exe_DEFS) PIC
+ TEMPLATE_VBoxR3DllBase_CFLAGS         = $(TEMPLATE_VBoxR3Exe_CFLAGS) -fPIC
+ TEMPLATE_VBoxR3DllBase_CXXFLAGS       = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -fPIC
+ TEMPLATE_VBoxR3DllBase_PCHFLAGS       = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fPIC
+ TEMPLATE_VBoxR3DllBase_LDFLAGS        = $(TEMPLATE_VBoxR3Exe_LDFLAGS) -fPIC
 endif
 ifeq ($(KBUILD_TARGET),haiku)
- # Haiku uses PIC by default...
- TEMPLATE_VBOXR3_CFLAGS               = $(TEMPLATE_VBoxR3Exe_CFLAGS) -fno-pic
- TEMPLATE_VBOXR3_CXXFLAGS             = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -fno-pic
- TEMPLATE_VBOXR3_PCHFLAGS             = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fno-pic
- TEMPLATE_VBOXR3_LDFLAGS              = $(TEMPLATE_VBoxR3Exe_LDFLAGS) -fno-pic
+ # Haiku uses PIC by default... ## @todo r=bird This looks like total nonsense.
+ TEMPLATE_VBoxR3DllBase_CFLAGS         = $(TEMPLATE_VBoxR3Exe_CFLAGS) -fno-pic
+ TEMPLATE_VBoxR3DllBase_CXXFLAGS       = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -fno-pic
+ TEMPLATE_VBoxR3DllBase_PCHFLAGS       = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fno-pic
+ TEMPLATE_VBoxR3DllBase_LDFLAGS        = $(TEMPLATE_VBoxR3Exe_LDFLAGS) -fno-pic
 endif
 
 #
 # Temporary: Renaming the template and warnings will be errors ("soon").
 #
-TEMPLATE_VBoxR3Dll                     += VBox ring-3 SO/DLLs, no warnings
-TEMPLATE_VBoxR3Dll_EXTENDS             += VBOXR3
+TEMPLATE_VBoxR3Dll                      = VBox ring-3 SO/DLLs, no warnings
+TEMPLATE_VBoxR3Dll_EXTENDS             += VBoxR3DllBase
 TEMPLATE_VBoxR3Dll_EXTENDS_BY          += appending
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxR3Dll_CFLAGS            += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3Dll_CXXFLAGS          += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3Dll_PCHFLAGS          += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3Dll_LDFLAGS           += $(VBOX_VCC_LD_WERR)
+ TEMPLATE_VBoxR3Dll_CFLAGS             += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3Dll_CXXFLAGS           += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3Dll_PCHFLAGS           += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3Dll_LDFLAGS            += $(VBOX_VCC_LD_WERR)
 else
  TEMPLATE_VBoxR3Dll_CFLAGS            += $(VBOX_GCC_WERR)
  TEMPLATE_VBoxR3Dll_CXXFLAGS          += $(VBOX_GCC_WERR)
@@ -6391,7 +6392,7 @@ TEMPLATE_VBoxR3Dll-x86_DEFS           = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VB
 # Template for building performance critical stuff with warnings-as-errors.
 #
 TEMPLATE_VBoxR3DllNoPic                    = VBox ring-3 SO/DLLs without PIC, without warnings.
-TEMPLATE_VBoxR3DllNoPic_EXTENDS            = VBOXR3
+TEMPLATE_VBoxR3DllNoPic_EXTENDS            = VBoxR3DllBase
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllNoPic_DEFS              = $(TEMPLATE_VBoxR3Exe_DEFS)
  TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(TEMPLATE_VBoxR3Exe_CFLAGS)   $(VBOX_GCC_WERR)
@@ -6399,20 +6400,20 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllNoPic_PCHFLAGS          = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) $(VBOX_GCC_WERR)
  TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBoxR3Exe_LDFLAGS)
 else ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(filter-out -W3 -wd%,$(TEMPLATE_VBOXR3_CFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_CFLAGS.debug      = $(filter-out -RTC%,$(TEMPLATE_VBOXR3_CFLAGS.debug))
- TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(filter-out -W3 -wd%,$(TEMPLATE_VBOXR3_CXXFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.debug    = $(filter-out -RTC%,$(TEMPLATE_VBOXR3_CXXFLAGS.debug)) # RTCsu Prevents IEM opt.
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllNoPic_PCHFLAGS          = $(filter-out -W3 -wd%,$(TEMPLATE_VBOXR3_PCHFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_PCHFLAGS.debug    = $(filter-out -RTC%,$(TEMPLATE_VBOXR3_PCHFLAGS.debug)) # RTCsu Prevents IEM opt.
- TEMPLATE_VBoxR3DllNoPic_PCHFLAGS.release  = $(TEMPLATE_VBOXR3_PCHFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBOXR3_LDFLAGS)  $(VBOX_VCC_LD_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(filter-out -W3 -wd%,$(TEMPLATE_VBoxR3DllBase_CFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS.debug      = $(filter-out -RTC%,$(TEMPLATE_VBoxR3DllBase_CFLAGS.debug))
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBoxR3DllBase_CFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(filter-out -W3 -wd%,$(TEMPLATE_VBoxR3DllBase_CXXFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.debug    = $(filter-out -RTC%,$(TEMPLATE_VBoxR3DllBase_CXXFLAGS.debug)) # RTCsu Prevents IEM opt.
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBoxR3DllBase_CXXFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllNoPic_PCHFLAGS          = $(filter-out -W3 -wd%,$(TEMPLATE_VBoxR3DllBase_PCHFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_PCHFLAGS.debug    = $(filter-out -RTC%,$(TEMPLATE_VBoxR3DllBase_PCHFLAGS.debug)) # RTCsu Prevents IEM opt.
+ TEMPLATE_VBoxR3DllNoPic_PCHFLAGS.release  = $(TEMPLATE_VBoxR3DllBase_PCHFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBoxR3DllBase_LDFLAGS)  $(VBOX_VCC_LD_WERR)
 else
- TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(TEMPLATE_VBOXR3_CFLAGS)   $(VBOX_GCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(TEMPLATE_VBOXR3_CXXFLAGS) $(VBOX_GCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_PCHFLAGS          = $(TEMPLATE_VBOXR3_PCHFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(TEMPLATE_VBoxR3DllBase_CFLAGS)   $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(TEMPLATE_VBoxR3DllBase_CXXFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_PCHFLAGS          = $(TEMPLATE_VBoxR3DllBase_PCHFLAGS) $(VBOX_GCC_WERR)
 endif
 
 # x86 edition of the above template for use on AMD64 targets.
@@ -6427,7 +6428,7 @@ TEMPLATE_VBoxR3DllNoPic-x86_DEFS           = $(filter-out HC_ARCH_BITS%,$(TEMPLA
 # Template for building performance critical stuff without warnings-as-errors.
 #
 TEMPLATE_VBoxR3DllWarnNoPic                = VBox ring-3 SO/DLLs without PIC, with warnings.
-TEMPLATE_VBoxR3DllWarnNoPic_EXTENDS        = VBOXR3
+TEMPLATE_VBoxR3DllWarnNoPic_EXTENDS        = VBoxR3DllBase
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllWarnNoPic_DEFS          = $(TEMPLATE_VBoxR3Exe_DEFS)
  TEMPLATE_VBoxR3DllWarnNoPic_CFLAGS        = $(TEMPLATE_VBoxR3Exe_CFLAGS)
@@ -6435,9 +6436,9 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllWarnNoPic_PCHFLAGS      = $(TEMPLATE_VBoxR3Exe_PCHFLAGS)
  TEMPLATE_VBoxR3DllWarnNoPic_LDFLAGS       = $(TEMPLATE_VBoxR3Exe_LDFLAGS)
 else ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxR3DllWarnNoPic_CFLAGS.release   = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllWarnNoPic_CXXFLAGS.release = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllWarnNoPic_PCHFLAGS.release = $(TEMPLATE_VBOXR3_PCHFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllWarnNoPic_CFLAGS.release   = $(TEMPLATE_VBoxR3DllBase_CFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllWarnNoPic_CXXFLAGS.release = $(TEMPLATE_VBoxR3DllBase_CXXFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllWarnNoPic_PCHFLAGS.release = $(TEMPLATE_VBoxR3DllBase_PCHFLAGS.release) -GS-
 endif
 
 #
@@ -6737,17 +6738,17 @@ else
 endif
 
 #
-# Same as VBOXR3 but without C++ exceptions.
+# Same as VBoxR3DllBase but without C++ exceptions.
 #
 TEMPLATE_VBOXR3DLLNOXCPT               = VBox Ring 3 SO/DLLs without C++ exception
-TEMPLATE_VBOXR3DLLNOXCPT_EXTENDS       = VBOXR3
+TEMPLATE_VBOXR3DLLNOXCPT_EXTENDS       = VBoxR3DllBase
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXR3DLLNOXCPT_CFLAGS       = $(filter-out -EH%,$(TEMPLATE_VBOXR3_CFLAGS)  ) -EHs-
- TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBOXR3_CXXFLAGS)) -EHs-
- TEMPLATE_VBOXR3DLLNOXCPT_PCHFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBOXR3_PCHFLAGS)) -EHs-
+ TEMPLATE_VBOXR3DLLNOXCPT_CFLAGS       = $(filter-out -EH%,$(TEMPLATE_VBoxR3DllBase_CFLAGS)  ) -EHs-
+ TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBoxR3DllBase_CXXFLAGS)) -EHs-
+ TEMPLATE_VBOXR3DLLNOXCPT_PCHFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBoxR3DllBase_PCHFLAGS)) -EHs-
 else
- TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS     = $(TEMPLATE_VBOXR3_CXXFLAGS) -fno-exceptions
- TEMPLATE_VBOXR3DLLNOXCPT_PCHFLAGS     = $(TEMPLATE_VBOXR3_PCHFLAGS) -fno-exceptions
+ TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS     = $(TEMPLATE_VBoxR3DllBase_CXXFLAGS) -fno-exceptions
+ TEMPLATE_VBOXR3DLLNOXCPT_PCHFLAGS     = $(TEMPLATE_VBoxR3DllBase_PCHFLAGS) -fno-exceptions
 endif
 
 #
@@ -7033,17 +7034,17 @@ endif
 # @deprecated Use VBoxR3DllNonPedantic!
 #
 TEMPLATE_VBOXR3NP = VBox Ring 3 Non-pedantic
-TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3
+TEMPLATE_VBOXR3NP_EXTENDS = VBoxR3DllBase
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBOXR3_CFLAGS)) \
+ TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBoxR3DllBase_CFLAGS)) \
 	$(VBOX_GCC_NON_PEDANTIC_C)
- TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_CXXFLAGS)) \
+ TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3DllBase_CXXFLAGS)) \
  	$(VBOX_GCC_NON_PEDANTIC_CXX)
- TEMPLATE_VBOXR3NP_PCHFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_PCHFLAGS)) \
+ TEMPLATE_VBOXR3NP_PCHFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3DllBase_PCHFLAGS)) \
  	$(VBOX_GCC_NON_PEDANTIC_CXX)
- TEMPLATE_VBOXR3NP_OBJCFLAGS             = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic -Wstrict-prototypes,$(TEMPLATE_VBOXR3_OBJCFLAGS))
- TEMPLATE_VBOXR3NP_OBJCXXFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic,$(TEMPLATE_VBOXR3_OBJCXXFLAGS))
+ TEMPLATE_VBOXR3NP_OBJCFLAGS             = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic -Wstrict-prototypes,$(TEMPLATE_VBoxR3DllBase_OBJCFLAGS))
+ TEMPLATE_VBOXR3NP_OBJCXXFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic,$(TEMPLATE_VBoxR3DllBase_OBJCXXFLAGS))
 endif
 
 
@@ -7052,18 +7053,18 @@ endif
 # (Same transformation as for VBoxR3ExeNonPedantic.)
 #
 TEMPLATE_VBoxR3DllNonPedantic               = VBox ring-3 Non-pedantic, with warnings.
-TEMPLATE_VBoxR3DllNonPedantic_EXTENDS       = VBOXR3
+TEMPLATE_VBoxR3DllNonPedantic_EXTENDS       = VBoxR3DllBase
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(TEMPLATE_VBOXR3_CFLAGS)   $(VBOX_VCC_NON_PEDANTIC)
- TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(TEMPLATE_VBOXR3_CXXFLAGS) $(VBOX_VCC_NON_PEDANTIC)
- TEMPLATE_VBoxR3DllNonPedantic_PCHFLAGS     = $(TEMPLATE_VBOXR3_PCHFLAGS) $(VBOX_VCC_NON_PEDANTIC)
+ TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(TEMPLATE_VBoxR3DllBase_CFLAGS)   $(VBOX_VCC_NON_PEDANTIC)
+ TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(TEMPLATE_VBoxR3DllBase_CXXFLAGS) $(VBOX_VCC_NON_PEDANTIC)
+ TEMPLATE_VBoxR3DllNonPedantic_PCHFLAGS     = $(TEMPLATE_VBoxR3DllBase_PCHFLAGS) $(VBOX_VCC_NON_PEDANTIC)
 else # gcc:
  TEMPLATE_VBoxR3DllNonPedantic_TOOL         = $(VBOX_GCC_TOOL)
- TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBOXR3_CFLAGS)) \
+ TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBoxR3DllBase_CFLAGS)) \
 	$(VBOX_GCC_NON_PEDANTIC_C)
- TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_CXXFLAGS)) \
+ TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3DllBase_CXXFLAGS)) \
  	$(VBOX_GCC_NON_PEDANTIC_CXX)
- TEMPLATE_VBoxR3DllNonPedantic_PCHFLAGS     = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_PCHFLAGS)) \
+ TEMPLATE_VBoxR3DllNonPedantic_PCHFLAGS     = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3DllBase_PCHFLAGS)) \
  	$(VBOX_GCC_NON_PEDANTIC_CXX)
 endif
 
