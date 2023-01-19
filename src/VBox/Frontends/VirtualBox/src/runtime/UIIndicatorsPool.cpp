@@ -201,8 +201,21 @@ public:
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/hd_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/hd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
+        /* Configure connection: */
+        connect(pSession, &UISession::sigStorageDeviceChange,
+                this, &UIIndicatorHardDrive::sltStorageDeviceChange);
         /* Translate finally: */
         retranslateUi();
+    }
+
+private slots:
+
+    /** Refresh the tooltip if the device config changes at runtime (hotplugging,
+     *  USB storage). */
+    void sltStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent)
+    {
+        RT_NOREF(attachment, fRemoved, fSilent);
+        updateAppearance();
     }
 
 private:
@@ -239,8 +252,7 @@ private:
         }
 
         /* Hide indicator if there are no attachments: */
-        if (!fAttachmentsPresent)
-            hide();
+        setVisible(fAttachmentsPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
