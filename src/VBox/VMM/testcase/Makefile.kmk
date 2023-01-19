@@ -474,7 +474,7 @@ tstVMREQHardened_DEFS     = PROGRAM_NAME_STR="tstVMREQ"
 tstVMREQHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMREQ\"
  endif
 tstVMREQHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstVMREQ_TEMPLATE         = VBOXR3
+tstVMREQ_TEMPLATE         = VBoxR3Dll
 else
 tstVMREQ_TEMPLATE         = VBoxR3Exe
 endif
@@ -494,7 +494,7 @@ tstAnimateHardened_DEFS     = PROGRAM_NAME_STR="tstAnimate"
 tstAnimateHardened_DEFS     = PROGRAM_NAME_STR=\"tstAnimate\"
  endif
 tstAnimateHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstAnimate_TEMPLATE         = VBOXR3
+tstAnimate_TEMPLATE         = VBoxR3Dll
 else
 tstAnimate_TEMPLATE         = VBoxR3Exe
 endif
@@ -525,7 +525,7 @@ tstVMMHardened_DEFS     = PROGRAM_NAME_STR="tstVMM"
 tstVMMHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMM\"
  endif
 tstVMMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstVMM_TEMPLATE         = VBOXR3
+tstVMM_TEMPLATE         = VBoxR3Dll
  else
 tstVMM_TEMPLATE         = VBoxR3Exe
  endif
@@ -558,7 +558,7 @@ tstMicroHardened_DEFS     = PROGRAM_NAME_STR="tstMicro"
 tstMicroHardened_DEFS     = PROGRAM_NAME_STR=\"tstMicro\"
  endif
 tstMicroHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstMicro_TEMPLATE         = VBOXR3
+tstMicro_TEMPLATE         = VBoxR3Dll
  else
 tstMicro_TEMPLATE         = VBoxR3Exe
  endif
@@ -633,7 +633,7 @@ tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletion
 tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletion\"
   endif
 tstPDMAsyncCompletionHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstPDMAsyncCompletion_TEMPLATE         = VBOXR3
+tstPDMAsyncCompletion_TEMPLATE         = VBoxR3Dll
  else
 tstPDMAsyncCompletion_TEMPLATE         = VBoxR3Exe
  endif
@@ -654,7 +654,7 @@ tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncComp
 tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletionStress\"
   endif
 tstPDMAsyncCompletionStressHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstPDMAsyncCompletionStress_TEMPLATE   = VBOXR3
+tstPDMAsyncCompletionStress_TEMPLATE   = VBoxR3Dll
  else
 tstPDMAsyncCompletionStress_TEMPLATE   = VBoxR3Exe
  endif
