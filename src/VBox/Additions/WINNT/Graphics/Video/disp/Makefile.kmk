@@ -40,7 +40,7 @@ endif
 # Note. This has to run on NT4! (*_NT4 => *_W2K3 when targeting 64-bit.)
 #
 SYSMODS += VBoxDisp
-VBoxDisp_TEMPLATE      = VBOXGUESTR0
+VBoxDisp_TEMPLATE      = VBoxGuestR0Drv
 VBoxDisp_SYSSUFF       = .dll
 VBoxDisp_SDKS          = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxDisp_DEFS.x86      = _WIN32_WINNT=0x0501

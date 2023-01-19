@@ -46,7 +46,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # vboxvideo - The Video DRM (Direct Rendering Module) kernel module
 #
 SYSMODS.solaris        += vboxvideo
-vboxvideo_TEMPLATE      = VBOXGUESTR0
+vboxvideo_TEMPLATE      = VBoxGuestR0Drv
 vboxvideo_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxvideo_DEPS         += $(VBOX_SVN_REV_KMK)
 if ($(VBOX_SOLARIS_11_UPDATE_VERSION) > 3)

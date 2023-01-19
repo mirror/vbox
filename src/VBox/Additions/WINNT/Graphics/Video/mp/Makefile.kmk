@@ -34,7 +34,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Note. This has to run on NT4! (*_NT4 => *_W2K3 when targeting 64-bit.)
 #
 SYSMODS += VBoxVideo
-VBoxVideo_TEMPLATE      = VBOXGUESTR0
+VBoxVideo_TEMPLATE      = VBoxGuestR0Drv
 VBoxVideo_SDKS          = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxVideo_DEFS          = VBOX_XPDM_MINIPORT VBOX_WITH_8BPP_MODES VBOX_USING_$(VBOX_WINDDK_GST_NT4)
 VBoxVideo_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
@@ -86,7 +86,7 @@ ifdef VBOX_WITH_WDDM
  # VBoxWddm - Windows Guest Additions WDDM Miniport Video Driver
  #
  SYSMODS += VBoxWddm
- VBoxWddm_TEMPLATE         = VBOXGUESTR0
+ VBoxWddm_TEMPLATE         = VBoxGuestR0Drv
  VBoxWddm_SDKS             = $(VBOX_WINDDK_GST_W8)
  VBoxWddm_DEFS            += VBOX_WDDM_MINIPORT VBOX_WITH_WDDM VBOX_WITH_HGCM
  # WIN9X_COMPAT_SPINLOCK inlines KeInitializeSpinLock in W8 DDK (Windows 7 or older ntoskrnl does not export it).

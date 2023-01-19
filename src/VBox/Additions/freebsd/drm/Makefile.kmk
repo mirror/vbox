@@ -53,7 +53,7 @@ vboxvideo-mod_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_NOBIN))
 #
 # Note! Syntax checking only.
 #
-vboxvideo_drm_TEMPLATE      = VBOXGUESTR0
+vboxvideo_drm_TEMPLATE      = VBoxGuestR0Drv
 vboxvideo_drm_NAME          = vboxvideo
 vboxvideo_drm_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxvideo_drm_DEPS         += $(VBOX_SVN_REV_KMK)

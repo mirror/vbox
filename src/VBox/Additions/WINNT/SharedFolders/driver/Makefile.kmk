@@ -35,7 +35,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #       or the linker barfs at loadcfg.obj not containing a large enough load config structure.
 #
 SYSMODS += VBoxSF
-VBoxSF_TEMPLATE    = VBOXGUESTR0
+VBoxSF_TEMPLATE    = VBoxGuestR0Drv
 VBoxSF_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_HGCM IN_RING0
 #VBoxSF_DEFS       += LOG_ENABLED
 

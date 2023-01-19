@@ -94,9 +94,9 @@ dotseg_SOURCES = dotseg.cpp
 # IFS kBuild template tweak.
 #
 TEMPLATE_VBoxR0DrvIFS = Hack to make sure we link a library. IFS must not be physical devices, but DLLs!
-TEMPLATE_VBoxR0DrvIFS_EXTENDS = VBOXGUESTR0
+TEMPLATE_VBoxR0DrvIFS_EXTENDS = VBoxGuestR0Drv
 ifdef VBOX_USE_WATCOM_FOR_OS2
-TEMPLATE_VBoxR0DrvIFS_LDFLAGS = $(subst physdevice,dll, $(TEMPLATE_VBOXGUESTR0_LDFLAGS))
+TEMPLATE_VBoxR0DrvIFS_LDFLAGS = $(subst physdevice,dll, $(TEMPLATE_VBoxGuestR0Drv_LDFLAGS))
 endif
 TEMPLATE_VBoxR0DrvIFS_SYSSUFF = .ifs
 TEMPLATE_VBoxR0DrvIFS_DLLSUFF = .ifs

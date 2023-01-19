@@ -70,7 +70,7 @@ endif
 # The module (for syntax checking).
 # The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels
 #
-vboxsf_TEMPLATE        = VBOXGUESTR0
+vboxsf_TEMPLATE        = VBoxGuestR0Drv
 vboxsf_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
 	KBUILD_MODNAME=KBUILD_STR\(vboxsf\) \

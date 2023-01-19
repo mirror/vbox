@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 SYSMODS.x86 += VBoxMouseNT
-VBoxMouseNT_TEMPLATE    = VBOXGUESTR0
+VBoxMouseNT_TEMPLATE    = VBoxGuestR0Drv
 VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR RT_WITHOUT_NOCRT_WRAPPERS TARGET_NT3
 VBoxMouseNT_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxMouseNT_INCS        = \

@@ -46,7 +46,7 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
  # VBoxGuest - The Guest Additions Driver.
  #
  SYSMODS += VBoxGuest
- VBoxGuest_TEMPLATE      = VBOXGUESTR0
+ VBoxGuest_TEMPLATE      = VBoxGuestR0Drv
  VBoxGuest_NAME.freebsd  = vboxguest
  VBoxGuest_NAME.haiku    = vboxguest
  VBoxGuest_NAME.netbsd   = vboxguest
@@ -143,7 +143,7 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
    # Therefore vboxguest is a module containing the ring-0 guest lib, and vboxdev/vboxsf
    # use this module to access the guest lib
    SYSMODS += VBoxDev
-   VBoxDev_TEMPLATE      = VBOXGUESTR0
+   VBoxDev_TEMPLATE      = VBoxGuestR0Drv
    VBoxDev_NAME          = vboxdev
    VBoxDev_DEFS          = VBOX_SVN_REV=$(VBOX_SVN_REV) _KERNEL_MODE=1 VBGL_VBOXGUEST VBOX_WITH_HGCM IN_RING0
    VBoxDev_SOURCES       = VBoxDev-haiku.c VBoxGuest-haiku-stubs.c
@@ -175,7 +175,7 @@ VBoxGuest_LIBS           = \
 
 # See above.
 LIBRARIES += VBoxGuestLibOs2Hack
-VBoxGuestLibOs2Hack_TEMPLATE = VBOXGUESTR0LIB
+VBoxGuestLibOs2Hack_TEMPLATE = VBoxGuestR0DrvLib
 VBoxGuestLibOs2Hack_INSTTYPE = none
 VBoxGuestLibOs2Hack_DEFS = $(VBoxGuest_DEFS)
 VBoxGuestLibOs2Hack_INCS = \
@@ -279,7 +279,7 @@ endif
 # Helper script.
 #
 INSTALLS.solaris += VBoxGuestLoad
-VBoxGuestLoad_TEMPLATE = VBOXGUESTR0
+VBoxGuestLoad_TEMPLATE = VBoxGuestR0Drv
 VBoxGuestLoad_EXEC_SOURCES = solaris/load.sh
 
 

@@ -45,7 +45,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # vboxfs - The Shared Folder Driver
 #
 SYSMODS.solaris      += vboxfs
-vboxfs_TEMPLATE      = VBOXGUESTR0
+vboxfs_TEMPLATE      = VBoxGuestR0Drv
 vboxfs_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxfs_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxfs_INCS         := \
@@ -73,7 +73,7 @@ ifndef VBOX_OSE
 # vboxfs_s10 - The Shared Folder Driver for Solaris 10
 #
 SYSMODS.solaris      += vboxfs_s10
-vboxfs_s10_TEMPLATE      = VBOXGUESTR0
+vboxfs_s10_TEMPLATE      = VBoxGuestR0Drv
 vboxfs_s10_DEFS          = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6 VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxfs_s10_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxfs_s10_INCS         := solaris10/
@@ -105,7 +105,7 @@ vboxfsmount_SOURCES     = vboxfs_mount.c
 # Load script.
 #
 INSTALLS += vboxfsload
-vboxfsload_TEMPLATE = VBOXGUESTR0
+vboxfsload_TEMPLATE = VBoxGuestR0Drv
 vboxfsload_EXEC_SOURCES = loadfs.sh
 
 

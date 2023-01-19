@@ -32,7 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # VBoxMouse - Windows NT5+ Guest Additions Mouse Filter Driver
 #
 SYSMODS                += VBoxMouse
-VBoxMouse_TEMPLATE     := VBOXGUESTR0
+VBoxMouse_TEMPLATE     := VBoxGuestR0Drv
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  VBoxMouse_INSTTYPE    := none
  VBoxMouse_DEBUG_INSTTYPE := both

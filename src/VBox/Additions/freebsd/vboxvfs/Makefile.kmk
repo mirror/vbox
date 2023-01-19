@@ -36,7 +36,7 @@ endif
 # vboxvfs - The Shared Folder Driver
 #
 SYSMODS.freebsd      += vboxvfs
-vboxvfs_TEMPLATE      = VBOXGUESTR0
+vboxvfs_TEMPLATE      = VBoxGuestR0Drv
 vboxvfs_DEFS          = VBOX_WITH_HGCM
 vboxvfs_INCS          = \
         . \

@@ -45,7 +45,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 # vboxms - The Mouse Integration Driver
 #
 SYSMODS.solaris     += vboxms
-vboxms_TEMPLATE   = VBOXGUESTR0
+vboxms_TEMPLATE   = VBoxGuestR0Drv
 vboxms_DEFS       = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxms_DEPS      += $(VBOX_SVN_REV_KMK)
 vboxms_SOURCES    = \
