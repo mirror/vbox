@@ -218,10 +218,10 @@ endif
 
 # disable -fvisibility=hidden as the SOAP stuff does not properly set the visibility attributes
 TEMPLATE_VBOXWEBR3EXE = Webservices without -fvisibility
-TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBOXR3EXE
-TEMPLATE_VBOXWEBR3EXE_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBOXR3EXE_DEFS.win) # Makes the redefinition warnings go away.
+TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBoxR3Exe
+TEMPLATE_VBOXWEBR3EXE_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBoxR3Exe_DEFS.win) # Makes the redefinition warnings go away.
 TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),\
-				 $(TEMPLATE_VBOXR3EXE_CXXFLAGS))
+				 $(TEMPLATE_VBoxR3Exe_CXXFLAGS))
 ifn1of ($(KBUILD_TARGET), win)
 TEMPLATE_VBOXWEBR3EXE_CXXFLAGS += $(VBOX_GCC_Wno-misleading-indentation)
 endif
@@ -230,7 +230,7 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  # -wd4458: stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
  # -wd5039: x509v3.h(883): warning C5039: 'OPENSSL_sk_set_cmp_func': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
  # soapc-1.cpp(182) : warning C4883: 'soap_getelement': function size suppresses optimizations
- TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win) -wd4774 -wd4458 -wd4883 -wd5039
+ TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBoxR3Exe_CXXFLAGS.win) -wd4774 -wd4458 -wd4883 -wd5039
 endif
 
 ifdef VBOX_GSOAP_INSTALLED

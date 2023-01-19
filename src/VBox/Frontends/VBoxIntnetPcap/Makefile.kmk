@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxIntnetPcap
-VBoxIntnetPcap_TEMPLATE := VBOXR3EXE
+VBoxIntnetPcap_TEMPLATE := VBoxR3Exe
 VBoxIntnetPcap_DEFS     := \
  	$(if $(VBOX_WITH_INTNET_SERVICE_IN_R3),VBOX_WITH_INTNET_SERVICE_IN_R3,)
 VBoxIntnetPcap_INCS     := \

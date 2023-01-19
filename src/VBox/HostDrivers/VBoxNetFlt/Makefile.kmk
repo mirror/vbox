@@ -257,7 +257,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
 
  # Version for EXEs:
  LIBRARIES.win += WinNetConfigExe
- WinNetConfigExe_TEMPLATE = VBOXR3EXE
+ WinNetConfigExe_TEMPLATE = VBoxR3Exe
  WinNetConfigExe_EXTENDS  = WinNetConfigSharedStatic
 
 
@@ -265,9 +265,9 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  # Template for NetFltInstall and friends.
  #
  TEMPLATE_VBoxNetFltR3 = Template for NetFltInstall, NetFltUninstall, NetAdpInstall, NetAdpUninstall, ++
- TEMPLATE_VBoxNetFltR3_EXTENDS  = VBOXR3EXE
- TEMPLATE_VBoxNetFltR3_SDKS     = $(TEMPLATE_VBOXR3EXE_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL VBOX_WIN_NEWDEV
- TEMPLATE_VBoxNetFltR3_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) \
+ TEMPLATE_VBoxNetFltR3_EXTENDS  = VBoxR3Exe
+ TEMPLATE_VBoxNetFltR3_SDKS     = $(TEMPLATE_VBoxR3Exe_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL VBOX_WIN_NEWDEV
+ TEMPLATE_VBoxNetFltR3_LIBS     = $(TEMPLATE_VBoxR3Exe_LIBS) \
  	$(WinNetConfigExe_1_TARGET) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfgExe$(VBOX_SUFF_LIB) \
        $(LIB_RUNTIME) \

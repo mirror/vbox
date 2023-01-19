@@ -131,7 +131,7 @@ endif
 # Use very generic template to make the build environment similar
 # to the standalone case, to detect if IPRT or glue use sneaks in.
 #
-tstVBoxAPIXPCOM_TEMPLATE = VBOXR3EXE
+tstVBoxAPIXPCOM_TEMPLATE = VBoxR3Exe
 tstVBoxAPIXPCOM_INST = $(INST_TESTCASE)
 tstVBoxAPIXPCOM_SOURCES  = tstVBoxAPIXPCOM.cpp
 tstVBoxAPIXPCOM_INCS = \
@@ -162,7 +162,7 @@ endif
 # Use very generic template to make the build environment similar
 # to the standalone case, to detect if IPRT or glue use sneaks in.
 #
-tstVBoxAPIWin_TEMPLATE = VBOXR3EXE
+tstVBoxAPIWin_TEMPLATE = VBoxR3Exe
 tstVBoxAPIWin_INST = $(INST_TESTCASE)
 tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
@@ -179,7 +179,7 @@ tstVBoxAPIWin_INTERMEDIATES = \
 # Use very generic template to make the build environment similar
 # to the standalone case, to detect if IPRT or glue use sneaks in.
 #
-msiDarwinDescriptorDecoder_TEMPLATE = VBOXR3EXE
+msiDarwinDescriptorDecoder_TEMPLATE = VBoxR3Exe
 msiDarwinDescriptorDecoder_INST = $(VBOX_INST_TOOLS)
 msiDarwinDescriptorDecoder_SOURCES  = \
 	msiDarwinDescriptorDecoder.cpp

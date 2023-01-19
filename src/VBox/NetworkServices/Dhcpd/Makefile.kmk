@@ -53,7 +53,7 @@ DLLS     += VBoxNetDHCP
 VBoxNetDHCP_TEMPLATE := VBoxR3Dll
 else
 PROGRAMS += VBoxNetDHCP
-VBoxNetDHCP_TEMPLATE := VBOXR3EXE
+VBoxNetDHCP_TEMPLATE := VBoxR3Exe
 endif
 
 # (current dir is for for lwipopts.h)

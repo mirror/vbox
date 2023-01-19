@@ -251,7 +251,7 @@ vbvdbg_SOURCES  = \
 	wddm/dbg/VBoxVideoWinDbg.def
 
 PROGRAMS += tstMvWnd
-tstMvWnd_TEMPLATE = VBOXR3EXE
+tstMvWnd_TEMPLATE = VBoxR3Exe
 tstMvWnd_DEFS     = UNICODE _UNICODE
 tstMvWnd_SOURCES  = \
 	wddm/dbg/tstMvWnd.cpp
@@ -259,7 +259,7 @@ tstMvWnd_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3)
 tstMvWnd_LDFLAGS.win = /SUBSYSTEM:windows
 
 PROGRAMS += DumpD3DCaps9
-DumpD3DCaps9_TEMPLATE = VBOXR3EXE
+DumpD3DCaps9_TEMPLATE = VBoxR3Exe
 DumpD3DCaps9_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 DumpD3DCaps9_DEFS     = UNICODE _UNICODE
 DumpD3DCaps9_SOURCES  = \

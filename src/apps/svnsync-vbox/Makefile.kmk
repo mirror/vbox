@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += svnsync-vbox
 
-svnsync-vbox_TEMPLATE = VBOXR3EXE
+svnsync-vbox_TEMPLATE = VBoxR3Exe
 svnsync-vbox_SOURCES = main.c
 svnsync-vbox_INCS = \
 	/usr/include/subversion-1 \

@@ -652,7 +652,7 @@ ifndef VBOX_ONLY_EXTPACKS
 # SSMStandalone.lib/a for linking with VBoxSVC and other executables.
 #
 LIBRARIES += SSMStandalone
-SSMStandalone_TEMPLATE = VBOXR3EXE
+SSMStandalone_TEMPLATE = VBoxR3Exe
 SSMStandalone_DEFS     = VBOX_IN_VMM IN_VMM_R3 IN_VMM_STATIC SSM_STANDALONE CPUM_DB_STANDALONE $(VMM_COMMON_DEFS)
 SSMStandalone_INCS     = include
 SSMStandalone_SOURCES  = \

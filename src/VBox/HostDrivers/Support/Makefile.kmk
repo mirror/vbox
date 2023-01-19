@@ -573,7 +573,7 @@ VBoxSupLib_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 #
 # VBoxSupSvc - The system wide service/daemon.
 #
-VBoxSupSvc_TEMPLATE = VBOXR3EXE
+VBoxSupSvc_TEMPLATE = VBoxR3Exe
 VBoxSupSvc_SOURCES = \
 	SUPSvc.cpp \
 	SUPSvcGlobal.cpp \

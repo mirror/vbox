@@ -208,7 +208,7 @@ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
 SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
 else
-SyntaxVBoxIncludeR3_TEMPLATE = VBOXR3EXE
+SyntaxVBoxIncludeR3_TEMPLATE = VBoxR3Exe
 SyntaxVBoxIncludeR3_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 endif
 SyntaxVBoxIncludeR3_DEFS += USING_VMM_COMMON_DEFS

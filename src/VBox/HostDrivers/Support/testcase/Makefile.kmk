@@ -69,19 +69,19 @@ PROGRAMS.win += \
 	tstNtQueryStuff
 endif # VBOX_WITH_TESTCASES
 
-SUPInstall_TEMPLATE   = VBOXR3EXE
+SUPInstall_TEMPLATE   = VBoxR3Exe
 SUPInstall_SOURCES    = SUPInstall.cpp
 SUPInstall_LIBS       = $(LIB_RUNTIME)
 
-SUPUninstall_TEMPLATE = VBOXR3EXE
+SUPUninstall_TEMPLATE = VBoxR3Exe
 SUPUninstall_SOURCES  = SUPUninstall.cpp
 SUPUninstall_LIBS     = $(LIB_RUNTIME)
 
-SUPLoggerCtl_TEMPLATE = VBOXR3EXE
+SUPLoggerCtl_TEMPLATE = VBoxR3Exe
 SUPLoggerCtl_SOURCES  = SUPLoggerCtl.cpp
 SUPLoggerCtl_LIBS     = $(LIB_RUNTIME)
 
-tstInt_TEMPLATE       = VBOXR3EXE
+tstInt_TEMPLATE       = VBoxR3Exe
 tstInt_DEFS           = $(VMM_COMMON_DEFS)
 tstInt_SOURCES        = tstInt.cpp
 tstInt_LIBS           = $(LIB_RUNTIME)

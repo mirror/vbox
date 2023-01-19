@@ -92,7 +92,7 @@ OTHER_CLEAN      += \
 #
 # VBoxZoneAccess
 #
-VBoxZoneAccess_TEMPLATE = VBOXR3EXE
+VBoxZoneAccess_TEMPLATE = VBoxR3Exe
 VBoxZoneAccess_DEPS     = $(VBOX_SVN_REV_KMK)
 VBoxZoneAccess_SOURCES  = VBoxZoneAccess.c
 VBoxZoneAccess_LIBS     = $(LIB_RUNTIME)
@@ -100,7 +100,7 @@ VBoxZoneAccess_LIBS     = $(LIB_RUNTIME)
 #
 # VBoxISAExec
 #
-VBoxISAExec_TEMPLATE = VBOXR3EXE
+VBoxISAExec_TEMPLATE = VBoxR3Exe
 VBoxISAExec_DEPS     = $(VBOX_SVN_REV_KMK)
 VBoxISAExec_SOURCES  = VBoxISAExec.c
 

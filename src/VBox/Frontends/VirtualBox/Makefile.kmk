@@ -2004,7 +2004,7 @@ endif
 		--output $@ $<
 
  PROGRAMS += vmstarter
- vmstarter_TEMPLATE = VBOXR3EXE
+ vmstarter_TEMPLATE = VBoxR3Exe
  vmstarter_OBJCXXFLAGS += -Wno-error=deprecated-declarations ## @todo fix deprecate API use!
  vmstarter_LDFLAGS += -framework AppKit
  vmstarter_SOURCES = src/platform/darwin/vmstarter.mm

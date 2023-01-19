@@ -49,7 +49,7 @@ ifndef VBOX_ONLY_EXTPACKS
  #       with the base VBox installation.
  #
  PROGRAMS += VBoxDTrace
- VBoxDTrace_TEMPLATE := VBOXR3EXE
+ VBoxDTrace_TEMPLATE := VBoxR3Exe
  VBoxDTrace_SOURCES := VBoxDTraceWrapper.cpp
  VBoxDTrace_LIBS = $(LIB_RUNTIME)
  $(call VBOX_SET_VER_INFO_DLL,VBoxDTrace,VirtualBox DTrace Chooser)

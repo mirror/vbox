@@ -46,7 +46,7 @@ VBoxDrvCfgSharedStatic_SOURCES  := cfg/VBoxDrvCfg.cpp
 
 # For the driver installer/uninstaller executables.
 LIBRARIES += VBoxDrvCfgExe
-VBoxDrvCfgExe_TEMPLATE := VBOXR3EXE
+VBoxDrvCfgExe_TEMPLATE := VBoxR3Exe
 VBoxDrvCfgExe_EXTENDS  := VBoxDrvCfgSharedStatic
 
 # For the regular VBox DLLs.
