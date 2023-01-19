@@ -25,9 +25,10 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+#define IPRT_NO_CRT_FOR_3RD_PARTY /* lazy */
 #include <iprt/win/windows.h>
 #define KDEXT_64BIT
-#include <wdbgexts.h>
+#include <iprt/win/wdbgexts.h>
 
 #define VBOXVWD_VERSION_MAJOR 1
 #define VBOXVWD_VERSION_MINOR 1
@@ -42,28 +43,10 @@ static EXT_API_VERSION g_VBoxVWDVersion = {
 /**
  * DLL entry point.
  */
-BOOL WINAPI DllMain(HINSTANCE hInstance,
-                    DWORD     dwReason,
-                    LPVOID    lpReserved)
+BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
-    BOOL bOk = TRUE;
-
-    switch (dwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-        {
-            break;
-        }
-
-        case DLL_PROCESS_DETACH:
-        {
-            break;
-        }
-
-        default:
-            break;
-    }
-    return bOk;
+    RT_NOREF(hInstance, dwReason, lpReserved);
+    return TRUE;
 }
 
 /* note: need to name it this way to make dprintf & other macros defined in wdbgexts.h work */
@@ -101,6 +84,7 @@ VOID WDBGAPI WinDbgExtensionDllInit(PWINDBG_EXTENSION_APIS64 lpExtensionApis, US
 
 DECLARE_API(help)
 {
+    RT_NOREF(args, dwProcessor, dwCurrentPc, hCurrentThread, hCurrentProcess);
     dprintf("**** VirtualBox Video Driver debugging extension ****\n"
             " The following commands are supported: \n"
             " !ms - save memory (video data) to clipboard \n"
@@ -117,6 +101,7 @@ DECLARE_API(ms)
     ULONG64 u64Pitch;
     ULONG64 u64DefaultPitch;
     PCSTR pExpr = args;
+    RT_NOREF(dwProcessor, dwCurrentPc, hCurrentThread, hCurrentProcess);
 
     /* address */
     if (!pExpr) { dprintf("address not specified\n"); return; }
@@ -202,7 +187,7 @@ DECLARE_API(ms)
                 uRc = 1;
                 break;
             }
-            else if (cbRead != u64DefaultPitch)
+            if (cbRead != u64DefaultPitch)
             {
                 dprintf("WARNING!!! the actual number of bytes read(%d) not equal the requested size(%d), chunk(%d)\n", (UINT)cbRead, (UINT)u64DefaultPitch, (UINT)i);
                 dprintf("ignoring this one and the all the rest, using height(%d)\n", (UINT)i);

@@ -26,7 +26,9 @@
  */
 
 #include <iprt/win/windows.h>
+#include <iprt/cdefs.h>
 
+#undef Assert
 #define Assert(_m) do {} while (0)
 #define vboxVDbgPrint(_m) do {} while (0)
 
@@ -79,23 +81,22 @@ HRESULT tstMvWndCreate(DWORD w, DWORD h, HWND *phWnd)
         wc.lpszClassName = VBOXDISPWND_NAME;
         if (!RegisterClass(&wc))
         {
-            DWORD winErr = GetLastError();
-            vboxVDbgPrint((__FUNCTION__": RegisterClass failed, winErr(%d)\n", winErr));
+            vboxVDbgPrint((__FUNCTION__": RegisterClass failed, winErr(%d)\n", GetLastError()));
             hr = E_FAIL;
         }
     }
 
     if (hr == S_OK)
     {
-        HWND hWnd = CreateWindowEx (0 /*WS_EX_CLIENTEDGE*/,
-                                        VBOXDISPWND_NAME, VBOXDISPWND_NAME,
-                                        WS_OVERLAPPEDWINDOW,
-                                        0, 0,
-                                        w, h,
-                                        GetDesktopWindow() /* hWndParent */,
-                                        NULL /* hMenu */,
-                                        hInstance,
-                                        NULL /* lpParam */);
+        HWND hWnd = CreateWindowEx(0 /*WS_EX_CLIENTEDGE*/,
+                                   VBOXDISPWND_NAME, VBOXDISPWND_NAME,
+                                   WS_OVERLAPPEDWINDOW,
+                                   0, 0,
+                                   w, h,
+                                   GetDesktopWindow() /* hWndParent */,
+                                   NULL /* hMenu */,
+                                   hInstance,
+                                   NULL /* lpParam */);
         Assert(hWnd);
         if (hWnd)
         {
@@ -103,8 +104,7 @@ HRESULT tstMvWndCreate(DWORD w, DWORD h, HWND *phWnd)
         }
         else
         {
-            DWORD winErr = GetLastError();
-            vboxVDbgPrint((__FUNCTION__": CreateWindowEx failed, winErr(%d)\n", winErr));
+            vboxVDbgPrint((__FUNCTION__": CreateWindowEx failed, winErr(%d)\n", GetLastError()));
             hr = E_FAIL;
         }
     }
@@ -113,7 +113,7 @@ HRESULT tstMvWndCreate(DWORD w, DWORD h, HWND *phWnd)
 }
 static int g_Width = 400;
 static int g_Height = 300;
-static DWORD WINAPI tstMvWndThread(void *pvUser)
+static DWORD WINAPI tstMvWndThread(void *pvUser) RT_NOEXCEPT
 {
     HWND hWnd = (HWND)pvUser;
     RECT Rect;
@@ -160,18 +160,18 @@ static DWORD WINAPI tstMvWndThread(void *pvUser)
 
 int main(int argc, char **argv, char **envp)
 {
+    RT_NOREF(argc, argv, envp);
     HWND hWnd;
     HRESULT hr = tstMvWndCreate(200, 200, &hWnd);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
-        HANDLE hThread = CreateThread(
-                              NULL /* LPSECURITY_ATTRIBUTES lpThreadAttributes */,
-                              0 /* SIZE_T dwStackSize */,
-                              tstMvWndThread,
-                              hWnd,
-                              0 /* DWORD dwCreationFlags */,
-                              NULL /* pThreadId */);
+        HANDLE hThread = CreateThread(NULL /* LPSECURITY_ATTRIBUTES lpThreadAttributes */,
+                                      0 /* SIZE_T dwStackSize */,
+                                      tstMvWndThread,
+                                      hWnd,
+                                      0 /* DWORD dwCreationFlags */,
+                                      NULL /* pThreadId */);
         Assert(hThread);
         if (hThread)
         {
@@ -188,9 +188,10 @@ int main(int argc, char **argv, char **envp)
     return 0;
 }
 
+#ifndef IPRT_NO_CRT
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-//    NOREF(hInstance); NOREF(hPrevInstance); NOREF(lpCmdLine); NOREF(nCmdShow);
-
+    RT_NOREF(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
     return main(__argc, __argv, environ);
 }
+#endif

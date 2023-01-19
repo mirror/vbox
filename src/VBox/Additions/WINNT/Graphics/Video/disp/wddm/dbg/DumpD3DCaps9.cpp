@@ -36,12 +36,12 @@
 
 #define MISSING_FLAGS(_dw1, _dw2) ((_dw2) & ((_dw1) ^ (_dw2)))
 
-#define Log(_m) do { printf _m ; } while (0)
+#define MyLog(_m) do { printf _m ; } while (0)
 
 #define DUMP_STRCASE(_t) \
-        case _t: { Log(("%s", #_t"")); break; }
-#define DUMP_STRCASE_DEFAULT_DWORD(_dw) \
-        default: { Log(("0x%08x", (_dw))); break; }
+        case _t: { MyLog(("%s", #_t"")); break; }
+#define DUMP_STRCASE_DEFAULT_INT(_dw) \
+        default: { MyLog(("0x%08x", (_dw))); break; }
 
 #define DUMP_STRIF_INIT(_ps, _t) \
         const char * _pSep = (_ps); \
@@ -51,10 +51,10 @@
 #define DUMP_STRIF(_v, _t) do { \
         if ((_v) & _t) { \
             if (_fSep) { \
-                Log(("%s%s", _pSep ,#_t"")); \
+                MyLog(("%s%s", _pSep ,#_t"")); \
             } \
             else { \
-                Log(("%s", #_t"")); \
+                MyLog(("%s", #_t"")); \
                 _fSep = !!_pSep; \
             } \
             _fFlags |= _t; \
@@ -65,10 +65,10 @@
         _fFlags = MISSING_FLAGS(_fFlags, _dw); \
         if (_fFlags) { \
             if (_fSep) { \
-                Log(("%s0x%08x", _pSep, (_fFlags))); \
+                MyLog(("%s0x%08lx", _pSep, (_fFlags))); \
             } \
             else { \
-                Log(("0x%08x", (_fFlags))); \
+                MyLog(("0x%08lx", (_fFlags))); \
                 _fSep = !!_pSep; \
             } \
         } \
@@ -93,38 +93,38 @@
     } while (0)
 
 #define DUMP_DIFF_VAL(_field, _format) do { \
-        if (pCaps1->_field != pCaps2->_field) { Log(("pCaps->" #_field " = " _format "; // " _format " \n", pCaps2->_field, pCaps1->_field)); } \
+        if (pCaps1->_field != pCaps2->_field) { MyLog(("pCaps->" #_field " = " _format "; // " _format " \n", pCaps2->_field, pCaps1->_field)); } \
     } while (0)
 
 static void printDeviceType(const char* pszPrefix, D3DDEVTYPE DeviceType, const char* pszSuffix)
 {
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     switch(DeviceType)
     {
         DUMP_STRCASE(D3DDEVTYPE_HAL)
         DUMP_STRCASE(D3DDEVTYPE_REF)
         DUMP_STRCASE(D3DDEVTYPE_SW)
         DUMP_STRCASE(D3DDEVTYPE_NULLREF)
-        DUMP_STRCASE_DEFAULT_DWORD(DeviceType)
+        DUMP_STRCASE_DEFAULT_INT(DeviceType)
     }
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
 //    DUMP_STRIF(Caps, D3DCAPS_OVERLAY);
     DUMP_STRIF(Caps, D3DCAPS_READ_SCANLINE);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 
 static void printCaps2(const char* pszPrefix, const char* pszSeparator, DWORD Caps2, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps2, D3DCAPS2_FULLSCREENGAMMA);
     DUMP_STRIF(Caps2, D3DCAPS2_CANCALIBRATEGAMMA);
     DUMP_STRIF(Caps2, D3DCAPS2_RESERVED);
@@ -133,49 +133,49 @@ static void printCaps2(const char* pszPrefix, const char* pszSeparator, DWORD Ca
     DUMP_STRIF(Caps2, D3DCAPS2_CANAUTOGENMIPMAP);
     DUMP_STRIF(Caps2, D3DCAPS2_CANSHARERESOURCE);
     DUMP_STRIF_MISSED(Caps2);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printCaps3(const char* pszPrefix, const char* pszSeparator, DWORD Caps3, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps3, D3DCAPS3_ALPHA_FULLSCREEN_FLIP_OR_DISCARD);
     DUMP_STRIF(Caps3, D3DCAPS3_LINEAR_TO_SRGB_PRESENTATION);
     DUMP_STRIF(Caps3, D3DCAPS3_COPY_TO_VIDMEM);
     DUMP_STRIF(Caps3, D3DCAPS3_COPY_TO_SYSTEMMEM);
 //    DUMP_STRIF(Caps3, D3DCAPS3_DXVAHD);
     DUMP_STRIF_MISSED(Caps3);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printPresentationIntervals(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPRESENT_INTERVAL_ONE);
     DUMP_STRIF(Caps, D3DPRESENT_INTERVAL_TWO);
     DUMP_STRIF(Caps, D3DPRESENT_INTERVAL_THREE);
     DUMP_STRIF(Caps, D3DPRESENT_INTERVAL_FOUR);
     DUMP_STRIF(Caps, D3DPRESENT_INTERVAL_IMMEDIATE);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printCursorCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DCURSORCAPS_COLOR);
     DUMP_STRIF(Caps, D3DCURSORCAPS_LOWRES);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printDevCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DDEVCAPS_EXECUTESYSTEMMEMORY);
     DUMP_STRIF(Caps, D3DDEVCAPS_EXECUTEVIDEOMEMORY);
     DUMP_STRIF(Caps, D3DDEVCAPS_TLVERTEXSYSTEMMEMORY);
@@ -197,13 +197,13 @@ static void printDevCaps(const char* pszPrefix, const char* pszSeparator, DWORD 
     DUMP_STRIF(Caps, D3DDEVCAPS_RTPATCHHANDLEZERO);
     DUMP_STRIF(Caps, D3DDEVCAPS_NPATCHES);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printPrimitiveMiscCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPMISCCAPS_MASKZ);
     DUMP_STRIF(Caps, D3DPMISCCAPS_CULLNONE);
     DUMP_STRIF(Caps, D3DPMISCCAPS_CULLCW);
@@ -223,13 +223,13 @@ static void printPrimitiveMiscCaps(const char* pszPrefix, const char* pszSeparat
     DUMP_STRIF(Caps, D3DPMISCCAPS_FOGVERTEXCLAMPED);
     DUMP_STRIF(Caps, D3DPMISCCAPS_POSTBLENDSRGBCONVERT);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printRasterCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPRASTERCAPS_DITHER);
     DUMP_STRIF(Caps, D3DPRASTERCAPS_ZTEST);
     DUMP_STRIF(Caps, D3DPRASTERCAPS_FOGVERTEX);
@@ -247,13 +247,13 @@ static void printRasterCaps(const char* pszPrefix, const char* pszSeparator, DWO
     DUMP_STRIF(Caps, D3DPRASTERCAPS_DEPTHBIAS);
     DUMP_STRIF(Caps, D3DPRASTERCAPS_MULTISAMPLE_TOGGLE);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printCmpCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPCMPCAPS_NEVER);
     DUMP_STRIF(Caps, D3DPCMPCAPS_LESS);
     DUMP_STRIF(Caps, D3DPCMPCAPS_EQUAL);
@@ -263,13 +263,13 @@ static void printCmpCaps(const char* pszPrefix, const char* pszSeparator, DWORD 
     DUMP_STRIF(Caps, D3DPCMPCAPS_GREATEREQUAL);
     DUMP_STRIF(Caps, D3DPCMPCAPS_ALWAYS);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printBlendCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPBLENDCAPS_ZERO);
     DUMP_STRIF(Caps, D3DPBLENDCAPS_ONE);
     DUMP_STRIF(Caps, D3DPBLENDCAPS_SRCCOLOR);
@@ -287,25 +287,25 @@ static void printBlendCaps(const char* pszPrefix, const char* pszSeparator, DWOR
     DUMP_STRIF(Caps, D3DPBLENDCAPS_SRCCOLOR2);
     DUMP_STRIF(Caps, D3DPBLENDCAPS_INVSRCCOLOR2);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printShadeCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPSHADECAPS_COLORGOURAUDRGB);
     DUMP_STRIF(Caps, D3DPSHADECAPS_SPECULARGOURAUDRGB);
     DUMP_STRIF(Caps, D3DPSHADECAPS_ALPHAGOURAUDBLEND);
     DUMP_STRIF(Caps, D3DPSHADECAPS_FOGGOURAUD);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printTextureCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPTEXTURECAPS_PERSPECTIVE);
     DUMP_STRIF(Caps, D3DPTEXTURECAPS_POW2);
     DUMP_STRIF(Caps, D3DPTEXTURECAPS_ALPHA);
@@ -323,13 +323,13 @@ static void printTextureCaps(const char* pszPrefix, const char* pszSeparator, DW
     DUMP_STRIF(Caps, D3DPTEXTURECAPS_VOLUMEMAP_POW2);
     DUMP_STRIF(Caps, D3DPTEXTURECAPS_NOPROJECTEDBUMPENV);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printFilterCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPTFILTERCAPS_MINFPOINT);
     DUMP_STRIF(Caps, D3DPTFILTERCAPS_MINFLINEAR);
     DUMP_STRIF(Caps, D3DPTFILTERCAPS_MINFANISOTROPIC);
@@ -344,13 +344,13 @@ static void printFilterCaps(const char* pszPrefix, const char* pszSeparator, DWO
     DUMP_STRIF(Caps, D3DPTFILTERCAPS_MAGFPYRAMIDALQUAD);
     DUMP_STRIF(Caps, D3DPTFILTERCAPS_MAGFGAUSSIANQUAD);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printTextureAddressCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DPTADDRESSCAPS_WRAP);
     DUMP_STRIF(Caps, D3DPTADDRESSCAPS_MIRROR);
     DUMP_STRIF(Caps, D3DPTADDRESSCAPS_CLAMP);
@@ -358,13 +358,13 @@ static void printTextureAddressCaps(const char* pszPrefix, const char* pszSepara
     DUMP_STRIF(Caps, D3DPTADDRESSCAPS_INDEPENDENTUV);
     DUMP_STRIF(Caps, D3DPTADDRESSCAPS_MIRRORONCE);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printLineCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DLINECAPS_TEXTURE);
     DUMP_STRIF(Caps, D3DLINECAPS_ZTEST);
     DUMP_STRIF(Caps, D3DLINECAPS_BLEND);
@@ -372,13 +372,13 @@ static void printLineCaps(const char* pszPrefix, const char* pszSeparator, DWORD
     DUMP_STRIF(Caps, D3DLINECAPS_FOG);
     DUMP_STRIF(Caps, D3DLINECAPS_ANTIALIAS);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printStencilCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DSTENCILCAPS_KEEP);
     DUMP_STRIF(Caps, D3DSTENCILCAPS_ZERO);
     DUMP_STRIF(Caps, D3DSTENCILCAPS_REPLACE);
@@ -389,24 +389,24 @@ static void printStencilCaps(const char* pszPrefix, const char* pszSeparator, DW
     DUMP_STRIF(Caps, D3DSTENCILCAPS_DECR);
     DUMP_STRIF(Caps, D3DSTENCILCAPS_TWOSIDED);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printFVFCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DFVFCAPS_TEXCOORDCOUNTMASK);
     DUMP_STRIF(Caps, D3DFVFCAPS_DONOTSTRIPELEMENTS);
     DUMP_STRIF(Caps, D3DFVFCAPS_PSIZE);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printTextureOpCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DTEXOPCAPS_DISABLE);
     DUMP_STRIF(Caps, D3DTEXOPCAPS_SELECTARG1);
     DUMP_STRIF(Caps, D3DTEXOPCAPS_SELECTARG2);
@@ -434,13 +434,13 @@ static void printTextureOpCaps(const char* pszPrefix, const char* pszSeparator, 
     DUMP_STRIF(Caps, D3DTEXOPCAPS_MULTIPLYADD);
     DUMP_STRIF(Caps, D3DTEXOPCAPS_LERP);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printVertexProcessingCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DVTXPCAPS_TEXGEN);
     DUMP_STRIF(Caps, D3DVTXPCAPS_MATERIALSOURCE7);
     DUMP_STRIF(Caps, D3DVTXPCAPS_DIRECTIONALLIGHTS);
@@ -450,13 +450,13 @@ static void printVertexProcessingCaps(const char* pszPrefix, const char* pszSepa
     DUMP_STRIF(Caps, D3DVTXPCAPS_TEXGEN_SPHEREMAP);
     DUMP_STRIF(Caps, D3DVTXPCAPS_NO_TEXGEN_NONLOCALVIEWER);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printDevCaps2(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DDEVCAPS2_STREAMOFFSET);
     DUMP_STRIF(Caps, D3DDEVCAPS2_DMAPNPATCH);
     DUMP_STRIF(Caps, D3DDEVCAPS2_ADAPTIVETESSRTPATCH);
@@ -465,13 +465,13 @@ static void printDevCaps2(const char* pszPrefix, const char* pszSeparator, DWORD
     DUMP_STRIF(Caps, D3DDEVCAPS2_PRESAMPLEDDMAPNPATCH);
     DUMP_STRIF(Caps, D3DDEVCAPS2_VERTEXELEMENTSCANSHARESTREAMOFFSET);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 static void printDeclTypes(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, D3DDTCAPS_UBYTE4);
     DUMP_STRIF(Caps, D3DDTCAPS_UBYTE4N);
     DUMP_STRIF(Caps, D3DDTCAPS_SHORT2N);
@@ -483,14 +483,14 @@ static void printDeclTypes(const char* pszPrefix, const char* pszSeparator, DWOR
     DUMP_STRIF(Caps, D3DDTCAPS_FLOAT16_2);
     DUMP_STRIF(Caps, D3DDTCAPS_FLOAT16_4);
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 
 #if 0
 static void printXxxCaps(const char* pszPrefix, const char* pszSeparator, DWORD Caps, const char* pszSuffix)
 {
     DUMP_STRIF_INIT(pszSeparator, DWORD);
-    Log(("%s", pszPrefix));
+    MyLog(("%s", pszPrefix));
     DUMP_STRIF(Caps, );
     DUMP_STRIF(Caps, );
     DUMP_STRIF(Caps, );
@@ -508,7 +508,7 @@ static void printXxxCaps(const char* pszPrefix, const char* pszSeparator, DWORD 
     DUMP_STRIF(Caps, );
     DUMP_STRIF(Caps, );
     DUMP_STRIF_MISSED(Caps);
-    Log(("%s", pszSuffix));
+    MyLog(("%s", pszSuffix));
 }
 #endif
 
@@ -516,11 +516,11 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
 {
     if (!memcmp(pCaps1, pCaps2, sizeof (D3DCAPS9)))
     {
-        Log(("caps are identical!\n"));
+        MyLog(("caps are identical!\n"));
         return;
     }
 
-    Log(("caps differ, doing detailed diff..\n"));
+    MyLog(("caps differ, doing detailed diff..\n"));
 
     if (pCaps1->DeviceType != pCaps2->DeviceType)
     {
@@ -551,12 +551,12 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
     DUMP_DIFF_CAPS(printLineCaps, LineCaps);
 
     /* non-caps */
-    DUMP_DIFF_VAL(MaxTextureWidth, "%d");
-    DUMP_DIFF_VAL(MaxTextureHeight, "%d");
-    DUMP_DIFF_VAL(MaxVolumeExtent, "%d");
-    DUMP_DIFF_VAL(MaxTextureRepeat, "%d");
-    DUMP_DIFF_VAL(MaxTextureAspectRatio, "%d");
-    DUMP_DIFF_VAL(MaxAnisotropy, "%d");
+    DUMP_DIFF_VAL(MaxTextureWidth, "%ld");
+    DUMP_DIFF_VAL(MaxTextureHeight, "%ld");
+    DUMP_DIFF_VAL(MaxVolumeExtent, "%ld");
+    DUMP_DIFF_VAL(MaxTextureRepeat, "%ld");
+    DUMP_DIFF_VAL(MaxTextureAspectRatio, "%ld");
+    DUMP_DIFF_VAL(MaxAnisotropy, "%ld");
     DUMP_DIFF_VAL(MaxVertexW, "%f");
     DUMP_DIFF_VAL(GuardBandLeft, "%f");
     DUMP_DIFF_VAL(GuardBandTop, "%f");
@@ -570,25 +570,25 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
     DUMP_DIFF_CAPS(printTextureOpCaps, TextureOpCaps);
 
     /* non-caps */
-    DUMP_DIFF_VAL(MaxTextureBlendStages, "%d");
-    DUMP_DIFF_VAL(MaxSimultaneousTextures, "%d");
+    DUMP_DIFF_VAL(MaxTextureBlendStages, "%ld");
+    DUMP_DIFF_VAL(MaxSimultaneousTextures, "%ld");
 
     /* caps */
     DUMP_DIFF_CAPS(printVertexProcessingCaps, VertexProcessingCaps);
 
     /* non-caps */
-    DUMP_DIFF_VAL(MaxActiveLights, "%d");
-    DUMP_DIFF_VAL(MaxUserClipPlanes, "%d");
-    DUMP_DIFF_VAL(MaxVertexBlendMatrices, "%d");
-    DUMP_DIFF_VAL(MaxVertexBlendMatrixIndex, "%d");
+    DUMP_DIFF_VAL(MaxActiveLights, "%ld");
+    DUMP_DIFF_VAL(MaxUserClipPlanes, "%ld");
+    DUMP_DIFF_VAL(MaxVertexBlendMatrices, "%ld");
+    DUMP_DIFF_VAL(MaxVertexBlendMatrixIndex, "%ld");
     DUMP_DIFF_VAL(MaxPointSize, "%f");
-    DUMP_DIFF_VAL(MaxPrimitiveCount, "%d");
-    DUMP_DIFF_VAL(MaxVertexIndex, "%d");
-    DUMP_DIFF_VAL(MaxStreams, "%d");
-    DUMP_DIFF_VAL(MaxStreamStride, "%d");
-    DUMP_DIFF_VAL(VertexShaderVersion, "0x%x");
-    DUMP_DIFF_VAL(MaxVertexShaderConst, "%d");
-    DUMP_DIFF_VAL(PixelShaderVersion, "0x%x");
+    DUMP_DIFF_VAL(MaxPrimitiveCount, "%ld");
+    DUMP_DIFF_VAL(MaxVertexIndex, "%ld");
+    DUMP_DIFF_VAL(MaxStreams, "%ld");
+    DUMP_DIFF_VAL(MaxStreamStride, "%ld");
+    DUMP_DIFF_VAL(VertexShaderVersion, "0x%lx");
+    DUMP_DIFF_VAL(MaxVertexShaderConst, "%ld");
+    DUMP_DIFF_VAL(PixelShaderVersion, "0x%lx");
     DUMP_DIFF_VAL(PixelShader1xMaxValue, "%f");
 
     /* D3D9 */
@@ -597,7 +597,7 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
 
     /* non-caps */
     DUMP_DIFF_VAL(MaxNpatchTessellationLevel, "%f");
-    DUMP_DIFF_VAL(Reserved5, "%d");
+    DUMP_DIFF_VAL(Reserved5, "%ld");
     DUMP_DIFF_VAL(MasterAdapterOrdinal, "%d");
     DUMP_DIFF_VAL(AdapterOrdinalInGroup, "%d");
     DUMP_DIFF_VAL(NumberOfAdaptersInGroup, "%d");
@@ -606,28 +606,28 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
     DUMP_DIFF_CAPS(printDeclTypes, DeclTypes);
 
     /* non-caps */
-    DUMP_DIFF_VAL(NumSimultaneousRTs, "%d");
+    DUMP_DIFF_VAL(NumSimultaneousRTs, "%ld");
 
     /* caps */
     DUMP_DIFF_CAPS(printFilterCaps, StretchRectFilterCaps);
 
     /* non-caps */
-    DUMP_DIFF_VAL(VS20Caps.Caps, "0x%x");
+    DUMP_DIFF_VAL(VS20Caps.Caps, "0x%lx");
     DUMP_DIFF_VAL(VS20Caps.DynamicFlowControlDepth, "%d");
     DUMP_DIFF_VAL(VS20Caps.NumTemps, "%d");
     DUMP_DIFF_VAL(VS20Caps.StaticFlowControlDepth, "%d");
 
-    DUMP_DIFF_VAL(PS20Caps.Caps, "0x%x");
+    DUMP_DIFF_VAL(PS20Caps.Caps, "0x%lx");
     DUMP_DIFF_VAL(PS20Caps.DynamicFlowControlDepth, "%d");
     DUMP_DIFF_VAL(PS20Caps.NumTemps, "%d");
     DUMP_DIFF_VAL(PS20Caps.StaticFlowControlDepth, "%d");
     DUMP_DIFF_VAL(PS20Caps.NumInstructionSlots, "%d");
 
     DUMP_DIFF_CAPS(printFilterCaps, VertexTextureFilterCaps);
-    DUMP_DIFF_VAL(MaxVShaderInstructionsExecuted, "%d");
-    DUMP_DIFF_VAL(MaxPShaderInstructionsExecuted, "%d");
-    DUMP_DIFF_VAL(MaxVertexShader30InstructionSlots, "%d");
-    DUMP_DIFF_VAL(MaxPixelShader30InstructionSlots, "%d");
+    DUMP_DIFF_VAL(MaxVShaderInstructionsExecuted, "%ld");
+    DUMP_DIFF_VAL(MaxPShaderInstructionsExecuted, "%ld");
+    DUMP_DIFF_VAL(MaxVertexShader30InstructionSlots, "%ld");
+    DUMP_DIFF_VAL(MaxPixelShader30InstructionSlots, "%ld");
 }
 
 static DWORD g_aCaps1[] = {
@@ -692,7 +692,7 @@ static const char * strNext(const char * pcszStr)
             return pcszStr;
     } while (1);
 
-    Log(("WARNING: should NOT be here!\n"));
+    MyLog(("WARNING: should NOT be here!\n"));
     return NULL;
 }
 
@@ -725,7 +725,7 @@ static char * strDupCur(const char * pcszStr, char sep)
     char * newStr = (char *)malloc(cStr+1);
     if (!newStr)
     {
-        Log(("malloc failed!\n"));
+        MyLog(("malloc failed!\n"));
         return NULL;
     }
     memcpy(newStr, pcszStr, cStr);
@@ -739,7 +739,7 @@ static char * strDupTotal(const char * pcszStr)
     char * newStr = (char *)malloc(cStr+1+1);
     if (!newStr)
     {
-        Log(("malloc failed!\n"));
+        MyLog(("malloc failed!\n"));
         return NULL;
     }
     memcpy(newStr, pcszStr, cStr);
@@ -754,7 +754,7 @@ static char * strDupSort(const char * pcszStr)
     char * pNewStr = (char *)malloc(cStr+1+1+1);
     if (!pNewStr)
     {
-        Log(("malloc failed!\n"));
+        MyLog(("malloc failed!\n"));
         return NULL;
     }
     char *pCurNew = pNewStr;
@@ -787,7 +787,7 @@ static char * strDupSort(const char * pcszStr)
                 {
                     if (pPrevCmp)
                     {
-                        int iCmp = strncmp(pCur, pPrevCmp, MIN(cCur, cPrevLength));
+                        iCmp = strncmp(pCur, pPrevCmp, MIN(cCur, cPrevLength));
                         if (!iCmp)
                             iCmp = cCur - cPrevLength;
                         if (iCmp > 0)
@@ -825,13 +825,13 @@ static char * strDupSort(const char * pcszStr)
 
 #define DUMP_DIFF_STR_ADDED(_pStr) do { \
         char * pszCopy = strDupCur(_pStr, ' '); \
-        Log(("+ %s\n", pszCopy)); \
+        MyLog(("+ %s\n", pszCopy)); \
         if (pszCopy) free(pszCopy); \
     } while (0)
 
 #define DUMP_DIFF_STR_REMOVED(_pStr) do { \
         char * pszCopy = strDupCur(_pStr, ' '); \
-        Log(("- %s\n", pszCopy)); \
+        MyLog(("- %s\n", pszCopy)); \
         if (pszCopy) free(pszCopy); \
     } while (0)
 
@@ -881,14 +881,14 @@ static void diffGlExts(const char * pcszExts1, const char * pcszExts2)
 
     if (!strcmp(pcszExts1, pcszExts2))
     {
-        Log(("GL Exts identical!\n"));
-        Log(("%s\n", pcszExts1));
+        MyLog(("GL Exts identical!\n"));
+        MyLog(("%s\n", pcszExts1));
         return;
     }
 
-    Log(("%s\n", pcszExts1));
+    MyLog(("%s\n", pcszExts1));
 
-    Log(("Diffing GL Exts..\n"));
+    MyLog(("Diffing GL Exts..\n"));
     diffStrOrderedLists(pcszExts1, pcszExts2);
 }
 
@@ -968,7 +968,7 @@ static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, 
             HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D);
             if (FAILED(hr))
             {
-                Log(("Direct3DCreate9Ex failed hr 0x%x\n", hr));
+                MyLog(("Direct3DCreate9Ex failed hr 0x%lx\n", hr));
                 return NULL;
             }
 
@@ -980,7 +980,7 @@ static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, 
 
             if (FAILED(hr))
             {
-                Log(("GetDeviceCaps failed hr 0x%x\n", hr));
+                MyLog(("GetDeviceCaps failed hr 0x%lx\n", hr));
                 return NULL;
             }
 
@@ -988,14 +988,14 @@ static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, 
         }
         case D3DCAPSSOURCE_TYPE_FILE:
         {
-            Log(("Loading caps from file not implemented yet!"));
+            MyLog(("Loading caps from file not implemented yet!"));
             return NULL;
         }
         case D3DCAPSSOURCE_TYPE_NONE:
             return NULL;
         default:
         {
-            Log(("Unsupported type %d", enmCapsType));
+            MyLog(("Unsupported type %d", enmCapsType));
         }
     }
 
@@ -1012,8 +1012,8 @@ static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
         dw2 = *pvData++;
         dw3 = *pvData++;
         dw4 = *pvData++;
-        sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x, 0x%08x,\n", dw1, dw2, dw3, dw4);
-        Log(("%s", aBuf));
+        sprintf(aBuf, "0x%08lx, 0x%08lx, 0x%08lx, 0x%08lx,\n", dw1, dw2, dw3, dw4);
+        MyLog(("%s", aBuf));
     }
 
     cData = cData % 4;
@@ -1023,19 +1023,19 @@ static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
             dw1 = *pvData++;
             dw2 = *pvData++;
             dw3 = *pvData++;
-            sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x\n", dw1, dw2, dw3);
-            Log(("%s", aBuf));
+            sprintf(aBuf, "0x%08lx, 0x%08lx, 0x%08lx\n", dw1, dw2, dw3);
+            MyLog(("%s", aBuf));
             break;
         case 2:
             dw1 = *pvData++;
             dw2 = *pvData++;
-            sprintf(aBuf, "0x%08x, 0x%08x\n", dw1, dw2);
-            Log(("%s", aBuf));
+            sprintf(aBuf, "0x%08lx, 0x%08lx\n", dw1, dw2);
+            MyLog(("%s", aBuf));
             break;
         case 1:
             dw1 = *pvData++;
-            sprintf(aBuf, "0x%8x\n", dw1);
-            Log(("%s", aBuf));
+            sprintf(aBuf, "0x%8lx\n", dw1);
+            MyLog(("%s", aBuf));
             break;
         default:
             break;
@@ -1048,13 +1048,13 @@ int main()
 
     if (sizeof (g_aCaps1) != sizeof (D3DCAPS9))
     {
-        Log(("incorrect caps 1 size (%d), expected(%d)\n", sizeof (g_aCaps1), sizeof (D3DCAPS9)));
+        MyLog(("incorrect caps 1 size (%zd), expected(%zd)\n", sizeof (g_aCaps1), sizeof (D3DCAPS9)));
         return 1;
     }
 
     if (sizeof (g_aCaps2) != sizeof (D3DCAPS9))
     {
-        Log(("incorrect caps 2 size (%d), expected(%d)\n", sizeof (g_aCaps2), sizeof (D3DCAPS9)));
+        MyLog(("incorrect caps 2 size (%zd), expected(%zd)\n", sizeof (g_aCaps2), sizeof (D3DCAPS9)));
         return 1;
     }
 
@@ -1066,7 +1066,7 @@ int main()
     pCaps1 = selectCaps(&Caps1, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps1);
     if (!pCaps1)
     {
-        Log(("Failed to select Caps1"));
+        MyLog(("Failed to select Caps1"));
         return 1;
     }
 
@@ -1075,7 +1075,7 @@ int main()
         pCaps2 = selectCaps(&Caps2, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps2);
         if (!pCaps2)
         {
-            Log(("Failed to select Caps2"));
+            MyLog(("Failed to select Caps2"));
             return 1;
         }
 

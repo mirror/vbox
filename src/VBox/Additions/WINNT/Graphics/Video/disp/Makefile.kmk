@@ -241,9 +241,14 @@ include $(PATH_SUB_CURRENT)/wddm/shared/Makefile.kmk
 
 endif #ifdef VBOX_WITH_WDDM
 
-ifdef VBOXVIDEOWINDBG
+
+ifdef VBOX_WITH_VBOXVIDEOWINDBG
+#
+# A windbg extension and a few test programs.
+#
+
 DLLS += vbvdbg
-vbvdbg_TEMPLATE = VBOXR3STATIC
+vbvdbg_TEMPLATE = VBoxR3StaticDll
 vbvdbg_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 vbvdbg_DEFS     = UNICODE _UNICODE
 vbvdbg_SOURCES  = \
@@ -251,30 +256,27 @@ vbvdbg_SOURCES  = \
 	wddm/dbg/VBoxVideoWinDbg.def
 
 PROGRAMS += tstMvWnd
-tstMvWnd_TEMPLATE = VBoxR3Exe
+tstMvWnd_TEMPLATE = VBoxR3Static
 tstMvWnd_DEFS     = UNICODE _UNICODE
-tstMvWnd_SOURCES  = \
-	wddm/dbg/tstMvWnd.cpp
-tstMvWnd_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3)
-tstMvWnd_LDFLAGS.win = /SUBSYSTEM:windows
+tstMvWnd_SOURCES  = wddm/dbg/tstMvWnd.cpp
+#tstMvWnd_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3) - Use guest template if this is wanted! duh!
+#tstMvWnd_LDFLAGS  = /SUBSYSTEM:windows
 
 PROGRAMS += DumpD3DCaps9
 DumpD3DCaps9_TEMPLATE = VBoxR3Exe
 DumpD3DCaps9_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 DumpD3DCaps9_DEFS     = UNICODE _UNICODE
-DumpD3DCaps9_SOURCES  = \
-	wddm/dbg/DumpD3DCaps9.cpp
+DumpD3DCaps9_SOURCES  = wddm/dbg/DumpD3DCaps9.cpp
 DumpD3DCaps9_LIBS     = d3d9.lib
-DumpD3DCaps9_LDFLAGS.win = /SUBSYSTEM:CONSOLE
 
 PROGRAMS += D3DFeatureLevel
-D3DFeatureLevel_TEMPLATE = VBOXR3STATIC
+D3DFeatureLevel_TEMPLATE = VBoxR3Static
 D3DFeatureLevel_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-D3DFeatureLevel_SOURCES  = \
-	wddm/dbg/D3DFeatureLevel.cpp
-D3DFeatureLevel_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3) d3d11.lib
-D3DFeatureLevel_LDFLAGS.win = /SUBSYSTEM:CONSOLE
+D3DFeatureLevel_SOURCES  = wddm/dbg/D3DFeatureLevel.cpp
+D3DFeatureLevel_LIBS     = d3d11.lib
+#D3DFeatureLevel_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3) d3d11.lib - Use guest template if this is wanted! duh!
+#D3DFeatureLevel_LDFLAGS.win = /SUBSYSTEM:CONSOLE
 
-endif #VBOXVIDEOWINDBG
+endif # VBOX_WITH_VBOXVIDEOWINDBG
 
 include $(FILE_KBUILD_SUB_FOOTER)
