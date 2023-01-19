@@ -546,7 +546,6 @@ static uint32_t pdmR3UsbSpd2Ver(VUSBSPEED enmSpeed)
 static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int iInstance, PCRTUUID pUuid,
                                 PCFGMNODE *ppInstanceNode, VUSBSPEED enmSpeed, const char *pszCaptureFilename)
 {
-    const bool fAtRuntime = iInstance == -1;
     int rc;
 
     AssertPtrReturn(ppInstanceNode, VERR_INVALID_POINTER);
@@ -567,7 +566,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     /* The instance node and number. */
     PCFGMNODE pInstanceToDelete = NULL;
     PCFGMNODE pInstanceNode = NULL;
-    if (fAtRuntime)
+    if (iInstance == -1)
     {
         /** @todo r=bird: This code is bogus as it ASSUMES that all USB devices are
          *        capable of infinite number of instances. */
@@ -645,10 +644,8 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     pUsbIns->Internal.s.Uuid                = *pUuid;
     //pUsbIns->Internal.s.pHub                = NULL;
     pUsbIns->Internal.s.iPort               = UINT32_MAX; /* to be determined. */
-    /* Set the flag accordingly.
-     * Otherwise VMPowerOff, VMSuspend will not be called for devices attached at runtime.
-     */
-    pUsbIns->Internal.s.fVMSuspended        = !fAtRuntime;
+    VMSTATE const enmVMState = VMR3GetState(pVM);
+    pUsbIns->Internal.s.fVMSuspended        = !VMSTATE_IS_POWERED_ON(enmVMState);
     //pUsbIns->Internal.s.pfnAsyncNotify      = NULL;
     pUsbIns->pHlpR3                         = &g_pdmR3UsbHlp;
     pUsbIns->pReg                           = pUsbDev->pReg;
@@ -711,7 +708,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
             pUsbIns->Internal.s.pHub = pHub;
 
             /* Send the hot-plugged notification if applicable. */
-            if (fAtRuntime && pUsbIns->pReg->pfnHotPlugged)
+            if (VMSTATE_IS_POWERED_ON(enmVMState) && pUsbIns->pReg->pfnHotPlugged)
                 pUsbIns->pReg->pfnHotPlugged(pUsbIns);
 
             Log(("PDM: Successfully attached USB device '%s' instance %d to hub %p\n",
@@ -728,7 +725,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
         if (rc == VERR_VERSION_MISMATCH)
             rc = VERR_PDM_USBDEV_VERSION_MISMATCH;
     }
-    if (fAtRuntime)
+    if (VMSTATE_IS_POWERED_ON(enmVMState))
         pdmR3UsbDestroyDevice(pVM, pUsbIns);
     /* else: destructors are invoked later. */
     return rc;

@@ -366,7 +366,9 @@ typedef struct PDMUSBINSINT
     /** The port number that we're connected to. */
     uint32_t                        iPort;
     /** Indicates that the USB device hasn't been powered on or resumed.
-     * See PDMDEVINSINT_FLAGS_SUSPENDED. */
+     * See PDMDEVINSINT_FLAGS_SUSPENDED.
+     * @note Runtime attached USB devices gets a pfnHotPlugged callback rather than
+     *       a pfnVMResume one. */
     bool                            fVMSuspended;
     /** Indicates that the USB device has been reset. */
     bool                            fVMReset;
