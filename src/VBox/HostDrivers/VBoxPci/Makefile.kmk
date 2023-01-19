@@ -43,7 +43,7 @@ if1of ($(KBUILD_TARGET), linux)
   # The driver.
   #
   SYSMODS += VBoxPci
-  VBoxPci_TEMPLATE       = VBOXR0DRV
+  VBoxPci_TEMPLATE       = VBoxR0Drv
   VBoxPci_INST           = $(INST_VBOXPCI)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
   VBoxPci_NAME.linux     = vboxpci
   VBoxPci_DEFS           = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC

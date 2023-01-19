@@ -5530,68 +5530,68 @@ endif
 #
 #     -wd4100: 'identifier' : unreferenced formal parameter [level 4] --- TODO: Enable this one!
 #
-TEMPLATE_VBOXR0DRV                     = VBox SUPDRV Ring 0
-TEMPLATE_VBOXR0DRV_ASTOOL             := $(VBOX_ASTOOL)
-TEMPLATE_VBOXR0DRV_ASFLAGS             = $(VBOX_ASFLAGS)
-TEMPLATE_VBOXR0DRV_DEFS                = IN_RING0 IN_RT_R0 $(ARCH_BITS_DEFS)
-TEMPLATE_VBOXR0DRV_USES               += dtrace
+TEMPLATE_VBoxR0Drv                     = VBox SUPDRV Ring 0
+TEMPLATE_VBoxR0Drv_ASTOOL             := $(VBOX_ASTOOL)
+TEMPLATE_VBoxR0Drv_ASFLAGS             = $(VBOX_ASFLAGS)
+TEMPLATE_VBoxR0Drv_DEFS                = IN_RING0 IN_RT_R0 $(ARCH_BITS_DEFS)
+TEMPLATE_VBoxR0Drv_USES               += dtrace
 ifdef VBOX_WITH_DTRACE_R0DRV
- TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG
- TEMPLATE_VBOXR0DRV_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
+ TEMPLATE_VBoxR0Drv_DTRACETOOL         = VBoxTpG
+ TEMPLATE_VBoxR0Drv_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
  ifdef VBOX_WITH_NATIVE_DTRACE
-  TEMPLATE_VBOXR0DRV_DEFS             += VBOX_WITH_NATIVE_DTRACE
+  TEMPLATE_VBoxR0Drv_DEFS             += VBOX_WITH_NATIVE_DTRACE
  endif
 else
- TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG-Disabled
+ TEMPLATE_VBoxR0Drv_DTRACETOOL         = VBoxTpG-Disabled
 endif
 
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXR0DRV_TOOL               = $(VBOX_VCC_TOOL)
+ TEMPLATE_VBoxR0Drv_TOOL               = $(VBOX_VCC_TOOL)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # for stddef.h ## @todo 8489: check if still needed
-  TEMPLATE_VBOXR0DRV_SDKS              = WINSDK10-UCRT-INCS
+  TEMPLATE_VBoxR0Drv_SDKS              = WINSDK10-UCRT-INCS
  endif
- TEMPLATE_VBOXR0DRV_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
- TEMPLATE_VBOXR0DRV_DEFS              += _KERNEL_MODE=1            # Needed with W10 to access things like KeQueryInterruptTime
- TEMPLATE_VBOXR0DRV_DEFS.x86           = _X86_
- TEMPLATE_VBOXR0DRV_DEFS.x86          += NO_INTERLOCKED_INTRINSICS # Avoids intrisic VC/WDK trouble
- TEMPLATE_VBOXR0DRV_DEFS.x86          += WIN9X_COMPAT_SPINLOCK     # Avoid multiply defined _KeInitializeSpinLock@4
- TEMPLATE_VBOXR0DRV_DEFS.amd64         = _AMD64_
- TEMPLATE_VBOXR0DRV_DEFS.amd64        += WIN9X_COMPAT_SPINLOCK     # For Windows 8+ WDKs where it is no longer inlined but imported from ntoskrnl.
- TEMPLATE_VBOXR0DRV_DEFS.amd64        += NT_INLINE_IRQL NT_INLINE_GET_CURRENT_IRQL # Prevent W10 WDK from importing KeLowerIrql and KeGetCurrentIrql.
- TEMPLATE_VBOXR0DRV_DEFS.win           = IPRT_NT_MAP_TO_ZW
- TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
+ TEMPLATE_VBoxR0Drv_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
+ TEMPLATE_VBoxR0Drv_DEFS              += _KERNEL_MODE=1            # Needed with W10 to access things like KeQueryInterruptTime
+ TEMPLATE_VBoxR0Drv_DEFS.x86           = _X86_
+ TEMPLATE_VBoxR0Drv_DEFS.x86          += NO_INTERLOCKED_INTRINSICS # Avoids intrisic VC/WDK trouble
+ TEMPLATE_VBoxR0Drv_DEFS.x86          += WIN9X_COMPAT_SPINLOCK     # Avoid multiply defined _KeInitializeSpinLock@4
+ TEMPLATE_VBoxR0Drv_DEFS.amd64         = _AMD64_
+ TEMPLATE_VBoxR0Drv_DEFS.amd64        += WIN9X_COMPAT_SPINLOCK     # For Windows 8+ WDKs where it is no longer inlined but imported from ntoskrnl.
+ TEMPLATE_VBoxR0Drv_DEFS.amd64        += NT_INLINE_IRQL NT_INLINE_GET_CURRENT_IRQL # Prevent W10 WDK from importing KeLowerIrql and KeGetCurrentIrql.
+ TEMPLATE_VBoxR0Drv_DEFS.win           = IPRT_NT_MAP_TO_ZW
+ TEMPLATE_VBoxR0Drv_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
 	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
-  TEMPLATE_VBOXR0DRV_CXXFLAGS         += -Gw
+  TEMPLATE_VBoxR0Drv_CXXFLAGS         += -Gw
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
-  TEMPLATE_VBOXR0DRV_CXXFLAGS         += /volatileMetadata-
+  TEMPLATE_VBoxR0Drv_CXXFLAGS         += /volatileMetadata-
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
-  TEMPLATE_VBOXR0DRV_CXXFLAGS         += /analyze
+  TEMPLATE_VBoxR0Drv_CXXFLAGS         += /analyze
  endif
- TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
- TEMPLATE_VBOXR0DRV_LDFLAGS            = -Ignore:4197 \
+ TEMPLATE_VBoxR0Drv_CFLAGS             = $(TEMPLATE_VBoxR0Drv_CXXFLAGS)
+ TEMPLATE_VBoxR0Drv_LDFLAGS            = -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
  	$(VBOX_VCC_LD_GUARD_CF) \
 	-Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-Stub:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
  ifdef VBOX_WITH_DTRACE_R0DRV
-  TEMPLATE_VBOXR0DRV_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
+  TEMPLATE_VBoxR0Drv_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
  ifdef VBOX_SIGNING_MODE
-  TEMPLATE_VBOXR0DRV_LDFLAGS          += -IntegrityCheck
+  TEMPLATE_VBoxR0Drv_LDFLAGS          += -IntegrityCheck
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
-  TEMPLATE_VBOXR0DRV_LDFLAGS          += -EmitVolatileMetadata:NO
+  TEMPLATE_VBoxR0Drv_LDFLAGS          += -EmitVolatileMetadata:NO
  endif
- TEMPLATE_VBOXR0DRV_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
- TEMPLATE_VBOXR0DRV_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
- TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
+ TEMPLATE_VBoxR0Drv_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
+ TEMPLATE_VBoxR0Drv_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
+ TEMPLATE_VBoxR0Drv_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif
 
 ifeq ($(KBUILD_TARGET),linux)
- TEMPLATE_VBOXR0DRV_TOOL                = $(NO_SUCH_VARIABLE)
+ TEMPLATE_VBoxR0Drv_TOOL                = $(NO_SUCH_VARIABLE)
 
  ifndef KERN_DIR
   ifndef KERN_VER
@@ -5678,29 +5678,29 @@ endif # linux target
 
 ifeq ($(KBUILD_TARGET),os2)
  ifndef VBOX_USE_WATCOM_FOR_OS2
-TEMPLATE_VBOXR0DRV_TOOL                = GXX3OMF
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions -fno-rtti
-TEMPLATE_VBOXR0DRV_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions
-TEMPLATE_VBOXR0DRV_LIBS                = $(VBOX_GCC_LIBGCC)
+TEMPLATE_VBoxR0Drv_TOOL                = GXX3OMF
+TEMPLATE_VBoxR0Drv_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions -fno-rtti
+TEMPLATE_VBoxR0Drv_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions
+TEMPLATE_VBoxR0Drv_LIBS                = $(VBOX_GCC_LIBGCC)
 # wlink thinks physdevice doesn't need fixups and should have a stack - stupid!
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -Zlinker Option -Zlinker internalrelocs, -Zlinker togglerelocs
+TEMPLATE_VBoxR0Drv_LDFLAGS             = -Zlinker Option -Zlinker internalrelocs, -Zlinker togglerelocs
   else
-TEMPLATE_VBOXR0DRV_TOOL     = OPENWATCOM
-TEMPLATE_VBOXR0DRV_CTOOL    = OPENWATCOM
-TEMPLATE_VBOXR0DRV_CXXTOOL  = OPENWATCOM
-TEMPLATE_VBOXR0DRV_LDTOOL   = OPENWATCOM-WL
-TEMPLATE_VBOXR0DRV_ARTOOL   = OPENWATCOM
-TEMPLATE_VBOXR0DRV_ASTOOL   = NASM
-TEMPLATE_VBOXR0DRV_ASFLAGS  = -fobj -DASM_FORMAT_OMF -D__NASM__ -w+orphan-labels #-g -F borland
-TEMPLATE_VBOXR0DRV_DEFS.os2 = #_OS2EMX_H
-TEMPLATE_VBOXR0DRV_INCS     = \
+TEMPLATE_VBoxR0Drv_TOOL     = OPENWATCOM
+TEMPLATE_VBoxR0Drv_CTOOL    = OPENWATCOM
+TEMPLATE_VBoxR0Drv_CXXTOOL  = OPENWATCOM
+TEMPLATE_VBoxR0Drv_LDTOOL   = OPENWATCOM-WL
+TEMPLATE_VBoxR0Drv_ARTOOL   = OPENWATCOM
+TEMPLATE_VBoxR0Drv_ASTOOL   = NASM
+TEMPLATE_VBoxR0Drv_ASFLAGS  = -fobj -DASM_FORMAT_OMF -D__NASM__ -w+orphan-labels #-g -F borland
+TEMPLATE_VBoxR0Drv_DEFS.os2 = #_OS2EMX_H
+TEMPLATE_VBoxR0Drv_INCS     = \
 	$(PATH_TOOL_OPENWATCOM)/h \
 	$(PATH_TOOL_OPENWATCOM)/h/os2 \
 	$(PATH_ROOT)/include \
 	$(PATH_KLIBC_TRUNK)/libc/include # for os2ddk
-TEMPLATE_VBOXR0DRV_CFLAGS   = -s -ze -w4 -hd -d1+ -nt=TEXT32 -nc=CODE -4 -of+
-TEMPLATE_VBOXR0DRV_CXXFLAGS = -s -ze -w4 -hd -d2t -nt=TEXT32 -nc=CODE -4 -of+
-TEMPLATE_VBOXR0DRV_LDFLAGS  = \
+TEMPLATE_VBoxR0Drv_CFLAGS   = -s -ze -w4 -hd -d1+ -nt=TEXT32 -nc=CODE -4 -of+
+TEMPLATE_VBoxR0Drv_CXXFLAGS = -s -ze -w4 -hd -d2t -nt=TEXT32 -nc=CODE -4 -of+
+TEMPLATE_VBoxR0Drv_LDFLAGS  = \
 	form os2 lx physdevice \
 	option NODefaultlibs, internalrelocs, togglerelocs \
 	debug dwarf all #option symfile
@@ -5709,43 +5709,43 @@ TEMPLATE_VBOXR0DRV_LDFLAGS  = \
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
-TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
-TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
+TEMPLATE_VBoxR0Drv_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0Drv_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
+TEMPLATE_VBoxR0Drv_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
  if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
-TEMPLATE_VBOXR0DRV_INCS               += \
+TEMPLATE_VBoxR0Drv_INCS               += \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 ## @todo try use VBOX_GCC_PEDANTIC_CXX
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
+TEMPLATE_VBoxR0Drv_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
 	-fno-common -nostdinc -fno-builtin -finline $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
 	-fno-keep-inline-functions -fno-exceptions -msoft-float \
 	-fapple-kext -fno-rtti -fcheck-new -force_cpusubtype_ALL \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mkernel -mno-red-zone -gdwarf-2
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -static
-TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
+TEMPLATE_VBoxR0Drv_CXXFLAGS.amd64      = -m64 -mkernel -mno-red-zone -gdwarf-2
+TEMPLATE_VBoxR0Drv_CXXFLAGS.x86        = -m32 -static
+TEMPLATE_VBoxR0Drv_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
 	-fno-keep-inline-functions -fno-exceptions $(VBOX_GCC_fvisibility-hidden) -msoft-float \
 	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations \
 	-Werror-implicit-function-declaration -force_cpusubtype_ALL \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
-TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
+TEMPLATE_VBoxR0Drv_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -m32 -static
+TEMPLATE_VBoxR0Drv_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
 	-nostdlib -Wl,-kext,-new_linker -Wl,-Y,1455 -keep_private_extern
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
-TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
+TEMPLATE_VBoxR0Drv_LDFLAGS.amd64       = -m64
+TEMPLATE_VBoxR0Drv_LDFLAGS.x86         = -m32
+TEMPLATE_VBoxR0Drv_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
  else
   # Note xcode uses -fstrict-aliasing, we currently don't dare... We also add -mno-red-zone.
-TEMPLATE_VBOXR0DRV_INCS               += \
+TEMPLATE_VBoxR0Drv_INCS               += \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 ## @todo try use VBOX_GCC_PEDANTIC_CXX
 # -Wno-c++11-extensions -Wno-c99-extensions -Wno-extra-semi -Wno-zero-length-array
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkernel \
+TEMPLATE_VBoxR0Drv_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkernel \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
 	-Wno-c++11-extensions -Wno-c99-extensions -Wno-extra-semi -Wno-zero-length-array \
 	-Wno-gnu-zero-variadic-macro-arguments -Wno-four-char-constants \
@@ -5757,7 +5757,7 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkerne
        $(VBOX_GCC_Wno-import-preprocessor-directive-pedantic) $(VBOX_GCC_Wno-c11-extensions) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing -stdlib=libc++
 #  if1of ($(VBOX_GCC_TOOL), CLANGXXMACHO) ## @todo check if we can safely use $(VBOX_GCC_std) @bugref{9790}, good for noexcept.
-#TEMPLATE_VBOXR0DRV_CXXFLAGS           += $(VBOX_GCC_std)
+#TEMPLATE_VBoxR0Drv_CXXFLAGS           += $(VBOX_GCC_std)
 #  endif
 # also used by xcode 6.2: \
 # -Werror=return-type \
@@ -5769,29 +5769,29 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkerne
 # -Wconditional-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants \
 # -Wno-conversion -Wconstant-conversion -Wint-conversion -Wbool-conversion -Wenum-conversion \
 # -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -msoft-float -mno-red-zone
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -msoft-float
-TEMPLATE_VBOXR0DRV_CXXFLAGS.arm64      = -m64 -fno-sanitize=vptr -target arm64e-apple-macos11.0
-TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -mkernel \
+TEMPLATE_VBoxR0Drv_CXXFLAGS.amd64      = -m64 -msoft-float -mno-red-zone
+TEMPLATE_VBoxR0Drv_CXXFLAGS.x86        = -m32 -msoft-float
+TEMPLATE_VBoxR0Drv_CXXFLAGS.arm64      = -m64 -fno-sanitize=vptr -target arm64e-apple-macos11.0
+TEMPLATE_VBoxR0Drv_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -mkernel \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
 	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
 	-fno-exceptions -fapple-kext -fno-rtti  \
 	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
 	-Werror=non-modular-include-in-framework-module $(VBOX_GCC_Wno-c11-extensions) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -msoft-float -mno-red-zone
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -msoft-float
-TEMPLATE_VBOXR0DRV_CFLAGS.arm64        = -m64 -fno-sanitize=vptr -target arm64e-apple-macos11.0
+TEMPLATE_VBoxR0Drv_CFLAGS.amd64        = -m64 -msoft-float -mno-red-zone
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -m32 -msoft-float
+TEMPLATE_VBoxR0Drv_CFLAGS.arm64        = -m64 -fno-sanitize=vptr -target arm64e-apple-macos11.0
   if 1
-   TEMPLATE_VBOXR0DRV_CFLAGS          += $(VBOX_GCC_WERR)
-   TEMPLATE_VBOXR0DRV_CXXFLAGS        += $(VBOX_GCC_WERR)
+   TEMPLATE_VBoxR0Drv_CFLAGS          += $(VBOX_GCC_WERR)
+   TEMPLATE_VBoxR0Drv_CXXFLAGS        += $(VBOX_GCC_WERR)
   endif
-TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
+TEMPLATE_VBoxR0Drv_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
 	-nostdlib -stdlib=libc++ -Wl,-kext -Wl,-keep_private_externs
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
-TEMPLATE_VBOXR0DRV_LDFLAGS.arm64       = -m64
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
-TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext
+TEMPLATE_VBoxR0Drv_LDFLAGS.amd64       = -m64
+TEMPLATE_VBoxR0Drv_LDFLAGS.arm64       = -m64
+TEMPLATE_VBoxR0Drv_LDFLAGS.x86         = -m32
+TEMPLATE_VBoxR0Drv_LIBS                = kmodc++ kmod cc_kext
  endif
 endif
 
@@ -5799,30 +5799,30 @@ ifeq ($(KBUILD_TARGET),solaris)
 ## The Solaris /usr/platform/i86pc/include and /usr/include directories.
 VBOX_SOLARIS_SYS_INCS ?= /usr/platform/i86pc/include /usr/include
 
-TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_DEFS               += _MACHDEP _KERNEL _STRICT_STDC
+TEMPLATE_VBoxR0Drv_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0Drv_DEFS               += _MACHDEP _KERNEL _STRICT_STDC
  if $(VBOX_GCC_VERSION_CC) < 30400
-TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+TEMPLATE_VBoxR0Drv_DEFS               += RT_WITHOUT_PRAGMA_ONCE
  endif
-TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_SOLARIS_SYS_INCS)
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -r -dy
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = $(if $(eq $(KBUILD_HOST),solaris),-64,-m elf_x86_64)
+TEMPLATE_VBoxR0Drv_INCS                = $(VBOX_SOLARIS_SYS_INCS)
+TEMPLATE_VBoxR0Drv_LDFLAGS             = -r -dy
+TEMPLATE_VBoxR0Drv_LDFLAGS.amd64       = $(if $(eq $(KBUILD_HOST),solaris),-64,-m elf_x86_64)
 # Exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress.
-TEMPLATE_VBOXR0DRV_CFLAGS              = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
+TEMPLATE_VBoxR0Drv_CFLAGS              = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_fdiagnostics-show-option) \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
 	-Wformat  -Wimplicit-int -Wimplicit-function-declaration -Werror-implicit-function-declaration -Wparentheses \
 	-O2 -fno-omit-frame-pointer -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_msave-args) \
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBoxR0Drv_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_msave-args) \
 	-mno-red-zone -mcmodel=kernel $(if-expr defined(VBOX_GCC_USING_SOLARIS_AS),-Wa$(COMMA)-xmodel=kernel,) \
 	-fno-reorder-blocks -fno-asynchronous-unwind-tables -funit-at-a-time
-TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith \
+TEMPLATE_VBoxR0Drv_CXXFLAGS           = -Wpointer-arith \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable -Wformat \
 	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
-TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
+TEMPLATE_VBoxR0Drv_CXXFLAGS.x86       = $(TEMPLATE_VBoxR0Drv_CFLAGS.x86)
+TEMPLATE_VBoxR0Drv_CXXFLAGS.amd64     = $(TEMPLATE_VBoxR0Drv_CFLAGS.amd64)
+TEMPLATE_VBoxR0Drv_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif # Solaris
 
 ifeq ($(KBUILD_TARGET),freebsd)
@@ -5856,40 +5856,40 @@ VBOX_FREEBSD_SRC ?= /usr/src/sys
 ## The FreeBSD /usr/include.
 VBOX_FREEBSD_SYS_INCS ?= /usr/include
 
-TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_LDTOOL              = FREEBSDKMODLD
-TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL KLD_MODULE
+TEMPLATE_VBoxR0Drv_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0Drv_LDTOOL              = FREEBSDKMODLD
+TEMPLATE_VBoxR0Drv_DEFS               += _KERNEL KLD_MODULE
  if $(VBOX_GCC_VERSION_CC) < 30400
-TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+TEMPLATE_VBoxR0Drv_DEFS               += RT_WITHOUT_PRAGMA_ONCE
  endif
-TEMPLATE_VBOXR0DRV_INCS                = \
+TEMPLATE_VBoxR0Drv_INCS                = \
 	$(VBOX_FREEBSD_SRC) \
 	$(VBOX_FREEBSD_SRC)/contrib/altq \
 	$(VBOX_FREEBSD_SRC)/contrib/ck/include \
 	$(VBOX_FREEBSD_SRC)/../include \
 	$(VBOX_FREEBSD_SYS_INCS)
 # omitting: -Wcast-qual, -Wredundant-decls
-TEMPLATE_VBOXR0DRV_CFLAGS              =  \
+TEMPLATE_VBoxR0Drv_CFLAGS              =  \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) $(VBOX_GCC_fdiagnostics-show-option) \
 	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes \
 	-Wimplicit-function-declaration -Werror-implicit-function-declaration \
 	-O2 -ffreestanding -fno-strict-aliasing -fno-common \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -std=c99
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-align-long-strings -mno-mmx -mno-3dnow -mno-sse -mno-sse2
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -fno-omit-frame-pointer -mcmodel=kernel -mno-red-zone -mfpmath=387 \
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -m32 -mno-align-long-strings -mno-mmx -mno-3dnow -mno-sse -mno-sse2
+TEMPLATE_VBoxR0Drv_CFLAGS.amd64        = -m64 -fno-omit-frame-pointer -mcmodel=kernel -mno-red-zone -mfpmath=387 \
 	-mno-sse -mno-sse2 -mno-mmx -mno-3dnow -msoft-float -fno-asynchronous-unwind-tables -Wundef
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
+TEMPLATE_VBoxR0Drv_CXXFLAGS            = -fno-exceptions -fno-rtti \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline \
 	-O2 -fno-strict-aliasing -fno-common \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
-TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -d --warn-common
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386_fbsd
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64_fbsd
+TEMPLATE_VBoxR0Drv_CXXFLAGS.x86        = $(TEMPLATE_VBoxR0Drv_CFLAGS.x86)
+TEMPLATE_VBoxR0Drv_CXXFLAGS.amd64      = $(TEMPLATE_VBoxR0Drv_CFLAGS.amd64)
+TEMPLATE_VBoxR0Drv_SYSSUFF             = .ko
+TEMPLATE_VBoxR0Drv_LDFLAGS             = -d --warn-common
+TEMPLATE_VBoxR0Drv_LDFLAGS.x86         = -m elf_i386_fbsd
+TEMPLATE_VBoxR0Drv_LDFLAGS.amd64       = -m elf_x86_64_fbsd
 
 TOOL_FREEBSDKMODLD = FreeBSD kernel module linker.
 # See kBuild/tools/GCC3.kmk for docs.
@@ -5942,17 +5942,17 @@ endif
 
 VBOX_NETBSD_TARGET_SRC=$(VBOX_NETBSD_SRC)/sys/arch/$(VBOX_NETBSD_TARGET_ARCH)
 
-TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL _MODULE
+TEMPLATE_VBoxR0Drv_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0Drv_DEFS               += _KERNEL _MODULE
  if $(VBOX_GCC_VERSION_CC) < 30400
-TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+TEMPLATE_VBoxR0Drv_DEFS               += RT_WITHOUT_PRAGMA_ONCE
  endif
-TEMPLATE_VBOXR0DRV_INCS                = \
+TEMPLATE_VBoxR0Drv_INCS                = \
 	$(VBOX_NETBSD_SRC)/sys \
 	$(VBOX_NETBSD_SRC)/common/include \
 	$(PATH_OBJ)/netbsd/include
 
-TEMPLATE_VBOXR0DRV_CFLAGS              =  \
+TEMPLATE_VBoxR0Drv_CFLAGS              =  \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	$(VBOX_GCC_fdiagnostics-show-option) \
 	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes \
@@ -5960,26 +5960,26 @@ TEMPLATE_VBOXR0DRV_CFLAGS              =  \
 	-O2 -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -std=c99 -msoft-float
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-mmx -mno-sse -mno-avx \
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -m32 -mno-mmx -mno-sse -mno-avx \
     -mno-fp-ret-in-387
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 \
+TEMPLATE_VBoxR0Drv_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 \
     --param large-function-growth=1000 -fno-omit-frame-pointer \
     -mcmodel=kernel -mno-red-zone -mno-sse -mno-mmx -mno-avx \
 	-fno-asynchronous-unwind-tables -mno-fp-ret-in-387
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
+TEMPLATE_VBoxR0Drv_CXXFLAGS            = -fno-exceptions -fno-rtti \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline \
 	-O2 -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -msoft-float
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
-TEMPLATE_VBOXR0DRV_SYSSUFF             = .kmod
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -d --warn-common
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64
+TEMPLATE_VBoxR0Drv_CXXFLAGS.x86        = $(TEMPLATE_VBoxR0Drv_CFLAGS.x86)
+TEMPLATE_VBoxR0Drv_CXXFLAGS.amd64      = $(TEMPLATE_VBoxR0Drv_CFLAGS.amd64)
+TEMPLATE_VBoxR0Drv_SYSSUFF             = .kmod
+TEMPLATE_VBoxR0Drv_LDFLAGS             = -d --warn-common
+TEMPLATE_VBoxR0Drv_LDFLAGS.x86         = -m elf_i386
+TEMPLATE_VBoxR0Drv_LDFLAGS.amd64       = -m elf_x86_64
 
 # symlink kernel includes
-TEMPLATE_VBOXR0DRV_ORDERDEPS += \
+TEMPLATE_VBoxR0Drv_ORDERDEPS += \
 	$(PATH_OBJ)/netbsd/include/$(VBOX_NETBSD_TARGET_ARCH) \
 	$(PATH_OBJ)/netbsd/include/x86 \
 	$(PATH_OBJ)/netbsd/include/machine
@@ -6002,33 +6002,33 @@ ifeq ($(KBUILD_TARGET),haiku)
 ## The Haiku include directories
 VBOX_HAIKU_SYS_INCS ?= /boot/develop/headers/os/kernel /boot/develop/headers/os/drivers
 
-TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_LDTOOL              = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL_MODE=1 _STRICT_STDC IN_RING0 IN_RT_R0
+TEMPLATE_VBoxR0Drv_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0Drv_LDTOOL              = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0Drv_DEFS                = _KERNEL_MODE=1 _STRICT_STDC IN_RING0 IN_RT_R0
  if $(VBOX_GCC_VERSION_CC) < 30400
-TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+TEMPLATE_VBoxR0Drv_DEFS               += RT_WITHOUT_PRAGMA_ONCE
  endif
-TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_HAIKU_SYS_INCS)
+TEMPLATE_VBoxR0Drv_INCS                = $(VBOX_HAIKU_SYS_INCS)
 #TODO: sort this out
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared $(VBOX_GCC_NO_UNDEFINED_R0) -dc -dy -lroot -rpath-link /boot/system/develop/lib/x86 --no-add-needed /boot/system/develop/lib/_KERNEL_ --no-add-needed /boot/system/develop/lib/haiku_version_glue.o
-TEMPLATE_VBOXR0DRV_CFLAGS              = -fno-PIC \
+TEMPLATE_VBoxR0Drv_LDFLAGS             = -shared $(VBOX_GCC_NO_UNDEFINED_R0) -dc -dy -lroot -rpath-link /boot/system/develop/lib/x86 --no-add-needed /boot/system/develop/lib/_KERNEL_ --no-add-needed /boot/system/develop/lib/haiku_version_glue.o
+TEMPLATE_VBoxR0Drv_CFLAGS              = -fno-PIC \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBoxR0Drv_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBoxR0Drv_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
 	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
 	-Wno-sign-compare
-TEMPLATE_VBOXR0DRV_CXXFLAGS           = -fno-PIC -Wpointer-arith \
+TEMPLATE_VBoxR0Drv_CXXFLAGS           = -fno-PIC -Wpointer-arith \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
 	-Wformat \
 	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86) -fno-exceptions -fno-rtti
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64) -fno-exceptions -fno-rtti
+TEMPLATE_VBoxR0Drv_CXXFLAGS.x86       = $(TEMPLATE_VBoxR0Drv_CFLAGS.x86) -fno-exceptions -fno-rtti
+TEMPLATE_VBoxR0Drv_CXXFLAGS.amd64     = $(TEMPLATE_VBoxR0Drv_CFLAGS.amd64) -fno-exceptions -fno-rtti
 endif # Haiku
 
 ifdef VBOX_WITH_VBOXDRV
- ifndef TEMPLATE_VBOXR0DRV_TOOL
+ ifndef TEMPLATE_VBoxR0Drv_TOOL
   $(warning Warning: VBox Build: Target $(KBUILD_HOST) is not officially supported!)
  endif
 endif
@@ -6036,22 +6036,22 @@ endif
 ifn1of ($(KBUILD_TARGET), darwin os2 win solaris freebsd)
  # This doesn't work if supdrv is natively loading VMMR0.r0 et al, but
  # fortunately it isn't really necessary.
- TEMPLATE_VBOXR0DRV_CFLAGS    += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
- TEMPLATE_VBOXR0DRV_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
- TEMPLATE_VBOXR0DRV_ASDEFS    += RT_MANGLER_PREFIX=VBoxHost_
+ TEMPLATE_VBoxR0Drv_CFLAGS    += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
+ TEMPLATE_VBoxR0Drv_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
+ TEMPLATE_VBoxR0Drv_ASDEFS    += RT_MANGLER_PREFIX=VBoxHost_
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
 #
-# A variant of VBOXR0DRV that uses the 10.10 SDK.
+# A variant of VBoxR0Drv that uses the 10.10 SDK.
 #
 TEMPLATE_VBoxR0DrvOSX10.10 = VBoxR0Drv variant using the 10.10 SDK
-TEMPLATE_VBoxR0DrvOSX10.10_EXTENDS  = VBOXR0DRV
+TEMPLATE_VBoxR0DrvOSX10.10_EXTENDS  = VBoxR0Drv
 TEMPLATE_VBoxR0DrvOSX10.10_SDKS     = MACOSX1010
-TEMPLATE_VBoxR0DrvOSX10.10_INCS     = $(filter-out $(VBOX_PATH_MACOSX_SDK)/%,$(TEMPLATE_VBOXR0DRV_INCS)) \
+TEMPLATE_VBoxR0DrvOSX10.10_INCS     = $(filter-out $(VBOX_PATH_MACOSX_SDK)/%,$(TEMPLATE_VBoxR0Drv_INCS)) \
 	$(PATH_SDK_MACOSX1010)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
 	$(PATH_SDK_MACOSX1010)/System/Library/Frameworks/Kernel.framework/Headers
-TEMPLATE_VBoxR0DrvOSX10.10_DEFS     = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_VBOXR0DRV_DEFS))
+TEMPLATE_VBoxR0DrvOSX10.10_DEFS     = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_VBoxR0Drv_DEFS))
 
 endif
 
@@ -6059,7 +6059,7 @@ endif
 # Template for building libraries used by ring-0 drivers.
 #
 TEMPLATE_VBoxR0DrvLib = VBox Ring 0 Driver Library
-TEMPLATE_VBoxR0DrvLib_EXTENDS = VBOXR0DRV
+TEMPLATE_VBoxR0DrvLib_EXTENDS = VBoxR0Drv
 TEMPLATE_VBoxR0DrvLib_INSTTYPE = stage
 TEMPLATE_VBoxR0DrvLib_INSTTYPE.linux = stage
 
@@ -7969,7 +7969,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -Gw
   endif
   ifdef VBOX_WITH_MSC_ANALYZE_THIS
-   TEMPLATE_VBOXR0DRV_CXXFLAGS += /analyze
+   TEMPLATE_VBoxR0Drv_CXXFLAGS += /analyze
   endif
 
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
@@ -8960,23 +8960,23 @@ TEMPLATE_VBOXGUESTR3XORGLIB_INST    = $(INST_ADDITIONS_LIB)
 # Template for building R0 drivers for the guest additions.
 #
 TEMPLATE_VBOXGUESTR0             = VBox Guest Driver
-TEMPLATE_VBOXGUESTR0_EXTENDS     = VBOXR0DRV
+TEMPLATE_VBOXGUESTR0_EXTENDS     = VBoxR0Drv
 TEMPLATE_VBOXGUESTR0_INST        = $(INST_ADDITIONS)
 TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS) VBOX_WIN_INT64
 TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS)
-TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
+TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBoxR0Drv_DEFS) IN_GUEST IN_GUEST_R0
 TEMPLATE_VBOXGUESTR0_DEFS.linux  = RT_NO_EXPORT_SYMBOL
 ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy
 endif
 ifn1of ($(KBUILD_TARGET), darwin os2 win)
- TEMPLATE_VBOXGUESTR0_CFLAGS     = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CFLAGS))
- TEMPLATE_VBOXGUESTR0_CXXFLAGS   = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CXXFLAGS))
- TEMPLATE_VBOXGUESTR0_ASDEFS     = $(patsubst RT_MANGLER_PREFIX=%,RT_MANGLER_PREFIX=VBoxGuest_,$(TEMPLATE_VBOXR0DRV_ASDEFS))
+ TEMPLATE_VBOXGUESTR0_CFLAGS     = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBoxR0Drv_CFLAGS))
+ TEMPLATE_VBOXGUESTR0_CXXFLAGS   = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBoxR0Drv_CXXFLAGS))
+ TEMPLATE_VBOXGUESTR0_ASDEFS     = $(patsubst RT_MANGLER_PREFIX=%,RT_MANGLER_PREFIX=VBoxGuest_,$(TEMPLATE_VBoxR0Drv_ASDEFS))
 endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120" # Do not use SSE so the binaries might works on NT4 and earlier.
- TEMPLATE_VBOXGUESTR0_CFLAGS.win.x86   = $(TEMPLATE_VBOXR0DRV_CFLAGS.win.x86) /arch:IA32
- TEMPLATE_VBOXGUESTR0_CXXFLAGS.win.x86 = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.win.x86) /arch:IA32
+ TEMPLATE_VBOXGUESTR0_CFLAGS.win.x86   = $(TEMPLATE_VBoxR0Drv_CFLAGS.win.x86) /arch:IA32
+ TEMPLATE_VBOXGUESTR0_CXXFLAGS.win.x86 = $(TEMPLATE_VBoxR0Drv_CXXFLAGS.win.x86) /arch:IA32
 endif
 
 

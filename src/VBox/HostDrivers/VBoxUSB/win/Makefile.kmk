@@ -45,13 +45,13 @@ INSTALLS.win  += install-infs
 #
 # usbd
 #
-usbd_TEMPLATE       = VBOXR0DRV
+usbd_TEMPLATE       = VBoxR0Drv
 usbd_SOURCES        = usbd/usbd.def
 
 #
 # VBoxUSB
 #
-VBoxUSB_TEMPLATE    = VBOXR0DRV
+VBoxUSB_TEMPLATE    = VBoxR0Drv
 ifdef VBOX_SIGNING_MODE
  VBoxUSB_INSTTYPE   = none
  VBoxUSB_DEBUG_INSTTYPE = both
@@ -81,7 +81,7 @@ VBoxUSB_LIBS        = \
 #
 # VBoxUSBMon
 #
-VBoxUSBMon_TEMPLATE    = VBOXR0DRV
+VBoxUSBMon_TEMPLATE    = VBoxR0Drv
 ifdef VBOX_SIGNING_MODE
  VBoxUSBMon_INSTTYPE = none
  VBoxUSBMon_DEBUG_INSTTYPE = both

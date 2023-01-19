@@ -45,7 +45,7 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  ifdef VBOX_WITH_VBOXDRV
   SYSMODS += VBoxNetFlt
  endif
- VBoxNetFlt_TEMPLATE = VBOXR0DRV
+ VBoxNetFlt_TEMPLATE = VBoxR0Drv
  VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
  VBoxNetFlt_DEBUG_INST.darwin = $(patsubst %/,%,$(INST_VBOXNETFLT))
  if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
@@ -167,7 +167,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  # VBoxNetLwf.sys - The light-weight filter driver for NDIS6.
  #
  SYSMODS += VBoxNetLwf
- VBoxNetLwf_TEMPLATE = VBOXR0DRV
+ VBoxNetLwf_TEMPLATE = VBoxR0Drv
  VBoxNetLwf_INST = $(INST_VBOXNETFLT)
  if defined(VBOX_SIGNING_MODE)
   VBoxNetLwf_INSTTYPE = none
@@ -379,7 +379,7 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
  # VBoxNetAdp.sys - The VirtualBox Adapter miniport driver.
  #
  SYSMODS.win += VBoxNetAdp
- VBoxNetAdp_TEMPLATE = VBOXR0DRV
+ VBoxNetAdp_TEMPLATE = VBoxR0Drv
  #VBoxNetAdp_INST = $(INST_VBOXNETADP)
  if defined(VBOX_SIGNING_MODE)
   VBoxNetAdp_INSTTYPE.win = none
@@ -445,7 +445,7 @@ else if1of ($(KBUILD_TARGET), solaris freebsd) ## @todo merge this with the mixe
 #
  ifdef VBOX_WITH_VBOXDRV
   SYSMODS += vboxnetflt
-  vboxnetflt_TEMPLATE      = VBOXR0DRV
+  vboxnetflt_TEMPLATE      = VBoxR0Drv
   vboxnetflt_NAME.solaris  = vboxflt
   vboxnetflt_DEFS          = IN_RT_R0
   vboxnetflt_DEPS.solaris += $(VBOX_SVN_REV_KMK)
@@ -464,7 +464,7 @@ else if1of ($(KBUILD_TARGET), solaris freebsd) ## @todo merge this with the mixe
 
   ifdef VBOX_WITH_NETFLT_CROSSBOW
    SYSMODS += vboxnetbow
-   vboxnetbow_TEMPLATE      = VBOXR0DRV
+   vboxnetbow_TEMPLATE      = VBoxR0Drv
    vboxnetbow_NAME          = vboxbow
    vboxnetbow_DEFS          = vboxnetflt_DEFS VBOX_WITH_NETFLT_CROSSBOW
    vboxnetbow_INCS         := $(PATH_SUB_CURRENT)

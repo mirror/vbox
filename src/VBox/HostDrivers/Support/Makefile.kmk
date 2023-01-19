@@ -646,7 +646,7 @@ ifeq ($(KBUILD_TARGET),os2)
 #
 # VBoxDrv.sys - The OS/2 driver.
 #
-VBoxDrv_TEMPLATE      = VBOXR0DRV
+VBoxDrv_TEMPLATE      = VBoxR0Drv
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 #VBoxDrv_LDFLAGS       = -s -t -v
@@ -661,7 +661,7 @@ VBoxDrv_LIBS          = \
 
 # temp hack to ensure that SUPDrvA-os2.asm is first in the link.
 LIBRARIES += VBoxDrvLib
-VBoxDrvLib_TEMPLATE   = VBOXR0DRV
+VBoxDrvLib_TEMPLATE   = VBoxR0Drv
 VBoxDrvLib_INSTTYPE   = none
 VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0
 VBoxDrvLib_INCS      := \
@@ -684,7 +684,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  ifdef VBOX_WITH_VBOXDRV
   SYSMODS += VBoxDrv
  endif
- VBoxDrv_TEMPLATE         = VBOXR0DRV
+ VBoxDrv_TEMPLATE         = VBoxR0Drv
  VBoxDrv_NAME.freebsd     = vboxdrv
  VBoxDrv_NAME.solaris     = vboxdrv
  VBoxDrv_NAME.win         = VBoxSup
