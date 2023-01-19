@@ -6355,13 +6355,6 @@ ifn1of ($(KBUILD_TARGET), darwin win os2)
  TEMPLATE_VBoxR3DllBase_PCHFLAGS       = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fPIC
  TEMPLATE_VBoxR3DllBase_LDFLAGS        = $(TEMPLATE_VBoxR3Exe_LDFLAGS) -fPIC
 endif
-ifeq ($(KBUILD_TARGET),haiku)
- # Haiku uses PIC by default... ## @todo r=bird This looks like total nonsense.
- TEMPLATE_VBoxR3DllBase_CFLAGS         = $(TEMPLATE_VBoxR3Exe_CFLAGS) -fno-pic
- TEMPLATE_VBoxR3DllBase_CXXFLAGS       = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -fno-pic
- TEMPLATE_VBoxR3DllBase_PCHFLAGS       = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fno-pic
- TEMPLATE_VBoxR3DllBase_LDFLAGS        = $(TEMPLATE_VBoxR3Exe_LDFLAGS) -fno-pic
-endif
 
 #
 # Temporary: Renaming the template and warnings will be errors ("soon").
