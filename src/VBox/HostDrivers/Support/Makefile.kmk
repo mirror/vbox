@@ -220,9 +220,9 @@ SUPR3-x86_EXTENDS  = SUPR3
 # Static version of SUPR3.  This is more of a stub than anything else in a
 # hardened build, at least on windows.
 #
-SUPR3Static_TEMPLATE = VBOXR3STATIC
-SUPR3Static_EXTENDS = SUPR3
-SUPR3Static_DEFS = $(SUPR3_DEFS) IN_SUP_R3_STATIC
+SUPR3Static_TEMPLATE   := VBoxR3Static
+SUPR3Static_EXTENDS    := SUPR3
+SUPR3Static_DEFS        = $(SUPR3_DEFS) IN_SUP_R3_STATIC
 SUPR3Static_SOURCES.win = $(filter-out win/SUPHardenedVerifyImage-win.cpp, $(SUPR3_SOURCES.win))
 
 
