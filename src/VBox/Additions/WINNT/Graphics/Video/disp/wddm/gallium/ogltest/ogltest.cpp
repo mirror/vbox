@@ -26,6 +26,7 @@
  */
 
 #include "oglrender.h"
+#include <iprt/string.h>
 
 PFNGLBINDBUFFERPROC                             glBindBuffer;
 PFNGLDELETEBUFFERSPROC                          glDeleteBuffers;
@@ -59,13 +60,13 @@ public:
     OGLTest();
     ~OGLTest();
 
-    HRESULT Init(HINSTANCE hInstance, LPSTR lpCmdLine, int nCmdShow);
+    HRESULT Init(HINSTANCE hInstance, int argc, char **argv, int nCmdShow);
     int Run();
 
 private:
     HRESULT initWindow(HINSTANCE hInstance, int nCmdShow);
     HRESULT initOGL();
-    void parseCmdLine(LPSTR lpCmdLine);
+    void parseCmdLine(int argc, char **argv);
     static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     void setCurrentGLCtx(HGLRC hGLRC);
@@ -256,40 +257,24 @@ HRESULT OGLTest::initOGL()
     return hr;
 }
 
-void OGLTest::parseCmdLine(LPSTR lpCmdLine)
+void OGLTest::parseCmdLine(int argc, char **argv)
 {
     /* Very simple: test number followed by step flag.
      * Default is test 0, step mode: 1
      */
-    if (!lpCmdLine)
-        return;
-
-    char *p = lpCmdLine;
-
-    while (*p == ' ')
-        ++p;
-
-    if (!*p)
-         return;
 
     /* First number is the render id. */
-    miRenderId = atoi(p);
-
-    while (*p == ' ' || ('0' <= *p && *p <= '9'))
-        ++p;
-
-    if (!*p)
-         return;
+    if (argc >= 2)
+        miRenderId = RTStrToInt32(argv[1]);
 
     /* Second number is the step mode. */
-    miRenderStep = atoi(p);
+    if (argc >= 3)
+        miRenderStep = RTStrToInt32(argv[2]);
 }
 
-HRESULT OGLTest::Init(HINSTANCE hInstance,
-                      LPSTR lpCmdLine,
-                      int nCmdShow)
+HRESULT OGLTest::Init(HINSTANCE hInstance, int argc, char **argv, int nCmdShow)
 {
-    parseCmdLine(lpCmdLine);
+    parseCmdLine(argc, argv);
 
     HRESULT hr = initWindow(hInstance, nCmdShow);
     if (SUCCEEDED(hr))
@@ -380,21 +365,14 @@ int OGLTest::Run()
     return msg.wParam;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance,
-                   HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine,
-                   int nCmdShow)
+int main(int argc, char **argv)
 {
-    (void)hPrevInstance;
+    int      rcExit = RTEXITCODE_FAILURE;
 
-    int result = 0;
     OGLTest test;
-
-    HRESULT hr = test.Init(hInstance, lpCmdLine, nCmdShow);
+    HRESULT hr = test.Init(GetModuleHandleW(NULL), argc, argv, SW_SHOWDEFAULT);
     if (SUCCEEDED(hr))
-    {
-        result = test.Run();
-    }
+        rcExit = test.Run();
 
-    return result;
+    return rcExit;
 }

@@ -33,7 +33,7 @@ PROGRAMS += \
 PROGRAMS.amd64 += \
 	ogltest-x86
 
-ogltest_TEMPLATE = VBOXR3STATIC
+ogltest_TEMPLATE = VBoxR3Static
 ogltest_INCS = \
 	$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_glext
 ogltest_SOURCES = \
