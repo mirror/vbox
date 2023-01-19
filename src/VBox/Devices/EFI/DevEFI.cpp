@@ -463,6 +463,42 @@ static void efiVBoxDbgScript(const char *pszFormat, ...)
 
 
 /**
+ * Handles writes to the event port.
+ *
+ * @returns VBox status suitable for I/O port write handler.
+ *
+ * @param   pThisCC             The EFI state for the current context.
+ * @param   u32                 The value being written.
+ * @param   cb                  The size of the value.
+ */
+static int efiR3PortEventWrite(PDEVEFIR3 pThisCC, uint32_t u32, unsigned cb)
+{
+    if (cb == sizeof(uint16_t))
+    {
+        switch (u32)
+        {
+            case EFI_EVENT_TYPE_BOOT_FAILED:
+            {
+                /* No additional data for this event. */
+                LogRel(("EFI: Boot failure\n"));
+                int rc = PDMDevHlpVMSetRuntimeError(pThisCC->pDevIns, 0 /*fFlags*/, "VMBootFail",
+                                                    N_("The VM failed to boot. This is possibly caused by not having an operating system installed or a misconfigured boot order. Maybe picking a guest OS install DVD will resolve the situation"));
+                AssertRC(rc);
+                break;
+            }
+            default:
+                Log(("EFI: Unknown event: %#x (cb=%d)\n", u32, cb));
+                break;
+        }
+    }
+    else
+        Log(("EFI: Invalid write size for the event port cb=%u\n", cb));
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Handles writes to the image event port.
  *
  * @returns VBox status suitable for I/O port write handler.
@@ -781,6 +817,12 @@ static DECLCALLBACK(VBOXSTRICTRC) efiR3IoPortWrite(PPDMDEVINS pDevIns, void *pvU
                         Log(("EFI: Unknown panic command: %#x (cb=%d)\n", u32, cb));
                     break;
             }
+            break;
+        }
+
+        case EFI_PORT_EVENT:
+        {
+            rc = efiR3PortEventWrite(pThisCC, u32, cb);
             break;
         }
 

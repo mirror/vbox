@@ -12,6 +12,10 @@
 #include <Library/PlatformBmPrintScLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
 #include <Library/XenPlatformLib.h>
+#ifdef VBOX
+# include <Library/IoLib.h>
+# include "../../../../DevEFI.h"
+#endif
 
 
 //
@@ -1540,9 +1544,19 @@ PlatformBootManagerAfterConsole (
   //
   // Register UEFI Shell
   //
+#ifndef VBOX
   PlatformRegisterFvBootOption (
     &gUefiShellFileGuid, L"EFI Internal Shell", LOAD_OPTION_ACTIVE
     );
+#else
+  /*
+   * Don't start the shell automatically (can still be selected from the boot manager)
+   * so we get into the error path when none of the boot options worked.
+   */
+  PlatformRegisterFvBootOption (
+    &gUefiShellFileGuid, L"EFI Internal Shell", 0
+    );
+#endif
 
   RemoveStaleFvFileOptions ();
   SetBootOrderFromQemu ();
@@ -1708,6 +1722,10 @@ PlatformBootManagerUnableToBoot (
   EFI_INPUT_KEY                Key;
   EFI_BOOT_MANAGER_LOAD_OPTION BootManagerMenu;
   UINTN                        Index;
+
+#ifdef VBOX
+  IoWrite16(EFI_PORT_EVENT, EFI_EVENT_TYPE_BOOT_FAILED);
+#endif
 
   //
   // BootManagerMenu doesn't contain the correct information when return status
