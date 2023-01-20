@@ -6916,22 +6916,6 @@ endif
 
 
 #
-# Ring-3 testcase (no -pedantic)
-#
-TEMPLATE_VBOXR3TSTNPEXE  = VBox Ring 3 Testcase Exe Non-pedantic
-TEMPLATE_VBOXR3TSTNPEXE_EXTENDS = VBoxR3TstExe
-ifneq ($(KBUILD_TARGET),win) # (only gcc)
- TEMPLATE_VBOXR3TSTNPEXE_TOOL             = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXR3TSTNPEXE_CFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBoxR3TstExe_CFLAGS)) \
- 	-Wno-sign-compare
- TEMPLATE_VBOXR3TSTNPEXE_CXXFLAGS         = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3TstExe_CXXFLAGS)) \
- 	-Wno-sign-compare
- TEMPLATE_VBOXR3TSTNPEXE_PCHFLAGS         = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3TstExe_PCHFLAGS)) \
- 	-Wno-sign-compare
-endif
-
-
-#
 # Ring-3 testcase DLL.
 #
 TEMPLATE_VBoxR3TstDll = VBox Ring-3 Testcase Dll
