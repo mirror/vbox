@@ -229,7 +229,7 @@ SUPR3Static_SOURCES.win = $(filter-out win/SUPHardenedVerifyImage-win.cpp, $(SUP
 #
 # The static part of the hardened support library (ring-3).
 #
-SUPR3HardenedStatic_TEMPLATE = VBOXR3HARDENEDLIB
+SUPR3HardenedStatic_TEMPLATE = VBoxR3HardenedLib
 SUPR3HardenedStatic_DEFS     = IN_SUP_HARDENED_R3
 SUPR3HardenedStatic_DEFS    += \
 	$(if $(VBOX_WITH_SUPSVC),VBOX_WITH_SUPSVC,) \
