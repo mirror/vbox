@@ -554,17 +554,19 @@ VBoxSupLib_DEFS = \
 	$(if $(VBOX_WITHOUT_DEBUGGER_CHECKS),VBOX_WITHOUT_DEBUGGER_CHECKS,)
 VBoxSupLib_SOURCES = \
 	$(KBUILD_TARGET)/VBoxSupLib-$(KBUILD_TARGET).cpp
+VBoxSupLib_SOURCES.win.amd64 = \
+       $(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/stack-probe-vcc.asm
+VBoxSupLib_SOURCES.win.x86 = \
+       $(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/stack-probe-vcc.asm
 VBoxSupLib_SOURCES.win = \
 	win/VBoxSupLib.rc
-VBoxSupLib_LIBS.win.x86 = \
-	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/chkstk.obj
-VBoxSupLib_LIBS.win.amd64 = \
-	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/chkstk.obj
-ifdef VBOX_WITH_HARDENING # for /guard:cf stuff
- VBoxSupLib_LIBS.win.x86 = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt.lib
- VBoxSupLib_LIBS.win.amd64 = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt.lib
+ifndef VBOX_WITH_NOCRT_STATIC
+ ifdef VBOX_WITH_HARDENING # for /guard:cf stuff
+  VBoxSupLib_LIBS.win.x86 = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticNoCrt_TOOL.win.x86)_LIB)/libcmt.lib
+  VBoxSupLib_LIBS.win.amd64 = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticNoCrt_TOOL.win.amd64)_LIB)/libcmt.lib
+ endif
 endif
 VBoxSupLib_VBOX_IMPORT_CHECKER.win.x86   = xp
 VBoxSupLib_VBOX_IMPORT_CHECKER.win.amd64 = xp64
