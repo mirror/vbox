@@ -6916,12 +6916,12 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 endif
 TEMPLATE_VBOXR3AUTOTST_INST        = $(INST_TESTCASE)
-TEMPLATE_VBOXR3AUTOTST_LIBS        = $(filter-out \
+TEMPLATE_VBOXR3AUTOTST_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
 	$(if-expr !defined(SDK_VBOX_LIBXML2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
 	$(if-expr "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "os2" \
  		,$(SDK_VBOX_LZF_STATIC_LIBS) $(SDK_VBOX_ZLIB_STATIC_LIBS) \
                ,$(SDK_VBOX_LZF_LIBS) $(SDK_VBOX_ZLIB_LIBS)) \
-	,$(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_LIBS))
+	,$(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_LIBS.$(KBUILD_TARGET_ARCH)))
 
 #
 # Ring-3 testcase.
@@ -8199,14 +8199,14 @@ ifdef VBOX_WITH_NLS
 	$(PATH_ROOT)/src/VBox/Main/nls/dummy.c
  TEMPLATE_VBoxNLS_SDKS	    = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS))
  ifdef VBOX_WITH_NOCRT_STATIC
-  TEMPLATE_VBoxNLS_LIBS    = $(filter-out \
+  TEMPLATE_VBoxNLS_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
   	 $(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-  	 $(TEMPLATE_VBoxR3Static_LIBS))
+  	 $(TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH)))
  else
-  TEMPLATE_VBoxNLS_LIBS    = $(filter-out \
+  TEMPLATE_VBoxNLS_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
   	 $(VBOX_LIB_RUNTIME_STATIC) \
   	 $(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-  	 $(TEMPLATE_VBoxR3Static_LIBS))
+  	 $(TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH)))
  endif
 endif # !VBOX_WITH_NLS
 
