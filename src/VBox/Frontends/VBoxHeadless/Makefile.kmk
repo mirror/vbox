@@ -35,7 +35,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 #
 ifdef VBOX_WITH_HARDENING
 PROGRAMS += VBoxHeadlessHardened
-VBoxHeadlessHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxHeadlessHardened_TEMPLATE = VBoxR3HardenedExe
 VBoxHeadlessHardened_DEFS    += $(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
 VBoxHeadlessHardened_SOURCES = VBoxHeadlessHardened.cpp
 VBoxHeadlessHardened_NAME = VBoxHeadless

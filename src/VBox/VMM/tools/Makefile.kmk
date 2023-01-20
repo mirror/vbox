@@ -43,7 +43,7 @@ endif
 #
 # Hardened stub.
 #
-VBoxVMMPreloadHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxVMMPreloadHardened_TEMPLATE = VBoxR3HardenedExe
 VBoxVMMPreloadHardened_SOURCES  = VBoxVMMPreloadHardened.cpp
 VBoxVMMPreloadHardened_NAME     = VBoxVMMPreload
 

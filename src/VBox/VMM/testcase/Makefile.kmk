@@ -466,7 +466,7 @@ tstVMMR0CallHost-1_SOURCES.x86 = \
 # For testing the VM request queue code.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstVMREQHardened_TEMPLATE = VBOXR3HARDENEDEXE
+tstVMREQHardened_TEMPLATE = VBoxR3HardenedExe
 tstVMREQHardened_NAME     = tstVMREQ
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstVMREQHardened_DEFS     = PROGRAM_NAME_STR="tstVMREQ"
@@ -486,7 +486,7 @@ tstVMREQ_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 # Tool for reanimate things like OS/2 dumps.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstAnimateHardened_TEMPLATE = VBOXR3HARDENEDEXE
+tstAnimateHardened_TEMPLATE = VBoxR3HardenedExe
 tstAnimateHardened_NAME     = tstAnimate
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstAnimateHardened_DEFS     = PROGRAM_NAME_STR="tstAnimate"
@@ -517,7 +517,7 @@ ifdef VBOX_WITH_RAW_MODE
  # Raw-mode VMM testcase.
  #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstVMMHardened_TEMPLATE = VBOXR3HARDENEDEXE
+tstVMMHardened_TEMPLATE = VBoxR3HardenedExe
 tstVMMHardened_NAME     = tstVMM
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstVMMHardened_DEFS     = PROGRAM_NAME_STR="tstVMM"
@@ -550,7 +550,7 @@ tstVMMFork_LIBS        = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 # Raw-mode micro benchmark.
 #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstMicroHardened_TEMPLATE = VBOXR3HARDENEDEXE
+tstMicroHardened_TEMPLATE = VBoxR3HardenedExe
 tstMicroHardened_NAME     = tstMicro
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstMicroHardened_DEFS     = PROGRAM_NAME_STR="tstMicro"
@@ -625,7 +625,7 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 # PDM asynchronous completation test.
 #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstPDMAsyncCompletionHardened_TEMPLATE = VBOXR3HARDENEDEXE
+tstPDMAsyncCompletionHardened_TEMPLATE = VBoxR3HardenedExe
 tstPDMAsyncCompletionHardened_NAME     = tstPDMAsyncCompletion
   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletion"
@@ -646,7 +646,7 @@ tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 # PDM asynchronous completation stress test.
 #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstPDMAsyncCompletionStressHardened_TEMPLATE = VBOXR3HARDENEDEXE
+tstPDMAsyncCompletionStressHardened_TEMPLATE = VBoxR3HardenedExe
 tstPDMAsyncCompletionStressHardened_NAME     = tstPDMAsyncCompletionStress
   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletionStress"

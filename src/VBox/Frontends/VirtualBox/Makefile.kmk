@@ -67,7 +67,7 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 # Hardened VirtualBoxVM.
 #
 ifdef VBOX_WITH_HARDENING
-VirtualBoxHardenedVM_TEMPLATE = VBOXR3HARDENEDEXE
+VirtualBoxHardenedVM_TEMPLATE = VBoxR3HardenedExe
 VirtualBoxHardenedVM_INST.darwin = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
 VirtualBoxHardenedVM_NAME = VirtualBoxVM
 VirtualBoxHardenedVM_DEFS += $(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)

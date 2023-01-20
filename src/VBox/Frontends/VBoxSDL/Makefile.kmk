@@ -35,7 +35,7 @@ ifdef VBOX_WITH_HARDENING
  # Hardened VBoxSDL
  #
  PROGRAMS += VBoxSDLHardened
- VBoxSDLHardened_TEMPLATE = VBOXR3HARDENEDEXE
+ VBoxSDLHardened_TEMPLATE = VBoxR3HardenedExe
  VBoxSDLHardened_SOURCES = VBoxSDLHardened.cpp
  VBoxSDLHardened_NAME = VBoxSDL
  $(call VBOX_SET_VER_INFO_EXE,VBoxSDLHardened,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
