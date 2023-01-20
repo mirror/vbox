@@ -6730,20 +6730,6 @@ TEMPLATE_VBoxR3StaticNoCrtExe_LDFLAGS.win := /entry:CustomMainEntrypoint /subsys
 
 
 #
-# Same as VBoxR3DllBase but without C++ exceptions.
-#
-TEMPLATE_VBOXR3DLLNOXCPT               = VBox Ring 3 SO/DLLs without C++ exception
-TEMPLATE_VBOXR3DLLNOXCPT_EXTENDS       = VBoxR3DllBase
-ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXR3DLLNOXCPT_CFLAGS       = $(filter-out -EH%,$(TEMPLATE_VBoxR3DllBase_CFLAGS)  ) -EHs-
- TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBoxR3DllBase_CXXFLAGS)) -EHs-
- TEMPLATE_VBOXR3DLLNOXCPT_PCHFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBoxR3DllBase_PCHFLAGS)) -EHs-
-else
- TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS     = $(TEMPLATE_VBoxR3DllBase_CXXFLAGS) -fno-exceptions
- TEMPLATE_VBOXR3DLLNOXCPT_PCHFLAGS     = $(TEMPLATE_VBoxR3DllBase_PCHFLAGS) -fno-exceptions
-endif
-
-#
 # Template for building hardened Ring-3 executables.
 # These shall have no extra runpaths, esp. not origin ones.
 #
