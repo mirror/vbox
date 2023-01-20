@@ -164,7 +164,7 @@ tstVMStructRC_INCS      = \
 	$(VBOX_PATH_VMM_SRC)/PATM
 endif
 
-tstVMStructSize_TEMPLATE= VBOXR3AUTOTST
+tstVMStructSize_TEMPLATE= VBoxR3AutoTest
 ifneq ($(KBUILD_TARGET),win)
 tstVMStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
 endif
@@ -184,7 +184,7 @@ ifdef VBOX_WITH_R0_LOGGING
 tstVMStructSize_DEFS   += VBOX_WITH_R0_LOGGING
 endif
 
-tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
+tstAsmStructs_TEMPLATE  = VBoxR3AutoTest
 ifneq ($(KBUILD_TARGET),win)
 tstAsmStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
 endif
@@ -679,7 +679,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
  && (   defined(VBOX_WITH_DTRACE_R3) \
      || defined(VBOX_WITH_DTRACE_R0) \
      || defined(VBOX_WITH_DTRACE_RC))
-tstVMStructDTrace_TEMPLATE = VBOXR3AUTOTST
+tstVMStructDTrace_TEMPLATE = VBoxR3AutoTest
 tstVMStructDTrace_DEFS     = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_RAW_MODE
 tstVMStructDTrace_DEFS    += VBOX_WITH_RAW_MODE

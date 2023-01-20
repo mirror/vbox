@@ -105,12 +105,12 @@ if "$(KBUILD_TARGET)" != "win" && $(VBOX_GCC_VERSION_CXX) < 40600
  # Template used for gcc older than 4.6.  (Strips away compiler options.)
  #
  TEMPLATE_tstDeviceStructSizeOldGCC         := tstDeviceStructSizeOldGCC
- TEMPLATE_tstDeviceStructSizeOldGCC_EXTENDS := VBOXR3AUTOTST
+ TEMPLATE_tstDeviceStructSizeOldGCC_EXTENDS := VBoxR3AutoTest
  TEMPLATE_tstDeviceStructSizeOldGCC_CXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_tstDeviceStructSizeOldGCC_EXTENDS)_CXXFLAGS))
 
  tstDeviceStructSize_TEMPLATE = tstDeviceStructSizeOldGCC
 else
- tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
+ tstDeviceStructSize_TEMPLATE = VBoxR3AutoTest
 endif
 tstDeviceStructSize_DEFS     = $(VBOX_DEVICES_TESTS_FEATURES)
 tstDeviceStructSize_INCS     = \

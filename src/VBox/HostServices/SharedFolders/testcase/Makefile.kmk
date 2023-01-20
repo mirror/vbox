@@ -40,7 +40,7 @@ ifndef VBOX_ONLY_SDK
   endif
  endif
 endif
-tstShflSizes_TEMPLATE = VBOXR3AUTOTST
+tstShflSizes_TEMPLATE = VBoxR3AutoTest
 tstShflSizes_DEFS     = VBOX_WITH_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
 tstShflSizes_CLEAN    = $(tstShflSizes_0_OUTDIR)/tstShflSizes.run
