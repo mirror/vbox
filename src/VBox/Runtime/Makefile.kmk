@@ -2126,6 +2126,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/compiler/vcc/stack-vcc.asm \
   	common/compiler/vcc/stack-except-vcc.cpp \
   	common/compiler/vcc/stack-except-seh-vcc.cpp \
+  	common/compiler/vcc/stack-probe-vcc.asm \
   	common/compiler/vcc/except-seh-vcc.cpp
   RuntimeR3_SOURCES.win.x86 = $(RuntimeBaseR3_SOURCES.win.x86) \
   	r3/win/nocrt-atexit-win.asm \
@@ -2133,6 +2134,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/win/nocrt-WinMainCRTStartup-win.asm \
   	common/compiler/vcc/guard-vcc.asm \
   	common/compiler/vcc/stack-vcc.asm \
+  	common/compiler/vcc/stack-probe-vcc.asm \
   	common/compiler/vcc/ftol2-vcc.asm \
   	common/compiler/vcc/except-x86-vcc.cpp \
   	common/compiler/vcc/except-x86-vcc-asm.asm
