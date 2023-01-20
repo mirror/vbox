@@ -2825,26 +2825,28 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
- * Gets CR0 fixed-0 bits in VMX non-root mode.
+ * Gets CR0 fixed-0 bits in VMX operation.
  *
  * We do this rather than fetching what we report to the guest (in
  * IA32_VMX_CR0_FIXED0 MSR) because real hardware (and so do we) report the same
  * values regardless of whether unrestricted-guest feature is available on the CPU.
  *
  * @returns CR0 fixed-0 bits.
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fVmxNonRootMode     Whether the CR0 fixed-0 bits for VMX non-root mode
+ *                              must be returned. When @c false, the CR0 fixed-0
+ *                              bits for VMX root mode is returned.
+ *
  */
-DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu) RT_NOEXCEPT
+DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu, bool fVmxNonRootMode) RT_NOEXCEPT
 {
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
-    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
 
-    static uint64_t const s_auCr0Fixed0[2] = { VMX_V_CR0_FIXED0, VMX_V_CR0_FIXED0_UX };
-    PCVMXVVMCS const pVmcs              = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-    uint8_t    const fUnrestrictedGuest = !!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
-    uint64_t   const uCr0Fixed0         = s_auCr0Fixed0[fUnrestrictedGuest];
-    Assert(!(uCr0Fixed0 & (X86_CR0_NW | X86_CR0_CD)));
-    return uCr0Fixed0;
+    PCVMXMSRS  pMsrs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs;
+    if (    fVmxNonRootMode
+        && (pMsrs->ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST))
+        return VMX_V_CR0_FIXED0_UX;
+    return VMX_V_CR0_FIXED0;
 }
 
 

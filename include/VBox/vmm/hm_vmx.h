@@ -2298,8 +2298,14 @@ AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
 /** @name VM-entry register masks.
  * @{ */
 /** CR0 bits ignored on VM-entry while loading guest CR0 (ET, CD, NW, bits 6:15,
- *  bit 17 and bits 19:28). */
-#define VMX_ENTRY_GUEST_CR0_IGNORE_MASK                         UINT64_C(0x7ffaffd0)
+ *  bit 17 and bits 19:28).
+ *
+ *  I don't know the Intel spec. excludes the high bits here while includes them in
+ *  the corresponding VM-exit mask. Nonetheless, I'm including the high bits here
+ *  (by making it identical to the VM-exit CR0 mask) since they are reserved anyway
+ *  and to prevent omission of the high bits with hardware-assisted VMX execution.
+ */
+#define VMX_ENTRY_GUEST_CR0_IGNORE_MASK                         VMX_EXIT_HOST_CR0_IGNORE_MASK
 /** DR7 bits set here are always cleared on VM-entry while loading guest DR7 (bit
  *  12, bits 14:15). */
 #define VMX_ENTRY_GUEST_DR7_MBZ_MASK                            UINT64_C(0xd000)

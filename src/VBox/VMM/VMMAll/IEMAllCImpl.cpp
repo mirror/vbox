@@ -5926,15 +5926,12 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             /* Check for bits that must remain set or cleared in VMX operation,
                see Intel spec. 23.8 "Restrictions on VMX operation". */
             if (IEM_VMX_IS_ROOT_MODE(pVCpu))
             {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                uint64_t const uCr0Fixed0 = IEM_VMX_IS_NON_ROOT_MODE(pVCpu) ? iemVmxGetCr0Fixed0(pVCpu) : VMX_V_CR0_FIXED0;
-#else
-                uint64_t const uCr0Fixed0 = VMX_V_CR0_FIXED0;
-#endif
+                uint64_t const uCr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu, IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
                 if ((uNewCrX & uCr0Fixed0) != uCr0Fixed0)
                 {
                     Log(("Trying to clear reserved CR0 bits in VMX operation: NewCr0=%#llx MB1=%#llx\n", uNewCrX, uCr0Fixed0));
@@ -5948,6 +5945,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
             }
+#endif
 
             /*
              * SVM nested-guest CR0 write intercepts.

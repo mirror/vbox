@@ -733,6 +733,7 @@ static uint64_t vmxHCGetFixedCr0Mask(PCVMCPUCC pVCpu)
      *        enmGuestMode to be in-sync with the current mode. See @bugref{6398}
      *        and @bugref{6944}. */
     PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    AssertCompile(RT_HI_U32(VMX_EXIT_HOST_CR0_IGNORE_MASK) == UINT32_C(0xffffffff));    /* Paranoia. */
     return (  X86_CR0_PE
             | X86_CR0_NE
             | (VM_IS_VMX_NESTED_PAGING(pVM) ? 0 : X86_CR0_WP)
@@ -2138,6 +2139,9 @@ static int vmxHCExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
+            Assert(!RT_HI_U32(u64GuestCr0));
+            Assert(u64GuestCr0 & X86_CR0_NE);
+
             /* Commit the CR0 and related fields to the guest VMCS. */
             int rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_CR0, u64GuestCr0);               AssertRC(rc);
             rc     = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);   AssertRC(rc);
@@ -2170,19 +2174,21 @@ static int vmxHCExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
             uint64_t       u64GuestCr0  = pVCpu->cpum.GstCtx.cr0;
             uint64_t const u64ShadowCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVmcsInfo->u64Cr0Mask);
-            Assert(!RT_HI_U32(u64GuestCr0));
-            Assert(u64GuestCr0 & X86_CR0_NE);
 
             /* Apply the hardware specified CR0 fixed bits and enable caching. */
             u64GuestCr0 |= fSetCr0;
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
+            Assert(!RT_HI_U32(u64GuestCr0));
+            Assert(u64GuestCr0 & X86_CR0_NE);
+
             /* Commit the CR0 and CR0 read-shadow to the nested-guest VMCS. */
             int rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_CR0, u64GuestCr0);               AssertRC(rc);
             rc     = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);   AssertRC(rc);
 
-            Log4Func(("cr0=%#RX64 shadow=%#RX64 (set=%#RX64 zap=%#RX64)\n", u64GuestCr0, u64ShadowCr0, fSetCr0, fZapCr0));
+            Log4Func(("cr0=%#RX64 shadow=%#RX64 vmcs_read_shw=%#RX64 (set=%#RX64 zap=%#RX64)\n", u64GuestCr0, u64ShadowCr0,
+                      pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0ReadShadow.u, fSetCr0, fZapCr0));
         }
 
         ASMAtomicUoAndU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, ~HM_CHANGED_GUEST_CR0);
@@ -2415,6 +2421,9 @@ static VBOXSTRICTRC vmxHCExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
         /* Apply the hardware specified CR4 fixed bits (mainly CR4.VMXE). */
         u64GuestCr4 |= fSetCr4;
         u64GuestCr4 &= fZapCr4;
+
+        Assert(!RT_HI_U32(u64GuestCr4));
+        Assert(u64GuestCr4 & X86_CR4_VMXE);
 
         /* Commit the CR4 and CR4 read-shadow to the guest VMCS. */
         rc = VMX_VMCS_WRITE_NW(pVCpu, VMX_VMCS_GUEST_CR4, u64GuestCr4);               AssertRC(rc);
@@ -4088,9 +4097,10 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
              */
             PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
             PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-            u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
-                   | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
-                   | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
+            u64Cr0 = (u64Cr0                     & ~(pVmcsInfoGst->u64Cr0Mask & pVmcsNstGst->u64Cr0Mask.u))
+                   | (pVmcsNstGst->u64GuestCr0.u &   pVmcsNstGst->u64Cr0Mask.u)
+                   | (u64Shadow                  &  (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
+            Assert(u64Cr0 & X86_CR0_NE);
         }
 #endif
 #ifndef IN_NEM_DARWIN
@@ -4124,9 +4134,10 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
              */
             PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
             PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-            u64Cr4 = (u64Cr4                     & ~pVmcsInfo->u64Cr4Mask)
-                   | (pVmcsNstGst->u64GuestCr4.u &  pVmcsNstGst->u64Cr4Mask.u)
-                   | (u64Shadow                  & (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
+            u64Cr4 = (u64Cr4                     & ~(pVmcsInfo->u64Cr4Mask & pVmcsNstGst->u64Cr4Mask.u))
+                   | (pVmcsNstGst->u64GuestCr4.u &   pVmcsNstGst->u64Cr4Mask.u)
+                   | (u64Shadow                  &  (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
+            Assert(u64Cr4 & X86_CR4_VMXE);
         }
 #endif
         pVCpu->cpum.GstCtx.cr4 = u64Cr4;

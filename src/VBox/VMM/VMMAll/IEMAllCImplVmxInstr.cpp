@@ -1739,16 +1739,21 @@ static void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu) RT_NOEXCEPT
     /* CR0. */
     {
         /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 fixed bits are not modified. */
-        uint64_t const uCr0Mb1       = iemVmxGetCr0Fixed0(pVCpu);
-        uint64_t const uCr0Mb0       = VMX_V_CR0_FIXED1;
-        uint64_t const fCr0IgnMask   = VMX_EXIT_HOST_CR0_IGNORE_MASK | uCr0Mb1 | ~uCr0Mb0;
+        uint64_t const fCr0IgnMask   = VMX_EXIT_HOST_CR0_IGNORE_MASK;
         uint64_t const uHostCr0      = pVmcs->u64HostCr0.u;
         uint64_t const uGuestCr0     = pVCpu->cpum.GstCtx.cr0;
         uint64_t const uValidHostCr0 = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
 
-        /* Verify we have not modified CR0 fixed bits in VMX non-root operation. */
-        Assert((uGuestCr0 &  uCr0Mb1) == uCr0Mb1);
-        Assert((uGuestCr0 & ~uCr0Mb0) == 0);
+        /* Verify we have not modified CR0 fixed bits in VMX operation. */
+#ifdef VBOX_STRICT
+        uint64_t const uCr0Mb1 = iemVmxGetCr0Fixed0(pVCpu, true /* fVmxNonRootMode */);
+        bool const fUx         = RT_BOOL(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
+        AssertMsg(   (uValidHostCr0 & uCr0Mb1) == uCr0Mb1
+                  && (uValidHostCr0 & ~VMX_V_CR0_FIXED1) == 0,
+                  ("host=%#RX64 guest=%#RX64 mb1=%#RX64 valid_host_cr0=%#RX64 fUx=%RTbool\n",
+                   uHostCr0, uGuestCr0, uCr0Mb1, uValidHostCr0, fUx));
+#endif
+        Assert(!(uValidHostCr0 >> 32));
         CPUMSetGuestCR0(pVCpu, uValidHostCr0);
     }
 
@@ -1757,18 +1762,18 @@ static void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu) RT_NOEXCEPT
         /* CR4 fixed bits are not modified. */
         uint64_t const uCr4Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
         uint64_t const uCr4Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed1;
-        uint64_t const fCr4IgnMask   = uCr4Mb1 | ~uCr4Mb0;
         uint64_t const uHostCr4      = pVmcs->u64HostCr4.u;
-        uint64_t const uGuestCr4     = pVCpu->cpum.GstCtx.cr4;
-        uint64_t       uValidHostCr4 = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
+        uint64_t       uValidHostCr4 = (uHostCr4 & uCr4Mb0) | uCr4Mb1;
         if (fHostInLongMode)
             uValidHostCr4 |= X86_CR4_PAE;
         else
             uValidHostCr4 &= ~(uint64_t)X86_CR4_PCIDE;
 
         /* Verify we have not modified CR4 fixed bits in VMX non-root operation. */
-        Assert((uGuestCr4 &  uCr4Mb1) == uCr4Mb1);
-        Assert((uGuestCr4 & ~uCr4Mb0) == 0);
+        AssertMsg(   (uValidHostCr4 &  uCr4Mb1) == uCr4Mb1
+                  && (uValidHostCr4 & ~uCr4Mb0) == 0,
+                  ("host=%#RX64 guest=%#RX64, uCr4Mb1=%#RX64 uCr4Mb0=%#RX64 valid_host_cr4=%#RX64\n",
+                   uHostCr4, pVCpu->cpum.GstCtx.cr4, uCr4Mb1, uCr4Mb0, uValidHostCr4));
         CPUMSetGuestCR4(pVCpu, uValidHostCr4);
     }
 
@@ -5134,7 +5139,7 @@ DECLINLINE(int) iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPUCC pVCpu, const cha
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
-        uint64_t const u64Cr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu);
+        uint64_t const u64Cr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu, true /* fVmxNonRootMode */);
         if ((pVmcs->u64GuestCr0.u & u64Cr0Fixed0) == u64Cr0Fixed0)
         { /* likely */ }
         else
@@ -6078,7 +6083,7 @@ static int iemVmxVmentryCheckHostState(PVMCPUCC pVCpu, const char *pszInstr) RT_
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
-        uint64_t const u64Cr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu);
+        uint64_t const u64Cr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu, true /* fVmxNonRootMode */);
         if ((pVmcs->u64HostCr0.u & u64Cr0Fixed0) == u64Cr0Fixed0)
         { /* likely */ }
         else
