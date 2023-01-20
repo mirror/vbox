@@ -36,7 +36,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   	$(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11.run \
   	$(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11Smoke.run
 
-  tstClipboardGH-X11_TEMPLATE  = VBOXR3TSTEXE
+  tstClipboardGH-X11_TEMPLATE  = VBoxR3TstExe
   tstClipboardGH-X11_DEFS      = VBOX_WITH_HGCM UNIT_TEST TESTCASE
   tstClipboardGH-X11_SOURCES   = \
 	tstClipboardGH-X11.cpp \
@@ -46,7 +46,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   tstClipboardGH-X11_LIBS      = X11 Xt
   tstClipboardGH-X11_CLEAN     = $(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11.run
 
-  tstClipboardGH-X11Smoke_TEMPLATE = VBOXR3TSTEXE
+  tstClipboardGH-X11Smoke_TEMPLATE = VBoxR3TstExe
   tstClipboardGH-X11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
   tstClipboardGH-X11Smoke_SOURCES  = \
 	tstClipboardGH-X11Smoke.cpp \

@@ -39,7 +39,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 # Note: No #ifdef TESTCASE hacks or similar allowed, has to run
 #       without #ifdef modifications to the core code!
 #
-tstClipboardMockHGCM_TEMPLATE = VBOXR3TSTEXE
+tstClipboardMockHGCM_TEMPLATE = VBoxR3TstExe
 tstClipboardMockHGCM_DEFS     = VBOX_WITH_HGCM VBOX_WITH_SHARED_CLIPBOARD
 tstClipboardMockHGCM_SOURCES  = \
 	../VBoxSharedClipboardSvc.cpp \
@@ -87,7 +87,7 @@ endif
  #
  #
  PROGRAMS += tstClipboardServiceHost
- tstClipboardServiceHost_TEMPLATE = VBOXR3TSTEXE
+ tstClipboardServiceHost_TEMPLATE = VBoxR3TstExe
  tstClipboardServiceHost_DEFS     = VBOX_WITH_HGCM UNIT_TEST
  tstClipboardServiceHost_SOURCES  = \
 	../VBoxSharedClipboardSvc.cpp \
@@ -108,7 +108,7 @@ endif
  #
  #
  PROGRAMS += tstClipboardServiceImpl
- tstClipboardServiceImpl_TEMPLATE = VBOXR3TSTEXE
+ tstClipboardServiceImpl_TEMPLATE = VBoxR3TstExe
  tstClipboardServiceImpl_DEFS     = VBOX_WITH_HGCM UNIT_TEST
  tstClipboardServiceImpl_SOURCES  = \
 	../VBoxSharedClipboardSvc.cpp \
@@ -125,7 +125,7 @@ endif
   #
   #
   PROGRAMS += tstClipboardTransfers
-  tstClipboardTransfers_TEMPLATE = VBOXR3TSTEXE
+  tstClipboardTransfers_TEMPLATE = VBoxR3TstExe
   tstClipboardTransfers_DEFS     = VBOX_WITH_HGCM UNIT_TEST VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   tstClipboardTransfers_SOURCES  = \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \

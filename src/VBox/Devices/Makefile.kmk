@@ -1442,7 +1442,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  #
  ifdef VBOX_WITH_TESTCASES
   PROGRAMS += tstIntNetR0
-  tstIntNetR0_TEMPLATE    = VBOXR3TSTEXE
+  tstIntNetR0_TEMPLATE    = VBoxR3TstExe
   tstIntNetR0_DEFS        = IN_INTNET_R0
   tstIntNetR0_SOURCES     = \
  	Network/testcase/tstIntNetR0.cpp
@@ -1471,7 +1471,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    tstIntNet-1_TEMPLATE   = VBoxR3HardenedTstDll
   else
    PROGRAMS += tstIntNet-1
-   tstIntNet-1_TEMPLATE   = VBOXR3TSTEXE
+   tstIntNet-1_TEMPLATE   = VBoxR3TstExe
   endif
   tstIntNet-1_SOURCES     = \
  	Network/testcase/tstIntNet-1.cpp \
@@ -1504,7 +1504,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  #
  ifdef VBOX_WITH_TESTCASES
   PROGRAMS.darwin += VBoxSmcUtil-darwin
-  VBoxSmcUtil-darwin_TEMPLATE = VBOXR3TSTEXE
+  VBoxSmcUtil-darwin_TEMPLATE = VBoxR3TstExe
   VBoxSmcUtil-darwin_SOURCES = EFI/VBoxSmcUtil-darwin.cpp
   VBoxSmcUtil-darwin_LDFLAGS = -framework IOKit
  endif
@@ -1514,7 +1514,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  #
  ifdef VBOX_WITH_TESTCASES_TSTDEV
   PROGRAMS += tstDevice
-  tstDevice_TEMPLATE    = VBOXR3TSTEXE
+  tstDevice_TEMPLATE    = VBoxR3TstExe
   tstDevice_DEFS        += IN_SUP_R3
   tstDevice_SOURCES     = \
  	testcase/tstDevice.cpp \

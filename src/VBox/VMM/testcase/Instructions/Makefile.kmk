@@ -61,7 +61,7 @@ $(foreach py, $(addprefix $(PATH_SUB_CURRENT)/, InstructionTestGen.py ) , $(eval
 # Ring-3 test program based on IPRT.
 #
 PROGRAMS += tstVBInsTstR3
-tstVBInsTstR3_TEMPLATE = VBOXR3TSTEXE
+tstVBInsTstR3_TEMPLATE = VBoxR3TstExe
 tstVBInsTstR3_INCS = .
 tstVBInsTstR3_SOURCES = \
 	tstVBInsTstR3.cpp \

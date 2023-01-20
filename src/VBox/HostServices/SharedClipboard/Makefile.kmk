@@ -105,7 +105,7 @@ if 0 ## Disabled for now; needs to be adapted to the new protocol first.
  #       OTHERS += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
  PROGRAMS += tstClipboardX11-2
  TESTING += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
- tstClipboardX11-2_TEMPLATE = VBOXR3TSTEXE
+ tstClipboardX11-2_TEMPLATE = VBoxR3TstExe
  tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
  tstClipboardX11-2_SOURCES  = VBoxSharedClipboardSvc-x11.cpp
  tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)

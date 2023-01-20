@@ -3090,7 +3090,7 @@ if1of (VBoxRT,$(DLLS))
  # VBoxRTImpCheck - Import library check.
  #
  PROGRAMS += VBoxRTStableCheck
- VBoxRTStableCheck_TEMPLATE = VBOXR3TSTEXE
+ VBoxRTStableCheck_TEMPLATE = VBoxR3TstExe
  VBoxRTStableCheck_SOURCES  = \
  	VBox/VBoxRTStableCheck.cpp \
  	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm

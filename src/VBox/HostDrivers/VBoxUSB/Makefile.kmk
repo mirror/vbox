@@ -71,7 +71,7 @@ ifdef VBOX_WITH_TESTCASES
  # USBFilter testcase.
  #
  PROGRAMS += tstUSBFilter
- tstUSBFilter_TEMPLATE = VBOXR3TSTEXE
+ tstUSBFilter_TEMPLATE = VBoxR3TstExe
  tstUSBFilter_DEFS = IN_USBLIB
  tstUSBFilter_SOURCES  = \
  	testcase/tstUSBFilter.cpp

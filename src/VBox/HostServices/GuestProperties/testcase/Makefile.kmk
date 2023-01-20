@@ -37,7 +37,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 
  PROGRAMS += tstGuestPropSvc
  TESTING  += $(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run
- tstGuestPropSvc_TEMPLATE = VBOXR3TSTEXE
+ tstGuestPropSvc_TEMPLATE = VBoxR3TstExe
  # The second define here is to ensure that the testcase will run fast,
  # without waiting for any thread synchronisation.
  tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_PROP_TEST_NOTHREAD

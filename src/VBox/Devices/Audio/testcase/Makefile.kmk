@@ -33,7 +33,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  PROGRAMS += tstAudioMixBuffer
  TESTING  += $(tstAudioMixBuffer_0_OUTDIR)/tstAudioMixBuffer.run
 
- tstAudioMixBuffer_TEMPLATE = VBOXR3TSTEXE
+ tstAudioMixBuffer_TEMPLATE = VBoxR3TstExe
  tstAudioMixBuffer_DEFS = TESTCASE VBOX_AUDIO_MIX_BUFFER_TESTCASE
  tstAudioMixBuffer_DEFS.debug  = VBOX_WITH_EF_WRAPS
  tstAudioMixBuffer_SOURCES = \
@@ -47,7 +47,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 	$(QUIET)$(APPEND) -t "$@" "done"
 
  ifeq ($(KBUILD_TARGET),win.amd64) # Note: Only runs on Windows 8 or newer.
-  tstAudioClient3_TEMPLATE = VBOXR3TSTEXE
+  tstAudioClient3_TEMPLATE = VBoxR3TstExe
   tstAudioClient3_DEFS = TESTCASE
   tstAudioClient3_DEFS.debug = VBOX_WITH_EF_WRAPS
   tstAudioClient3_SOURCES = tstAudioClient3.cpp
@@ -63,7 +63,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  PROGRAMS += tstAudioTestService
  TESTING  += $(tstAudioTestService_0_OUTDIR)/tstAudioTestService.run
 
- tstAudioTestService_TEMPLATE = VBOXR3TSTEXE
+ tstAudioTestService_TEMPLATE = VBoxR3TstExe
  tstAudioTestService_DEFS = TESTCASE
  tstAudioTestService_DEFS.debug  = VBOX_WITH_EF_WRAPS
  tstAudioTestService_SOURCES = \

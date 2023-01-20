@@ -2040,7 +2040,7 @@ endif # darwin
 #
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS.darwin += tstDarwinKeyboard
- tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
+ tstDarwinKeyboard_TEMPLATE = VBoxR3TstExe
  tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
  tstDarwinKeyboard_INCS = \
  	$(VBOX_GUI_INC_DIRS)

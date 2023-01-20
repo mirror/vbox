@@ -31,7 +31,7 @@ include $(KBUILD_PATH)/subheader.kmk
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
  PROGRAMS += tstUsbMouse
 endif
-tstUsbMouse_TEMPLATE = VBOXR3TSTEXE
+tstUsbMouse_TEMPLATE = VBoxR3TstExe
 tstUsbMouse_DEFS     = VBOX_WITH_VUSB
 tstUsbMouse_INCS     = \
         ../../build

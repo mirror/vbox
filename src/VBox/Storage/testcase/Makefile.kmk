@@ -34,15 +34,15 @@ include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVD tstVD-2 tstVDSnap tstVDFill
 
- tstVD_TEMPLATE = VBOXR3TSTEXE
+ tstVD_TEMPLATE = VBoxR3TstExe
  tstVD_SOURCES = tstVD.cpp
  tstVD_LIBS = $(LIB_DDU)
 
- tstVD-2_TEMPLATE = VBOXR3TSTEXE
+ tstVD-2_TEMPLATE = VBoxR3TstExe
  tstVD-2_SOURCES  = tstVD-2.cpp
  tstVD-2_LIBS = $(LIB_DDU)
 
- tstVDFill_TEMPLATE = VBOXR3TSTEXE
+ tstVDFill_TEMPLATE = VBoxR3TstExe
  tstVDFill_SOURCES  = tstVDFill.cpp
  tstVDFill_LIBS = $(LIB_DDU)
 
@@ -85,7 +85,7 @@ ifdef VBOX_WITH_TESTCASES
 	$(QUIET)$(APPEND) -n "$@" '' \
                $(call TSTVDIO_GEN_TEST_MACRO,VDIoTests,%) \
 
- tstVDIo_TEMPLATE = VBOXR3TSTEXE
+ tstVDIo_TEMPLATE = VBoxR3TstExe
  tstVDIo_INCS := $(PATH_SUB_CURRENT)
 
  ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
@@ -107,7 +107,7 @@ ifdef VBOX_WITH_TESTCASES
  	$(LIB_DDU)
  tstVDIo_CLEAN = \
  	$(TSTVDIO_BUILTIN_TESTS_FILE)
- tstVDSnap_TEMPLATE = VBOXR3TSTEXE
+ tstVDSnap_TEMPLATE = VBoxR3TstExe
  tstVDSnap_LIBS = $(LIB_DDU)
  tstVDSnap_SOURCES  = tstVDSnap.cpp
 endif

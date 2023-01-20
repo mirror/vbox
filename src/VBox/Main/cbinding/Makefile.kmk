@@ -130,7 +130,7 @@ if !defined(VBOX_ONLY_SDK)
   # C testcase using the dynamic glue.
   #
   PROGRAMS += tstCAPIGlue
-  tstCAPIGlue_TEMPLATE = VBOXR3TSTEXE
+  tstCAPIGlue_TEMPLATE = VBoxR3TstExe
   tstCAPIGlue_INCS = \
   	$(VBOX_PATH_SDK)/bindings/c/include \
   	$(VBOX_PATH_SDK)/bindings/c/glue

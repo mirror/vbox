@@ -42,7 +42,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_BUILD)
 # Testcase for the physical heap.
 #
 PROGRAMS += tstVbglR0PhysHeap-1
-tstVbglR0PhysHeap-1_TEMPLATE = VBOXR3TSTEXE
+tstVbglR0PhysHeap-1_TEMPLATE = VBoxR3TstExe
 tstVbglR0PhysHeap-1_SOURCES  = \
 	tstVbglR0PhysHeap-1.cpp
 

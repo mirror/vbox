@@ -91,7 +91,7 @@ $(call VBOX_SET_VER_INFO_DLL,DbgPlugInDiggers,VirtualBox Debugger Guest OS Digge
 # The DBGC parser testcase.
 # This stubs all the VBoxVMM APIs.
 #
-tstDBGCParser_TEMPLATE = VBOXR3TSTEXE
+tstDBGCParser_TEMPLATE = VBoxR3TstExe
 tstDBGCParser_DEFS = IN_VMM_R3
 tstDBGCParser_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS)
 tstDBGCParser_SOURCES = \

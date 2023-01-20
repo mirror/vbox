@@ -229,7 +229,7 @@ tstGlobalConfigHardened_DEFS     = PROGRAM_NAME_STR=\"tstGlobalConfig\"
 tstGlobalConfigHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
 tstGlobalConfig_TEMPLATE = VBoxR3HardenedTstDll
 else
-tstGlobalConfig_TEMPLATE = VBOXR3TSTEXE
+tstGlobalConfig_TEMPLATE = VBoxR3TstExe
 endif
 tstGlobalConfig_SOURCES  = tstGlobalConfig.cpp
 tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
@@ -317,7 +317,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseConvert-cvtps2pi_u128.bin \
 	tstIEMAImplDataSseConvert-cvttps2pi_u128.bin
 
-tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
+tstIEMAImpl_TEMPLATE  = VBoxR3TstExe
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
 tstIEMAImpl_SDKS      = VBOX_SOFTFLOAT
 tstIEMAImpl_INCS      = ../include .
@@ -350,7 +350,7 @@ tstIEMAImplDataSseBinary.S_DEPS   = \
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
-tstIEMAImplAsm_TEMPLATE      := VBOXR3TSTEXE
+tstIEMAImplAsm_TEMPLATE      := VBoxR3TstExe
 tstIEMAImplAsm_SDKS          := VBOX_SOFTFLOAT
 tstIEMAImplAsm_DEFS           = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
 tstIEMAImplAsm_ASFLAGS.amd64 := -Werror
@@ -404,7 +404,7 @@ $(evalcall2 def_tstIEMAImplData_adjust,FpuOther-Intel)
 #
 # Testcase for checking the repurposing of the IEM instruction code.
 #
-tstIEMCheckMc_TEMPLATE  = VBOXR3TSTEXE
+tstIEMCheckMc_TEMPLATE  = VBoxR3TstExe
 tstIEMCheckMc_SOURCES   = tstIEMCheckMc.cpp
 tstIEMCheckMc_DEFS      = $(VMM_COMMON_DEFS)
 tstIEMCheckMc_LIBS      = $(LIB_RUNTIME)
@@ -417,7 +417,7 @@ endif
 #
 # Saved state manager testcase.
 #
-tstSSM_TEMPLATE         = VBOXR3TSTEXE
+tstSSM_TEMPLATE         = VBoxR3TstExe
 tstSSM_INCS             = $(VBOX_PATH_VMM_SRC)/include
 tstSSM_DEFS             = $(VMM_COMMON_DEFS)
 tstSSM_SOURCES          = tstSSM.cpp
@@ -437,7 +437,7 @@ tstCFGMHardened_DEFS     = PROGRAM_NAME_STR=\"tstCFGM\"
 tstCFGMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
 tstCFGM_TEMPLATE         = VBoxR3HardenedTstDll
 else
-tstCFGM_TEMPLATE         = VBOXR3TSTEXE
+tstCFGM_TEMPLATE         = VBoxR3TstExe
 endif
 tstCFGM_DEFS             = $(VMM_COMMON_DEFS)
 tstCFGM_SOURCES          = tstCFGM.cpp
@@ -446,13 +446,13 @@ tstCFGM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 #
 # Comparing some compression algorithms considered for SSM usage.
 #
-tstCompressionBenchmark_TEMPLATE = VBOXR3TSTEXE
+tstCompressionBenchmark_TEMPLATE = VBoxR3TstExe
 tstCompressionBenchmark_SOURCES  = tstCompressionBenchmark.cpp
 
 #
 # Two testcases for checking the ring-0 setjmp/longjmp code.
 #
-tstVMMR0CallHost-1_TEMPLATE = VBOXR3TSTEXE
+tstVMMR0CallHost-1_TEMPLATE = VBoxR3TstExe
 tstVMMR0CallHost-1_INCS = $(VBOX_PATH_VMM_SRC)/include
 tstVMMR0CallHost-1_SOURCES = \
 	tstVMMR0CallHost-1.cpp
@@ -502,12 +502,12 @@ tstAnimate_DEFS             = $(VMM_COMMON_DEFS)
 tstAnimate_SOURCES          = tstAnimate.cpp
 tstAnimate_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
-tstX86-1_TEMPLATE      = VBOXR3TSTEXE
+tstX86-1_TEMPLATE      = VBoxR3TstExe
 tstX86-1_SOURCES       = tstX86-1.cpp tstX86-1A.asm
 tstX86-1_LIBS          = $(LIB_RUNTIME)
 tstX86-1_LDFLAGS.linux = $(VBOX_GCC_no-pie)
 
-tstX86-FpuSaveRestore_TEMPLATE = VBOXR3TSTEXE
+tstX86-FpuSaveRestore_TEMPLATE = VBoxR3TstExe
 tstX86-FpuSaveRestore_SOURCES  = tstX86-FpuSaveRestore.cpp tstX86-FpuSaveRestoreA.asm
 tstX86-FpuSaveRestore_LIBS     = $(LIB_RUNTIME)
 
@@ -666,7 +666,7 @@ endif
 
 ifndef VBOX_ONLY_EXTPACKS
 PROGRAMS += tstSSM-2
-tstSSM-2_TEMPLATE       = VBOXR3TSTEXE
+tstSSM-2_TEMPLATE       = VBoxR3TstExe
 tstSSM-2_DEFS           = IN_VMM_STATIC
 tstSSM-2_SOURCES        = tstSSM-2.cpp
 tstSSM-2_LIBS           = $(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB)

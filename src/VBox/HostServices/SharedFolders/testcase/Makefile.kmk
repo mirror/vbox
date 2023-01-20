@@ -55,7 +55,7 @@ ifdef VBOX_WITH_TESTCASES
 # Case conversion testcase.
 #
 PROGRAMS += tstShflCase
-tstShflCase_TEMPLATE = VBOXR3TSTEXE
+tstShflCase_TEMPLATE = VBoxR3TstExe
 tstShflCase_DEFS     = VBOX_WITH_HGCM
 tstShflCase_SOURCES  = tstShflCase.cpp
 tstShflCase_LIBS     = $(LIB_RUNTIME)
@@ -65,7 +65,7 @@ tstShflCase_LIBS     = $(LIB_RUNTIME)
 #
 
 PROGRAMS += tstSharedFolderService
-tstSharedFolderService_TEMPLATE = VBOXR3TSTEXE
+tstSharedFolderService_TEMPLATE = VBoxR3TstExe
 tstSharedFolderService_DEFS     = VBOX_WITH_HGCM UNITTEST
 tstSharedFolderService_INCS     = ..
 tstSharedFolderService_SOURCES  = \

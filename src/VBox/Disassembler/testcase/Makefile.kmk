@@ -32,7 +32,7 @@ ifdef VBOX_WITH_TESTCASES
 
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 PROGRAMS               += tstDisasm-1
-tstDisasm-1_TEMPLATE    = VBOXR3TSTEXE
+tstDisasm-1_TEMPLATE    = VBoxR3TstExe
 tstDisasm-1_DEFS        = IN_DIS
 tstDisasm-1_SOURCES     = \
 	tstDisasm-1.cpp \
@@ -51,7 +51,7 @@ endif
 
 
 PROGRAMS += tstDisasm-2
-tstDisasm-2_TEMPLATE    = VBOXR3TSTEXE
+tstDisasm-2_TEMPLATE    = VBoxR3TstExe
 tstDisasm-2_DEFS        = IN_DIS
 tstDisasm-2_SOURCES     = \
 	tstDisasm-2.cpp
