@@ -211,10 +211,12 @@ usage(FILE *fp)
 	    "\t[-i probe-id %s] [ args ... ]\n\n", g_pname,
 	    predact, predact, predact, predact, predact);
 
-	(void) fprintf(fp, "\tpredicate -> '/' D-expression '/'\n");
-	(void) fprintf(fp, "\t   action -> '{' D-statements '}'\n");
+	(void) fputs(
+	    "\tpredicate -> '/' D-expression '/'\n"
+	    "\t   action -> '{' D-statements '}'\n", fp);
 
-	(void) fprintf(fp, "\n"
+	(void) fputs(
+	    "\n"
 	    "\t-32 generate 32-bit D programs and ELF files\n"
 	    "\t-64 generate 64-bit D programs and ELF files\n\n"
 	    "\t-a  claim anonymous tracing state\n"
@@ -225,7 +227,8 @@ usage(FILE *fp)
 	    "\t-D  define symbol when invoking preprocessor\n"
 	    "\t-e  exit after compiling request but prior to enabling probes\n"
 	    "\t-f  enable or list probes matching the specified function name\n"
-	    "\t-F  coalesce trace output by function\n"
+	    "\t-F  coalesce trace output by function\n", fp);
+	(void) fputs(
 	    "\t-G  generate an ELF file containing embedded dtrace program\n"
 	    "\t-h  generate a header file with definitions for static probes\n"
 	    "\t-H  print included files when invoking preprocessor\n"
@@ -237,7 +240,8 @@ usage(FILE *fp)
 	    "\t-n  enable or list probes matching the specified probe name\n"
 	    "\t-o  set output file\n"
 	    "\t-p  grab specified process-ID and cache its symbol tables\n"
-	    "\t-P  enable or list probes matching the specified provider name\n"
+	    "\t-P  enable or list probes matching the specified provider name\n", fp);
+	(void) fputs(
 	    "\t-q  set quiet mode (only output explicitly traced data)\n"
 	    "\t-s  enable or list probes according to the specified D script\n"
 	    "\t-S  print D compiler intermediate code\n"
@@ -247,7 +251,7 @@ usage(FILE *fp)
 	    "\t-w  permit destructive actions\n"
 	    "\t-x  enable or modify compiler and tracing options\n"
 	    "\t-X  specify ISO C conformance settings for preprocessor\n"
-	    "\t-Z  permit probe descriptions that match zero probes\n");
+	    "\t-Z  permit probe descriptions that match zero probes\n", fp);
 
 	return (E_USAGE);
 }
