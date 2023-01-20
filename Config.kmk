@@ -6719,24 +6719,6 @@ TEMPLATE_VBoxR3StaticNoCrtExe_LDFLAGS.win := /entry:CustomMainEntrypoint /subsys
 
 
 #
-# Same as VBoxR3Exe but without C++ exceptions.
-#
-# VBoxR3Exe does C++ exceptions and may assumes that extern "C" functions
-# doesn't throw them. Use this template (and VBOXR3DLLNOXCPT) with care
-# and only where the C++ overhead is really unwanted.
-#
-TEMPLATE_VBOXR3EXENOXCPT               = VBox Ring 3 Exe without C++ exception
-TEMPLATE_VBOXR3EXENOXCPT_EXTENDS       = VBoxR3Exe
-ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXR3EXENOXCPT_CFLAGS       = $(filter-out -EH%,$(TEMPLATE_VBoxR3Exe_CFLAGS)  ) -EHs-
- TEMPLATE_VBOXR3EXENOXCPT_CXXFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBoxR3Exe_CXXFLAGS)) -EHs-
- TEMPLATE_VBOXR3EXENOXCPT_PCHFLAGS     = $(filter-out -EH%,$(TEMPLATE_VBoxR3Exe_PCHFLAGS)) -EHs-
-else
- TEMPLATE_VBOXR3EXENOXCPT_CXXFLAGS     = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -fno-exceptions
- TEMPLATE_VBOXR3EXENOXCPT_PCHFLAGS     = $(TEMPLATE_VBoxR3Exe_PCHFLAGS) -fno-exceptions
-endif
-
-#
 # Same as VBoxR3DllBase but without C++ exceptions.
 #
 TEMPLATE_VBOXR3DLLNOXCPT               = VBox Ring 3 SO/DLLs without C++ exception
