@@ -6677,6 +6677,8 @@ endif
 # VBoxR3Static w/o any CRT (windows only atm, experimental).
 # Implies no fancy C++, no exceptions, no static constructors or destructors, ++.
 #
+# Note! Not compatible with BLD_TRG_ARCH overrides yet.
+#
 TEMPLATE_VBoxR3StaticNoCrt               = Static
 TEMPLATE_VBoxR3StaticNoCrt_EXTENDS       = VBoxR3Static
 TEMPLATE_VBoxR3StaticNoCrt_SDKS          = $(subst WINSDK10-UCRT-STATIC,WINSDK10-UCRT-INCS, $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS)))
@@ -6693,8 +6695,17 @@ ifeq ($(KBUILD_TARGET),win)
 TEMPLATE_VBoxR3StaticNoCrt_LIBS.x86        = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxR3StaticNoCrt_LIBS.amd64      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxR3StaticNoCrt_LIBS.win        = $(NO_SUCH_VARIABLE)
+ ifdef VBOX_WITH_NOCRT_STATIC
+TEMPLATE_VBoxR3StaticNoCrt_LIBS.$(KBUILD_TARGET_ARCH) = \
+	$(PATH_STAGE_LIB)/RuntimeR3NoCrt$(VBOX_SUFF_LIB)
+  ifneq ($(KBUILD_TARGET_ARCH),x86)
+TEMPLATE_VBoxR3StaticNoCrt_LIBS.x86        = \
+	$(PATH_STAGE_LIB)/RuntimeR3NoCrt-x86$(VBOX_SUFF_LIB) # place holder, we don't have this library
+  endif
+ else
 TEMPLATE_VBoxR3StaticNoCrt_LIBS.win.x86    = \
 	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticNoCrt_TOOL.win.x86)_LIB)/chkstk.obj
+ endif
 TEMPLATE_VBoxR3StaticNoCrt_SDKS.win.x86   += VBOX_WIN_INT64
 TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxR3Static_LDFLAGS))
 TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxR3Static_LDFLAGS.win.x86))
