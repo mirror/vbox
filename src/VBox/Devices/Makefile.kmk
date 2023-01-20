@@ -1487,9 +1487,11 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    PROGRAMS += tstDevEEPROM
    tstDevEEPROM_TEMPLATE    = VBOXCPPUNITEXE
    tstDevEEPROM_SOURCES     = \
-  	Network/testcase/tstDevEEPROM.cpp
+  	Network/testcase/tstDevEEPROM.cpp \
+  	Network/DevEEPROM.cpp
    tstDevEEPROM_LIBS        = \
   	$(TARGET_VBoxDD)
+
    PROGRAMS += tstDevPhy
    tstDevPhy_TEMPLATE    = VBOXCPPUNITEXE
    tstDevPhy_SOURCES     = \

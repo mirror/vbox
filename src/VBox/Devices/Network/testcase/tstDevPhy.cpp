@@ -165,7 +165,7 @@ void PhyTest::writeTo(uint16_t addr, uint32_t value)
 }
 
 // Create text test runner and run all tests.
-int main( int argc, char **argv)
+int main()
 {
     CppUnit::TextUi::TestRunner runner;
     runner.addTest( PhyTest::suite() );

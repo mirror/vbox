@@ -28,6 +28,7 @@
 #include <cppunit/ui/text/TestRunner.h>
 #include <cppunit/extensions/HelperMacros.h>
 
+#include <VBox/vmm/pdmdev.h>
 #include "../DevEEPROM.h"
 
 static const uint16_t initialContent[] = {
@@ -519,7 +520,7 @@ void EEPROMTest::writeOpAddr(int opCode, int opCodeBits, uint16_t addr, int addr
 }
 
 // Create text test runner and run all tests.
-int main( int argc, char **argv)
+int main()
 {
     CppUnit::TextUi::TestRunner runner;
     runner.addTest( EEPROMTest::suite() );

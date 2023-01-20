@@ -50,8 +50,6 @@
 
 /* Little helpers ************************************************************/
 #ifdef PHY_UNIT_TEST
-# define SSMR3PutMem(a,b,c)
-# define SSMR3GetMem(a,b,c)
 # include <stdio.h>
 # define PhyLog(a)               printf a
 #else /* PHY_UNIT_TEST */
@@ -63,7 +61,7 @@
 
 /* Internals */
 namespace Phy {
-#if defined(LOG_ENABLED) && !defined(PHY_UNIT_TEST)
+#if defined(LOG_ENABLED) || defined(PHY_UNIT_TEST)
     /** Retrieves state name by id */
     static const char * getStateName(uint16_t u16State);
 #endif
@@ -379,7 +377,11 @@ static void Phy::softReset(PPHY pPhy, PPDMDEVINS pDevIns)
     REG(PSSTAT)  &= 0xe001;
     PhyLog(("PHY#%d PSTATUS=%04x PSSTAT=%04x\n", pPhy->iInstance, REG(PSTATUS), REG(PSSTAT)));
 
+#ifndef PHY_UNIT_TEST
     e1kPhyLinkResetCallback(pDevIns);
+#else
+    RT_NOREF(pDevIns);
+#endif
 }
 
 /**
@@ -513,7 +515,7 @@ static uint16_t Phy::regReadGSTATUS(PPHY pPhy, uint32_t index, PPDMDEVINS pDevIn
     return 0x3C00;
 }
 
-#if defined(LOG_ENABLED) && !defined(PHY_UNIT_TEST)
+#if defined(LOG_ENABLED) || defined(PHY_UNIT_TEST)
 static const char * Phy::getStateName(uint16_t u16State)
 {
     static const char *pcszState[] =
