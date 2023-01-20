@@ -59,20 +59,15 @@ VKAT_PATH_AUDIO       = $(VBOX_PATH_SRC_DEVICES)/Audio
 ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
  if defined(VBOX_ONLY_VALIDATIONKIT) || !defined(VBOX_ONLY_BUILD)
   PROGRAMS += vkat
-  ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
-   if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
-    PROGRAMS += vkathost
-   endif
+  if defined(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST) && !defined(VBOX_ONLY_BUILD)
+   PROGRAMS += vkathost
   endif
  endif
- ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
-  if defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD)
-   ifndef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
-    ifdef VBOX_WITH_ADDITIONS
-     PROGRAMS += vkatadd
-    endif
-   endif
-  endif
+ if    defined(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST) \
+    && defined(VBOX_WITH_ADDITIONS) \
+    && defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
+    && (defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD))
+  PROGRAMS += vkatadd
  endif
 endif
 
@@ -185,6 +180,7 @@ vkatadd_SDKS           = VBOX_ZLIB_STATIC
 vkatadd_LDFLAGS.darwin = -framework IOKit
 vkatadd_LIBS.solaris   = m
 
+
 #
 # Build the valkit vkat to bin as VBoxAudioTest, so that it can be shipped with
 # the host installer too.
@@ -192,21 +188,16 @@ vkatadd_LIBS.solaris   = m
 # Note: We also need to have this as a signed binary, so don't just copy the
 #       vkat binary to bin/ directory but built this as an own binary.
 #
-ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
- ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
-  ifndef VBOX_ONLY_ADDITIONS
-   vkathost_TEMPLATE  := VBoxR3Exe
-   vkathost_EXTENDS   := vkat
-   vkathost_INST      := $(INST_BIN)
-   vkathost_NAME      := VBoxAudioTest
-   vkathost_SOURCES    = \
-   	$(vkat_SOURCES) \
-   	$(VBOX_PATH_SRC_DEVICES)/build/VBoxDD.d
-   vkathost_LIBS       = \
-   	$(LIB_RUNTIME)
-  endif
- endif
-endif
+vkathost_TEMPLATE  := VBoxR3Exe
+vkathost_EXTENDS   := vkat
+vkathost_INST      := $(INST_BIN)
+vkathost_NAME      := VBoxAudioTest
+vkathost_SOURCES    = \
+	$(vkat_SOURCES) \
+	$(VBOX_PATH_SRC_DEVICES)/build/VBoxDD.d
+vkathost_LIBS       = \
+	$(LIB_RUNTIME)
+
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK) \
   && 0 ## @todo r=bird: Disabled because nobody really wants or needs to run this during build other than Andy.
