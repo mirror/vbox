@@ -65,7 +65,7 @@ ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
  endif
  if    defined(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST) \
     && defined(VBOX_WITH_ADDITIONS) \
-    && defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
+    && !defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
     && (defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD))
   PROGRAMS += vkatadd
  endif
