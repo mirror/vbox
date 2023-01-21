@@ -938,7 +938,7 @@ ifdef VBOX_WITH_XPCOM
 # VBoxSVCM - VBoxSVC wrapper module
 #
 DLLS += VBoxSVCM
-VBoxSVCM_TEMPLATE       = VBOXMAINCOMP
+VBoxSVCM_TEMPLATE       = VBoxMainComp
 VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
  ifdef VBOX_WITH_HARDENING
 VBoxSVCM_DEFS         += VBOX_WITH_HARDENING
@@ -976,7 +976,7 @@ endif # VBOX_WITH_XPCOM
 # VBoxC module
 #
 DLLS += VBoxC
-VBoxC_TEMPLATE  = VBOXMAINCOMP
+VBoxC_TEMPLATE  = VBoxMainComp
 if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win"
  VBoxC_USES     = vccprecomp
  VBoxC_PCH_HDR := $(PATH_SUB_CURRENT)/src-client/win/precomp_vcc.h
@@ -1488,7 +1488,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  # changes in the generated code where it uses new helpers from OLE32.
  #
  DLLS += VBoxProxyStub
- VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
+ VBoxProxyStub_TEMPLATE = VBoxMainComp
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
   VBoxProxyStub_DEFS   := REGISTER_PROXY_DLL PROXY_CLSID_IS=$(quote $(VBOX_MIDL_PROXY_CLSID_IS))
  else
@@ -1514,7 +1514,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  VBoxProxyStub_VirtualBox_p.c_CFLAGS.x86 = /Gz # Workaround for incorrect ObjectStublessClient* prototypes in SDK v7.1.
 
  DLLS += VBoxProxyStubLegacy
- VBoxProxyStubLegacy_TEMPLATE = VBOXMAINCOMP
+ VBoxProxyStubLegacy_TEMPLATE = VBoxMainComp
  VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
  VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
  VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/legacy/
