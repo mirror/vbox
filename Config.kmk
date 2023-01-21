@@ -7288,21 +7288,21 @@ endif # COM
 #
 # This differs from VBoxMainExe only in PIC handling and similar DLL stuff.
 #
-TEMPLATE_VBOXMAINDLL  = VBox Main Component (shared library)
-TEMPLATE_VBOXMAINDLL_EXTENDS = VBoxMainExe
+TEMPLATE_VBoxMainDll  = VBox Main Component (shared library)
+TEMPLATE_VBoxMainDll_EXTENDS = VBoxMainExe
 ifn1of ($(KBUILD_TARGET), darwin haiku os2 win)
- TEMPLATE_VBOXMAINDLL_DEFS     = PIC $(TEMPLATE_VBoxMainExe_DEFS)
- TEMPLATE_VBOXMAINDLL_CFLAGS   = -fPIC $(TEMPLATE_VBoxMainExe_CFLAGS)
- TEMPLATE_VBOXMAINDLL_CXXFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_CXXFLAGS)
- TEMPLATE_VBOXMAINDLL_PCHFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_PCHFLAGS)
- TEMPLATE_VBOXMAINDLL_LDFLAGS  = -fPIC $(TEMPLATE_VBoxMainExe_LDFLAGS)
+ TEMPLATE_VBoxMainDll_DEFS     = PIC $(TEMPLATE_VBoxMainExe_DEFS)
+ TEMPLATE_VBoxMainDll_CFLAGS   = -fPIC $(TEMPLATE_VBoxMainExe_CFLAGS)
+ TEMPLATE_VBoxMainDll_CXXFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_CXXFLAGS)
+ TEMPLATE_VBoxMainDll_PCHFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_PCHFLAGS)
+ TEMPLATE_VBoxMainDll_LDFLAGS  = -fPIC $(TEMPLATE_VBoxMainExe_LDFLAGS)
 endif
-TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainExe_LDFLAGS.darwin)) \
+TEMPLATE_VBoxMainDll_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainExe_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 
 #
-# Template identical to VBOXMAINDLL except for where the stuff is
+# Template identical to VBoxMainDll except for where the stuff is
 # installed when using XPCOM (components/).
 #
 # Note! In the hardened build this gets a bit ugly since $ORIGIN/..
@@ -7353,10 +7353,10 @@ TEMPLATE_VBoxMainComp-x86_LIBS = \
 #
 # Template for building the Main static libraries.
 #
-# This differs from VBOXMAINDLL only that it zeroes out the _LIBS definition.
+# This differs from VBoxMainDll only that it zeroes out the _LIBS definition.
 #
 TEMPLATE_VBoxMainLib  = VBox Main Component (static library)
-TEMPLATE_VBoxMainLib_EXTENDS = VBOXMAINDLL
+TEMPLATE_VBoxMainLib_EXTENDS = VBoxMainDll
 TEMPLATE_VBoxMainLib_LIBS =
 
 TEMPLATE_VBoxMainLib-x86  = 32-bit VBox Main Component (static library)
@@ -7480,13 +7480,13 @@ ifdef VBOX_WITH_EXTPACK
  endif
 
  TEMPLATE_VBoxR3ExtPackApi = For the ring-3 context extension pack modules using the Main API.
- TEMPLATE_VBoxR3ExtPackApi_EXTENDS = VBOXMAINDLL
- TEMPLATE_VBoxR3ExtPackApi_DEFS = $(TEMPLATE_VBOXMAINDLL_DEFS) VBOX_IN_EXTPACK VBOX_IN_EXTPACK_R3
+ TEMPLATE_VBoxR3ExtPackApi_EXTENDS = VBoxMainDll
+ TEMPLATE_VBoxR3ExtPackApi_DEFS = $(TEMPLATE_VBoxMainDll_DEFS) VBOX_IN_EXTPACK VBOX_IN_EXTPACK_R3
  TEMPLATE_VBoxR3ExtPackApi_INST = $(INST_EXTPACK)YouShallOverrideThis/
  ifeq ($(KBUILD_TARGET),linux)
-  TEMPLATE_VBoxR3ExtPackApi_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBOXMAINDLL_LDFLAGS))
+  TEMPLATE_VBoxR3ExtPackApi_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBoxMainDll_LDFLAGS))
  else if !defined(VBOX_WITH_RUNPATH) && defined(VBOX_WITH_RELATIVE_RUNPATH)
-   TEMPLATE_VBoxR3ExtPackApi_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/../../..' $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBOXMAINDLL_LDFLAGS))
+   TEMPLATE_VBoxR3ExtPackApi_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/../../..' $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBoxMainDll_LDFLAGS))
  endif
  ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   if1of ($(KBUILD_TARGET), win os2)
