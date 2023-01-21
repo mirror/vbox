@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxFB - implementation of VBoxDirectFB class.
+ * VBoxFB - Implementation of the VBoxDirectFB class.
  */
 
 /*
@@ -56,7 +56,7 @@ VBoxDirectFB::~VBoxDirectFB()
     // free our internal surface
     if (fbInternalSurface)
     {
-        DFBCHECK(fbInternalSurface->Release(fbInternalSurface));
+        DFBCHECK((DFBResult)fbInternalSurface->Release(fbInternalSurface));
         fbInternalSurface = NULL;
     }
 }
@@ -174,11 +174,11 @@ NS_IMETHODIMP VBoxDirectFB::GetBytesPerLine(PRUint32 *bytesPerLine)
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::GetPixelFormat (PRUint32 *pixelFormat)
+NS_IMETHODIMP VBoxDirectFB::GetPixelFormat(BitmapFormat_T *pixelFormat)
 {
     if (!pixelFormat)
         return NS_ERROR_INVALID_POINTER;
-    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    *pixelFormat = BitmapFormat_RGBA;
     return NS_OK;
 }
 
@@ -207,13 +207,21 @@ NS_IMETHODIMP VBoxDirectFB::GetOverlay(IFramebufferOverlay **overlay)
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::GetWinId(PRint64 *winId)
+NS_IMETHODIMP VBoxDirectFB::GetWinId(PRInt64 *winId)
 {
     if (!winId)
         return NS_ERROR_INVALID_POINTER;
     *winId = 0;
     return NS_OK;
 }
+
+NS_IMETHODIMP VBoxDirectFB::GetCapabilities(PRUint32 *pcCapabilites, FramebufferCapabilities_T **ppaenmCapabilities)
+{
+    RT_NOREF(pcCapabilites, ppaenmCapabilities);
+    AssertMsgFailed(("Not implemented"));
+    return E_NOTIMPL;
+}
+
 
 NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(PRUint32 x, PRUint32 y,
                                          PRUint32 w, PRUint32 h)
@@ -227,7 +235,7 @@ NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(PRUint32 x, PRUint32 y,
         blitRectangle.y = y;
         blitRectangle.w = w;
         blitRectangle.h = h;
-        if (scaleGuest)
+        if (g_scaleGuest)
         {
             DFBRectangle hostRectangle;
             float factorX = (float)screenWidth / (float)fbWidth;
@@ -247,6 +255,20 @@ NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(PRUint32 x, PRUint32 y,
         }
     }
     return NS_OK;
+}
+
+NS_IMETHODIMP VBoxDirectFB::NotifyUpdateImage(PRUint32 x, PRUint32 y, PRUint32 cx, PRUint32 cy, PRUint32 cbImage, PRUint8 *pbImage)
+{
+    RT_NOREF(x, y, cx, cy, cbImage, pbImage);
+    AssertMsgFailed(("Not implemented"));
+    return E_NOTIMPL;
+}
+
+NS_IMETHODIMP VBoxDirectFB::NotifyChange(PRUint32 idScreen, PRUint32 xOrigin, PRUint32 yOrigin, PRUint32 cx, PRUint32 cy)
+{
+    RT_NOREF(idScreen, xOrigin, yOrigin, cx, cy);
+    AssertMsgFailed(("Not implemented"));
+    return E_NOTIMPL;
 }
 
 NS_IMETHODIMP VBoxDirectFB::RequestResize(PRUint32 aScreenId, PRUint32 pixelFormat, PRUint8 *vram,
@@ -273,17 +295,15 @@ NS_IMETHODIMP VBoxDirectFB::RequestResize(PRUint32 aScreenId, PRUint32 pixelForm
     }
 
     // check if we have a fixed host video mode
-    if (useFixedVideoMode)
+    if (g_useFixedVideoMode)
     {
         // does the current video mode differ from what the guest wants?
-        if ((screenWidth == w) && (screenHeight == h))
-        {
+        if (screenWidth == w && screenHeight == h)
             printf("requested guest mode matches current host mode!\n");
-        } else
-        {
+        else
             createSurface(w, h);
-        }
-    } else
+    }
+    else
     {
         // we adopt to the guest resolution or the next higher that is available
         int32_t bestMode = getBestVideoMode(w, h, bitsPerPixel);
@@ -295,18 +315,22 @@ NS_IMETHODIMP VBoxDirectFB::RequestResize(PRUint32 aScreenId, PRUint32 pixelForm
         }
 
         // does the mode differ from what we wanted?
-        if ((videoModes[bestMode].width != w) || (videoModes[bestMode].height != h) ||
-            (videoModes[bestMode].bpp != bitsPerPixel))
+        if (   g_videoModes[bestMode].width  != w
+            || g_videoModes[bestMode].height != h
+            || g_videoModes[bestMode].bpp    != bitsPerPixel)
         {
             printf("The mode does not fit exactly!\n");
             createSurface(w, h);
-        } else
+        }
+        else
         {
             printf("The mode fits exactly!\n");
         }
         // switch to this mode
-        DFBCHECK(dfb->SetVideoMode(dfb, videoModes[bestMode].width, videoModes[bestMode].height,
-                                   videoModes[bestMode].bpp));
+        DFBCHECK(dfb->SetVideoMode(dfb,
+                                   g_videoModes[bestMode].width,
+                                   g_videoModes[bestMode].height,
+                                   g_videoModes[bestMode].bpp));
     }
 
     // update dimensions to the new size
@@ -329,6 +353,7 @@ NS_IMETHODIMP VBoxDirectFB::RequestResize(PRUint32 aScreenId, PRUint32 pixelForm
 
 NS_IMETHODIMP VBoxDirectFB::VideoModeSupported(PRUint32 w, PRUint32 h, PRUint32 bpp, PRBool *supported)
 {
+    RT_NOREF(w, h, bpp);
     if (!supported)
         return NS_ERROR_INVALID_POINTER;
     *supported = true;
@@ -337,8 +362,8 @@ NS_IMETHODIMP VBoxDirectFB::VideoModeSupported(PRUint32 w, PRUint32 h, PRUint32 
 
 NS_IMETHODIMP VBoxDirectFB::GetVisibleRegion(PRUint8 *rectangles, PRUint32 count, PRUint32 *countCopied)
 {
+    RT_NOREF(count);
     PRTRECT rects = (PRTRECT)rectangles;
-
     if (!rects || !countCopied)
         return NS_ERROR_INVALID_POINTER;
     /** @todo */
@@ -348,8 +373,8 @@ NS_IMETHODIMP VBoxDirectFB::GetVisibleRegion(PRUint8 *rectangles, PRUint32 count
 
 NS_IMETHODIMP VBoxDirectFB::SetVisibleRegion(PRUint8 *rectangles, PRUint32 count)
 {
+    RT_NOREF(count);
     PRTRECT rects = (PRTRECT)rectangles;
-
     if (!rects)
         return NS_ERROR_INVALID_POINTER;
     /** @todo */
@@ -362,8 +387,9 @@ NS_IMETHODIMP VBoxDirectFB::ProcessVHWACommand(PRUint8 *command, LONG enmCmd, BO
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP VBoxDirectFB::Notify3DEvent(PRUint32 type, PRUint8 *reserved)
+NS_IMETHODIMP VBoxDirectFB::Notify3DEvent(PRUint32 type, PRUint32 cbData, PRUint8 *pbData)
 {
+    RT_NOREF(type, cbData, pbData);
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Framebuffer (FB, DirectFB):
- * Main header file
+ * VBox frontends - Framebuffer (FB, DirectFB), Main header file.
  */
 
 /*
@@ -57,6 +56,10 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#ifndef VBOX_WITH_XPCOM
+# define VBOX_WITH_XPCOM
+#endif
+#include <VBox/com/com.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 
@@ -84,8 +87,8 @@
 /**
  * Globals
  */
-extern uint32_t useFixedVideoMode;
-extern videoMode fixedVideoMode;
-extern int scaleGuest;
+extern uint32_t g_useFixedVideoMode;
+extern videoMode g_fixedVideoMode;
+extern int g_scaleGuest;
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxFB_VBoxFB_h */

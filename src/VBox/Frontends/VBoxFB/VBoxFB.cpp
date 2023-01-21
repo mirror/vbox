@@ -1,10 +1,9 @@
+/* $Id$ */
 /** @file
+ * VBoxFB - Linux Direct Framebuffer Frontend.
  *
- * VBox frontends: Framebuffer (FB, DirectFB):
- * main() routine.
- *
- * NOTE: this code has not been tested, so expect bugs. It is not part
- * of a regular VirtualBox build.
+ * @note This code has not been tested in a long time, so expect bugs if it
+ *       even compiles.  It is not part of any regular VirtualBox build.
  */
 
 /*
@@ -34,14 +33,15 @@
 #include <getopt.h>
 #include <VBox/param.h>
 #include <iprt/path.h>
+#include <VBox/version.h>
 
 /**
  * Globals
  */
-uint32_t useFixedVideoMode = 0;
-int scaleGuest = 0;
-videoMode fixedVideoMode = {0};
-int32_t initialVideoMode = -1;
+uint32_t g_useFixedVideoMode = 0;
+int g_scaleGuest = 0;
+videoMode g_fixedVideoMode = {0};
+int32_t g_initialVideoMode = -1;
 
 void showusage()
 {
@@ -74,6 +74,8 @@ int main(int argc, char *argv[])
            "Copyright (C) 2004-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
            "Copyright (C) 2004-2005 secunet Security Networks AG\n", __DATE__, __TIME__);
 
+    fputs("\nWARNING! Unmaintained code.\nWARNING! Needs fixing & debugging!\n\n", stdout);
+
     for (;;)
     {
         c = getopt_long(argc, argv, "s:", options, NULL);
@@ -88,6 +90,7 @@ int main(int argc, char *argv[])
             }
             case 's':
             {
+#if 0
                 // UUID as string, parse it
                 RTUUID buuid;
                 if (!RT_SUCCESS(RTUuidFromStr((PRTUUID)&buuid, optarg)))
@@ -96,19 +99,20 @@ int main(int argc, char *argv[])
                     showusage();
                     exit(-1);
                 }
+#endif
                 uuid = optarg;
                 break;
             }
             case 'f':
             {
-                if (sscanf(optarg, "%ux%ux%u", &fixedVideoMode.width, &fixedVideoMode.height,
-                           &fixedVideoMode.bpp) != 3)
+                if (sscanf(optarg, "%ux%ux%u", &g_fixedVideoMode.width, &g_fixedVideoMode.height,
+                           &g_fixedVideoMode.bpp) != 3)
                 {
                     printf("Error, invalid resolution argument!\n");
                     showusage();
                     exit(-1);
                 }
-                useFixedVideoMode = 1;
+                g_useFixedVideoMode = 1;
                 break;
             }
             case 'l':
@@ -118,7 +122,7 @@ int main(int argc, char *argv[])
             }
             case 'c':
             {
-                scaleGuest = 1;
+                g_scaleGuest = 1;
                 break;
             }
             default:
@@ -135,7 +139,7 @@ int main(int argc, char *argv[])
     }
 
 
-    /**
+    /*
      * XPCOM setup
      */
 
@@ -146,6 +150,7 @@ int main(int argc, char *argv[])
      * end. This is an XPCOM requirement.
      */
     {
+#if 0
         nsCOMPtr<nsIServiceManager> serviceManager;
         rc = NS_InitXPCOM2(getter_AddRefs(serviceManager), nsnull, nsnull);
         if (NS_FAILED(rc))
@@ -178,6 +183,14 @@ int main(int argc, char *argv[])
             printf("Error: could not get main event queue! rc=%08X\n", rc);
             return -1;
         }
+#else
+        rc = com::Initialize();
+        if (NS_FAILED(rc))
+        {
+            printf("Error: XPCOM could not be initialized! rc=0x%x\n", rc);
+            exit(-1);
+        }
+#endif
 
         /*
          * Now XPCOM is ready and we can start to do real work.
@@ -217,14 +230,22 @@ int main(int argc, char *argv[])
             exit(-1);
         }
 
+        // find the VM
+        nsCOMPtr<IMachine> machine;
+        rc = virtualBox->FindMachine(NS_ConvertUTF8toUTF16(uuid).get(), getter_AddRefs(machine));
+        if (rc != S_OK || !machine)
+        {
+            printf("Error: given machine not found!\n");
+            return RTEXITCODE_FAILURE;
+        }
+
         // open session for this VM
-        rc = virtualBox->OpenSession(session, NS_ConvertUTF8toUTF16(uuid).get());
+        rc = machine->LockMachine(session, LockType_VM);
         if (NS_FAILED(rc))
         {
             printf("Error: given machine not found!\n");
             exit(-1);
         }
-        nsCOMPtr<IMachine> machine;
         session->GetMachine(getter_AddRefs(machine));
         if (!machine)
         {
@@ -251,7 +272,7 @@ int main(int argc, char *argv[])
         nsCOMPtr<IMouse> mouse;
         VBoxDirectFB *frameBuffer = NULL;
 
-        /**
+        /*
          * Init DirectFB
          */
         IDirectFB *dfb = NULL;
@@ -271,35 +292,35 @@ int main(int argc, char *argv[])
         if (listHostModes)
         {
             printf("*****************************************************\n");
-            printf("Number of available host video modes: %u\n", numVideoModes);
-            for (uint32_t i = 0; i < numVideoModes; i++)
+            printf("Number of available host video modes: %u\n", g_numVideoModes);
+            for (uint32_t i = 0; i < g_numVideoModes; i++)
             {
                 printf("Mode %u: xres = %u, yres = %u, bpp = %u\n", i,
-                       videoModes[i].width, videoModes[i].height, videoModes[i].bpp);
+                       g_videoModes[i].width, g_videoModes[i].height, g_videoModes[i].bpp);
             }
             printf("Note: display modes with bpp < have been filtered out\n");
             printf("*****************************************************\n");
             goto Leave;
         }
 
-        if (useFixedVideoMode)
+        if (g_useFixedVideoMode)
         {
-            int32_t bestVideoMode = getBestVideoMode(fixedVideoMode.width,
-                                                     fixedVideoMode.height,
-                                                     fixedVideoMode.bpp);
+            int32_t bestVideoMode = getBestVideoMode(g_fixedVideoMode.width,
+                                                     g_fixedVideoMode.height,
+                                                     g_fixedVideoMode.bpp);
             // validate the fixed mode
-            if ((bestVideoMode == -1) ||
-                ((fixedVideoMode.width  != videoModes[bestVideoMode].width) ||
-                (fixedVideoMode.height != videoModes[bestVideoMode].height) ||
-                (fixedVideoMode.bpp    != videoModes[bestVideoMode].bpp)))
+            if (   bestVideoMode == -1
+                || g_fixedVideoMode.width  != g_videoModes[bestVideoMode].width
+                || g_fixedVideoMode.height != g_videoModes[bestVideoMode].height
+                || g_fixedVideoMode.bpp    != g_videoModes[bestVideoMode].bpp)
             {
                 printf("Error: the specified fixed video mode is not available!\n");
                 exit(-1);
             }
         } else
         {
-            initialVideoMode = getBestVideoMode(640, 480, 16);
-            if (initialVideoMode == -1)
+            g_initialVideoMode = getBestVideoMode(640, 480, 16);
+            if (g_initialVideoMode == -1)
             {
                 printf("Error: initial video mode 640x480x16 is not available!\n");
                 exit(-1);
@@ -317,27 +338,29 @@ int main(int argc, char *argv[])
         DFBCHECK(dfbMouse->AttachEventBuffer(dfbMouse, dfbEventBuffer));
 
 
-        if (useFixedVideoMode)
+        if (g_useFixedVideoMode)
         {
-            printf("Information: setting video mode to %ux%ux%u\n", fixedVideoMode.width,
-                   fixedVideoMode.height, fixedVideoMode.bpp);
-            DFBCHECK(dfb->SetVideoMode(dfb, fixedVideoMode.width,
-                                       fixedVideoMode.height, fixedVideoMode.bpp));
+            printf("Information: setting video mode to %ux%ux%u\n", g_fixedVideoMode.width,
+                   g_fixedVideoMode.height, g_fixedVideoMode.bpp);
+            DFBCHECK(dfb->SetVideoMode(dfb, g_fixedVideoMode.width,
+                                       g_fixedVideoMode.height, g_fixedVideoMode.bpp));
         } else
         {
             printf("Information: starting with default video mode %ux%ux%u\n",
-                   videoModes[initialVideoMode].width, videoModes[initialVideoMode].height,
-                   videoModes[initialVideoMode].bpp);
-            DFBCHECK(dfb->SetVideoMode(dfb, videoModes[initialVideoMode].width,
-                                            videoModes[initialVideoMode].height,
-                                            videoModes[initialVideoMode].bpp));
+                   g_videoModes[g_initialVideoMode].width, g_videoModes[g_initialVideoMode].height,
+                   g_videoModes[g_initialVideoMode].bpp);
+            DFBCHECK(dfb->SetVideoMode(dfb,
+                                       g_videoModes[g_initialVideoMode].width,
+                                       g_videoModes[g_initialVideoMode].height,
+                                       g_videoModes[g_initialVideoMode].bpp));
         }
 
         // register our framebuffer
         frameBuffer = new VBoxDirectFB(dfb, surface);
-        display->SetFramebuffer(0, frameBuffer);
+        PRUnichar *pwszFrameBufferUuid = NULL;
+        display->AttachFramebuffer(0, frameBuffer, &pwszFrameBufferUuid);
 
-        /**
+        /*
          * Start the VM execution thread
          */
         console->PowerUp(NULL);
@@ -345,7 +368,7 @@ int main(int argc, char *argv[])
         console->GetKeyboard(getter_AddRefs(keyboard));
         console->GetMouse(getter_AddRefs(mouse));
 
-        /**
+        /*
          * Main event loop
          */
         #define MAX_KEYEVENTS 10
@@ -548,8 +571,7 @@ int main(int argc, char *argv[])
                             buttonState |= MouseButtonState::RightButton;
                         if (event.buttons & DIBM_MIDDLE)
                             buttonState |= MouseButtonState::MiddleButton;
-                        mouse->PutMouseEvent(mouseXDelta, mouseYDelta, mouseZDelta,
-                                             buttonState);
+                        mouse->PutMouseEvent(mouseXDelta, mouseYDelta, mouseZDelta, 0, buttonState);
                         break;
                     }
                     default:

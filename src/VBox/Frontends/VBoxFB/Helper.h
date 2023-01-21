@@ -39,8 +39,8 @@ struct videoMode
     uint32_t height;
     uint32_t bpp;
 };
-extern videoMode videoModes[];
-extern uint32_t numVideoModes;
+extern videoMode g_videoModes[];
+extern uint32_t g_numVideoModes;
 
 DFBEnumerationResult enumVideoModesHandler(int width, int height, int bpp, void *callbackdata);
 int32_t getBestVideoMode(uint32_t width, uint32_t height, uint32_t bpp);
