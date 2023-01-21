@@ -6931,27 +6931,6 @@ endif
 
 #
 # Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
-# (Same transformation as for VBOXR3NPEXE.)
-#
-# @deprecated Use VBoxR3DllNonPedantic!
-#
-TEMPLATE_VBOXR3NP = VBox Ring 3 Non-pedantic
-TEMPLATE_VBOXR3NP_EXTENDS = VBoxR3DllBase
-ifneq ($(KBUILD_TARGET),win) # (only gcc)
- TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBoxR3DllBase_CFLAGS)) \
-	$(VBOX_GCC_NON_PEDANTIC_C)
- TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3DllBase_CXXFLAGS)) \
- 	$(VBOX_GCC_NON_PEDANTIC_CXX)
- TEMPLATE_VBOXR3NP_PCHFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3DllBase_PCHFLAGS)) \
- 	$(VBOX_GCC_NON_PEDANTIC_CXX)
- TEMPLATE_VBOXR3NP_OBJCFLAGS             = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic -Wstrict-prototypes,$(TEMPLATE_VBoxR3DllBase_OBJCFLAGS))
- TEMPLATE_VBOXR3NP_OBJCXXFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic,$(TEMPLATE_VBoxR3DllBase_OBJCXXFLAGS))
-endif
-
-
-#
-# Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
 # (Same transformation as for VBoxR3ExeNonPedantic.)
 #
 TEMPLATE_VBoxR3DllNonPedantic               = VBox ring-3 Non-pedantic, with warnings.
