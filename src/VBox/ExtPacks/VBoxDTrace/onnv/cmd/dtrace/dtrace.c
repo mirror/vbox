@@ -222,7 +222,8 @@ usage(FILE *fp)
 	    "\t-a  claim anonymous tracing state\n"
 	    "\t-A  generate driver.conf(4) directives for anonymous tracing\n"
 	    "\t-b  set trace buffer size\n"
-	    "\t-c  run specified command and exit upon its completion\n"
+	    "\t-c  run specified command and exit upon its completion\n", fp);
+	(void) fputs(
 	    "\t-C  run cpp(1) preprocessor on script files\n"
 	    "\t-D  define symbol when invoking preprocessor\n"
 	    "\t-e  exit after compiling request but prior to enabling probes\n"
@@ -234,7 +235,8 @@ usage(FILE *fp)
 	    "\t-H  print included files when invoking preprocessor\n"
 	    "\t-i  enable or list probes matching the specified probe id\n"
 	    "\t-I  add include directory to preprocessor search path\n"
-	    "\t-l  list probes matching specified criteria\n"
+	    "\t-l  list probes matching specified criteria\n", fp);
+	(void) fputs(
 	    "\t-L  add library directory to library search path\n"
 	    "\t-m  enable or list probes matching the specified module name\n"
 	    "\t-n  enable or list probes matching the specified probe name\n"
@@ -246,7 +248,8 @@ usage(FILE *fp)
 	    "\t-s  enable or list probes according to the specified D script\n"
 	    "\t-S  print D compiler intermediate code\n"
 	    "\t-U  undefine symbol when invoking preprocessor\n"
-	    "\t-v  set verbose mode (report stability attributes, arguments)\n"
+	    "\t-v  set verbose mode (report stability attributes, arguments)\n", fp);
+	(void) fputs(
 	    "\t-V  report DTrace API version\n"
 	    "\t-w  permit destructive actions\n"
 	    "\t-x  enable or modify compiler and tracing options\n"
