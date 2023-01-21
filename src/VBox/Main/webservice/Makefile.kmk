@@ -388,7 +388,7 @@ ifdef VBOX_GSOAP_INSTALLED
  # vboxwebsrv - webservice server process
  #
  PROGRAMS += vboxwebsrv
- vboxwebsrv_TEMPLATE = VBOXMAINCLIENTEXE
+ vboxwebsrv_TEMPLATE = VBoxMainClientExe
  vboxwebsrv_DEFS += SOCKET_CLOSE_ON_EXEC
  vboxwebsrv_DEFS.win += WIN32_LEAN_AND_MEAN
  vboxwebsrv_INCS = \

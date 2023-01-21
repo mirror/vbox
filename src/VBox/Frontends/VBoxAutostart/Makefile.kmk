@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_TARGET),win)
  PROGRAMS += VBoxAutostartSvc
- VBoxAutostartSvc_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxAutostartSvc_TEMPLATE   = VBoxMainClientExe
  VBoxAutostartSvc_INCS       = ../Common
  VBoxAutostartSvc_SOURCES    = \
 	VBoxAutostartCfg.cpp \
@@ -42,7 +42,7 @@ ifeq ($(KBUILD_TARGET),win)
  VBoxAutostartSvc_LIBS.win += Secur32.lib
 else
  PROGRAMS += VBoxAutostart
- VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxAutostart_TEMPLATE   = VBoxMainClientExe
  VBoxAutostart_SOURCES    = \
 	VBoxAutostartCfg.cpp \
 	VBoxAutostartStart.cpp \

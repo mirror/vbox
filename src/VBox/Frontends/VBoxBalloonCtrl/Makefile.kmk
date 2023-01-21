@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxBalloonCtrl
-VBoxBalloonCtrl_TEMPLATE   = VBOXMAINCLIENTEXE
+VBoxBalloonCtrl_TEMPLATE   = VBoxMainClientExe
 VBoxBalloonCtrl_DEFS       = VBOX_WATCHDOG_GLOBAL_PERFCOL
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
  VBoxBalloonCtrl_DEFS     += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"

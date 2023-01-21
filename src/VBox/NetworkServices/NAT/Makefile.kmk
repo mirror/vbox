@@ -65,7 +65,7 @@ DLLS     += VBoxNetNAT
  else
 PROGRAMS += VBoxNetNAT
  endif
-VBoxNetNAT_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBoxMainDll,VBOXMAINCLIENTEXE)
+VBoxNetNAT_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBoxMainDll,VBoxMainClientExe)
 VBoxNetNAT_NAME     := VBoxNetNAT
 VBoxNetNAT_DEFS      = \
  	IPv6 \

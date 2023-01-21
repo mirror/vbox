@@ -33,7 +33,7 @@ PROGRAMS += VBoxFB
 #
 # VBoxFB
 #
-VBoxFB_TEMPLATE = VBOXMAINCLIENTEXE
+VBoxFB_TEMPLATE = VBoxMainClientExe
 VBoxFB_SOURCES  = \
 	VBoxFB.cpp \
 	Framebuffer.cpp \
