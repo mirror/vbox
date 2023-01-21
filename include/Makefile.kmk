@@ -205,7 +205,7 @@ VBOX_HDRS_ALL_RC_C := $(filter-out $(VBOX_HDRS_CPP_FEATURES), $(VBOX_HDRS_ALL_RC
 #$(error $(subst $(SP),$(NLTAB),$(strip $(sort $(VBOX_HDRS_ALL_RC_C)))))
 
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
-SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
+SyntaxVBoxIncludeR3_TEMPLATE = VBoxMainExe
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
 else
 SyntaxVBoxIncludeR3_TEMPLATE = VBoxR3Exe

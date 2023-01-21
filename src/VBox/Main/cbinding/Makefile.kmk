@@ -106,7 +106,7 @@ if !defined(VBOX_ONLY_SDK)
  # The C glue library.
  #
  LIBRARIES += VBoxCAPIGlue
- VBoxCAPIGlue_TEMPLATE = VBOXMAINEXE
+ VBoxCAPIGlue_TEMPLATE = VBoxMainExe
  VBoxCAPIGlue_DEFS = IN_VBOXCAPI
  VBoxCAPIGlue_SOURCES = \
  	VBoxCAPIGlue.c

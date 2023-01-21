@@ -7031,65 +7031,65 @@ endif
 # Template for building executables that are part of the VBox Main component
 # (COM/XPCOM interface to VirtualBox).
 #
-TEMPLATE_VBOXMAINEXE         = VBox Main Executable
-TEMPLATE_VBOXMAINEXE_ASTOOL             := $(VBOX_ASTOOL)
-TEMPLATE_VBOXMAINEXE_ASFLAGS             = $(VBOX_ASFLAGS)
-TEMPLATE_VBOXMAINEXE_DEFS                = IN_RING3 UNICODE NDEBUG=1
-TEMPLATE_VBOXMAINEXE_DEFS.win            = _UNICODE
-TEMPLATE_VBOXMAINEXE_RCDEFS              = $(TEMPLATE_VBoxR3Exe_RCDEFS)
-TEMPLATE_VBOXMAINEXE_LIBS.kprofile       = $(LIB_KPROFILE)
-TEMPLATE_VBOXMAINEXE_USES                = dtrace
+TEMPLATE_VBoxMainExe         = VBox Main Executable
+TEMPLATE_VBoxMainExe_ASTOOL             := $(VBOX_ASTOOL)
+TEMPLATE_VBoxMainExe_ASFLAGS             = $(VBOX_ASFLAGS)
+TEMPLATE_VBoxMainExe_DEFS                = IN_RING3 UNICODE NDEBUG=1
+TEMPLATE_VBoxMainExe_DEFS.win            = _UNICODE
+TEMPLATE_VBoxMainExe_RCDEFS              = $(TEMPLATE_VBoxR3Exe_RCDEFS)
+TEMPLATE_VBoxMainExe_LIBS.kprofile       = $(LIB_KPROFILE)
+TEMPLATE_VBoxMainExe_USES                = dtrace
 if defined(VBOX_WITH_DTRACE_R3_MAIN) && defined(VBOX_WITH_NATIVE_DTRACE)
- TEMPLATE_VBOXMAINEXE_DTRACETOOL         = DTraceAndVBoxTpG
- TEMPLATE_VBOXMAINEXE_DTRACE_OBJ_FLAGS   = -C
- TEMPLATE_VBOXMAINEXE_DTRACE_HDR_FLAGS   = -C
- TEMPLATE_VBOXMAINEXE_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_DTRACE_R3_MAIN VBOX_WITH_NATIVE_DTRACE
+ TEMPLATE_VBoxMainExe_DTRACETOOL         = DTraceAndVBoxTpG
+ TEMPLATE_VBoxMainExe_DTRACE_OBJ_FLAGS   = -C
+ TEMPLATE_VBoxMainExe_DTRACE_HDR_FLAGS   = -C
+ TEMPLATE_VBoxMainExe_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_DTRACE_R3_MAIN VBOX_WITH_NATIVE_DTRACE
 else
-  TEMPLATE_VBOXMAINEXE_DTRACE_HDR_FLAGS  = --ring-3-context
-  TEMPLATE_VBOXMAINEXE_DTRACE_OBJ_FLAGS  = --ring-3-context --pic --probe-fn-imported --probe-fn-name "SUPTracerFireProbe"
+  TEMPLATE_VBoxMainExe_DTRACE_HDR_FLAGS  = --ring-3-context
+  TEMPLATE_VBoxMainExe_DTRACE_OBJ_FLAGS  = --ring-3-context --pic --probe-fn-imported --probe-fn-name "SUPTracerFireProbe"
  if defined(VBOX_WITH_DTRACE_R3_MAIN)
-  TEMPLATE_VBOXMAINEXE_DTRACETOOL        = VBoxTpG
-  TEMPLATE_VBOXMAINEXE_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_DTRACE_R3_MAIN
+  TEMPLATE_VBoxMainExe_DTRACETOOL        = VBoxTpG
+  TEMPLATE_VBoxMainExe_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_DTRACE_R3_MAIN
  else
-  TEMPLATE_VBOXMAINEXE_DTRACETOOL        = VBoxTpG-Disabled
+  TEMPLATE_VBoxMainExe_DTRACETOOL        = VBoxTpG-Disabled
  endif
 endif
 
 ifeq ($(KBUILD_TARGET),win)
- #TEMPLATE_VBOXMAINEXE_TOOL               = $(VBOX_VCC_TOOL)
- TEMPLATE_VBOXMAINEXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
- TEMPLATE_VBOXMAINEXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
+ #TEMPLATE_VBoxMainExe_TOOL               = $(VBOX_VCC_TOOL)
+ TEMPLATE_VBoxMainExe_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
+ TEMPLATE_VBoxMainExe_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-  TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK) $(VBOX_WINDDK)
+  TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK) $(VBOX_WINDDK)
  else
-  TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+  TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  endif
- TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- \
+ TEMPLATE_VBoxMainExe_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- \
  	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
  #    -wd4355: 'this' : used in base member initializer list (e.g. VirtualBoxBase.cpp)
- TEMPLATE_VBOXMAINEXE_CXXFLAGS          += $(VBOX_VCC_WARN_ALL) -wd4625 -wd4626 -wd4355 $(VBOX_VCC_WERR)
- TEMPLATE_VBOXMAINEXE_CXXFLAGS          += -Gy
+ TEMPLATE_VBoxMainExe_CXXFLAGS          += $(VBOX_VCC_WARN_ALL) -wd4625 -wd4626 -wd4355 $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxMainExe_CXXFLAGS          += -Gy
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += -Gw
+  TEMPLATE_VBoxMainExe_CXXFLAGS         += -Gw
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += /analyze
+  TEMPLATE_VBoxMainExe_CXXFLAGS         += /analyze
  endif
- TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug     = -RTCsu
- TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
- TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile  = -Gh -GH
- TEMPLATE_VBOXMAINEXE_CFLAGS             = $(filter-out $(VBOX_VCC_std),$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
- TEMPLATE_VBOXMAINEXE_CFLAGS.debug       = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
- TEMPLATE_VBOXMAINEXE_CFLAGS.dbgopt      = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt)
- TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile    = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
- TEMPLATE_VBOXMAINEXE_PCHFLAGS           = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
- TEMPLATE_VBOXMAINEXE_PCHFLAGS.debug     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
- TEMPLATE_VBOXMAINEXE_PCHFLAGS.dbgopt    = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt)
- TEMPLATE_VBOXMAINEXE_PCHFLAGS.kprofile  = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
- TEMPLATE_VBOXMAINEXE_LDFLAGS            = -Ignore:4197 \
+ TEMPLATE_VBoxMainExe_CXXFLAGS.debug     = -RTCsu
+ TEMPLATE_VBoxMainExe_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
+ TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile  = -Gh -GH
+ TEMPLATE_VBoxMainExe_CFLAGS             = $(filter-out $(VBOX_VCC_std),$(TEMPLATE_VBoxMainExe_CXXFLAGS))
+ TEMPLATE_VBoxMainExe_CFLAGS.debug       = $(TEMPLATE_VBoxMainExe_CXXFLAGS.debug)
+ TEMPLATE_VBoxMainExe_CFLAGS.dbgopt      = $(TEMPLATE_VBoxMainExe_CXXFLAGS.dbgopt)
+ TEMPLATE_VBoxMainExe_CFLAGS.kprofile    = $(TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile)
+ TEMPLATE_VBoxMainExe_PCHFLAGS           = $(TEMPLATE_VBoxMainExe_CXXFLAGS)
+ TEMPLATE_VBoxMainExe_PCHFLAGS.debug     = $(TEMPLATE_VBoxMainExe_CXXFLAGS.debug)
+ TEMPLATE_VBoxMainExe_PCHFLAGS.dbgopt    = $(TEMPLATE_VBoxMainExe_CXXFLAGS.dbgopt)
+ TEMPLATE_VBoxMainExe_PCHFLAGS.kprofile  = $(TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile)
+ TEMPLATE_VBoxMainExe_LDFLAGS            = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
 	$(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
@@ -7107,178 +7107,178 @@ ifeq ($(KBUILD_TARGET),win)
 	/DISALLOWLIB:libucrt.lib \
 	/DISALLOWLIB:libucrtd.lib
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
-  TEMPLATE_VBOXMAINEXE_LDFLAGS          += -IntegrityCheck
+  TEMPLATE_VBoxMainExe_LDFLAGS          += -IntegrityCheck
  endif
  ifdef VBOX_WITH_DTRACE_R3_MAIN
-  TEMPLATE_VBOXMAINEXE_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
+  TEMPLATE_VBoxMainExe_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
- TEMPLATE_VBOXMAINEXE_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
- TEMPLATE_VBOXMAINEXE_LIBS               = \
+ TEMPLATE_VBoxMainExe_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
+ TEMPLATE_VBoxMainExe_LIBS               = \
 	$(LIB_RUNTIME)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-  TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib
-  TEMPLATE_VBOXMAINEXE_LIBS.amd64         = \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
+  TEMPLATE_VBoxMainExe_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBoxMainExe_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/oldnames.lib
   ifeq ($(KBUILD_TYPE),asan)
-   TEMPLATE_VBOXMAINEXE_LIBS.x86         += \
-   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic-i386.lib \
-   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic_runtime_thunk-i386.lib
-   TEMPLATE_VBOXMAINEXE_LIBS.amd64       += \
-   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic-x86_64.lib \
-   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+   TEMPLATE_VBoxMainExe_LIBS.x86         += \
+   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic-i386.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic_runtime_thunk-i386.lib
+   TEMPLATE_VBoxMainExe_LIBS.amd64       += \
+   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic-x86_64.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
   endif
  else
-  TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib
-  TEMPLATE_VBOXMAINEXE_LIBS.amd64         = \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
+  TEMPLATE_VBoxMainExe_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBoxMainExe_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/oldnames.lib
  endif
- TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_UTF8_MANIFEST_CMDS)$(NLTAB)$(VBOX_SIGN_IMAGE_CMDS)
- TEMPLATE_VBOXMAINEXE_ORDERDEPS          = $(VBOX_SIGN_IMAGE_CMDS_ORDERDEPS)
+ TEMPLATE_VBoxMainExe_POST_CMDS          = $(VBOX_UTF8_MANIFEST_CMDS)$(NLTAB)$(VBOX_SIGN_IMAGE_CMDS)
+ TEMPLATE_VBoxMainExe_ORDERDEPS          = $(VBOX_SIGN_IMAGE_CMDS_ORDERDEPS)
 
 else # the GCC guys:
 
-TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxMainExe_TOOL                = $(VBOX_GCC_TOOL)
  if $(VBOX_GCC_VERSION_CC) < 30400
-  TEMPLATE_VBOXMAINEXE_DEFS             += RT_WITHOUT_PRAGMA_ONCE
+  TEMPLATE_VBoxMainExe_DEFS             += RT_WITHOUT_PRAGMA_ONCE
  endif
-TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
+TEMPLATE_VBoxMainExe_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_Wno-class-memaccess) -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK) \
 	$(VBOX_GCC_SANITIZER_FLAGS)
  if !defined("VBOX_GCC_Wno-delete-non-virtual-dtor") && defined("VBOX_GCC_Wno-non-virtual-dtor")
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_GCC_Wno-non-virtual-dtor)
+  TEMPLATE_VBoxMainExe_CXXFLAGS         += $(VBOX_GCC_Wno-non-virtual-dtor)
  endif
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_GCC_WERR)
+  TEMPLATE_VBoxMainExe_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
  ifdef VBOX_WITH_DTRACE_R3_MAIN
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
+  TEMPLATE_VBoxMainExe_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBoxMainExe_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
  endif
-TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
-TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
-TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
-TEMPLATE_VBOXMAINEXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros) \
+TEMPLATE_VBoxMainExe_CXXFLAGS.x86        = -m32
+TEMPLATE_VBoxMainExe_CXXFLAGS.amd64      = -m64
+TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile   = -finstrument-functions
+TEMPLATE_VBoxMainExe_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros) \
 	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK) \
 	$(VBOX_GCC_SANITIZER_FLAGS)
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
-  TEMPLATE_VBOXMAINEXE_CFLAGS           += $(VBOX_GCC_WERR)
+  TEMPLATE_VBoxMainExe_CFLAGS           += $(VBOX_GCC_WERR)
  endif
-TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
-TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
-TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS           = $(TEMPLATE_VBOXMAINEXE_CFLAGS)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS.x86       = $(TEMPLATE_VBOXMAINEXE_CFLAGS.x86)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS.amd64     = $(TEMPLATE_VBOXMAINEXE_CFLAGS.amd64)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS.debug     = $(TEMPLATE_VBOXMAINEXE_CFLAGS.debug)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS.kprofile  = $(TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile)
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS         = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.x86     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86)
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.amd64   = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64)
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.debug   = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.kprofile= $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXMAINEXE_PCHFLAGS            = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
-TEMPLATE_VBOXMAINEXE_PCHFLAGS.x86        = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86)
-TEMPLATE_VBOXMAINEXE_PCHFLAGS.amd64      = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64)
-TEMPLATE_VBOXMAINEXE_PCHFLAGS.debug      = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
-TEMPLATE_VBOXMAINEXE_PCHFLAGS.kprofile   = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXMAINEXE_LDFLAGS             = $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS)
-TEMPLATE_VBOXMAINEXE_LDFLAGS.x86         = -m32
-TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
+TEMPLATE_VBoxMainExe_CFLAGS.x86          = -m32
+TEMPLATE_VBoxMainExe_CFLAGS.amd64        = -m64
+TEMPLATE_VBoxMainExe_CFLAGS.kprofile     = $(TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile)
+TEMPLATE_VBoxMainExe_CFLAGS.debug        = $(TEMPLATE_VBoxMainExe_CXXFLAGS.debug)
+TEMPLATE_VBoxMainExe_OBJCFLAGS           = $(TEMPLATE_VBoxMainExe_CFLAGS)
+TEMPLATE_VBoxMainExe_OBJCFLAGS.x86       = $(TEMPLATE_VBoxMainExe_CFLAGS.x86)
+TEMPLATE_VBoxMainExe_OBJCFLAGS.amd64     = $(TEMPLATE_VBoxMainExe_CFLAGS.amd64)
+TEMPLATE_VBoxMainExe_OBJCFLAGS.debug     = $(TEMPLATE_VBoxMainExe_CFLAGS.debug)
+TEMPLATE_VBoxMainExe_OBJCFLAGS.kprofile  = $(TEMPLATE_VBoxMainExe_CFLAGS.kprofile)
+TEMPLATE_VBoxMainExe_OBJCXXFLAGS         = $(TEMPLATE_VBoxMainExe_CXXFLAGS)
+TEMPLATE_VBoxMainExe_OBJCXXFLAGS.x86     = $(TEMPLATE_VBoxMainExe_CXXFLAGS.x86)
+TEMPLATE_VBoxMainExe_OBJCXXFLAGS.amd64   = $(TEMPLATE_VBoxMainExe_CXXFLAGS.amd64)
+TEMPLATE_VBoxMainExe_OBJCXXFLAGS.debug   = $(TEMPLATE_VBoxMainExe_CXXFLAGS.debug)
+TEMPLATE_VBoxMainExe_OBJCXXFLAGS.kprofile= $(TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile)
+TEMPLATE_VBoxMainExe_PCHFLAGS            = $(TEMPLATE_VBoxMainExe_CXXFLAGS)
+TEMPLATE_VBoxMainExe_PCHFLAGS.x86        = $(TEMPLATE_VBoxMainExe_CXXFLAGS.x86)
+TEMPLATE_VBoxMainExe_PCHFLAGS.amd64      = $(TEMPLATE_VBoxMainExe_CXXFLAGS.amd64)
+TEMPLATE_VBoxMainExe_PCHFLAGS.debug      = $(TEMPLATE_VBoxMainExe_CXXFLAGS.debug)
+TEMPLATE_VBoxMainExe_PCHFLAGS.kprofile   = $(TEMPLATE_VBoxMainExe_CXXFLAGS.kprofile)
+TEMPLATE_VBoxMainExe_LDFLAGS             = $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS)
+TEMPLATE_VBoxMainExe_LDFLAGS.x86         = -m32
+TEMPLATE_VBoxMainExe_LDFLAGS.amd64       = -m64
  ifeq ($(KBUILD_TARGET),linux)
-TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME) dl
-TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
+TEMPLATE_VBoxMainExe_LIBS                = pthread m rt $(LIB_RUNTIME) dl
+TEMPLATE_VBoxMainExe_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
  else ifeq ($(KBUILD_TARGET),os2)
-TEMPLATE_VBOXMAINEXE_TOOL                = GXX3OMF
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBoxMainExe_TOOL                = GXX3OMF
+TEMPLATE_VBoxMainExe_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(KBUILD_TARGET),darwin)
-TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXMAINEXE_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
-TEMPLATE_VBOXMAINEXE_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
-TEMPLATE_VBOXMAINEXE_CFLAGS             += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
-TEMPLATE_VBOXMAINEXE_CXXFLAGS           += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS          += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
-TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin     += -bind_at_load
-TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon -Wl,-headerpad_max_install_names
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
-TEMPLATE_VBOXMAINEXE_POST_CMDS.darwin    = $(VBOX_SIGN_IMAGE_CMDS)
+TEMPLATE_VBoxMainExe_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxMainExe_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
+TEMPLATE_VBoxMainExe_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
+TEMPLATE_VBoxMainExe_CFLAGS             += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
+TEMPLATE_VBoxMainExe_CXXFLAGS           += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
+TEMPLATE_VBoxMainExe_OBJCFLAGS          += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
+TEMPLATE_VBoxMainExe_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
+TEMPLATE_VBoxMainExe_LDFLAGS.darwin     += -bind_at_load
+TEMPLATE_VBoxMainExe_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon -Wl,-headerpad_max_install_names
+TEMPLATE_VBoxMainExe_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBoxMainExe_POST_CMDS.darwin    = $(VBOX_SIGN_IMAGE_CMDS)
  else ifeq ($(KBUILD_TARGET),haiku)
-TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) network stdc++ supc++
+TEMPLATE_VBoxMainExe_TOOL                = GXX3
+TEMPLATE_VBoxMainExe_LIBS                = $(LIB_RUNTIME) network stdc++ supc++
  else if1of ($(KBUILD_TARGET), freebsd openbsd)
-TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
-TEMPLATE_VBOXMAINEXE_INCS               += \
+TEMPLATE_VBoxMainExe_TOOL                = GXX3
+TEMPLATE_VBoxMainExe_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBoxMainExe_INCS               += \
 	/usr/include \
 	/usr/X11R6/include \
 	/usr/local/include
-TEMPLATE_VBOXMAINEXE_LIBPATH            += \
+TEMPLATE_VBoxMainExe_LIBPATH            += \
 	/usr/lib \
 	/usr/X11R6/lib \
 	/usr/local/lib
  else ifeq ($(KBUILD_TARGET),netbsd)
-TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
-TEMPLATE_VBOXMAINEXE_INCS               += \
+TEMPLATE_VBoxMainExe_TOOL                = GXX3
+TEMPLATE_VBoxMainExe_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBoxMainExe_INCS               += \
 	/usr/include \
 	/usr/X11R7/include
-TEMPLATE_VBOXMAINEXE_LIBPATH            += \
+TEMPLATE_VBoxMainExe_LIBPATH            += \
 	/usr/lib \
 	/usr/X11R7/lib
 else ifeq ($(KBUILD_TARGET),solaris)
-TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
-TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt thread
+TEMPLATE_VBoxMainExe_TOOL                = GXX3PLAIN
+TEMPLATE_VBoxMainExe_DEFS               += _REENTRANT
+TEMPLATE_VBoxMainExe_LIBS                = $(LIB_RUNTIME) rt thread
  else
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
-TEMPLATE_VBOXMAINEXE_LIBS                =
+TEMPLATE_VBoxMainExe_LIBS                =
  endif
-TEMPLATE_VBOXMAINEXE_LDFLAGS.solaris     = -Wl,-z,ignore # Same as VBOX_LD_as_needed.
+TEMPLATE_VBoxMainExe_LDFLAGS.solaris     = -Wl,-z,ignore # Same as VBOX_LD_as_needed.
  ifdef VBOX_WITH_RUNPATH
-TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+TEMPLATE_VBoxMainExe_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
  else ifdef VBOX_WITH_RELATIVE_RUNPATH
-TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
+TEMPLATE_VBoxMainExe_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
  endif
  ifdef VBOX_WITH_ORIGIN
-TEMPLATE_VBOXMAINEXE_LDFLAGS.linux      += $(VBOX_GCC_ORIGIN_OPT)
+TEMPLATE_VBoxMainExe_LDFLAGS.linux      += $(VBOX_GCC_ORIGIN_OPT)
  endif
 
 endif # !win
 
 # Add COM/XPCOM stuff
-TEMPLATE_VBOXMAINEXE_LIBS               += \
+TEMPLATE_VBoxMainExe_LIBS               += \
 	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def
- TEMPLATE_VBOXMAINEXE_DEFS              += VBOX_WITH_XPCOM
+ TEMPLATE_VBoxMainExe_DEFS              += VBOX_WITH_XPCOM
  ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-  TEMPLATE_VBOXMAINEXE_DEFS             += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+  TEMPLATE_VBoxMainExe_DEFS             += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  endif
- TEMPLATE_VBOXMAINEXE_INCS              += \
+ TEMPLATE_VBoxMainExe_INCS              += \
 	$(VBOX_XPCOM_INCS)
- TEMPLATE_VBOXMAINEXE_LIBS              += \
+ TEMPLATE_VBoxMainExe_LIBS              += \
 	$(LIB_XPCOM)
- TEMPLATE_VBOXMAINEXE_INTERMEDIATES     += \
+ TEMPLATE_VBoxMainExe_INTERMEDIATES     += \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 else  # COM
- TEMPLATE_VBOXMAINEXE_INCS              += \
+ TEMPLATE_VBoxMainExe_INCS              += \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
- TEMPLATE_VBOXMAINEXE_INTERMEDIATES     += \
+ TEMPLATE_VBoxMainExe_INTERMEDIATES     += \
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 endif # COM
 
@@ -7286,18 +7286,18 @@ endif # COM
 # Template for building the Main DLL modules (such as in-process COM/XPCOM
 # components for Main).
 #
-# This differs from VBOXMAINEXE only in PIC handling and similar DLL stuff.
+# This differs from VBoxMainExe only in PIC handling and similar DLL stuff.
 #
 TEMPLATE_VBOXMAINDLL  = VBox Main Component (shared library)
-TEMPLATE_VBOXMAINDLL_EXTENDS = VBOXMAINEXE
+TEMPLATE_VBOXMAINDLL_EXTENDS = VBoxMainExe
 ifn1of ($(KBUILD_TARGET), darwin haiku os2 win)
- TEMPLATE_VBOXMAINDLL_DEFS     = PIC $(TEMPLATE_VBOXMAINEXE_DEFS)
- TEMPLATE_VBOXMAINDLL_CFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_CFLAGS)
- TEMPLATE_VBOXMAINDLL_CXXFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
- TEMPLATE_VBOXMAINDLL_PCHFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_PCHFLAGS)
- TEMPLATE_VBOXMAINDLL_LDFLAGS  = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
+ TEMPLATE_VBOXMAINDLL_DEFS     = PIC $(TEMPLATE_VBoxMainExe_DEFS)
+ TEMPLATE_VBOXMAINDLL_CFLAGS   = -fPIC $(TEMPLATE_VBoxMainExe_CFLAGS)
+ TEMPLATE_VBOXMAINDLL_CXXFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_CXXFLAGS)
+ TEMPLATE_VBOXMAINDLL_PCHFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_PCHFLAGS)
+ TEMPLATE_VBOXMAINDLL_LDFLAGS  = -fPIC $(TEMPLATE_VBoxMainExe_LDFLAGS)
 endif
-TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin)) \
+TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainExe_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 
@@ -7306,34 +7306,34 @@ TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOX
 # installed when using XPCOM (components/).
 #
 # Note! In the hardened build this gets a bit ugly since $ORIGIN/..
-#       doesn't work. So, we keep the $ORIGIN from VBOXMAINEXE and let
+#       doesn't work. So, we keep the $ORIGIN from VBoxMainExe and let
 #       the installers do the necessary .so symlinking.
 #
 # (No difference when building against COM on Windows.)
 #
 TEMPLATE_VBOXMAINCOMP            = VBox Main COM/XPCOM Component (shared library)
-TEMPLATE_VBOXMAINCOMP_EXTENDS    = VBOXMAINEXE
+TEMPLATE_VBOXMAINCOMP_EXTENDS    = VBoxMainExe
 ifn1of ($(KBUILD_TARGET), win)
  TEMPLATE_VBOXMAINCOMP_INST      = $(INST_BIN)components/
 endif
 ifneq ($(KBUILD_TARGET),win)
  ifeq ($(filter-out solaris.x86 %.amd64 %.sparc32 %.sparc64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) ## TODO: cleanup!
-  TEMPLATE_VBOXMAINCOMP_DEFS     = PIC $(TEMPLATE_VBOXMAINEXE_DEFS)
-  TEMPLATE_VBOXMAINCOMP_CFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_CFLAGS)
-  TEMPLATE_VBOXMAINCOMP_CXXFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
-  TEMPLATE_VBOXMAINCOMP_PCHFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_PCHFLAGS)
+  TEMPLATE_VBOXMAINCOMP_DEFS     = PIC $(TEMPLATE_VBoxMainExe_DEFS)
+  TEMPLATE_VBOXMAINCOMP_CFLAGS   = -fPIC $(TEMPLATE_VBoxMainExe_CFLAGS)
+  TEMPLATE_VBOXMAINCOMP_CXXFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_CXXFLAGS)
+  TEMPLATE_VBOXMAINCOMP_PCHFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_PCHFLAGS)
   if defined(VBOX_WITH_RELATIVE_RUNPATH) && !defined(VBOX_WITH_HARDENING)
-   TEMPLATE_VBOXMAINCOMP_LDFLAGS = -fPIC $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_VBOXMAINEXE_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
+   TEMPLATE_VBOXMAINCOMP_LDFLAGS = -fPIC $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_VBoxMainExe_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
   else
-   TEMPLATE_VBOXMAINCOMP_LDFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
+   TEMPLATE_VBOXMAINCOMP_LDFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_LDFLAGS)
   endif
  else ifndef VBOX_WITH_HARDENING
   ifdef VBOX_WITH_RELATIVE_RUNPATH
-   TEMPLATE_VBOXMAINCOMP_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_VBOXMAINEXE_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
+   TEMPLATE_VBOXMAINCOMP_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_VBoxMainExe_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
   endif
  endif
 endif
-TEMPLATE_VBOXMAINCOMP_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin)) \
+TEMPLATE_VBOXMAINCOMP_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainExe_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 
@@ -7367,15 +7367,15 @@ TEMPLATE_VBoxMainLib-x86_DEFS = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxMainLi
 
 #
 # Main unit testing, for compiling API implementation files into a testcase.
-# This is the VBOXMAINEXE template only with a different install dir.
+# This is the VBoxMainExe template only with a different install dir.
 #
 TEMPLATE_VBOXMAINTSTEXE  = VBox Main Testcase Exe
-TEMPLATE_VBOXMAINTSTEXE_EXTENDS = VBOXMAINEXE
+TEMPLATE_VBOXMAINTSTEXE_EXTENDS = VBoxMainExe
 TEMPLATE_VBOXMAINTSTEXE_INST    = $(INST_TESTCASE)
 ifdef VBOX_WITH_RUNPATH
- TEMPLATE_VBOXMAINTSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
+ TEMPLATE_VBOXMAINTSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' $(TEMPLATE_VBoxMainExe_LDFLAGS)
 else ifdef VBOX_WITH_RELATIVE_RUNPATH
- TEMPLATE_VBOXMAINTSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..' $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
+ TEMPLATE_VBOXMAINTSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..' $(TEMPLATE_VBoxMainExe_LDFLAGS)
 endif
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_SIGNING_MODE)
  TEMPLATE_VBOXMAINTSTEXE_POST_CMDS =
@@ -7385,10 +7385,10 @@ endif
 # Template for building executables that use the VBox Main component.
 #
 TEMPLATE_VBOXMAINCLIENTEXE                 = VBox Main Client (executable)
-TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS         = VBOXMAINEXE
+TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS         = VBoxMainExe
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINCLIENTEXE_DEPS	    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
- TEMPLATE_VBOXMAINCLIENTEXE_LIBS.win	    = $(TEMPLATE_VBOXMAINEXE_LIBS.win) \
+ TEMPLATE_VBOXMAINCLIENTEXE_LIBS.win	    = $(TEMPLATE_VBoxMainExe_LIBS.win) \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/User32.Lib \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Shell32.Lib \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/ShLwApi.Lib \
@@ -7397,10 +7397,10 @@ ifeq ($(KBUILD_TARGET),win)
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Uuid.Lib
 else
  TEMPLATE_VBOXMAINCLIENTEXE_DEPS	    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
- TEMPLATE_VBOXMAINCLIENTEXE_DEFS	    = $(TEMPLATE_VBOXMAINEXE_DEFS) \
+ TEMPLATE_VBOXMAINCLIENTEXE_DEFS	    = $(TEMPLATE_VBoxMainExe_DEFS) \
 	NDEBUG TRIMMED
- TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) -pthread
- TEMPLATE_VBOXMAINCLIENTEXE_PCHFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_PCHFLAGS.linux) -pthread
+ TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBoxMainExe_CXXFLAGS.linux) -pthread
+ TEMPLATE_VBOXMAINCLIENTEXE_PCHFLAGS.linux = $(TEMPLATE_VBoxMainExe_PCHFLAGS.linux) -pthread
 endif
 
 #

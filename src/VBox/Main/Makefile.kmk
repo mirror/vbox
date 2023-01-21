@@ -463,7 +463,7 @@ tst-main-certificates: $(VBOX_SVC_CERTS_FILE)
 #
 if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 PROGRAMS.win += VBoxSDS
-VBoxSDS_TEMPLATE = VBOXMAINEXE
+VBoxSDS_TEMPLATE = VBoxMainExe
 VBoxSDS_DEFS += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x0600
  ifdef VBOX_WITH_VBOXSDL
 VBoxSDS_DEFS += VBOX_WITH_VBOXSDL
@@ -515,7 +515,7 @@ endif #if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 # VBoxSVC executable
 #
 PROGRAMS += VBoxSVC
-VBoxSVC_TEMPLATE = VBOXMAINEXE
+VBoxSVC_TEMPLATE = VBoxMainExe
 if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win"
  VBoxSVC_USES    += vccprecomp
  VBoxSVC_PCH_HDR := $(PATH_SUB_CURRENT)/src-server/win/precomp_vcc.h
