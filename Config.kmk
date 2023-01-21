@@ -6930,22 +6930,6 @@ endif
 
 
 #
-# Template for building bad C/C++ style R3 executables (no -pedantic).
-#
-TEMPLATE_VBOXR3NPEXE                     = VBox Ring 3 Non-pedantic
-TEMPLATE_VBOXR3NPEXE_EXTENDS             = VBoxR3Exe
-ifneq ($(KBUILD_TARGET),win) # (only gcc)
- TEMPLATE_VBOXR3NPEXE_TOOL               = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXR3NPEXE_CFLAGS             = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBoxR3Exe_CFLAGS)) \
- 	$(VBOX_GCC_NON_PEDANTIC_C)
- TEMPLATE_VBOXR3NPEXE_CXXFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3Exe_CXXFLAGS)) \
- 	$(VBOX_GCC_NON_PEDANTIC_CXX)
- TEMPLATE_VBOXR3NPEXE_PCHFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxR3Exe_PCHFLAGS)) \
- 	$(VBOX_GCC_NON_PEDANTIC_CXX)
-endif
-
-
-#
 # Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
 # (Same transformation as for VBOXR3NPEXE.)
 #
