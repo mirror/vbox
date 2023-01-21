@@ -76,34 +76,34 @@ samplesXPCOM_SOURCES = tstVBoxAPIXPCOM.cpp makefile.tstVBoxAPIXPCOM=>Makefile
 #
 # tstVBoxMultipleVM
 #
-tstVBoxMultipleVM_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstVBoxMultipleVM_TEMPLATE = VBoxMainClientTstExe
 tstVBoxMultipleVM_SOURCES  = tstVBoxMultipleVM.cpp
 
 #
 # tstAPI
 #
-tstAPI_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstAPI_TEMPLATE = VBoxMainClientTstExe
 #tstAPI_INST = $(INST_SDK)bindings/gluecom/samples/
 tstAPI_SOURCES  = tstAPI.cpp
 
 #
 # tstVBoxAPI
 #
-tstVBoxAPI_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstVBoxAPI_TEMPLATE = VBoxMainClientTstExe
 tstVBoxAPI_SOURCES  = \
 	tstVBoxAPI.cpp
 
 #
 # tstVBoxAPIPerf
 #
-tstVBoxAPIPerf_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstVBoxAPIPerf_TEMPLATE = VBoxMainClientTstExe
 tstVBoxAPIPerf_SOURCES  = \
 	tstVBoxAPIPerf.cpp
 
 #
 # tstOVF
 #
-tstOVF_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstOVF_TEMPLATE = VBoxMainClientTstExe
 #tstOVF_INST = $(INST_SDK)bindings/gluecom/samples/
 tstOVF_SOURCES  = tstOVF.cpp
 
@@ -192,7 +192,7 @@ msiDarwinDescriptorDecoder_SOURCES  = \
 #       parent directory.  Since the rules for generating the files listed by
 #       the variable lives in the parent makefile, this is not a problem.
 #
-tstCollector_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstCollector_TEMPLATE = VBoxMainClientTstExe
 tstCollector_SOURCES  = \
 	tstCollector.cpp \
 	../src-server/Performance.cpp
@@ -209,7 +209,7 @@ tstCollector_LDFLAGS.win     = psapi.lib powrprof.lib
 #
 # tstGuestCtrlContextID
 #
-tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlContextID_TEMPLATE = VBoxMainClientTstExe
 tstGuestCtrlContextID_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlContextID_SOURCES  = \
@@ -222,7 +222,7 @@ tstGuestCtrlContextID_INCS     = ../include \
 #
 # tstGuestCtrlParseBuffer
 #
-tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlParseBuffer_TEMPLATE = VBoxMainClientTstExe
 tstGuestCtrlParseBuffer_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlParseBuffer_SOURCES  = \
@@ -235,7 +235,7 @@ tstGuestCtrlParseBuffer_INCS     = ../include \
 #
 # tstGuestCtrlPaths
 #
-tstGuestCtrlPaths_TEMPLATE       = VBOXMAINCLIENTTSTEXE
+tstGuestCtrlPaths_TEMPLATE       = VBoxMainClientTstExe
 tstGuestCtrlPaths_INTERMEDIATES  = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlPaths_DEFS          += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlPaths_SOURCES        = \
@@ -255,7 +255,7 @@ endif
 #
 # tstUSBProxyLinux
 #
-tstUSBProxyLinux_TEMPLATE  = VBOXMAINCLIENTTSTEXE
+tstUSBProxyLinux_TEMPLATE  = VBoxMainClientTstExe
 tstUSBProxyLinux_INTERMEDIATES = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstUSBProxyLinux_SOURCES   = \
 	tstUSBProxyLinux.cpp \
@@ -282,28 +282,28 @@ tstUSBProxyLinux_LIBS     += \
 #
 # tstMediumLock
 #
-tstMediumLock_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstMediumLock_TEMPLATE = VBoxMainClientTstExe
 tstMediumLock_SOURCES  = tstMediumLock.cpp
 
 
 #
 # tstBstr
 #
-tstBstr_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstBstr_TEMPLATE = VBoxMainClientTstExe
 tstBstr_SOURCES  = tstBstr.cpp
 
 
 #
 # tstGuid
 #
-tstGuid_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstGuid_TEMPLATE = VBoxMainClientTstExe
 tstGuid_SOURCES  = tstGuid.cpp
 
 
 #
 # tstUnattendedScript
 #
-tstUnattendedScript_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstUnattendedScript_TEMPLATE = VBoxMainClientTstExe
 tstUnattendedScript_DEFS     = VBOX_WITH_UNATTENDED IN_VBOXSVC IN_TST_UNATTENDED_SCRIPT
 tstUnattendedScript_INTERMEDIATES = \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS) \
@@ -333,7 +333,7 @@ tstUnattendedScriptFiles_SOURCES = \
 #
 # tstVBoxCrypto
 #
-tstVBoxCrypto_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstVBoxCrypto_TEMPLATE = VBoxMainClientTstExe
 tstVBoxCrypto_SOURCES  = tstVBoxCrypto.cpp
 
 

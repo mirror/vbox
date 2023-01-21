@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstHeadless
- tstHeadless_TEMPLATE = VBOXMAINCLIENTTSTEXE
+ tstHeadless_TEMPLATE = VBoxMainClientTstExe
  tstHeadless_SOURCES  = tstHeadless.cpp
 endif
 
