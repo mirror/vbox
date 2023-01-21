@@ -7409,16 +7409,16 @@ endif
 #
 # This differs from VBoxMainClientExe only in PIC handling and similar DLL stuff.
 #
-TEMPLATE_VBOXMAINCLIENTDLL              = VBox MAIN Client (shared library)
-TEMPLATE_VBOXMAINCLIENTDLL_EXTENDS      = VBoxMainClientExe
+TEMPLATE_VBoxMainClientDll              = VBox MAIN Client (shared library)
+TEMPLATE_VBoxMainClientDll_EXTENDS      = VBoxMainClientExe
 ifn1of ($(KBUILD_TARGET), darwin os2 win)
- TEMPLATE_VBOXMAINCLIENTDLL_DEFS        = PIC $(TEMPLATE_VBoxMainClientExe_DEFS)
- TEMPLATE_VBOXMAINCLIENTDLL_CFLAGS      = -fPIC $(TEMPLATE_VBoxMainClientExe_CFLAGS)
- TEMPLATE_VBOXMAINCLIENTDLL_CXXFLAGS    = -fPIC $(TEMPLATE_VBoxMainClientExe_CXXFLAGS)
- TEMPLATE_VBOXMAINCLIENTDLL_PCHFLAGS    = -fPIC $(TEMPLATE_VBoxMainClientExe_PCHFLAGS)
- TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS     = -fPIC $(TEMPLATE_VBoxMainClientExe_LDFLAGS)
+ TEMPLATE_VBoxMainClientDll_DEFS        = PIC $(TEMPLATE_VBoxMainClientExe_DEFS)
+ TEMPLATE_VBoxMainClientDll_CFLAGS      = -fPIC $(TEMPLATE_VBoxMainClientExe_CFLAGS)
+ TEMPLATE_VBoxMainClientDll_CXXFLAGS    = -fPIC $(TEMPLATE_VBoxMainClientExe_CXXFLAGS)
+ TEMPLATE_VBoxMainClientDll_PCHFLAGS    = -fPIC $(TEMPLATE_VBoxMainClientExe_PCHFLAGS)
+ TEMPLATE_VBoxMainClientDll_LDFLAGS     = -fPIC $(TEMPLATE_VBoxMainClientExe_LDFLAGS)
 endif
-TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainClientExe_LDFLAGS.darwin))
+TEMPLATE_VBoxMainClientDll_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainClientExe_LDFLAGS.darwin))
 
 #
 # Template for building testcases which are API clients.

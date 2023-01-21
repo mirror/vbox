@@ -87,7 +87,7 @@ if !defined(VBOX_ONLY_SDK)
  # The C API binding utility DLL
  #
  DLLS += VBoxCAPI
- VBoxCAPI_TEMPLATE = VBOXMAINCLIENTDLL
+ VBoxCAPI_TEMPLATE = VBoxMainClientDll
  ifdef VBOX_WITH_XPCOM
   # Keep old name on XPCOM so that legacy code is happy.
   VBoxCAPI_INST = $(INST_BIN)VBoxXPCOMC$(VBOX_SUFF_DLL)

@@ -51,7 +51,7 @@ DLLS     += VBoxHeadless
 else
 PROGRAMS += VBoxHeadless
 endif
-VBoxHeadless_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBoxMainClientExe)
+VBoxHeadless_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBoxMainClientDll,VBoxMainClientExe)
 VBoxHeadless_DEFS     += $(if $(VBOX_WITH_RECORDING),VBOX_WITH_RECORDING,)
 VBoxHeadless_INCS      = \
 	$(VBOX_GRAPHICS_INCS) \

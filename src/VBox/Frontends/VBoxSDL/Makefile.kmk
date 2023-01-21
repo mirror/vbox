@@ -50,7 +50,7 @@ ifdef VBOX_WITH_HARDENING
 else
  PROGRAMS += VBoxSDL
 endif
-VBoxSDL_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBoxMainClientExe)
+VBoxSDL_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBoxMainClientDll,VBoxMainClientExe)
 VBoxSDL_SDKS       = LIBSDL
 VBoxSDL_SOURCES    = \
 	VBoxSDL.cpp \
