@@ -6957,7 +6957,6 @@ TEMPLATE_VBoxR3DllNonPedantic-x86_DEFS      = $(filter-out HC_ARCH_BITS%,$(TEMPL
 	HC_ARCH_BITS=32 ARCH_BITS=32
 
 
-
 #
 # Same as VBoxR3DllNonPedantic, only it optimizes debug builds.
 #
@@ -7026,99 +7025,6 @@ ifeq ($(KBUILD_TYPE),debug)
   TEMPLATE_VBoxR3RuntimeDllNonPedanticFast_PCHFLAGS       = $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_PCHFLAGS) -O2 -fno-omit-frame-pointer
  endif
 endif
-
-
-#
-# Template for building libraries, shared libraries / modules
-# which only depends on IPRT for crt.
-#
-TEMPLATE_VBoxNoCrtGccLib = VBox no-crt GCC libraries and modules, yasm/nasm.
-TEMPLATE_VBoxNoCrtGccLib_DEFS              = IN_RING3 IPRT_NO_CRT $(ARCH_BITS_DEFS)
-TEMPLATE_VBoxNoCrtGccLib_ASDEFS            = ASM_CALL64_GCC
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS            = -nostdinc -fno-strict-aliasing -fno-math-errno $(VBOX_GCC_WARN) -Werror-implicit-function-declaration
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.x86        = -m32
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.amd64      = -m64 -mcmodel=medium -fno-common
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.sparc32    = -m32
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.sparc64    = -m64
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.release    = -O2 -fno-strict-aliasing
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.profile    = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.release)
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.kprofile   = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.release)
-TEMPLATE_VBoxNoCrtGccLib_CFLAGS.darwin     = -static
-TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS          = $(filter-out -Werror-implicit-function-declaration,$(TEMPLATE_VBoxNoCrtGccLib_CFLAGS))
-TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.$(KBUILD_TARGET))
-TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS          = $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS)
-TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET))
-TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET_ARCH) =  $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_VBoxNoCrtGccLib_INCS              = $(PATH_ROOT)/include/iprt/nocrt
-
-ifeq (disabled-by-mingw-w64 $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
- # cross compile to 64-bit ELF (linux).
- TEMPLATE_VBoxNoCrtGccLib_TOOL             = XGCCAMD64LINUX
- TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = YASM
- TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = -f elf64 -DASM_FORMAT_ELF -D__YASM__ -g dwarf2 -w+orphan-labels $(VBOX_YASM_Wno-segreg-in-64bit)
- TEMPLATE_VBoxNoCrtGccLib_LIBS             = $(KBUILD_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701-r2/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
- TEMPLATE_VBoxNoCrtGccLib_LDFLAGS          = -nostdlib
-
-else if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
- # Use the default GCC (MinGW) with the Microsoft linker.
- # (Drop all '-g' options as we're unable to strip the debug info.)
- TEMPLATE_VBoxNoCrtGccLib_TOOL             = $(VBOX_GCC_TOOL)
- if $(VBOX_GCC_VERSION_CC) < 30400
-  TEMPLATE_VBoxNoCrtGccLib_DEFS           += RT_WITHOUT_PRAGMA_ONCE
- endif
- TEMPLATE_VBoxNoCrtGccLib_ASTOOL          := $(VBOX_ASTOOL)
- TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = $(VBOX_ASFLAGS)
- TEMPLATE_VBoxNoCrtGccLib_LDTOOL           = $(VBOX_VCC_TOOL)
- TEMPLATE_VBoxNoCrtGccLib_LDFLAGS          = -Incremental:NO -MapInfo:Exports -NoD -Ignore:4197
- TEMPLATE_VBoxNoCrtGccLib_LIBS             = $(VBOX_GCC_LIBGCC)
- TEMPLATE_VBoxNoCrtGccLib_CFLAGS          := $(filter-out -g,$(TEMPLATE_VBoxNoCrtGccLib_CFLAGS)) -s
- TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS        := $(filter-out -g,$(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS)) -s
- TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS        := $(filter-out -g,$(TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS)) -s
-
-else
- # Use the default GCC.
- # The use of --exclude-libs ALL is to avoid confusing the linux ld.so.
- TEMPLATE_VBoxNoCrtGccLib_TOOL             = $(VBOX_GCC_TOOL)
- if $(VBOX_GCC_VERSION_CC) < 30400
-  TEMPLATE_VBoxNoCrtGccLib_DEFS           += RT_WITHOUT_PRAGMA_ONCE
- endif
- TEMPLATE_VBoxNoCrtGccLib_ASTOOL          := $(VBOX_ASTOOL)
- TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = $(VBOX_ASFLAGS)
- TEMPLATE_VBoxNoCrtGccLib_CFLAGS          += $(VBOX_GCC_fno-stack-protector)
- TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS        += $(VBOX_GCC_fno-stack-protector)
- TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS        += $(VBOX_GCC_fno-stack-protector)
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-  # in 64-bit mode we'll build a sys-module (VBoxREM2).
-  if1of ($(KBUILD_TARGET), darwin solaris)
-   TEMPLATE_VBoxNoCrtGccLib_LDFLAGS.solaris= -64 -r
-  else
-   TEMPLATE_VBoxNoCrtGccLib_LDFLAGS        = -nostdlib
-  endif
- else # x86:
-  TEMPLATE_VBoxNoCrtGccLib_LDFLAGS         = -nostdlib
-  ifn1of ($(KBUILD_TARGET), os2 darwin solaris)
-   TEMPLATE_VBoxNoCrtGccLib_LDFLAGS       += $(VBOX_GCC_NO_UNDEFINED)
-  endif
- endif # x86
- TEMPLATE_VBoxNoCrtGccLib_LDFLAGS.darwin   = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -Wl,-headerpad_max_install_names
- TEMPLATE_VBoxNoCrtGccLib_LIBS             = # FIXME - has unwind mess.
-endif
-
-
-#
-# Same as VBoxNoCrtGccLib only it uses GAS as the assembler instead of yasm/nasm.
-#
-TEMPLATE_VBOXNOCRTGAS = VBox no-crt GCC libraries and modules, gas.
-TEMPLATE_VBOXNOCRTGAS_EXTENDS = VBoxNoCrtGccLib
-TEMPLATE_VBOXNOCRTGAS_ASTOOL = $(TEMPLATE_VBoxNoCrtGccLib_TOOL)
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
- TEMPLATE_VBOXNOCRTGAS_ASFLAGS = -s
-else
- TEMPLATE_VBOXNOCRTGAS_ASFLAGS = -g
-endif
-TEMPLATE_VBOXNOCRTGAS_ASFLAGS.x86 = -m32
-TEMPLATE_VBOXNOCRTGAS_ASFLAGS.amd64 = -m64
 
 
 #
