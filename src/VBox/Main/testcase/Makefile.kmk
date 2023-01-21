@@ -324,7 +324,7 @@ tstUnattendedScript_LIBS     = \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
 
 INSTALLS += tstUnattendedScriptFiles
-tstUnattendedScriptFiles_TEMPLATE = VBOXMAINTSTEXE
+tstUnattendedScriptFiles_TEMPLATE = VBoxMainTstExe
 tstUnattendedScriptFiles_SOURCES = \
 	tstUnattendedScript-1.template \
 	tstUnattendedScript-1.expected
