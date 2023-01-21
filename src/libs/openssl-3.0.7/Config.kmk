@@ -241,7 +241,6 @@ endif
 TEMPLATE_LIBCRYPTO = Template for the OpenSSL crypto library.
 TEMPLATE_LIBCRYPTO_EXTENDS = VBoxR3RuntimeDllNonPedantic
 ifneq ($(KBUILD_TARGET), win)
- ## @todo correct inheritance here to make it use all the VBOXR3NP settings instead of overriding all of them.
  TEMPLATE_LIBCRYPTO_ASTOOL          = $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_TOOL)
  TEMPLATE_LIBCRYPTO_ASFLAGS         = -include $(VBOX_PATH_OPENSSL)/openssl-mangling.h
  TEMPLATE_LIBCRYPTO_ASFLAGS.x86     = -m32
