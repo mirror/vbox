@@ -6930,17 +6930,6 @@ endif
 
 
 #
-# Template for the CppUnit kind of testcases.
-#
-TEMPLATE_VBOXCPPUNITEXE  = VBox CppUnit Testcase Exe
-TEMPLATE_VBOXCPPUNITEXE_EXTENDS = VBoxR3TstExe
-## @todo make a CPPUNIT SDK and add cppunit tools packages for windows, mac, solaris and OS/2.
-#TEMPLATE_VBOXCPPUNITEXE_SDKS = CPPUNIT -
-TEMPLATE_VBOXCPPUNITEXE_LIBS = \
-	$(TEMPLATE_VBoxR3TstExe_LIBS) \
-	cppunit
-
-#
 # Template for building bad C/C++ style R3 executables (no -pedantic).
 #
 TEMPLATE_VBOXR3NPEXE                     = VBox Ring 3 Non-pedantic
