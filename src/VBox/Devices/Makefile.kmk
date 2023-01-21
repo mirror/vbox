@@ -1482,23 +1482,19 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  #
  # EEPROM device unit test requires cppunit
  #
- ifdef VBOX_WITH_CPPUNIT_TESTCASES
-  ifdef VBOX_WITH_E1000
-   PROGRAMS += tstDevEEPROM
-   tstDevEEPROM_TEMPLATE    = VBOXCPPUNITEXE
-   tstDevEEPROM_SOURCES     = \
+ if defined(VBOX_WITH_E1000) && defined(VBOX_WITH_TESTCASES)
+  PROGRAMS += tstDevEEPROM
+  tstDevEEPROM_TEMPLATE    = VBoxR3TstExe
+  tstDevEEPROM_SOURCES     = \
   	Network/testcase/tstDevEEPROM.cpp \
   	Network/DevEEPROM.cpp
-   tstDevEEPROM_LIBS        = \
-  	$(TARGET_VBoxDD)
 
-   PROGRAMS += tstDevPhy
-   tstDevPhy_TEMPLATE    = VBOXCPPUNITEXE
-   tstDevPhy_SOURCES     = \
+  PROGRAMS += tstDevPhy
+  tstDevPhy_TEMPLATE    = VBoxR3TstExe
+  tstDevPhy_DEFS        = PHY_UNIT_TEST
+  tstDevPhy_SOURCES     = \
   	Network/testcase/tstDevPhy.cpp \
   	Network/DevE1000Phy.cpp
-   tstDevPhy_DEFS        = PHY_UNIT_TEST
-  endif
  endif
 
  #

@@ -50,11 +50,17 @@
 
 /* Little helpers ************************************************************/
 #ifdef PHY_UNIT_TEST
-# include <stdio.h>
-# define PhyLog(a)               printf a
-#else /* PHY_UNIT_TEST */
+# ifdef CPP_UNIT
+#  include <stdio.h>
+#  define PhyLog(a)               printf a
+# else
+#  include <iprt/test.h>
+#  define PhyLogC99(...)         RTTestIPrintf(RTTESTLVL_ALWAYS, __VA_ARGS__)
+#  define PhyLog(a)              PhyLogC99 a
+# endif
+#else  /* !PHY_UNIT_TEST */
 # define PhyLog(a)               Log(a)
-#endif /* PHY_UNIT_TEST */
+#endif /* !PHY_UNIT_TEST */
 
 #define REG(x) pPhy->au16Regs[x##_IDX]
 

@@ -25,13 +25,25 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#include <cppunit/ui/text/TestRunner.h>
-#include <cppunit/extensions/HelperMacros.h>
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#ifdef USE_CPPUNIT
+# include <cppunit/ui/text/TestRunner.h>
+# include <cppunit/extensions/HelperMacros.h>
+#else
+# include "CppUnitEmulation.h"
+#endif
 #include <VBox/vmm/pdmdev.h>
 #include "../DevEEPROM.h"
 
-static const uint16_t initialContent[] = {
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static const uint16_t g_abInitialContent[] =
+{
     0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
     0x0008, 0x0009, 0x000a, 0x000b, 0x000c, 0x000d, 0x000e, 0x000f,
     0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017,
@@ -42,11 +54,16 @@ static const uint16_t initialContent[] = {
     0x0038, 0x0039, 0x003a, 0x003b, 0x003c, 0x003d, 0x003e, 0x003f
 };
 
+
 /**
  * Test fixture for 93C46-compatible EEPROM device emulation.
  */
-class EEPROMTest : public CppUnit::TestFixture  {
-    CPPUNIT_TEST_SUITE( EEPROMTest );
+class EEPROMTest
+#ifdef USE_CPPUNIT
+    : public CppUnit::TestFixture
+#endif
+{
+    CPPUNIT_TEST_SUITE( tstDevEEPROM );
 
     CPPUNIT_TEST( testRead );
     CPPUNIT_TEST( testSequentialRead );
@@ -105,7 +122,7 @@ public:
     void setUp()
     {
         eeprom = new EEPROM93C46;
-        eeprom->init(initialContent);
+        eeprom->init(g_abInitialContent);
     }
 
     void tearDown()
@@ -115,7 +132,7 @@ public:
 
     void testSize()
     {
-        CPPUNIT_ASSERT_EQUAL( sizeof(initialContent), (size_t)EEPROM93C46::SIZE );
+        CPPUNIT_ASSERT_EQUAL( sizeof(g_abInitialContent), (size_t)EEPROM93C46::SIZE );
     }
 
     void testRead()
@@ -125,8 +142,8 @@ public:
             shiftOutBits(READ_OPCODE, READ_OPCODE_BITS);
             shiftOutBits(wordAddr, READ_ADDR_BITS);
 
-            CPPUNIT_ASSERT_EQUAL( initialContent[wordAddr], (uint16_t)wordAddr );
-            CPPUNIT_ASSERT_EQUAL( initialContent[wordAddr], shiftInBits(DATA_BITS) );
+            CPPUNIT_ASSERT_EQUAL( g_abInitialContent[wordAddr], (uint16_t)wordAddr );
+            CPPUNIT_ASSERT_EQUAL( g_abInitialContent[wordAddr], shiftInBits(DATA_BITS) );
             standby();
         }
         stop();
@@ -138,7 +155,7 @@ public:
         shiftOutBits(READ_OPCODE, READ_OPCODE_BITS);
         shiftOutBits(0, READ_ADDR_BITS);
         for ( int wordAddr=0; wordAddr < EEPROM93C46::SIZE; wordAddr++ ) {
-            CPPUNIT_ASSERT_EQUAL( initialContent[wordAddr], shiftInBits(DATA_BITS) );
+            CPPUNIT_ASSERT_EQUAL( g_abInitialContent[wordAddr], shiftInBits(DATA_BITS) );
         }
         stop();
     }
@@ -519,11 +536,15 @@ void EEPROMTest::writeOpAddr(int opCode, int opCodeBits, uint16_t addr, int addr
     shiftOutBits(addr, addrBits);
 }
 
-// Create text test runner and run all tests.
 int main()
 {
+#ifdef USE_CPPUNIT
     CppUnit::TextUi::TestRunner runner;
     runner.addTest( EEPROMTest::suite() );
     return runner.run() ? 0 : 1;
+#else
+    EEPROMTest Test;
+    return Test.run();
+#endif
 }
 
