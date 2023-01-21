@@ -25,7 +25,6 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-
 #ifndef VBOX_INCLUDED_SRC_Network_testcase_CppUnitEmulation_h
 #define VBOX_INCLUDED_SRC_Network_testcase_CppUnitEmulation_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
@@ -69,4 +68,4 @@ public: \
     } while (0)
 #endif
 
-#endif /* VBOX_INCLUDED_SRC_Network_testcase_CppUnitEmulation_h */
+#endif /* !VBOX_INCLUDED_SRC_Network_testcase_CppUnitEmulation_h */
