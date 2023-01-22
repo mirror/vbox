@@ -34,7 +34,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxClient
 
-VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
+VBoxClient_TEMPLATE = VBoxGuestR3Exe
 VBoxClient_DEFS    += VBOX_WITH_HGCM
 
 VBoxClient_SOURCES  = \

@@ -71,7 +71,7 @@ $$(VBoxSF.kext_0_OUTDIR)/Info.plist: \
 # mount.vboxsf - The Shared Folders mounting tool.
 #
 PROGRAMS += mount.vboxsf
-mount.vboxsf_TEMPLATE = NewVBoxGuestR3Exe
+mount.vboxsf_TEMPLATE = VBoxGuestR3Exe
 mount.vboxsf_SOURCES  = mount.vboxsf.cpp
 mount.vboxsf_INST     = $(INST_ADDITIONS)VBoxSF.kext/Contents/MacOS/
 
