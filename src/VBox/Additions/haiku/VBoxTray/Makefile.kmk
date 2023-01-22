@@ -61,7 +61,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 # single bin will cause problems loading gcc4 binary from a gcc2-built Deskbar!
 
 PROGRAMS += VBoxTray
-VBoxTray_TEMPLATE = VBOXGUESTR3EXE
+VBoxTray_TEMPLATE = VBoxGuestR3Exe
 VBoxTray_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
 VBoxTray_DEFS    += LOG_ENABLED
 VBoxTray_INCS     = ../include

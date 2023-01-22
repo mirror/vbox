@@ -62,7 +62,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 # R1 will need gcc2-built input_server add-ons.
 
 PROGRAMS += VBoxMouse
-VBoxMouse_TEMPLATE = VBOXGUESTR3EXE
+VBoxMouse_TEMPLATE = VBoxGuestR3Exe
 VBoxMouse_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
 VBoxMouse_DEFS    += LOG_ENABLED
 VBoxMouse_INCS     = ../include
@@ -77,7 +77,7 @@ VBoxMouse_LIBS     = \
 	/system/servers/input_server
 
 PROGRAMS += VBoxMouseFilter
-VBoxMouseFilter_TEMPLATE = VBOXGUESTR3EXE
+VBoxMouseFilter_TEMPLATE = VBoxGuestR3Exe
 VBoxMouseFilter_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
 VBoxMouseFilter_DEFS    += LOG_ENABLED
 VBoxMouseFilter_INCS     = ../include
