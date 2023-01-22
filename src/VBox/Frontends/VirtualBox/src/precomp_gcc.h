@@ -172,8 +172,8 @@
 
 /* These two are freuqently used internal headers. */
 #include "UILibraryDefs.h"
-#include "QIWithRestorableGeometry.h"
-#include "QIWithRetranslateUI.h"
+/*#include "QIWithRestorableGeometry.h" - broken as it includes iprt/log.h thru UIDefs.h via UICommon.h. */
+/*#include "QIWithRetranslateUI.h"      - broken as it includes iprt/log.h thru UIDefs.h via UITranslator.h. */
 
 #if defined(Log) || defined(LogIsEnabled)
 # error "Log() from iprt/log.h cannot be defined in the precompiled header!"
