@@ -8471,31 +8471,24 @@ else ifn1of ($(KBUILD_TARGET), darwin os2 win)
 endif
 
 #
-# Template for building normal R3 (dynamic) libraries for the guest additions, allows warnings.
+# Template for building normal R3 (dynamic) libraries for the guest additions, strict.
 #
-## @todo rename to VBoxGuestR3DllWarn
-TEMPLATE_NewVBoxGuestR3Dll = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
-TEMPLATE_NewVBoxGuestR3Dll_EXTENDS  = VBOXGUESTR3DLL
-TEMPLATE_NewVBoxGuestR3Dll_LIBS     = \
+TEMPLATE_VBoxGuestR3Dll = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3Dll_EXTENDS    = VBOXGUESTR3DLL
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxGuestR3Dll_CFLAGS    = $(TEMPLATE_VBOXGUESTR3DLL_CFLAGS) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_CXXFLAGS  = $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_LDFLAGS   = $(TEMPLATE_VBOXGUESTR3DLL_LDFLAGS) $(VBOX_VCC_LD_WERR)
+else
+ TEMPLATE_VBoxGuestR3Dll_CFLAGS    = $(TEMPLATE_VBOXGUESTR3DLL_CFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_CXXFLAGS  = $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS) $(VBOX_GCC_WERR)
+endif
+TEMPLATE_VBoxGuestR3Dll_LIBS       = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(TEMPLATE_VBOXGUESTR3DLL_LIBS)
 
-#
-# Template for building normal R3 (dynamic) libraries for the guest additions, strict.
-#
-TEMPLATE_VBoxGuestR3Dll = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
-TEMPLATE_VBoxGuestR3Dll_EXTENDS  = NewVBoxGuestR3Dll
-TEMPLATE_VBoxGuestR3Dll_EXTENDS_BY = appending
-ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxGuestR3Dll_CFLAGS      += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Dll_CXXFLAGS    += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Dll_LDFLAGS     += $(VBOX_VCC_LD_WERR)
-else
- TEMPLATE_VBoxGuestR3Dll_CFLAGS      += $(VBOX_GCC_WERR)
- TEMPLATE_VBoxGuestR3Dll_CXXFLAGS    += $(VBOX_GCC_WERR)
-endif
 
 #
 # Variant of VBoxGuestR3Dll that requires Windows 2000 or later for x86, and W2K3 for AMD64.
