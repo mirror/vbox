@@ -32,13 +32,7 @@ ifdef VBOX_WITH_TESTCASES
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
-VBOX_DND_GUESTHOST_FILES := \
-	DnDDroppedFiles.cpp \
-	DnDMIME.cpp \
-	DnDPath.cpp \
-	DnDTransferObject.cpp \
-	DnDTransferList.cpp \
-	DnDUtils.cpp
+VBOX_PATH_HOSTSERVICES_COMMON = $(PATH_ROOT)/src/VBox/HostServices/common
 
 #
 # DnDGuestR3Lib - For tools on the guest side,
@@ -46,13 +40,19 @@ VBOX_DND_GUESTHOST_FILES := \
 #
 ifdef VBOX_WITH_ADDITIONS
  LIBRARIES += VBoxDnDGuestR3Lib
- VBoxDnDGuestR3Lib_TEMPLATE = VBOXGUESTR3LIB
- VBoxDnDGuestR3Lib_SOURCES  = $(VBOX_DND_GUESTHOST_FILES)
+endif
+VBoxDnDGuestR3Lib_TEMPLATE = VBoxGuestR3Lib
+VBoxDnDGuestR3Lib_SOURCES  = \
+	DnDDroppedFiles.cpp \
+	DnDMIME.cpp \
+	DnDPath.cpp \
+	DnDTransferObject.cpp \
+	DnDTransferList.cpp \
+	DnDUtils.cpp
 
 # LIBRARIES.win.amd64 += VBoxDnDGuestR3Lib-x86
 # VBoxDnDGuestR3Lib-x86_EXTENDS      := VBoxDnDGuestR3Lib
 # VBoxDnDGuestR3Lib-x86_BLD_TRG_ARCH := x86
-endif
 
 #
 # DnDHostR3Lib - For the host side, e.g. Main
@@ -60,11 +60,8 @@ endif
 #
 LIBRARIES += VBoxDnDHostR3Lib
 VBoxDnDHostR3Lib_TEMPLATE   = VBoxR3Dll
-VBoxDnDHostR3Lib_SOURCES    = $(VBOX_DND_GUESTHOST_FILES)
-
-# Include the common host services code.
-VBOX_PATH_HOSTSERVICES_COMMON = $(PATH_ROOT)/src/VBox/HostServices/common
-VBoxDnDHostR3Lib_SOURCES   += \
+VBoxDnDHostR3Lib_SOURCES    = \
+	$(VBoxDnDGuestR3Lib_SOURCES) \
 	$(VBOX_PATH_HOSTSERVICES_COMMON)/client.cpp \
 	$(VBOX_PATH_HOSTSERVICES_COMMON)/message.cpp
 
