@@ -33,11 +33,16 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
+
 #
 # Target lists.
 #
 PROGRAMS += VBoxService
 
+
+#
+# Globals?
+#
 # Enable the timesync service within VBoxService.
 VBOX_WITH_VBOXSERVICE_TIMESYNC      := 1
 
@@ -77,17 +82,13 @@ if "$(KBUILD_TARGET)" == "linux" && defined(VBOX_WITH_GUEST_PROPS)
  VBOX_WITH_VBOXSERVICE_DRMRESIZE    := 1
 endif
 
+
 #
 # VBoxService
 #
-if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) ## @todo use VBoxGuestR3Exe everywhere
 VBoxService_TEMPLATE      = VBoxGuestR3Exe
-else
-VBoxService_TEMPLATE      = NewVBoxGuestR3Exe
-endif
 
-# Define features to be activate.
-VBoxService_DEFS         += \
+VBoxService_DEFS          = \
 	$(if $(VBOX_WITH_VBOXSERVICE_CONTROL),VBOX_WITH_VBOXSERVICE_CONTROL,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_CPUHOTPLUG),VBOX_WITH_VBOXSERVICE_CPUHOTPLUG,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_DRMRESIZE),VBOX_WITH_VBOXSERVICE_DRMRESIZE,) \
@@ -95,15 +96,11 @@ VBoxService_DEFS         += \
 	$(if $(VBOX_WITH_VBOXSERVICE_PAGE_SHARING),VBOX_WITH_VBOXSERVICE_PAGE_SHARING,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_TIMESYNC),VBOX_WITH_VBOXSERVICE_TIMESYNC,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_TOOLBOX),VBOX_WITH_VBOXSERVICE_TOOLBOX,) \
-	$(if $(VBOX_WITH_VBOXSERVICE_VMINFO),VBOX_WITH_VBOXSERVICE_VMINFO,)
-
-# Import global defines.
-VBoxService_DEFS         += \
+	$(if $(VBOX_WITH_VBOXSERVICE_VMINFO),VBOX_WITH_VBOXSERVICE_VMINFO,) \
 	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
 	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
-
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 VBoxService_DEFS         += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
 else
