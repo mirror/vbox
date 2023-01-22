@@ -35,10 +35,6 @@ pam_vbox_TEMPLATE := VBoxGuestR3Dll
 pam_vbox_DEFS     := LOG_TO_BACKDOOR VBOX_WITH_HGCM
 pam_vbox_DEFS     += VBOX_WITH_GUEST_PROPS
 pam_vbox_SOURCES  := pam_vbox.cpp
-pam_vbox_LIBS      = \
-	pam \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
+pam_vbox_LIBS     := pam
 
 include $(FILE_KBUILD_SUB_FOOTER)
