@@ -49,7 +49,7 @@ include $(PATH_SUB_CURRENT)/VBoxSF/Makefile.kmk
 # Installation helper.
 #
 PROGRAMS += VBoxReplaceDll
-VBoxReplaceDll_TEMPLATE = NewVBoxGuestR3Exe
+VBoxReplaceDll_TEMPLATE = VBoxGuestR3Exe
 VBoxReplaceDll_SOURCES = VBoxReplaceDll.cpp
 
 
