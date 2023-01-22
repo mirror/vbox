@@ -3337,6 +3337,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-implicit-fallthrough       ?= $(call VBOX_GCC_CHECK_CC,-Wno-implicit-fallthrough,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-inline                     ?= $(call VBOX_GCC_CHECK_CXX,-Wno-inline,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-unknown-pragmas            ?= $(call VBOX_GCC_CHECK_CXX,-Wno-unknown-pragmas,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-deprecated-copy            ?= $(call VBOX_GCC_CHECK_CXX,-Wno-deprecated-copy,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_m64                   ?= $(call VBOX_GCC_CHECK_CC,-m64,)'
@@ -7947,7 +7948,7 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBoxQtGuiExe_CFLAGS   += -fPIC
    TEMPLATE_VBoxQtGuiExe_CXXFLAGS += -fPIC
    # Needed for GCC 9. Even system's Qt 5.12.4 (on Ubuntu 19.10) did not have this fixed yet.
-   TEMPLATE_VBoxQtGuiExe_CXXFLAGS.linux = -Wno-deprecated-copy $(TEMPLATE_VBoxQtGuiExe_CXXFLAGS)
+   TEMPLATE_VBoxQtGuiExe_CXXFLAGS.linux = $(VBOX_GCC_Wno-deprecated-copy) $(TEMPLATE_VBoxQtGuiExe_CXXFLAGS)
    TEMPLATE_VBoxQtGuiExe_LDFLAGS  += -fPIC
  endif # not darwin, os2 or win
 
@@ -8730,7 +8731,7 @@ endif
 
 #
 # Guest additions libraries (all static).
-#   The _MINI and _SHARED are both compiled as PIC and intended for linking into a .so/.dll/.dylib.
+#   The _SHARED variants are compiled as PIC and intended for linking into a .so/.dll/.dylib.
 #
 VBOX_LIB_IPRT_GUEST_R3           = $(VBOX_PATH_ADDITIONS_LIB)/RuntimeGuestR3$(VBOX_SUFF_LIB)
 VBOX_LIB_IPRT_GUEST_R3_SHARED    = $(VBOX_PATH_ADDITIONS_LIB)/RuntimeGuestR3Shared$(VBOX_SUFF_LIB)
