@@ -8559,7 +8559,7 @@ TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS             = \
 # Variant of NewerVccVBoxGuestR3Dll that requires Windows Vista or later.
 #
 TEMPLATE_NewerVccVBoxGuestR3DllMinVista = NewerVccVBoxGuestR3Dll with the newer Visual C++ version (2013 or later).
-TEMPLATE_NewerVccVBoxGuestR3DllMinVista_EXTENDS  = NewerVccVBoxGuestR3Dll
+TEMPLATE_NewerVccVBoxGuestR3DllMinVista_EXTENDS := NewerVccVBoxGuestR3Dll
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
@@ -8578,12 +8578,12 @@ TEMPLATE_VBoxGuestR3Lib_EXTENDS    := VBoxGuestR3ExeBase
 TEMPLATE_VBoxGuestR3Lib_EXTENDS_BY := appending
 TEMPLATE_VBoxGuestR3Lib_INST        = $(INST_ADDITIONS_LIB)
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxGuestR3Lib_CFLAGS     += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Lib_CXXFLAGS   += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Lib_LDFLAGS    += $(VBOX_VCC_LD_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CFLAGS    += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CXXFLAGS  += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_LDFLAGS   += $(VBOX_VCC_LD_WERR)
 else
- TEMPLATE_VBoxGuestR3Lib_CFLAGS     += $(VBOX_GCC_WERR)
- TEMPLATE_VBoxGuestR3Lib_CXXFLAGS   += $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CFLAGS    += $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CXXFLAGS  += $(VBOX_GCC_WERR)
 endif
 
 
@@ -8621,39 +8621,6 @@ else
 TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS) -fno-exceptions
 TEMPLATE_VBoxGuestR3NoCrtExe_PCHFLAGS        = $(TEMPLATE_VBoxGuestR3Exe_PCHFLAGS) -fno-exceptions
 endif
-
-
-#
-# Template for building R3 programs for the guest additions (no -pedantic)
-#
-TEMPLATE_VBOXGUESTR3NPEXE          = VBox Guest Program Non-pedantic
-TEMPLATE_VBOXGUESTR3NPEXE_EXTENDS  = VBoxGuestR3ExeBase
-ifneq ($(KBUILD_TARGET),win) # gcc only
- TEMPLATE_VBOXGUESTR3NPEXE_CXXFLAGS = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBoxGuestR3ExeBase_CXXFLAGS)) \
- 	-Wno-sign-compare
- TEMPLATE_VBOXGUESTR3NPEXE_CFLAGS   = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBoxGuestR3ExeBase_CFLAGS)) \
- 	-Wno-sign-compare
-endif
-
-#
-# Template for building R3 (dynamic) libraries for the guest additions (no -pedantic)
-#
-TEMPLATE_VBOXGUESTR3NPDLL           = VBox Guest User Dynamic Libraries Non-pedantic
-TEMPLATE_VBOXGUESTR3NPDLL_EXTENDS   = VBOXGUESTR3NPEXE
-## @todo add a INSTFUN that separates dlls and libs.
-ifn1of ($(KBUILD_TARGET), darwin os2 win)
- TEMPLATE_VBOXGUESTR3NPDLL_DEFS     = $(TEMPLATE_VBOXGUESTR3NPEXE_DEFS) PIC
- TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS   = $(TEMPLATE_VBOXGUESTR3NPEXE_CFLAGS) -fPIC
- TEMPLATE_VBOXGUESTR3NPDLL_CXXFLAGS = $(TEMPLATE_VBOXGUESTR3NPEXE_CXXFLAGS) -fPIC -fno-exceptions
- TEMPLATE_VBOXGUESTR3NPDLL_LDFLAGS  = $(TEMPLATE_VBOXGUESTR3NPEXE_LDFLAGS) -fPIC
-endif
-
-#
-# Template for building R3 (static) libraries for the guest additions (no -pedantic)
-#
-TEMPLATE_VBOXGUESTR3NPLIB           = VBox Guest User Libraries Non-pedantic
-TEMPLATE_VBOXGUESTR3NPLIB_EXTENDS   = VBOXGUESTR3NPEXE
-TEMPLATE_VBOXGUESTR3NPLIB_INST      = $(INST_ADDITIONS_LIB)
 
 
 #
