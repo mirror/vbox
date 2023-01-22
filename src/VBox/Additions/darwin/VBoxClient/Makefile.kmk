@@ -38,16 +38,16 @@ VBoxClient_TEMPLATE = VBoxGuestR3Exe
 VBoxClient_DEFS    += VBOX_WITH_HGCM
 
 VBoxClient_SOURCES  = \
-    VBoxClient.cpp
+	VBoxClient.cpp
 
 ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_DEFS   += \
-	VBOX_WITH_SHARED_CLIPBOARD
+ 	VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_SOURCES += \
-	VBoxClientClipboard.cpp \
-	VBoxClientClipboardHostToGuest.cpp \
-	VBoxClientClipboardGuestToHost.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
+ 	VBoxClientClipboard.cpp \
+ 	VBoxClientClipboardHostToGuest.cpp \
+ 	VBoxClientClipboardGuestToHost.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
 endif
 
 VBoxClient_LDFLAGS  = -framework IOKit -framework ApplicationServices
