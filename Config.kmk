@@ -8571,26 +8571,19 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 
 #
-# Template for building R3 (static) libraries for the guest additions, allows warnings.
-#
-## @todo rename to VBoxGuestR3LibWarn.
-TEMPLATE_VBOXGUESTR3LIB           = VBox Guest User Libraries
-TEMPLATE_VBOXGUESTR3LIB_EXTENDS   = VBoxGuestR3ExeBase
-TEMPLATE_VBOXGUESTR3LIB_INST      = $(INST_ADDITIONS_LIB)
-
-#
 # Template for building R3 (static) libraries for the guest additions, strict.
 #
-TEMPLATE_VBoxGuestR3Lib = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
-TEMPLATE_VBoxGuestR3Lib_EXTENDS  = VBOXGUESTR3LIB
-TEMPLATE_VBoxGuestR3Lib_EXTENDS_BY = appending
+TEMPLATE_VBoxGuestR3Lib            := VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3Lib_EXTENDS    := VBoxGuestR3ExeBase
+TEMPLATE_VBoxGuestR3Lib_EXTENDS_BY := appending
+TEMPLATE_VBoxGuestR3Lib_INST        = $(INST_ADDITIONS_LIB)
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxGuestR3Lib_CFLAGS      += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Lib_CXXFLAGS    += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Lib_LDFLAGS     += $(VBOX_VCC_LD_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CFLAGS     += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CXXFLAGS   += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_LDFLAGS    += $(VBOX_VCC_LD_WERR)
 else
- TEMPLATE_VBoxGuestR3Lib_CFLAGS      += $(VBOX_GCC_WERR)
- TEMPLATE_VBoxGuestR3Lib_CXXFLAGS    += $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CFLAGS     += $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Lib_CXXFLAGS   += $(VBOX_GCC_WERR)
 endif
 
 
