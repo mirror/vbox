@@ -8453,42 +8453,41 @@ else
 endif
 
 #
-# Template for building R3 (dynamic) libraries for the guest additions.
+# Template for building R3 (dynamic) libraries for the guest additions, relaxed.
 #
-TEMPLATE_VBOXGUESTR3DLL           = VBox Guest User Dynamic Libraries
-TEMPLATE_VBOXGUESTR3DLL_EXTENDS   = VBoxGuestR3ExeBase
+TEMPLATE_VBoxGuestR3DllNonPedantic          := VBox Guest User Dynamic Libraries w/ IPRT and VBGL, non-pedantic.
+TEMPLATE_VBoxGuestR3DllNonPedantic_EXTENDS  := VBoxGuestR3ExeBase
 ## @todo add a INSTFUN that separates dlls and libs.
 ifeq ($(KBUILD_TARGET),win)
  ifeq ($(KBUILD_TYPE),asan)
-  TEMPLATE_VBOXGUESTR3DLL_LIBS.x86   = $(patsubst %clang_rt.asan-i386.lib, %clang_rt.asan_dll_thunk-i386.lib, $(filter-out %clang_rt.asan_cxx-i386.lib,$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.x86)))
-  TEMPLATE_VBOXGUESTR3DLL_LIBS.amd64 = $(patsubst %clang_rt.asan-x86_64.lib, %clang_rt.asan_dll_thunk-x86_64.lib, $(filter-out %clang_rt.asan_cxx-x86_64.lib,$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.amd64)))
+  TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.x86   = $(patsubst %clang_rt.asan-i386.lib, %clang_rt.asan_dll_thunk-i386.lib, $(filter-out %clang_rt.asan_cxx-i386.lib,$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.x86)))
+  TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.amd64 = $(patsubst %clang_rt.asan-x86_64.lib, %clang_rt.asan_dll_thunk-x86_64.lib, $(filter-out %clang_rt.asan_cxx-x86_64.lib,$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.amd64)))
  endif
 else ifn1of ($(KBUILD_TARGET), darwin os2 win)
- TEMPLATE_VBOXGUESTR3DLL_DEFS     = $(TEMPLATE_VBoxGuestR3ExeBase_DEFS) PIC
- TEMPLATE_VBOXGUESTR3DLL_CFLAGS   = $(TEMPLATE_VBoxGuestR3ExeBase_CFLAGS) -fPIC
- TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS = $(TEMPLATE_VBoxGuestR3ExeBase_CXXFLAGS) -fPIC -fno-exceptions
- TEMPLATE_VBOXGUESTR3DLL_LDFLAGS  = $(TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS) -fPIC
+ TEMPLATE_VBoxGuestR3DllNonPedantic_DEFS     = $(TEMPLATE_VBoxGuestR3ExeBase_DEFS) PIC
+ TEMPLATE_VBoxGuestR3DllNonPedantic_CFLAGS   = $(TEMPLATE_VBoxGuestR3ExeBase_CFLAGS) -fPIC
+ TEMPLATE_VBoxGuestR3DllNonPedantic_CXXFLAGS = $(TEMPLATE_VBoxGuestR3ExeBase_CXXFLAGS) -fPIC -fno-exceptions
+ TEMPLATE_VBoxGuestR3DllNonPedantic_LDFLAGS  = $(TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS) -fPIC
 endif
+TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS      = \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS)
 
 #
 # Template for building normal R3 (dynamic) libraries for the guest additions, strict.
 #
-TEMPLATE_VBoxGuestR3Dll = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
-TEMPLATE_VBoxGuestR3Dll_EXTENDS    = VBOXGUESTR3DLL
+TEMPLATE_VBoxGuestR3Dll           := VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3Dll_EXTENDS   := VBoxGuestR3DllNonPedantic
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxGuestR3Dll_CFLAGS    = $(TEMPLATE_VBOXGUESTR3DLL_CFLAGS) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Dll_CXXFLAGS  = $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Dll_LDFLAGS   = $(TEMPLATE_VBOXGUESTR3DLL_LDFLAGS) $(VBOX_VCC_LD_WERR)
+ TEMPLATE_VBoxGuestR3Dll_CFLAGS    = $(TEMPLATE_VBoxGuestR3DllNonPedantic_CFLAGS) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_CXXFLAGS  = $(TEMPLATE_VBoxGuestR3DllNonPedantic_CXXFLAGS) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_LDFLAGS   = $(TEMPLATE_VBoxGuestR3DllNonPedantic_LDFLAGS) $(VBOX_VCC_LD_WERR)
 else
- TEMPLATE_VBoxGuestR3Dll_CFLAGS    = $(TEMPLATE_VBOXGUESTR3DLL_CFLAGS) $(VBOX_GCC_WERR)
- TEMPLATE_VBoxGuestR3Dll_CXXFLAGS  = $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_CFLAGS    = $(TEMPLATE_VBoxGuestR3DllNonPedantic_CFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Dll_CXXFLAGS  = $(TEMPLATE_VBoxGuestR3DllNonPedantic_CXXFLAGS) $(VBOX_GCC_WERR)
 endif
-TEMPLATE_VBoxGuestR3Dll_LIBS       = \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(TEMPLATE_VBOXGUESTR3DLL_LIBS)
-
 
 #
 # Variant of VBoxGuestR3Dll that requires Windows 2000 or later for x86, and W2K3 for AMD64.
@@ -8525,22 +8524,22 @@ endif
 #
 # Template for building normal R3 (dynamic) libraries for the guest additions with Visual C++ 2013 or later, strict.
 #
-TEMPLATE_NewerVccVBoxGuestR3Dll          = VBOXGUESTR3DLL with the newer Visual C++ version (2013 or later).
-TEMPLATE_NewerVccVBoxGuestR3Dll_EXTENDS  = VBOXGUESTR3DLL
+TEMPLATE_NewerVccVBoxGuestR3Dll          = VBoxGuestR3DllNonPedantic with the newer Visual C++ version (2013 or later).
+TEMPLATE_NewerVccVBoxGuestR3Dll_EXTENDS  = VBoxGuestR3DllNonPedantic
 if "$(KBUILD_TARGET)" == "win" && "$(VBOX_NEWER_VCC_TOOL_STEM)" != "$(VBOX_VCC_TOOL_STEM)"
  TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86    = $(VBOX_NEWER_VCC_TOOL_STEM)X86
  TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64  = $(VBOX_NEWER_VCC_TOOL_STEM)AMD64
  TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS        = \
- 	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS)) \
+ 	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBoxGuestR3DllNonPedantic_CXXFLAGS)) \
 	$(VBOX_NEWER_VCC_WARN_ALL) $(VBOX_VCC_WERR)
- TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS          = $(TEMPLATE_NewerVccVBOXGUESTR3DLL_CXXFLAGS)
+ TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS          = $(TEMPLATE_NewerVccVBoxGuestR3DllNonPedantic_CXXFLAGS)
  ifndef VBOX_WITH_NOCRT_STATIC
 # Hack begin
 # Does not work when building x86 for amd64 build (No rule to make target /oldnames.lib).
 # TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86        = \
-# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3DLL_TOOL.win.x86)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB), $(TEMPLATE_VBOXGUESTR3DLL_LIBS.x86))
+# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3DllNonPedantic_TOOL.win.x86)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB), $(TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.x86))
 # TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.amd64      = \
-# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3DLL_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB), $(TEMPLATE_VBOXGUESTR3DLL_LIBS.amd64))
+# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3DllNonPedantic_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB), $(TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.amd64))
 # Directly assign TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.
   TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/oldnames.lib \
@@ -8553,6 +8552,8 @@ if "$(KBUILD_TARGET)" == "win" && "$(VBOX_NEWER_VCC_TOOL_STEM)" != "$(VBOX_VCC_T
  endif # !VBOX_WITH_NOCRT_STATIC
 # Hack end
 endif
+TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS             = \
+	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS)
 
 #
 # Variant of NewerVccVBoxGuestR3Dll that requires Windows Vista or later.
@@ -8689,7 +8690,7 @@ TEMPLATE_VBOXGUESTR3XF86MOD_CXXFLAGS.linux = $(VBOX_GCC_fno-stack-protector) # R
 TEMPLATE_VBOXGUESTR3XF86MOD_SYSSUFF = .o
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS  = \
 	$(VBOX_LIB_VBGL_R3_XFREE86)
-TEMPLATE_VBOXGUESTR3XF86MOD_DEFS  = $(TEMPLATE_VBOXGUESTR3DLL_DEFS) VBOX_GUESTR3XF86MOD RTMEM_NO_WRAP_TO_EF_APIS
+TEMPLATE_VBOXGUESTR3XF86MOD_DEFS  = $(TEMPLATE_VBoxGuestR3ExeBase_DEFS) VBOX_GUESTR3XF86MOD RTMEM_NO_WRAP_TO_EF_APIS
 
 
 #
@@ -8702,22 +8703,22 @@ TEMPLATE_VBOXGUESTR3XF86LIB_INST    = $(INST_ADDITIONS_LIB)
 
 #
 # Template for X.org guest modules (shared libs).
-# This mostly about zapping unnecessary LIBS from VBOXGUESTR3DLL and adding some flags.
+# This mostly about zapping unnecessary LIBS from VBoxGuestR3DllNonPedantic and adding some flags.
 #
 TEMPLATE_VBOXGUESTR3XORGMOD       = VBox X.org Guest Module
-TEMPLATE_VBOXGUESTR3XORGMOD_EXTENDS = VBOXGUESTR3DLL
+TEMPLATE_VBOXGUESTR3XORGMOD_EXTENDS = VBoxGuestR3DllNonPedantic
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.$(KBUILD_TYPE)     = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.$(KBUILD_TARGET)   = $(NO_SUCH_VARIABLE)
-TEMPLATE_VBOXGUESTR3XORGMOD_CFLAGS = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS),$(TEMPLATE_VBOXGUESTR3DLL_CFLAGS)) -std=c99
-TEMPLATE_VBOXGUESTR3XORGMOD_CXXFLAGS = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS),$(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS))
+TEMPLATE_VBOXGUESTR3XORGMOD_CFLAGS = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxGuestR3DllNonPedantic_CFLAGS)) -std=c99
+TEMPLATE_VBOXGUESTR3XORGMOD_CXXFLAGS = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxGuestR3DllNonPedantic_CXXFLAGS))
 if1of ($(KBUILD_TARGET), linux)
  TEMPLATE_VBOXGUESTR3XORGMOD_CFLAGS += -Wno-conversion -Wno-unused-parameter
 endif
-TEMPLATE_VBOXGUESTR3XORGMOD_DEFS = $(TEMPLATE_VBOXGUESTR3DLL_DEFS) VBOX_GUESTR3XORGMOD RTMEM_NO_WRAP_TO_EF_APIS
+TEMPLATE_VBOXGUESTR3XORGMOD_DEFS = $(TEMPLATE_VBoxGuestR3DllNonPedantic_DEFS) VBOX_GUESTR3XORGMOD RTMEM_NO_WRAP_TO_EF_APIS
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  TEMPLATE_VBOXGUESTR3XORGMOD_DEFS += _XSERVER64
 endif
-TEMPLATE_VBOXGUESTR3XORGMOD_LDFLAGS = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS),$(TEMPLATE_VBOXGUESTR3DLL_LDFLAGS))
+TEMPLATE_VBOXGUESTR3XORGMOD_LDFLAGS = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS),$(TEMPLATE_VBoxGuestR3DllNonPedantic_LDFLAGS))
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS = \
 	$(VBOX_LIB_VBGL_R3_XORG)
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.freebsd += \
