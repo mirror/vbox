@@ -57,7 +57,7 @@
 #include "VBoxGuestR3LibInternal.h"
 
 
-/**
+/*
  * Function naming convention:
  *
  * FunctionNameRecv  = Receives a host message (request).
