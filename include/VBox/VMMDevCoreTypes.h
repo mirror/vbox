@@ -335,12 +335,10 @@ typedef struct HGCMFunctionParameter32
 
     int GetUInt32(uint32_t RT_FAR *pu32)
     {
-        if (type == VMMDevHGCMParmType_32bit)
-        {
-            *pu32 = u.value32;
-            return VINF_SUCCESS;
-        }
-        return VERR_INVALID_PARAMETER;
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_32bit, ("type=%d\n", type),
+                            *pu32 = UINT32_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
+        *pu32 = u.value32;
+        return VINF_SUCCESS;
     }
 
     void SetUInt64(uint64_t u64)
@@ -351,12 +349,10 @@ typedef struct HGCMFunctionParameter32
 
     int GetUInt64(uint64_t RT_FAR *pu64)
     {
-        if (type == VMMDevHGCMParmType_64bit)
-        {
-            *pu64 = u.value64;
-            return VINF_SUCCESS;
-        }
-        return VERR_INVALID_PARAMETER;
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_64bit, ("type=%d\n", type),
+                            *pu64 = UINT64_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
+        *pu64 = u.value64;
+        return VINF_SUCCESS;
     }
 
     void SetPtr(void RT_FAR *pv, uint32_t cb)
@@ -419,12 +415,10 @@ typedef struct HGCMFunctionParameter64
 
     int GetUInt32(uint32_t RT_FAR *pu32)
     {
-        if (type == VMMDevHGCMParmType_32bit)
-        {
-            *pu32 = u.value32;
-            return VINF_SUCCESS;
-        }
-        return VERR_INVALID_PARAMETER;
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_32bit, ("type=%d\n", type),
+                            *pu32 = UINT32_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
+        *pu32 = u.value32;
+        return VINF_SUCCESS;
     }
 
     void SetUInt64(uint64_t u64)
@@ -435,12 +429,10 @@ typedef struct HGCMFunctionParameter64
 
     int GetUInt64(uint64_t RT_FAR *pu64)
     {
-        if (type == VMMDevHGCMParmType_64bit)
-        {
-            *pu64 = u.value64;
-            return VINF_SUCCESS;
-        }
-        return VERR_INVALID_PARAMETER;
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_64bit, ("type=%d\n", type),
+                            *pu64 = UINT64_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
+        *pu64 = u.value64;
+        return VINF_SUCCESS;
     }
 
     void SetPtr(void RT_FAR *pv, uint32_t cb)
@@ -518,7 +510,7 @@ typedef struct
 
     int GetUInt32(uint32_t *pu32)
     {
-        AssertMsgReturnStmt(type == VMMDevHGCMParmType_32bit, ("type=-%d\n", type),
+        AssertMsgReturnStmt(type == VMMDevHGCMParmType_32bit, ("type=%d\n", type),
                             *pu32 = UINT32_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE)
         *pu32 = u.value32;
         return VINF_SUCCESS;
@@ -533,7 +525,7 @@ typedef struct
     int GetUInt64(uint64_t *pu64)
     {
         AssertMsgReturnStmt(type == VMMDevHGCMParmType_64bit, ("type=%d\n", type),
-                            *pu64 = UINT32_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
+                            *pu64 = UINT64_MAX /* shut up gcc */, VERR_WRONG_PARAMETER_TYPE);
         *pu64 = u.value64;
         return VINF_SUCCESS;
     }
