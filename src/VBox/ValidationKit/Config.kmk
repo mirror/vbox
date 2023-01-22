@@ -120,7 +120,7 @@ TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIB
 TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86    = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBOXVALIDATIONKITR3BASE_LNK_DEPS.win.x86)
 TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBOXVALIDATIONKITR3BASE_LNK_DEPS.win.amd64)
 
-#TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBOXGUESTR3EXE
+#TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBoxGuestR3Exe
 
 TEMPLATE_VBoxValidationKitR3_USES.win += vboximportchecker
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt31
