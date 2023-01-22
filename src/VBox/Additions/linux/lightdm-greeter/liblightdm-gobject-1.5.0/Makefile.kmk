@@ -31,17 +31,24 @@ include $(KBUILD_PATH)/subheader.kmk
 # The greeter module.
 LIBRARIES += VBox-liblightdm-gobject
 
-VBox-liblightdm-gobject_TEMPLATE = VBOXGUESTR3NPLIB
+VBox-liblightdm-gobject_TEMPLATE = VBoxGuestR3Lib
 VBox-liblightdm-gobject_SDKS = VBoxGlib20WithIo
 VBox-liblightdm-gobject_INCS = \
 	/usr/include/glib-2.0 \
 	/usr/lib/i386-linux-gnu/glib-2.0/include \
 	/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 	/usr/include/gio-unix-2.0
-VBox-liblightdm-gobject_DEFS = \
-	CONFIG_DIR=\"/etc/lightdm\" \
-	XSESSIONS_DIR=\"/usr/share/xsessions\" \
-	REMOTE_SESSIONS_DIR=\"/usr/share/lightdm/remote-sessions\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ VBox-liblightdm-gobject_DEFS = \
+ 	CONFIG_DIR="/etc/lightdm" \
+ 	XSESSIONS_DIR="/usr/share/xsessions" \
+ 	REMOTE_SESSIONS_DIR="/usr/share/lightdm/remote-sessions"
+else
+ VBox-liblightdm-gobject_DEFS = \
+ 	CONFIG_DIR=\"/etc/lightdm\" \
+ 	XSESSIONS_DIR=\"/usr/share/xsessions\" \
+ 	REMOTE_SESSIONS_DIR=\"/usr/share/lightdm/remote-sessions\"
+endif
 VBox-liblightdm-gobject_SOURCES = \
 	greeter.c \
 	language.c \

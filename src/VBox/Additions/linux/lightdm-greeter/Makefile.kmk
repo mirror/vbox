@@ -2,6 +2,8 @@
 ## @file
 # Makefile for VBox LightDM greeter for providing automated logons.
 #
+# Note! This isn't compiled any more. Remove?
+#
 
 #
 # Copyright (C) 2012-2023 Oracle and/or its affiliates.
@@ -42,11 +44,14 @@ VBOX_GREETER_WITH_PNG_SUPPORT := 1
 
 # The greeter module.
 PROGRAMS += vbox-greeter
-vbox-greeter_TEMPLATE = VBOXGUESTR3EXE
+vbox-greeter_TEMPLATE = VBoxGuestR3Exe
 vbox-greeter_SDKS     = VBoxGlib20WithIo
 vbox-greeter_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
-vbox-greeter_DEFS    += \
-	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ vbox-greeter_DEFS   += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+else
+ vbox-greeter_DEFS   += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+endif
 vbox-greeter_DEFS    += \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
 	$(if $(VBOX_GREETER_WITH_PNG_SUPPORT),VBOX_GREETER_WITH_PNG_SUPPORT,)
