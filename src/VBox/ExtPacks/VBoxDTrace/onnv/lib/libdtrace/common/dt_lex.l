@@ -51,7 +51,7 @@
 #  pragma warning(disable:4668 4131 4255)
 # endif
 # ifdef __GNUC__
-#  if ((__GNUC__ << 16) + __GNUC_MINOR__) >= 0x4002
+#  if ((__GNUC__ << 16) + __GNUC_MINOR__) >= 0x40002
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #  endif
 # endif
