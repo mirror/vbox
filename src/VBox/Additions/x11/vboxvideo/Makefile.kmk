@@ -56,7 +56,7 @@ LIBRARIES += vboxvideo_drv_lib
 #
 # vboxvideo_drv_lib
 #
-vboxvideo_drv_lib_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_lib_TEMPLATE = VBoxGuestR3XOrgMod
 # We are relying in the include guard in the two headers below to stop the more
 # generic ones from being included.  Not very nice, I know.
 vboxvideo_drv_lib_CFLAGS += $(vboxvideo_override_INCLUDES)
@@ -87,7 +87,7 @@ vboxvideo_drv_lib_INST = $(INST_LIB)
 if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxvideo_drv
 endif   # target linux
-vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
+vboxvideo_drv_TEMPLATE = VBoxGuestR3XFree86Mod
 vboxvideo_drv_CFLAGS += $(vboxvideo_override_INCLUDES)
 vboxvideo_drv_CFLAGS += -Wno-shadow # Avoid MBs of warnings in X11 and OpenGL headers (solaris mostly).
 vboxvideo_drv_CXXFLAGS += $(vboxvideo_override_INCLUDES)
@@ -136,7 +136,7 @@ vboxvideo_drv_SOURCES = \
 #         Also it is *important* to use := and not = when deriving a property.
 #
 DLLS += vboxvideo_drv_70
-vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_70_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_70_DEFS = $(vboxvideo_70_DEFS) XORG_VERSION_CURRENT=70000000
 vboxvideo_drv_70_CFLAGS += $(vboxvideo_override_INCLUDES)
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
@@ -154,7 +154,7 @@ vboxvideo_drv_70_LIBS = $(PATH_STAGE_LIB)/vboxvideo_drv_lib$(VBOX_SUFF_LIB)
 # vboxvideo_drv_71
 #
 DLLS += vboxvideo_drv_71
-vboxvideo_drv_71_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_71_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_71_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_71_DEFS := $(vboxvideo_70_DEFS) XORG_VERSION_CURRENT=70100000
 vboxvideo_drv_71_INCS = \
@@ -169,7 +169,7 @@ vboxvideo_drv_71_LIBS = $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_13
 #
 DLLS += vboxvideo_drv_13
-vboxvideo_drv_13_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_13_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_13_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_13_DEFS := $(vboxvideo_13_DEFS) XORG_VERSION_CURRENT=10300000
 vboxvideo_drv_13_INCS = \
@@ -184,7 +184,7 @@ vboxvideo_drv_13_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_14
 #
 DLLS += vboxvideo_drv_14
-vboxvideo_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_14_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_14_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_14_DEFS := $(vboxvideo_13_DEFS) XORG_VERSION_CURRENT=10400000
 vboxvideo_drv_14_INCS = \
@@ -199,7 +199,7 @@ vboxvideo_drv_14_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_15
 #
 DLLS += vboxvideo_drv_15
-vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_15_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_15_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10503000
 vboxvideo_drv_15_INCS = \
@@ -214,7 +214,7 @@ vboxvideo_drv_15_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_16
 #
 DLLS += vboxvideo_drv_16
-vboxvideo_drv_16_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_16_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_16_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_16_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10600000
 vboxvideo_drv_16_INCS = \
@@ -229,7 +229,7 @@ vboxvideo_drv_16_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_17
 #
 DLLS += vboxvideo_drv_17
-vboxvideo_drv_17_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_17_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_17_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_17_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10699000
 vboxvideo_drv_17_INCS = \
@@ -244,7 +244,7 @@ vboxvideo_drv_17_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_18
 #
 DLLS += vboxvideo_drv_18
-vboxvideo_drv_18_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_18_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_18_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_18_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10800000
 vboxvideo_drv_18_INCS = \
@@ -259,7 +259,7 @@ vboxvideo_drv_18_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_19
 #
 DLLS += vboxvideo_drv_19
-vboxvideo_drv_19_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_19_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_19_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_19_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10900000
 vboxvideo_drv_19_INCS = \
@@ -274,7 +274,7 @@ vboxvideo_drv_19_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_110
 #
 DLLS += vboxvideo_drv_110
-vboxvideo_drv_110_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_110_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_110_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_110_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11000000
 vboxvideo_drv_110_INCS = \
@@ -289,7 +289,7 @@ vboxvideo_drv_110_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_111
 #
 DLLS += vboxvideo_drv_111
-vboxvideo_drv_111_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_111_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_111_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_111_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11100000
 vboxvideo_drv_111_INCS = \
@@ -304,7 +304,7 @@ vboxvideo_drv_111_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_112
 #
 DLLS += vboxvideo_drv_112
-vboxvideo_drv_112_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_112_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_112_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_112_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11200000
 vboxvideo_drv_112_INCS = \
@@ -319,7 +319,7 @@ vboxvideo_drv_112_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_113
 #
 DLLS += vboxvideo_drv_113
-vboxvideo_drv_113_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_113_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_113_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_113_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11300000
 vboxvideo_drv_113_INCS = \
@@ -334,7 +334,7 @@ vboxvideo_drv_113_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_114
 #
 DLLS += vboxvideo_drv_114
-vboxvideo_drv_114_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_114_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_114_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_114_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11400000
 vboxvideo_drv_114_INCS = \
@@ -349,7 +349,7 @@ vboxvideo_drv_114_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_115
 #
 DLLS += vboxvideo_drv_115
-vboxvideo_drv_115_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_115_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_115_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_115_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11500000
 vboxvideo_drv_115_INCS = \
@@ -364,7 +364,7 @@ vboxvideo_drv_115_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_116
 #
 DLLS += vboxvideo_drv_116
-vboxvideo_drv_116_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_116_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_116_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_116_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11600000
 vboxvideo_drv_116_INCS = \
@@ -379,7 +379,7 @@ vboxvideo_drv_116_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_117
 #
 DLLS += vboxvideo_drv_117
-vboxvideo_drv_117_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_117_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_117_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_117_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11700000
 vboxvideo_drv_117_INCS = \
@@ -394,7 +394,7 @@ vboxvideo_drv_117_LIBS += $(vboxvideo_drv_70_LIBS)
 # vboxvideo_drv_118
 #
 DLLS += vboxvideo_drv_118
-vboxvideo_drv_118_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_118_TEMPLATE = VBoxGuestR3XOrgMod
 vboxvideo_drv_118_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_118_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11800000
 vboxvideo_drv_118_INCS = \
@@ -408,7 +408,7 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  # Build using local X.Org headers.  We assume X.Org Server 1.7 or later.
  DLLS    := $(filter-out vboxvideo_drv_%,$(DLLS)) vboxvideo_drv_system
  SYSMODS := $(filter-out vboxvideo_drv%,$(SYSMODS))
- vboxvideo_drv_system_TEMPLATE = VBOXGUESTR3XORGMOD
+ vboxvideo_drv_system_TEMPLATE = VBoxGuestR3XOrgMod
  vboxvideo_drv_system_CFLAGS := \
         $(vboxvideo_drv_70_CFLAGS) -include xorg-server.h
  vboxvideo_drv_system_DEFS := $(filter-out _XORG_SERVER_H_ _DIX_CONFIG_H_, $(vboxvideo_15_DEFS))

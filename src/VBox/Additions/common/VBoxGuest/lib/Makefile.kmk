@@ -209,7 +209,7 @@ VBoxGuestR3LibShared-x86_BLD_TRG_ARCH := x86
 # the X server runtime instead of IPRT, for use with old servers where the
 # C library is not available.
 #
-VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3XF86LIB
+VBoxGuestR3LibXFree86_TEMPLATE = VBoxGuestR3XFree86Lib
 VBoxGuestR3LibXFree86_DEFS     = \
 	VBOX_WITH_HGCM \
 	VBOX_VBGLR3_XFREE86 \
@@ -236,7 +236,7 @@ VBoxGuestR3LibXFree86_INCS     = \
 # VBoxGuestR3LibXOrg - a reduced version of the guest library which uses
 # the C server runtime instead of IPRT.
 #
-VBoxGuestR3LibXOrg_TEMPLATE = VBOXGUESTR3XORGLIB
+VBoxGuestR3LibXOrg_TEMPLATE = VBoxGuestR3XOrgLib
 VBoxGuestR3LibXOrg_DEFS     = \
 	VBOX_WITH_HGCM \
 	VBOX_VBGLR3_XORG \

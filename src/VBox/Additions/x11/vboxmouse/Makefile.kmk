@@ -40,7 +40,7 @@ vboxmouse_xorg_INCS = \
 #
 if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxmouse_drv
- vboxmouse_drv_TEMPLATE = VBOXGUESTR3XF86MOD
+ vboxmouse_drv_TEMPLATE = VBoxGuestR3XFree86Mod
  vboxmouse_drv_DEFS.linux = linux
  vboxmouse_drv_DEFS.x86 += __i386__
  # This one has to be defined when building server code on systems where
@@ -75,7 +75,7 @@ endif
 # vboxmouse_drv_70
 #
 DLLS += vboxmouse_drv_70
-vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_70_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X IN_XF86_MODULE DONT_DEFINE_WRAPPERS NO_ANSIC
 vboxmouse_drv_70_INCS := \
@@ -90,7 +90,7 @@ vboxmouse_drv_70_SOURCES = \
 # vboxmouse_drv_71
 #
 DLLS += vboxmouse_drv_71
-vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_71_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_71_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_71_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -104,7 +104,7 @@ vboxmouse_drv_71_SOURCES = \
 # vboxmouse_drv_13
 #
 DLLS += vboxmouse_drv_13
-vboxmouse_drv_13_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_13_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_13_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_13_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -118,7 +118,7 @@ vboxmouse_drv_13_SOURCES = \
 # vboxmouse_drv_14
 #
 DLLS += vboxmouse_drv_14
-vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_14_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_14_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_14_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -132,7 +132,7 @@ vboxmouse_drv_14_SOURCES = \
 # vboxmouse_drv_15
 #
 DLLS += vboxmouse_drv_15
-vboxmouse_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_15_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_15_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_15_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -146,7 +146,7 @@ vboxmouse_drv_15_SOURCES = \
 # vboxmouse_drv_16
 #
 DLLS += vboxmouse_drv_16
-vboxmouse_drv_16_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_16_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_16_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_16_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -162,7 +162,7 @@ ifneq ($(KBUILD_TARGET), linux)
 # vboxmouse_drv_17
 #
 DLLS += vboxmouse_drv_17
-vboxmouse_drv_17_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_17_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_17_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_17_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -176,7 +176,7 @@ vboxmouse_drv_17_SOURCES = \
 # vboxmouse_drv_18
 #
 DLLS += vboxmouse_drv_18
-vboxmouse_drv_18_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_18_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_18_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_18_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -190,7 +190,7 @@ vboxmouse_drv_18_SOURCES = \
 # vboxmouse_drv_19
 #
 DLLS += vboxmouse_drv_19
-vboxmouse_drv_19_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_19_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_19_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_19_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -204,7 +204,7 @@ vboxmouse_drv_19_SOURCES = \
 # vboxmouse_drv_110
 #
 DLLS += vboxmouse_drv_110
-vboxmouse_drv_110_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_110_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_110_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_110_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -214,7 +214,7 @@ vboxmouse_drv_110_SOURCES = \
 	vboxmouse.c
 
 DLLS += vboxmouse_drv_111
-vboxmouse_drv_111_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_111_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_111_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_111_INCS := \
 	$(vboxmouse_xorg_INCS) \
@@ -224,7 +224,7 @@ vboxmouse_drv_111_SOURCES = \
 	vboxmouse.c
 
 DLLS += vboxmouse_drv_112
-vboxmouse_drv_112_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_112_TEMPLATE = VBoxGuestR3XOrgMod
 vboxmouse_drv_112_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_112_INCS := \
     $(vboxmouse_xorg_INCS) \
