@@ -197,7 +197,7 @@ DisplayModeR VBoxClient_xf86CVTMode(int HDisplay, int VDisplay, float VRefresh /
         (void) VBackPorch;
 
         /* 11. Find total number of lines in vertical field */
-        Mode.VTotal = VDisplayRnd + 2 * VMargin + VSyncAndBackPorch + Interlace + CVT_MIN_V_PORCH;
+        Mode.VTotal = (int)(VDisplayRnd + 2 * VMargin + VSyncAndBackPorch + Interlace + CVT_MIN_V_PORCH);
 
         /* 5) Definition of Horizontal blanking time limitation */
         /* Gradient (%/kHz) - default 600 */
