@@ -8414,52 +8414,42 @@ TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS.linux    += $(VBOX_LD_hash_style_sysv)
 
 
 #
-# Template for building normal R3 programs for the guest additions.
+# Template for building normal R3 programs for the guest additions, strict.
 #
-TEMPLATE_NewVBoxGuestR3Exe = VBox Guest Program w/ IPRT and VBGL.
-TEMPLATE_NewVBoxGuestR3Exe_EXTENDS  = VBoxGuestR3ExeBase
-if1of ($(KBUILD_TARGET),win)
- ifndef VBOX_WITH_NOCRT_STATIC # Temporary kludge to deal with some link order issues.
-  TEMPLATE_NewVBoxGuestR3Exe_LDFLAGS.win.x86 = $(TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS.win.x86) -Include:_vcc100_kernel32_fakes_asm
+TEMPLATE_VBoxGuestR3Exe = VBox Guest Program w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3Exe_EXTENDS  = VBoxGuestR3ExeBase
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxGuestR3Exe_CFLAGS        = $(TEMPLATE_VBoxGuestR3ExeBase_CFLAGS) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Exe_CXXFLAGS      = $(TEMPLATE_VBoxGuestR3ExeBase_CXXFLAGS) $(VBOX_VCC_WERR)
+ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+  # VBoxDrvInst.cpp(520) : warning C4313: 'wprintf'  : '%d' in format string conflicts with argument 1 of type 'const TCHAR *' [false positive - buggy compiler?]
+  TEMPLATE_VBoxGuestR3Exe_CXXFLAGS    += -wd4313
  endif
- TEMPLATE_NewVBoxGuestR3Exe_LIBS.x86 = \
+ TEMPLATE_VBoxGuestR3Exe_LDFLAGS       = $(TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS) $(VBOX_VCC_LD_WERR)
+ ifndef VBOX_WITH_NOCRT_STATIC # Temporary kludge to deal with some link order issues.
+  TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win.x86 = $(TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS.win.x86) -Include:_vcc100_kernel32_fakes_asm
+ endif
+ TEMPLATE_VBoxGuestR3Exe_LIBS.x86      = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86) \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.x86)
- TEMPLATE_NewVBoxGuestR3Exe_LIBS.$(KBUILD_TARGET_ARCH) = \
+ TEMPLATE_VBoxGuestR3Exe_LIBS.$(KBUILD_TARGET_ARCH) = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.$(KBUILD_TARGET_ARCH))
 else
- TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS)
-endif
-ifeq ($(KBUILD_TARGET),solaris)
-TEMPLATE_NewVBoxGuestR3Exe_LIBS += contract
-endif
-
-#
-# Template for building normal R3 programs for the guest additions, strict.
-#
-TEMPLATE_VBoxGuestR3Exe = VBox Guest Program w/ IPRT and VBGL.
-TEMPLATE_VBoxGuestR3Exe_EXTENDS  = NewVBoxGuestR3Exe
-TEMPLATE_VBoxGuestR3Exe_EXTENDS_BY = appending
-ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxGuestR3Exe_CFLAGS      += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxGuestR3Exe_CXXFLAGS    += $(VBOX_VCC_WERR)
- if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
-  # VBoxDrvInst.cpp(520) : warning C4313: 'wprintf'  : '%d' in format string conflicts with argument 1 of type 'const TCHAR *' [false positive - buggy compiler?]
-  TEMPLATE_VBoxGuestR3Exe_CXXFLAGS   += -wd4313
+ TEMPLATE_VBoxGuestR3Exe_CFLAGS        = $(TEMPLATE_VBoxGuestR3ExeBase_CFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Exe_CXXFLAGS      = $(TEMPLATE_VBoxGuestR3ExeBase_CXXFLAGS) $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Exe_LIBS          = \
+ 	$(VBOX_LIB_IPRT_GUEST_R3) \
+ 	$(VBOX_LIB_VBGL_R3) \
+ 	$(VBOX_LIB_IPRT_GUEST_R3) \
+ 	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS)
+ ifeq ($(KBUILD_TARGET),solaris)
+  TEMPLATE_VBoxGuestR3Exe_LIBS        += contract
  endif
- TEMPLATE_VBoxGuestR3Exe_LDFLAGS     += $(VBOX_VCC_LD_WERR)
-else
- TEMPLATE_VBoxGuestR3Exe_CFLAGS      += $(VBOX_GCC_WERR)
- TEMPLATE_VBoxGuestR3Exe_CXXFLAGS    += $(VBOX_GCC_WERR)
 endif
 
 #
