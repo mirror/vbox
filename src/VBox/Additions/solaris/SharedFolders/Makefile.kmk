@@ -96,7 +96,7 @@ endif # VBOX_OSE
 #
 # mount - Userland mount wrapper for vboxfs
 #
-PROGRAMS                += vboxfsmount
+PROGRAMS               += vboxfsmount
 vboxfsmount_TEMPLATE    = VBoxGuestR3Exe
 vboxfsmount_SOURCES     = vboxfs_mount.c
 
