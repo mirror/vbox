@@ -96,7 +96,7 @@ tstLow_TEMPLATE       = VBoxR3TstExe
 tstLow_SOURCES        = tstLow.cpp
 
 tstNtQueryStuff_TEMPLATE = VBoxR3TstExe
-tstNtQueryStuff_SDKS     = VBOX_NTDLL
+tstNtQueryStuff_SDKS     = VBoxNtDll
 tstNtQueryStuff_SOURCES  = tstNtQueryStuff.cpp
 
 tstPin_TEMPLATE       = VBoxR3TstExe

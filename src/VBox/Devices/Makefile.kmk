@@ -158,7 +158,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  else
   VBoxDD_TEMPLATE         = VBoxR3DllWarnNoPic
  endif
- VBoxDD_SDKS.win         = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+ VBoxDD_SDKS.win         = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBoxNtDll
  Storage/DrvHostDVD.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK)
  VBoxDD_INCS             = \
  	build \

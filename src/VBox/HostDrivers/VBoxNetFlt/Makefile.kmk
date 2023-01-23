@@ -266,7 +266,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  #
  TEMPLATE_VBoxNetFltR3 = Template for NetFltInstall, NetFltUninstall, NetAdpInstall, NetAdpUninstall, ++
  TEMPLATE_VBoxNetFltR3_EXTENDS  = VBoxR3Exe
- TEMPLATE_VBoxNetFltR3_SDKS     = $(TEMPLATE_VBoxR3Exe_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL VBOX_WIN_NEWDEV
+ TEMPLATE_VBoxNetFltR3_SDKS     = $(TEMPLATE_VBoxR3Exe_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBoxNtDll VBOX_WIN_NEWDEV
  TEMPLATE_VBoxNetFltR3_LIBS     = $(TEMPLATE_VBoxR3Exe_LIBS) \
  	$(WinNetConfigExe_1_TARGET) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfgExe$(VBOX_SUFF_LIB) \

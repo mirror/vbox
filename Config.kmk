@@ -5074,9 +5074,9 @@ endif
 #
 # Special SDK for the problematic NTDLL.LIB.
 #
-SDK_VBOX_NTDLL                 := Mini NTDLL import library, required IPRT.
-SDK_VBOX_NTDLL_LIBS.x86        ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
-SDK_VBOX_NTDLL_LIBS.amd64      ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
+SDK_VBoxNtDll                 := Mini NTDLL import library, required by IPRT.
+SDK_VBoxNtDll_LIBS.x86        ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
+SDK_VBoxNtDll_LIBS.amd64      ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
 
 #
 # SDK for including newdev.lib.
@@ -6570,7 +6570,7 @@ TEMPLATE_VBoxR3Static               = New name for VBoxR3StaticBase
 TEMPLATE_VBoxR3Static_EXTENDS       = VBoxR3StaticBase
 TEMPLATE_VBoxR3Static_EXTENDS_BY    = appending
 TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH) += VBoxOpenSslStatic
-TEMPLATE_VBoxR3Static_SDKS.win     += VBOX_NTDLL
+TEMPLATE_VBoxR3Static_SDKS.win     += VBoxNtDll
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3Static_CFLAGS      += $(VBOX_VCC_WERR)
  TEMPLATE_VBoxR3Static_CXXFLAGS    += $(VBOX_VCC_WERR)
@@ -6744,7 +6744,7 @@ ifeq ($(KBUILD_TARGET),linux)
 # TEMPLATE_VBoxR3HardenedExe_LIBS += cap
 endif
 ifeq ($(KBUILD_TARGET),win) # No CRT!
- TEMPLATE_VBoxR3HardenedExe_SDKS          = VBOX_NTDLL $(TEMPLATE_VBoxR3Exe_SDKS)
+ TEMPLATE_VBoxR3HardenedExe_SDKS          = VBoxNtDll $(TEMPLATE_VBoxR3Exe_SDKS)
  TEMPLATE_VBoxR3HardenedExe_SDKS.x86      = VBOX_WIN_INT64
  ifneq ($(VBOX_VCC_LD_GUARD_CF),)
   TEMPLATE_VBoxR3HardenedExe_CXXFLAGS       = $(filter-out -RTC% -GZ $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Exe_CXXFLAGS))
@@ -8254,7 +8254,7 @@ endif # !win
 TEMPLATE_VBoxAdvBldProg = Advanced VBox Build Program
 TEMPLATE_VBoxAdvBldProg_EXTENDS = VBoxBldProg
 TEMPLATE_VBoxAdvBldProg_SDKS    = $(TEMPLATE_VBoxBldProg_SDKS)
-TEMPLATE_VBoxAdvBldProg_SDKS.win= $(TEMPLATE_VBoxBldProg_SDKS.win) VBOX_NTDLL
+TEMPLATE_VBoxAdvBldProg_SDKS.win= $(TEMPLATE_VBoxBldProg_SDKS.win) VBoxNtDll
 TEMPLATE_VBoxAdvBldProg_DEFS    = $(TEMPLATE_VBoxBldProg_DEFS) IN_RT_R3 IN_ADV_BLD_PROG
 ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxAdvBldProg_CFLAGS = $(TEMPLATE_VBoxBldProg_CFLAGS) $(VBOX_VCC_WERR)
@@ -8319,12 +8319,12 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxGuestR3ExeBase_EXTENDS  = VBoxR3StaticBase
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   ifdef VBOX_WITH_NOCRT_STATIC
-   TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBOX_NTDLL
+   TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBoxNtDll
   else
-   TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK_GST) VBOX_NTDLL
+   TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK_GST) VBoxNtDll
   endif
  else
-  TEMPLATE_VBoxGuestR3ExeBase_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBOX_NTDLL
+  TEMPLATE_VBoxGuestR3ExeBase_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBoxNtDll
  endif
  # Hack for running on NT3x, NT4, W2K and XP w/o SP:
  #  1. Change OS and subsystem version in the image.

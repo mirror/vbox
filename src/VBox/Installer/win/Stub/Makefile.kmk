@@ -50,7 +50,7 @@ VBoxStub_SOURCES = \
 	VBoxStub.rc
 
 VBoxStub_SDKS = \
-	VBOX_NTDLL
+	VBoxNtDll
 VBoxStub_LIBS += \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
 

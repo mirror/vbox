@@ -2769,7 +2769,7 @@ VBoxRT_SDKS                   += VBoxOpenSslStatic
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
 VBoxRT_SDKS                   += VBoxSoftFloatR3Shared
 endif
-VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBoxNtDll
 if1of ($(KBUILD_TARGET), win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE) $(VBOX_INST_TOOLS)
 else if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))

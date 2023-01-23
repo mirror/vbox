@@ -249,7 +249,7 @@ VBoxVMM_SOURCES.linux.amd64 += VMMR3/NEMR3Native-linux.cpp
 
 VBoxVMM_SOURCES.win.amd64 += VMMR3/NEMR3Native-win.cpp
 VBoxVMM_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM
-VBoxVMM_SDKS.win          += VBOX_NTDLL
+VBoxVMM_SDKS.win          += VBoxNtDll
 VMMR3/NEMR3Native-win.cpp_DEFS.amd64 = _AMD64_
 VMMR3/NEMR3Native-win.cpp_INCS = \
 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \

@@ -181,7 +181,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
   else ifeq ($(KBUILD_TARGET),darwin)
    vbox-img_LIBS += iconv
   else ifeq ($(KBUILD_TARGET),win)
-   vbox-img_SDKS.win = VBOX_NTDLL
+   vbox-img_SDKS.win = VBoxNtDll
   else ifeq ($(KBUILD_TARGET),solaris)
    vbox-img_LIBS += kstat efi
    ifdef SDK_VBoxLibXml2_LIBS
@@ -226,7 +226,7 @@ if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
  else if1of ($(KBUILD_TARGET),darwin freebsd)
   vdkeystoremgr_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
-  vdkeystoremgr_SDKS.win = VBOX_NTDLL
+  vdkeystoremgr_SDKS.win = VBoxNtDll
  else ifeq ($(KBUILD_TARGET),solaris)
   vdkeystoremgr_LIBS += kstat
  endif
