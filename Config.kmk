@@ -4981,41 +4981,42 @@ ifdef VBOX_WITH_LIBVORBIS
  SDK_VBoxLibVorbis_LIBS          ?= $(PATH_STAGE_LIB)/VBox-libvorbis$(VBOX_SUFF_LIB)
 endif
 
-SDK_VBOX_SOFTFLOAT             := SoftFloat 3 for dll linking.
-SDK_VBOX_SOFTFLOAT_DEFS        := SOFTFLOAT_FAST_INT64
-SDK_VBOX_SOFTFLOAT_DEFS.amd64  := LITTLEENDIAN
-SDK_VBOX_SOFTFLOAT_DEFS.arm64  := LITTLEENDIAN
-SDK_VBOX_SOFTFLOAT_DEFS.x86    := LITTLEENDIAN
+# Our SoftFloat 3e variant.
+SDK_VBoxSoftFloatR3Shared             := SoftFloat 3 for dll linking.
+SDK_VBoxSoftFloatR3Shared_DEFS        := SOFTFLOAT_FAST_INT64
+SDK_VBoxSoftFloatR3Shared_DEFS.amd64  := LITTLEENDIAN
+SDK_VBoxSoftFloatR3Shared_DEFS.arm64  := LITTLEENDIAN
+SDK_VBoxSoftFloatR3Shared_DEFS.x86    := LITTLEENDIAN
 if1of ($(KBUILD_TARGET),win)
- SDK_VBOX_SOFTFLOAT_DEFS       += THREAD_LOCAL=__declspec(thread)
+ SDK_VBoxSoftFloatR3Shared_DEFS       += THREAD_LOCAL=__declspec(thread)
 else
- SDK_VBOX_SOFTFLOAT_DEFS       += THREAD_LOCAL=__thread
+ SDK_VBoxSoftFloatR3Shared_DEFS       += THREAD_LOCAL=__thread
 endif
-SDK_VBOX_SOFTFLOAT_INCS         = \
+SDK_VBoxSoftFloatR3Shared_INCS         = \
 	$(PATH_ROOT)/src/libs/softfloat-3e/source/include
-SDK_VBOX_SOFTFLOAT_LIBS         = \
+SDK_VBoxSoftFloatR3Shared_LIBS         = \
 	$(PATH_STAGE_LIB)/VBox-SoftFloat$(VBOX_SUFF_LIB)
 
-SDK_VBOX_SOFTFLOATR0           := SoftFloat 3 for ring-0 linking.
-SDK_VBOX_SOFTFLOATR0_DEFS      := SOFTFLOAT_FAST_INT64
-SDK_VBOX_SOFTFLOATR0_DEFS.amd64:= LITTLEENDIAN
-SDK_VBOX_SOFTFLOATR0_DEFS.arm64:= LITTLEENDIAN
-SDK_VBOX_SOFTFLOATR0_DEFS.x86  := LITTLEENDIAN
-SDK_VBOX_SOFTFLOATR0_INCS       = \
+SDK_VBoxSoftFloatR0           := SoftFloat 3 for ring-0 linking.
+SDK_VBoxSoftFloatR0_DEFS      := SOFTFLOAT_FAST_INT64
+SDK_VBoxSoftFloatR0_DEFS.amd64:= LITTLEENDIAN
+SDK_VBoxSoftFloatR0_DEFS.arm64:= LITTLEENDIAN
+SDK_VBoxSoftFloatR0_DEFS.x86  := LITTLEENDIAN
+SDK_VBoxSoftFloatR0_INCS       = \
 	$(PATH_ROOT)/src/libs/softfloat-3e/source/include
-SDK_VBOX_SOFTFLOATR0_LIBS       = \
+SDK_VBoxSoftFloatR0_LIBS       = \
 	$(PATH_STAGE_LIB)/VBox-SoftFloatR0$(VBOX_SUFF_LIB)
 
-SDK_VBOX_SOFTFLOATGUESTR3SHARED           := SoftFloat 3 for ring-0 linking.
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_DEFS      := SOFTFLOAT_FAST_INT64
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_DEFS.amd64:= LITTLEENDIAN
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_DEFS.arm64:= LITTLEENDIAN
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_DEFS.x86  := LITTLEENDIAN
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_INCS       = \
+SDK_VBoxSoftFloatGuestR3Shared           := SoftFloat 3 for ring-0 linking.
+SDK_VBoxSoftFloatGuestR3Shared_DEFS      := SOFTFLOAT_FAST_INT64
+SDK_VBoxSoftFloatGuestR3Shared_DEFS.amd64:= LITTLEENDIAN
+SDK_VBoxSoftFloatGuestR3Shared_DEFS.arm64:= LITTLEENDIAN
+SDK_VBoxSoftFloatGuestR3Shared_DEFS.x86  := LITTLEENDIAN
+SDK_VBoxSoftFloatGuestR3Shared_INCS       = \
 	$(PATH_ROOT)/src/libs/softfloat-3e/source/include
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.x86  = \
+SDK_VBoxSoftFloatGuestR3Shared_LIBS.x86  = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBox-SoftFloatGuestR3Shared-x86$(VBOX_SUFF_LIB)
-SDK_VBOX_SOFTFLOATGUESTR3SHARED_LIBS.$(KBUILD_TARGET_ARCH) = \
+SDK_VBoxSoftFloatGuestR3Shared_LIBS.$(KBUILD_TARGET_ARCH) = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBox-SoftFloatGuestR3Shared$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_LIBSSH

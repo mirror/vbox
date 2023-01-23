@@ -2740,7 +2740,7 @@ RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
 RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
 ifdef VBOX_WITH_NOCRT_STATIC
  if1of ($(KBUILD_TARGET), win)
-  RuntimeGuestR3Shared_SDKS              = $(filter-out VBOX_SOFTFLOAT,$(RuntimeGuestR3_SDKS)) VBOX_SOFTFLOATGUESTR3SHARED
+  RuntimeGuestR3Shared_SDKS              = $(filter-out VBoxSoftFloatR3Shared,$(RuntimeGuestR3_SDKS)) VBoxSoftFloatGuestR3Shared
   RuntimeGuestR3Shared_SOURCES           = $(RuntimeGuestR3_SOURCES) \
   	common/math/fma.cpp \
   	common/math/fma-asm.asm \
@@ -2767,7 +2767,7 @@ ifdef VBOX_WITH_LIBCURL
 endif
 VBoxRT_SDKS                   += VBoxOpenSslStatic
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
-VBoxRT_SDKS                   += VBOX_SOFTFLOAT
+VBoxRT_SDKS                   += VBoxSoftFloatR3Shared
 endif
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET), win)

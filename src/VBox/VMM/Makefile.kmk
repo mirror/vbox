@@ -91,7 +91,7 @@ if "$(KBUILD_TYPE)" == "debug" && "$(USERNAME)" == "bird" && 0
 VBoxVMM_DEFS    += RTMEM_WRAP_TO_EF_APIS
 endif
 
-VBoxVMM_SDKS     = VBOX_SOFTFLOAT
+VBoxVMM_SDKS     = VBoxSoftFloatR3Shared
 
 VBoxVMM_INCS     = \
 	include \
@@ -488,7 +488,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  endif
  VMMR0_ASFLAGS.x86   := -Werror
 
- VMMR0_SDKS      = VBOX_SOFTFLOATR0
+ VMMR0_SDKS      = VBoxSoftFloatR0
 
  VMMR0_INCS      = \
  	include \

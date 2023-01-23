@@ -607,7 +607,7 @@ tstNoCrt-1_SOURCES = \
 tstRTNoCrt-2_TEMPLATE = VBoxR3TstExe
 tstRTNoCrt-2_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
 tstRTNoCrt-2_INCS = ../include
-tstRTNoCrt-2_SDKS = VBOX_SOFTFLOAT
+tstRTNoCrt-2_SDKS = VBoxSoftFloatR3Shared
 tstRTNoCrt-2_SOURCES = \
 	tstRTNoCrt-2.cpp \
        \

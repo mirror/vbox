@@ -319,7 +319,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 
 tstIEMAImpl_TEMPLATE  = VBoxR3TstExe
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
-tstIEMAImpl_SDKS      = VBOX_SOFTFLOAT
+tstIEMAImpl_SDKS      = VBoxSoftFloatR3Shared
 tstIEMAImpl_INCS      = ../include .
 tstIEMAImpl_CLEAN     = \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataInt.cpp \
@@ -351,7 +351,7 @@ $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
 tstIEMAImplAsm_TEMPLATE      := VBoxR3TstExe
-tstIEMAImplAsm_SDKS          := VBOX_SOFTFLOAT
+tstIEMAImplAsm_SDKS          := VBoxSoftFloatR3Shared
 tstIEMAImplAsm_DEFS           = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
 tstIEMAImplAsm_ASFLAGS.amd64 := -Werror
 tstIEMAImplAsm_ASFLAGS.x86   := -Werror

@@ -33,7 +33,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 TEMPLATE_VBoxTestFloat = Template for building SoftFloat-3e
 TEMPLATE_VBoxTestFloat_EXTENDS = VBoxR3DllNonPedantic
-TEMPLATE_VBoxTestFloat_SDKS    = $(TEMPLATE_VBoxR3DllNonPedantic_SDKS) VBOX_SOFTFLOAT
+TEMPLATE_VBoxTestFloat_SDKS    = $(TEMPLATE_VBoxR3DllNonPedantic_SDKS) VBoxSoftFloatR3Shared
 TEMPLATE_VBoxTestFloat_DEFS    = $(TEMPLATE_VBoxR3DllNonPedantic_DEFS) \
 	FLOAT16 \
 	FLOAT64 \
