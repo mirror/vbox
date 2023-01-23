@@ -4891,13 +4891,6 @@ ifdef VBOX_WITH_DXVK
  SDK_VBoxDxVk_LIBS             ?=
 endif
 
-ifdef VBOX_WITH_LIBFUSE
- SDK_VBOX_FUSE                 := libfuse (file system in userspace) for dll linking.
- SDK_VBOX_FUSE_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libfuse-2.9.8/include
- SDK_VBOX_FUSE_INCS            ?= $(SDK_VBOX_FUSE_DEFAULT_INCS)
- SDK_VBOX_FUSE_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libfuse$(VBOX_SUFF_LIB)
-endif
-
 ifdef VBOX_WITH_LIBCURL
  SDK_VBOX_LIBCURL              := libcurl for dll linking.
  SDK_VBOX_LIBCURL_INCS         ?= $(PATH_ROOT)/src/libs/curl-7.83.1/include
