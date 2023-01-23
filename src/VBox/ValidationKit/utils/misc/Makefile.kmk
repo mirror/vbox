@@ -70,7 +70,7 @@ vts_rm_SOURCES  = vts_rm.cpp
 #
 PROGRAMS += vts_tar
 vts_tar_TEMPLATE = VBoxValidationKitR3
-vts_tar_SDKS     = VBOX_ZLIB_STATIC
+vts_tar_SDKS     = VBoxZlibStatic
 vts_tar_SOURCES  = vts_tar.cpp
 
 #

@@ -176,7 +176,7 @@ vkatadd_TEMPLATE       = VBoxGuestR3Exe
 vkatadd_EXTENDS        = vkat
 vkatadd_EXTENDS_BY     = appending
 vkatadd_NAME           = VBoxAudioTest
-vkatadd_SDKS           = VBOX_ZLIB_STATIC
+vkatadd_SDKS           = VBoxZlibStatic
 vkatadd_LDFLAGS.darwin = -framework IOKit
 vkatadd_LIBS.solaris   = m
 

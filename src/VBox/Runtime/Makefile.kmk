@@ -356,7 +356,7 @@ ifdef IPRT_WITHOUT_PAM
 endif
 RuntimeBaseR3_INCS          = \
 	include \
-	$(SDK_VBOX_ZLIB_INCS) \
+	$(SDK_VBoxZlib_INCS) \
 	$(SDK_VBoxLzf_INCS)
 
 # RuntimeBaseR3_INCS.solaris  = \
@@ -2860,7 +2860,7 @@ ifndef SDK_VBoxLibXml2_LIBS
 	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
 VBoxRT_LIBS                   += \
-	$(SDK_VBOX_ZLIB_LIBS)
+	$(SDK_VBoxZlib_LIBS)
 ifndef SDK_VBoxOpenSslStatic_LIBS
  VBoxRT_LIBS                  += \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
@@ -3017,7 +3017,7 @@ ifndef SDK_VBoxLibXml2_LIBS
 	$(PATH_STAGE_LIB)/VBox-libxml2-x86$(VBOX_SUFF_LIB)
 endif
 VBoxRT-x86_LIBS                  += \
-	$(SDK_VBOX_ZLIB_LIBS-x86)
+	$(SDK_VBoxZlib_LIBS-x86)
 ifndef SDK_VBoxOpenSslStatic_LIBS
  VBoxRT-x86_LIBS                 += \
 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB) \

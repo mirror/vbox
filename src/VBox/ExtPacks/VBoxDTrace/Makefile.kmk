@@ -116,7 +116,7 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  #VBoxDTraceCmd_DEFS += YYDEBUG
  VBoxDTraceCmd_DEFS.linux = _XOPEN_SOURCE=700 _LARGEFILE64_SOURCE
  VBoxDTraceCmd_DEFS.win = YY_USE_PROTOS=1 YYENABLE_NLS=0 YYLTYPE_IS_TRIVIAL=0
- VBoxDTraceCmd_SDKS = VBOX_ZLIB
+ VBoxDTraceCmd_SDKS = VBoxZlib
  ifn1of ($(KBUILD_TARGET), win)
   VBoxDTraceCmd_CFLAGS = -Wno-format $(VBOX_GCC_Wno-overlength-strings) -Wno-sign-compare -Wno-strict-prototypes -Wno-missing-prototypes -Wno-missing-declarations -Wno-shadow
  endif

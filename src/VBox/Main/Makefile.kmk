@@ -582,7 +582,7 @@ VBoxSVC_LIBS += \
 	$(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB) \
 	$(LIB_DDU)
 
-VBoxSVC_SDKS = VBoxLibPng VBOX_ZLIB
+VBoxSVC_SDKS = VBoxLibPng VBoxZlib
 VBoxSVC_LIBS.solaris = \
 	adm \
 	nsl \
@@ -1012,7 +1012,7 @@ if $(KBUILD_TARGET) != "win" && $(VBOX_GCC_VERSION_CXX) >= 40900 # gcc 4.9.x (4.
 # VBoxC_CXXFLAGS = -Wunused -Wconversion
 endif
 
-VBoxC_SDKS = VBoxLibPng VBOX_ZLIB
+VBoxC_SDKS = VBoxLibPng VBoxZlib
 
 ifdef VBOX_WITH_RECORDING
  ifdef VBOX_WITH_LIBVPX

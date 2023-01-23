@@ -163,11 +163,11 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
   if1of ($(KBUILD_TARGET),os2 win)
    vbox-img_LIBS += \
  	$(SDK_VBoxLzf_STATIC_LIBS) \
- 	$(SDK_VBOX_ZLIB_STATIC_LIBS)
+ 	$(SDK_VBoxZlibStatic_LIBS)
   else
    vbox-img_LIBS += \
  	$(SDK_VBoxLzf_LIBS) \
- 	$(SDK_VBOX_ZLIB_LIBS)
+ 	$(SDK_VBoxZlib_LIBS)
   endif
   ifeq ($(KBUILD_TARGET),linux)
    ifdef SDK_VBoxLibXml2_LIBS
@@ -213,11 +213,11 @@ if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
  if1of ($(KBUILD_TARGET),os2 win)
   vdkeystoremgr_LIBS += \
 	$(SDK_VBoxLzf_STATIC_LIBS) \
-	$(SDK_VBOX_ZLIB_STATIC_LIBS)
+	$(SDK_VBoxZlibStatic_LIBS)
  else
   vdkeystoremgr_LIBS += \
 	$(SDK_VBoxLzf_LIBS) \
-	$(SDK_VBOX_ZLIB_LIBS)
+	$(SDK_VBoxZlib_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)
   ifdef SDK_VBoxLibXml2_LIBS

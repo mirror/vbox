@@ -957,8 +957,8 @@ EOF
   if test_compile "$LIBZ $I_INCZ" zlib zlib; then
     if test_execute; then
       echo "if1of (\$(KBUILD_TARGET),darwin freebsd haiku linux)" >> $CNF
-      cnf_append " SDK_VBOX_ZLIB_LIBS" "`strip_l "$LIBZ"`"
-      cnf_append " SDK_VBOX_ZLIB_INCS" "$INCZ"
+      cnf_append " SDK_VBoxZlib_LIBS" "`strip_l "$LIBZ"`"
+      cnf_append " SDK_VBoxZlib_INCS" "$INCZ"
       echo "endif" >> $CNF
     fi
   fi

@@ -576,7 +576,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  endif
 
  if defined(VBOX_WITH_CLOUD_NET) && defined(VBOX_WITH_LIBSSH)
-  VBoxDD_SDKS           += VBoxLibSsh VBOX_ZLIB VBoxOpenSsl
+  VBoxDD_SDKS           += VBoxLibSsh VBoxZlib VBoxOpenSsl
   VBoxDD_DEFS           += VBOX_WITH_CLOUD_NET
   VBoxDD_SOURCES        += \
  	Network/DrvCloudTunnel.cpp
