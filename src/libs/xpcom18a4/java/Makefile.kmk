@@ -44,18 +44,18 @@ ifndef VBOX_ONLY_SDK
 #
 DLLS += VBoxJXpcom
 
-VBoxJXpcom_TEMPLATE = XPCOM
+VBoxJXpcom_TEMPLATE = XPComDll
 VBoxJXpcom_CXXFLAGS = -Wno-write-strings
-VBoxJXpcom_DEFS     =    \
-	EXPORT_XPTI_API  \
-        EXPORT_XPT_API   \
+VBoxJXpcom_DEFS     = \
+	EXPORT_XPTI_API \
+	EXPORT_XPT_API \
 	VBOX_WITH_XPCOM
 VBoxJXpcom_NAME     = libvboxjxpcom
 VBoxJXpcom_DLLSUFF.darwin = .jnilib
 VBoxJXpcom_INCS     = \
 	src \
-        $(VBOX_JAVA_INC) \
-        $(VBOX_PATH_XPCOM_SRC)/xpcom/glue \
+	$(VBOX_JAVA_INC) \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/glue \
 	$(VBOX_PATH_XPCOM_SRC)/xpcom/build \
 	$(VBOX_JXPCOM_JDEST)
 VBoxJXpcom_SOURCES  = \
@@ -64,8 +64,8 @@ VBoxJXpcom_SOURCES  = \
 	src/nsJavaXPCOMBindingUtils.cpp \
 	src/nsJavaXPTCStub.cpp \
 	src/nsJavaXPTCStubWeakRef.cpp \
-        src/nsJavaXPCOMGlue.cpp \
-        src/nsJavaInterfaces.cpp
+	src/nsJavaXPCOMGlue.cpp \
+	src/nsJavaInterfaces.cpp
 VBoxJXpcom_LIBS     = \
 	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
@@ -106,7 +106,7 @@ VBoxJXpcom-inst-jar_CLEAN = \
 	$(VBOX_JXPCOM_JAR) \
 	$(VBOX_JXPCOM_NSERROR) \
 	$(VBOX_JXPCOM_GEN)/jxpcomgen.list  \
-        $(VBOX_JXPCOM_GEN)/jxpcomglue.list \
+	$(VBOX_JXPCOM_GEN)/jxpcomglue.list \
 	$(wildcard \
 		$(VBOX_JXPCOM_GEN)/java/*.java \
                 $(VBOX_JXPCOM_GEN)/java/glue/*.java \

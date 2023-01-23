@@ -91,7 +91,7 @@ ifndef VBOX_ONLY_SDK
 #
 # Base Python Client Module - the C++/XPCOM bits (not actually built).
 #
-VBoxPythonBase_TEMPLATE = XPCOM
+VBoxPythonBase_TEMPLATE = XPComDll
 VBoxPythonBase_CXXFLAGS = -Wno-write-strings
 VBoxPythonBase_CXXFLAGS.solaris = $(VBOX_GCC_Wno-unknown-pragmas) # /usr/include/python[23].[75]*/ceval.h:67: warning: ignoring #pragma no_inline(PyEval_EvalFrameEx)
 VBoxPythonBase_DLLSUFF.darwin = .so
@@ -99,7 +99,7 @@ VBoxPythonBase_DEFS     = \
 	_IMPL_NS_COM \
 	_IMPL_NS_BASE \
 	EXPORT_XPTI_API \
-        EXPORT_XPT_API \
+	EXPORT_XPT_API \
 	VBOX_PYXPCOM \
 	VBOX_WITH_XPCOM \
 	VBOX_PYXPCOM_VERSIONED
@@ -139,12 +139,12 @@ VBoxPythonBase_m_EXTENDS    = VBoxPythonBase
 VBoxPythonBase_m_DEFS       = MODULE_NAME_SUFFIX=m $(VBoxPythonBase_DEFS)
 
 # 32-bit base.
-VBoxPythonBase_x86_TEMPLATE = XPCOM-x86
+VBoxPythonBase_x86_TEMPLATE = XPComDll-x86
 VBoxPythonBase_x86_EXTENDS  = VBoxPythonBase
 VBoxPythonBase_x86_DEFS     = MODULE_NAME_SUFFIX=_x86 $(VBoxPythonBase_DEFS)
 VBoxPythonBase_x86_LIBS     = \
 	$(PATH_STAGE_LIB)/VBoxCOM-x86$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_BIN)/VBoxXPCOM-x86$(VBOX_SUFF_DLL)
+	$(PATH_STAGE_BIN)/VBoxXPComDll-x86$(VBOX_SUFF_DLL)
 
 # 32-bit pymalloc abi variant.
 VBoxPythonBase_x86_m_EXTENDS    = VBoxPythonBase_x86
@@ -159,9 +159,9 @@ DLLS += VBoxPython2_6
 VBoxPython2_6_EXTENDS    = VBoxPythonBase
 VBoxPython2_6_EXTENDS_BY = appending
  ifdef KMK_WITH_VERSION_COMPARE
-VBoxPython2_6_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.6",OSX106,)
+VBoxPython2_6_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.6",OSX106,)
  else
-VBoxPython2_6_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.6",OSX106,)
+VBoxPython2_6_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.6",OSX106,)
  endif
 VBoxPython2_6_INCS       = $(VBOX_PYTHON26_INC)
 VBoxPython2_6_LIBS       = $(VBOX_PYTHON26_LIB)
@@ -172,9 +172,9 @@ DLLS += VBoxPython2_6_x86
 VBoxPython2_6_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython2_6_x86_EXTENDS_BY = appending
    ifdef KMK_WITH_VERSION_COMPARE
-VBoxPython2_6_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.6",OSX106,-x86)
+VBoxPython2_6_x86_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.6",OSX106,-x86)
    else
-VBoxPython2_6_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.6",OSX106,-x86)
+VBoxPython2_6_x86_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.6",OSX106,-x86)
    endif
 VBoxPython2_6_x86_INCS       = $(VBOX_PYTHON26_INC)
 VBoxPython2_6_x86_LIBS       = $(VBOX_PYTHON26_LIB_X86)
@@ -190,9 +190,9 @@ DLLS += VBoxPython2_7
 VBoxPython2_7_EXTENDS    = VBoxPythonBase
 VBoxPython2_7_EXTENDS_BY = appending
  ifdef KMK_WITH_VERSION_COMPARE
-VBoxPython2_7_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,)
+VBoxPython2_7_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,)
  else
-VBoxPython2_7_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,)
+VBoxPython2_7_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,)
  endif
 VBoxPython2_7_INCS       = $(VBOX_PYTHON27_INC)
 VBoxPython2_7_LIBS       = $(VBOX_PYTHON27_LIB)
@@ -203,9 +203,9 @@ DLLS += VBoxPython2_7_x86
 VBoxPython2_7_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython2_7_x86_EXTENDS_BY = appending
    ifdef KMK_WITH_VERSION_COMPARE
-VBoxPython2_7_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,-x86)
+VBoxPython2_7_x86_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,-x86)
    else
-VBoxPython2_7_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,-x86)
+VBoxPython2_7_x86_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,-x86)
    endif
 VBoxPython2_7_x86_INCS       = $(VBOX_PYTHON27_INC)
 VBoxPython2_7_x86_LIBS       = $(VBOX_PYTHON27_LIB_X86)
@@ -222,9 +222,9 @@ VBoxPython2_EXTENDS    = VBoxPythonBase
 VBoxPython2_EXTENDS_BY = appending
 VBoxPython2_DEFS       = VBOX_PYXPCOM_MAJOR_VERSIONED
   ifdef KMK_WITH_VERSION_COMPARE
-VBoxPython2_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,)
+VBoxPython2_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,)
   else
-VBoxPython2_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,)
+VBoxPython2_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,)
   endif
   if defined(VBOX_PYTHON26_INC)
 VBoxPython2_INCS       = $(VBOX_PYTHON26_INC)
@@ -245,9 +245,9 @@ VBoxPython2_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython2_x86_EXTENDS_BY = appending
 VBoxPython2_x86_DEFS       = VBOX_PYXPCOM_MAJOR_VERSIONED $(VBoxPythonBase_x86_DEFS)
   ifdef KMK_WITH_VERSION_COMPARE
-VBoxPython2_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,-x86)
+VBoxPython2_x86_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,-x86)
   else
-VBoxPython2_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,-x86)
+VBoxPython2_x86_TEMPLATE   = XPComDll$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,-x86)
   endif
   if defined(VBOX_PYTHON26LIB_X86)
 VBoxPython2_x86_INCS       = $(VBOX_PYTHON26_INC)
@@ -270,7 +270,7 @@ ifdef VBOX_PYTHON31_INC
 DLLS += VBoxPython3_1
 VBoxPython3_1_EXTENDS    = VBoxPythonBase
 VBoxPython3_1_EXTENDS_BY = appending
-VBoxPython3_1_TEMPLATE   = XPCOM
+VBoxPython3_1_TEMPLATE   = XPComDll
 VBoxPython3_1_INCS       = $(VBOX_PYTHON31_INC)
 VBoxPython3_1_LIBS       = $(VBOX_PYTHON31_LIB)
 
@@ -279,7 +279,7 @@ VBoxPython3_1_LIBS       = $(VBOX_PYTHON31_LIB)
 DLLS += VBoxPython3_1_x86
 VBoxPython3_1_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_1_x86_EXTENDS_BY = appending
-VBoxPython3_1_x86_TEMPLATE   = XPCOM
+VBoxPython3_1_x86_TEMPLATE   = XPComDll
 VBoxPython3_1_x86_INCS       = $(VBOX_PYTHON31_INC)
 VBoxPython3_1_x86_LIBS       = $(VBOX_PYTHON31_LIB_X86)
   endif
@@ -293,7 +293,7 @@ ifdef VBOX_PYTHON32_INC
 DLLS += VBoxPython3_2
 VBoxPython3_2_EXTENDS    = VBoxPythonBase
 VBoxPython3_2_EXTENDS_BY = appending
-VBoxPython3_2_TEMPLATE   = XPCOM
+VBoxPython3_2_TEMPLATE   = XPComDll
 VBoxPython3_2_INCS       = $(VBOX_PYTHON32_INC)
 VBoxPython3_2_LIBS       = $(VBOX_PYTHON32_LIB)
 
@@ -302,7 +302,7 @@ VBoxPython3_2_LIBS       = $(VBOX_PYTHON32_LIB)
 DLLS += VBoxPython3_2_x86
 VBoxPython3_2_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_2_x86_EXTENDS_BY = appending
-VBoxPython3_2_x86_TEMPLATE   = XPCOM
+VBoxPython3_2_x86_TEMPLATE   = XPComDll
 VBoxPython3_2_x86_INCS       = $(VBOX_PYTHON32_INC)
 VBoxPython3_2_x86_LIBS       = $(VBOX_PYTHON32_LIB_X86)
   endif
@@ -316,7 +316,7 @@ ifdef VBOX_PYTHON32M_INC
 DLLS += VBoxPython3_2m
 VBoxPython3_2m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_2m_EXTENDS_BY = appending
-VBoxPython3_2m_TEMPLATE   = XPCOM
+VBoxPython3_2m_TEMPLATE   = XPComDll
 VBoxPython3_2m_INCS       = $(VBOX_PYTHON32M_INC)
 VBoxPython3_2m_LIBS       = $(VBOX_PYTHON32M_LIB)
 VBoxPython3_2m_DEFS       = MODULE_NAME_SUFFIX
@@ -326,7 +326,7 @@ VBoxPython3_2m_DEFS       = MODULE_NAME_SUFFIX
 DLLS += VBoxPython3_2m_x86
 VBoxPython3_2m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_2m_x86_EXTENDS_BY = appending
-VBoxPython3_2m_x86_TEMPLATE   = XPCOM
+VBoxPython3_2m_x86_TEMPLATE   = XPComDll
 VBoxPython3_2m_x86_INCS       = $(VBOX_PYTHON32M_INC)
 VBoxPython3_2m_x86_LIBS       = $(VBOX_PYTHON32M_LIB_X86)
   endif
@@ -342,7 +342,7 @@ ifdef VBOX_PYTHON33_INC
 DLLS += VBoxPython3_3
 VBoxPython3_3_EXTENDS    = VBoxPythonBase
 VBoxPython3_3_EXTENDS_BY = appending
-VBoxPython3_3_TEMPLATE   = XPCOM
+VBoxPython3_3_TEMPLATE   = XPComDll
 VBoxPython3_3_INCS       = $(VBOX_PYTHON33_INC)
 VBoxPython3_3_LIBS       = $(VBOX_PYTHON33_LIB)
 
@@ -351,7 +351,7 @@ VBoxPython3_3_LIBS       = $(VBOX_PYTHON33_LIB)
 DLLS += VBoxPython3_3_x86
 VBoxPython3_3_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_3_x86_EXTENDS_BY = appending
-VBoxPython3_3_x86_TEMPLATE   = XPCOM
+VBoxPython3_3_x86_TEMPLATE   = XPComDll
 VBoxPython3_3_x86_INCS       = $(VBOX_PYTHON33_INC)
 VBoxPython3_3_x86_LIBS       = $(VBOX_PYTHON33_LIB_X86)
   endif
@@ -365,7 +365,7 @@ ifdef VBOX_PYTHON33M_INC
 DLLS += VBoxPython3_3m
 VBoxPython3_3m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_3m_EXTENDS_BY = appending
-VBoxPython3_3m_TEMPLATE   = XPCOM
+VBoxPython3_3m_TEMPLATE   = XPComDll
 VBoxPython3_3m_INCS       = $(VBOX_PYTHON33M_INC)
 VBoxPython3_3m_LIBS       = $(VBOX_PYTHON33M_LIB)
 
@@ -374,7 +374,7 @@ VBoxPython3_3m_LIBS       = $(VBOX_PYTHON33M_LIB)
 DLLS += VBoxPython3_3m_x86
 VBoxPython3_3m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_3m_x86_EXTENDS_BY = appending
-VBoxPython3_3m_x86_TEMPLATE   = XPCOM
+VBoxPython3_3m_x86_TEMPLATE   = XPComDll
 VBoxPython3_3m_x86_INCS       = $(VBOX_PYTHON33M_INC)
 VBoxPython3_3m_x86_LIBS       = $(VBOX_PYTHON33M_LIB_X86)
   endif
@@ -388,7 +388,7 @@ ifdef VBOX_PYTHON34_INC
 DLLS += VBoxPython3_4
 VBoxPython3_4_EXTENDS    = VBoxPythonBase
 VBoxPython3_4_EXTENDS_BY = appending
-VBoxPython3_4_TEMPLATE   = XPCOM
+VBoxPython3_4_TEMPLATE   = XPComDll
 VBoxPython3_4_INCS       = $(VBOX_PYTHON34_INC)
 VBoxPython3_4_LIBS       = $(VBOX_PYTHON34_LIB)
 
@@ -397,7 +397,7 @@ VBoxPython3_4_LIBS       = $(VBOX_PYTHON34_LIB)
 DLLS += VBoxPython3_4_x86
 VBoxPython3_4_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_4_x86_EXTENDS_BY = appending
-VBoxPython3_4_x86_TEMPLATE   = XPCOM
+VBoxPython3_4_x86_TEMPLATE   = XPComDll
 VBoxPython3_4_x86_INCS       = $(VBOX_PYTHON34_INC)
 VBoxPython3_4_x86_LIBS       = $(VBOX_PYTHON34_LIB_X86)
   endif
@@ -411,7 +411,7 @@ ifdef VBOX_PYTHON34M_INC
 DLLS += VBoxPython3_4m
 VBoxPython3_4m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_4m_EXTENDS_BY = appending
-VBoxPython3_4m_TEMPLATE   = XPCOM
+VBoxPython3_4m_TEMPLATE   = XPComDll
 VBoxPython3_4m_INCS       = $(VBOX_PYTHON34M_INC)
 VBoxPython3_4m_LIBS       = $(VBOX_PYTHON34M_LIB)
 
@@ -420,7 +420,7 @@ VBoxPython3_4m_LIBS       = $(VBOX_PYTHON34M_LIB)
 DLLS += VBoxPython3_4m_x86
 VBoxPython3_4m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_4m_x86_EXTENDS_BY = appending
-VBoxPython3_4m_x86_TEMPLATE   = XPCOM
+VBoxPython3_4m_x86_TEMPLATE   = XPComDll
 VBoxPython3_4m_x86_INCS       = $(VBOX_PYTHON34M_INC)
 VBoxPython3_4m_x86_LIBS       = $(VBOX_PYTHON34M_LIB_X86)
   endif
@@ -434,7 +434,7 @@ ifdef VBOX_PYTHON35_INC
 DLLS += VBoxPython3_5
 VBoxPython3_5_EXTENDS    = VBoxPythonBase
 VBoxPython3_5_EXTENDS_BY = appending
-VBoxPython3_5_TEMPLATE   = XPCOM
+VBoxPython3_5_TEMPLATE   = XPComDll
 VBoxPython3_5_INCS       = $(VBOX_PYTHON35_INC)
 VBoxPython3_5_LIBS       = $(VBOX_PYTHON35_LIB)
 
@@ -443,7 +443,7 @@ VBoxPython3_5_LIBS       = $(VBOX_PYTHON35_LIB)
 DLLS += VBoxPython3_5_x86
 VBoxPython3_5_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_5_x86_EXTENDS_BY = appending
-VBoxPython3_5_x86_TEMPLATE   = XPCOM
+VBoxPython3_5_x86_TEMPLATE   = XPComDll
 VBoxPython3_5_x86_INCS       = $(VBOX_PYTHON35_INC)
 VBoxPython3_5_x86_LIBS       = $(VBOX_PYTHON35_LIB_X86)
   endif
@@ -457,7 +457,7 @@ ifdef VBOX_PYTHON35M_INC
 DLLS += VBoxPython3_5m
 VBoxPython3_5m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_5m_EXTENDS_BY = appending
-VBoxPython3_5m_TEMPLATE   = XPCOM
+VBoxPython3_5m_TEMPLATE   = XPComDll
 VBoxPython3_5m_INCS       = $(VBOX_PYTHON35M_INC)
 VBoxPython3_5m_LIBS       = $(VBOX_PYTHON35M_LIB)
 
@@ -466,7 +466,7 @@ VBoxPython3_5m_LIBS       = $(VBOX_PYTHON35M_LIB)
 DLLS += VBoxPython3_5m_x86
 VBoxPython3_5m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_5m_x86_EXTENDS_BY = appending
-VBoxPython3_5m_x86_TEMPLATE   = XPCOM
+VBoxPython3_5m_x86_TEMPLATE   = XPComDll
 VBoxPython3_5m_x86_INCS       = $(VBOX_PYTHON35M_INC)
 VBoxPython3_5m_x86_LIBS       = $(VBOX_PYTHON35M_LIB_X86)
   endif
@@ -480,7 +480,7 @@ ifdef VBOX_PYTHON36_INC
 DLLS += VBoxPython3_6
 VBoxPython3_6_EXTENDS    = VBoxPythonBase
 VBoxPython3_6_EXTENDS_BY = appending
-VBoxPython3_6_TEMPLATE   = XPCOM
+VBoxPython3_6_TEMPLATE   = XPComDll
 VBoxPython3_6_INCS       = $(VBOX_PYTHON36_INC)
 VBoxPython3_6_LIBS       = $(VBOX_PYTHON36_LIB)
 
@@ -489,7 +489,7 @@ VBoxPython3_6_LIBS       = $(VBOX_PYTHON36_LIB)
 DLLS += VBoxPython3_6_x86
 VBoxPython3_6_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_6_x86_EXTENDS_BY = appending
-VBoxPython3_6_x86_TEMPLATE   = XPCOM
+VBoxPython3_6_x86_TEMPLATE   = XPComDll
 VBoxPython3_6_x86_INCS       = $(VBOX_PYTHON36_INC)
 VBoxPython3_6_x86_LIBS       = $(VBOX_PYTHON36_LIB_X86)
   endif
@@ -503,7 +503,7 @@ ifdef VBOX_PYTHON36M_INC
 DLLS += VBoxPython3_6m
 VBoxPython3_6m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_6m_EXTENDS_BY = appending
-VBoxPython3_6m_TEMPLATE   = XPCOM
+VBoxPython3_6m_TEMPLATE   = XPComDll
 VBoxPython3_6m_INCS       = $(VBOX_PYTHON36M_INC)
 VBoxPython3_6m_LIBS       = $(VBOX_PYTHON36M_LIB)
 
@@ -512,7 +512,7 @@ VBoxPython3_6m_LIBS       = $(VBOX_PYTHON36M_LIB)
 DLLS += VBoxPython3_6m_x86
 VBoxPython3_6m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_6m_x86_EXTENDS_BY = appending
-VBoxPython3_6m_x86_TEMPLATE   = XPCOM
+VBoxPython3_6m_x86_TEMPLATE   = XPComDll
 VBoxPython3_6m_x86_INCS       = $(VBOX_PYTHON36M_INC)
 VBoxPython3_6m_x86_LIBS       = $(VBOX_PYTHON36M_LIB_X86)
   endif
@@ -526,7 +526,7 @@ ifdef VBOX_PYTHON37_INC
 DLLS += VBoxPython3_7
 VBoxPython3_7_EXTENDS    = VBoxPythonBase
 VBoxPython3_7_EXTENDS_BY = appending
-VBoxPython3_7_TEMPLATE   = XPCOM
+VBoxPython3_7_TEMPLATE   = XPComDll
 VBoxPython3_7_INCS       = $(VBOX_PYTHON37_INC)
 VBoxPython3_7_LIBS       = $(VBOX_PYTHON37_LIB)
 
@@ -535,7 +535,7 @@ VBoxPython3_7_LIBS       = $(VBOX_PYTHON37_LIB)
 DLLS += VBoxPython3_7_x86
 VBoxPython3_7_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_7_x86_EXTENDS_BY = appending
-VBoxPython3_7_x86_TEMPLATE   = XPCOM
+VBoxPython3_7_x86_TEMPLATE   = XPComDll
 VBoxPython3_7_x86_INCS       = $(VBOX_PYTHON37_INC)
 VBoxPython3_7_x86_LIBS       = $(VBOX_PYTHON37_LIB_X86)
   endif
@@ -549,7 +549,7 @@ ifdef VBOX_PYTHON37M_INC
 DLLS += VBoxPython3_7m
 VBoxPython3_7m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_7m_EXTENDS_BY = appending
-VBoxPython3_7m_TEMPLATE   = XPCOM
+VBoxPython3_7m_TEMPLATE   = XPComDll
 VBoxPython3_7m_INCS       = $(VBOX_PYTHON37M_INC)
 VBoxPython3_7m_LIBS       = $(VBOX_PYTHON37M_LIB)
 
@@ -558,7 +558,7 @@ VBoxPython3_7m_LIBS       = $(VBOX_PYTHON37M_LIB)
 DLLS += VBoxPython3_7m_x86
 VBoxPython3_7m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_7m_x86_EXTENDS_BY = appending
-VBoxPython3_7m_x86_TEMPLATE_   = XPCOM
+VBoxPython3_7m_x86_TEMPLATE_   = XPComDll
 VBoxPython3_7m_x86_INCS       = $(VBOX_PYTHON37M_INC)
 VBoxPython3_7m_x86_LIBS       = $(VBOX_PYTHON37M_LIB_X86)
   endif
@@ -572,7 +572,7 @@ ifdef VBOX_PYTHON38_INC
 DLLS += VBoxPython3_8
 VBoxPython3_8_EXTENDS    = VBoxPythonBase
 VBoxPython3_8_EXTENDS_BY = appending
-VBoxPython3_8_TEMPLATE   = XPCOM
+VBoxPython3_8_TEMPLATE   = XPComDll
 VBoxPython3_8_INCS       = $(VBOX_PYTHON38_INC)
 VBoxPython3_8_LIBS       = $(VBOX_PYTHON38_LIB)
 
@@ -581,7 +581,7 @@ VBoxPython3_8_LIBS       = $(VBOX_PYTHON38_LIB)
 DLLS += VBoxPython3_8_x86
 VBoxPython3_8_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_8_x86_EXTENDS_BY = appending
-VBoxPython3_8_x86_TEMPLATE   = XPCOM
+VBoxPython3_8_x86_TEMPLATE   = XPComDll
 VBoxPython3_8_x86_INCS       = $(VBOX_PYTHON38_INC)
 VBoxPython3_8_x86_LIBS       = $(VBOX_PYTHON38_LIB_X86)
   endif
@@ -595,7 +595,7 @@ ifdef VBOX_PYTHON38M_INC
 DLLS += VBoxPython3_8m
 VBoxPython3_8m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_8m_EXTENDS_BY = appending
-VBoxPython3_8m_TEMPLATE   = XPCOM
+VBoxPython3_8m_TEMPLATE   = XPComDll
 VBoxPython3_8m_INCS       = $(VBOX_PYTHON38M_INC)
 VBoxPython3_8m_LIBS       = $(VBOX_PYTHON38M_LIB)
 
@@ -604,7 +604,7 @@ VBoxPython3_8m_LIBS       = $(VBOX_PYTHON38M_LIB)
 DLLS += VBoxPython3_8m_x86
 VBoxPython3_8m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_8m_x86_EXTENDS_BY = appending
-VBoxPython3_8m_x86_TEMPLATE_   = XPCOM
+VBoxPython3_8m_x86_TEMPLATE_   = XPComDll
 VBoxPython3_8m_x86_INCS       = $(VBOX_PYTHON38M_INC)
 VBoxPython3_8m_x86_LIBS       = $(VBOX_PYTHON38M_LIB_X86)
   endif
@@ -618,7 +618,7 @@ ifdef VBOX_PYTHON39_INC
 DLLS += VBoxPython3_9
 VBoxPython3_9_EXTENDS    = VBoxPythonBase
 VBoxPython3_9_EXTENDS_BY = appending
-VBoxPython3_9_TEMPLATE   = XPCOM
+VBoxPython3_9_TEMPLATE   = XPComDll
 VBoxPython3_9_INCS       = $(VBOX_PYTHON39_INC)
 VBoxPython3_9_LIBS       = $(VBOX_PYTHON39_LIB)
 
@@ -627,7 +627,7 @@ VBoxPython3_9_LIBS       = $(VBOX_PYTHON39_LIB)
 DLLS += VBoxPython3_9_x86
 VBoxPython3_9_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_9_x86_EXTENDS_BY = appending
-VBoxPython3_9_x86_TEMPLATE   = XPCOM
+VBoxPython3_9_x86_TEMPLATE   = XPComDll
 VBoxPython3_9_x86_INCS       = $(VBOX_PYTHON39_INC)
 VBoxPython3_9_x86_LIBS       = $(VBOX_PYTHON39_LIB_X86)
   endif
@@ -641,7 +641,7 @@ ifdef VBOX_PYTHON39M_INC
 DLLS += VBoxPython3_9m
 VBoxPython3_9m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_9m_EXTENDS_BY = appending
-VBoxPython3_9m_TEMPLATE   = XPCOM
+VBoxPython3_9m_TEMPLATE   = XPComDll
 VBoxPython3_9m_INCS       = $(VBOX_PYTHON39M_INC)
 VBoxPython3_9m_LIBS       = $(VBOX_PYTHON39M_LIB)
 
@@ -650,7 +650,7 @@ VBoxPython3_9m_LIBS       = $(VBOX_PYTHON39M_LIB)
 DLLS += VBoxPython3_9m_x86
 VBoxPython3_9m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_9m_x86_EXTENDS_BY = appending
-VBoxPython3_9m_x86_TEMPLATE_   = XPCOM
+VBoxPython3_9m_x86_TEMPLATE_   = XPComDll
 VBoxPython3_9m_x86_INCS       = $(VBOX_PYTHON39M_INC)
 VBoxPython3_9m_x86_LIBS       = $(VBOX_PYTHON39M_LIB_X86)
   endif
@@ -664,7 +664,7 @@ ifdef VBOX_PYTHON310_INC
 DLLS += VBoxPython3_10
 VBoxPython3_10_EXTENDS    = VBoxPythonBase
 VBoxPython3_10_EXTENDS_BY = appending
-VBoxPython3_10_TEMPLATE   = XPCOM
+VBoxPython3_10_TEMPLATE   = XPComDll
 VBoxPython3_10_INCS       = $(VBOX_PYTHON310_INC)
 VBoxPython3_10_LIBS       = $(VBOX_PYTHON310_LIB)
 
@@ -673,7 +673,7 @@ VBoxPython3_10_LIBS       = $(VBOX_PYTHON310_LIB)
 DLLS += VBoxPython3_10_x86
 VBoxPython3_10_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython3_10_x86_EXTENDS_BY = appending
-VBoxPython3_10_x86_TEMPLATE   = XPCOM
+VBoxPython3_10_x86_TEMPLATE   = XPComDll
 VBoxPython3_10_x86_INCS       = $(VBOX_PYTHON310_INC)
 VBoxPython3_10_x86_LIBS       = $(VBOX_PYTHON310_LIB_X86)
   endif
@@ -687,7 +687,7 @@ ifdef VBOX_PYTHON310M_INC
 DLLS += VBoxPython3_10m
 VBoxPython3_10m_EXTENDS    = VBoxPythonBase_m
 VBoxPython3_10m_EXTENDS_BY = appending
-VBoxPython3_10m_TEMPLATE   = XPCOM
+VBoxPython3_10m_TEMPLATE   = XPComDll
 VBoxPython3_10m_INCS       = $(VBOX_PYTHON310M_INC)
 VBoxPython3_10m_LIBS       = $(VBOX_PYTHON310M_LIB)
 
@@ -696,7 +696,7 @@ VBoxPython3_10m_LIBS       = $(VBOX_PYTHON310M_LIB)
 DLLS += VBoxPython3_10m_x86
 VBoxPython3_10m_x86_EXTENDS    = VBoxPythonBase_x86_m
 VBoxPython3_10m_x86_EXTENDS_BY = appending
-VBoxPython3_10m_x86_TEMPLATE_  = XPCOM
+VBoxPython3_10m_x86_TEMPLATE_  = XPComDll
 VBoxPython3_10m_x86_INCS       = $(VBOX_PYTHON310M_INC)
 VBoxPython3_10m_x86_LIBS       = $(VBOX_PYTHON310M_LIB_X86)
   endif

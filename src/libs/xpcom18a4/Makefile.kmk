@@ -49,7 +49,7 @@ ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  endif
 endif
 
-# @todo check whether VBoxXPCOMIPCC.so or VBoxXPCOMIPCD contain undefined
+# @todo check whether VBoxXPComIpcDllC.so or VBoxXPComIpcDllD contain undefined
 # symbols starting with NS_, PL_, PR_ or XPT. Would move the test time failure
 # when missing a symbol renaming to a build time failure. Likewise, there
 # should be a check whether VBoxXPCOM.so contains global C symbols (at least
@@ -107,7 +107,7 @@ LIBRARIES += $(VBOX_XPCOM_LIBRARIES)
 
 VBOX_XPCOM_DLLS := \
 	VBoxXPCOM \
-	VBoxXPCOMIPCC
+	VBoxXPComIpcDllC
 DLLS += $(VBOX_XPCOM_DLLS)
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
@@ -146,7 +146,7 @@ PROGRAMS += \
 #	tstXptDump
 #	tstXptLink
  endif # VBOX_WITH_TESTCASES
-PROGRAMS += VBoxXPCOMIPCD
+PROGRAMS += VBoxXPComIpcDllD
 
 endif # !VBOX_ONLY_SDK && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS))
 
@@ -514,7 +514,7 @@ xpt_link_SOURCES = \
 #
 # The NSPR Library.
 #
-VBox-xpcom-nspr_TEMPLATE   = XPCOM
+VBox-xpcom-nspr_TEMPLATE   = XPComDll
 VBox-xpcom-nspr_INSTTYPE   = none
 VBox-xpcom-nspr_DEFS       = \
 	_NSPR_BUILD_ \
@@ -702,7 +702,7 @@ $$(VBox-xpcom-nspr_0_OUTDIR)/_pl_bld.h: | $$(VBox-xpcom-nspr_0_OUTDIR)/
 $(evalcall2 VBOX_XPCOM_X86,VBox-xpcom-nspr)
 
 
-VBox-xpcom-typelib_TEMPLATE = XPCOM
+VBox-xpcom-typelib_TEMPLATE = XPComDll
 VBox-xpcom-typelib_INSTTYPE = none
 VBox-xpcom-typelib_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_arena.c \
@@ -710,7 +710,7 @@ VBox-xpcom-typelib_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-typelib)
 
-VBox-xpcom-string_TEMPLATE = XPCOM
+VBox-xpcom-string_TEMPLATE = XPComDll
 VBox-xpcom-string_INSTTYPE = none
 VBox-xpcom-string_SOURCES = \
 	xpcom/string/src/nsAString.cpp \
@@ -726,7 +726,7 @@ VBox-xpcom-string_SOURCES = \
 	xpcom/string/src/nsStringObsolete.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-string)
 
-VBox-xpcom-base_TEMPLATE = XPCOM
+VBox-xpcom-base_TEMPLATE = XPComDll
 VBox-xpcom-base_INSTTYPE = none
 VBox-xpcom-base_DEFS = _IMPL_NS_COM
 VBox-xpcom-base_SOURCES = \
@@ -742,7 +742,7 @@ VBox-xpcom-base_SOURCES = \
 	xpcom/base/nsStackFrameUnix.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-base)
 
-VBox-xpcom-ds_TEMPLATE = XPCOM
+VBox-xpcom-ds_TEMPLATE = XPComDll
 VBox-xpcom-ds_INSTTYPE = none
 VBox-xpcom-ds_DEFS = _IMPL_NS_COM
 VBox-xpcom-ds_SOURCES = \
@@ -783,7 +783,7 @@ VBox-xpcom-ds_SOURCES = \
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-ds)
 
 # @todo what about MOZ_USER_DIR?
-VBox-xpcom-io_TEMPLATE = XPCOM
+VBox-xpcom-io_TEMPLATE = XPComDll
 VBox-xpcom-io_INSTTYPE = none
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
  VBox-xpcom-io_DEFS = _IMPL_NS_COM MOZ_USER_DIR=".mozilla"
@@ -832,7 +832,7 @@ VBox-xpcom-io_SOURCES.os2 = \
 	xpcom/io/nsLocalFileOS2.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-io)
 
-VBox-xpcom-components_TEMPLATE = XPCOM
+VBox-xpcom-components_TEMPLATE = XPComDll
 VBox-xpcom-components_INSTTYPE = none
 VBox-xpcom-components_DEFS = _IMPL_NS_COM EXPORT_XPTI_API
 VBox-xpcom-components_SOURCES = \
@@ -845,7 +845,7 @@ VBox-xpcom-components_SOURCES = \
 	xpcom/components/nsStaticComponentLoader.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-components)
 
-VBox-xpcom-threads_TEMPLATE = XPCOM
+VBox-xpcom-threads_TEMPLATE = XPComDll
 VBox-xpcom-threads_INSTTYPE = none
 VBox-xpcom-threads_DEFS = _IMPL_NS_COM
 VBox-xpcom-threads_SOURCES = \
@@ -860,7 +860,7 @@ VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/TimerThread.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-threads)
 
-VBox-xpcom-xptinfo_TEMPLATE = XPCOM
+VBox-xpcom-xptinfo_TEMPLATE = XPComDll
 VBox-xpcom-xptinfo_INSTTYPE = none
 VBox-xpcom-xptinfo_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API
 VBox-xpcom-xptinfo_SOURCES = \
@@ -876,7 +876,7 @@ VBox-xpcom-xptinfo_SOURCES = \
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-xptinfo)
 
 
-VBox-xpcom-xptcall_TEMPLATE = XPCOMYASM
+VBox-xpcom-xptcall_TEMPLATE = XPComDllYasm
 VBox-xpcom-xptcall_INSTTYPE = none
 VBox-xpcom-xptcall_DEFS                  = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTC_API
 VBox-xpcom-xptcall_DEFS.darwin           = KEEP_STACK_16_BYTE_ALIGNED
@@ -914,7 +914,7 @@ xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp_CXXFLAGS = -O0
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-xptcall)
 
 
-VBox-xpcom-proxy_TEMPLATE = XPCOM
+VBox-xpcom-proxy_TEMPLATE = XPComDll
 VBox-xpcom-proxy_INSTTYPE = none
 VBox-xpcom-proxy_DEFS     = _IMPL_NS_COM EXPORT_XPTC_API EXPORT_XPTI_API
 VBox-xpcom-proxy_SOURCES  = \
@@ -955,7 +955,7 @@ VBoxXPCOMGlue_COMMON_SOURCES = \
 	xpcom/glue/nsWeakReference.cpp
 
 # dependent glue library which goes in to the VBoxXPCOM shared library
-VBoxXPCOMGlue_s_TEMPLATE = XPCOM
+VBoxXPCOMGlue_s_TEMPLATE = XPComDll
 VBoxXPCOMGlue_s_INSTTYPE = none
 VBoxXPCOMGlue_s_DEFS     = _IMPL_NS_COM
 VBoxXPCOMGlue_s_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
@@ -963,7 +963,7 @@ $(evalcall VBOX_XPCOM_X86,VBoxXPCOMGlue_s)
 
 # standalone glue library which all third-party client apps (if any) will
 # link with (currently completely unused and nit built, to be part of the SDK)
-VBoxXPCOMGlue_TEMPLATE = XPCOM
+VBoxXPCOMGlue_TEMPLATE = XPComDll
 VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
 #VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)lib/
 $(evalcall VBOX_XPCOM_X86,VBoxXPCOMGlue)
@@ -972,7 +972,7 @@ $(evalcall VBOX_XPCOM_X86,VBoxXPCOMGlue)
 #
 # The VBoxXPCOM Shared Object, assembling all lib files.
 #
-VBoxXPCOM_TEMPLATE = XPCOM
+VBoxXPCOM_TEMPLATE = XPComDll
 VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
 VBoxXPCOM_DEFS = BUILD_DCONNECT=1 _IMPL_NS_COM
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
@@ -1046,10 +1046,10 @@ VBoxXPCOM_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxXPCOM.
 #
 # The 32-bit VBoxXPCOM Shared Object, assembling all lib files.
 #
-VBoxXPCOM-x86_TEMPLATE = XPCOM-x86
-VBoxXPCOM-x86_EXTENDS = VBoxXPCOM
-VBoxXPCOM-x86_NAME = VBoxXPCOM-x86
-VBoxXPCOM-x86_LIBS = \
+VBoxXPComDll-x86_TEMPLATE = XPComDll-x86
+VBoxXPComDll-x86_EXTENDS = VBoxXPCOM
+VBoxXPComDll-x86_NAME = VBoxXPComDll-x86
+VBoxXPComDll-x86_LIBS = \
 	$(VBox-xpcom-typelib-x86_1_TARGET) \
 	$(VBox-xpcom-string-x86_1_TARGET) \
 	$(VBox-xpcom-base-x86_1_TARGET) \
@@ -1064,7 +1064,7 @@ VBoxXPCOM-x86_LIBS = \
 	$(VBoxXPCOMGlue_s-x86_1_TARGET)
 
 ifeq ($(filter-out freebsd linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
-VBoxXPCOM-x86_LDFLAGS = -Wl,--whole-archive \
+VBoxXPComDll-x86_LDFLAGS = -Wl,--whole-archive \
 	$(VBox-xpcom-typelib-x86_1_TARGET) \
 	$(VBox-xpcom-string-x86_1_TARGET) \
 	$(VBox-xpcom-base-x86_1_TARGET) \
@@ -1080,7 +1080,7 @@ VBoxXPCOM-x86_LDFLAGS = -Wl,--whole-archive \
 	-Wl,--no-whole-archive
 endif
 
-VBoxXPCOM-x86_LDFLAGS.solaris += -Wl,-z,allextract \
+VBoxXPComDll-x86_LDFLAGS.solaris += -Wl,-z,allextract \
 	$(VBox-xpcom-typelib-x86_1_TARGET) \
 	$(VBox-xpcom-string-x86_1_TARGET) \
 	$(VBox-xpcom-base-x86_1_TARGET) \
@@ -1115,46 +1115,46 @@ else ifneq ($(KBUILD_TYPE),release)
 IPC_LOGGING = 1
 endif
 
-TEMPLATE_XPCOMIPC                  = XPCOM IPC libraries
-TEMPLATE_XPCOMIPC_EXTENDS          = XPCOM
-TEMPLATE_XPCOMIPC_DEFS             = $(TEMPLATE_XPCOM_DEFS) BUILD_DCONNECT=1
+TEMPLATE_XPComIpcDll                  = XPCOM IPC libraries
+TEMPLATE_XPComIpcDll_EXTENDS          = XPComDll
+TEMPLATE_XPComIpcDll_DEFS             = $(TEMPLATE_XPComDll_DEFS) BUILD_DCONNECT=1
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
- TEMPLATE_XPCOMIPC_DEFS           += IPC_DAEMON_APP_NAME="VBoxXPCOMIPCD$(SUFF_EXE)"
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME="VBoxXPComIpcDllD$(SUFF_EXE)"
 else
- TEMPLATE_XPCOMIPC_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD$(SUFF_EXE)\"
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPComIpcDllD$(SUFF_EXE)\"
 endif
 ifdef IPC_LOGGING
- TEMPLATE_XPCOMIPC_DEFS           += IPC_LOGGING
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_LOGGING
 endif
-TEMPLATE_XPCOMIPC_LIBS             = $(VBoxXPCOM_1_TARGET) $(TEMPLATE_XPCOM_LIBS)
+TEMPLATE_XPComIpcDll_LIBS             = $(VBoxXPCOM_1_TARGET) $(TEMPLATE_XPComDll_LIBS)
 ifneq ($(KBUILD_TARGET),win)
  ifeq ($(filter-out solaris.x86 %.amd64 %.sparc32 %.sparc64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) ## TODO: cleanup!
   if defined(VBOX_WITH_RELATIVE_RUNPATH) && !defined(VBOX_WITH_HARDENING)
-   TEMPLATE_XPCOMIPC_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_XPCOM_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
+   TEMPLATE_XPComIpcDll_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_XPComDll_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
   endif
  else ifndef VBOX_WITH_HARDENING
   ifdef VBOX_WITH_RELATIVE_RUNPATH
-   TEMPLATE_XPCOMIPC_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_XPCOM_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
+   TEMPLATE_XPComIpcDll_LDFLAGS = $(filter-out '$(VBOX_GCC_RPATH_OPT)%',$(TEMPLATE_XPComDll_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..'
   endif
  endif
 endif
 
-TEMPLATE_XPCOMIPC-x86              = 32-bit XPCOM IPC libraries
-TEMPLATE_XPCOMIPC-x86_EXTENDS      = XPCOMIPC
-TEMPLATE_XPCOMIPC-x86_BLD_TRG_ARCH = x86
-TEMPLATE_XPCOMIPC-x86_LIBS         = $(VBoxXPCOM-x86_1_TARGET) $(TEMPLATE_XPCOM-x86_LIBS)
+TEMPLATE_XPComIpcDll-x86              = 32-bit XPCOM IPC libraries
+TEMPLATE_XPComIpcDll-x86_EXTENDS      = XPComIpcDll
+TEMPLATE_XPComIpcDll-x86_BLD_TRG_ARCH = x86
+TEMPLATE_XPComIpcDll-x86_LIBS         = $(VBoxXPComDll-x86_1_TARGET) $(TEMPLATE_XPComDll-x86_LIBS)
 
-TEMPLATE_XPCOMIPCEXE               = XPCOM IPC executables
-TEMPLATE_XPCOMIPCEXE_EXTENDS       = XPComExe
-TEMPLATE_XPCOMIPCEXE_DEFS          = $(TEMPLATE_XPComExe_DEFS) BUILD_DCONNECT=1
+TEMPLATE_XPComIpcExe               = XPCOM IPC executables
+TEMPLATE_XPComIpcExe_EXTENDS       = XPComExe
+TEMPLATE_XPComIpcExe_DEFS          = $(TEMPLATE_XPComExe_DEFS) BUILD_DCONNECT=1
 ifdef IPC_LOGGING
- TEMPLATE_XPCOMIPCEXE_DEFS        += IPC_LOGGING
+ TEMPLATE_XPComIpcExe_DEFS        += IPC_LOGGING
 endif
 
 #
 # Shared IPC code. Used by the IPC component as well as the executables.
 #
-VBox-xpcom-ipcshared_TEMPLATE = XPCOMIPC
+VBox-xpcom-ipcshared_TEMPLATE = XPComIpcDll
 VBox-xpcom-ipcshared_INSTTYPE = none
 VBox-xpcom-ipcshared_SOURCES = \
 	ipc/ipcd/shared/src/ipcLog.cpp \
@@ -1170,11 +1170,11 @@ $(evalcall VBOX_XPCOM_X86,VBox-xpcom-ipcshared)
 #
 # DCONNECT client shared object
 #
-VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
-VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
-VBoxXPCOMIPCC_INST = $(INST_BIN)components/
-#VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS - dependentLibs.h is linux specific, so this cannot be required.
-VBoxXPCOMIPCC_SOURCES = \
+VBoxXPComIpcDllC_TEMPLATE = XPComIpcDll
+VBoxXPComIpcDllC_NAME.os2 = VBoxIPCC
+VBoxXPComIpcDllC_INST = $(INST_BIN)components/
+#VBoxXPComIpcDllC_DEFS = HAVE_DEPENDENT_LIBS - dependentLibs.h is linux specific, so this cannot be required.
+VBoxXPComIpcDllC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
 	ipc/ipcd/client/src/ipcService.cpp \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
@@ -1192,36 +1192,36 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/extensions/transmngr/common/tmVector.cpp
 
 ifeq ($(KBUILD_TARGET),win)
-VBoxXPCOMIPCC_SOURCES += \
+VBoxXPComIpcDllC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionWin.cpp
 else
-VBoxXPCOMIPCC_SOURCES += \
+VBoxXPComIpcDllC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 endif
-VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPCOMIPCC.dylib
-VBoxXPCOMIPCC_LIBS = \
+VBoxXPComIpcDllC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPComIpcDllC.dylib
+VBoxXPComIpcDllC_LIBS = \
 	$(VBox-xpcom-ipcshared_1_TARGET)
 
 # 32-bit version of the component.
-$(evalcall VBOX_XPCOM_X86,VBoxXPCOMIPCC)
-VBoxXPCOMIPCC-x86_LIBS = \
+$(evalcall VBOX_XPCOM_X86,VBoxXPComIpcDllC)
+VBoxXPComIpcDllC-x86_LIBS = \
 	$(VBox-xpcom-ipcshared-x86_1_TARGET)
 
 
 #
 # DCONNECT daemon executable
 #
-VBoxXPCOMIPCD_TEMPLATE = XPCOMIPCEXE
-VBoxXPCOMIPCD_SOURCES = \
+VBoxXPComIpcDllD_TEMPLATE = XPComIpcExe
+VBoxXPComIpcDllD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcd.cpp \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp
 ifeq ($(KBUILD_TARGET),win)
- VBoxXPCOMIPCD_SOURCES += \
+ VBoxXPComIpcDllD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdWin.cpp
 else
- VBoxXPCOMIPCD_SOURCES += \
+ VBoxXPComIpcDllD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdUnix.cpp
 endif
 
