@@ -318,7 +318,7 @@ endif
 #       inherited from by RuntimeR3(.lib) and VBoxR3(.dll).
 #
 RuntimeBaseR3_TEMPLATE      = VBoxR3Static
-RuntimeBaseR3_SDKS          = VBOX_LIBXML2
+RuntimeBaseR3_SDKS          = VBoXLibXml2
 RuntimeBaseR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
 RuntimeBaseR3_DEFS          = \
 	IN_RT_R3 \
@@ -2761,7 +2761,7 @@ RuntimeGuestR3Shared-x86_BLD_TRG_ARCH   := x86
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBoxR3DllNoPic
-VBoxRT_SDKS                    = VBOX_LIBXML2
+VBoxRT_SDKS                    = VBoXLibXml2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBoxLibCurl
 endif
@@ -2855,7 +2855,7 @@ VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeBaseR3_INCS.$(KBU
 VBoxRT_LIBS                    = \
 	$(SDK_VBoxLzf_LIBS) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
-ifndef SDK_VBOX_LIBXML2_LIBS
+ifndef SDK_VBoXLibXml2_LIBS
  VBoxRT_LIBS                  += \
 	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
@@ -3000,7 +3000,7 @@ endif
 VBoxRT-x86_EXTENDS = VBoxRT
 VBoxRT-x86_TEMPLATE = VBoxR3Dll-x86
 VBoxRT-x86_INST.win = $(INST_DLL)x86/
-VBoxRT-x86_SDKS  = VBOX_LIBXML2
+VBoxRT-x86_SDKS  = VBoXLibXml2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT-x86_SDKS += VBoxLibCurl-x86
 endif
@@ -3012,7 +3012,7 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT-x86_LIBS += \
 	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
 endif
-ifndef SDK_VBOX_LIBXML2_LIBS
+ifndef SDK_VBoXLibXml2_LIBS
  VBoxRT-x86_LIBS                 += \
 	$(PATH_STAGE_LIB)/VBox-libxml2-x86$(VBOX_SUFF_LIB)
 endif

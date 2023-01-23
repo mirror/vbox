@@ -5041,10 +5041,10 @@ ifdef VBOX_WITH_LIBVPX
 endif
 
 # libxml2
-SDK_VBOX_LIBXML2               := libxml2 for dll linking.
-SDK_VBOX_LIBXML2_INCS          ?= $(PATH_ROOT)/src/libs/libxml2-2.9.14/include
-SDK_VBOX_LIBXML2_DEFS          ?= _REENTRANT LIBXML_STATIC LIBXML_STATIC_FOR_DLL
-SDK_VBOX_LIBXML2_DEFS.win      ?= WIN32 _WINDOWS _MBCS HAVE_WIN32_THREADS HAVE_COMPILER_TLS
+SDK_VBoXLibXml2               := libxml2 for dll linking.
+SDK_VBoXLibXml2_INCS          ?= $(PATH_ROOT)/src/libs/libxml2-2.9.14/include
+SDK_VBoXLibXml2_DEFS          ?= _REENTRANT LIBXML_STATIC LIBXML_STATIC_FOR_DLL
+SDK_VBoXLibXml2_DEFS.win      ?= WIN32 _WINDOWS _MBCS HAVE_WIN32_THREADS HAVE_COMPILER_TLS
 # Note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
 #       libxml against VBoxRT
 
@@ -6588,7 +6588,7 @@ ifneq ($(KBUILD_TARGET_ARCH),x86)
 TEMPLATE_VBoxR3Static_LIBS.x86     += \
  	$(VBOX_LIB_RUNTIME_STATIC_X86)
 endif
-ifndef SDK_VBOX_LIBXML2_LIBS
+ifndef SDK_VBoXLibXml2_LIBS
  TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH) += \
  	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB)
 endif
@@ -6879,7 +6879,7 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 TEMPLATE_VBoxR3AutoTest_INST        = $(INST_TESTCASE)
 TEMPLATE_VBoxR3AutoTest_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
-	$(if-expr !defined(SDK_VBOX_LIBXML2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
+	$(if-expr !defined(SDK_VBoXLibXml2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
 	$(if-expr "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "os2" \
  		,$(SDK_VBoxLzf_STATIC_LIBS) $(SDK_VBOX_ZLIB_STATIC_LIBS) \
                ,$(SDK_VBoxLzf_LIBS) $(SDK_VBOX_ZLIB_LIBS)) \
