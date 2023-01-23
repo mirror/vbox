@@ -1731,11 +1731,11 @@ sub CheckForCurl(strOptCurl, bln32Bit)
 
    strPathCurl = UnixSlashes(PathAbs(strPathCurl))
    if bln32Bit = True then
-      CfgPrintAssign "SDK_VBOX_LIBCURL-x86_INCS",     strPathCurl & "/include"
-      CfgPrintAssign "SDK_VBOX_LIBCURL-x86_LIBS.x86", strPathCurl & "/libcurl.lib"
+      CfgPrintAssign "SDK_VBoxLibCurl-x86_INCS",     strPathCurl & "/include"
+      CfgPrintAssign "SDK_VBoxLibCurl-x86_LIBS.x86", strPathCurl & "/libcurl.lib"
    else
-      CfgPrintAssign "SDK_VBOX_LIBCURL_INCS", strPathCurl & "/include"
-      CfgPrintAssign "SDK_VBOX_LIBCURL_LIBS", strPathCurl & "/libcurl.lib"
+      CfgPrintAssign "SDK_VBoxLibCurl_INCS", strPathCurl & "/include"
+      CfgPrintAssign "SDK_VBoxLibCurl_LIBS", strPathCurl & "/libcurl.lib"
    end if
 
    PrintResult strCurl, strPathCurl

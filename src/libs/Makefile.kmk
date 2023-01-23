@@ -42,7 +42,7 @@ if  defined(VBOX_WITH_LIBCURL) \
  && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
  && !defined(VBOX_ONLY_SDK) \
  && (!defined(VBOX_ONLY_VALIDATIONKIT) || defined(VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING)) \
- && "$(SDK_VBOX_LIBCURL_INCS)" == "$(PATH_ROOT)/src/libs/curl-7.83.1/include"
+ && "$(SDK_VBoxLibCurl_INCS)" == "$(PATH_ROOT)/src/libs/curl-7.83.1/include"
  include $(PATH_SUB_CURRENT)/curl-7.83.1/Makefile.kmk
 endif
 

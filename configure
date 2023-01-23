@@ -1096,8 +1096,8 @@ EOF
     [ -n "$INCCURL" ] && I_INCCURL=`prefix_I "$INCCURL"`
     if test_compile "$LIBCURL $I_INCCURL" libcurl libcurl; then
       if test_execute; then
-        cnf_append "SDK_VBOX_LIBCURL_LIBS" "`strip_l "$LIBCURL"`"
-        cnf_append "SDK_VBOX_LIBCURL_INCS" "$INCCURL"
+        cnf_append "SDK_VBoxLibCurl_LIBS" "`strip_l "$LIBCURL"`"
+        cnf_append "SDK_VBoxLibCurl_INCS" "$INCCURL"
       fi
     fi
   fi

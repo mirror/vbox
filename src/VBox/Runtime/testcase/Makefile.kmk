@@ -374,7 +374,7 @@ tstRTDigest-2_SOURCES = tstRTDigest-2.cpp
 ifdef VBOX_WITH_LIBCURL
 tstRTHttp-1_TEMPLATE = VBoxR3TstExe
 tstRTHttp-1_SOURCES = tstRTHttp-1.cpp
-tstRTHttp-1_SDKS = VBOX_LIBCURL
+tstRTHttp-1_SDKS = VBoxLibCurl
 endif
 
 tstDir_TEMPLATE = VBoxR3TstExe

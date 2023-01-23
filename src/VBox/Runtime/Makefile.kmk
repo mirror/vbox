@@ -2763,7 +2763,7 @@ RuntimeGuestR3Shared-x86_BLD_TRG_ARCH   := x86
 VBoxRT_TEMPLATE                = VBoxR3DllNoPic
 VBoxRT_SDKS                    = VBOX_LIBXML2
 ifdef VBOX_WITH_LIBCURL
- VBoxRT_SDKS                  += VBOX_LIBCURL
+ VBoxRT_SDKS                  += VBoxLibCurl
 endif
 VBoxRT_SDKS                   += VBOX_OPENSSL
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
@@ -3002,7 +3002,7 @@ VBoxRT-x86_TEMPLATE = VBoxR3Dll-x86
 VBoxRT-x86_INST.win = $(INST_DLL)x86/
 VBoxRT-x86_SDKS  = VBOX_LIBXML2
 ifdef VBOX_WITH_LIBCURL
- VBoxRT-x86_SDKS += VBOX_LIBCURL-x86
+ VBoxRT-x86_SDKS += VBoxLibCurl-x86
 endif
 VBoxRT-x86_SDKS  += VBOX_OPENSSL-x86
 

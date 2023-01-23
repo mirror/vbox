@@ -4892,15 +4892,15 @@ ifdef VBOX_WITH_DXVK
 endif
 
 ifdef VBOX_WITH_LIBCURL
- SDK_VBOX_LIBCURL              := libcurl for dll linking.
- SDK_VBOX_LIBCURL_INCS         ?= $(PATH_ROOT)/src/libs/curl-7.83.1/include
- SDK_VBOX_LIBCURL_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
- SDK_VBOX_LIBCURL_DEFS         ?= BUILDING_LIBCURL
+ SDK_VBoxLibCurl              := libcurl for dll linking.
+ SDK_VBoxLibCurl_INCS         ?= $(PATH_ROOT)/src/libs/curl-7.83.1/include
+ SDK_VBoxLibCurl_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
+ SDK_VBoxLibCurl_DEFS         ?= BUILDING_LIBCURL
 
- SDK_VBOX_LIBCURL-x86           = libcurl/x86 for dll linking.
- SDK_VBOX_LIBCURL-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.83.1/include
- SDK_VBOX_LIBCURL-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
- SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
+ SDK_VBoxLibCurl-x86           = libcurl/x86 for dll linking.
+ SDK_VBoxLibCurl-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.83.1/include
+ SDK_VBoxLibCurl-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
+ SDK_VBoxLibCurl-x86_DEFS     ?= BUILDING_LIBCURL
 endif
 
 SDK_VBOX_LIBPNG                := protable network graphics (png) library for dll linking.
