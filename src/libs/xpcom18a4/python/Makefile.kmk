@@ -144,7 +144,7 @@ VBoxPythonBase_x86_EXTENDS  = VBoxPythonBase
 VBoxPythonBase_x86_DEFS     = MODULE_NAME_SUFFIX=_x86 $(VBoxPythonBase_DEFS)
 VBoxPythonBase_x86_LIBS     = \
 	$(PATH_STAGE_LIB)/VBoxCOM-x86$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_BIN)/VBoxXPComDll-x86$(VBOX_SUFF_DLL)
+	$(PATH_STAGE_BIN)/VBoxXPCOM-x86$(VBOX_SUFF_DLL)
 
 # 32-bit pymalloc abi variant.
 VBoxPythonBase_x86_m_EXTENDS    = VBoxPythonBase_x86
