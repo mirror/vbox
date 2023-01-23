@@ -170,12 +170,12 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  	$(SDK_VBOX_ZLIB_LIBS)
   endif
   ifeq ($(KBUILD_TARGET),linux)
-   ifdef SDK_VBoXLibXml2_LIBS
+   ifdef SDK_VBoxLibXml2_LIBS
     vbox-img_LIBS += xml2
    endif
   else ifeq ($(KBUILD_TARGET),freebsd)
    vbox-img_LIBS += iconv geom bsdxml sbuf
-   ifdef SDK_VBoXLibXml2_LIBS
+   ifdef SDK_VBoxLibXml2_LIBS
     vbox-img_LIBS += xml2 lzma
    endif
   else ifeq ($(KBUILD_TARGET),darwin)
@@ -184,7 +184,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
    vbox-img_SDKS.win = VBOX_NTDLL
   else ifeq ($(KBUILD_TARGET),solaris)
    vbox-img_LIBS += kstat efi
-   ifdef SDK_VBoXLibXml2_LIBS
+   ifdef SDK_VBoxLibXml2_LIBS
     vbox-img_LIBS += xml2
    endif
   endif
@@ -220,7 +220,7 @@ if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
 	$(SDK_VBOX_ZLIB_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)
-  ifdef SDK_VBoXLibXml2_LIBS
+  ifdef SDK_VBoxLibXml2_LIBS
    vdkeystoremgr_LIBS += xml2
   endif
  else if1of ($(KBUILD_TARGET),darwin freebsd)
