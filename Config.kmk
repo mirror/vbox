@@ -5853,7 +5853,7 @@ VBOX_FREEBSD_SRC ?= /usr/src/sys
 VBOX_FREEBSD_SYS_INCS ?= /usr/include
 
 TEMPLATE_VBoxR0Drv_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBoxR0Drv_LDTOOL              = FREEBSDKMODLD
+TEMPLATE_VBoxR0Drv_LDTOOL              = FreeBsdKModLd
 TEMPLATE_VBoxR0Drv_DEFS               += _KERNEL KLD_MODULE
  if $(VBOX_GCC_VERSION_CC) < 30400
 TEMPLATE_VBoxR0Drv_DEFS               += RT_WITHOUT_PRAGMA_ONCE
@@ -5887,14 +5887,14 @@ TEMPLATE_VBoxR0Drv_LDFLAGS             = -d --warn-common
 TEMPLATE_VBoxR0Drv_LDFLAGS.x86         = -m elf_i386_fbsd
 TEMPLATE_VBoxR0Drv_LDFLAGS.amd64       = -m elf_x86_64_fbsd
 
-TOOL_FREEBSDKMODLD = FreeBSD kernel module linker.
+TOOL_FreeBsdKModLd = FreeBSD kernel module linker.
 # See kBuild/tools/GCC3.kmk for docs.
-TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT_MAYBE = $(outbase).map
-TOOL_FREEBSDKMODLD_LINK_SYSMOD_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))
-TOOL_FREEBSDKMODLD_LINK_SYSMOD_DEPORD =
+TOOL_FreeBsdKModLd_LINK_SYSMOD_OUTPUT_MAYBE = $(outbase).map
+TOOL_FreeBsdKModLd_LINK_SYSMOD_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))
+TOOL_FreeBsdKModLd_LINK_SYSMOD_DEPORD =
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
-TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT =
-define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
+TOOL_FreeBsdKModLd_LINK_SYSMOD_OUTPUT =
+define TOOL_FreeBsdKModLd_LINK_SYSMOD_CMDS
 # Link intermediate .kld (a relocatable object).
 	ld $(flags) -r -o  $(out) $(objs) \
 		$(foreach p,$(libpath), -L$(p))\
@@ -5907,8 +5907,8 @@ define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
 	objcopy --strip-debug $(out)
 endef
  else # x86
-TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT = $(outbase).kld
-define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
+TOOL_FreeBsdKModLd_LINK_SYSMOD_OUTPUT = $(outbase).kld
+define TOOL_FreeBsdKModLd_LINK_SYSMOD_CMDS
 # Link intermediate .kld (a relocatable object).
 	ld $(flags) -r -o $(outbase).kld $(objs) \
 		$(foreach p,$(libpath), -L$(p))\
