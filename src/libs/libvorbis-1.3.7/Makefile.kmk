@@ -30,43 +30,18 @@ include $(KBUILD_PATH)/subheader.kmk
 
 
 #
-# Need to drop some assembly flags and add some C flags (gcc) present in
-# VBoxR3DllNonPedantic.  So, create or own template deriving from it.
-#
-# Note! We ASSUME that see is available here (doesn't build cleanly on 32-bit
-#       linux without this assumption).  Too bad for anyone with ancient CPUs.
-#
-TEMPLATE_VBOXLIBVORBIS         = Template for adjusting assembler and C compiler flags.
-TEMPLATE_VBOXLIBVORBIS_EXTENDS = VBoxR3DllNonPedanticFast
-ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXLIBVORBIS_ASFLAGS.amd64 = $(filter-out -Worphan-labels -f win64, $(TEMPLATE_VBoxR3DllNonPedanticFast_ASFLAGS.amd64)) \
- 	-f x64
-else
- TEMPLATE_VBOXLIBVORBIS_CFLAGS        = $(filter-out $(VBOX_GCC_fvisibility-hidden), $(TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS))
- TEMPLATE_VBOXLIBVORBIS_CFLAGS.amd64  = $(TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS.amd64) -msse # Needed?
- TEMPLATE_VBOXLIBVORBIS_CFLAGS.x86    = $(TEMPLATE_VBoxR3DllNonPedanticFast_CFLAGS.x86) -msse
- TEMPLATE_VBOXLIBVORBIS_ASFLAGS.amd64 = $(filter-out -Worphan-labels, $(TEMPLATE_VBoxR3DllNonPedanticFast_ASFLAGS.amd64))
- TEMPLATE_VBOXLIBVORBIS_ASFLAGS.x86   = $(filter-out -Worphan-labels, $(TEMPLATE_VBoxR3DllNonPedanticFast_ASFLAGS.x86))
-endif
-
-
-#
 # The VBox libvorbis shared library.
 #
 LIBRARIES += VBox-libvorbis
-VBox-libvorbis_TEMPLATE   := VBOXLIBVORBIS
-
+VBox-libvorbis_TEMPLATE   := VBoxR3DllNonPedanticFast
+ifn1of ($(KBUILD_TARGET), win) # Include our own config.h. Not required on Windows.
+ VBox-libvorbis_DEFS      := HAVE_CONFIG_H
+endif
 VBox-libvorbis_INCS       := \
 	. \
 	include \
 	lib \
 	../libogg-1.3.5/include
-
-# Include our own config.h. Not required on Windows.
-ifn1of ($(KBUILD_TARGET), win)
- VBox-libvorbis_DEFS       += HAVE_CONFIG_H
-endif
-
 VBox-libvorbis_SOURCES    := \
 	lib/mdct.c \
 	lib/smallft.c \
