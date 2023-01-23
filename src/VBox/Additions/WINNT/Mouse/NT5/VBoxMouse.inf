@@ -60,10 +60,6 @@ DefaultDestDir = 12     ; DIRID_DRIVERS
 
 [DefaultInstall@DOT-NT-ARCH@]
 CopyFiles = @VBoxMouse.sys
-LegacyUninstall = 1
-
-[DefaultUninstall@DOT-NT-ARCH@]
-LegacyUninstall = 1
 
 [DefaultInstall@DOT-NT-ARCH@.Services]
 AddService = VBoxMouse,,VBoxMouse.Service
