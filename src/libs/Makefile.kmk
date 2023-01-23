@@ -140,7 +140,7 @@ if defined(VBOX_WITH_MAIN) \
 
   # libvorbis for supporting audio with video recording.
   if   defined(VBOX_WITH_LIBVORBIS) \
-    && ("$(SDK_VBOX_VORBIS_INCS)" == "$(SDK_VBOX_VORBIS_DEFAULT_INCS)")
+    && ("$(SDK_VBoxLibVorbis_INCS)" == "$(SDK_VBoxLibVorbis_DEFAULT_INCS)")
    include $(PATH_SUB_CURRENT)/libvorbis-1.3.7/Makefile.kmk
   endif
 

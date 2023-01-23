@@ -1041,12 +1041,12 @@ ifdef VBOX_WITH_RECORDING
   endif
   ifdef VBOX_WITH_LIBVORBIS
    VBOX_MAIN_DEFS += VBOX_WITH_LIBVORBIS
-   VBoxC_SDKS     += VBOX_VORBIS
+   VBoxC_SDKS     += VBoxLibVorbis
    ## @todo We also need to specify this for VBoxSVC, as we need to have VBOX_WITH_LIBVORBIS defined
    ##       for SystemProperties::getSupportedRecordingAudioCodecs().
    #        SystemPropertiesImpl_DEFS += VBOX_WITH_LIBVORBIS didn't work for precompiled headers on Windows --
    #        needs to be solved properly so that we can remove the following _SDKS from VBoxSVC again.
-   VBoxSVC_SDKS   += VBOX_VORBIS
+   VBoxSVC_SDKS   += VBoxLibVorbis
   endif
   VBoxC_SOURCES += src-client/DrvAudioRec.cpp
  endif # VBOX_WITH_AUDIO_RECORDING

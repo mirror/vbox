@@ -4975,10 +4975,10 @@ ifdef VBOX_WITH_LIBOGG
 endif
 
 ifdef VBOX_WITH_LIBVORBIS
- SDK_VBOX_VORBIS               := libvorbis for dll linking.
- SDK_VBOX_VORBIS_DEFAULT_INCS  := $(PATH_ROOT)/src/libs/libvorbis-1.3.7/include
- SDK_VBOX_VORBIS_INCS          ?= $(SDK_VBOX_VORBIS_DEFAULT_INCS)
- SDK_VBOX_VORBIS_LIBS          ?= $(PATH_STAGE_LIB)/VBox-libvorbis$(VBOX_SUFF_LIB)
+ SDK_VBoxLibVorbis               := libvorbis for dll linking.
+ SDK_VBoxLibVorbis_DEFAULT_INCS  := $(PATH_ROOT)/src/libs/libvorbis-1.3.7/include
+ SDK_VBoxLibVorbis_INCS          ?= $(SDK_VBoxLibVorbis_DEFAULT_INCS)
+ SDK_VBoxLibVorbis_LIBS          ?= $(PATH_STAGE_LIB)/VBox-libvorbis$(VBOX_SUFF_LIB)
 endif
 
 SDK_VBOX_SOFTFLOAT             := SoftFloat 3 for dll linking.

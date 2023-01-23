@@ -1838,8 +1838,8 @@ EOF
     [ -n "$INCVRB" ] && I_INCVRB=`prefix_I "$INCVRB"`
     if test_compile "$LIBVRB $I_INCVRB" vorbis vorbis nofatal; then
       if test_execute; then
-        cnf_append "SDK_VBOX_VORBIS_INCS" "$INCVRB"
-        cnf_append "SDK_VBOX_VORBIS_LIBS" "`strip_l "$LIBVRB"`"
+        cnf_append "SDK_VBoxLibVorbis_INCS" "$INCVRB"
+        cnf_append "SDK_VBoxLibVorbis_LIBS" "`strip_l "$LIBVRB"`"
       fi
     else
       echo "not found -- building libvorbis from in-tree code."
