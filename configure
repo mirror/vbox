@@ -990,8 +990,8 @@ EOF
   if test_compile "$LIBLZF $I_INCLZF" liblzf liblzf nofatal; then
     if test_execute; then
       echo "if1of (\$(KBUILD_TARGET),darwin freebsd haiku linux)" >> $CNF
-      cnf_append " SDK_VBOX_LZF_LIBS" "`strip_l "$LIBLZF"`"
-      cnf_append " SDK_VBOX_LZF_INCS" "$INCLZF"
+      cnf_append " SDK_VBoxLzf_LIBS" "`strip_l "$LIBLZF"`"
+      cnf_append " SDK_VBoxLzf_INCS" "$INCLZF"
       echo "endif" >> $CNF
     fi
   else

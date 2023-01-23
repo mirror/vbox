@@ -4908,18 +4908,18 @@ SDK_VBoxLibPng_INCS           ?= $(PATH_ROOT)/src/libs/libpng-1.6.37
 SDK_VBoxLibPng_LIBS           ?= $(PATH_STAGE_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
 # lzf
-SDK_VBOX_LZF                   := lzf compressor/decompressor for dll linking.
-SDK_VBOX_LZF_INCS              ?= $(PATH_ROOT)/src/libs/liblzf-3.6
-SDK_VBOX_LZF_LIBS              ?= $(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
+SDK_VBoxLzf                   := lzf compressor/decompressor for dll linking.
+SDK_VBoxLzf_INCS              ?= $(PATH_ROOT)/src/libs/liblzf-3.6
+SDK_VBoxLzf_LIBS              ?= $(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 
-SDK_VBOX_LZF-x86               := lzf/x86 compressor/decompressor for dll linking.
-SDK_VBOX_LZF-x86_EXTENDS       := VBOX_LZF
-SDK_VBOX_LZF_LIBS-x86          ?= $(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
+SDK_VBoxLzf-x86               := lzf/x86 compressor/decompressor for dll linking.
+SDK_VBoxLzf-x86_EXTENDS       := VBoxLzf
+SDK_VBoxLzf_LIBS-x86          ?= $(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
 
-SDK_VBOX_LZF_STATIC            := lzf compressor/decompressor for static linking.
-SDK_VBOX_LZF_STATIC_EXTENDS    := VBOX_LZF
+SDK_VBoxLzf_STATIC            := lzf compressor/decompressor for static linking.
+SDK_VBoxLzf_STATIC_EXTENDS    := VBoxLzf
 if1of ($(KBUILD_TARGET), os2 win)
- SDK_VBOX_LZF_STATIC_LIBS      := $(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB)
+ SDK_VBoxLzf_STATIC_LIBS      := $(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB)
 endif
 
 # openssl
@@ -6593,11 +6593,11 @@ ifndef SDK_VBOX_LIBXML2_LIBS
 endif
 if1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH) += \
- 	$(SDK_VBOX_LZF_STATIC_LIBS) \
+ 	$(SDK_VBoxLzf_STATIC_LIBS) \
  	$(SDK_VBOX_ZLIB_STATIC_LIBS)
 else
  TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH) += \
- 	$(SDK_VBOX_LZF_LIBS) \
+ 	$(SDK_VBoxLzf_LIBS) \
  	$(SDK_VBOX_ZLIB_LIBS)
  if1of ($(KBUILD_TARGET),darwin freebsd)
   TEMPLATE_VBoxR3Static_LIBS       += iconv
@@ -6880,8 +6880,8 @@ TEMPLATE_VBoxR3AutoTest_INST        = $(INST_TESTCASE)
 TEMPLATE_VBoxR3AutoTest_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
 	$(if-expr !defined(SDK_VBOX_LIBXML2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
 	$(if-expr "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "os2" \
- 		,$(SDK_VBOX_LZF_STATIC_LIBS) $(SDK_VBOX_ZLIB_STATIC_LIBS) \
-               ,$(SDK_VBOX_LZF_LIBS) $(SDK_VBOX_ZLIB_LIBS)) \
+ 		,$(SDK_VBoxLzf_STATIC_LIBS) $(SDK_VBOX_ZLIB_STATIC_LIBS) \
+               ,$(SDK_VBoxLzf_LIBS) $(SDK_VBOX_ZLIB_LIBS)) \
 	,$(TEMPLATE_$(TEMPLATE_VBoxR3AutoTest_EXTENDS)_LIBS.$(KBUILD_TARGET_ARCH)))
 
 #

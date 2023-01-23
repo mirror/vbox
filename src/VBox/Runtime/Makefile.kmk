@@ -357,7 +357,7 @@ endif
 RuntimeBaseR3_INCS          = \
 	include \
 	$(SDK_VBOX_ZLIB_INCS) \
-	$(SDK_VBOX_LZF_INCS)
+	$(SDK_VBoxLzf_INCS)
 
 # RuntimeBaseR3_INCS.solaris  = \
 #    /usr/include
@@ -2853,7 +2853,7 @@ VBoxRT_INCS                   := $(RuntimeBaseR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeBaseR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeBaseR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
-	$(SDK_VBOX_LZF_LIBS) \
+	$(SDK_VBoxLzf_LIBS) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
 ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT_LIBS                  += \
@@ -3007,7 +3007,7 @@ endif
 VBoxRT-x86_SDKS  += VBOX_OPENSSL-x86
 
 VBoxRT-x86_LIBS = \
-	$(SDK_VBOX_LZF_LIBS-x86)
+	$(SDK_VBoxLzf_LIBS-x86)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT-x86_LIBS += \
 	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
