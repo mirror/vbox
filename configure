@@ -1875,8 +1875,8 @@ EOF
     [ -n "$INCOGG" ] && I_INCVRB=`prefix_I "$INCOGG"`
     if test_compile "$LIBOGG $I_INCOGG" ogg ogg nofatal; then
       if test_execute; then
-        cnf_append "SDK_VBOX_OGG_INCS" "$INCOGG"
-        cnf_append "SDK_VBOX_OGG_LIBS" "`strip_l "$LIBOGG"`"
+        cnf_append "SDK_VBoxLibOgg_INCS" "$INCOGG"
+        cnf_append "SDK_VBoxLibOgg_LIBS" "`strip_l "$LIBOGG"`"
       fi
     else
       echo "not found -- building libogg from in-tree code."
