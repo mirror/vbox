@@ -350,8 +350,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
        Graphics/DevVGA-SVGA3d-dx-savedstate.cpp \
        Graphics/DevVGA-SVGA3d-dx-shader.cpp
    if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_DXVK)
-    VBoxDD_SDKS.linux   += VBOX_DXVK
-    VBoxDD_SDKS.darwin  += VBOX_DXVK
+    VBoxDD_SDKS.linux   += VBoxDxVk
+    VBoxDD_SDKS.darwin  += VBoxDxVk
     VBoxDD_DEFS         += VMSVGA3D_DX_BACKEND
     VBoxDD_SOURCES      += \
        Graphics/DevVGA-SVGA3d-dx-dx11.cpp

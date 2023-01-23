@@ -50,7 +50,7 @@ endif
 # dxvk-native for supporting DirectX over Vulkan on platforms other than Windows.
 if defined(VBOX_WITH_DXVK) \
  && !defined(VBOX_ONLY_BUILD) \
- && "$(SDK_VBOX_DXVK_INCS)" == "$(SDK_VBOX_DXVK_DEFAULT_INCS)" \
+ && "$(SDK_VBoxDxVk_INCS)" == "$(SDK_VBoxDxVk_DEFAULT_INCS)" \
  && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   include $(PATH_SUB_CURRENT)/dxvk-native-1.9.2a/Makefile.kmk
 endif
