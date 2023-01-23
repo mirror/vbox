@@ -7465,16 +7465,13 @@ ifdef VBOX_WITH_EXTPACK
  ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   if1of ($(KBUILD_TARGET), win os2)
    TEMPLATE_VBoxR3ExtPack_LIBS = \
-   	$(TEMPLATE_LIBS_VBOXR3) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
   else
    TEMPLATE_VBoxR3ExtPack_LIBS = \
-   	$(TEMPLATE_LIBS_VBOXR3) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
   endif
  else
   TEMPLATE_VBoxR3ExtPack_LIBS = \
-  	$(TEMPLATE_LIBS_VBOXR3) \
   	$(LIB_RUNTIME)
  endif
  ifeq ($(KBUILD_TARGET),darwin)
@@ -7493,16 +7490,13 @@ ifdef VBOX_WITH_EXTPACK
  ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   if1of ($(KBUILD_TARGET), win os2)
    TEMPLATE_VBoxR3ExtPackApi_LIBS = \
-   	$(TEMPLATE_LIBS_VBOXR3) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
   else
    TEMPLATE_VBoxR3ExtPackApi_LIBS = \
-   	$(TEMPLATE_LIBS_VBOXR3) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
   endif
  else
   TEMPLATE_VBoxR3ExtPackApi_LIBS = \
-  	$(TEMPLATE_LIBS_VBOXR3) \
   	$(LIB_RUNTIME)
  endif
  ifeq ($(KBUILD_TARGET),darwin)
