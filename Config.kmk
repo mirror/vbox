@@ -5082,13 +5082,13 @@ SDK_VBoxNtDll_LIBS.amd64      ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
 # SDK for including newdev.lib.
 # It conceptually moved from the WDK to the PSDK with W10, as it's now in the um subdir.
 #
-SDK_VBOX_WIN_NEWDEV            := Abstracts where to find newdev.lib.
+SDK_VBoxWinNewDevLib            := Abstracts where to find newdev.lib.
 ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
- SDK_VBOX_WIN_NEWDEV_LIBS.x86   = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/newdev.lib
- SDK_VBOX_WIN_NEWDEV_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.amd64)/newdev.lib
+ SDK_VBoxWinNewDevLib_LIBS.x86   = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/newdev.lib
+ SDK_VBoxWinNewDevLib_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.amd64)/newdev.lib
 else
- SDK_VBOX_WIN_NEWDEV_LIBS.x86   = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/newdev.lib
- SDK_VBOX_WIN_NEWDEV_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.amd64)/newdev.lib
+ SDK_VBoxWinNewDevLib_LIBS.x86   = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/newdev.lib
+ SDK_VBoxWinNewDevLib_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.amd64)/newdev.lib
 endif
 
 #

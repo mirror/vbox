@@ -770,7 +770,7 @@ ifdef VBOX_WITH_USB
 endif
 
 ifdef VBOX_WITH_NETFLT
- VBoxSVC_SDKS.win += VBOX_WIN_NEWDEV
+ VBoxSVC_SDKS.win += VBoxWinNewDevLib
  VBoxSVC_LIBS.win += \
 	$(PATH_STAGE_LIB)/WinNetConfigDll$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfgDll$(VBOX_SUFF_LIB) \
@@ -1081,7 +1081,7 @@ VBoxC_LIBS.win += \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/psapi.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 ifdef VBOX_WITH_NETFLT
- VBoxC_SDKS.win += VBOX_WIN_NEWDEV
+ VBoxC_SDKS.win += VBoxWinNewDevLib
  VBoxC_LIBS.win += \
 	$(PATH_STAGE_LIB)/WinNetConfigDll$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfgDll$(VBOX_SUFF_LIB) \

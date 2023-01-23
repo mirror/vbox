@@ -34,7 +34,7 @@ VBoxInstallHelper_TEMPLATE = VBoxR3StaticDllNoAsan
 VBoxInstallHelper_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxInstallHelper_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_NETFLT
- VBoxInstallHelper_SDKS   += VBOX_WIN_NEWDEV
+ VBoxInstallHelper_SDKS   += VBoxWinNewDevLib
  VBoxInstallHelper_DEFS   += VBOX_WITH_NETFLT=1
 endif
 VBoxInstallHelper_DEPS     = $(VBOX_SVN_REV_KMK)
