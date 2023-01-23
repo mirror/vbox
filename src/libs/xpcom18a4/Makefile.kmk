@@ -49,7 +49,7 @@ ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  endif
 endif
 
-# @todo check whether VBoxXPComIpcDllC.so or VBoxXPComIpcDllD contain undefined
+# @todo check whether VBoxXPComIPCC.so or VBoxXPCOMIPCD contain undefined
 # symbols starting with NS_, PL_, PR_ or XPT. Would move the test time failure
 # when missing a symbol renaming to a build time failure. Likewise, there
 # should be a check whether VBoxXPCOM.so contains global C symbols (at least
@@ -107,7 +107,7 @@ LIBRARIES += $(VBOX_XPCOM_LIBRARIES)
 
 VBOX_XPCOM_DLLS := \
 	VBoxXPCOM \
-	VBoxXPComIpcDllC
+	VBoxXPComIPCC
 DLLS += $(VBOX_XPCOM_DLLS)
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
@@ -146,7 +146,7 @@ PROGRAMS += \
 #	tstXptDump
 #	tstXptLink
  endif # VBOX_WITH_TESTCASES
-PROGRAMS += VBoxXPComIpcDllD
+PROGRAMS += VBoxXPCOMIPCD
 
 endif # !VBOX_ONLY_SDK && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS))
 
@@ -1119,9 +1119,9 @@ TEMPLATE_XPComIpcDll                  = XPCOM IPC libraries
 TEMPLATE_XPComIpcDll_EXTENDS          = XPComDll
 TEMPLATE_XPComIpcDll_DEFS             = $(TEMPLATE_XPComDll_DEFS) BUILD_DCONNECT=1
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
- TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME="VBoxXPComIpcDllD$(SUFF_EXE)"
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME="VBoxXPCOMIPCD$(SUFF_EXE)"
 else
- TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPComIpcDllD$(SUFF_EXE)\"
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD$(SUFF_EXE)\"
 endif
 ifdef IPC_LOGGING
  TEMPLATE_XPComIpcDll_DEFS           += IPC_LOGGING
@@ -1170,11 +1170,11 @@ $(evalcall VBOX_XPCOM_X86,VBox-xpcom-ipcshared)
 #
 # DCONNECT client shared object
 #
-VBoxXPComIpcDllC_TEMPLATE = XPComIpcDll
-VBoxXPComIpcDllC_NAME.os2 = VBoxIPCC
-VBoxXPComIpcDllC_INST = $(INST_BIN)components/
-#VBoxXPComIpcDllC_DEFS = HAVE_DEPENDENT_LIBS - dependentLibs.h is linux specific, so this cannot be required.
-VBoxXPComIpcDllC_SOURCES = \
+VBoxXPComIPCC_TEMPLATE = XPComIpcDll
+VBoxXPComIPCC_NAME.os2 = VBoxIPCC
+VBoxXPComIPCC_INST = $(INST_BIN)components/
+#VBoxXPComIPCC_DEFS = HAVE_DEPENDENT_LIBS - dependentLibs.h is linux specific, so this cannot be required.
+VBoxXPComIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
 	ipc/ipcd/client/src/ipcService.cpp \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
@@ -1192,36 +1192,36 @@ VBoxXPComIpcDllC_SOURCES = \
 	ipc/ipcd/extensions/transmngr/common/tmVector.cpp
 
 ifeq ($(KBUILD_TARGET),win)
-VBoxXPComIpcDllC_SOURCES += \
+VBoxXPComIPCC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionWin.cpp
 else
-VBoxXPComIpcDllC_SOURCES += \
+VBoxXPComIPCC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 endif
-VBoxXPComIpcDllC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPComIpcDllC.dylib
-VBoxXPComIpcDllC_LIBS = \
+VBoxXPComIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPComIPCC.dylib
+VBoxXPComIPCC_LIBS = \
 	$(VBox-xpcom-ipcshared_1_TARGET)
 
 # 32-bit version of the component.
-$(evalcall VBOX_XPCOM_X86,VBoxXPComIpcDllC)
-VBoxXPComIpcDllC-x86_LIBS = \
+$(evalcall VBOX_XPCOM_X86,VBoxXPComIPCC)
+VBoxXPComIPCC-x86_LIBS = \
 	$(VBox-xpcom-ipcshared-x86_1_TARGET)
 
 
 #
 # DCONNECT daemon executable
 #
-VBoxXPComIpcDllD_TEMPLATE = XPComIpcExe
-VBoxXPComIpcDllD_SOURCES = \
+VBoxXPCOMIPCD_TEMPLATE = XPComIpcExe
+VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcd.cpp \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp
 ifeq ($(KBUILD_TARGET),win)
- VBoxXPComIpcDllD_SOURCES += \
+ VBoxXPCOMIPCD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdWin.cpp
 else
- VBoxXPComIpcDllD_SOURCES += \
+ VBoxXPCOMIPCD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdUnix.cpp
 endif
 
