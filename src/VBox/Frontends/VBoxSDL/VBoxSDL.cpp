@@ -595,7 +595,11 @@ public:
 # endif /* VBOX_WITH_SDL2 */
                 {
 # if defined(VBOXSDL_WITH_X11)
+#  ifdef VBOX_WITH_SDL2
+                    pSWEv->COMSETTER(WinId)((LONG64)info.info.x11.window);
+#  else
                     pSWEv->COMSETTER(WinId)((LONG64)info.info.x11.wmwindow);
+#  endif
 # elif defined(RT_OS_WINDOWS)
 #  ifdef VBOX_WITH_SDL2
                     pSWEv->COMSETTER(WinId)((intptr_t)info.info.win.window);
@@ -810,10 +814,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * and work around the missing KeyPress/KeyRelease events in ProcessKeys().
      */
     {
+#ifndef VBOX_WITH_SDL2
         const SDL_version *pVersion = SDL_Linked_Version();
         if (  SDL_VERSIONNUM(pVersion->major, pVersion->minor, pVersion->patch)
             < SDL_VERSIONNUM(1, 2, 14))
             RTEnvSet("SDL_DISABLE_LOCK_KEYS", "1");
+#endif
     }
 #endif
 
@@ -3409,7 +3415,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         case SDLK_QUESTION:         return 0x35;
         case SDLK_RSHIFT:           return 0x36;
         case SDLK_KP_MULTIPLY:
-        case SDLK_PRINT:            return 0x37; /* fixme */
+            //case SDLK_PRINT:            return 0x37; /* fixme */
         case SDLK_LALT:             return 0x38;
         case SDLK_MODE: /* alt gr*/
         case SDLK_RALT:             return 0x38 | 0x100;
@@ -3426,28 +3432,28 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         case SDLK_F9:               return 0x43;
         case SDLK_F10:              return 0x44;
         case SDLK_PAUSE:            return 0x45; /* not right */
-        case SDLK_NUMLOCK:          return 0x45;
-        case SDLK_SCROLLOCK:        return 0x46;
-        case SDLK_KP7:              return 0x47;
+            //case SDLK_NUMLOCK:          return 0x45;
+            //case SDLK_SCROLLOCK:        return 0x46;
+            //case SDLK_KP7:              return 0x47;
         case SDLK_HOME:             return 0x47 | 0x100;
-        case SDLK_KP8:              return 0x48;
+            //case SDLK_KP8:              return 0x48;
         case SDLK_UP:               return 0x48 | 0x100;
-        case SDLK_KP9:              return 0x49;
+            //case SDLK_KP9:              return 0x49;
         case SDLK_PAGEUP:           return 0x49 | 0x100;
         case SDLK_KP_MINUS:         return 0x4a;
-        case SDLK_KP4:              return 0x4b;
+            //case SDLK_KP4:              return 0x4b;
         case SDLK_LEFT:             return 0x4b | 0x100;
-        case SDLK_KP5:              return 0x4c;
-        case SDLK_KP6:              return 0x4d;
+            //case SDLK_KP5:              return 0x4c;
+            //case SDLK_KP6:              return 0x4d;
         case SDLK_RIGHT:            return 0x4d | 0x100;
         case SDLK_KP_PLUS:          return 0x4e;
-        case SDLK_KP1:              return 0x4f;
+            //case SDLK_KP1:              return 0x4f;
         case SDLK_END:              return 0x4f | 0x100;
-        case SDLK_KP2:              return 0x50;
+            //case SDLK_KP2:              return 0x50;
         case SDLK_DOWN:             return 0x50 | 0x100;
-        case SDLK_KP3:              return 0x51;
+            //case SDLK_KP3:              return 0x51;
         case SDLK_PAGEDOWN:         return 0x51 | 0x100;
-        case SDLK_KP0:              return 0x52;
+            //case SDLK_KP0:              return 0x52;
         case SDLK_INSERT:           return 0x52 | 0x100;
         case SDLK_KP_PERIOD:        return 0x53;
         case SDLK_DELETE:           return 0x53 | 0x100;

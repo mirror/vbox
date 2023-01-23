@@ -126,6 +126,7 @@ endif
 #
 # tstSDL
 #
+ifndef VBOX_WITH_SDL2
 PROGRAMS += tstSDL
 tstSDL_TEMPLATE = VBoxR3TstExe
 tstSDL_SDKS = LIBSDL
@@ -139,6 +140,7 @@ tstSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 ifdef VBOX_OPENGL
 tstSDL_DEFS.linux = VBOX_OPENGL
 endif
+
 
 tstSDL_LIBS = \
 	$(LIB_RUNTIME)
@@ -157,7 +159,7 @@ endif
 
 tstSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
-
+endif
 ## @todo What was this stuff doing here? The exception config is saying two different things, and why just -O for release builds?
 #tstSDL_CXXFLAGS.win = \
 #	-EHsc

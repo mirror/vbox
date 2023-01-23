@@ -772,7 +772,7 @@ void VBoxSDLFB::resizeGuest()
     }
     else
     {
-        mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, mBitsPerPixel,
+        mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, 32,
                                          Rmask, Gmask, Bmask, Amask);
         LogFlow(("VBoxSDL:: using SDL_SWSURFACE\n"));
     }
@@ -1088,6 +1088,7 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
 #endif
     RTCritSectEnter(&mUpdateLock);
     Log(("Updates %d, %d,%d %dx%d\n", mfUpdates, x, y, w, h));
+    // printf("Updates %d, %d,%d %dx%d\n", mfUpdates, x, y, w, h);
     if (!mfUpdates)
     {
         RTCritSectLeave(&mUpdateLock);
@@ -1159,18 +1160,21 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     dstRect.w = w;
     dstRect.h = RT_MAX(0, h - yCutoffGuest);
 
+
+    /* hardware surfaces don't need update notifications */
+#if defined(VBOX_WITH_SDL2)
+    AssertRelease(mScreen->flags & SDL_PREALLOC);
+    SDL_Texture *pNewTexture = SDL_CreateTextureFromSurface(mpRenderer, mSurfVRAM);
+    /** @todo Do we need to update the dirty rect for the texture for SDL2 here as well? */
+    //SDL_RenderClear(mpRenderer);
+    SDL_RenderCopy(mpRenderer, pNewTexture, &srcRect, &dstRect);
+    SDL_RenderPresent(mpRenderer);
+    SDL_DestroyTexture(pNewTexture);
+#else
     /*
      * Now we just blit
      */
     SDL_BlitSurface(mSurfVRAM, &srcRect, mScreen, &dstRect);
-    /* hardware surfaces don't need update notifications */
-#if defined(VBOX_WITH_SDL2)
-    AssertRelease(mScreen->flags & SDL_PREALLOC);
-    /** @todo Do we need to update the dirty rect for the texture for SDL2 here as well? */
-    SDL_RenderClear(mpRenderer);
-    SDL_RenderCopy(mpRenderer, mpTexture, &dstRect, &dstRect);
-    SDL_RenderPresent(mpRenderer);
-#else
     if ((mScreen->flags & SDL_HWSURFACE) == 0)
         SDL_UpdateRect(mScreen, dstRect.x, dstRect.y, dstRect.w, dstRect.h);
 #endif
