@@ -216,22 +216,26 @@ ifdef VBOX_WITHOUT_NOINLINE_SOAPH
  endif
 endif
 
-# disable -fvisibility=hidden as the SOAP stuff does not properly set the visibility attributes
-TEMPLATE_VBOXWEBR3EXE = Webservices without -fvisibility
-TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBoxR3Exe
-TEMPLATE_VBOXWEBR3EXE_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBoxR3Exe_DEFS.win) # Makes the redefinition warnings go away.
-TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),\
+#
+# Template that disables -fvisibility=hidden as the SOAP stuff does not
+# properly set the visibility attributes (or at least it didn't).
+#
+TEMPLATE_VBoxWebR3Exe = Webservices without -fvisibility=hidden
+TEMPLATE_VBoxWebR3Exe_EXTENDS = VBoxR3Exe
+TEMPLATE_VBoxWebR3Exe_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBoxR3Exe_DEFS.win) # Makes the redefinition warnings go away.
+TEMPLATE_VBoxWebR3Exe_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),\
 				 $(TEMPLATE_VBoxR3Exe_CXXFLAGS))
 ifn1of ($(KBUILD_TARGET), win)
-TEMPLATE_VBOXWEBR3EXE_CXXFLAGS += $(VBOX_GCC_Wno-misleading-indentation)
+TEMPLATE_VBoxWebR3Exe_CXXFLAGS += $(VBOX_GCC_Wno-misleading-indentation)
 endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  # -wd4774: string(532): warning C4774: 'sprintf_s' : format string expected in argument 3 is not a string literal
  # -wd4458: stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
  # -wd5039: x509v3.h(883): warning C5039: 'OPENSSL_sk_set_cmp_func': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
  # soapc-1.cpp(182) : warning C4883: 'soap_getelement': function size suppresses optimizations
- TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBoxR3Exe_CXXFLAGS.win) -wd4774 -wd4458 -wd4883 -wd5039
+ TEMPLATE_VBoxWebR3Exe_CXXFLAGS.win = $(TEMPLATE_VBoxR3Exe_CXXFLAGS.win) -wd4774 -wd4458 -wd4883 -wd5039
 endif
+
 
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
@@ -246,7 +250,7 @@ ifdef VBOX_GSOAP_INSTALLED
   # vboxsoap - Library used by both the programs (save build time).
   #
   LIBRARIES += vboxsoap
-  vboxsoap_TEMPLATE = VBOXWEBR3EXE
+  vboxsoap_TEMPLATE = VBoxWebR3Exe
   ifndef VBOX_WITHOUT_PRECOMPILED_HEADERS
    ifeq ($(KBUILD_TARGET),win)
     vboxsoap_USES     = vccprecomp
@@ -574,7 +578,7 @@ $$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
  # webtest - webservice sample client in C++
  #
  PROGRAMS += webtest
- webtest_TEMPLATE = VBOXWEBR3EXE
+ webtest_TEMPLATE = VBoxWebR3Exe
  webtest_CXXFLAGS.win += -bigobj
  ifn1of ($(KBUILD_TARGET), win)
   webtest_CXXFLAGS += -Wno-shadow
