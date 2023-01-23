@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_pem
-crypto_pem_TEMPLATE = SUBLIBCRYPTO
+crypto_pem_TEMPLATE = SubLibCrypto
 crypto_pem_DEFS = OPENSSL_NO_DEPRECATED
 crypto_pem_SOURCES = \
 	pem_all.c \

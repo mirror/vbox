@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_rand
-crypto_rand_TEMPLATE = SUBLIBCRYPTO
+crypto_rand_TEMPLATE = SubLibCrypto
 crypto_rand_DEFS = OPENSSL_NO_DEPRECATED
 crypto_rand_SOURCES = \
 	prov_seed.c \

@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_evp
-crypto_evp_TEMPLATE = SUBLIBCRYPTO
+crypto_evp_TEMPLATE = SubLibCrypto
 crypto_evp_DEFS = OPENSSL_NO_DEPRECATED
 crypto_evp_SOURCES = \
 	asymcipher.c \

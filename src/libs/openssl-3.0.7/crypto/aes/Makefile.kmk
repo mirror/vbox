@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_aes
-crypto_aes_TEMPLATE = SUBLIBCRYPTO
+crypto_aes_TEMPLATE = SubLibCrypto
 crypto_aes_DEFS = OPENSSL_NO_DEPRECATED
 crypto_aes_SOURCES = \
 	aes_cfb.c \

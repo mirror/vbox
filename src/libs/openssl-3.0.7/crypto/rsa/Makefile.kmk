@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_rsa
-crypto_rsa_TEMPLATE = SUBLIBCRYPTO
+crypto_rsa_TEMPLATE = SubLibCrypto
 crypto_rsa_DEFS = OPENSSL_NO_DEPRECATED
 crypto_rsa_SOURCES = \
 	rsa_ameth.c \

@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_camellia
-crypto_camellia_TEMPLATE = SUBLIBCRYPTO
+crypto_camellia_TEMPLATE = SubLibCrypto
 crypto_camellia_DEFS = OPENSSL_NO_DEPRECATED
 crypto_camellia_SOURCES = \
 	camellia.c \

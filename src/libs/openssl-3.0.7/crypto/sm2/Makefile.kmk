@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if 0 # Disabled following OL's example.
 LIBRARIES += crypto_sm2
-crypto_sm2_TEMPLATE = SUBLIBCRYPTO
+crypto_sm2_TEMPLATE = SubLibCrypto
 crypto_sm2_DEFS = OPENSSL_NO_DEPRECATED
 crypto_sm2_SOURCES = \
 	sm2_crypt.c \

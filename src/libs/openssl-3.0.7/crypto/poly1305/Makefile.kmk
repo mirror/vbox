@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_poly1305
-crypto_poly1305_TEMPLATE = SUBLIBCRYPTO
+crypto_poly1305_TEMPLATE = SubLibCrypto
 crypto_poly1305_DEFS = OPENSSL_NO_DEPRECATED
 crypto_poly1305_SOURCES = \
 	poly1305.c

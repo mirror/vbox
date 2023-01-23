@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_rands
-providers_rands_TEMPLATE = SUBLIBCRYPTO
+providers_rands_TEMPLATE = SubLibCrypto
 providers_rands_DEFS = OPENSSL_NO_DEPRECATED
 providers_rands_SOURCES = \
 	crngt.c \

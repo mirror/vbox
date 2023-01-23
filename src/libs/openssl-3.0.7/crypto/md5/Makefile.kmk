@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_md5
-crypto_md5_TEMPLATE = SUBLIBCRYPTO
+crypto_md5_TEMPLATE = SubLibCrypto
 crypto_md5_DEFS = OPENSSL_NO_DEPRECATED
 crypto_md5_SOURCES = \
 	md5_dgst.c \

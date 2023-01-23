@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_crmf
-crypto_crmf_TEMPLATE = SUBLIBCRYPTO
+crypto_crmf_TEMPLATE = SubLibCrypto
 crypto_crmf_DEFS = OPENSSL_NO_DEPRECATED
 crypto_crmf_SOURCES = \
 	crmf_asn.c \

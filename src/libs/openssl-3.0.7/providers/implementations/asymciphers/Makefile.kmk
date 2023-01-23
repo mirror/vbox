@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_asymciphers
-providers_asymciphers_TEMPLATE = SUBLIBCRYPTO
+providers_asymciphers_TEMPLATE = SubLibCrypto
 providers_asymciphers_DEFS = OPENSSL_NO_DEPRECATED
 providers_asymciphers_SOURCES = \
 	rsa_enc.c

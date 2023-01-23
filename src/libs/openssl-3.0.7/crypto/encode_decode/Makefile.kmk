@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_encode_decode
-crypto_encode_decode_TEMPLATE = SUBLIBCRYPTO
+crypto_encode_decode_TEMPLATE = SubLibCrypto
 crypto_encode_decode_DEFS = OPENSSL_NO_DEPRECATED
 crypto_encode_decode_SOURCES = \
 	decoder_err.c \

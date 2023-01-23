@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_seed
-crypto_seed_TEMPLATE = SUBLIBCRYPTO
+crypto_seed_TEMPLATE = SubLibCrypto
 crypto_seed_DEFS = OPENSSL_NO_DEPRECATED
 crypto_seed_SOURCES = \
 	seed.c \

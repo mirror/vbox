@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_kdfs
-providers_kdfs_TEMPLATE = SUBLIBCRYPTO
+providers_kdfs_TEMPLATE = SubLibCrypto
 providers_kdfs_DEFS = OPENSSL_NO_DEPRECATED
 providers_kdfs_SOURCES = \
 	hkdf.c \

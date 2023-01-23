@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_keymgmt
-providers_keymgmt_TEMPLATE = SUBLIBCRYPTO
+providers_keymgmt_TEMPLATE = SubLibCrypto
 providers_keymgmt_DEFS = OPENSSL_NO_DEPRECATED
 providers_keymgmt_SOURCES = \
 	dh_kmgmt.c \

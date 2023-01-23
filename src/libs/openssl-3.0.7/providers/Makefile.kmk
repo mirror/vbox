@@ -56,7 +56,7 @@ VBOX_LIBRARIES_BEFORE_CRYPTO_PROVIDERS_SUBDIRS :=
 if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
  LIBRARIES += VBox-libproviders
 endif
-VBox-libproviders_TEMPLATE = LIBCRYPTO
+VBox-libproviders_TEMPLATE = LibCrypto
 VBox-libproviders_DEFS = OPENSSL_NO_DEPRECATED
 VBox-libproviders_SOURCES  = \
 	baseprov.c \

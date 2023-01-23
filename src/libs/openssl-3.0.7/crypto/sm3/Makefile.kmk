@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_sm3
-crypto_sm3_TEMPLATE = SUBLIBCRYPTO
+crypto_sm3_TEMPLATE = SubLibCrypto
 crypto_sm3_DEFS = OPENSSL_NO_DEPRECATED
 crypto_sm3_SOURCES = \
 	legacy_sm3.c \

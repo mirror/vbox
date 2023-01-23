@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_cmac
-crypto_cmac_TEMPLATE = SUBLIBCRYPTO
+crypto_cmac_TEMPLATE = SubLibCrypto
 crypto_cmac_DEFS = OPENSSL_NO_DEPRECATED
 crypto_cmac_SOURCES = \
 	cmac.c

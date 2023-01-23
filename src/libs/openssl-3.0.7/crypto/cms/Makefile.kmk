@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_cms
-crypto_cms_TEMPLATE = SUBLIBCRYPTO
+crypto_cms_TEMPLATE = SubLibCrypto
 crypto_cms_DEFS = OPENSSL_NO_DEPRECATED
 crypto_cms_SOURCES = \
 	cms_asn1.c \

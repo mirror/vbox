@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_x509
-crypto_x509_TEMPLATE = SUBLIBCRYPTO
+crypto_x509_TEMPLATE = SubLibCrypto
 crypto_x509_DEFS = OPENSSL_NO_DEPRECATED
 crypto_x509_SOURCES = \
 	by_dir.c \

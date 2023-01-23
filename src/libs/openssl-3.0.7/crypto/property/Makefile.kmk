@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_property
-crypto_property_TEMPLATE = SUBLIBCRYPTO
+crypto_property_TEMPLATE = SubLibCrypto
 crypto_property_DEFS = OPENSSL_NO_DEPRECATED
 crypto_property_SOURCES = \
 	defn_cache.c \

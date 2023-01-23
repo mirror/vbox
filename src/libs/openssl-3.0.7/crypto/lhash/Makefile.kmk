@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_lhash
-crypto_lhash_TEMPLATE = SUBLIBCRYPTO
+crypto_lhash_TEMPLATE = SubLibCrypto
 crypto_lhash_DEFS = OPENSSL_NO_DEPRECATED
 crypto_lhash_SOURCES = \
 	lh_stats.c \

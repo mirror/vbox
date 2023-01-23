@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_sha
-crypto_sha_TEMPLATE = SUBLIBCRYPTO
+crypto_sha_TEMPLATE = SubLibCrypto
 crypto_sha_DEFS = OPENSSL_NO_DEPRECATED
 crypto_sha_SOURCES = \
 	sha1_one.c \

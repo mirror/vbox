@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_ocsp
-crypto_ocsp_TEMPLATE = SUBLIBCRYPTO
+crypto_ocsp_TEMPLATE = SubLibCrypto
 crypto_ocsp_DEFS = OPENSSL_NO_DEPRECATED
 crypto_ocsp_SOURCES = \
 	ocsp_asn.c \

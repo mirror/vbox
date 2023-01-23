@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_chacha
-crypto_chacha_TEMPLATE = SUBLIBCRYPTO
+crypto_chacha_TEMPLATE = SubLibCrypto
 crypto_chacha_DEFS = OPENSSL_NO_DEPRECATED
 #ifdef VBOX_WITH_CRYPTO_ASM
 # crypto_chacha_SOURCES.x86 += \

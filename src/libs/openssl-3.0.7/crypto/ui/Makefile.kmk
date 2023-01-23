@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_ui
-crypto_ui_TEMPLATE = SUBLIBCRYPTO
+crypto_ui_TEMPLATE = SubLibCrypto
 crypto_ui_DEFS = OPENSSL_NO_DEPRECATED
 crypto_ui_SOURCES = \
 	ui_err.c \

@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_dh
-crypto_dh_TEMPLATE = SUBLIBCRYPTO
+crypto_dh_TEMPLATE = SubLibCrypto
 crypto_dh_DEFS = OPENSSL_NO_DEPRECATED
 crypto_dh_SOURCES = \
 	dh_ameth.c \

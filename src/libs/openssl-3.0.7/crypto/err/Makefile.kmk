@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_err
-crypto_err_TEMPLATE = SUBLIBCRYPTO
+crypto_err_TEMPLATE = SubLibCrypto
 crypto_err_DEFS = OPENSSL_NO_DEPRECATED
 crypto_err_SOURCES = \
 	err.c \

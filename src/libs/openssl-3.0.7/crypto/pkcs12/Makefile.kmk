@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_pkcs12
-crypto_pkcs12_TEMPLATE = SUBLIBCRYPTO
+crypto_pkcs12_TEMPLATE = SubLibCrypto
 crypto_pkcs12_DEFS = OPENSSL_NO_DEPRECATED
 crypto_pkcs12_SOURCES = \
 	p12_add.c \

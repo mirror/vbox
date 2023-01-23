@@ -55,7 +55,7 @@ VBOX_LIBRARIES_BEFORE_CRYPTO_SUBDIRS :=
 # The VBoxRT libcrypto.
 #
 LIBRARIES += VBox-libcrypto
-VBox-libcrypto_TEMPLATE = LIBCRYPTO
+VBox-libcrypto_TEMPLATE = LibCrypto
 VBox-libcrypto_INCS     = $(VBox-libcrypto_0_OUTDIR)
 VBox-libcrypto_SOURCES  = \
 	asn1_dsa.c \

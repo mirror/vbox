@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_comp
-crypto_comp_TEMPLATE = SUBLIBCRYPTO
+crypto_comp_TEMPLATE = SubLibCrypto
 crypto_comp_DEFS = OPENSSL_NO_DEPRECATED
 crypto_comp_SOURCES = \
 	c_zlib.c \

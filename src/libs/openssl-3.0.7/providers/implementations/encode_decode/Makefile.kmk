@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_encode_decode
-providers_encode_decode_TEMPLATE = SUBLIBCRYPTO
+providers_encode_decode_TEMPLATE = SubLibCrypto
 providers_encode_decode_DEFS = OPENSSL_NO_DEPRECATED
 providers_encode_decode_SOURCES = \
 	decode_der2key.c \

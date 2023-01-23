@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_signature
-providers_signature_TEMPLATE = SUBLIBCRYPTO
+providers_signature_TEMPLATE = SubLibCrypto
 providers_signature_DEFS = OPENSSL_NO_DEPRECATED
 providers_signature_SOURCES = \
 	dsa_sig.c \

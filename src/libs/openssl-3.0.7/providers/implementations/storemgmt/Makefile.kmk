@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_storemgmt
-providers_storemgmt_TEMPLATE = SUBLIBCRYPTO
+providers_storemgmt_TEMPLATE = SubLibCrypto
 providers_storemgmt_DEFS = OPENSSL_NO_DEPRECATED
 providers_storemgmt_SOURCES = \
 	file_store.c \

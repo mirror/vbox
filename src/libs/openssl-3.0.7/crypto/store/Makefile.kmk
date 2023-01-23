@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_store
-crypto_store_TEMPLATE = SUBLIBCRYPTO
+crypto_store_TEMPLATE = SubLibCrypto
 crypto_store_DEFS = OPENSSL_NO_DEPRECATED
 crypto_store_SOURCES = \
 	store_err.c \

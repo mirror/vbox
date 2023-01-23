@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_exchange
-providers_exchange_TEMPLATE = SUBLIBCRYPTO
+providers_exchange_TEMPLATE = SubLibCrypto
 providers_exchange_DEFS = OPENSSL_NO_DEPRECATED
 providers_exchange_SOURCES = \
 	dh_exch.c \

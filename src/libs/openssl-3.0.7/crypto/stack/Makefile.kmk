@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_stack
-crypto_stack_TEMPLATE = SUBLIBCRYPTO
+crypto_stack_TEMPLATE = SubLibCrypto
 crypto_stack_DEFS = OPENSSL_NO_DEPRECATED
 crypto_stack_SOURCES = \
 	stack.c

@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_rc4
-crypto_rc4_TEMPLATE = SUBLIBCRYPTO
+crypto_rc4_TEMPLATE = SubLibCrypto
 crypto_rc4_DEFS = OPENSSL_NO_DEPRECATED
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_rc4_SOURCES.x86 += \

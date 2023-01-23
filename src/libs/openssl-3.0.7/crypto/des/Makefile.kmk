@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_des
-crypto_des_TEMPLATE = SUBLIBCRYPTO
+crypto_des_TEMPLATE = SubLibCrypto
 crypto_des_DEFS = OPENSSL_NO_DEPRECATED
 crypto_des_SOURCES = \
 	cbc_cksm.c \

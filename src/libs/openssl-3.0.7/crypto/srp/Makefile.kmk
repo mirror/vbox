@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_srp
-crypto_srp_TEMPLATE = SUBLIBCRYPTO
+crypto_srp_TEMPLATE = SubLibCrypto
 crypto_srp_DEFS = OPENSSL_NO_DEPRECATED
 crypto_srp_SOURCES = \
 	srp_lib.c \

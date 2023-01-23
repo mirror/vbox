@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += crypto_http
-crypto_http_TEMPLATE = SUBLIBCRYPTO
+crypto_http_TEMPLATE = SubLibCrypto
 crypto_http_DEFS = OPENSSL_NO_DEPRECATED
 crypto_http_SOURCES = \
 	http_client.c \

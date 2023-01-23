@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += providers_digests
-providers_digests_TEMPLATE = SUBLIBCRYPTO
+providers_digests_TEMPLATE = SubLibCrypto
 providers_digests_DEFS = OPENSSL_NO_DEPRECATED
 providers_digests_SOURCES = \
 	blake2_prov.c \
