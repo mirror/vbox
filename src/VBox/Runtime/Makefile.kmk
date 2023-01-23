@@ -2765,7 +2765,7 @@ VBoxRT_SDKS                    = VBOX_LIBXML2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBoxLibCurl
 endif
-VBoxRT_SDKS                   += VBOX_OPENSSL
+VBoxRT_SDKS                   += VBoxOpenSslStatic
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
 VBoxRT_SDKS                   += VBOX_SOFTFLOAT
 endif
@@ -2861,7 +2861,7 @@ ifndef SDK_VBOX_LIBXML2_LIBS
 endif
 VBoxRT_LIBS                   += \
 	$(SDK_VBOX_ZLIB_LIBS)
-ifndef SDK_VBOX_OPENSSL_LIBS
+ifndef SDK_VBoxOpenSslStatic_LIBS
  VBoxRT_LIBS                  += \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
@@ -3004,7 +3004,7 @@ VBoxRT-x86_SDKS  = VBOX_LIBXML2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT-x86_SDKS += VBoxLibCurl-x86
 endif
-VBoxRT-x86_SDKS  += VBOX_OPENSSL-x86
+VBoxRT-x86_SDKS  += VBoxOpenSslStatic-x86
 
 VBoxRT-x86_LIBS = \
 	$(SDK_VBoxLzf_LIBS-x86)
@@ -3018,7 +3018,7 @@ ifndef SDK_VBOX_LIBXML2_LIBS
 endif
 VBoxRT-x86_LIBS                  += \
 	$(SDK_VBOX_ZLIB_LIBS-x86)
-ifndef SDK_VBOX_OPENSSL_LIBS
+ifndef SDK_VBoxOpenSslStatic_LIBS
  VBoxRT-x86_LIBS                 += \
 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB)
@@ -3403,7 +3403,7 @@ RuntimeR0Stub_SOURCES.solaris = \
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
-RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK_INCS) VBOX_OPENSSL
+RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK_INCS) VBoxOpenSslStatic ## @todo why OpenSSL in ring-0
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL NOFILEID
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0 LDR_ONLY_PE IPRT_WITHOUT_DIGEST_MD4
 RuntimeR0Drv_DEFS.darwin= IN_SUP_R0 LDR_ONLY_MACHO IPRT_WITHOUT_DIGEST_MD4 IN_RING0_DRV_ON_DARWIN

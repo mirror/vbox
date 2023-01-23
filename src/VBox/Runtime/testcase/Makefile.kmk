@@ -289,7 +289,7 @@ tstRTBase64_SOURCES = tstRTBase64.cpp
 
 tstRTBigNum_TEMPLATE = VBoxR3TstExe
 tstRTBigNum_SOURCES = tstRTBigNum.cpp
-tstRTBigNum_SDKS = VBOX_OPENSSL2
+tstRTBigNum_SDKS = VBoxOpenSsl
 tstRTBigNum_CXXFLAGS.win = -bigobj
 
 tstRTBitOperations_TEMPLATE = VBoxR3TstExe

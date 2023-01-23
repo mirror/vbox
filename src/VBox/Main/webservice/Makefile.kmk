@@ -275,7 +275,7 @@ ifdef VBOX_GSOAP_INSTALLED
   	$(PATH_SUB_CURRENT)
   ifdef VBOX_WITH_WEBSERVICES_SSL
    vboxsoap_DEFS += WITH_OPENSSL
-   vboxsoap_SDKS += VBOX_OPENSSL2
+   vboxsoap_SDKS += VBoxOpenSsl
   endif
   ifdef VBOX_WITHOUT_SPLIT_SOAPC
    vboxsoap_SOURCES = \
@@ -418,7 +418,7 @@ ifdef VBOX_GSOAP_INSTALLED
  vboxwebsrv_LIBS.solaris += socket nsl
  ifdef VBOX_WITH_WEBSERVICES_SSL
   vboxwebsrv_DEFS += WITH_OPENSSL
-  vboxwebsrv_SDKS += VBOX_OPENSSL2
+  vboxwebsrv_SDKS += VBoxOpenSsl
  endif
  vboxwebsrv_SOURCES = \
 	vboxweb.cpp \
@@ -594,7 +594,7 @@ $$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
  webtest_LIBS.solaris += nsl
  ifdef VBOX_WITH_WEBSERVICES_SSL
   webtest_DEFS += WITH_OPENSSL
-  webtest_SDKS += VBOX_OPENSSL2
+  webtest_SDKS += VBoxOpenSsl
  endif
  webtest_SOURCES = \
 	webtest.cpp \

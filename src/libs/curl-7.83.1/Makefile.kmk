@@ -32,7 +32,7 @@ VBOX_PATH_LIBCURL = $(PATH_ROOT)/src/libs/curl-7.83.1
 
 LIBRARIES += VBox-libcurl
 VBox-libcurl_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
-VBox-libcurl_SDKS           = VBOX_ZLIB VBOX_OPENSSL
+VBox-libcurl_SDKS           = VBOX_ZLIB VBoxOpenSslStatic
 VBox-libcurl_DEFS           = \
 	CURL_STATICLIB \
         OPENSSL_NO_ENGINE \

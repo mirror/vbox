@@ -4923,48 +4923,48 @@ if1of ($(KBUILD_TARGET), os2 win)
 endif
 
 # openssl
-SDK_VBOX_OPENSSL                        := OpenSSL - Only for VBoxRT and/or statically linked programs.
-SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS      := $(PATH_OUT)/obj/crypto-3.0.7-headers/include
-SDK_VBOX_OPENSSL_INCS                   ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-SDK_VBOX_OPENSSL_ORDERDEPS              ?= $(crypto-headers_1_TARGET)
+SDK_VBoxOpenSslStatic                        := OpenSSL - Only for VBoxRT and/or statically linked programs.
+SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS      := $(PATH_OUT)/obj/crypto-3.0.7-headers/include
+SDK_VBoxOpenSslStatic_INCS                   ?= $(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)
+SDK_VBoxOpenSslStatic_ORDERDEPS              ?= $(crypto-headers_1_TARGET)
 if  !defined(VBOX_ONLY_SDK) \
  && (!defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER)) \
  && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)) \
- && ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
- SDK_VBOX_OPENSSL_DEPS                  ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
+ && ("$(SDK_VBoxOpenSslStatic_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)")
+ SDK_VBoxOpenSslStatic_DEPS                  ?= $(SDK_VBoxOpenSslStatic_INCS)/openssl/openssl-mangling.h
 endif
-SDK_VBOX_OPENSSL_LIBS                   ?= \
+SDK_VBoxOpenSslStatic_LIBS                   ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
-SDK_VBOX_OPENSSL-x86                    := OpenSSL/x86 - Only for VBoxRT and/or statically linked programs.
-SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS  := $(PATH_OUT)/obj/crypto-3.0.7-headers/include
-SDK_VBOX_OPENSSL-x86_INCS               ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-SDK_VBOX_OPENSSL-x86_ORDERDEPS          ?= $(crypto-headers_1_TARGET)
-if ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
- SDK_VBOX_OPENSSL-x86_DEPS              ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
+SDK_VBoxOpenSslStatic-x86                    := OpenSSL/x86 - Only for VBoxRT and/or statically linked programs.
+SDK_VBoxOpenSslStatic-x86_VBOX_DEFAULT_INCS  := $(PATH_OUT)/obj/crypto-3.0.7-headers/include
+SDK_VBoxOpenSslStatic-x86_INCS               ?= $(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)
+SDK_VBoxOpenSslStatic-x86_ORDERDEPS          ?= $(crypto-headers_1_TARGET)
+if ("$(SDK_VBoxOpenSslStatic_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)")
+ SDK_VBoxOpenSslStatic-x86_DEPS              ?= $(SDK_VBoxOpenSslStatic_INCS)/openssl/openssl-mangling.h
 endif
-SDK_VBOX_OPENSSL-x86_LIBS               ?= \
+SDK_VBoxOpenSslStatic-x86_LIBS               ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
- SDK_VBOX_OPENSSL_BLDPROG               := OpenSSL - Build tools verison (i.e. bldRTSignTool)
- SDK_VBOX_OPENSSL_BLDPROG_INCS          ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
- SDK_VBOX_OPENSSL_BLDPROG_ORDERDEPS     ?= $(crypto-headers_1_TARGET)
+ SDK_VBoxOpenSslBldProg               := OpenSSL - Build tools verison (i.e. bldRTSignTool)
+ SDK_VBoxOpenSslBldProg_INCS          ?= $(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)
+ SDK_VBoxOpenSslBldProg_ORDERDEPS     ?= $(crypto-headers_1_TARGET)
  if  !defined(VBOX_ONLY_SDK) \
-  && ("$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)")
-  SDK_VBOX_OPENSSL_BLDPROG_DEPS         ?= $(SDK_VBOX_OPENSSL_INCS)/openssl/openssl-mangling.h
+  && ("$(SDK_VBoxOpenSsl_INCS)" == "$(SDK_VBoxOpenSsl_VBOX_DEFAULT_INCS)")
+  SDK_VBoxOpenSslBldProg_DEPS         ?= $(SDK_VBoxOpenSslStatic_INCS)/openssl/openssl-mangling.h
  endif
- SDK_VBOX_OPENSSL_BLDPROG_LIBS          ?= \
+ SDK_VBoxOpenSslBldProg_LIBS          ?= \
  	$(PATH_STAGE_LIB)/VBoxBldProg-libssl$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
 endif
 
-SDK_VBOX_OPENSSL2              := This is what you should be using!  It links against VBoxRT.
-SDK_VBOX_OPENSSL2_EXTENDS      := VBOX_OPENSSL
-if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
- SDK_VBOX_OPENSSL2_LIBS         = $(NO_SUCH_VARIABLE)
+SDK_VBoxOpenSsl              := This is what you should be using!  It links against VBoxRT.
+SDK_VBoxOpenSsl_EXTENDS      := VBoxOpenSslStatic
+if "$(SDK_VBoxOpenSsl_INCS)" == "$(SDK_VBoxOpenSsl_VBOX_DEFAULT_INCS)"
+ SDK_VBoxOpenSsl_LIBS         = $(NO_SUCH_VARIABLE)
 endif
 
 ifdef VBOX_WITH_LIBOGG
@@ -6568,7 +6568,7 @@ endif
 TEMPLATE_VBoxR3Static               = New name for VBoxR3StaticBase
 TEMPLATE_VBoxR3Static_EXTENDS       = VBoxR3StaticBase
 TEMPLATE_VBoxR3Static_EXTENDS_BY    = appending
-TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH) += VBOX_OPENSSL
+TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH) += VBoxOpenSslStatic
 TEMPLATE_VBoxR3Static_SDKS.win     += VBOX_NTDLL
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3Static_CFLAGS      += $(VBOX_VCC_WERR)
@@ -6676,7 +6676,7 @@ endif
 TEMPLATE_VBoxR3StaticNoCrt               = Static
 TEMPLATE_VBoxR3StaticNoCrt_EXTENDS       = VBoxR3Static
 TEMPLATE_VBoxR3StaticNoCrt_SDKS          = $(subst WINSDK10-UCRT-STATIC,WINSDK10-UCRT-INCS, $(TEMPLATE_VBoxR3Static_SDKS))
-TEMPLATE_VBoxR3StaticNoCrt_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
+TEMPLATE_VBoxR3StaticNoCrt_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
 TEMPLATE_VBoxR3StaticNoCrt_DEFS          = $(TEMPLATE_VBoxR3Static_DEFS) \
 	RT_NO_CRT \
 	IN_RT_STATIC
@@ -6866,7 +6866,7 @@ endif
 #
 TEMPLATE_VBoxR3AutoTest  = VBox Ring 3 Testcase Exe
 TEMPLATE_VBoxR3AutoTest_EXTENDS    := VBoxR3Static
-TEMPLATE_VBoxR3AutoTest_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBOX_OPENSSL,$(TEMPLATE_$(TEMPLATE_VBoxR3AutoTest_EXTENDS)_SDKS.$(KBUILD_TARGET_ARCH)))
+TEMPLATE_VBoxR3AutoTest_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_$(TEMPLATE_VBoxR3AutoTest_EXTENDS)_SDKS.$(KBUILD_TARGET_ARCH)))
 ifeq ($(KBUILD_TARGET),win)
  if "$(KBUILD_HOST_VERSION)" vlt "10.0.0.0.10240"  # The windows ASAN requires windows 10 APIs to work.
   TEMPLATE_VBoxR3AutoTest_EXTENDS  := VBoxR3StaticExeNoAsan
@@ -7997,7 +7997,7 @@ ifdef VBOX_WITH_NLS
  TEMPLATE_VBoxNLS_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
  TEMPLATE_VBoxNLS_SOURCES  = \
 	$(PATH_ROOT)/src/VBox/Main/nls/dummy.c
- TEMPLATE_VBoxNLS_SDKS.$(KBUILD_TARGET_ARCH)  = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
+ TEMPLATE_VBoxNLS_SDKS.$(KBUILD_TARGET_ARCH)  = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_VBoxNLS_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
   	 $(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
@@ -8583,7 +8583,7 @@ endif
 TEMPLATE_VBoxGuestR3NoCrtExe                := ...
 TEMPLATE_VBoxGuestR3NoCrtExe_EXTENDS        := VBoxGuestR3Exe
 TEMPLATE_VBoxGuestR3NoCrtExe_SDKS            = $(subst WINSDK10-UCRT-STATIC,WINSDK10-UCRT-INCS, $(TEMPLATE_VBoxGuestR3Exe_SDKS))
-TEMPLATE_VBoxGuestR3NoCrtExe_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxGuestR3Exe_SDKS.$(KBUILD_TARGET_ARCH)))
+TEMPLATE_VBoxGuestR3NoCrtExe_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxGuestR3Exe_SDKS.$(KBUILD_TARGET_ARCH)))
 TEMPLATE_VBoxGuestR3NoCrtExe_DEFS            = $(TEMPLATE_VBoxGuestR3Exe_DEFS) \
 	RT_NO_CRT \
 	IN_RT_STATIC

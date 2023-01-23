@@ -1053,7 +1053,7 @@ ifdef VBOX_WITH_RECORDING
 endif # VBOX_WITH_RECORDING
 
 ifdef VBOX_WITH_OPENSSL_FIPS
-VBoxC_SDKS += VBOX_OPENSSL2
+VBoxC_SDKS += VBoxOpenSsl
 endif
 
 VBoxC_INCS          = \
@@ -1163,7 +1163,7 @@ endif
 # Experimental cloud support
 if defined(VBOX_WITH_CLOUD_NET)
  if defined(VBOX_WITH_LIBSSH)
-  VBoxC_SDKS += VBOX_SSH VBOX_OPENSSL
+  VBoxC_SDKS += VBOX_SSH VBoxOpenSsl
   VBoxC_DEFS += VBOX_WITH_LIBSSH
  endif
  VBoxC_SOURCES += src-client/CloudGateway.cpp

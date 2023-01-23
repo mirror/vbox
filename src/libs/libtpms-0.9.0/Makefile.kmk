@@ -32,7 +32,7 @@ VBOX_PATH_LIBTPMS = $(PATH_ROOT)/src/libs/libtpms-0.9.0
 
 LIBRARIES += VBox-libtpms_tpm12 VBox-libtpms_tpm2 VBox-libtpms
 VBox-libtpms_tpm12_TEMPLATE       = VBoxR3DllNonPedantic
-VBox-libtpms_tpm12_SDKS           = VBOX_OPENSSL2
+VBox-libtpms_tpm12_SDKS           = VBoxOpenSsl
 VBox-libtpms_tpm12_DEFS           = \
 	TPM_PCCLIENT \
 	TPM_VOLATILE_LOAD \
@@ -98,7 +98,7 @@ VBox-libtpms_tpm12_SOURCES        = \
 	src/tpm_tpm12_tis.c
 
 VBox-libtpms_tpm2_TEMPLATE       = VBoxR3DllNonPedantic
-VBox-libtpms_tpm2_SDKS           = VBOX_OPENSSL2
+VBox-libtpms_tpm2_SDKS           = VBoxOpenSsl
 VBox-libtpms_tpm2_DEFS           = \
 	TPM_LIBTPMS_CALLBACKS
 VBox-libtpms_2_DEFS            += \

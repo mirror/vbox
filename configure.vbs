@@ -1655,13 +1655,13 @@ sub CheckForSsl(strOptSsl, bln32Bit)
 
    strPathSsl = UnixSlashes(PathAbs(strPathSsl))
    if bln32Bit = True then
-      CfgPrintAssign "SDK_VBOX_OPENSSL-x86_INCS",     strPathSsl & "/include"
-      CfgPrintAssign "SDK_VBOX_OPENSSL-x86_LIBS",     strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
-      CfgPrintAssign "SDK_VBOX_BLD_OPENSSL-x86_LIBS", strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBoxOpenSslStatic-x86_INCS",     strPathSsl & "/include"
+      CfgPrintAssign "SDK_VBoxOpenSslStatic-x86_LIBS",     strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBoxOpenSslBldProg-x86_LIBS", strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
    else
-      CfgPrintAssign "SDK_VBOX_OPENSSL_INCS",         strPathSsl & "/include"
-      CfgPrintAssign "SDK_VBOX_OPENSSL_LIBS",         strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
-      CfgPrintAssign "SDK_VBOX_BLD_OPENSSL_LIBS",     strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBoxOpenSslStatic_INCS",         strPathSsl & "/include"
+      CfgPrintAssign "SDK_VBoxOpenSslStatic_LIBS",         strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBoxOpenSslBldProg_LIBS",     strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
    end if
 
    PrintResult strOpenssl, strPathSsl

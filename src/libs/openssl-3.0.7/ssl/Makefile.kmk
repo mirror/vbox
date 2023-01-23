@@ -31,7 +31,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # The main target: libssl.
 #
-if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
+if "$(SDK_VBoxOpenSslStatic_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)"
  LIBRARIES += VBox-libssl
 endif
 VBox-libssl_TEMPLATE = LibCrypto

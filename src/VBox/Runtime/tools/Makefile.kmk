@@ -94,7 +94,7 @@ if !defined(VBOX_ONLY_DOCS)
   ifndef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
    bldRTSignTool_DEFS     += IPRT_SIGNTOOL_NO_SIGNING
   else # RuntimeBldProg is missing a lot and is built w/o IPRT_WITH_OPENSSL. So, include missing and rebuilt openssl deps.
-   bldRTSignTool_SDKS     += VBOX_OPENSSL_BLDPROG
+   bldRTSignTool_SDKS     += VBoxOpenSslBldProg
    bldRTSignTool_DEFS     += IPRT_WITH_OPENSSL
    bldRTSignTool_SOURCES  += \
        ../common/crypto/pkix-signature-builtin.cpp \
