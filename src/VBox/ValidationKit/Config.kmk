@@ -51,26 +51,25 @@ VBOX_PATH_VALIDATIONKIT_SRC := $(PATH_ROOT)/src/VBox/ValidationKit
 # Base template for Validation Kit R3 programs that drops the -static flag since we only want to use the
 # static version of our own libraries and not the system libs.
 #
-#
-TEMPLATE_VBOXVALIDATIONKITR3BASE = VBox Validation Kit ring-3 program base, both guest and host.
-TEMPLATE_VBOXVALIDATIONKITR3BASE_EXTENDS = VBoxR3Static
+TEMPLATE_VBoxValidationKitR3Base = VBox Validation Kit ring-3 program base, both guest and host.
+TEMPLATE_VBoxValidationKitR3Base_EXTENDS = VBoxR3Static
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS         = $(filter-out -IntegrityCheck, $(TEMPLATE_VBoxR3Static_LDFLAGS))
+ TEMPLATE_VBoxValidationKitR3Base_LDFLAGS         = $(filter-out -IntegrityCheck, $(TEMPLATE_VBoxR3Static_LDFLAGS))
 else ifn1of ($(KBUILD_TARGET), darwin solaris win)
- TEMPLATE_VBOXVALIDATIONKITR3BASE_CFLAGS          = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CFLAGS))
- TEMPLATE_VBOXVALIDATIONKITR3BASE_CXXFLAGS        = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CXXFLAGS))
- TEMPLATE_VBOXVALIDATIONKITR3BASE_OBJCFLAGS       = $(filter-out -static, $(TEMPLATE_VBoxR3Static_OBJCFLAGS))
- TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS         = $(filter-out -static, $(TEMPLATE_VBoxR3Static_LDFLAGS))
+ TEMPLATE_VBoxValidationKitR3Base_CFLAGS          = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CFLAGS))
+ TEMPLATE_VBoxValidationKitR3Base_CXXFLAGS        = $(filter-out -static, $(TEMPLATE_VBoxR3Static_CXXFLAGS))
+ TEMPLATE_VBoxValidationKitR3Base_OBJCFLAGS       = $(filter-out -static, $(TEMPLATE_VBoxR3Static_OBJCFLAGS))
+ TEMPLATE_VBoxValidationKitR3Base_LDFLAGS         = $(filter-out -static, $(TEMPLATE_VBoxR3Static_LDFLAGS))
 endif
-TEMPLATE_VBOXVALIDATIONKITR3BASE_DEFS = $(filter-out VBOX_WITH_DTRACE,$(TEMPLATE_VBoxR3Static_DEFS))
-TEMPLATE_VBOXVALIDATIONKITR3BASE_LIBS = $(TEMPLATE_VBoxR3Static_LIBS)
+TEMPLATE_VBoxValidationKitR3Base_DEFS = $(filter-out VBOX_WITH_DTRACE,$(TEMPLATE_VBoxR3Static_DEFS))
+TEMPLATE_VBoxValidationKitR3Base_LIBS = $(TEMPLATE_VBoxR3Static_LIBS)
 if1of ($(KBUILD_TARGET), linux)
  if $(VBOX_GCC_VERSION_CXX) < 40800
-  TEMPLATE_VBOXVALIDATIONKITR3BASE_LIBS += supc++
-  TEMPLATE_VBOXVALIDATIONKITR3BASE_LDTOOL = $(subst GXX,GCC,$(TEMPLATE_VBoxR3Static_TOOL))
+  TEMPLATE_VBoxValidationKitR3Base_LIBS += supc++
+  TEMPLATE_VBoxValidationKitR3Base_LDTOOL = $(subst GXX,GCC,$(TEMPLATE_VBoxR3Static_TOOL))
  endif
 endif
-TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS.darwin = $(TEMPLATE_VBoxR3Static_LDFLAGS.darwin) -framework IOKit
+TEMPLATE_VBoxValidationKitR3Base_LDFLAGS.darwin = $(TEMPLATE_VBoxR3Static_LDFLAGS.darwin) -framework IOKit
 
 
 #
@@ -78,7 +77,7 @@ TEMPLATE_VBOXVALIDATIONKITR3BASE_LDFLAGS.darwin = $(TEMPLATE_VBoxR3Static_LDFLAG
 # These programs can run on any host or guest.
 #
 TEMPLATE_VBoxValidationKitR3 = VBox Validation Kit ring-3 program, both guest and host.
-TEMPLATE_VBoxValidationKitR3_EXTENDS = VBOXVALIDATIONKITR3BASE
+TEMPLATE_VBoxValidationKitR3_EXTENDS = VBoxValidationKitR3Base
 TEMPLATE_VBoxValidationKitR3_EXTENDS_BY = appending
 TEMPLATE_VBoxValidationKitR3_INST = $(INST_VALIDATIONKIT)$(KBUILD_TARGET)/$(KBUILD_TARGET_ARCH)/
 TEMPLATE_VBoxValidationKitR3_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
@@ -115,10 +114,10 @@ TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 = \
 	-Section:.bss,RW!K
 endif
 TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 += -NoOptIData
-TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBOXVALIDATIONKITR3BASE_POST_CMDS.win.x86)$$(NLTAB)
-TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBOXVALIDATIONKITR3BASE_POST_CMDS.win.amd64)$$(NLTAB)
-TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86    = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBOXVALIDATIONKITR3BASE_LNK_DEPS.win.x86)
-TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBOXVALIDATIONKITR3BASE_LNK_DEPS.win.amd64)
+TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS.win.x86)$$(NLTAB)
+TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS.win.amd64)$$(NLTAB)
+TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86    = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxValidationKitR3Base_LNK_DEPS.win.x86)
+TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxValidationKitR3Base_LNK_DEPS.win.amd64)
 
 #TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBoxGuestR3Exe
 
