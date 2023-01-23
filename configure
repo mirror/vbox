@@ -1765,8 +1765,8 @@ EOF
       [ -n "$INCVPX" ] && I_INCVPX=`prefix_I "$INCVPX"`
       if test_compile "$LIBVPX $I_INCVPX" vpx vpx; then
         if test_execute; then
-          cnf_append "SDK_VBOX_VPX_INCS" "$INCVPX"
-          cnf_append "SDK_VBOX_VPX_LIBS" "`strip_l "$LIBVPX"`"
+          cnf_append "SDK_VBoxLibVpx_INCS" "$INCVPX"
+          cnf_append "SDK_VBoxLibVpx_LIBS" "`strip_l "$LIBVPX"`"
           fi
       fi
     fi

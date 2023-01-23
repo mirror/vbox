@@ -1016,7 +1016,7 @@ VBoxC_SDKS = VBoxLibPng VBOX_ZLIB
 
 ifdef VBOX_WITH_RECORDING
  ifdef VBOX_WITH_LIBVPX
-  VBoxC_SDKS += VBOX_VPX
+  VBoxC_SDKS += VBoxLibVpx
   VBoxC_DEFS += VBOX_WITH_LIBVPX
  endif
  VBoxC_SOURCES += \
@@ -1271,7 +1271,7 @@ if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win" ## @tod
  VBoxClient-x86_USES     = vccprecomp
  VBoxClient-x86_PCH_HDR := $(PATH_SUB_CURRENT)/src-client/win/precomp_vcc.h
 endif
- VBoxClient-x86_SDKS = $(filter-out VBOX_VPX,$(VBoxC_SDKS))
+ VBoxClient-x86_SDKS = $(filter-out VBoxLibVpx,$(VBoxC_SDKS))
  VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT \
 	$(filter-out VBOX_WITH_RECORDING VBOX_WITH_AUDIO_RECORDING \
                  VBOX_WITH_LIBVPX,$(VBoxC_DEFS))
