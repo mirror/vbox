@@ -1024,8 +1024,8 @@ EOF
   [ -n "$INCPNG" ] && I_INCPNG=`prefix_I "$INCPNG"`
   if test_compile "$LIBPNG $I_INCPNG" libpng libpng; then
     if test_execute; then
-      cnf_append "SDK_VBOX_LIBPNG_LIBS" "`strip_l "$LIBPNG"`"
-      cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
+      cnf_append "SDK_VBoxLibPng_LIBS" "`strip_l "$LIBPNG"`"
+      cnf_append "SDK_VBoxLibPng_INCS" "$INCPNG"
     fi
   fi
 }
