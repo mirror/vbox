@@ -635,7 +635,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	Security/DrvTpmHost.cpp
 
   if defined(VBOX_WITH_LIBTPMS)
-   VBoxDD_SDKS          += VBOX_TPMS
+   VBoxDD_SDKS          += VBoxLibTpms
    VBoxDD_DEFS          += VBOX_WITH_LIBTPMS
    VBoxDD_SOURCES += \
    	Security/DrvTpmEmuTpms.cpp
