@@ -73,7 +73,7 @@ endef
 #
 # DXK utilities static library
 #
-VBox-DxVkNativeUtil_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
+VBox-DxVkNativeUtil_TEMPLATE       = VBoxR3DllNonPedantic
 VBox-DxVkNativeUtil_DEFS           = \
 	DXVK_NATIVE \
 	NOMINMAX \
@@ -158,7 +158,7 @@ VBox-DxVkNativeUtil_SOURCES        = \
 #
 # Core DXVK library.
 #
-VBox-DxVkNativeDxVk_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
+VBox-DxVkNativeDxVk_TEMPLATE       = VBoxR3DllNonPedantic
 VBox-DxVkNativeDxVk_DEFS           = \
 	DXVK_NATIVE \
 	NOMINMAX \
@@ -284,7 +284,7 @@ $(evalcall2 def_VBoxDxVkCompilerShaders,VBox-DxVkNativeDxVk)
 #
 # DXVK D3D11 interface library
 #
-VBox-DxVkNativeD3D11_TEMPLATE        = VBoxR3RuntimeDllNonPedantic
+VBox-DxVkNativeD3D11_TEMPLATE        = VBoxR3DllNonPedantic
 VBox-DxVkNativeD3D11_DEFS            = \
 	DXVK_NATIVE \
 	NOMINMAX \
