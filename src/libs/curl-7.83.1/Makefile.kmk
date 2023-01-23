@@ -34,7 +34,6 @@ LIBRARIES += VBox-libcurl
 VBox-libcurl_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
 VBox-libcurl_SDKS           = VBOX_ZLIB VBOX_OPENSSL
 VBox-libcurl_DEFS           = \
-	IN_RT_R3 \
 	CURL_STATICLIB \
         OPENSSL_NO_ENGINE \
 	BUILDING_LIBCURL \
