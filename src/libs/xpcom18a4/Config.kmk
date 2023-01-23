@@ -277,9 +277,8 @@ TEMPLATE_XPComBldProg_INCS                = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
-## @todo fix typo (causes build issues).
-#TEMPLATE_XPComBldProg_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TEMPLATE_VBoxBldProg_CFLAGS)) $(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast) -Wno-format
-TEMPLATE_XPComBldProg_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TEMPLATE_VBOX_BLDPROG_CFLAGS)) $(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast) -Wno-format
+TEMPLATE_XPComBldProg_CFLAGS             = $(filter-out $(VBOX_GCC_PEDANTIC_C), $(TEMPLATE_VBoxBldProg_CFLAGS)) \
+	$(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast) $(VBOX_GCC_NON_PEDANTIC_C)
 TEMPLATE_XPComBldProg_CXXFLAGS.darwin    = $(TEMPLATE_VBoxBldProg_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
 TEMPLATE_XPComBldProg_CXXFLAGS.solaris   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPComBldProg_LDFLAGS.darwin     = $(TEMPLATE_VBoxBldProg_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
