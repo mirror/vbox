@@ -290,32 +290,32 @@ public:
                                             ComPtr<IProgress> &pProgress);
     HRESULT                 i_copyToGuest(const GuestSessionFsSourceSet &SourceSet, const com::Utf8Str &strDestination,
                                           ComPtr<IProgress> &pProgress);
-    int                     i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
+    int                     i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pvrcGuest);
     HRESULT                 i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, bool fStrict, DirectoryCopyFlag_T *pfFlags);
     bool                    i_directoryExists(const Utf8Str &strPath);
     inline bool             i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir);
     int                     i_directoryUnregister(GuestDirectory *pDirectory);
-    int                     i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int *pGuestRc);
-    int                     i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc);
+    int                     i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int *pvrcGuest);
+    int                     i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pvrcGuest);
     int                     i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
-                                            ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
-    int                     i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
+                                            ComObjPtr<GuestDirectory> &pDirectory, int *pvrcGuest);
+    int                     i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest);
     int                     i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     HRESULT                 i_fileCopyFlagFromStr(const com::Utf8Str &strFlags, bool fStrict, FileCopyFlag_T *pfFlags);
     inline bool             i_fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *pFile);
     int                     i_fileUnregister(GuestFile *pFile);
-    int                     i_fileRemove(const Utf8Str &strPath, int *pGuestRc);
+    int                     i_fileRemove(const Utf8Str &strPath, int *pvrcGuest);
     int                     i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
                                          FileSharingMode_T aSharingMode, ULONG aCreationMode,
                                          const std::vector<FileOpenExFlag_T> &aFlags,
-                                         ComObjPtr<GuestFile> &pFile, int *prcGuest);
-    int                     i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *pGuestRc);
-    int                     i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
-    int                     i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *pGuestRc);
+                                         ComObjPtr<GuestFile> &pFile, int *pvrcGuest);
+    int                     i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *pvrcGuest);
+    int                     i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest);
+    int                     i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *pvrcGuest);
     int                     i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory,
-                                           Utf8Str &strName, uint32_t fMode, bool fSecure, int *pGuestRc);
-    int                     i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
+                                           Utf8Str &strName, uint32_t fMode, bool fSecure, int *pvrcGuest);
+    int                     i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest);
     const GuestCredentials &i_getCredentials(void);
     EventSource            *i_getEventSource(void) { return mEventSource; }
     Utf8Str                 i_getName(void);
@@ -327,7 +327,7 @@ public:
     int                     i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     PathStyle_T             i_getGuestPathStyle(void);
     static PathStyle_T      i_getHostPathStyle(void);
-    int                     i_startSession(int *pGuestRc);
+    int                     i_startSession(int *pvrcGuest);
     int                     i_startSessionAsync(void);
     Guest                  *i_getParent(void) { return mParent; }
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
@@ -335,22 +335,22 @@ public:
     int                     i_objectUnregister(uint32_t uObjectID);
     int                     i_objectsUnregister(void);
     int                     i_objectsNotifyAboutStatusChange(GuestSessionStatus_T enmSessionStatus);
-    int                     i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pGuestRc);
-    int                     i_pathUserDocuments(Utf8Str &strPath, int *prcGuest);
-    int                     i_pathUserHome(Utf8Str &strPath, int *prcGuest);
+    int                     i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pvrcGuest);
+    int                     i_pathUserDocuments(Utf8Str &strPath, int *pvrcGuest);
+    int                     i_pathUserHome(Utf8Str &strPath, int *pvrcGuest);
     int                     i_processUnregister(GuestProcess *pProcess);
     int                     i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     int                     i_sendMessage(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
                                           uint64_t fDst = VBOX_GUESTCTRL_DST_SESSION);
-    int                     i_setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc);
-    int                     i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */);
-    int                     i_shutdown(uint32_t fFlags, int *prcGuest);
+    int                     i_setSessionStatus(GuestSessionStatus_T sessionStatus, int vrcSession);
+    int                     i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int vrc /*= VINF_SUCCESS */);
+    int                     i_shutdown(uint32_t fFlags, int *pvrcGuest);
     int                     i_determineProtocolVersion(void);
-    int                     i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pGuestRc);
+    int                     i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pvrcGuest);
     int                     i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,
-                                                  GuestSessionStatus_T *pSessionStatus, int *pGuestRc);
+                                                  GuestSessionStatus_T *pSessionStatus, int *pvrcGuest);
     /** @}  */
 
 public:

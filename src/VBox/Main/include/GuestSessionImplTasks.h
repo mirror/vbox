@@ -217,11 +217,10 @@ public:
     virtual HRESULT Init(const Utf8Str &strTaskDesc)
     {
         setTaskDesc(strTaskDesc);
-        int rc = createAndSetProgressObject(); /* Single operation by default. */
-        if (RT_FAILURE(rc))
-            return E_FAIL;
-
-        return S_OK;
+        int vrc = createAndSetProgressObject(); /* Single operation by default. */
+        if (RT_SUCCESS(vrc))
+            return S_OK;
+        return E_FAIL;
     }
 
     /** Returns the task's progress object. */
@@ -261,8 +260,8 @@ protected:
 
     int setProgress(ULONG uPercent);
     int setProgressSuccess(void);
-    HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
-    HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg, const GuestErrorInfo &guestErrorInfo);
+    HRESULT setProgressErrorMsg(HRESULT hrc, const Utf8Str &strMsg);
+    HRESULT setProgressErrorMsg(HRESULT hrc, const Utf8Str &strMsg, const GuestErrorInfo &guestErrorInfo);
 
     inline void setTaskDesc(const Utf8Str &strTaskDesc) throw()
     {

@@ -72,22 +72,22 @@ public:
      * @{ */
     inline int i_checkPID(uint32_t uPID);
     ProcessStatus_T i_getStatus(void);
-    int i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
-    int i_startProcess(uint32_t cMsTimeout, int *pGuestRc);
-    int i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock, GuestWaitEvent *pEvent, int *pGuestRc);
+    int i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pvrcGuest);
+    int i_startProcess(uint32_t cMsTimeout, int *pvrcGuest);
+    int i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock, GuestWaitEvent *pEvent, int *pvrcGuest);
     int i_startProcessAsync(void);
-    int i_terminateProcess(uint32_t uTimeoutMS, int *pGuestRc);
+    int i_terminateProcess(uint32_t uTimeoutMS, int *pvrcGuest);
     ProcessWaitResult_T i_waitFlagsToResult(uint32_t fWaitFlags);
-    int i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
+    int i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pvrcGuest);
     int i_waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
     int i_waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
-    int i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
-    int i_writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
+    int i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pvrcGuest);
+    int i_writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pvrcGuest);
     /** @}  */
 
     /** @name Static internal methods.
      * @{ */
-    static Utf8Str i_guestErrorToString(int rcGuest, const char *pcszWhat);
+    static Utf8Str i_guestErrorToString(int vrcGuest, const char *pcszWhat);
     static Utf8Str i_statusToString(ProcessStatus_T enmStatus);
     static bool i_isGuestError(int guestRc);
     static ProcessWaitResult_T i_waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus, ProcessStatus_T newStatus, uint32_t uProcFlags, uint32_t uProtocol);
@@ -107,7 +107,7 @@ protected:
     int i_onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int i_prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
-    int i_setProcessStatus(ProcessStatus_T procStatus, int procRc);
+    int i_setProcessStatus(ProcessStatus_T procStatus, int vrcProc);
     static int i_startProcessThreadTask(GuestProcessStartTask *pTask);
     /** @}  */
 
@@ -209,8 +209,8 @@ private:
  */
 struct GuestProcessToolErrorInfo
 {
-    /** Return code from the guest side for executing the process tool. */
-    int     rcGuest;
+    /** Return (VBox status) code from the guest side for executing the process tool. */
+    int     vrcGuest;
     /** The process tool's returned exit code. */
     int32_t iExitCode;
 };
@@ -239,7 +239,7 @@ public:
 
 public:
 
-    int init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pGuestRc);
+    int init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pvrcGuest);
 
     void uninit(void);
 
@@ -253,9 +253,9 @@ public:
     /** Returns the stderr output from the guest process tool. */
     GuestProcessStream &getStdErr(void) { return mStdErr; }
 
-    int wait(uint32_t fToolWaitFlags, int *pGuestRc);
+    int wait(uint32_t fToolWaitFlags, int *pvrcGuest);
 
-    int waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
+    int waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *pStreamBlock, int *pvrcGuest);
 
     bool isRunning(void);
 
@@ -263,18 +263,18 @@ public:
 
     int getTerminationStatus(int32_t *piExitCode = NULL);
 
-    int terminate(uint32_t uTimeoutMS, int *pGuestRc);
+    int terminate(uint32_t uTimeoutMS, int *pvrcGuest);
 
 public:
 
     /** Wrapped @name Static run methods.
      * @{ */
-    static int run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
+    static int run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pvrcGuest);
 
     static int runErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestProcessToolErrorInfo &errorInfo);
 
     static int runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
-                     GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pGuestRc);
+                     GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pvrcGuest);
 
     static int runExErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
                               GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, GuestProcessToolErrorInfo &errorInfo);

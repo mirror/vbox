@@ -112,7 +112,7 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
          * Start the process synchronously and keep it around so that we can use
          * it later in subsequent read() calls.
          */
-        vrc = mData.mProcessTool.init(mSession, procInfo, false /* Async */, NULL /* Guest rc */);
+        vrc = mData.mProcessTool.init(mSession, procInfo, false /*fAsync*/, NULL /*pvrcGuest*/);
         if (RT_SUCCESS(vrc))
         {
             /* As we need to know if the directory we were about to open exists and and is accessible,
@@ -243,23 +243,23 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
  * Converts a given guest directory error to a string.
  *
  * @returns Error string.
- * @param   rcGuest             Guest file error to return string for.
+ * @param   vrcGuest            Guest file error to return string for.
  * @param   pcszWhat            Hint of what was involved when the error occurred.
  */
 /* static */
-Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest, const char *pcszWhat)
+Utf8Str GuestDirectory::i_guestErrorToString(int vrcGuest, const char *pcszWhat)
 {
     AssertPtrReturn(pcszWhat, "");
 
     Utf8Str strErr;
-    switch (rcGuest)
+    switch (vrcGuest)
     {
 #define CASE_MSG(a_iRc, ...) \
         case a_iRc: strErr.printf(__VA_ARGS__); break;
         CASE_MSG(VERR_CANT_CREATE  , tr("Access to guest directory \"%s\" is denied"), pcszWhat);
         CASE_MSG(VERR_DIR_NOT_EMPTY, tr("Guest directory \"%s\" is not empty"), pcszWhat);
         default:
-            strErr.printf(tr("Error %Rrc for guest directory \"%s\" occurred\n"), rcGuest, pcszWhat);
+            strErr.printf(tr("Error %Rrc for guest directory \"%s\" occurred\n"), vrcGuest, pcszWhat);
             break;
     }
 

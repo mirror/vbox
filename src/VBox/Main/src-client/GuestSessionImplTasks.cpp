@@ -110,14 +110,14 @@ int GuestSessionTask::createAndSetProgressObject(ULONG cOperations /* = 1 */)
 
     /* Create the progress object. */
     ComObjPtr<Progress> pProgress;
-    HRESULT hr = pProgress.createObject();
-    if (FAILED(hr))
+    HRESULT hrc = pProgress.createObject();
+    if (FAILED(hrc))
         return VERR_COM_UNEXPECTED;
 
-    hr = pProgress->init(static_cast<IGuestSession*>(mSession),
-                         Bstr(mDesc).raw(),
-                         TRUE /* aCancelable */, cOperations, Bstr(mDesc).raw());
-    if (FAILED(hr))
+    hrc = pProgress->init(static_cast<IGuestSession*>(mSession),
+                          Bstr(mDesc).raw(),
+                          TRUE /* aCancelable */, cOperations, Bstr(mDesc).raw());
+    if (FAILED(hrc))
         return VERR_COM_UNEXPECTED;
 
     mProgress = pProgress;
@@ -158,10 +158,8 @@ int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
     Assert(!pMachine.isNull());
     Bstr strTemp, strFlags;
     LONG64 i64Timestamp;
-    HRESULT hr = pMachine->GetGuestProperty(Bstr(strPath).raw(),
-                                            strTemp.asOutParam(),
-                                            &i64Timestamp, strFlags.asOutParam());
-    if (SUCCEEDED(hr))
+    HRESULT hrc = pMachine->GetGuestProperty(Bstr(strPath).raw(), strTemp.asOutParam(), &i64Timestamp, strFlags.asOutParam());
+    if (SUCCEEDED(hrc))
     {
         strValue = strTemp;
         return VINF_SUCCESS;
@@ -191,8 +189,8 @@ int GuestSessionTask::setProgress(ULONG uPercent)
         AssertMsgFailed(("Setting value of an already completed progress\n"));
         return VINF_SUCCESS;
     }
-    HRESULT hr = mProgress->SetCurrentOperationProgress(uPercent);
-    if (FAILED(hr))
+    HRESULT hrc = mProgress->SetCurrentOperationProgress(uPercent);
+    if (FAILED(hrc))
         return VERR_COM_UNEXPECTED;
 
     return VINF_SUCCESS;
@@ -217,9 +215,9 @@ int GuestSessionTask::setProgressSuccess(void)
         ULONG cOps;   mProgress->COMGETTER(OperationCount(&cOps));
         AssertMsg(uCurOp + 1 /* Zero-based */ == cOps, ("Not all operations done yet (%u/%u)\n", uCurOp + 1, cOps));
 #endif
-        HRESULT hr = mProgress->i_notifyComplete(S_OK);
-        if (FAILED(hr))
-            return VERR_COM_UNEXPECTED; /** @todo Find a better rc. */
+        HRESULT hrc = mProgress->i_notifyComplete(S_OK);
+        if (FAILED(hrc))
+            return VERR_COM_UNEXPECTED; /** @todo Find a better vrc. */
     }
 
     return VINF_SUCCESS;
@@ -228,16 +226,16 @@ int GuestSessionTask::setProgressSuccess(void)
 /**
  * Sets the task's progress object to an error using a string message.
  *
- * @returns Returns \a hr for convenience.
- * @param   hr                  Progress operation result to set.
+ * @returns Returns \a hrc for convenience.
+ * @param   hrc                 Progress operation result to set.
  * @param   strMsg              Message to set.
  */
-HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
+HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hrc, const Utf8Str &strMsg)
 {
-    LogFlowFunc(("hr=%Rhrc, strMsg=%s\n", hr, strMsg.c_str()));
+    LogFlowFunc(("hrc=%Rhrc, strMsg=%s\n", hrc, strMsg.c_str()));
 
     if (mProgress.isNull()) /* Progress is optional. */
-        return hr; /* Return original rc. */
+        return hrc; /* Return original status. */
 
     BOOL fCanceled;
     BOOL fCompleted;
@@ -246,30 +244,30 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
-        HRESULT hr2 = mProgress->i_notifyComplete(hr,
-                                                  COM_IIDOF(IGuestSession),
-                                                  GuestSession::getStaticComponentName(),
-                                                  /* Make sure to hand-in the message via format string to avoid problems
-                                                   * with (file) paths which e.g. contain "%s" and friends. Can happen with
-                                                   * randomly generated Validation Kit stuff. */
-                                                  "%s", strMsg.c_str());
-        if (FAILED(hr2))
-            return hr2;
+        HRESULT hrc2 = mProgress->i_notifyComplete(hrc,
+                                                   COM_IIDOF(IGuestSession),
+                                                   GuestSession::getStaticComponentName(),
+                                                   /* Make sure to hand-in the message via format string to avoid problems
+                                                    * with (file) paths which e.g. contain "%s" and friends. Can happen with
+                                                    * randomly generated Validation Kit stuff. */
+                                                   "%s", strMsg.c_str());
+        if (FAILED(hrc2))
+            return hrc2;
     }
-    return hr; /* Return original rc. */
+    return hrc; /* Return original status. */
 }
 
 /**
  * Sets the task's progress object to an error using a string message and a guest error info object.
  *
- * @returns Returns \a hr for convenience.
- * @param   hr                  Progress operation result to set.
+ * @returns Returns \a hrc for convenience.
+ * @param   hrc                 Progress operation result to set.
  * @param   strMsg              Message to set.
  * @param   guestErrorInfo      Guest error info to use.
  */
-HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg, const GuestErrorInfo &guestErrorInfo)
+HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hrc, const Utf8Str &strMsg, const GuestErrorInfo &guestErrorInfo)
 {
-    return setProgressErrorMsg(hr, strMsg + Utf8Str(": ") + GuestBase::getErrorAsString(guestErrorInfo));
+    return setProgressErrorMsg(hrc, strMsg + Utf8Str(": ") + GuestBase::getErrorAsString(guestErrorInfo));
 }
 
 /**
@@ -1370,12 +1368,13 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
                                     }
 
                                     if (RT_FAILURE(vrc))
-                                        LogRel2(("Guest Control: Unable to query symbolic link info for \"%s\", rc=%Rrc\n",
+                                        LogRel2(("Guest Control: Unable to query symbolic link info for \"%s\", vrc=%Rrc\n",
                                                  pszPathReal, vrc));
                                 }
                                 else
                                 {
-                                    LogRel2(("Guest Control: Unable to resolve symlink for \"%s\", rc=%Rrc\n", strPathAbs.c_str(), vrc));
+                                    LogRel2(("Guest Control: Unable to resolve symlink for \"%s\", vrc=%Rrc\n",
+                                             strPathAbs.c_str(), vrc));
                                     if (vrc == VERR_FILE_NOT_FOUND) /* Broken symlink, skip. */
                                         vrc = VINF_SUCCESS;
                                 }
@@ -1400,7 +1399,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir,
             vrc = VERR_NOT_SUPPORTED;
     }
     else
-        LogFlowFunc(("Unable to query \"%s\", rc=%Rrc\n", strPathAbs.c_str(), vrc));
+        LogFlowFunc(("Unable to query \"%s\", vrc=%Rrc\n", strPathAbs.c_str(), vrc));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -2656,7 +2655,7 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
                                     GuestErrorInfo(GuestErrorInfo::Type_Process, vrcGuest, procInfo.mExecutable.c_str()));
                 break;
 
-            case VERR_INVALID_STATE: /** @todo Special guest control rc needed! */
+            case VERR_INVALID_STATE: /** @todo Special guest control vrc needed! */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Update file \"%s\" reported invalid running state"),
                                                procInfo.mExecutable.c_str()));
@@ -2683,10 +2682,10 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest)
 {
     int vrc                         = VERR_GSTCTL_GUEST_ERROR;
-    int rc                          = VERR_TIMEOUT;
+    int vrcRet                      = VERR_TIMEOUT;
 
     uint64_t tsStart                = RTTimeSystemMilliTS();
-    const uint64_t timeoutMs        = 600 * 1000;
+    const uint64_t cMsTimeout       = 10 * RT_MS_1MIN;
 
     AssertReturn(!pGuest.isNull(), VERR_TIMEOUT);
 
@@ -2702,22 +2701,20 @@ int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest
         vrc = pGuest->i_sessionCreate(startupInfo, guestCreds, pSession);
         if (RT_SUCCESS(vrc))
         {
-            int vrcGuest = VERR_GSTCTL_GUEST_ERROR; /* unused. */
-
             Assert(!pSession.isNull());
 
+            int vrcGuest = VERR_GSTCTL_GUEST_ERROR; /* unused. */
             vrc = pSession->i_startSession(&vrcGuest);
             if (RT_SUCCESS(vrc))
             {
-                GuestSessionWaitResult_T enmWaitResult = GuestSessionWaitResult_None;
-                int rcGuest = 0; /* unused. */
-
                 /* Wait for VBoxService to start. */
-                vrc = pSession->i_waitFor(GuestSessionWaitForFlag_Start, 100 /* timeout, ms */, enmWaitResult, &rcGuest);
+                GuestSessionWaitResult_T enmWaitResult = GuestSessionWaitResult_None;
+                int vrcGuest2 = VINF_SUCCESS; /* unused. */
+                vrc = pSession->i_waitFor(GuestSessionWaitForFlag_Start, 100 /* timeout, ms */, enmWaitResult, &vrcGuest2);
                 if (RT_SUCCESS(vrc))
                 {
                     vrc = pSession->Close();
-                    rc = 0;
+                    vrcRet = VINF_SUCCESS;
                     break;
                 }
             }
@@ -2727,9 +2724,9 @@ int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest
 
         RTThreadSleep(100);
 
-    } while ((RTTimeSystemMilliTS() - tsStart) < timeoutMs);
+    } while ((RTTimeSystemMilliTS() - tsStart) < cMsTimeout);
 
-    return rc;
+    return vrcRet;
 }
 
 /** @copydoc GuestSessionTask::Run */
