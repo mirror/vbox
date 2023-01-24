@@ -1158,9 +1158,9 @@ bool VirtualBoxSDS::i_watchIt(VBoxSDSPerUserData *pUserData, HANDLE hProcess, RT
 
                 /* Start the thread and we're good. */
                 m_papWatchers[m_cWatchers++] = pWatcher;
-                int rc = RTThreadCreateF(&pWatcher->hThread, i_watcherThreadProc, pWatcher, 0, RTTHREADTYPE_MAIN_WORKER,
-                                         RTTHREADFLAGS_WAITABLE, "watcher%u", pWatcher->iWatcher);
-                if (RT_SUCCESS(rc))
+                int vrc = RTThreadCreateF(&pWatcher->hThread, i_watcherThreadProc, pWatcher, 0, RTTHREADTYPE_MAIN_WORKER,
+                                          RTTHREADFLAGS_WAITABLE, "watcher%u", pWatcher->iWatcher);
+                if (RT_SUCCESS(vrc))
                 {
                     LogRel(("i_watchIt: Created new watcher #%u\n", m_cWatchers));
 
@@ -1169,7 +1169,7 @@ bool VirtualBoxSDS::i_watchIt(VBoxSDSPerUserData *pUserData, HANDLE hProcess, RT
                     return true;
                 }
 
-                LogRel(("i_watchIt: Error starting watcher thread: %Rrc\n", rc));
+                LogRel(("i_watchIt: Error starting watcher thread: %Rrc\n", vrc));
                 m_papWatchers[--m_cWatchers] = NULL;
 
                 pUserData->m_iWatcher = UINT32_MAX;
@@ -1328,11 +1328,11 @@ void VirtualBoxSDS::i_shutdownAllWatchers(void)
         {
             m_papWatchers[i] = NULL;
 
-            int rc = RTThreadWait(pWatcher->hThread, RT_MS_1MIN / 2, NULL);
-            if (RT_SUCCESS(rc))
+            int vrc = RTThreadWait(pWatcher->hThread, RT_MS_1MIN / 2, NULL);
+            if (RT_SUCCESS(vrc))
                 pWatcher->hThread = NIL_RTTHREAD;
             else
-                LogRel(("i_shutdownAllWatchers: RTThreadWait failed on #%u: %Rrc\n", i, rc));
+                LogRel(("i_shutdownAllWatchers: RTThreadWait failed on #%u: %Rrc\n", i, vrc));
 
             if (ASMAtomicDecU32(&pWatcher->cRefs) == 0)
                 RTMemFree(pWatcher);

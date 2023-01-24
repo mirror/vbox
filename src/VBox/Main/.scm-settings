@@ -54,6 +54,7 @@
 /cbinding/VBoxCAPIGlue.h.in: --guard-relative-to-dir ''
 
 /src-client/*cpp: --no-rc-use
+/src-global/*cpp: --no-rc-use
 
 # IDL and XML
 /idl/VirtualBox.xidl:                   --treat-as .xml
