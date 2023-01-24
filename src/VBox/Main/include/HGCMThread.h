@@ -97,7 +97,7 @@ class HGCMMsgCore : public HGCMReferencedObject
         uint32_t m_fu32Flags;
 
         /** Result code for a Send */
-        int32_t m_rcSend;
+        int32_t m_vrcSend;
 
     protected:
         void InitializeCore(uint32_t u32MsgId, HGCMThread *pThread);

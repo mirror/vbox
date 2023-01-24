@@ -1175,7 +1175,7 @@ HRESULT Console::i_teleporterTrg(PUVM pUVM, PCVMMR3VTABLE pVMM, IMachine *pMachi
                     else
                     {
                         hrc = setErrorBoth(E_FAIL, vrc, tr("Unexpected RTTcpServerListen status code %Rrc"), vrc);
-                        LogRel(("Teleporter: Unexpected RTTcpServerListen rc: %Rrc\n", vrc));
+                        LogRel(("Teleporter: Unexpected RTTcpServerListen vrc: %Rrc\n", vrc));
                     }
                 }
                 else

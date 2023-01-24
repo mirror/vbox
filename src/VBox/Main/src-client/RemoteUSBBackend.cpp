@@ -202,7 +202,7 @@ DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint
         {
             vrc = pThis->reapURB(pvRet, cbRet);
 
-            LogFlow(("USBClientResponseCallback: reap URB, rc = %Rrc.\n", vrc));
+            LogFlow(("USBClientResponseCallback: reap URB, vrc = %Rrc.\n", vrc));
         } break;
 
         case VRDE_USB_REQ_QUEUE_URB:

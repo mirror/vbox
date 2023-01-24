@@ -1772,7 +1772,7 @@ int ConsoleVRDPServer::Launch(void)
             else
             {
                 if (vrc != VERR_NET_ADDRESS_IN_USE)
-                    LogRel(("VRDE: Could not start the server rc = %Rrc\n", vrc));
+                    LogRel(("VRDE: Could not start the server vrc = %Rrc\n", vrc));
                 /* Don't unload the lib, because it prevents us trying again or
                    because there may be other users? */
             }
@@ -1901,10 +1901,10 @@ typedef struct H3DORInstance
         }
         else
         {
-            int vrc = p->fFallback?
-                         VERR_NOT_SUPPORTED: /* Try to go out of fallback mode. */
-                         p->pThis->m_interfaceImage.VRDEImageGeometrySet(p->hImageBitmap, &rect);
-            if (RT_SUCCESS(rc))
+            int vrc = p->fFallback
+                    ? VERR_NOT_SUPPORTED /* Try to go out of fallback mode. */
+                    : p->pThis->m_interfaceImage.VRDEImageGeometrySet(p->hImageBitmap, &rect);
+            if (RT_SUCCESS(vrc))
             {
                 p->x = x;
                 p->y = y;
@@ -1944,7 +1944,7 @@ typedef struct H3DORInstance
                                                                    NULL,
                                                                    0,
                                                                    &fu32CompletionFlags);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
             /* No support for a 3D + WINDOW. Try bitmap updates. */
             H3DORLOG(("H3DORGeometry: Fallback to bitmaps\n"));
@@ -1962,7 +1962,7 @@ typedef struct H3DORInstance
                                                                    &fu32CompletionFlags);
         }
 
-        H3DORLOG(("H3DORGeometry: Image handle create %Rrc, flags 0x%RX32\n", rc, fu32CompletionFlags));
+        H3DORLOG(("H3DORGeometry: Image handle create %Rrc, flags 0x%RX32\n", vrc, fu32CompletionFlags));
 
         if (RT_SUCCESS(vrc))
         {

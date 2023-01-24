@@ -898,9 +898,9 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
     {
         vrc = VERR_NO_MEMORY;
     }
-    catch (int vrc)
+    catch (int vrcCatch)
     {
-        vrc = vrc;
+        vrc = vrcCatch;
     }
 
     LogFlowFuncLeaveRC(vrc);

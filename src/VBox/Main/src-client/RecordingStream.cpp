@@ -208,7 +208,7 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
         {
             m_fEnabled = false;
 
-            int vrc2 = m_pCtx->OnLimitReached(m_uScreenID, VINF_SUCCESS /* rc */);
+            int vrc2 = m_pCtx->OnLimitReached(m_uScreenID, VINF_SUCCESS /* vrc */);
             AssertRC(vrc2);
             break;
         }
@@ -852,7 +852,7 @@ int RecordingStream::close(void)
                 }
                 else
                 {
-                    LogRel(("Recording: Error closing file '%s', rc=%Rrc\n", m_ScreenSettings.File.strName.c_str(), vrc));
+                    LogRel(("Recording: Error closing file '%s', vrc=%Rrc\n", m_ScreenSettings.File.strName.c_str(), vrc));
                     break;
                 }
             }
@@ -866,7 +866,7 @@ int RecordingStream::close(void)
                 if (pWebMWriter->GetClusters() == 0)
                 {
                     int vrc2 = RTFileDelete(m_ScreenSettings.File.strName.c_str());
-                    AssertRC(vrc2); /* Ignore rc on non-debug builds. */
+                    AssertRC(vrc2); /* Ignore vrc on non-debug builds. */
                 }
 
                 delete pWebMWriter;

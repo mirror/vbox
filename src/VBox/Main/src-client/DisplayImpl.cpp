@@ -291,7 +291,7 @@ DECLCALLBACK(int) Display::i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, PCVMMR3VT
         LogFunc(("Failed to get VM pointer 0x%x\n", ptrVM.hrc()));
     }
 
-    /* Regardless of rc, save what is available:
+    /* Regardless of vrc, save what is available:
      * Data format:
      *    uint32_t cBlocks;
      *    [blocks]

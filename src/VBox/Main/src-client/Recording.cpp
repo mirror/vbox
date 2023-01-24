@@ -70,7 +70,7 @@ using namespace com;
 /**
  * Recording context constructor.
  *
- * @note    Will throw rc when unable to create.
+ * @note    Will throw vrc when unable to create.
  */
 RecordingContext::RecordingContext(void)
     : m_pConsole(NULL)
@@ -88,7 +88,7 @@ RecordingContext::RecordingContext(void)
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
  * @param   Settings            Reference to recording settings to use for creation.
  *
- * @note    Will throw rc when unable to create.
+ * @note    Will throw vrc when unable to create.
  */
 RecordingContext::RecordingContext(Console *ptrConsole, const settings::RecordingSettings &Settings)
     : m_pConsole(NULL)
@@ -436,7 +436,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
             vrc = VERR_NO_MEMORY;
             break;
         }
-        catch (int vrc_thrown) /* Catch rc thrown by constructor. */
+        catch (int vrc_thrown) /* Catch vrc thrown by constructor. */
         {
             vrc = vrc_thrown;
             break;
@@ -857,10 +857,10 @@ bool RecordingContext::NeedsUpdate( uint32_t uScreen, uint64_t msTimestamp)
     return fNeedsUpdate;
 }
 
-DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
+DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int vrc)
 {
-    RT_NOREF(uScreen, rc);
-    LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, rc));
+    RT_NOREF(uScreen, vrc);
+    LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, vrc));
 
     lock();
 

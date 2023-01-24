@@ -164,7 +164,7 @@ DECLCALLBACK(int) AudioDriver::attachDriverOnEmt(AudioDriver *pThis)
         LogRel2(("%s: Driver attached (LUN #%u)\n", pCfg->strName.c_str(), pCfg->uLUN));
     }
     else
-        LogRel(("%s: Failed to attach audio driver, rc=%Rrc\n", pCfg->strName.c_str(), vrc));
+        LogRel(("%s: Failed to attach audio driver, vrc=%Rrc\n", pCfg->strName.c_str(), vrc));
 
     LogFunc(("Returning %Rrc\n", vrc));
     return vrc;

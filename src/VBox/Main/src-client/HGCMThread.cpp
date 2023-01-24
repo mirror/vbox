@@ -178,7 +178,7 @@ void HGCMMsgCore::InitializeCore(uint32_t u32MsgId, HGCMThread *pThread)
     m_pNext       = NULL;
     m_pPrev       = NULL;
     m_fu32Flags   = 0;
-    m_rcSend      = VINF_SUCCESS;
+    m_vrcSend     = VINF_SUCCESS;
     m_pThread     = pThread;
     pThread->Reference();
 }
@@ -487,7 +487,7 @@ int HGCMThread::MsgPost(HGCMMsgCore *pMsg, PFNHGCMMSGCALLBACK pfnCallback, bool 
             if (c == 0)
                 RTSemEventMultiReset(m_eventSend);
 
-            vrc = pMsg->m_rcSend;
+            vrc = pMsg->m_vrcSend;
         }
     }
 
@@ -571,9 +571,9 @@ int HGCMThread::MsgGet(HGCMMsgCore **ppMsg)
     return vrc;
 }
 
-int HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
+int HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t vrcResult)
 {
-    LogFlow(("HGCMThread::MsgComplete: thread = %p, pMsg = %p, result = %Rrc (%d)\n", this, pMsg, result, result));
+    LogFlow(("HGCMThread::MsgComplete: thread = %p, pMsg = %p, vrcResult = %Rrc (%d)\n", this, pMsg, vrcResult, vrcResult));
 
     AssertRelease(pMsg->m_pThread == this);
     AssertReleaseMsg((pMsg->m_fu32Flags & HGCM_MSG_F_IN_PROCESS) != 0, ("%p %x\n", pMsg, pMsg->m_fu32Flags));
@@ -583,7 +583,7 @@ int HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
     {
         /** @todo call callback with error code in MsgPost in case of errors */
 
-        vrcRet = pMsg->m_pfnCallback(result, pMsg);
+        vrcRet = pMsg->m_pfnCallback(vrcResult, pMsg);
 
         LogFlow(("HGCMThread::MsgComplete: callback executed. pMsg = %p, thread = %p, rcRet = %Rrc\n", pMsg, this, vrcRet));
     }
@@ -616,7 +616,7 @@ int HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
             ASMAtomicIncS32(&m_i32MessagesProcessed);
 
             /* This should be done before setting the HGCM_MSG_F_PROCESSED flag. */
-            pMsg->m_rcSend = result;
+            pMsg->m_vrcSend = vrcResult;
         }
 
         /* The message is now completed. */
@@ -757,17 +757,17 @@ int hgcmMsgGet(HGCMThread *pThread, HGCMMsgCore **ppMsg)
     return vrc;
 }
 
-int hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t rcMsg)
+int hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t vrcMsg)
 {
-    LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, rcMsg = %Rrc (%d)\n", pMsg, rcMsg, rcMsg));
+    LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, vrcMsg = %Rrc (%d)\n", pMsg, vrcMsg, vrcMsg));
 
     int vrc;
     if (pMsg)
-        vrc = pMsg->Thread()->MsgComplete(pMsg, rcMsg);
+        vrc = pMsg->Thread()->MsgComplete(pMsg, vrcMsg);
     else
         vrc = VINF_SUCCESS;
 
-    LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, rcMsg =%Rrc (%d), returns vrc = %Rrc\n", pMsg, rcMsg, rcMsg, vrc));
+    LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, vrcMsg =%Rrc (%d), returns vrc = %Rrc\n", pMsg, vrcMsg, vrcMsg, vrc));
     return vrc;
 }
 

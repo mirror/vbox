@@ -106,7 +106,7 @@ public:
         if (autoCaller.isNotOk())
             return;
 
-        /* ignore rc */ pThis->i_sendData(mpCtx, RT_INDEFINITE_WAIT /* msTimeout */);
+        pThis->i_sendData(mpCtx, RT_INDEFINITE_WAIT /* msTimeout */); /* ignore return code */
     }
 
     virtual ~GuestDnDSendDataTask(void) { }
@@ -1118,7 +1118,7 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
         vrc = DnDTransferObjectOpen(pObj, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fMode */,
                                     DNDTRANSFEROBJECT_FLAGS_NONE);
         if (RT_FAILURE(vrc))
-            LogRel(("DnD: Opening host file '%s' failed, rc=%Rrc\n", pcszSrcPath, vrc));
+            LogRel(("DnD: Opening host file '%s' failed, vrc=%Rrc\n", pcszSrcPath, vrc));
     }
 
     if (RT_FAILURE(vrc))
@@ -1176,7 +1176,7 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
     }
 
     if (RT_FAILURE(vrc))
-        LogRel(("DnD: Sending host file '%s' to guest failed, rc=%Rrc\n", pcszSrcPath, vrc));
+        LogRel(("DnD: Sending host file '%s' to guest failed, vrc=%Rrc\n", pcszSrcPath, vrc));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;

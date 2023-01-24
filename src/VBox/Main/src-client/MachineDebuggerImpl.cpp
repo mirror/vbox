@@ -610,7 +610,7 @@ HRESULT MachineDebugger::setVirtualTimeRate(ULONG aVirtualTimeRate)
         {
             int vrc = ptrVM.vtable()->pfnTMR3SetWarpDrive(ptrVM.rawUVM(), aVirtualTimeRate);
             if (RT_FAILURE(vrc))
-                hrc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("TMR3SetWarpDrive(, %u) failed with rc=%Rrc"), aVirtualTimeRate, vrc);
+                hrc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("TMR3SetWarpDrive(, %u) failed with vrc=%Rrc"), aVirtualTimeRate, vrc);
         }
     }
 
@@ -1077,7 +1077,7 @@ HRESULT MachineDebugger::getRegister(ULONG aCpuId, const com::Utf8Str &aName, co
             hrc = setErrorBoth(E_FAIL, vrc, tr("Invalid CPU ID: %u"), aCpuId);
         else
             hrc = setErrorBoth(VBOX_E_VM_ERROR, vrc,
-                               tr("DBGFR3RegNmQuery failed with rc=%Rrc querying register '%s' with default cpu set to %u"),
+                               tr("DBGFR3RegNmQuery failed with vrc=%Rrc querying register '%s' with default cpu set to %u"),
                                vrc, aName.c_str(), aCpuId);
     }
 
