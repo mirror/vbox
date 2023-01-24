@@ -129,7 +129,7 @@ public:
     int32_t getYOffset() { return mCenterYOffset; }
 #ifdef VBOX_WITH_SDL2
     SDL_Window *getWindow() { return mpWindow; }
-    bool hasWindow(uint32_t id) { return mScreen && SDL_GetWindowID(mpWindow) == id; }
+    bool hasWindow(uint32_t id) { return SDL_GetWindowID(mpWindow) == id; }
     int setWindowTitle(const char *pcszTitle);
 #endif
 #ifdef VBOX_SECURELABEL
@@ -143,8 +143,7 @@ public:
     bool getFullscreen() { return mfFullscreen; }
 
 private:
-    /** current SDL framebuffer pointer (also includes screen width/height) */
-    SDL_Surface *mScreen;
+
 #ifdef VBOX_WITH_SDL2
     /** the SDL window */
     SDL_Window *mpWindow;

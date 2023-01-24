@@ -126,7 +126,6 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
 
     mScreenId       = uScreenId;
     mfUpdateImage   = fUpdateImage;
-    mScreen         = NULL;
 #ifdef VBOX_WITH_SDL2
     mpWindow        = NULL;
     mpTexture       = NULL;
@@ -163,7 +162,6 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     AssertMsg(rc == VINF_SUCCESS, ("Error from RTCritSectInit!\n"));
 
     resizeGuest();
-    Assert(mScreen);
     mfInitialized = true;
 #ifdef RT_OS_WINDOWS
     HRESULT hr = CoCreateFreeThreadedMarshaler(this, m_pUnkMarshaler.asOutParam());
@@ -196,7 +194,6 @@ VBoxSDLFB::~VBoxSDLFB()
         SDL_FreeSurface(mSurfVRAM);
         mSurfVRAM = NULL;
     }
-    mScreen = NULL;
 
 #ifdef VBOX_SECURELABEL
     if (mLabelFont)
@@ -244,50 +241,7 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
 
 #ifdef VBOX_WITH_SDL2
     RT_NOREF(fShowSDLConfig);
-#else
-    const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
-    AssertPtr(videoInfo);
-    if (videoInfo)
-    {
-        /* output what SDL is capable of */
-        if (fShowSDLConfig)
-            RTPrintf("SDL capabilities:\n"
-                     "  Hardware surface support:                    %s\n"
-                     "  Window manager available:                    %s\n"
-                     "  Screen to screen blits accelerated:          %s\n"
-                     "  Screen to screen colorkey blits accelerated: %s\n"
-                     "  Screen to screen alpha blits accelerated:    %s\n"
-                     "  Memory to screen blits accelerated:          %s\n"
-                     "  Memory to screen colorkey blits accelerated: %s\n"
-                     "  Memory to screen alpha blits accelerated:    %s\n"
-                     "  Color fills accelerated:                     %s\n"
-                     "  Video memory in kilobytes:                   %d\n"
-                     "  Optimal bpp mode:                            %d\n"
-                     "SDL video driver:                              %s\n",
-                         videoInfo->hw_available ? "yes" : "no",
-                         videoInfo->wm_available ? "yes" : "no",
-                         videoInfo->blit_hw ? "yes" : "no",
-                         videoInfo->blit_hw_CC ? "yes" : "no",
-                         videoInfo->blit_hw_A ? "yes" : "no",
-                         videoInfo->blit_sw ? "yes" : "no",
-                         videoInfo->blit_sw_CC ? "yes" : "no",
-                         videoInfo->blit_sw_A ? "yes" : "no",
-                         videoInfo->blit_fill ? "yes" : "no",
-                         videoInfo->video_mem,
-                         videoInfo->vfmt->BitsPerPixel,
-                         RTEnvGet("SDL_VIDEODRIVER"));
-    }
 #endif /* !VBOX_WITH_SDL2 */
-
-#ifndef VBOX_WITH_SDL2
-    gWMIcon = SDL_AllocSurface(SDL_SWSURFACE, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
-    /** @todo make it as simple as possible. No PNM interpreter here... */
-    if (gWMIcon)
-    {
-        memcpy(gWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
-        SDL_WM_SetIcon(gWMIcon, NULL);
-    }
-#endif
 
     return true;
 }
@@ -303,14 +257,6 @@ void VBoxSDLFB::uninit()
     {
         AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
-
-#ifndef VBOX_WITH_SDL2
-        if (gWMIcon)
-        {
-            SDL_FreeSurface(gWMIcon);
-            gWMIcon = NULL;
-        }
-#endif
     }
 }
 
@@ -840,51 +786,6 @@ void VBoxSDLFB::resizeSDL(void)
     }
     else
         AssertFailed(); /** @todo */
-#else
-
-    /*
-     * We request a hardware surface from SDL so that we can perform
-     * accelerated system memory to VRAM blits. The way video handling
-     * works it that on the one hand we have the screen surface from SDL
-     * and on the other hand we have a software surface that we create
-     * using guest VRAM memory for linear modes and using SDL allocated
-     * system memory for text and non linear graphics modes. We never
-     * directly write to the screen surface but always use SDL blitting
-     * functions to blit from our system memory surface to the VRAM.
-     * Therefore, SDL can take advantage of hardware acceleration.
-     */
-    int sdlFlags = SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL;
-#ifndef RT_OS_OS2 /* doesn't seem to work for some reason... */
-    if (mfResizable)
-        sdlFlags |= SDL_RESIZABLE;
-#endif
-    if (mfFullscreen)
-        sdlFlags |= SDL_FULLSCREEN;
-
-    /*
-     * Now we have to check whether there are video mode restrictions
-     */
-    SDL_Rect **modes;
-    /* Get available fullscreen/hardware modes */
-    modes = SDL_ListModes(NULL, sdlFlags);
-    Assert(modes != NULL);
-    /* -1 means that any mode is possible (usually non fullscreen) */
-    if (modes != (SDL_Rect **)-1)
-    {
-        /*
-         * according to the SDL documentation, the API guarantees that
-         * the modes are sorted from larger to smaller, so we just
-         * take the first entry as the maximum.
-         */
-        mMaxScreenWidth  = modes[0]->w;
-        mMaxScreenHeight = modes[0]->h;
-    }
-    else
-    {
-        /* no restriction */
-        mMaxScreenWidth  = ~(uint32_t)0;
-        mMaxScreenHeight = ~(uint32_t)0;
-    }
 #endif /* VBOX_WITH_SDL2 */
 
     uint32_t newWidth;
@@ -972,58 +873,6 @@ void VBoxSDLFB::resizeSDL(void)
         if (!mpTexture)
             AssertReleaseFailed();
     }
-
-    void *pixels;
-    int pitch;
-    int w, h, bpp;
-    uint32_t Rmask, Gmask, Bmask, Amask;
-    uint32_t format;
-
-    if (SDL_QueryTexture(mpTexture, &format, NULL, &w, &h) < 0)
-        AssertReleaseFailed();
-
-    if (!SDL_PixelFormatEnumToMasks(format, &bpp, &Rmask, &Gmask, &Bmask, &Amask))
-        AssertReleaseFailed();
-
-    if (SDL_LockTexture(mpTexture, NULL /* SDL_Rect */, &pixels, &pitch) == 0)
-    {
-        mScreen = SDL_CreateRGBSurfaceFrom(pixels, w, h, bpp, pitch,
-                                           Rmask, Gmask, Bmask, Amask);
-        SDL_UnlockTexture(mpTexture); /** @BUGBUG See: https://bugzilla.libsdl.org/show_bug.cgi?id=1586 */
-    }
-    else
-    {
-        mScreen = SDL_CreateRGBSurface(0, w, h, bpp, Rmask, Gmask, Bmask, Amask);
-        AssertReleaseFailed();
-    }
-
-    SDL_SetClipRect(mScreen, NULL);
-
-#else
-    /*
-     * Now set the screen resolution and get the surface pointer
-     * @todo BPP is not supported!
-     */
-    mScreen = SDL_SetVideoMode(newWidth, newHeight, 0, sdlFlags);
-
-    /*
-     * Set the Window ID. Currently used for OpenGL accelerated guests.
-     */
-# if defined (RT_OS_WINDOWS)
-    SDL_SysWMinfo info;
-    SDL_VERSION(&info.version);
-    if (SDL_GetWMInfo(&info))
-        mWinId = (intptr_t) info.window;
-# elif defined (RT_OS_LINUX)
-    SDL_SysWMinfo info;
-    SDL_VERSION(&info.version);
-    if (SDL_GetWMInfo(&info))
-        mWinId = (LONG64) info.info.x11.wmwindow;
-# elif defined(RT_OS_DARWIN)
-    mWinId = (intptr_t)VBoxSDLGetDarwinWindowId();
-# else
-    /* XXX ignore this for other architectures */
-# endif
 #endif /* VBOX_WITH_SDL2 */
 #ifdef VBOX_SECURELABEL
     /*
@@ -1034,9 +883,9 @@ void VBoxSDLFB::resizeSDL(void)
     if (mFixedSDLWidth == ~(uint32_t)0)
     {
         /* if it didn't work, then we have to go for the original resolution and paint over the guest */
-        if (!mScreen)
+        if (!mScreenSurface)
         {
-            mScreen = SDL_SetVideoMode(newWidth, newHeight - mLabelHeight, 0, sdlFlags);
+            mScreenSurface = SDL_SetVideoMode(newWidth, newHeight - mLabelHeight, 0, sdlFlags);
         }
         else
         {
@@ -1058,16 +907,6 @@ void VBoxSDLFB::resizeSDL(void)
     }
 #endif /* VBOX_SECURELABEL */
 
-    AssertMsg(mScreen, ("Error: SDL_SetVideoMode failed!\n"));
-    if (mScreen)
-    {
-#ifdef VBOX_WIN32_UI
-        /* inform the UI code */
-        resizeUI(mScreen->w, mScreen->h);
-#endif
-        if (mfShowSDLConfig)
-            RTPrintf("Resized to %dx%d\n", mScreen->w, mScreen->h);
-    }
 }
 
 /**
@@ -1095,9 +934,8 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
         return;
     }
 
-    Assert(mScreen);
     Assert(mSurfVRAM);
-    if (!mScreen || !mSurfVRAM)
+    if (!mSurfVRAM)
     {
         RTCritSectLeave(&mUpdateLock);
         return;
@@ -1163,20 +1001,14 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
 
     /* hardware surfaces don't need update notifications */
 #if defined(VBOX_WITH_SDL2)
-    AssertRelease(mScreen->flags & SDL_PREALLOC);
     SDL_Texture *pNewTexture = SDL_CreateTextureFromSurface(mpRenderer, mSurfVRAM);
     /** @todo Do we need to update the dirty rect for the texture for SDL2 here as well? */
-    //SDL_RenderClear(mpRenderer);
+    // SDL_RenderClear(mpRenderer);
+    //SDL_UpdateTexture(mpTexture, &dstRect, mSurfVRAM->pixels, mSurfVRAM->pitch);
+    // SDL_RenderCopy(mpRenderer, mpTexture, NULL, NULL);
     SDL_RenderCopy(mpRenderer, pNewTexture, &srcRect, &dstRect);
     SDL_RenderPresent(mpRenderer);
     SDL_DestroyTexture(pNewTexture);
-#else
-    /*
-     * Now we just blit
-     */
-    SDL_BlitSurface(mSurfVRAM, &srcRect, mScreen, &dstRect);
-    if ((mScreen->flags & SDL_HWSURFACE) == 0)
-        SDL_UpdateRect(mScreen, dstRect.x, dstRect.y, dstRect.w, dstRect.h);
 #endif
 
 #ifdef VBOX_SECURELABEL
@@ -1195,7 +1027,11 @@ void VBoxSDLFB::repaint()
 {
     AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
     LogFlow(("VBoxSDLFB::repaint\n"));
-    update(0, 0, mScreen->w, mScreen->h, false /* fGuestRelative */);
+    int w, h;
+    uint32_t format;
+    int access;
+    SDL_QueryTexture(mpTexture, &format, &access, &w, &h);
+    update(0, 0, w, h, false /* fGuestRelative */);
 }
 
 /**
@@ -1219,36 +1055,7 @@ void VBoxSDLFB::setFullscreen(bool fFullscreen)
  */
 void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
 {
-#ifndef VBOX_WITH_SDL2
-    SDL_Rect **modes;
-
-    /* Get available fullscreen/hardware modes */
-    modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
-    Assert(modes != NULL);
-    /* -1 means that any mode is possible (usually non fullscreen) */
-    if (modes != (SDL_Rect **)-1)
-    {
-        /*
-         * According to the SDL documentation, the API guarantees that the modes
-         * are sorted from larger to smaller, so we just take the first entry as
-         * the maximum.
-         *
-         * XXX Crude Xinerama hack :-/
-         */
-        if (   modes[0]->w > (16*modes[0]->h/9)
-            && modes[1]
-            && modes[1]->h == modes[0]->h)
-        {
-            *width  = modes[1]->w;
-            *height = modes[1]->h;
-        }
-        else
-        {
-            *width  = modes[0]->w;
-            *height = modes[0]->w;
-        }
-    }
-#else
+#ifdef VBOX_WITH_SDL2
     SDL_DisplayMode dm;
     int rc = SDL_GetDesktopDisplayMode(0, &dm); /** @BUGBUG Handle multi monitor setups! */
     if (rc == 0)
@@ -1267,6 +1074,7 @@ int VBoxSDLFB::setWindowTitle(const char *pcszTitle)
     return VINF_SUCCESS;
 }
 #endif
+
 
 #ifdef VBOX_SECURELABEL
 
@@ -1372,6 +1180,7 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
 }
 
 #endif /* VBOX_SECURELABEL */
+
 
 // IFramebufferOverlay
 ///////////////////////////////////////////////////////////////////////////////////
