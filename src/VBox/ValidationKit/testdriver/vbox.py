@@ -904,6 +904,7 @@ class TestDriver(base.TestDriver):                                              
         self.fAlwaysUploadScreenshots = False;
         self.fAlwaysUploadRecordings  = False; # Only upload recording files on failure by default.
         self.fEnableDebugger          = True;
+        self.fVmNoTerminate           = False; # Whether to skip exit handling and tearing down the VMs.
         self.adRecordingFiles         = [];
         self.fRecordingEnabled        = False; # Don't record by default (yet).
         self.fRecordingAudio          = False; # Don't record audio by default.
@@ -1829,6 +1830,8 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('      Limits the maximum per-file size in MiB.');
         reporter.log('      Explicitly specify 0 for unlimited size.');
         reporter.log('      Default: 195 MB.');
+        reporter.log('  --vbox-vm-no-terminate');
+        reporter.log('      Does not terminate the test VM after running the test driver.');
         if self.oTestVmSet is not None:
             self.oTestVmSet.showUsage();
         return rc;
@@ -1959,6 +1962,8 @@ class TestDriver(base.TestDriver):                                              
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--vbox-recording-max-file-size" takes an argument');
             self.cMbRecordingMax = int(asArgs[iArg]);
+        elif asArgs[iArg] == '--vbox-vm-no-terminate':
+            self.fVmNoTerminate = True;
         else:
             # Relevant for selecting VMs to test?
             if self.oTestVmSet is not None:
@@ -2082,7 +2087,8 @@ class TestDriver(base.TestDriver):                                              
         """
         Stop VBoxSVC if we've started it.
         """
-        if self.oVBoxSvcProcess is not None:
+        if  not self.fVmNoTerminate \
+        and self.oVBoxSvcProcess is not None:
             reporter.log('*** Shutting down the VBox API... (iRc=%s)' % (iRc,));
             self._powerOffAllVms();
             self._teardownVBoxApi();
@@ -3284,7 +3290,13 @@ class TestDriver(base.TestDriver):                                              
         Returns False if on failure (logged), including when we successfully
         kill the VM process.
         """
+
         reporter.log2('terminateVmBySession: oSession=%s (pid=%s) oProgress=%s' % (oSession.sName, oSession.getPid(), oProgress));
+
+        if self.fVmNoTerminate:
+            reporter.log('terminateVmBySession: Skipping, as --vbox-vm-no-terminate was specified');
+            # Make sure that we still process the events the VM needs.
+            self.sleep(24 * 60 * 60 * 1000);
 
         # Call getPid first to make sure the PID is cached in the wrapper.
         oSession.getPid();
