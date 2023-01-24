@@ -85,7 +85,7 @@ DECLCALLBACK(void *) PCIRawDev::drvQueryInterface(PPDMIBASE pInterface, const ch
  */
 DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
                                                         uint32_t uHostPCIAddress, uint32_t uGuestPCIAddress,
-                                                        int rc)
+                                                        int vrc)
 {
     PDRVMAINPCIRAWDEV pThis = RT_FROM_CPP_MEMBER(pInterface, DRVMAINPCIRAWDEV, IConnector);
     Console *pConsole = pThis->pPCIRawDev->getParent();
@@ -109,10 +109,10 @@ DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
     pda->init(machine, bstrName, uHostPCIAddress, uGuestPCIAddress, TRUE);
 
     Bstr msg("");
-    if (RT_FAILURE(rc))
-        msg = BstrFmt("runtime error %Rrc", rc);
+    if (RT_FAILURE(vrc))
+        msg.printf("runtime error %Rrc", vrc);
 
-    ::FireHostPCIDevicePlugEvent(es, bstrId.raw(), true /* plugged */, RT_SUCCESS_NP(rc) /* success */, pda, msg.raw());
+    ::FireHostPCIDevicePlugEvent(es, bstrId.raw(), true /* plugged */, RT_SUCCESS_NP(vrc) /* success */, pda, msg.raw());
 
     return VINF_SUCCESS;
 }
@@ -164,11 +164,11 @@ DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      * Get the object pointer and update the mpDrv member.
      */
     void *pv;
-    int rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (RT_FAILURE(rc))
+    int vrc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
+    if (RT_FAILURE(vrc))
     {
-        AssertMsgFailed(("Configuration error: No \"Object\" value! rc=%Rrc\n", rc));
-        return rc;
+        AssertMsgFailed(("Configuration error: No \"Object\" value! vrc=%Rrc\n", vrc));
+        return vrc;
     }
 
     pThis->pPCIRawDev = (PCIRawDev *)pv;

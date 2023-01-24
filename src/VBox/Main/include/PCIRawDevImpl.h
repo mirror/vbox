@@ -55,7 +55,7 @@ class PCIRawDev
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)    drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
                                                            uint32_t uHostPCIAddress, uint32_t uGuestPCIAddress,
-                                                           int rc);
+                                                           int vrc);
 
     Console * const mParent;
     struct DRVMAINPCIRAWDEV *mpDrv;
