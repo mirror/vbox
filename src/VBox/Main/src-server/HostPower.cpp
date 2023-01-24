@@ -56,7 +56,7 @@ void HostPowerService::notify(Reason_T aReason)
     SessionMachinesList machines;
     VirtualBox::InternalControlList controls;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     switch (aReason)
     {
@@ -82,8 +82,8 @@ void HostPowerService::notify(Reason_T aReason)
 
                 /* PauseWithReason() will simply return a failure if
                  * the VM is in an inappropriate state */
-                rc = pControl->PauseWithReason(Reason_HostSuspend);
-                if (FAILED(rc))
+                hrc = pControl->PauseWithReason(Reason_HostSuspend);
+                if (FAILED(hrc))
                     continue;
 
                 /* save the control to un-pause the VM later */
@@ -107,8 +107,8 @@ void HostPowerService::notify(Reason_T aReason)
                  * in an inappropriate state (it will also fail if the VM has
                  * been somehow closed by this time already so that the
                  * console reference we have is dead) */
-                rc = mSessionControls[i]->ResumeWithReason(Reason_HostResume);
-                if (FAILED(rc))
+                hrc = mSessionControls[i]->ResumeWithReason(Reason_HostResume);
+                if (FAILED(hrc))
                     continue;
 
                 ++resumed;
@@ -133,10 +133,9 @@ void HostPowerService::notify(Reason_T aReason)
             LogFunc(("BATTERY LOW\n"));
 
             Bstr value;
-            rc = mVirtualBox->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(),
-                                           value.asOutParam());
+            hrc = mVirtualBox->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(), value.asOutParam());
             int fGlobal = 0;
-            if (SUCCEEDED(rc) && !value.isEmpty())
+            if (SUCCEEDED(hrc) && !value.isEmpty())
             {
                 if (value != "0")
                     fGlobal = 1;
@@ -153,10 +152,9 @@ void HostPowerService::notify(Reason_T aReason)
                  ++it)
             {
                 ComPtr<SessionMachine> pMachine = *it;
-                rc = pMachine->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(),
-                                            value.asOutParam());
+                hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(), value.asOutParam());
                 int fPerVM = 0;
-                if (SUCCEEDED(rc) && !value.isEmpty())
+                if (SUCCEEDED(hrc) && !value.isEmpty())
                 {
                     /* per-VM overrides global */
                     if (value != "0")
@@ -172,25 +170,25 @@ void HostPowerService::notify(Reason_T aReason)
 
                     /* SessionMachine::i_saveStateWithReason() will return
                      * a failure if the VM is in an inappropriate state */
-                    rc = pMachine->i_saveStateWithReason(Reason_HostBatteryLow, progress);
-                    if (FAILED(rc))
+                    hrc = pMachine->i_saveStateWithReason(Reason_HostBatteryLow, progress);
+                    if (FAILED(hrc))
                     {
-                        LogRel(("SaveState '%s' failed with %Rhrc\n", pMachine->i_getName().c_str(), rc));
+                        LogRel(("SaveState '%s' failed with %Rhrc\n", pMachine->i_getName().c_str(), hrc));
                         continue;
                     }
 
                     /* Wait until the operation has been completed. */
-                    rc = progress->WaitForCompletion(-1);
-                    if (SUCCEEDED(rc))
+                    hrc = progress->WaitForCompletion(-1);
+                    if (SUCCEEDED(hrc))
                     {
                         LONG iRc;
                         progress->COMGETTER(ResultCode)(&iRc);
-                        rc = (HRESULT)iRc;
+                        hrc = (HRESULT)iRc;
                     }
 
-                    AssertMsg(SUCCEEDED(rc), ("SaveState WaitForCompletion failed with %Rhrc (%#08X)\n", rc, rc));
+                    AssertMsg(SUCCEEDED(hrc), ("SaveState WaitForCompletion failed with %Rhrc (%#08X)\n", hrc, hrc));
 
-                    if (SUCCEEDED(rc))
+                    if (SUCCEEDED(hrc))
                     {
                         LogRel(("SaveState '%s' succeeded\n", pMachine->i_getName().c_str()));
                         ++saved;

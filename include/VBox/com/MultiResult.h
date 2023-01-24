@@ -187,9 +187,9 @@ public:
     /**
      * @copydoc FWResult::FWResult()
      */
-    MultiResult (HRESULT aRC = E_FAIL) : FWResult (aRC) { incCounter(); }
+    MultiResult(HRESULT aRC = E_FAIL) : FWResult (aRC) { incCounter(); }
 
-    MultiResult (const MultiResult &aThat) : FWResult (aThat)
+    MultiResult(const MultiResult &aThat) : FWResult (aThat)
     {
         /* We need this copy constructor only for GCC that wants to have
          * it in case of expressions like |MultiResult rc = E_FAIL;|. But

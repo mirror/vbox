@@ -835,8 +835,8 @@ static kern_return_t darwinGetUSBHostDeviceFromLegacyDevice(io_object_t USBDevic
      * Perform the search and get a collection of USB Device back.
      */
     io_iterator_t USBDevices = IO_OBJECT_NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
-    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), KERN_FAILURE);
+    IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), KERN_FAILURE);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
@@ -1086,8 +1086,8 @@ PUSBDEVICE DarwinGetUSBDevices(void)
      * Perform the search and get a collection of USB Device back.
      */
     io_iterator_t USBDevices = IO_OBJECT_NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
-    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
+    IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
@@ -1187,15 +1187,15 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                  */
                 SInt32 Score = 0;
                 IOCFPlugInInterface **ppPlugInInterface = NULL;
-                rc = IOCreatePlugInInterfaceForService(USBDevice, kIOUSBDeviceUserClientTypeID,
-                                                       kIOCFPlugInInterfaceID, &ppPlugInInterface, &Score);
-                if (rc == kIOReturnSuccess)
+                irc = IOCreatePlugInInterfaceForService(USBDevice, kIOUSBDeviceUserClientTypeID,
+                                                        kIOCFPlugInInterfaceID, &ppPlugInInterface, &Score);
+                if (irc == kIOReturnSuccess)
                 {
                     IOUSBDeviceInterface245 **ppUSBDevI = NULL;
                     HRESULT hrc = (*ppPlugInInterface)->QueryInterface(ppPlugInInterface,
                                                                        CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID245),
                                                                        (LPVOID *)&ppUSBDevI);
-                    rc = IODestroyPlugInInterface(ppPlugInInterface); Assert(rc == kIOReturnSuccess);
+                    irc = IODestroyPlugInInterface(ppPlugInInterface); Assert(irc == kIOReturnSuccess);
                     ppPlugInInterface = NULL;
                     if (hrc == S_OK)
                     {
@@ -1315,8 +1315,8 @@ PDARWINDVD DarwinGetDVDDrives(void)
      * Perform the search and get a collection of DVD services.
      */
     io_iterator_t DVDServices = IO_OBJECT_NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &DVDServices);
-    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
+    IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &DVDServices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
@@ -1446,8 +1446,8 @@ PDARWINFIXEDDRIVE DarwinGetFixedDrives(void)
      * Perform the search and get a collection of IOMedia objects.
      */
     io_iterator_t MediaServices = IO_OBJECT_NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &MediaServices);
-    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
+    IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &MediaServices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
@@ -1611,8 +1611,8 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
      * Perform the search and get a collection of ethernet controller services.
      */
     io_iterator_t EtherIfServices = IO_OBJECT_NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &EtherIfServices);
-    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
+    IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &EtherIfServices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*

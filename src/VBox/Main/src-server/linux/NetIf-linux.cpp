@@ -125,8 +125,8 @@ static uint32_t getInterfaceSpeed(const char *pszName)
     if (uSpeed == 0)
     {
         /* Failed to get speed via sysfs, go to plan B. */
-        int rc = NetIfAdpCtlOut(pszName, "speed", szBuf, sizeof(szBuf));
-        if (RT_SUCCESS(rc))
+        int vrc = NetIfAdpCtlOut(pszName, "speed", szBuf, sizeof(szBuf));
+        if (RT_SUCCESS(vrc))
             uSpeed = RTStrToUInt32(szBuf);
     }
     return uSpeed;
@@ -229,8 +229,8 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     char szDefaultIface[256];
-    int rc = getDefaultIfaceName(szDefaultIface, sizeof(szDefaultIface));
-    if (RT_FAILURE(rc))
+    int vrc = getDefaultIfaceName(szDefaultIface, sizeof(szDefaultIface));
+    if (RT_FAILURE(vrc))
     {
         Log(("NetIfList: Failed to find default interface.\n"));
         szDefaultIface[0] = '\0';
@@ -252,8 +252,8 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                 char *pszName = buf + iFirstNonWS;
                 NETIFINFO Info;
                 RT_ZERO(Info);
-                rc = getInterfaceInfo(sock, pszName, &Info);
-                if (RT_FAILURE(rc))
+                vrc = getInterfaceInfo(sock, pszName, &Info);
+                if (RT_FAILURE(vrc))
                     break;
                 if (Info.enmMediumType == NETIF_T_ETHERNET)
                 {
@@ -281,20 +281,19 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         close(sock);
     }
     else
-        rc = VERR_INTERNAL_ERROR;
+        vrc = VERR_INTERNAL_ERROR;
 
-    return rc;
+    return vrc;
 }
 
 int NetIfGetConfigByName(PNETIFINFO pInfo)
 {
-    int rc = VINF_SUCCESS;
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)
         return VERR_NOT_IMPLEMENTED;
-    rc = getInterfaceInfo(sock, pInfo->szShortName, pInfo);
+    int vrc = getInterfaceInfo(sock, pInfo->szShortName, pInfo);
     close(sock);
-    return rc;
+    return vrc;
 }
 
 /**

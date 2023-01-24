@@ -197,14 +197,14 @@ HRESULT HostDnsServiceBase::init(HostDnsMonitorProxy *pProxy)
     {
         LogRel2(("HostDnsMonitor: starting thread ...\n"));
 
-        int rc = RTSemEventCreate(&m->hMonitorThreadEvent);
-        AssertRCReturn(rc, E_FAIL);
+        int vrc = RTSemEventCreate(&m->hMonitorThreadEvent);
+        AssertRCReturn(vrc, E_FAIL);
 
-        rc = RTThreadCreate(&m->hMonitorThread,
-                            HostDnsServiceBase::threadMonitorProc,
-                            this, 128 * _1K, RTTHREADTYPE_IO,
-                            RTTHREADFLAGS_WAITABLE, "dns-monitor");
-        AssertRCReturn(rc, E_FAIL);
+        vrc = RTThreadCreate(&m->hMonitorThread,
+                             HostDnsServiceBase::threadMonitorProc,
+                             this, 128 * _1K, RTTHREADTYPE_IO,
+                             RTTHREADFLAGS_WAITABLE, "dns-monitor");
+        AssertRCReturn(vrc, E_FAIL);
 
         RTSemEventWait(m->hMonitorThreadEvent, RT_INDEFINITE_WAIT);
 
@@ -226,9 +226,9 @@ void HostDnsServiceBase::uninit(void)
 
         monitorThreadShutdown(uTimeoutMs);
 
-        int rc = RTThreadWait(m->hMonitorThread, uTimeoutMs, NULL);
-        if (RT_FAILURE(rc))
-            LogRel(("HostDnsMonitor: waiting for thread failed with rc=%Rrc\n", rc));
+        int vrc = RTThreadWait(m->hMonitorThread, uTimeoutMs, NULL);
+        if (RT_FAILURE(vrc))
+            LogRel(("HostDnsMonitor: waiting for thread failed with vrc=%Rrc\n", vrc));
 
         if (m->hMonitorThreadEvent != NIL_RTSEMEVENT)
         {

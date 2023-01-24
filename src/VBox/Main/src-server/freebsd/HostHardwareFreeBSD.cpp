@@ -125,60 +125,60 @@ void dvdCreateDeviceString(const char *pcszVendor, const char *pcszModel, char *
 int VBoxMainDriveInfo::updateDVDs() RT_NOEXCEPT
 {
     LogFlowThisFunc(("entered\n"));
-    int rc;
+    int vrc;
     try
     {
         mDVDList.clear();
         /* Always allow the user to override our auto-detection using an
          * environment variable. */
         bool fSuccess = false;  /* Have we succeeded in finding anything yet? */
-        rc = getDriveInfoFromEnv("VBOX_CDROM", &mDVDList, true /* isDVD */, &fSuccess);
-        if (RT_SUCCESS(rc) && !fSuccess)
-            rc = getDriveInfoFromCAM(&mDVDList, DVD, &fSuccess);
+        vrc = getDriveInfoFromEnv("VBOX_CDROM", &mDVDList, true /* isDVD */, &fSuccess);
+        if (RT_SUCCESS(vrc) && !fSuccess)
+            vrc = getDriveInfoFromCAM(&mDVDList, DVD, &fSuccess);
     }
     catch (std::bad_alloc &)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
-    LogFlowThisFunc(("rc=%Rrc\n", rc));
-    return rc;
+    LogFlowThisFunc(("vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 int VBoxMainDriveInfo::updateFloppies() RT_NOEXCEPT
 {
     LogFlowThisFunc(("entered\n"));
-    int rc;
+    int vrc;
     try
     {
         /* Only got the enviornment variable here... */
         mFloppyList.clear();
         bool fSuccess = false;  /* ignored */
-        rc = getDriveInfoFromEnv("VBOX_FLOPPY", &mFloppyList, false /* isDVD */, &fSuccess);
+        vrc = getDriveInfoFromEnv("VBOX_FLOPPY", &mFloppyList, false /* isDVD */, &fSuccess);
     }
     catch (std::bad_alloc &)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
-    LogFlowThisFunc(("rc=%Rrc\n", rc));
-    return rc;
+    LogFlowThisFunc(("vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 int VBoxMainDriveInfo::updateFixedDrives() RT_NOEXCEPT
 {
     LogFlowThisFunc(("entered\n"));
-    int rc;
+    int vrc;
     try
     {
         mFixedDriveList.clear();
         bool fSuccess = false;  /* ignored */
-        rc = getDriveInfoFromCAM(&mFixedDriveList, Fixed, &fSuccess);
+        vrc = getDriveInfoFromCAM(&mFixedDriveList, Fixed, &fSuccess);
     }
     catch (std::bad_alloc &)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
-    LogFlowThisFunc(("rc=%Rrc\n", rc));
-    return rc;
+    LogFlowThisFunc(("vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 static void strDeviceStringSCSI(device_match_result *pDevResult, char *pszDesc, size_t cbDesc) RT_NOTHROW_DEF
@@ -323,8 +323,8 @@ static void strDeviceStringNVME(device_match_result *pDevResult, char *pszDesc, 
 static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, bool *pfSuccess) RT_NOTHROW_DEF
 {
     RTFILE hFileXpt = NIL_RTFILE;
-    int rc = RTFileOpen(&hFileXpt, "/dev/xpt0", RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_SUCCESS(rc))
+    int vrc = RTFileOpen(&hFileXpt, "/dev/xpt0", RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(vrc))
     {
         union ccb DeviceCCB;
         struct dev_match_pattern DeviceMatchPattern;
@@ -376,10 +376,10 @@ static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, b
 
             do
             {
-                rc = RTFileIoCtl(hFileXpt, CAMIOCOMMAND, &DeviceCCB, sizeof(union ccb), NULL);
-                if (RT_FAILURE(rc))
+                vrc = RTFileIoCtl(hFileXpt, CAMIOCOMMAND, &DeviceCCB, sizeof(union ccb), NULL);
+                if (RT_FAILURE(vrc))
                 {
-                    Log(("Error while querying available CD/DVD devices rc=%Rrc\n", rc));
+                    Log(("Error while querying available CD/DVD devices vrc=%Rrc\n", vrc));
                     break;
                 }
 
@@ -430,10 +430,10 @@ static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, b
 
                         do
                         {
-                            rc = RTFileIoCtl(hFileXpt, CAMIOCOMMAND, &PeriphCCB, sizeof(union ccb), NULL);
-                            if (RT_FAILURE(rc))
+                            vrc = RTFileIoCtl(hFileXpt, CAMIOCOMMAND, &PeriphCCB, sizeof(union ccb), NULL);
+                            if (RT_FAILURE(vrc))
                             {
-                                Log(("Error while querying available periph devices rc=%Rrc\n", rc));
+                                Log(("Error while querying available periph devices vrc=%Rrc\n", vrc));
                                 break;
                             }
 
@@ -478,7 +478,7 @@ static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, b
                             catch (std::bad_alloc &)
                             {
                                 pList->clear();
-                                rc = VERR_NO_MEMORY;
+                                vrc = VERR_NO_MEMORY;
                                 break;
                             }
                             if (pfSuccess)
@@ -488,17 +488,17 @@ static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, b
                 }
             } while (   DeviceCCB.ccb_h.status == CAM_REQ_CMP
                      && DeviceCCB.cdm.status == CAM_DEV_MATCH_MORE
-                     && RT_SUCCESS(rc));
+                     && RT_SUCCESS(vrc));
 
             RTMemFree(paMatches);
         }
         else
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
 
         RTFileClose(hFileXpt);
     }
 
-    return rc;
+    return vrc;
 }
 
 
@@ -523,7 +523,7 @@ static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool i
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER);
     LogFlowFunc(("pcszVar=%s, pList=%p, isDVD=%d, pfSuccess=%p\n", pcszVar, pList, isDVD, pfSuccess));
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     bool success = false;
     char *pszFreeMe = RTEnvDupEx(RTENV_DEFAULT, pcszVar);
 
@@ -551,10 +551,10 @@ static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool i
     }
     catch (std::bad_alloc &)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
     RTStrFree(pszFreeMe);
-    LogFlowFunc(("rc=%Rrc, success=%d\n", rc, success));
-    return rc;
+    LogFlowFunc(("vrc=%Rrc, success=%d\n", vrc, success));
+    return vrc;
 }
 

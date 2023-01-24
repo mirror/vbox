@@ -103,7 +103,7 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
        this status & allocation error throwing is): */
     try
     {
-        i_parseURI(aFile, m->locInfo); /* may trhow rc. */
+        i_parseURI(aFile, m->locInfo); /* may throw hrc. */
     }
     catch (HRESULT aRC)
     {
@@ -143,7 +143,7 @@ HRESULT Appliance::interpret()
     if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* Clear any previous virtual system descriptions */
     m->virtualSystemDescriptions.clear();
@@ -170,10 +170,10 @@ HRESULT Appliance::interpret()
             const ovf::VirtualSystem &vsysThis = *it;
 
             ComObjPtr<VirtualSystemDescription> pNewDesc;
-            rc = pNewDesc.createObject();
-            if (FAILED(rc)) throw rc;
-            rc = pNewDesc->init();
-            if (FAILED(rc)) throw rc;
+            hrc = pNewDesc.createObject();
+            if (FAILED(hrc)) throw hrc;
+            hrc = pNewDesc->init();
+            if (FAILED(hrc)) throw hrc;
 
             // if the virtual system in OVF had a <vbox:Machine> element, have the
             // VirtualBox settings code parse that XML now
@@ -232,12 +232,12 @@ HRESULT Appliance::interpret()
 
             /* Based on the VM name, create a target machine path. */
             Bstr bstrSettingsFilename;
-            rc = mVirtualBox->ComposeMachineFilename(Bstr(nameVBox).raw(),
-                                                     Bstr(strPrimaryGroup).raw(),
-                                                     NULL /* aCreateFlags */,
-                                                     NULL /* aBaseFolder */,
-                                                     bstrSettingsFilename.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = mVirtualBox->ComposeMachineFilename(Bstr(nameVBox).raw(),
+                                                      Bstr(strPrimaryGroup).raw(),
+                                                      NULL /* aCreateFlags */,
+                                                      NULL /* aBaseFolder */,
+                                                      bstrSettingsFilename.asOutParam());
+            if (FAILED(hrc)) throw hrc;
             Utf8Str strMachineFolder(bstrSettingsFilename);
             strMachineFolder.stripFilename();
 
@@ -363,8 +363,8 @@ HRESULT Appliance::interpret()
                 ULONG memSizeVBox2;
                 if (!pGuestOSType.isNull())
                 {
-                    rc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
-                    if (FAILED(rc)) throw rc;
+                    hrc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
+                    if (FAILED(hrc)) throw hrc;
                 }
                 else
                     memSizeVBox2 = 1024;
@@ -455,8 +455,8 @@ HRESULT Appliance::interpret()
                 NetworkAdapterType_T defaultAdapterVBox = NetworkAdapterType_Am79C970A;
                 if (!pGuestOSType.isNull())
                 {
-                    rc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
-                    if (FAILED(rc)) throw rc;
+                    hrc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
+                    if (FAILED(hrc)) throw hrc;
                 }
                 else
                 {
@@ -723,14 +723,14 @@ HRESULT Appliance::interpret()
                      */
 
                     ComObjPtr<MediumFormat> mediumFormat;
-                    rc = i_findMediumFormatFromDiskImage(di, mediumFormat);
-                    if (FAILED(rc))
-                        throw rc;
+                    hrc = i_findMediumFormatFromDiskImage(di, mediumFormat);
+                    if (FAILED(hrc))
+                        throw hrc;
 
                     Bstr bstrFormatName;
-                    rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-                    if (FAILED(rc))
-                        throw rc;
+                    hrc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                    if (FAILED(hrc))
+                        throw hrc;
                     Utf8Str vdf = Utf8Str(bstrFormatName);
 
                     /// @todo
@@ -798,14 +798,14 @@ HRESULT Appliance::interpret()
     {
         /* On error we clear the list & return */
         m->virtualSystemDescriptions.clear();
-        rc = aRC;
+        hrc = aRC;
     }
 
     // reset the appliance state
     alock.acquire();
     m->state = ApplianceIdle;
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -1308,7 +1308,7 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         hrc = arc;
     }
 
-    LogFlowFunc(("rc=%Rhrc\n", hrc));
+    LogFlowFunc(("hrc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
 
     return hrc;
@@ -2269,7 +2269,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         }
     }
 
-    LogFlowFunc(("rc=%Rhrc\n", hrc));
+    LogFlowFunc(("hrc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
     return hrc;
 }
@@ -2295,16 +2295,16 @@ HRESULT Appliance::i_readFS(TaskOVF *pTask)
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc;
+    HRESULT hrc;
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        rc = i_readFSOVF(pTask);
+        hrc = i_readFSOVF(pTask);
     else
-        rc = i_readFSOVA(pTask);
+        hrc = i_readFSOVA(pTask);
 
-    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFunc(("hrc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
@@ -2579,7 +2579,7 @@ HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const
     {
         hrc = E_FAIL;
     }
-    LogFlowFunc(("OVFReader(%s) -> rc=%Rhrc\n", pTask->locInfo.strPath.c_str(), hrc));
+    LogFlowFunc(("OVFReader(%s) -> hrc=%Rhrc\n", pTask->locInfo.strPath.c_str(), hrc));
 
     RTVfsIoStrmReadAllFree(pvBufferedOvf, cbBufferedOvf);
     if (SUCCEEDED(hrc))
@@ -3529,16 +3529,16 @@ HRESULT Appliance::i_readTailProcessingVerifyContentInfoCerts(void const *pvData
 HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
                                 ComObjPtr<Progress> &progress)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     /* Initialize our worker task */
     ThreadTask *pTask;
     if (locInfo.storageType != VFSType_Cloud)
     {
-        rc = i_setUpProgress(progress, Utf8StrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
-                             locInfo.storageType == VFSType_File ? ImportFile : ImportS3);
-        if (FAILED(rc))
-            return setError(rc, tr("Failed to create task for importing appliance into VirtualBox"));
+        hrc = i_setUpProgress(progress, Utf8StrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
+                              locInfo.storageType == VFSType_File ? ImportFile : ImportS3);
+        if (FAILED(hrc))
+            return setError(hrc, tr("Failed to create task for importing appliance into VirtualBox"));
         try
         {
             pTask = new TaskOVF(this, TaskOVF::Import, locInfo, progress);
@@ -3591,16 +3591,16 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
              */
             try
             {
-                rc = progress.createObject();
-                if (SUCCEEDED(rc))
-                    rc = progress->init(mVirtualBox, static_cast<IAppliance *>(this),
-                                        Utf8Str(tr("Importing VM from Cloud...")),
-                                        TRUE /* aCancelable */,
-                                        10, // ULONG cOperations,
-                                        1000, // ULONG ulTotalOperationsWeight,
-                                        Utf8Str(tr("Start import VM from the Cloud...")), // aFirstOperationDescription
-                                        25); // ULONG ulFirstOperationWeight
-                if (SUCCEEDED(rc))
+                hrc = progress.createObject();
+                if (SUCCEEDED(hrc))
+                    hrc = progress->init(mVirtualBox, static_cast<IAppliance *>(this),
+                                         Utf8Str(tr("Importing VM from Cloud...")),
+                                         TRUE /* aCancelable */,
+                                         10, // ULONG cOperations,
+                                         1000, // ULONG ulTotalOperationsWeight,
+                                         Utf8Str(tr("Start import VM from the Cloud...")), // aFirstOperationDescription
+                                         25); // ULONG ulFirstOperationWeight
+                if (SUCCEEDED(hrc))
                     pTask = new TaskCloud(this, TaskCloud::Import, locInfo, progress);
                 else
                     pTask = NULL; /* shut up vcc */
@@ -3609,8 +3609,8 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
             {
                 return E_OUTOFMEMORY;
             }
-            if (FAILED(rc))
-                return setError(rc, tr("Failed to create task for importing appliance into VirtualBox"));
+            if (FAILED(hrc))
+                return setError(hrc, tr("Failed to create task for importing appliance into VirtualBox"));
         }
         else
             return setError(E_NOTIMPL, tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
@@ -3620,11 +3620,11 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
     /*
      * Start the task thread.
      */
-    rc = pTask->createThread();
+    hrc = pTask->createThread();
     pTask = NULL;
-    if (SUCCEEDED(rc))
-        return rc;
-    return setError(rc, tr("Failed to start thread for importing appliance into VirtualBox"));
+    if (SUCCEEDED(hrc))
+        return hrc;
+    return setError(hrc, tr("Failed to start thread for importing appliance into VirtualBox"));
 }
 
 /**
@@ -3662,16 +3662,16 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
     /* Set the internal state to importing. */
     m->state = ApplianceImporting;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* Clear the list of imported machines, if any */
     m->llGuidsMachinesCreated.clear();
 
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        rc = i_importFSOVF(pTask, writeLock);
+        hrc = i_importFSOVF(pTask, writeLock);
     else
-        rc = i_importFSOVA(pTask, writeLock);
-    if (FAILED(rc))
+        hrc = i_importFSOVA(pTask, writeLock);
+    if (FAILED(hrc))
     {
         /* With _whatever_ error we've had, do a complete roll-back of
          * machines and images we've created */
@@ -3700,9 +3700,9 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
     /* Reset the state so others can call methods again */
     m->state = ApplianceIdle;
 
-    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFunc(("hrc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
-    return rc;
+    return hrc;
 }
 
 HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase &rWriteLock)
@@ -4028,7 +4028,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                      ComObjPtr<Medium> &pTargetMedium,
                                      ImportStack &stack)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     Utf8Str strAbsDstPath;
     int vrc = RTPathAbsExCxx(strAbsDstPath, stack.strMachineFolder, strDstPath);
@@ -4062,8 +4062,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     vrc = RTUuidFromStr(&uuid, strDstPath.c_str());
     if (vrc == VINF_SUCCESS)
     {
-        rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetMedium);
-        if (FAILED(rc)) throw rc;
+        hrc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetMedium);
+        if (FAILED(hrc)) throw hrc;
     }
     else
     {
@@ -4098,8 +4098,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                 if (trgFormat.isNull())
                     throw setError(E_FAIL, tr("Unsupported medium format for disk image '%s'"), di.strHref.c_str());
 
-                rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                if (FAILED(hrc)) throw hrc;
 
                 strTrgFormat = Utf8Str(bstrFormatName);
 
@@ -4117,10 +4117,10 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                 /* Check the capabilities. We need create capabilities. */
                 lCabs = 0;
                 com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
-                rc = trgFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));
+                hrc = trgFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));
 
-                if (FAILED(rc))
-                    throw rc;
+                if (FAILED(hrc))
+                    throw hrc;
 
                 for (ULONG j = 0; j < mediumFormatCap.size(); j++)
                     lCabs |= mediumFormatCap[j];
@@ -4149,13 +4149,13 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                         i_importCopyFile(stack, strSrcFilePath, strAbsDstPath, strSourceOVF.c_str());
 
                     ComPtr<IMedium> pTmp;
-                    rc = mVirtualBox->OpenMedium(Bstr(strAbsDstPath).raw(),
-                                                 DeviceType_DVD,
-                                                 AccessMode_ReadWrite,
-                                                 false,
-                                                 pTmp.asOutParam());
-                    if (FAILED(rc))
-                        throw rc;
+                    hrc = mVirtualBox->OpenMedium(Bstr(strAbsDstPath).raw(),
+                                                  DeviceType_DVD,
+                                                  AccessMode_ReadWrite,
+                                                  false,
+                                                  pTmp.asOutParam());
+                    if (FAILED(hrc))
+                        throw hrc;
 
                     IMedium *iM = pTmp;
                     pTargetMedium = static_cast<Medium*>(iM);
@@ -4176,12 +4176,12 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                 /* Create an IMedium object. */
                 pTargetMedium.createObject();
 
-                rc = pTargetMedium->init(mVirtualBox,
-                                         strTrgFormat,
-                                         strAbsDstPath,
-                                         Guid::Empty /* media registry: none yet */,
-                                         DeviceType_HardDisk);
-                if (FAILED(rc)) throw rc;
+                hrc = pTargetMedium->init(mVirtualBox,
+                                          strTrgFormat,
+                                          strAbsDstPath,
+                                          Guid::Empty /* media registry: none yet */,
+                                          DeviceType_HardDisk);
+                if (FAILED(hrc)) throw hrc;
 
                 ComPtr<IProgress> pProgressImport;
                 /* If strHref is empty we have to create a new file. */
@@ -4191,10 +4191,10 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     mediumVariant.push_back(MediumVariant_Standard);
 
                     /* Kick off the creation of a dynamic growing disk image with the given capacity. */
-                    rc = pTargetMedium->CreateBaseStorage(di.iCapacity / _1M,
-                                                          ComSafeArrayAsInParam(mediumVariant),
-                                                          pProgressImport.asOutParam());
-                    if (FAILED(rc)) throw rc;
+                    hrc = pTargetMedium->CreateBaseStorage(di.iCapacity / _1M,
+                                                           ComSafeArrayAsInParam(mediumVariant),
+                                                           pProgressImport.asOutParam());
+                    if (FAILED(hrc)) throw hrc;
 
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
@@ -4207,8 +4207,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* We need a proper source format description */
                     /* Which format to use? */
                     ComObjPtr<MediumFormat> srcFormat;
-                    rc = i_findMediumFormatFromDiskImage(di, srcFormat);
-                    if (FAILED(rc))
+                    hrc = i_findMediumFormatFromDiskImage(di, srcFormat);
+                    if (FAILED(hrc))
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                        tr("Could not find a valid medium format for the source disk '%s' "
                                           "Check correctness of the image format URL in the OVF description file "
@@ -4253,28 +4253,27 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* Start the source image cloning operation. */
                     ComObjPtr<Medium> nullParent;
                     ComObjPtr<Progress> pProgressImportTmp;
-                    rc = pProgressImportTmp.createObject();
-                    if (FAILED(rc)) throw rc;
-                    rc = pProgressImportTmp->init(mVirtualBox,
-                                                  static_cast<IAppliance*>(this),
-                                                  Utf8StrFmt(tr("Importing medium '%s'"),
-                                                             strAbsDstPath.c_str()),
-                                                  TRUE);
-                    if (FAILED(rc)) throw rc;
+                    hrc = pProgressImportTmp.createObject();
+                    if (FAILED(hrc)) throw hrc;
+                    hrc = pProgressImportTmp->init(mVirtualBox,
+                                                   static_cast<IAppliance*>(this),
+                                                   Utf8StrFmt(tr("Importing medium '%s'"), strAbsDstPath.c_str()),
+                                                   TRUE);
+                    if (FAILED(hrc)) throw hrc;
                     pProgressImportTmp.queryInterfaceTo(pProgressImport.asOutParam());
                     /* pProgressImportTmp is in parameter for Medium::i_importFile,
                      * which is somewhat unusual and might be changed later. */
-                    rc = pTargetMedium->i_importFile(strSrcFilePath.c_str(),
-                                                     srcFormat,
-                                                     MediumVariant_Standard,
-                                                     hVfsIosReadAhead,
-                                                     nullParent,
-                                                     pProgressImportTmp,
-                                                     true /* aNotify */);
+                    hrc = pTargetMedium->i_importFile(strSrcFilePath.c_str(),
+                                                      srcFormat,
+                                                      MediumVariant_Standard,
+                                                      hVfsIosReadAhead,
+                                                      nullParent,
+                                                      pProgressImportTmp,
+                                                      true /* aNotify */);
                     RTVfsIoStrmRelease(hVfsIosReadAhead);
                     hVfsIosSrc = NIL_RTVFSIOSTREAM;
-                    if (FAILED(rc))
-                        throw rc;
+                    if (FAILED(hrc))
+                        throw hrc;
 
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
@@ -4400,64 +4399,64 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                        ImportStack &stack)
 {
     LogFlowFuncEnter();
-    HRESULT rc;
+    HRESULT hrc;
 
     // Get the instance of IGuestOSType which matches our string guest OS type so we
     // can use recommended defaults for the new machine where OVF doesn't provide any
     ComPtr<IGuestOSType> osType;
-    rc = mVirtualBox->GetGuestOSType(Bstr(stack.strOsTypeVBox).raw(), osType.asOutParam());
-    if (FAILED(rc)) throw rc;
+    hrc = mVirtualBox->GetGuestOSType(Bstr(stack.strOsTypeVBox).raw(), osType.asOutParam());
+    if (FAILED(hrc)) throw hrc;
 
     /* Create the machine */
     SafeArray<BSTR> groups; /* no groups, or maybe one group... */
     if (!stack.strPrimaryGroup.isEmpty() && stack.strPrimaryGroup != "/")
         Bstr(stack.strPrimaryGroup).detachTo(groups.appendedRaw());
     ComPtr<IMachine> pNewMachine;
-    rc = mVirtualBox->CreateMachine(Bstr(stack.strSettingsFilename).raw(),
-                                    Bstr(stack.strNameVBox).raw(),
-                                    ComSafeArrayAsInParam(groups),
-                                    Bstr(stack.strOsTypeVBox).raw(),
-                                    NULL, /* aCreateFlags */
-                                    NULL, /* aCipher */
-                                    NULL, /* aPasswordId */
-                                    NULL, /* aPassword */
-                                    pNewMachine.asOutParam());
-    if (FAILED(rc)) throw rc;
+    hrc = mVirtualBox->CreateMachine(Bstr(stack.strSettingsFilename).raw(),
+                                     Bstr(stack.strNameVBox).raw(),
+                                     ComSafeArrayAsInParam(groups),
+                                     Bstr(stack.strOsTypeVBox).raw(),
+                                     NULL, /* aCreateFlags */
+                                     NULL, /* aCipher */
+                                     NULL, /* aPasswordId */
+                                     NULL, /* aPassword */
+                                     pNewMachine.asOutParam());
+    if (FAILED(hrc)) throw hrc;
     pNewMachineRet = pNewMachine;
 
     // set the description
     if (!stack.strDescription.isEmpty())
     {
-        rc = pNewMachine->COMSETTER(Description)(Bstr(stack.strDescription).raw());
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->COMSETTER(Description)(Bstr(stack.strDescription).raw());
+        if (FAILED(hrc)) throw hrc;
     }
 
     // CPU count
-    rc = pNewMachine->COMSETTER(CPUCount)(stack.cCPUs);
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine->COMSETTER(CPUCount)(stack.cCPUs);
+    if (FAILED(hrc)) throw hrc;
 
     if (stack.fForceHWVirt)
     {
-        rc = pNewMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
+        if (FAILED(hrc)) throw hrc;
     }
 
     // RAM
-    rc = pNewMachine->COMSETTER(MemorySize)(stack.ulMemorySizeMB);
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine->COMSETTER(MemorySize)(stack.ulMemorySizeMB);
+    if (FAILED(hrc)) throw hrc;
 
     /* VRAM */
     /* Get the recommended VRAM for this guest OS type */
     ULONG vramVBox;
-    rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
-    if (FAILED(rc)) throw rc;
+    hrc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
+    if (FAILED(hrc)) throw hrc;
 
     /* Set the VRAM */
     ComPtr<IGraphicsAdapter> pGraphicsAdapter;
-    rc = pNewMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
-    if (FAILED(rc)) throw rc;
-    rc = pGraphicsAdapter->COMSETTER(VRAMSize)(vramVBox);
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    if (FAILED(hrc)) throw hrc;
+    hrc = pGraphicsAdapter->COMSETTER(VRAMSize)(vramVBox);
+    if (FAILED(hrc)) throw hrc;
 
     // I/O APIC: Generic OVF has no setting for this. Enable it if we
     // import a Windows VM because if if Windows was installed without IOAPIC,
@@ -4466,8 +4465,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (!stack.fForceIOAPIC)
     {
         Bstr bstrFamilyId;
-        rc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
-        if (FAILED(rc)) throw rc;
+        hrc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
+        if (FAILED(hrc)) throw hrc;
         if (bstrFamilyId == "Windows")
             stack.fForceIOAPIC = true;
     }
@@ -4475,11 +4474,11 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (stack.fForceIOAPIC)
     {
         ComPtr<IBIOSSettings> pBIOSSettings;
-        rc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+        if (FAILED(hrc)) throw hrc;
 
-        rc = pBIOSSettings->COMSETTER(IOAPICEnabled)(TRUE);
-        if (FAILED(rc)) throw rc;
+        hrc = pBIOSSettings->COMSETTER(IOAPICEnabled)(TRUE);
+        if (FAILED(hrc)) throw hrc;
     }
 
     if (stack.strFirmwareType.isNotEmpty())
@@ -4494,24 +4493,24 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             else
                 firmwareType = FirmwareType_EFI;
         }
-        rc = pNewMachine->COMSETTER(FirmwareType)(firmwareType);
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->COMSETTER(FirmwareType)(firmwareType);
+        if (FAILED(hrc)) throw hrc;
     }
 
     if (!stack.strAudioAdapter.isEmpty())
         if (stack.strAudioAdapter.compare("null", Utf8Str::CaseInsensitive) != 0)
         {
             ComPtr<IAudioSettings> audioSettings;
-            rc = pNewMachine->COMGETTER(AudioSettings)(audioSettings.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = pNewMachine->COMGETTER(AudioSettings)(audioSettings.asOutParam());
+            if (FAILED(hrc)) throw hrc;
             uint32_t audio = RTStrToUInt32(stack.strAudioAdapter.c_str());       // should be 0 for AC97
             ComPtr<IAudioAdapter> audioAdapter;
-            rc = audioSettings->COMGETTER(Adapter)(audioAdapter.asOutParam());
-            if (FAILED(rc)) throw rc;
-            rc = audioAdapter->COMSETTER(Enabled)(true);
-            if (FAILED(rc)) throw rc;
-            rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
-            if (FAILED(rc)) throw rc;
+            hrc = audioSettings->COMGETTER(Adapter)(audioAdapter.asOutParam());
+            if (FAILED(hrc)) throw hrc;
+            hrc = audioAdapter->COMSETTER(Enabled)(true);
+            if (FAILED(hrc)) throw hrc;
+            hrc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
+            if (FAILED(hrc)) throw hrc;
         }
 
 #ifdef VBOX_WITH_USB
@@ -4519,8 +4518,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (stack.fUSBEnabled)
     {
         ComPtr<IUSBController> usbController;
-        rc = pNewMachine->AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI, usbController.asOutParam());
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI, usbController.asOutParam());
+        if (FAILED(hrc)) throw hrc;
     }
 #endif /* VBOX_WITH_USB */
 
@@ -4532,10 +4531,10 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     {
         /* No network adapters, so we have to disable our default one */
         ComPtr<INetworkAdapter> nwVBox;
-        rc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
-        if (FAILED(rc)) throw rc;
-        rc = nwVBox->COMSETTER(Enabled)(false);
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
+        if (FAILED(hrc)) throw hrc;
+        hrc = nwVBox->COMSETTER(Enabled)(false);
+        if (FAILED(hrc)) throw hrc;
     }
     else if (vsdeNW.size() > maxNetworkAdapters)
         throw setError(VBOX_E_FILE_ERROR,
@@ -4555,26 +4554,26 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             const Utf8Str &nwTypeVBox = pvsys->strVBoxCurrent;
             uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
             ComPtr<INetworkAdapter> pNetworkAdapter;
-            rc = pNewMachine->GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = pNewMachine->GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
+            if (FAILED(hrc)) throw hrc;
             /* Enable the network card & set the adapter type */
-            rc = pNetworkAdapter->COMSETTER(Enabled)(true);
-            if (FAILED(rc)) throw rc;
-            rc = pNetworkAdapter->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
-            if (FAILED(rc)) throw rc;
+            hrc = pNetworkAdapter->COMSETTER(Enabled)(true);
+            if (FAILED(hrc)) throw hrc;
+            hrc = pNetworkAdapter->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
+            if (FAILED(hrc)) throw hrc;
 
             // default is NAT; change to "bridged" if extra conf says so
             if (pvsys->strExtraConfigCurrent.endsWith("type=Bridged", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged);
-                if (FAILED(rc)) throw rc;
+                hrc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged);
+                if (FAILED(hrc)) throw hrc;
                 ComPtr<IHost> host;
-                rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
+                if (FAILED(hrc)) throw hrc;
                 com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
-                rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
-                if (FAILED(rc)) throw rc;
+                hrc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
+                if (FAILED(hrc)) throw hrc;
                 // We search for the first host network interface which
                 // is usable for bridged networking
                 for (size_t j = 0;
@@ -4582,16 +4581,16 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                      ++j)
                 {
                     HostNetworkInterfaceType_T itype;
-                    rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
-                    if (FAILED(rc)) throw rc;
+                    hrc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
+                    if (FAILED(hrc)) throw hrc;
                     if (itype == HostNetworkInterfaceType_Bridged)
                     {
                         Bstr name;
-                        rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
-                        if (FAILED(rc)) throw rc;
+                        hrc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
+                        if (FAILED(hrc)) throw hrc;
                         /* Set the interface name to attach to */
-                        rc = pNetworkAdapter->COMSETTER(BridgedInterface)(name.raw());
-                        if (FAILED(rc)) throw rc;
+                        hrc = pNetworkAdapter->COMSETTER(BridgedInterface)(name.raw());
+                        if (FAILED(hrc)) throw hrc;
                         break;
                     }
                 }
@@ -4600,14 +4599,14 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             else if (pvsys->strExtraConfigCurrent.endsWith("type=HostOnly", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly);
-                if (FAILED(rc)) throw rc;
+                hrc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly);
+                if (FAILED(hrc)) throw hrc;
                 ComPtr<IHost> host;
-                rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
+                if (FAILED(hrc)) throw hrc;
                 com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
-                rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
-                if (FAILED(rc)) throw rc;
+                hrc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
+                if (FAILED(hrc)) throw hrc;
                 // We search for the first host network interface which
                 // is usable for host only networking
                 for (size_t j = 0;
@@ -4615,16 +4614,16 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                      ++j)
                 {
                     HostNetworkInterfaceType_T itype;
-                    rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
-                    if (FAILED(rc)) throw rc;
+                    hrc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
+                    if (FAILED(hrc)) throw hrc;
                     if (itype == HostNetworkInterfaceType_HostOnly)
                     {
                         Bstr name;
-                        rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
-                        if (FAILED(rc)) throw rc;
+                        hrc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
+                        if (FAILED(hrc)) throw hrc;
                         /* Set the interface name to attach to */
-                        rc = pNetworkAdapter->COMSETTER(HostOnlyInterface)(name.raw());
-                        if (FAILED(rc)) throw rc;
+                        hrc = pNetworkAdapter->COMSETTER(HostOnlyInterface)(name.raw());
+                        if (FAILED(hrc)) throw hrc;
                         break;
                     }
                 }
@@ -4633,35 +4632,35 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             else if (pvsys->strExtraConfigCurrent.endsWith("type=Internal", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Internal);
-                if (FAILED(rc)) throw rc;
+                hrc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Internal);
+                if (FAILED(hrc)) throw hrc;
             }
             /* Next test for Generic interfaces */
             else if (pvsys->strExtraConfigCurrent.endsWith("type=Generic", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Generic);
-                if (FAILED(rc)) throw rc;
+                hrc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Generic);
+                if (FAILED(hrc)) throw hrc;
             }
 
             /* Next test for NAT network interfaces */
             else if (pvsys->strExtraConfigCurrent.endsWith("type=NATNetwork", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork);
-                if (FAILED(rc)) throw rc;
+                hrc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork);
+                if (FAILED(hrc)) throw hrc;
                 com::SafeIfaceArray<INATNetwork> nwNATNetworks;
-                rc = mVirtualBox->COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nwNATNetworks));
-                if (FAILED(rc)) throw rc;
+                hrc = mVirtualBox->COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nwNATNetworks));
+                if (FAILED(hrc)) throw hrc;
                 // Pick the first NAT network (if there is any)
                 if (nwNATNetworks.size())
                 {
                     Bstr name;
-                    rc = nwNATNetworks[0]->COMGETTER(NetworkName)(name.asOutParam());
-                    if (FAILED(rc)) throw rc;
+                    hrc = nwNATNetworks[0]->COMGETTER(NetworkName)(name.asOutParam());
+                    if (FAILED(hrc)) throw hrc;
                     /* Set the NAT network name to attach to */
-                    rc = pNetworkAdapter->COMSETTER(NATNetwork)(name.raw());
-                    if (FAILED(rc)) throw rc;
+                    hrc = pNetworkAdapter->COMSETTER(NATNetwork)(name.raw());
+                    if (FAILED(hrc)) throw hrc;
                     break;
                 }
             }
@@ -4684,21 +4683,21 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     {
         // one or two IDE controllers present in OVF: add one VirtualBox controller
         ComPtr<IStorageController> pController;
-        rc = pNewMachine->AddStorageController(Bstr("IDE").raw(), StorageBus_IDE, pController.asOutParam());
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->AddStorageController(Bstr("IDE").raw(), StorageBus_IDE, pController.asOutParam());
+        if (FAILED(hrc)) throw hrc;
 
         const char *pcszIDEType = vsdeHDCIDE.front()->strVBoxCurrent.c_str();
         if (!strcmp(pcszIDEType, "PIIX3"))
-            rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
+            hrc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
         else if (!strcmp(pcszIDEType, "PIIX4"))
-            rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
+            hrc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
         else if (!strcmp(pcszIDEType, "ICH6"))
-            rc = pController->COMSETTER(ControllerType)(StorageControllerType_ICH6);
+            hrc = pController->COMSETTER(ControllerType)(StorageControllerType_ICH6);
         else
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Invalid IDE controller type \"%s\""),
                            pcszIDEType);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(hrc)) throw hrc;
     }
 
     /* Storage controller SATA */
@@ -4713,15 +4712,11 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVBoxCurrent;
         if (hdcVBox == "AHCI")
         {
-            rc = pNewMachine->AddStorageController(Bstr("SATA").raw(),
-                                                   StorageBus_SATA,
-                                                   pController.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = pNewMachine->AddStorageController(Bstr("SATA").raw(), StorageBus_SATA, pController.asOutParam());
+            if (FAILED(hrc)) throw hrc;
         }
         else
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Invalid SATA controller type \"%s\""),
-                           hdcVBox.c_str());
+            throw setError(VBOX_E_FILE_ERROR, tr("Invalid SATA controller type \"%s\""), hdcVBox.c_str());
     }
 
     /* Storage controller SCSI */
@@ -4749,14 +4744,12 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         else if (hdcVBox == "BusLogic")
             controllerType = StorageControllerType_BusLogic;
         else
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Invalid SCSI controller type \"%s\""),
-                           hdcVBox.c_str());
+            throw setError(VBOX_E_FILE_ERROR, tr("Invalid SCSI controller type \"%s\""), hdcVBox.c_str());
 
-        rc = pNewMachine->AddStorageController(Bstr(strName).raw(), busType, pController.asOutParam());
-        if (FAILED(rc)) throw rc;
-        rc = pController->COMSETTER(ControllerType)(controllerType);
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->AddStorageController(Bstr(strName).raw(), busType, pController.asOutParam());
+        if (FAILED(hrc)) throw hrc;
+        hrc = pController->COMSETTER(ControllerType)(controllerType);
+        if (FAILED(hrc)) throw hrc;
     }
 
     /* Storage controller SAS */
@@ -4768,12 +4761,10 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (!vsdeHDCSAS.empty())
     {
         ComPtr<IStorageController> pController;
-        rc = pNewMachine->AddStorageController(Bstr(L"SAS").raw(),
-                                               StorageBus_SAS,
-                                               pController.asOutParam());
-        if (FAILED(rc)) throw rc;
-        rc = pController->COMSETTER(ControllerType)(StorageControllerType_LsiLogicSas);
-        if (FAILED(rc)) throw rc;
+        hrc = pNewMachine->AddStorageController(Bstr(L"SAS").raw(), StorageBus_SAS, pController.asOutParam());
+        if (FAILED(hrc)) throw hrc;
+        hrc = pController->COMSETTER(ControllerType)(StorageControllerType_LsiLogicSas);
+        if (FAILED(hrc)) throw hrc;
     }
 
 
@@ -4790,28 +4781,24 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         const Utf8Str &hdcVBox = vsdeHDCVirtioSCSI.front()->strVBoxCurrent;
         if (hdcVBox == "VirtioSCSI")
         {
-            rc = pNewMachine->AddStorageController(Bstr(strName).raw(),
-                                                   StorageBus_VirtioSCSI,
-                                                   pController.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = pNewMachine->AddStorageController(Bstr(strName).raw(), StorageBus_VirtioSCSI, pController.asOutParam());
+            if (FAILED(hrc)) throw hrc;
 
-            rc = pController->COMSETTER(ControllerType)(StorageControllerType_VirtioSCSI);
-            if (FAILED(rc)) throw rc;
+            hrc = pController->COMSETTER(ControllerType)(StorageControllerType_VirtioSCSI);
+            if (FAILED(hrc)) throw hrc;
         }
         else
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Invalid VirtioSCSI controller type \"%s\""),
-                           hdcVBox.c_str());
+            throw setError(VBOX_E_FILE_ERROR, tr("Invalid VirtioSCSI controller type \"%s\""), hdcVBox.c_str());
     }
 
     /* Now its time to register the machine before we add any storage devices */
-    rc = mVirtualBox->RegisterMachine(pNewMachine);
-    if (FAILED(rc)) throw rc;
+    hrc = mVirtualBox->RegisterMachine(pNewMachine);
+    if (FAILED(hrc)) throw hrc;
 
     // store new machine for roll-back in case of errors
     Bstr bstrNewMachineId;
-    rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
+    if (FAILED(hrc)) throw hrc;
     Guid uuidNewMachine(bstrNewMachineId);
     m->llGuidsMachinesCreated.push_back(uuidNewMachine);
 
@@ -4831,26 +4818,24 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         try
         {
             // to attach things we need to open a session for the new machine
-            rc = pNewMachine->LockMachine(stack.pSession, LockType_Write);
-            if (FAILED(rc)) throw rc;
+            hrc = pNewMachine->LockMachine(stack.pSession, LockType_Write);
+            if (FAILED(hrc)) throw hrc;
             stack.fSessionOpen = true;
 
             ComPtr<IMachine> sMachine;
-            rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
+            if (FAILED(hrc)) throw hrc;
 
             // floppy first
             if (vsdeFloppy.size() == 1)
             {
                 ComPtr<IStorageController> pController;
-                rc = sMachine->AddStorageController(Bstr("Floppy").raw(),
-                                                    StorageBus_Floppy,
-                                                    pController.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = sMachine->AddStorageController(Bstr("Floppy").raw(), StorageBus_Floppy, pController.asOutParam());
+                if (FAILED(hrc)) throw hrc;
 
                 Bstr bstrName;
-                rc = pController->COMGETTER(Name)(bstrName.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = pController->COMGETTER(Name)(bstrName.asOutParam());
+                if (FAILED(hrc)) throw hrc;
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
@@ -4861,22 +4846,22 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 Log(("Attaching floppy\n"));
 
-                rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),
-                                            mhda.lControllerPort,
-                                            mhda.lDevice,
-                                            DeviceType_Floppy,
-                                            NULL);
-                if (FAILED(rc)) throw rc;
+                hrc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),
+                                             mhda.lControllerPort,
+                                             mhda.lDevice,
+                                             DeviceType_Floppy,
+                                             NULL);
+                if (FAILED(hrc)) throw hrc;
 
                 stack.llHardDiskAttachments.push_back(mhda);
             }
 
-            rc = sMachine->SaveSettings();
-            if (FAILED(rc)) throw rc;
+            hrc = sMachine->SaveSettings();
+            if (FAILED(hrc)) throw hrc;
 
             // only now that we're done with all storage devices, close the session
-            rc = stack.pSession->UnlockMachine();
-            if (FAILED(rc)) throw rc;
+            hrc = stack.pSession->UnlockMachine();
+            if (FAILED(hrc)) throw hrc;
             stack.fSessionOpen = false;
         }
         catch(HRESULT aRC)
@@ -4917,8 +4902,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 #endif
 
             // to attach things we need to open a session for the new machine
-            rc = pNewMachine->LockMachine(stack.pSession, LockType_Write);
-            if (FAILED(rc)) throw rc;
+            hrc = pNewMachine->LockMachine(stack.pSession, LockType_Write);
+            if (FAILED(hrc)) throw hrc;
             stack.fSessionOpen = true;
 
             /* get VM name from virtual system description. Only one record is possible (size of list is equal 1). */
@@ -4987,8 +4972,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         continue;
                     }
 l_skipped:
-                    rc = i_preCheckImageAvailability(stack);
-                    if (SUCCEEDED(rc))
+                    hrc = i_preCheckImageAvailability(stack);
+                    if (SUCCEEDED(hrc))
                     {
                         /* current opened file isn't the same as passed one */
                         if (RTStrICmp(diCurrent.strHref.c_str(), stack.pszOvaLookAheadName) != 0)
@@ -5077,9 +5062,9 @@ l_skipped:
                      * VirtualDisk::strDiskId is filled in the */
 
                     Guid id(ovfVdisk.strDiskId);
-                    rc = mVirtualBox->i_findHardDiskById(id, false, &pTargetMedium);
-                    if (FAILED(rc))
-                        throw rc;
+                    hrc = mVirtualBox->i_findHardDiskById(id, false, &pTargetMedium);
+                    if (FAILED(hrc))
+                        throw hrc;
                 }
                 else
                 {
@@ -5091,9 +5076,9 @@ l_skipped:
 
                 // now use the new uuid to attach the medium to our new machine
                 ComPtr<IMachine> sMachine;
-                rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
-                if (FAILED(rc))
-                    throw rc;
+                hrc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
+                if (FAILED(hrc))
+                    throw hrc;
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
@@ -5164,12 +5149,10 @@ l_skipped:
                     }
 
                     ULONG ulMaxPorts;
-                    rc = i_verifyStorageControllerPortValid(hdStorageControllerType,
-                                                            uNewControllerPortValue,
-                                                            &ulMaxPorts);
-                    if (FAILED(rc))
+                    hrc = i_verifyStorageControllerPortValid(hdStorageControllerType, uNewControllerPortValue, &ulMaxPorts);
+                    if (FAILED(hrc))
                     {
-                        if (rc == E_INVALIDARG)
+                        if (hrc == E_INVALIDARG)
                         {
                             const char *pcszSCType = Global::stringifyStorageControllerType(hdStorageControllerType);
                             throw setError(E_INVALIDARG,
@@ -5177,7 +5160,7 @@ l_skipped:
                                            "0 to %lu (inclusive).\n"), uNewControllerPortValue, pcszSCType, ulMaxPorts-1);
                         }
                         else
-                            throw rc;
+                            throw hrc;
                     }
 
                     unconst(ovfVdisk.ulAddressOnParent) = uNewControllerPortValue;
@@ -5196,23 +5179,23 @@ l_skipped:
                      vsdeTargetHD->strVBoxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
                 DeviceType_T devType = DeviceType_Null;
-                rc = pTargetMedium->COMGETTER(DeviceType)(&devType);
-                if (FAILED(rc))
-                    throw rc;
+                hrc = pTargetMedium->COMGETTER(DeviceType)(&devType);
+                if (FAILED(hrc))
+                    throw hrc;
 
-                rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
-                                            mhda.lControllerPort,     // long controllerPort
-                                            mhda.lDevice,             // long device
-                                            devType,                  // DeviceType_T type
-                                            pTargetMedium);
-                if (FAILED(rc))
-                    throw rc;
+                hrc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
+                                             mhda.lControllerPort,     // long controllerPort
+                                             mhda.lDevice,             // long device
+                                             devType,                  // DeviceType_T type
+                                             pTargetMedium);
+                if (FAILED(hrc))
+                    throw hrc;
 
                 stack.llHardDiskAttachments.push_back(mhda);
 
-                rc = sMachine->SaveSettings();
-                if (FAILED(rc))
-                    throw rc;
+                hrc = sMachine->SaveSettings();
+                if (FAILED(hrc))
+                    throw hrc;
 
                 ++cImportedDisks;
 
@@ -5228,9 +5211,9 @@ l_skipped:
             }
 
             // only now that we're done with all disks, close the session
-            rc = stack.pSession->UnlockMachine();
-            if (FAILED(rc))
-                throw rc;
+            hrc = stack.pSession->UnlockMachine();
+            if (FAILED(hrc))
+                throw hrc;
             stack.fSessionOpen = false;
         }
         catch(HRESULT aRC)
@@ -5284,7 +5267,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     LogFlowFuncEnter();
     Assert(vsdescThis->m->pConfig);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     settings::MachineConfigFile &config = *vsdescThis->m->pConfig;
 
@@ -5546,8 +5529,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 continue;
             }
 l_skipped:
-            rc = i_preCheckImageAvailability(stack);
-            if (SUCCEEDED(rc))
+            hrc = i_preCheckImageAvailability(stack);
+            if (SUCCEEDED(hrc))
             {
                 /* current opened file isn't the same as passed one */
                 if (RTStrICmp(diCurrent.strHref.c_str(), stack.pszOvaLookAheadName) != 0)
@@ -5754,17 +5737,15 @@ l_skipped:
                         if (AD.uuid.toString() == strTargetDiskUuid)
                         {
                             ULONG ulMaxPorts;
-                            rc = i_verifyStorageControllerPortValid(SC.controllerType,
-                                                                    uNewControllerPortValue,
-                                                                    &ulMaxPorts);
-                            if (FAILED(rc))
+                            hrc = i_verifyStorageControllerPortValid(SC.controllerType, uNewControllerPortValue, &ulMaxPorts);
+                            if (FAILED(hrc))
                             {
-                                if (rc == E_INVALIDARG)
+                                if (hrc == E_INVALIDARG)
                                     throw setError(E_INVALIDARG,
                                                    tr("Illegal channel: '%u'.  For %s controllers the valid values are "
                                                    "0 to %lu (inclusive).\n"), uNewControllerPortValue, pcszSCType, ulMaxPorts-1);
                                 else
-                                    throw rc;
+                                    throw hrc;
                             }
 
                             if (uOrigControllerPortValue != uNewControllerPortValue)
@@ -5897,15 +5878,15 @@ l_skipped:
                 // ... and replace the old UUID in the machine config with the one of
                 // the imported disk that was just created
                 Bstr hdId;
-                rc = pTargetMedium->COMGETTER(Id)(hdId.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = pTargetMedium->COMGETTER(Id)(hdId.asOutParam());
+                if (FAILED(hrc)) throw hrc;
 
                 /*
                  * 1. saving original UUID for restoring in case of failure.
                  * 2. replacement of original UUID by new UUID in the current VM config (settings::MachineConfigFile).
                  */
                 {
-                    rc = stack.saveOriginalUUIDOfAttachedDevice(d, Utf8Str(hdId));
+                    hrc = stack.saveOriginalUUIDOfAttachedDevice(d, Utf8Str(hdId));
                     d.uuid = hdId;
                 }
 
@@ -5940,27 +5921,27 @@ l_skipped:
      */
 
     ComObjPtr<Machine> pNewMachine;
-    rc = pNewMachine.createObject();
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine.createObject();
+    if (FAILED(hrc)) throw hrc;
 
     // this magic constructor fills the new machine object with the MachineConfig
     // instance that we created from the vbox:Machine
-    rc = pNewMachine->init(mVirtualBox,
-                           stack.strNameVBox,// name from OVF preparations; can be suffixed to avoid duplicates
-                           stack.strSettingsFilename,
-                           config);          // the whole machine config
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine->init(mVirtualBox,
+                            stack.strNameVBox,// name from OVF preparations; can be suffixed to avoid duplicates
+                            stack.strSettingsFilename,
+                            config);          // the whole machine config
+    if (FAILED(hrc)) throw hrc;
 
     pReturnNewMachine = ComPtr<IMachine>(pNewMachine);
 
     // and register it
-    rc = mVirtualBox->RegisterMachine(pNewMachine);
-    if (FAILED(rc)) throw rc;
+    hrc = mVirtualBox->RegisterMachine(pNewMachine);
+    if (FAILED(hrc)) throw hrc;
 
     // store new machine for roll-back in case of errors
     Bstr bstrNewMachineId;
-    rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
-    if (FAILED(rc)) throw rc;
+    hrc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
+    if (FAILED(hrc)) throw hrc;
     m->llGuidsMachinesCreated.push_back(Guid(bstrNewMachineId));
 
     LogFlowFuncLeave();
@@ -5975,8 +5956,8 @@ void Appliance::i_importMachines(ImportStack &stack)
     const ovf::OVFReader &reader = *m->pReader;
 
     // create a session for the machine + disks we manipulate below
-    HRESULT rc = stack.pSession.createInprocObject(CLSID_Session);
-    ComAssertComRCThrowRC(rc);
+    HRESULT hrc = stack.pSession.createInprocObject(CLSID_Session);
+    ComAssertComRCThrowRC(hrc);
 
     list<ovf::VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
@@ -6035,12 +6016,12 @@ void Appliance::i_importMachines(ImportStack &stack)
             if (vsdeBaseFolder.size() >= 1)
                 strBaseFolder = vsdeBaseFolder.front()->strVBoxCurrent;
             Bstr bstrSettingsFilename;
-            rc = mVirtualBox->ComposeMachineFilename(Bstr(stack.strNameVBox).raw(),
-                                                     Bstr(stack.strPrimaryGroup).raw(),
-                                                     NULL /* aCreateFlags */,
-                                                     Bstr(strBaseFolder).raw(),
-                                                     bstrSettingsFilename.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = mVirtualBox->ComposeMachineFilename(Bstr(stack.strNameVBox).raw(),
+                                                      Bstr(stack.strPrimaryGroup).raw(),
+                                                      NULL /* aCreateFlags */,
+                                                      Bstr(strBaseFolder).raw(),
+                                                      bstrSettingsFilename.asOutParam());
+            if (FAILED(hrc)) throw hrc;
             stack.strSettingsFilename = bstrSettingsFilename;
         }
 
@@ -6120,18 +6101,16 @@ void Appliance::i_importMachines(ImportStack &stack)
 HRESULT Appliance::ImportStack::saveOriginalUUIDOfAttachedDevice(settings::AttachedDevice &device,
                                                      const Utf8Str &newlyUuid)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* save for restoring */
     mapNewUUIDsToOriginalUUIDs.insert(std::make_pair(newlyUuid, device.uuid.toString()));
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::MachineConfigFile *config)
 {
-    HRESULT rc = S_OK;
-
     settings::StorageControllersList &llControllers = config->hardwareMachine.storage.llStorageControllers;
     settings::StorageControllersList::iterator itscl;
     for (itscl = llControllers.begin();
@@ -6154,7 +6133,7 @@ HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::Ma
         }
     }
 
-    return rc;
+    return S_OK;
 }
 
 /**

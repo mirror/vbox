@@ -98,18 +98,18 @@ int USBProxyBackendLinux::init(USBProxyService *pUsbProxyService, const com::Utf
     unconst(m_strBackend) = Utf8Str("host");
 
     const char *pcszDevicesRoot;
-    int rc = USBProxyLinuxChooseMethod(&mUsingUsbfsDevices, &pcszDevicesRoot);
-    if (RT_SUCCESS(rc))
+    int vrc = USBProxyLinuxChooseMethod(&mUsingUsbfsDevices, &pcszDevicesRoot);
+    if (RT_SUCCESS(vrc))
     {
         mDevicesRoot = pcszDevicesRoot;
-        rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
+        vrc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
         /* For the day when we have VBoxSVC release logging... */
-        LogRel((RT_SUCCESS(rc) ? "Successfully initialised host USB using %s\n"
-                               : "Failed to initialise host USB using %s\n",
+        LogRel((RT_SUCCESS(vrc) ? "Successfully initialised host USB using %s\n"
+                                : "Failed to initialise host USB using %s\n",
                 mUsingUsbfsDevices ? "USBFS" : "sysfs"));
     }
 
-    return rc;
+    return vrc;
 }
 
 void USBProxyBackendLinux::uninit()
@@ -145,21 +145,21 @@ int USBProxyBackendLinux::initUsbfs(void)
     /*
      * Open the devices file.
      */
-    int rc;
+    int vrc;
     char *pszDevices = RTPathJoinA(mDevicesRoot.c_str(), "devices");
     if (pszDevices)
     {
-        rc = RTFileOpen(&mhFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc))
+        vrc = RTFileOpen(&mhFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(vrc))
         {
-            rc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0 /*fFlags*/);
-            if (RT_SUCCESS(rc))
+            vrc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0 /*fFlags*/);
+            if (RT_SUCCESS(vrc))
             {
                 /*
                  * Start the poller thread.
                  */
-                rc = start();
-                if (RT_SUCCESS(rc))
+                vrc = start();
+                if (RT_SUCCESS(vrc))
                 {
                     RTStrFree(pszDevices);
                     LogFlowThisFunc(("returns successfully\n"));
@@ -171,7 +171,7 @@ int USBProxyBackendLinux::initUsbfs(void)
                 mhWakeupPipeW = mhWakeupPipeR = NIL_RTPIPE;
             }
             else
-                Log(("USBProxyBackendLinux::USBProxyBackendLinux: RTFilePipe failed with rc=%Rrc\n", rc));
+                Log(("USBProxyBackendLinux::USBProxyBackendLinux: RTFilePipe failed with vrc=%Rrc\n", vrc));
             RTFileClose(mhFile);
         }
 
@@ -179,12 +179,12 @@ int USBProxyBackendLinux::initUsbfs(void)
     }
     else
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
         Log(("USBProxyBackendLinux::USBProxyBackendLinux: out of memory!\n"));
     }
 
-    LogFlowThisFunc(("returns failure!!! (rc=%Rrc)\n", rc));
-    return rc;
+    LogFlowThisFunc(("returns failure!!! (vrc=%Rrc)\n", vrc));
+    return vrc;
 }
 
 
@@ -206,14 +206,14 @@ int USBProxyBackendLinux::initSysfs(void)
     {
         return VERR_NO_MEMORY;
     }
-    int rc = mpWaiter->getStatus();
-    if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_TRY_AGAIN)
-        rc = start();
-    else if (rc == VERR_NOT_SUPPORTED)
+    int vrc = mpWaiter->getStatus();
+    if (RT_SUCCESS(vrc) || vrc == VERR_TIMEOUT || vrc == VERR_TRY_AGAIN)
+        vrc = start();
+    else if (vrc == VERR_NOT_SUPPORTED)
         /* This can legitimately happen if hal or DBus are not running, but of
          * course we can't start in this case. */
-        rc = VINF_SUCCESS;
-    return rc;
+        vrc = VINF_SUCCESS;
+    return vrc;
 
 #else  /* !VBOX_USB_WITH_SYSFS */
     return VERR_NOT_IMPLEMENTED;
@@ -306,12 +306,12 @@ bool USBProxyBackendLinux::isFakeUpdateRequired()
 
 int USBProxyBackendLinux::wait(RTMSINTERVAL aMillies)
 {
-    int rc;
+    int vrc;
     if (mUsingUsbfsDevices)
-        rc = waitUsbfs(aMillies);
+        vrc = waitUsbfs(aMillies);
     else
-        rc = waitSysfs(aMillies);
-    return rc;
+        vrc = waitSysfs(aMillies);
+    return vrc;
 }
 
 
@@ -337,17 +337,17 @@ int USBProxyBackendLinux::waitUsbfs(RTMSINTERVAL aMillies)
     PollFds[1].fd        = (int)RTPipeToNative(mhWakeupPipeR);
     PollFds[1].events    = POLLIN | POLLERR | POLLHUP;
 
-    int rc = poll(&PollFds[0], 2, aMillies);
-    if (rc == 0)
+    int iRc = poll(&PollFds[0], 2, aMillies);
+    if (iRc == 0)
         return VERR_TIMEOUT;
-    if (rc > 0)
+    if (iRc > 0)
     {
         /* drain the pipe */
         if (PollFds[1].revents & POLLIN)
         {
             char szBuf[WAKE_UP_STRING_LEN];
-            rc = RTPipeReadBlocking(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
-            AssertRC(rc);
+            int vrc2 = RTPipeReadBlocking(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
+            AssertRC(vrc2);
         }
         return VINF_SUCCESS;
     }
@@ -358,13 +358,13 @@ int USBProxyBackendLinux::waitUsbfs(RTMSINTERVAL aMillies)
 int USBProxyBackendLinux::waitSysfs(RTMSINTERVAL aMillies)
 {
 #ifdef VBOX_USB_WITH_SYSFS
-    int rc = mpWaiter->Wait(aMillies);
-    if (rc == VERR_TRY_AGAIN)
+    int vrc = mpWaiter->Wait(aMillies);
+    if (vrc == VERR_TRY_AGAIN)
     {
         RTThreadYield();
-        rc = VINF_SUCCESS;
+        vrc = VINF_SUCCESS;
     }
-    return rc;
+    return vrc;
 #else  /* !VBOX_USB_WITH_SYSFS */
     return USBProxyService::wait(aMillies);
 #endif /* !VBOX_USB_WITH_SYSFS */
@@ -385,11 +385,11 @@ int USBProxyBackendLinux::interruptWait(void)
         return VINF_SUCCESS;
     }
 #endif /* VBOX_USB_WITH_SYSFS */
-    int rc = RTPipeWriteBlocking(mhWakeupPipeW, WAKE_UP_STRING, WAKE_UP_STRING_LEN, NULL);
-    if (RT_SUCCESS(rc))
+    int vrc = RTPipeWriteBlocking(mhWakeupPipeW, WAKE_UP_STRING, WAKE_UP_STRING_LEN, NULL);
+    if (RT_SUCCESS(vrc))
         RTPipeFlush(mhWakeupPipeW);
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("returning %Rrc\n", vrc));
+    return vrc;
 }
 
 

@@ -68,7 +68,7 @@ int CollectorFreeBSD::getHostCpuMHz(ULONG *mhz)
 
 int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     u_long cbMemPhys = 0;
     u_int cPagesMemFree = 0;
     u_int cPagesMemInactive = 0;
@@ -104,9 +104,9 @@ int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
         *available = (cPagesMemFree + cPagesMemInactive + cPagesMemCached ) * (cbPage / _1K);
     }
     else
-        rc = VERR_NOT_SUPPORTED;
+        vrc = VERR_NOT_SUPPORTED;
 
-    return rc;
+    return vrc;
 }
 
 int CollectorFreeBSD::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)

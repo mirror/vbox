@@ -603,15 +603,15 @@ public:
 
     HRESULT i_getDirectControl(ComPtr<IInternalSessionControl> *directControl)
     {
-        HRESULT rc;
         *directControl = mData->mSession.mDirectControl;
 
+        HRESULT hrc;
         if (!*directControl)
-            rc = E_ACCESSDENIED;
+            hrc = E_ACCESSDENIED;
         else
-            rc = S_OK;
+            hrc = S_OK;
 
-        return rc;
+        return hrc;
     }
 
     bool i_isSessionOpen(ComObjPtr<SessionMachine> &aMachine,

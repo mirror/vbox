@@ -256,8 +256,8 @@ HRESULT HostNetworkInterface::i_updatePersistentConfig(void)
 HRESULT HostNetworkInterface::updateConfig()
 {
     NETIFINFO info;
-    int rc = NetIfGetConfig(this, &info);
-    if (RT_SUCCESS(rc))
+    int vrc = NetIfGetConfig(this, &info);
+    if (RT_SUCCESS(vrc))
     {
         int iPrefixIPv6;
 
@@ -279,7 +279,7 @@ HRESULT HostNetworkInterface::updateConfig()
         m.wireless = info.fWireless;
         return S_OK;
     }
-    return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    return vrc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 }
 
 Utf8Str HostNetworkInterface::i_composeNetworkName(const Utf8Str aShortName)
@@ -561,8 +561,8 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
     {
         if (m.IPAddress)
         {
-            int rc = NetIfEnableStaticIpConfig(mVirtualBox, this, m.IPAddress, 0, 0);
-            if (RT_SUCCESS(rc))
+            int vrc = NetIfEnableStaticIpConfig(mVirtualBox, this, m.IPAddress, 0, 0);
+            if (RT_SUCCESS(vrc))
             {
                 m.realIPAddress = 0;
 #if defined(RT_OS_WINDOWS)
@@ -595,8 +595,8 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
         {
             if (m.realIPAddress == ip && m.realNetworkMask == mask)
                 return S_OK;
-            int rc = NetIfEnableStaticIpConfig(mVirtualBox, this, m.IPAddress, ip, mask);
-            if (RT_SUCCESS(rc))
+            int vrc = NetIfEnableStaticIpConfig(mVirtualBox, this, m.IPAddress, ip, mask);
+            if (RT_SUCCESS(vrc))
             {
                 m.realIPAddress   = ip;
                 m.realNetworkMask = mask;
@@ -616,9 +616,9 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
             }
             else
             {
-                LogRel(("Failed to EnableStaticIpConfig with rc=%Rrc\n", rc));
+                LogRel(("Failed to EnableStaticIpConfig with vrc=%Rrc\n", vrc));
                 /* Global::vboxStatusCodeToCOM assert things we can guarantee */
-                switch (rc)
+                switch (vrc)
                 {
                     case VERR_NOT_IMPLEMENTED:
                         hrc = E_NOTIMPL;
@@ -651,41 +651,30 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
                    tr("Invalid IPv6 prefix length"));
 
     HRESULT hrc;
-    int rc;
 
-    RTNETADDRIPV6 AddrOld, AddrNew;
+    RTNETADDRIPV6 AddrNew;
     char *pszZoneIgnored;
-    bool fAddrChanged;
+    int vrc = RTNetStrToIPv6Addr(aIPV6Address.c_str(), &AddrNew, &pszZoneIgnored);
+    if (RT_FAILURE(vrc))
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, vrc, tr("Invalid IPv6 address"));
 
-    rc = RTNetStrToIPv6Addr(aIPV6Address.c_str(), &AddrNew, &pszZoneIgnored);
-    if (RT_FAILURE(rc))
-    {
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc, tr("Invalid IPv6 address"));
-    }
-
-    rc = RTNetStrToIPv6Addr(com::Utf8Str(m.realIPV6Address).c_str(), &AddrOld, &pszZoneIgnored);
-    if (RT_SUCCESS(rc))
-    {
-        fAddrChanged = (AddrNew.s.Lo != AddrOld.s.Lo || AddrNew.s.Hi != AddrOld.s.Hi);
-    }
-    else
-    {
-        fAddrChanged = true;
-    }
+    RTNETADDRIPV6 AddrOld;
+    vrc = RTNetStrToIPv6Addr(com::Utf8Str(m.realIPV6Address).c_str(), &AddrOld, &pszZoneIgnored);
+    bool fAddrChanged = RT_SUCCESS(vrc) ? AddrNew.s.Lo != AddrOld.s.Lo || AddrNew.s.Hi != AddrOld.s.Hi : true;
 
     if (   fAddrChanged
         || m.realIPV6PrefixLength != aIPV6NetworkMaskPrefixLength)
     {
         if (aIPV6NetworkMaskPrefixLength == 0)
             aIPV6NetworkMaskPrefixLength = 64;
-        rc = NetIfEnableStaticIpConfigV6(mVirtualBox, this, m.IPV6Address.c_str(),
-                                         aIPV6Address.c_str(),
-                                         aIPV6NetworkMaskPrefixLength);
-        if (RT_FAILURE(rc))
+        vrc = NetIfEnableStaticIpConfigV6(mVirtualBox, this, m.IPV6Address.c_str(),
+                                          aIPV6Address.c_str(),
+                                          aIPV6NetworkMaskPrefixLength);
+        if (RT_FAILURE(vrc))
         {
-            LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Rrc\n", rc));
+            LogRel(("Failed to EnableStaticIpConfigV6 with vrc=%Rrc\n", vrc));
             /* Global::vboxStatusCodeToCOM assert things we can guarantee */
-            switch (rc)
+            switch (vrc)
             {
                 case VERR_NOT_IMPLEMENTED:
                     hrc = E_NOTIMPL;
@@ -727,11 +716,11 @@ HRESULT HostNetworkInterface::enableDynamicIPConfig()
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    int rc = NetIfEnableDynamicIpConfig(mVirtualBox, this);
-    if (RT_FAILURE(rc))
+    int vrc = NetIfEnableDynamicIpConfig(mVirtualBox, this);
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("Failed to EnableDynamicIpConfig with rc=%Rrc\n", rc));
-        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+        LogRel(("Failed to EnableDynamicIpConfig with vrc=%Rrc\n", vrc));
+        return vrc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
     }
     return S_OK;
 #endif
@@ -742,11 +731,11 @@ HRESULT HostNetworkInterface::dHCPRediscover()
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    int rc = NetIfDhcpRediscover(mVirtualBox, this);
-    if (RT_FAILURE(rc))
+    int vrc = NetIfDhcpRediscover(mVirtualBox, this);
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("Failed to DhcpRediscover with rc=%Rrc\n", rc));
-        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+        LogRel(("Failed to DhcpRediscover with vrc=%Rrc\n", vrc));
+        return vrc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
     }
     return S_OK;
 #endif

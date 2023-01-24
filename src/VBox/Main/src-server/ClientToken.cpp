@@ -259,17 +259,17 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
     }
 #elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     ComObjPtr<MachineToken> pToken;
-    HRESULT rc = pToken.createObject();
-    if (SUCCEEDED(rc))
+    HRESULT hrc = pToken.createObject();
+    if (SUCCEEDED(hrc))
     {
-        rc = pToken->init(pSessionMachine);
-        if (SUCCEEDED(rc))
+        hrc = pToken->init(pSessionMachine);
+        if (SUCCEEDED(hrc))
         {
             mClientToken = pToken;
             if (mClientToken)
             {
-                rc = mClientToken->AddRef();
-                if (FAILED(rc))
+                hrc = mClientToken->AddRef();
+                if (FAILED(hrc))
                     mClientToken = NULL;
             }
         }
@@ -278,9 +278,7 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
     mClientTokenPassed = false;
     /* mClientTokenId isn't really used */
     mClientTokenId = pMachine->mData->m_strConfigFileFull;
-    AssertMsg(mClientToken,
-              ("Cannot create token '%s', rc=%Rhrc",
-               mClientTokenId.c_str(), rc));
+    AssertMsg(mClientToken, ("Cannot create token '%s', hrc=%Rhrc", mClientTokenId.c_str(), hrc));
 #else
 # error "Port me!"
 #endif

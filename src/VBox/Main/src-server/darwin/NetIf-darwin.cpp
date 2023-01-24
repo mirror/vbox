@@ -73,11 +73,11 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         return NULL;
     }
     struct ifaddrs *IfAddrs, *pAddr;
-    int rc = getifaddrs(&IfAddrs);
-    if (rc)
+    int iRc = getifaddrs(&IfAddrs);
+    if (iRc)
     {
         close(sock);
-        Log(("NetIfList: getifaddrs() -> %d\n", rc));
+        Log(("NetIfList: getifaddrs() -> %d\n", iRc));
         return VERR_INTERNAL_ERROR;
     }
 
@@ -252,7 +252,7 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
         {
             Log(("getDefaultIfaceIndex: Got message %u while expecting %u.\n",
                  pRtMsg->rtm_type, RTM_GET));
-            //rc = VERR_INTERNAL_ERROR;
+            //vrc = VERR_INTERNAL_ERROR;
             continue;
         }
         if ((char*)(pRtMsg + 1) < pEnd)
@@ -285,16 +285,16 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
 
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     size_t cbNeeded;
     char *pBuf, *pNext;
     int aiMib[6];
     unsigned short u16DefaultIface = 0; /* initialized to shut up gcc */
 
     /* Get the index of the interface associated with default route. */
-    rc = getDefaultIfaceIndex(&u16DefaultIface);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = getDefaultIfaceIndex(&u16DefaultIface);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
@@ -337,7 +337,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         {
             Log(("NetIfList: Got message %u while expecting %u.\n",
                  pIfMsg->ifm_type, RTM_IFINFO));
-            rc = VERR_INTERNAL_ERROR;
+            vrc = VERR_INTERNAL_ERROR;
             break;
         }
         struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
@@ -354,7 +354,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         PNETIFINFO pNew = (PNETIFINFO)RTMemAllocZ(RT_UOFFSETOF_DYN(NETIFINFO, szName[cbNameLen]));
         if (!pNew)
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
             break;
         }
         memcpy(pNew->MACAddress.au8, LLADDR(pSdl), sizeof(pNew->MACAddress.au8));
@@ -438,12 +438,12 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     }
     close(sock);
     RTMemFree(pBuf);
-    return rc;
+    return vrc;
 }
 
 int NetIfGetConfigByName(PNETIFINFO pInfo)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     size_t cbNeeded;
     char *pBuf, *pNext;
     int aiMib[6];
@@ -486,7 +486,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
         {
             Log(("NetIfList: Got message %u while expecting %u.\n",
                  pIfMsg->ifm_type, RTM_IFINFO));
-            rc = VERR_INTERNAL_ERROR;
+            vrc = VERR_INTERNAL_ERROR;
             break;
         }
         struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
@@ -538,7 +538,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
     }
     close(sock);
     RTMemFree(pBuf);
-    return rc;
+    return vrc;
 }
 
 /**

@@ -391,10 +391,10 @@ HRESULT DHCPConfig::i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEnco
      * startup failures an no DHCP.  We share this code with the server.
      */
     DhcpOption *pParsed = NULL;
-    int         rc      = VINF_SUCCESS;
+    int         vrc     = VINF_SUCCESS;
     try
     {
-        pParsed = DhcpOption::parse((uint8_t)aOption, aEncoding, aValue.c_str(), &rc);
+        pParsed = DhcpOption::parse((uint8_t)aOption, aEncoding, aValue.c_str(), &vrc);
     }
     catch (std::bad_alloc &)
     {
@@ -422,14 +422,14 @@ HRESULT DHCPConfig::i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEnco
         return S_OK;
     }
 
-    if (rc == VERR_WRONG_TYPE)
+    if (vrc == VERR_WRONG_TYPE)
         return m_pHack->setError(E_INVALIDARG, tr("Unsupported encoding %d (option %d, value %s)"),
                                  (int)aEncoding, (int)aOption, aValue.c_str());
-    if (rc == VERR_NOT_SUPPORTED)
+    if (vrc == VERR_NOT_SUPPORTED)
         return m_pHack->setError(E_INVALIDARG, tr("Unsupported option %d (encoding %d, value %s)"),
                                  (int)aOption, (int)aEncoding, aValue.c_str());
-    return m_pHack->setError(E_INVALIDARG, tr("Malformed option %d value '%s' (encoding %d, rc=%Rrc)"),
-                             (int)aOption, aValue.c_str(), (int)aEncoding, rc);
+    return m_pHack->setError(E_INVALIDARG, tr("Malformed option %d value '%s' (encoding %d, vrc=%Rrc)"),
+                             (int)aOption, aValue.c_str(), (int)aEncoding, vrc);
 }
 
 

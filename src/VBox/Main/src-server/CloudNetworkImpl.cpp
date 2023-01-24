@@ -167,8 +167,8 @@ HRESULT CloudNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -189,8 +189,8 @@ HRESULT CloudNetwork::setEnabled(BOOL aEnabled)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -211,8 +211,8 @@ HRESULT CloudNetwork::setProvider(const com::Utf8Str &aProvider)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -233,8 +233,8 @@ HRESULT CloudNetwork::setProfile(const com::Utf8Str &aProfile)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -255,8 +255,8 @@ HRESULT CloudNetwork::setNetworkId(const com::Utf8Str &aNetworkId)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 

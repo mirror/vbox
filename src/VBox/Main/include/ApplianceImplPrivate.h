@@ -305,13 +305,13 @@ public:
             TaskType aType,
             LocationInfo aLocInfo,
             ComObjPtr<Progress> &aProgress)
-      : ThreadTask("TaskOVF"),
-        pAppliance(aThat),
-        taskType(aType),
-        locInfo(aLocInfo),
-        pProgress(aProgress),
-        enFormat(ovf::OVFVersion_unknown),
-        rc(S_OK)
+      : ThreadTask("TaskOVF")
+      , pAppliance(aThat)
+      , taskType(aType)
+      , locInfo(aLocInfo)
+      , pProgress(aProgress)
+      , enFormat(ovf::OVFVersion_unknown)
+      , hrc(S_OK)
     {
         switch (taskType)
         {
@@ -331,7 +331,7 @@ public:
 
     ovf::OVFVersion_T enFormat;
 
-    HRESULT rc;
+    HRESULT hrc;
 
     void handler()
     {
@@ -351,12 +351,12 @@ public:
             TaskType aType,
             LocationInfo aLocInfo,
             ComObjPtr<Progress> &aProgress)
-      : ThreadTask("TaskOPC"),
-        pAppliance(aThat),
-        taskType(aType),
-        locInfo(aLocInfo),
-        pProgress(aProgress),
-        rc(S_OK)
+      : ThreadTask("TaskOPC")
+      , pAppliance(aThat)
+      , taskType(aType)
+      , locInfo(aLocInfo)
+      , pProgress(aProgress)
+      , hrc(S_OK)
     {
         m_strTaskName = "OPCExpt";
     }
@@ -372,7 +372,7 @@ public:
     const LocationInfo locInfo;
     ComObjPtr<Progress> pProgress;
 
-    HRESULT rc;
+    HRESULT hrc;
 
     void handler()
     {
@@ -392,15 +392,15 @@ public:
     };
 
     TaskCloud(Appliance *aThat,
-            TaskType aType,
-            LocationInfo aLocInfo,
-            ComObjPtr<Progress> &aProgress)
-      : ThreadTask("TaskCloud"),
-        pAppliance(aThat),
-        taskType(aType),
-        locInfo(aLocInfo),
-        pProgress(aProgress),
-        rc(S_OK)
+              TaskType aType,
+              LocationInfo aLocInfo,
+              ComObjPtr<Progress> &aProgress)
+      : ThreadTask("TaskCloud")
+      , pAppliance(aThat)
+      , taskType(aType)
+      , locInfo(aLocInfo)
+      , pProgress(aProgress)
+      , hrc(S_OK)
     {
         switch (taskType)
         {
@@ -422,7 +422,7 @@ public:
     const LocationInfo locInfo;
     ComObjPtr<Progress> pProgress;
 
-    HRESULT rc;
+    HRESULT hrc;
 
     void handler()
     {
@@ -485,7 +485,7 @@ struct Appliance::ImportStack
     // a list of images that we created/imported; this is initially empty
     // and will be cleaned up on errors
     std::list<MyHardDiskAttachment> llHardDiskAttachments;      // disks that were attached
-    std::map<Utf8Str , Utf8Str>     mapNewUUIDsToOriginalUUIDs;
+    std::map<Utf8Str, Utf8Str>      mapNewUUIDsToOriginalUUIDs;
 
     ImportStack(const LocationInfo &aLocInfo,
                 const ovf::DiskImagesMap &aMapDisks,
@@ -532,10 +532,8 @@ struct Appliance::ImportStack
     }
 
     HRESULT restoreOriginalUUIDOfAttachedDevice(settings::MachineConfigFile *config);
-    HRESULT saveOriginalUUIDOfAttachedDevice(settings::AttachedDevice &device,
-                                                  const Utf8Str &newlyUuid);
+    HRESULT saveOriginalUUIDOfAttachedDevice(settings::AttachedDevice &device, const Utf8Str &newlyUuid);
     RTVFSIOSTREAM claimOvaLookAHead(void);
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -546,13 +544,14 @@ struct Appliance::ImportStack
 
 struct VirtualSystemDescription::Data
 {
-    std::vector<VirtualSystemDescriptionEntry>
-                            maDescriptions;     // item descriptions
+    /** item descriptions */
+    std::vector<VirtualSystemDescriptionEntry> maDescriptions;
 
-    ComPtr<Machine>         pMachine;           // VirtualBox machine this description was exported from (export only)
+    /** VirtualBox machine this description was exported from (export only) */
+    ComPtr<Machine> pMachine;
 
-    settings::MachineConfigFile
-                            *pConfig;           // machine config created from <vbox:Machine> element if found (import only)
+    /** machine config created from <vbox:Machine> element if found (import only) */
+    settings::MachineConfigFile *pConfig;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

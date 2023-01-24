@@ -105,8 +105,8 @@ HRESULT HostDnsServiceResolvConf::readResolvConf(void)
     struct rcp_state st;
 
     st.rcps_flags = RCPSF_NO_STR2IPCONV;
-    int rc = rcp_parse(&st, m->resolvConfFilename.c_str());
-    if (rc == -1)
+    int vrc = rcp_parse(&st, m->resolvConfFilename.c_str());
+    if (vrc == -1)
         return S_OK;
 
     HostDnsInformation info;

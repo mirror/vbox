@@ -872,7 +872,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                 cMillies = s_aUpdateTimeoutSteps[uOld];
             }
 
-            int rc = RTSemEventWait(that->mUpdateReq, cMillies);
+            int vrc = RTSemEventWait(that->mUpdateReq, cMillies);
 
             /*
              *  Restore the caller before using VirtualBox. If it fails, this
@@ -882,9 +882,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
             if (!autoCaller.isOk())
                 break;
 
-            if (RT_SUCCESS(rc) || update || updateSpawned)
+            if (RT_SUCCESS(vrc) || update || updateSpawned)
             {
-                /* RT_SUCCESS(rc) means an update event is signaled */
+                /* RT_SUCCESS(vrc) means an update event is signaled */
 
                 // get reference to the machines list in VirtualBox
                 VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
@@ -892,7 +892,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-                if (RT_SUCCESS(rc) || update)
+                if (RT_SUCCESS(vrc) || update)
                 {
                     /* obtain a new set of opened machines */
                     machines.clear();
@@ -910,7 +910,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                     LogFlowFunc(("UPDATE: direct session count = %d\n", cnt));
                 }
 
-                if (RT_SUCCESS(rc) || updateSpawned)
+                if (RT_SUCCESS(vrc) || updateSpawned)
                 {
                     /* obtain a new set of spawned machines */
                     spawnedMachines.clear();
@@ -981,7 +981,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                 cMillies = s_aUpdateTimeoutSteps[uOld];
             }
 
-            int rc = RTSemEventWait(that->mUpdateReq, cMillies);
+            int vrc = RTSemEventWait(that->mUpdateReq, cMillies);
 
             /*
              *  Restore the caller before using VirtualBox. If it fails, this
@@ -997,9 +997,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
              * reaping is made smarter, having cross-reference information
              * from the pid to the corresponding machine object. Both cases do
              * more or less the same thing anyway. */
-            if (RT_SUCCESS(rc) || updateSpawned)
+            if (RT_SUCCESS(vrc) || updateSpawned)
             {
-                /* RT_SUCCESS(rc) means an update event is signaled */
+                /* RT_SUCCESS(vrc) means an update event is signaled */
 
                 // get reference to the machines list in VirtualBox
                 VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
@@ -1007,7 +1007,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                 // lock the machines list for reading
                 AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-                if (RT_SUCCESS(rc) || updateSpawned)
+                if (RT_SUCCESS(vrc) || updateSpawned)
                 {
                     /* obtain a new set of spawned machines */
                     spawnedMachines.clear();

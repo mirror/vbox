@@ -87,9 +87,9 @@ int USBProxyBackendFreeBSD::init(USBProxyService *pUsbProxyService, const com::U
     /*
      * Create semaphore.
      */
-    int rc = RTSemEventCreate(&mNotifyEventSem);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = RTSemEventCreate(&mNotifyEventSem);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /*
      * Start the poller thread.
@@ -221,14 +221,14 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
     int FileUsb = 0;
     int iBus  = 0;
     int iAddr = 1;
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     char *pszDevicePath = NULL;
     uint32_t PlugTime = 0;
 
     for (;;)
     {
-        rc = RTStrAPrintf(&pszDevicePath, "/dev/%s%d.%d", USB_GENERIC_NAME, iBus, iAddr);
-        if (RT_FAILURE(rc))
+        vrc = RTStrAPrintf(&pszDevicePath, "/dev/%s%d.%d", USB_GENERIC_NAME, iBus, iAddr);
+        if (RT_FAILURE(vrc))
             break;
 
         LogFlowFunc((": Opening %s\n", pszDevicePath));
@@ -259,10 +259,10 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
         struct usb_device_info UsbDevInfo;
         RT_ZERO(UsbDevInfo);
 
-        rc = ioctl(FileUsb, USB_GET_DEVICEINFO, &UsbDevInfo);
-        if (rc < 0)
+        vrc = ioctl(FileUsb, USB_GET_DEVICEINFO, &UsbDevInfo);
+        if (vrc < 0)
         {
-            LogFlowFunc((": Error querying device info rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+            LogFlowFunc((": Error querying device info vrc=%Rrc\n", RTErrConvertFromErrno(errno)));
             close(FileUsb);
             RTStrFree(pszDevicePath);
             break;
@@ -330,8 +330,8 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
                 pDevice->pszSerialNumber = RTStrDupN(UsbDevInfo.udi_serial, sizeof(UsbDevInfo.udi_serial));
                 pDevice->u64SerialHash = USBLibHashSerial(UsbDevInfo.udi_serial);
             }
-            rc = ioctl(FileUsb, USB_GET_PLUGTIME, &PlugTime);
-            if (rc == 0)
+            vrc = ioctl(FileUsb, USB_GET_PLUGTIME, &PlugTime);
+            if (vrc == 0)
                 pDevice->u64SerialHash  += PlugTime;
 
             pDevice->pszAddress = RTStrDup(pszDevicePath);

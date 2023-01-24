@@ -113,8 +113,8 @@ CollectorLinux::CollectorLinux()
     LogFlowThisFunc(("mHZ=%u\n", mHZ));
 
     uint64_t cb;
-    int rc = RTSystemQueryTotalRam(&cb);
-    if (RT_FAILURE(rc))
+    int vrc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(vrc))
         mTotalRAM = 0;
     else
         mTotalRAM = (ULONG)(cb / 1024);
@@ -129,11 +129,11 @@ int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */
     for (it = processes.begin(); it != processes.end(); ++it)
     {
         VMProcessStats vmStats;
-        int rc = getRawProcessStats(*it, &vmStats.cpuUser, &vmStats.cpuKernel, &vmStats.pagesUsed);
+        int vrc = getRawProcessStats(*it, &vmStats.cpuUser, &vmStats.cpuKernel, &vmStats.pagesUsed);
         /* On failure, do NOT stop. Just skip the entry. Having the stats for
          * one (probably broken) process frozen/zero is a minor issue compared
          * to not updating many process stats and the host cpu stats. */
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
             mProcessStats[*it] = vmStats;
     }
     if (hints.isHostCpuLoadCollected() || !mProcessStats.empty())
@@ -145,7 +145,7 @@ int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */
 
 int CollectorLinux::_getRawHostCpuLoad()
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     long long unsigned uUser, uNice, uKernel, uIdle, uIowait, uIrq, uSoftirq;
     FILE *f = fopen("/proc/stat", "r");
 
@@ -183,16 +183,16 @@ int CollectorLinux::_getRawHostCpuLoad()
                 }
             }
             else
-                rc = VERR_FILE_IO_ERROR;
+                vrc = VERR_FILE_IO_ERROR;
         }
         else
-            rc = VERR_FILE_IO_ERROR;
+            vrc = VERR_FILE_IO_ERROR;
         fclose(f);
     }
     else
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
 
-    return rc;
+    return vrc;
 }
 
 int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
@@ -222,14 +222,14 @@ int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availab
 {
     AssertReturn(mTotalRAM, VERR_INTERNAL_ERROR);
     uint64_t cb;
-    int rc = RTSystemQueryAvailableRam(&cb);
-    if (RT_SUCCESS(rc))
+    int vrc = RTSystemQueryAvailableRam(&cb);
+    if (RT_SUCCESS(vrc))
     {
         *total = mTotalRAM;
         *available = (ULONG)(cb / 1024);
         *used = *total - *available;
     }
-    return rc;
+    return vrc;
 }
 
 int CollectorLinux::getHostFilesystemUsage(const char *path, ULONG *total, ULONG *used, ULONG *available)
@@ -256,18 +256,18 @@ int CollectorLinux::getHostDiskSize(const char *pszFile, uint64_t *size)
     RTStrAPrintf(&pszPath, "/sys/block/%s/size", pszFile);
     Assert(pszPath);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (!RTLinuxSysFsExists(pszPath))
-        rc = VERR_FILE_NOT_FOUND;
+        vrc = VERR_FILE_NOT_FOUND;
     else
     {
         int64_t cSize = 0;
-        rc = RTLinuxSysFsReadIntFile(0, &cSize, pszPath);
-        if (RT_SUCCESS(rc))
+        vrc = RTLinuxSysFsReadIntFile(0, &cSize, pszPath);
+        if (RT_SUCCESS(vrc))
             *size = cSize * 512;
     }
     RTStrFree(pszPath);
-    return rc;
+    return vrc;
 }
 
 int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
@@ -285,7 +285,7 @@ int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 
 int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     char *pszName;
     pid_t pid2;
     char c;
@@ -315,13 +315,13 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
             *cpuKernel = u32kernel;
         }
         else
-            rc = VERR_FILE_IO_ERROR;
+            vrc = VERR_FILE_IO_ERROR;
         fclose(f);
     }
     else
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
 
-    return rc;
+    return vrc;
 }
 
 int CollectorLinux::getRawHostNetworkLoad(const char *pszFile, uint64_t *rx, uint64_t *tx)
@@ -333,9 +333,9 @@ int CollectorLinux::getRawHostNetworkLoad(const char *pszFile, uint64_t *rx, uin
         return VERR_FILE_NOT_FOUND;
 
     int64_t cSize = 0;
-    int rc = RTLinuxSysFsReadIntFile(0, &cSize, szIfName);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = RTLinuxSysFsReadIntFile(0, &cSize, szIfName);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     *rx = cSize;
 
@@ -343,9 +343,9 @@ int CollectorLinux::getRawHostNetworkLoad(const char *pszFile, uint64_t *rx, uin
     if (!RTLinuxSysFsExists(szIfName))
         return VERR_FILE_NOT_FOUND;
 
-    rc = RTLinuxSysFsReadIntFile(0, &cSize, szIfName);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = RTLinuxSysFsReadIntFile(0, &cSize, szIfName);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     *tx = cSize;
     return VINF_SUCCESS;
@@ -354,7 +354,7 @@ int CollectorLinux::getRawHostNetworkLoad(const char *pszFile, uint64_t *rx, uin
 int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms)
 {
 #if 0
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     char szIfName[/*IFNAMSIZ*/ 16 + 36];
     long long unsigned int u64Busy, tmp;
 
@@ -369,13 +369,13 @@ int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint
             *total_ms  = (uint64_t)(mSingleUser + mSingleKernel + mSingleIdle) * 1000 / mHZ;
         }
         else
-            rc = VERR_FILE_IO_ERROR;
+            vrc = VERR_FILE_IO_ERROR;
         fclose(f);
     }
     else
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
 #else
-    int rc = VERR_MISSING;
+    int vrc = VERR_MISSING;
     FILE *f = fopen("/proc/diskstats", "r");
     if (f)
     {
@@ -405,10 +405,10 @@ int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint
                 {
                     *disk_ms   = u64Busy;
                     *total_ms  = (uint64_t)(mSingleUser + mSingleKernel + mSingleIdle) * 1000 / mHZ;
-                    rc = VINF_SUCCESS;
+                    vrc = VINF_SUCCESS;
                 }
                 else
-                    rc = VERR_FILE_IO_ERROR;
+                    vrc = VERR_FILE_IO_ERROR;
                 break;
             }
         }
@@ -416,7 +416,7 @@ int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint
     }
 #endif
 
-    return rc;
+    return vrc;
 }
 
 char *CollectorLinux::trimNewline(char *pszName)
@@ -524,11 +524,10 @@ void CollectorLinux::addRaidDisks(const char *pcszDevice, DiskList& listDisks)
 void CollectorLinux::addVolumeDependencies(const char *pcszVolume, DiskList& listDisks)
 {
     char szVolInfo[RTPATH_MAX];
-    int rc = RTPathAppPrivateArch(szVolInfo,
-                                  sizeof(szVolInfo) - sizeof("/" VBOXVOLINFO_NAME " ") - strlen(pcszVolume));
-    if (RT_FAILURE(rc))
+    int vrc = RTPathAppPrivateArch(szVolInfo, sizeof(szVolInfo) - sizeof("/" VBOXVOLINFO_NAME " ") - strlen(pcszVolume));
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("VolInfo: Failed to get program path, rc=%Rrc\n", rc));
+        LogRel(("VolInfo: Failed to get program path, vrc=%Rrc\n", vrc));
         return;
     }
     strcat(szVolInfo, "/" VBOXVOLINFO_NAME " ");
@@ -567,8 +566,8 @@ int CollectorLinux::getDiskListByFs(const char *pszPath, DiskList& listUsage, Di
                 char szDevName[128];
                 char szFsName[1024];
                 /* Try to resolve symbolic link if necessary. Yes, we access the file system here! */
-                int rc = RTPathReal(mntent->mnt_fsname, szFsName, sizeof(szFsName));
-                if (RT_FAILURE(rc))
+                int vrc = RTPathReal(mntent->mnt_fsname, szFsName, sizeof(szFsName));
+                if (RT_FAILURE(vrc))
                     continue; /* something got wrong, just ignore this path */
                 /* check against the actual mtab entry, NOT the real path as /dev/mapper/xyz is
                  * often a symlink to something else */

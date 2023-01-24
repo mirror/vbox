@@ -754,8 +754,8 @@ HRESULT HostUSBDevice::i_requestReleaseToHost()
         i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused);
 
     alock.release();
-    int rc = mUSBProxyBackend->releaseDevice(this);
-    if (RT_FAILURE(rc))
+    int vrc = mUSBProxyBackend->releaseDevice(this);
+    if (RT_FAILURE(vrc))
     {
         alock.acquire();
         i_failTransition(kHostUSBDeviceState_Invalid);
@@ -807,8 +807,8 @@ HRESULT HostUSBDevice::i_requestHold()
         i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy);
 
     alock.release();
-    int rc = mUSBProxyBackend->captureDevice(this);
-    if (RT_FAILURE(rc))
+    int vrc = mUSBProxyBackend->captureDevice(this);
+    if (RT_FAILURE(vrc))
     {
         alock.acquire();
         i_failTransition(kHostUSBDeviceState_Invalid);

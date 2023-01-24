@@ -156,29 +156,29 @@ static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, void **pp
 static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHOSTWEBCAMLIST *ppfn)
 #endif
 {
-    int rc;
+    int vrc;
     if (RTPathHavePath(pszPath))
     {
         RTLDRMOD hmod = NIL_RTLDRMOD;
         RTERRINFOSTATIC ErrInfo;
-        rc = SUPR3HardenedLdrLoadPlugIn(pszPath, &hmod, RTErrInfoInitStatic(&ErrInfo));
-        if (RT_SUCCESS(rc))
+        vrc = SUPR3HardenedLdrLoadPlugIn(pszPath, &hmod, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(vrc))
         {
             static const char s_szSymbol[] = "VBoxHostWebcamList";
-            rc = RTLdrGetSymbol(hmod, s_szSymbol, (void **)ppfn);
-            if (RT_SUCCESS(rc))
+            vrc = RTLdrGetSymbol(hmod, s_szSymbol, (void **)ppfn);
+            if (RT_SUCCESS(vrc))
                 *phmod = hmod;
             else
             {
-                if (rc != VERR_SYMBOL_NOT_FOUND)
-                    LogRel(("Resolving symbol '%s': %Rrc\n", s_szSymbol, rc));
+                if (vrc != VERR_SYMBOL_NOT_FOUND)
+                    LogRel(("Resolving symbol '%s': %Rrc\n", s_szSymbol, vrc));
                 RTLdrClose(hmod);
                 hmod = NIL_RTLDRMOD;
             }
         }
         else
         {
-            LogRel(("Loading the library '%s': %Rrc\n", pszPath, rc));
+            LogRel(("Loading the library '%s': %Rrc\n", pszPath, vrc));
             if (RTErrInfoIsSet(&ErrInfo.Core))
                 LogRel(("  %s\n", ErrInfo.Core.pszMsg));
         }
@@ -186,9 +186,9 @@ static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHO
     else
     {
         LogRel(("Loading the library '%s': No path! Refusing to try loading it!\n", pszPath));
-        rc = VERR_INVALID_PARAMETER;
+        vrc = VERR_INVALID_PARAMETER;
     }
-    return rc;
+    return vrc;
 }
 
 

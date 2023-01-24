@@ -488,8 +488,8 @@ HRESULT BandwidthControl::deleteBandwidthGroup(const com::Utf8Str &aName)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<BandwidthGroup> group;
-    HRESULT rc = i_getBandwidthGroupByName(aName, group, true /* aSetError */);
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = i_getBandwidthGroupByName(aName, group, true /* aSetError */);
+    if (FAILED(hrc)) return hrc;
 
     if (group->i_getReferences() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
@@ -524,12 +524,11 @@ HRESULT BandwidthControl::getBandwidthGroup(const com::Utf8Str &aName, ComPtr<IB
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<BandwidthGroup> group;
-    HRESULT rc = i_getBandwidthGroupByName(aName, group, true /* aSetError */);
-
-    if (SUCCEEDED(rc))
+    HRESULT hrc = i_getBandwidthGroupByName(aName, group, true /* aSetError */);
+    if (SUCCEEDED(hrc))
         group.queryInterfaceTo(aBandwidthGroup.asOutParam());
 
-    return rc;
+    return hrc;
 }
 
 HRESULT BandwidthControl::getAllBandwidthGroups(std::vector<ComPtr<IBandwidthGroup> > &aBandwidthGroups)
@@ -547,7 +546,7 @@ HRESULT BandwidthControl::getAllBandwidthGroups(std::vector<ComPtr<IBandwidthGro
 
 HRESULT BandwidthControl::i_loadSettings(const settings::IOSettings &data)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
@@ -557,11 +556,11 @@ HRESULT BandwidthControl::i_loadSettings(const settings::IOSettings &data)
          ++it)
     {
         const settings::BandwidthGroup &gr = *it;
-        rc = createBandwidthGroup(gr.strName, gr.enmType, (LONG64)gr.cMaxBytesPerSec);
-        if (FAILED(rc)) break;
+        hrc = createBandwidthGroup(gr.strName, gr.enmType, (LONG64)gr.cMaxBytesPerSec);
+        if (FAILED(hrc)) break;
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT BandwidthControl::i_saveSettings(settings::IOSettings &data)

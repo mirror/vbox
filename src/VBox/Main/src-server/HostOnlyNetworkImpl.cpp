@@ -158,8 +158,8 @@ HRESULT HostOnlyNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -185,8 +185,8 @@ HRESULT HostOnlyNetwork::setNetworkMask(const com::Utf8Str &aNetworkMask)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -207,8 +207,8 @@ HRESULT HostOnlyNetwork::setEnabled(BOOL aEnabled)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -236,8 +236,8 @@ HRESULT HostOnlyNetwork::setLowerIP(const com::Utf8Str &aLowerIP)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -258,8 +258,8 @@ HRESULT HostOnlyNetwork::setUpperIP(const com::Utf8Str &aUpperIP)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -280,8 +280,8 @@ HRESULT HostOnlyNetwork::setId(const com::Guid &aId)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 

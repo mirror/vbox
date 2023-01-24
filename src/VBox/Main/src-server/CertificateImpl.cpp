@@ -110,7 +110,7 @@ void Certificate::FinalRelease()
  */
 HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted, bool a_fExpired)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     LogFlowThisFuncEnter();
 
     AutoInitSpan autoInitSpan(this);
@@ -127,10 +127,10 @@ HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrus
         autoInitSpan.setSucceeded();
     }
     else
-        rc = Global::vboxStatusCodeToCOM(vrc);
+        hrc = Global::vboxStatusCodeToCOM(vrc);
 
-    LogFlowThisFunc(("returns rc=%Rhrc\n", rc));
-    return rc;
+    LogFlowThisFunc(("returns hrc=%Rhrc\n", hrc));
+    return hrc;
 }
 
 void Certificate::uninit()

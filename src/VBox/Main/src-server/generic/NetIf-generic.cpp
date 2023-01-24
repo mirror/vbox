@@ -62,11 +62,11 @@ static int NetIfAdpCtl(const char * pcszIfName, const char *pszAddr, const char 
     const char *args[] = { NULL, pcszIfName, pszAddr, pszOption, pszMask, NULL };
 
     char szAdpCtl[RTPATH_MAX];
-    int rc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
-    if (RT_FAILURE(rc))
+    int vrc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("NetIfAdpCtl: failed to get program path, rc=%Rrc.\n", rc));
-        return rc;
+        LogRel(("NetIfAdpCtl: failed to get program path, vrc=%Rrc.\n", vrc));
+        return vrc;
     }
     strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME);
     args[0] = szAdpCtl;
@@ -78,24 +78,24 @@ static int NetIfAdpCtl(const char * pcszIfName, const char *pszAddr, const char 
     }
 
     RTPROCESS pid;
-    rc = RTProcCreate(szAdpCtl, args, RTENV_DEFAULT, 0, &pid);
-    if (RT_SUCCESS(rc))
+    vrc = RTProcCreate(szAdpCtl, args, RTENV_DEFAULT, 0, &pid);
+    if (RT_SUCCESS(vrc))
     {
         RTPROCSTATUS Status;
-        rc = RTProcWait(pid, 0, &Status);
-        if (RT_SUCCESS(rc))
+        vrc = RTProcWait(pid, 0, &Status);
+        if (RT_SUCCESS(vrc))
         {
             if (   Status.iStatus == 0
                 && Status.enmReason == RTPROCEXITREASON_NORMAL)
                 return VINF_SUCCESS;
             LogRel(("NetIfAdpCtl: failed to create process for %s: iStats=%d enmReason=%d\n",
                     szAdpCtl, Status.iStatus, Status.enmReason));
-            rc = -Status.iStatus;
+            vrc = -Status.iStatus;
         }
     }
     else
-        LogRel(("NetIfAdpCtl: failed to create process for %s: %Rrc\n", szAdpCtl, rc));
-    return rc;
+        LogRel(("NetIfAdpCtl: failed to create process for %s: %Rrc\n", szAdpCtl, vrc));
+    return vrc;
 }
 
 static int NetIfAdpCtl(HostNetworkInterface * pIf, const char *pszAddr, const char *pszOption, const char *pszMask)
@@ -109,10 +109,10 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, const char *pszAddr, const ch
 int NetIfAdpCtlOut(const char * pcszName, const char * pcszCmd, char *pszBuffer, size_t cBufSize)
 {
     char szAdpCtl[RTPATH_MAX];
-    int rc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME " ") - strlen(pcszCmd));
-    if (RT_FAILURE(rc))
+    int vrc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME " ") - strlen(pcszCmd));
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("NetIfAdpCtlOut: Failed to get program path, rc=%Rrc\n", rc));
+        LogRel(("NetIfAdpCtlOut: Failed to get program path, vrc=%Rrc\n", vrc));
         return VERR_INVALID_PARAMETER;
     }
     strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME " ");
@@ -137,17 +137,17 @@ int NetIfAdpCtlOut(const char * pcszName, const char * pcszCmd, char *pszBuffer,
             if (!strncmp(VBOXNETADPCTL_NAME ":", pszBuffer, sizeof(VBOXNETADPCTL_NAME)))
             {
                 LogRel(("NetIfAdpCtlOut: %s", pszBuffer));
-                rc = VERR_INTERNAL_ERROR;
+                vrc = VERR_INTERNAL_ERROR;
             }
         }
         else
         {
             LogRel(("NetIfAdpCtlOut: No output from " VBOXNETADPCTL_NAME));
-            rc = VERR_INTERNAL_ERROR;
+            vrc = VERR_INTERNAL_ERROR;
         }
         pclose(fp);
     }
-    return rc;
+    return vrc;
 }
 
 int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask)

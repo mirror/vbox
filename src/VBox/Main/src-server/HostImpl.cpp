@@ -386,8 +386,8 @@ HRESULT Host::init(VirtualBox *aParent)
                    )
                 {
                     const char *pszIgn;
-                    int rc = SUPR3QueryVTxSupported(&pszIgn);
-                    if (RT_SUCCESS(rc))
+                    int vrc = SUPR3QueryVTxSupported(&pszIgn);
+                    if (RT_SUCCESS(vrc))
                         m->fVTSupported = true;
                 }
             }
@@ -589,9 +589,9 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
     AutoWriteLock treeLock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
-    HRESULT rc = i_getDrives(DeviceType_DVD, true /* fRefresh */, pList, treeLock);
-    if (FAILED(rc))
-        return rc;
+    HRESULT vrc = i_getDrives(DeviceType_DVD, true /* fRefresh */, pList, treeLock);
+    if (FAILED(vrc))
+        return vrc;
 
     aDVDDrives.resize(pList->size());
     size_t i = 0;
@@ -612,9 +612,9 @@ HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
     AutoWriteLock treeLock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
-    HRESULT rc = i_getDrives(DeviceType_Floppy, true /* fRefresh */, pList, treeLock);
-    if (FAILED(rc))
-        return rc;
+    HRESULT vrc = i_getDrives(DeviceType_Floppy, true /* fRefresh */, pList, treeLock);
+    if (FAILED(vrc))
+        return vrc;
 
     aFloppyDrives.resize(pList->size());
     size_t i = 0;
@@ -634,7 +634,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
     LPWSTR lpszName;
     GUID IfGuid;
     HRESULT hr;
-    int rc = VERR_GENERAL_FAILURE;
+    int vrc = VERR_GENERAL_FAILURE;
 
     hr = pncc->GetDisplayName(&lpszName);
     Assert(hr == S_OK);
@@ -654,7 +654,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
             {
 //                iface->setVirtualBox(m->pParent);
                 pPist->push_back(iface);
-                rc = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
             }
             else
             {
@@ -664,7 +664,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
         CoTaskMemFree(lpszName);
     }
 
-    return rc;
+    return vrc;
 }
 #endif /* defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
@@ -829,18 +829,18 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 {
 #if defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
 # ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT rc = i_updateNetIfList();
-    if (FAILED(rc))
+    HRESULT vrc = i_updateNetIfList();
+    if (FAILED(vrc))
     {
-        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
-        return rc;
+        Log(("Failed to update host network interface list with vrc=%Rhrc\n", vrc));
+        return vrc;
     }
 #if defined(RT_OS_WINDOWS)
-    rc = i_updatePersistentConfigForHostOnlyAdapters();
-    if (FAILED(rc))
+    vrc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(vrc))
     {
-        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
-        return rc;
+        LogRel(("Failed to update persistent config for host-only adapters with vrc=%Rhrc\n", vrc));
+        return vrc;
     }
 #endif /* defined(RT_OS_WINDOWS) */
 
@@ -1031,9 +1031,9 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = i_checkUSBProxyService();
-    if (FAILED(rc) || SUCCEEDED_WARNING(rc))
-        return rc;
+    MultiResult vrc = i_checkUSBProxyService();
+    if (FAILED(vrc) || SUCCEEDED_WARNING(vrc))
+        return vrc;
 
     return m->pUSBProxyService->getDeviceCollection(aUSBDevices);
 #else
@@ -1080,16 +1080,16 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = i_checkUSBProxyService();
-    if (FAILED(rc))
-        return rc;
+    MultiResult vrc = i_checkUSBProxyService();
+    if (FAILED(vrc))
+        return vrc;
 
     aUSBDeviceFilters.resize(m->llUSBDeviceFilters.size());
     size_t i = 0;
     for (USBDeviceFilterList::iterator it = m->llUSBDeviceFilters.begin(); it != m->llUSBDeviceFilters.end(); ++it, ++i)
         (*it).queryInterfaceTo(aUSBDeviceFilters[i].asOutParam());
 
-    return rc;
+    return vrc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -1208,21 +1208,21 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 void Host::i_updateProcessorFeatures()
 {
     /* Perhaps the driver is available now... */
-    int rc = SUPR3InitEx(SUPR3INIT_F_LIMITED, NULL);
-    if (RT_SUCCESS(rc))
+    int vrc = SUPR3InitEx(SUPR3INIT_F_LIMITED, NULL);
+    if (RT_SUCCESS(vrc))
     {
         uint32_t fVTCaps;
-        rc = SUPR3QueryVTCaps(&fVTCaps);
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_SUP_DRIVERLESS, ("SUPR3QueryVTCaps failed rc=%Rrc\n", rc));
+        vrc = SUPR3QueryVTCaps(&fVTCaps);
+        AssertMsg(RT_SUCCESS(vrc) || vrc == VERR_SUP_DRIVERLESS, ("SUPR3QueryVTCaps failed vrc=%Rrc\n", vrc));
 
         SUPR3Term(false);
 
         AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
             fVTCaps = 0;
-            if (rc != VERR_SUP_DRIVERLESS)
-                LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
+            if (vrc != VERR_SUP_DRIVERLESS)
+                LogRel(("SUPR0QueryVTCaps -> %Rrc\n", vrc));
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /* Preserve detected VT-x/AMD-V support for show. */
             else
                 fVTCaps = m->fVTSupported ? SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X : 0;
@@ -1375,8 +1375,8 @@ HRESULT Host::getMemorySize(ULONG *aSize)
     // no locking required
 
     uint64_t cb;
-    int rc = RTSystemQueryTotalRam(&cb);
-    if (RT_FAILURE(rc))
+    int vrc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(vrc))
         return E_FAIL;
     *aSize = (ULONG)(cb / _1M);
     return S_OK;
@@ -1393,8 +1393,8 @@ HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
     // no locking required
 
     uint64_t cb;
-    int rc = RTSystemQueryAvailableRam(&cb);
-    if (RT_FAILURE(rc))
+    int vrc = RTSystemQueryAvailableRam(&cb);
+    if (RT_FAILURE(vrc))
         return E_FAIL;
     *aAvailable = (ULONG)(cb / _1M);
     return S_OK;
@@ -1571,39 +1571,39 @@ HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
      * violations with the called functions. */
 
     Bstr name;
-    HRESULT rc;
+    HRESULT hrc;
 
     /* first check whether an interface with the given name already exists */
     {
         ComPtr<IHostNetworkInterface> iface;
-        rc = findHostNetworkInterfaceById(aId, iface);
-        if (FAILED(rc))
+        hrc = findHostNetworkInterfaceById(aId, iface);
+        if (FAILED(hrc))
             return setError(VBOX_E_OBJECT_NOT_FOUND,
                             tr("Host network interface with UUID {%RTuuid} does not exist"),
                             Guid(aId).raw());
-        rc = iface->COMGETTER(Name)(name.asOutParam());
-        ComAssertComRCRet(rc, rc);
+        hrc = iface->COMGETTER(Name)(name.asOutParam());
+        ComAssertComRCRet(hrc, hrc);
     }
 
-    int r = NetIfRemoveHostOnlyNetworkInterface(m->pParent, aId, aProgress.asOutParam());
-    if (RT_SUCCESS(r))
+    int vrc = NetIfRemoveHostOnlyNetworkInterface(m->pParent, aId, aProgress.asOutParam());
+    if (RT_SUCCESS(vrc))
     {
         /* Drop configuration parameters for removed interface */
 #ifdef RT_OS_WINDOWS
-        rc = i_removePersistentConfig(Utf8StrFmt("%RTuuid", &aId));
-        if (FAILED(rc))
-            LogRel(("i_removePersistentConfig(%RTuuid) failed with 0x%x\n", &aId, rc));
+        hrc = i_removePersistentConfig(Utf8StrFmt("%RTuuid", &aId));
+        if (FAILED(hrc))
+            LogRel(("i_removePersistentConfig(%RTuuid) failed with 0x%x\n", &aId, hrc));
 #else /* !RT_OS_WINDOWS */
-        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", name.raw()).raw(), NULL);
-        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", name.raw()).raw(), NULL);
-        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", name.raw()).raw(), NULL);
-        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask", name.raw()).raw(), NULL);
+        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", name.raw()).raw(), NULL);
+        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", name.raw()).raw(), NULL);
+        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", name.raw()).raw(), NULL);
+        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask", name.raw()).raw(), NULL);
 #endif /* !RT_OS_WINDOWS */
 
         return S_OK;
     }
 
-    return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    return vrc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 #else
     RT_NOREF(aId, aProgress);
     return E_NOTIMPL;
@@ -1619,10 +1619,10 @@ HRESULT Host::createUSBDeviceFilter(const com::Utf8Str &aName,
 
     ComObjPtr<HostUSBDeviceFilter> filter;
     filter.createObject();
-    HRESULT rc = filter->init(this, Bstr(aName).raw());
-    ComAssertComRCRet(rc, rc);
-    rc = filter.queryInterfaceTo(aFilter.asOutParam());
-    AssertComRCReturn(rc, rc);
+    HRESULT hrc = filter->init(this, Bstr(aName).raw());
+    ComAssertComRCRet(hrc, hrc);
+    hrc = filter.queryInterfaceTo(aFilter.asOutParam());
+    AssertComRCReturn(hrc, hrc);
     return S_OK;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
@@ -1641,9 +1641,9 @@ HRESULT Host::insertUSBDeviceFilter(ULONG aPosition,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = i_checkUSBProxyService();
-    if (FAILED(rc))
-        return rc;
+    MultiResult hrcMult = i_checkUSBProxyService();
+    if (FAILED(hrcMult))
+        return hrcMult;
 
     ComObjPtr<HostUSBDeviceFilter> pFilter;
     for (USBDeviceFilterList::iterator it = m->llChildren.begin();
@@ -1682,7 +1682,7 @@ HRESULT Host::insertUSBDeviceFilter(ULONG aPosition,
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
     AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    return rc = m->pParent->i_saveSettings();
+    return hrcMult = m->pParent->i_saveSettings();
 #else
 
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
@@ -1700,9 +1700,9 @@ HRESULT Host::removeUSBDeviceFilter(ULONG aPosition)
     /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = i_checkUSBProxyService();
-    if (FAILED(rc))
-        return rc;
+    MultiResult hrcMult = i_checkUSBProxyService();
+    if (FAILED(hrcMult))
+        return hrcMult;
 
     if (!m->llUSBDeviceFilters.size())
         return setError(E_INVALIDARG,
@@ -1736,7 +1736,7 @@ HRESULT Host::removeUSBDeviceFilter(ULONG aPosition)
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
     AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    return rc = m->pParent->i_saveSettings();
+    return hrcMult = m->pParent->i_saveSettings();
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -1750,12 +1750,12 @@ HRESULT Host::findHostDVDDrive(const com::Utf8Str &aName,
                                ComPtr<IMedium> &aDrive)
 {
     ComObjPtr<Medium> medium;
-    HRESULT rc = i_findHostDriveByNameOrId(DeviceType_DVD, aName, medium);
-    if (SUCCEEDED(rc))
-        rc = medium.queryInterfaceTo(aDrive.asOutParam());
+    HRESULT hrc = i_findHostDriveByNameOrId(DeviceType_DVD, aName, medium);
+    if (SUCCEEDED(hrc))
+        hrc = medium.queryInterfaceTo(aDrive.asOutParam());
     else
-        rc = setError(rc, tr("The host DVD drive named '%s' could not be found"), aName.c_str());
-    return rc;
+        hrc = setError(hrc, tr("The host DVD drive named '%s' could not be found"), aName.c_str());
+    return hrc;
 }
 
 HRESULT Host::findHostFloppyDrive(const com::Utf8Str &aName, ComPtr<IMedium> &aDrive)
@@ -1764,11 +1764,10 @@ HRESULT Host::findHostFloppyDrive(const com::Utf8Str &aName, ComPtr<IMedium> &aD
 
     ComObjPtr<Medium>medium;
 
-    HRESULT rc = i_findHostDriveByNameOrId(DeviceType_Floppy, aName, medium);
-    if (SUCCEEDED(rc))
+    HRESULT hrc = i_findHostDriveByNameOrId(DeviceType_Floppy, aName, medium);
+    if (SUCCEEDED(hrc))
         return medium.queryInterfaceTo(aDrive.asOutParam());
-    else
-        return setError(rc, tr("The host floppy drive named '%s' could not be found"), aName.c_str());
+    return setError(hrc, tr("The host floppy drive named '%s' could not be found"), aName.c_str());
 }
 
 HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
@@ -1781,18 +1780,18 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
     if (!aName.length())
         return E_INVALIDARG;
 
-    HRESULT rc = i_updateNetIfList();
-    if (FAILED(rc))
+    HRESULT hrc = i_updateNetIfList();
+    if (FAILED(hrc))
     {
-        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
-        return rc;
+        Log(("Failed to update host network interface list with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #if defined(RT_OS_WINDOWS)
-    rc = i_updatePersistentConfigForHostOnlyAdapters();
-    if (FAILED(rc))
+    hrc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(hrc))
     {
-        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
-        return rc;
+        LogRel(("Failed to update persistent config for host-only adapters with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #endif /* defined(RT_OS_WINDOWS) */
 
@@ -1825,18 +1824,18 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
     if (!aId.isValid())
         return E_INVALIDARG;
 
-    HRESULT rc = i_updateNetIfList();
-    if (FAILED(rc))
+    HRESULT hrc = i_updateNetIfList();
+    if (FAILED(hrc))
     {
-        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
-        return rc;
+        Log(("Failed to update host network interface list with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #if defined(RT_OS_WINDOWS)
-    rc = i_updatePersistentConfigForHostOnlyAdapters();
-    if (FAILED(rc))
+    hrc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(hrc))
     {
-        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
-        return rc;
+        LogRel(("Failed to update persistent config for host-only adapters with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #endif /* defined(RT_OS_WINDOWS) */
 
@@ -1863,18 +1862,18 @@ HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
                                               std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
 #ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT rc = i_updateNetIfList();
-    if (FAILED(rc))
+    HRESULT hrc = i_updateNetIfList();
+    if (FAILED(hrc))
     {
-        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
-        return rc;
+        Log(("Failed to update host network interface list with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #if defined(RT_OS_WINDOWS)
-    rc = i_updatePersistentConfigForHostOnlyAdapters();
-    if (FAILED(rc))
+    hrc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(hrc))
     {
-        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
-        return rc;
+        LogRel(("Failed to update persistent config for host-only adapters with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #endif /* defined(RT_OS_WINDOWS) */
 
@@ -1912,16 +1911,16 @@ HRESULT Host::findUSBDeviceByAddress(const com::Utf8Str &aName,
 
     aDevice = NULL;
     SafeIfaceArray<IHostUSBDevice> devsvec;
-    HRESULT rc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
+    if (FAILED(hrc))
+        return hrc;
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
         Bstr address;
-        rc = devsvec[i]->COMGETTER(Address)(address.asOutParam());
-        if (FAILED(rc))
-            return rc;
+        hrc = devsvec[i]->COMGETTER(Address)(address.asOutParam());
+        if (FAILED(hrc))
+            return hrc;
         if (address == aName)
         {
             return (ComPtr<IHostUSBDevice>(devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
@@ -1947,16 +1946,16 @@ HRESULT Host::findUSBDeviceById(const com::Guid &aId,
     aDevice = NULL;
 
     SafeIfaceArray<IHostUSBDevice> devsvec;
-    HRESULT rc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
+    if (FAILED(hrc))
+        return hrc;
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
         Bstr id;
-        rc = devsvec[i]->COMGETTER(Id)(id.asOutParam());
-        if (FAILED(rc))
-            return rc;
+        hrc = devsvec[i]->COMGETTER(Id)(id.asOutParam());
+        if (FAILED(hrc))
+            return hrc;
         if (Guid(id) == aId)
         {
             return (ComPtr<IHostUSBDevice>(devsvec[i]).queryInterfaceTo(aDevice.asOutParam()));
@@ -1990,9 +1989,9 @@ HRESULT Host::getVideoInputDevices(std::vector<ComPtr<IHostVideoInputDevice> > &
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     HostVideoInputDeviceList list;
 
-    HRESULT rc = HostVideoInputDevice::queryHostDevices(m->pParent, &list);
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = HostVideoInputDevice::queryHostDevices(m->pParent, &list);
+    if (FAILED(hrc))
+        return hrc;
 
     aVideoInputDevices.resize(list.size());
     size_t i = 0;
@@ -2076,7 +2075,7 @@ HRESULT  Host::getHostDrives(std::vector<ComPtr<IHostDrive> > &aHostDrives)
 
 HRESULT Host::i_loadSettings(const settings::Host &data)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 #ifdef VBOX_WITH_USB
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc()))
@@ -2091,8 +2090,8 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
         const settings::USBDeviceFilter &f = *it;
         ComObjPtr<HostUSBDeviceFilter> pFilter;
         pFilter.createObject();
-        rc = pFilter->init(this, f);
-        if (FAILED(rc))
+        hrc = pFilter->init(this, f);
+        if (FAILED(hrc))
             break;
 
         m->llUSBDeviceFilters.push_back(pFilter);
@@ -2106,18 +2105,18 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
         }
     }
 
-    rc = m->pUSBProxyService->i_loadSettings(data.llUSBDeviceSources);
+    hrc = m->pUSBProxyService->i_loadSettings(data.llUSBDeviceSources);
 #else
     RT_NOREF(data);
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_UPDATE_AGENT
-    rc = m->pUpdateHost->i_loadSettings(data.updateHost);
-    ComAssertComRCRet(rc, rc);
+    hrc = m->pUpdateHost->i_loadSettings(data.updateHost);
+    ComAssertComRCRet(hrc, hrc);
     /** @todo Add handling for ExtPack and Guest Additions updates here later. See @bugref{7983}. */
 #endif
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Host::i_saveSettings(settings::Host &data)
@@ -2128,7 +2127,7 @@ HRESULT Host::i_saveSettings(settings::Host &data)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc;
+    HRESULT hrc;
 
 #ifdef VBOX_WITH_USB
     data.llUSBDeviceFilters.clear();
@@ -2144,15 +2143,15 @@ HRESULT Host::i_saveSettings(settings::Host &data)
         data.llUSBDeviceFilters.push_back(f);
     }
 
-    rc = m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
-    ComAssertComRCRet(rc, rc);
+    hrc = m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
+    ComAssertComRCRet(hrc, hrc);
 #else
     RT_NOREF(data);
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_UPDATE_AGENT
-    rc = m->pUpdateHost->i_saveSettings(data.updateHost);
-    ComAssertComRCRet(rc, rc);
+    hrc = m->pUpdateHost->i_saveSettings(data.updateHost);
+    ComAssertComRCRet(hrc, hrc);
     /** @todo Add handling for ExtPack and Guest Additions updates here later. See @bugref{7983}. */
 #endif
 
@@ -2182,7 +2181,7 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
                           MediaList *&pll,
                           AutoWriteLock &treeLock)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     Assert(m->pParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     MediaList llNew;
@@ -2194,9 +2193,9 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
         case DeviceType_DVD:
             if (!m->fDVDDrivesListBuilt || fRefresh)
             {
-                rc = i_buildDVDDrivesList(llNew);
-                if (FAILED(rc))
-                    return rc;
+                hrc = i_buildDVDDrivesList(llNew);
+                if (FAILED(hrc))
+                    return hrc;
                 pfListBuilt = &m->fDVDDrivesListBuilt;
             }
             pllCached = &m->llDVDDrives;
@@ -2205,9 +2204,9 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
         case DeviceType_Floppy:
             if (!m->fFloppyDrivesListBuilt || fRefresh)
             {
-                rc = i_buildFloppyDrivesList(llNew);
-                if (FAILED(rc))
-                    return rc;
+                hrc = i_buildFloppyDrivesList(llNew);
+                if (FAILED(hrc))
+                    return hrc;
                 pfListBuilt = &m->fFloppyDrivesListBuilt;
             }
             pllCached = &m->llFloppyDrives;
@@ -2298,7 +2297,7 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
 
     treeLock.acquire();
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -2320,8 +2319,8 @@ HRESULT Host::i_findHostDriveById(DeviceType_T mediumType,
     MediaList *pllMedia;
 
     AutoWriteLock treeLock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_getDrives(mediumType, fRefresh, pllMedia, treeLock);
-    if (SUCCEEDED(rc))
+    HRESULT hrc = i_getDrives(mediumType, fRefresh, pllMedia, treeLock);
+    if (SUCCEEDED(hrc))
     {
         for (MediaList::iterator it = pllMedia->begin();
              it != pllMedia->end();
@@ -2360,8 +2359,8 @@ HRESULT Host::i_findHostDriveByName(DeviceType_T mediumType,
     MediaList *pllMedia;
 
     AutoWriteLock treeLock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_getDrives(mediumType, fRefresh, pllMedia, treeLock);
-    if (SUCCEEDED(rc))
+    HRESULT hrc = i_getDrives(mediumType, fRefresh, pllMedia, treeLock);
+    if (SUCCEEDED(hrc))
     {
         for (MediaList::iterator it = pllMedia->begin();
              it != pllMedia->end();
@@ -2412,7 +2411,7 @@ HRESULT Host::i_findHostDriveByNameOrId(DeviceType_T mediumType,
  */
 HRESULT Host::i_buildDVDDrivesList(MediaList &list)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     Assert(m->pParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
@@ -2450,16 +2449,16 @@ HRESULT Host::i_buildDVDDrivesList(MediaList &list)
 #elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
         if (RT_SUCCESS(m->hostDrives.updateDVDs()))
             for (DriveInfoList::const_iterator it = m->hostDrives.DVDBegin();
-                SUCCEEDED(rc) && it != m->hostDrives.DVDEnd(); ++it)
+                SUCCEEDED(hrc) && it != m->hostDrives.DVDEnd(); ++it)
             {
                 ComObjPtr<Medium> hostDVDDriveObj;
                 Utf8Str location(it->mDevice);
                 Utf8Str description(it->mDescription);
-                if (SUCCEEDED(rc))
-                    rc = hostDVDDriveObj.createObject();
-                if (SUCCEEDED(rc))
-                    rc = hostDVDDriveObj->init(m->pParent, DeviceType_DVD, location, description);
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
+                    hrc = hostDVDDriveObj.createObject();
+                if (SUCCEEDED(hrc))
+                    hrc = hostDVDDriveObj->init(m->pParent, DeviceType_DVD, location, description);
+                if (SUCCEEDED(hrc))
                     list.push_back(hostDVDDriveObj);
             }
 #elif defined(RT_OS_DARWIN)
@@ -2480,11 +2479,11 @@ HRESULT Host::i_buildDVDDrivesList(MediaList &list)
     /* PORTME */
 #endif
     }
-    catch(std::bad_alloc &)
+    catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
-    return rc;
+    return hrc;
 }
 
 /**
@@ -2494,7 +2493,7 @@ HRESULT Host::i_buildDVDDrivesList(MediaList &list)
  */
 HRESULT Host::i_buildFloppyDrivesList(MediaList &list)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     Assert(m->pParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
@@ -2523,16 +2522,16 @@ HRESULT Host::i_buildFloppyDrivesList(MediaList &list)
 #elif defined(RT_OS_LINUX)
         if (RT_SUCCESS(m->hostDrives.updateFloppies()))
             for (DriveInfoList::const_iterator it = m->hostDrives.FloppyBegin();
-                SUCCEEDED(rc) && it != m->hostDrives.FloppyEnd(); ++it)
+                SUCCEEDED(hrc) && it != m->hostDrives.FloppyEnd(); ++it)
             {
                 ComObjPtr<Medium> hostFloppyDriveObj;
                 Utf8Str location(it->mDevice);
                 Utf8Str description(it->mDescription);
-                if (SUCCEEDED(rc))
-                    rc = hostFloppyDriveObj.createObject();
-                if (SUCCEEDED(rc))
-                    rc = hostFloppyDriveObj->init(m->pParent, DeviceType_Floppy, location, description);
-                if (SUCCEEDED(rc))
+                if (SUCCEEDED(hrc))
+                    hrc = hostFloppyDriveObj.createObject();
+                if (SUCCEEDED(hrc))
+                    hrc = hostFloppyDriveObj->init(m->pParent, DeviceType_Floppy, location, description);
+                if (SUCCEEDED(hrc))
                     list.push_back(hostFloppyDriveObj);
             }
 #else
@@ -2542,10 +2541,10 @@ HRESULT Host::i_buildFloppyDrivesList(MediaList &list)
     }
     catch(std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
 
-    return rc;
+    return hrc;
 }
 
 #ifdef VBOX_WITH_USB
@@ -2909,8 +2908,8 @@ static int solarisWalkDeviceNodeForFixedDrive(di_node_t Node, void *pvArg) RT_NO
                             RTStrPurgeEncoding(pDrive->szDescription);
 
                             const char *pszDevPath = pszDisk ? pszDisk : pszPartition0 ? pszPartition0 : pszSlice0;
-                            int rc = RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevPath);
-                            AssertRC(rc);
+                            int hrc = RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevPath);
+                            AssertRC(hrc);
 
                             if (*ppDrives)
                                 pDrive->pNext = *ppDrives;
@@ -3646,10 +3645,10 @@ HRESULT Host::i_updateNetIfList()
      * if there's a constant hammering of this method, we don't want this
      * to cause update starvation. */
     HostNetworkInterfaceList list;
-    int rc = NetIfList(list);
-    if (rc)
+    int vrc = NetIfList(list);
+    if (RT_FAILURE(vrc))
     {
-        Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
+        Log(("Failed to get host network interface list with vrc=%Rrc\n", vrc));
         return E_FAIL;
     }
 
@@ -3766,8 +3765,8 @@ void Host::i_registerDiskMetrics(PerformanceCollector *aCollector)
 
     /* For now we are concerned with the root file system only. */
     pm::DiskList disksUsage, disksLoad;
-    int rc = hal->getDiskListByFs("/", disksUsage, disksLoad);
-    if (RT_FAILURE(rc))
+    int hrc = hal->getDiskListByFs("/", disksUsage, disksLoad);
+    if (RT_FAILURE(hrc))
         return;
     pm::DiskList::iterator it;
     for (it = disksLoad.begin(); it != disksLoad.end(); ++it)
@@ -3971,9 +3970,9 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
     RTERRINFOSTATIC  ErrInfo;
     uint32_t         offError;
     RTVFSDIR         hVfsDir;
-    int rc = RTVfsChainOpenDir("\\\\:iprtnt:\\GLOBAL??", 0 /*fFlags*/, &hVfsDir, &offError, RTErrInfoInitStatic(&ErrInfo));
-    if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("Failed to open NT\\GLOBAL?? (error %Rrc)"), rc);
+    int vrc = RTVfsChainOpenDir("\\\\:iprtnt:\\GLOBAL??", 0 /*fFlags*/, &hVfsDir, &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("Failed to open NT\\GLOBAL?? (error %Rrc)"), vrc);
 
     /*
      * Scan whole directory and find any 'PhysicalDiskX' entries. Next, combine with '\\.\'
@@ -3991,10 +3990,10 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
     for (;;)
     {
         size_t cbDirEntry = cbDirEntryAlloced;
-        rc = RTVfsDirReadEx(hVfsDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING);
-        if (RT_FAILURE(rc))
+        vrc = RTVfsDirReadEx(hVfsDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING);
+        if (RT_FAILURE(vrc))
         {
-            if (rc == VERR_BUFFER_OVERFLOW)
+            if (vrc == VERR_BUFFER_OVERFLOW)
             {
                 RTMemTmpFree(pDirEntry);
                 cbDirEntryAlloced = RT_ALIGN_Z(RT_MIN(cbDirEntry, cbDirEntryAlloced) + 64, 64);
@@ -4003,8 +4002,8 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
                     continue;
                 hrc = setError(E_OUTOFMEMORY, tr("Out of memory! (direntry buffer)"));
             }
-            else if (rc != VERR_NO_MORE_FILES)
-                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsDirReadEx failed: %Rrc"), rc);
+            else if (vrc != VERR_NO_MORE_FILES)
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsDirReadEx failed: %Rrc"), vrc);
             break;
         }
         if (RTStrStartsWith(pDirEntry->szName, "PhysicalDrive"))
@@ -4013,7 +4012,7 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
             RTStrPrintf(szPhysicalDrive, sizeof(szPhysicalDrive), "\\\\.\\%s", pDirEntry->szName);
 
             RTFILE hRawFile = NIL_RTFILE;
-            int vrc = RTFileOpen(&hRawFile, szPhysicalDrive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            vrc = RTFileOpen(&hRawFile, szPhysicalDrive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
             if (RT_FAILURE(vrc))
             {
                 try

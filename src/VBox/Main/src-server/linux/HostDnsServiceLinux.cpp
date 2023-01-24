@@ -184,9 +184,9 @@ int HostDnsServiceLinux::monitorThreadProc(void)
      * ASSUME Linux 2.6.27 or later and that we can use SOCK_CLOEXEC.
      */
     int aiStopPair[2];
-    int rc = socketpair(AF_LOCAL, SOCK_DGRAM | SOCK_CLOEXEC, 0, aiStopPair);
+    int iRc = socketpair(AF_LOCAL, SOCK_DGRAM | SOCK_CLOEXEC, 0, aiStopPair);
     int iErr = errno;
-    AssertLogRelMsgReturn(rc == 0, ("socketpair: failed (%d: %s)\n", iErr, strerror(iErr)), RTErrConvertFromErrno(iErr));
+    AssertLogRelMsgReturn(iRc == 0, ("socketpair: failed (%d: %s)\n", iErr, strerror(iErr)), RTErrConvertFromErrno(iErr));
 
     m_fdShutdown = aiStopPair[0];
 
@@ -240,17 +240,17 @@ int HostDnsServiceLinux::monitorThreadProc(void)
         /*
          * Wait for something to happen.
          */
-        rc = poll(aFdPolls, RT_ELEMENTS(aFdPolls), -1 /*infinite timeout*/);
-        if (rc == -1)
+        iRc = poll(aFdPolls, RT_ELEMENTS(aFdPolls), -1 /*infinite timeout*/);
+        if (iRc == -1)
         {
             if (errno != EINTR)
             {
-                LogRelMax(32, ("HostDnsServiceLinux::monitorThreadProc: poll failed %d: errno=%d\n", rc, errno));
+                LogRelMax(32, ("HostDnsServiceLinux::monitorThreadProc: poll failed %d: errno=%d\n", iRc, errno));
                 RTThreadSleep(1);
             }
             continue;
         }
-        Log5Func(("poll returns %d: [0]=%#x [1]=%#x\n", rc, aFdPolls[1].revents, aFdPolls[0].revents));
+        Log5Func(("poll returns %d: [0]=%#x [1]=%#x\n", iRc, aFdPolls[1].revents, aFdPolls[0].revents));
 
         AssertMsgBreakStmt(   (aFdPolls[0].revents & (POLLERR | POLLNVAL)) == 0 /* (ok for fd=-1 too, revents=0 then) */
                            && (aFdPolls[1].revents & (POLLERR | POLLNVAL)) == 0,
@@ -321,8 +321,8 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                         Log5Func(("file: deleted self\n"));
                         if (iWdFileNew != -1)
                         {
-                            rc = inotify_rm_watch(iNotifyFd, iWdFileNew);
-                            AssertMsg(rc >= 0, ("%d/%d\n", rc, errno));
+                            iRc = inotify_rm_watch(iNotifyFd, iWdFileNew);
+                            AssertMsg(iRc >= 0, ("%d/%d\n", iRc, errno));
                             iWdFileNew = -1;
                         }
                     }
@@ -349,16 +349,16 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                         {
                             if (iWdFileNew >= 0)
                             {
-                                rc = inotify_rm_watch(iNotifyFd, iWdFileNew);
-                                Log5Func(("dir: moved / created / deleted: dropped file watch (%d - rc=%d/err=%d)\n",
-                                          iWdFileNew, rc, errno));
+                                iRc = inotify_rm_watch(iNotifyFd, iWdFileNew);
+                                Log5Func(("dir: moved / created / deleted: dropped file watch (%d - iRc=%d/err=%d)\n",
+                                          iWdFileNew, iRc, errno));
                                 iWdFileNew = -1;
                             }
                             if (iWdSymDirNew >= 0)
                             {
-                                rc = inotify_rm_watch(iNotifyFd, iWdSymDirNew);
-                                Log5Func(("dir: moved / created / deleted: dropped symlinked dir watch (%d - %s/%s - rc=%d/err=%d)\n",
-                                          iWdSymDirNew, szRealResolvConf, &szRealResolvConf[offRealResolvConfName], rc, errno));
+                                iRc = inotify_rm_watch(iNotifyFd, iWdSymDirNew);
+                                Log5Func(("dir: moved / created / deleted: dropped symlinked dir watch (%d - %s/%s - iRc=%d/err=%d)\n",
+                                          iWdSymDirNew, szRealResolvConf, &szRealResolvConf[offRealResolvConfName], iRc, errno));
                                 iWdSymDirNew = -1;
                                 offRealResolvConfName = 0;
                             }
@@ -396,9 +396,9 @@ int HostDnsServiceLinux::monitorThreadProc(void)
                     {
                         if (iWdFileNew >= 0)
                         {
-                            rc = inotify_rm_watch(iNotifyFd, iWdFileNew);
-                            Log5Func(("symdir: moved / created / deleted: drop file watch (%d - rc=%d/err=%d)\n",
-                                      iWdFileNew, rc, errno));
+                            iRc = inotify_rm_watch(iNotifyFd, iWdFileNew);
+                            Log5Func(("symdir: moved / created / deleted: drop file watch (%d - iRc=%d/err=%d)\n",
+                                      iWdFileNew, iRc, errno));
                             iWdFileNew = -1;
                         }
                         if (pCurEvt->mask & (IN_MOVED_TO | IN_CREATE))

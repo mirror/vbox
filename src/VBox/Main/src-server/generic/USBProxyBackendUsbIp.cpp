@@ -296,7 +296,7 @@ USBProxyBackendUsbIp::~USBProxyBackendUsbIp()
 int USBProxyBackendUsbIp::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
                                const com::Utf8Str &strAddress, bool fLoadingSettings)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     USBProxyBackend::init(pUsbProxyService, strId, strAddress, fLoadingSettings);
 
@@ -321,18 +321,17 @@ int USBProxyBackendUsbIp::init(USBProxyService *pUsbProxyService, const com::Utf
     }
 
     /* Setup wakeup pipe and poll set first. */
-    rc = RTSemFastMutexCreate(&m->hMtxDevices);
-    if (RT_SUCCESS(rc))
+    vrc = RTSemFastMutexCreate(&m->hMtxDevices);
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTPipeCreate(&m->hWakeupPipeR, &m->hWakeupPipeW, 0);
-        if (RT_SUCCESS(rc))
+        vrc = RTPipeCreate(&m->hWakeupPipeR, &m->hWakeupPipeW, 0);
+        if (RT_SUCCESS(vrc))
         {
-            rc = RTPollSetCreate(&m->hPollSet);
-            if (RT_SUCCESS(rc))
+            vrc = RTPollSetCreate(&m->hPollSet);
+            if (RT_SUCCESS(vrc))
             {
-                rc = RTPollSetAddPipe(m->hPollSet, m->hWakeupPipeR,
-                                      RTPOLL_EVT_READ, USBIP_POLL_ID_PIPE);
-                if (RT_SUCCESS(rc))
+                vrc = RTPollSetAddPipe(m->hPollSet, m->hWakeupPipeR, RTPOLL_EVT_READ, USBIP_POLL_ID_PIPE);
+                if (RT_SUCCESS(vrc))
                 {
                     /*
                      * Connect to the USB/IP host. Be more graceful to connection errors
@@ -343,12 +342,12 @@ int USBProxyBackendUsbIp::init(USBProxyService *pUsbProxyService, const com::Utf
                      * either the USB source is removed by the user or the USB server is
                      * reachable.
                      */
-                    rc = reconnect();
-                    if (RT_SUCCESS(rc) || fLoadingSettings)
-                        rc = start(); /* Start service thread. */
+                    vrc = reconnect();
+                    if (RT_SUCCESS(vrc) || fLoadingSettings)
+                        vrc = start(); /* Start service thread. */
                 }
 
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(vrc))
                 {
                     RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_PIPE);
                     int rc2 = RTPollSetDestroy(m->hPollSet);
@@ -357,7 +356,7 @@ int USBProxyBackendUsbIp::init(USBProxyService *pUsbProxyService, const com::Utf
                 }
             }
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
             {
                 int rc2 = RTPipeClose(m->hWakeupPipeR);
                 AssertRC(rc2);
@@ -366,14 +365,14 @@ int USBProxyBackendUsbIp::init(USBProxyService *pUsbProxyService, const com::Utf
                 m->hWakeupPipeR = m->hWakeupPipeW = NIL_RTPIPE;
             }
         }
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
             RTSemFastMutexDestroy(m->hMtxDevices);
             m->hMtxDevices = NIL_RTSEMFASTMUTEX;
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -396,14 +395,14 @@ void USBProxyBackendUsbIp::uninit()
     {
         disconnect();
 
-        int rc = RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_PIPE);
-        AssertRC(rc);
-        rc = RTPollSetDestroy(m->hPollSet);
-        AssertRC(rc);
-        rc = RTPipeClose(m->hWakeupPipeR);
-        AssertRC(rc);
-        rc = RTPipeClose(m->hWakeupPipeW);
-        AssertRC(rc);
+        int vrc = RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_PIPE);
+        AssertRC(vrc);
+        vrc = RTPollSetDestroy(m->hPollSet);
+        AssertRC(vrc);
+        vrc = RTPipeClose(m->hWakeupPipeR);
+        AssertRC(vrc);
+        vrc = RTPipeClose(m->hWakeupPipeW);
+        AssertRC(vrc);
 
         m->hPollSet = NIL_RTPOLLSET;
         m->hWakeupPipeR = NIL_RTPIPE;
@@ -467,7 +466,7 @@ bool USBProxyBackendUsbIp::isFakeUpdateRequired()
 
 int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     bool fDeviceListChangedOrWokenUp = false;
 
     /* Don't start any possibly lengthy operation if we are supposed to return immediately again. */
@@ -482,8 +481,8 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
     if (   m->hSocket != NIL_RTSOCKET
         && m->enmRecvState == kUsbIpRecvState_None)
     {
-        rc = startListExportedDevicesReq();
-        if (RT_FAILURE(rc))
+        vrc = startListExportedDevicesReq();
+        if (RT_FAILURE(vrc))
             disconnect();
     }
 
@@ -495,7 +494,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
      */
     while (   !fDeviceListChangedOrWokenUp
            && (aMillies == RT_INDEFINITE_WAIT || aMillies > 0)
-           && RT_SUCCESS(rc))
+           && RT_SUCCESS(vrc))
     {
         RTMSINTERVAL msWait = aMillies;
         uint64_t msPollStart = RTTimeMilliTS();
@@ -506,8 +505,8 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
         if (m->hSocket == NIL_RTSOCKET || m->enmRecvState == kUsbIpRecvState_None)
             msWait = RT_MIN(3000, aMillies);
 
-        rc = RTPoll(m->hPollSet, msWait, &fEventsRecv, &uIdReady);
-        if (RT_SUCCESS(rc))
+        vrc = RTPoll(m->hPollSet, msWait, &fEventsRecv, &uIdReady);
+        if (RT_SUCCESS(vrc))
         {
             if (uIdReady == USBIP_POLL_ID_PIPE)
             {
@@ -515,17 +514,17 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                 char bRead = 0;
                 size_t cbRead = 0;
 
-                rc = RTPipeRead(m->hWakeupPipeR, &bRead, 1, &cbRead);
-                Assert(RT_SUCCESS(rc) && cbRead == 1);
+                vrc = RTPipeRead(m->hWakeupPipeR, &bRead, 1, &cbRead);
+                Assert(RT_SUCCESS(vrc) && cbRead == 1);
                 fDeviceListChangedOrWokenUp = true;
             }
             else if (uIdReady == USBIP_POLL_ID_SOCKET)
             {
                 if (fEventsRecv & RTPOLL_EVT_READ)
-                    rc = receiveData();
-                if (   RT_SUCCESS(rc)
+                    vrc = receiveData();
+                if (   RT_SUCCESS(vrc)
                     && (fEventsRecv & RTPOLL_EVT_ERROR))
-                    rc = VERR_NET_SHUTDOWN;
+                    vrc = VERR_NET_SHUTDOWN;
 
                 /*
                  * If we are in the none state again we received the previous request
@@ -548,21 +547,21 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                 }
 
                 /* Current USB/IP server closes the connection after each request, don't abort but try again. */
-                if (rc == VERR_NET_SHUTDOWN || rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_RESET_BY_PEER)
+                if (vrc == VERR_NET_SHUTDOWN || vrc == VERR_BROKEN_PIPE || vrc == VERR_NET_CONNECTION_RESET_BY_PEER)
                 {
                     Log(("USB/IP: Lost connection to host \"%s\", trying to reconnect...\n", m->pszHost));
                     disconnect();
-                    rc = VINF_SUCCESS;
+                    vrc = VINF_SUCCESS;
                 }
             }
             else
             {
                 AssertMsgFailed(("Invalid poll ID returned\n"));
-                rc = VERR_INVALID_STATE;
+                vrc = VERR_INVALID_STATE;
             }
             aMillies -= (RTMSINTERVAL)(RTTimeMilliTS() - msPollStart);
         }
-        else if (rc == VERR_TIMEOUT)
+        else if (vrc == VERR_TIMEOUT)
         {
             aMillies -= msWait;
             if (aMillies)
@@ -570,25 +569,25 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                 /* Try to reconnect and start a new request if we lost the connection before. */
                 if (m->hSocket == NIL_RTSOCKET)
                 {
-                    rc = reconnect();
-                    if (RT_SUCCESS(rc))
-                        rc = startListExportedDevicesReq();
-                    else if (   rc == VERR_NET_SHUTDOWN
-                             || rc == VERR_BROKEN_PIPE
-                             || rc == VERR_NET_CONNECTION_RESET_BY_PEER
-                             || rc == VERR_NET_CONNECTION_REFUSED)
+                    vrc = reconnect();
+                    if (RT_SUCCESS(vrc))
+                        vrc = startListExportedDevicesReq();
+                    else if (   vrc == VERR_NET_SHUTDOWN
+                             || vrc == VERR_BROKEN_PIPE
+                             || vrc == VERR_NET_CONNECTION_RESET_BY_PEER
+                             || vrc == VERR_NET_CONNECTION_REFUSED)
                     {
                         if (hasDevListChanged(m->pHead))
                             fDeviceListChangedOrWokenUp = true;
-                        rc = VINF_SUCCESS;
+                        vrc = VINF_SUCCESS;
                     }
                 }
             }
         }
     }
 
-    LogFlowFunc(("return rc=%Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("return vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 
@@ -598,11 +597,11 @@ int USBProxyBackendUsbIp::interruptWait(void)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = RTPipeWriteBlocking(m->hWakeupPipeW, "", 1, NULL);
-    if (RT_SUCCESS(rc))
+    int vrc = RTPipeWriteBlocking(m->hWakeupPipeW, "", 1, NULL);
+    if (RT_SUCCESS(vrc))
         RTPipeFlush(m->hWakeupPipeW);
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("returning %Rrc\n", vrc));
+    return vrc;
 }
 
 
@@ -704,9 +703,9 @@ void USBProxyBackendUsbIp::disconnect()
 
     if (m->hSocket != NIL_RTSOCKET)
     {
-        int rc = RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_SOCKET);
-        NOREF(rc);
-        Assert(RT_SUCCESS(rc) || rc == VERR_POLL_HANDLE_ID_NOT_FOUND);
+        int vrc = RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_SOCKET);
+        NOREF(vrc);
+        Assert(RT_SUCCESS(vrc) || vrc == VERR_POLL_HANDLE_ID_NOT_FOUND);
 
         RTTcpClientCloseEx(m->hSocket, false /*fGracefulShutdown*/);
         m->hSocket = NIL_RTSOCKET;
@@ -729,16 +728,15 @@ int USBProxyBackendUsbIp::reconnect()
     disconnect();
 
     /* Connect to the USB/IP host. */
-    int rc = RTTcpClientConnect(m->pszHost, m->uPort, &m->hSocket);
-    if (RT_SUCCESS(rc))
+    int vrc = RTTcpClientConnect(m->pszHost, m->uPort, &m->hSocket);
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTTcpSetSendCoalescing(m->hSocket, false);
-        if (RT_FAILURE(rc))
-            LogRelMax(5, ("USB/IP: Disabling send coalescing failed (rc=%Rrc), continuing nevertheless but expect increased latency\n", rc));
+        vrc = RTTcpSetSendCoalescing(m->hSocket, false);
+        if (RT_FAILURE(vrc))
+            LogRelMax(5, ("USB/IP: Disabling send coalescing failed (vrc=%Rrc), continuing nevertheless but expect increased latency\n", vrc));
 
-        rc = RTPollSetAddSocket(m->hPollSet, m->hSocket, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
-                                USBIP_POLL_ID_SOCKET);
-        if (RT_FAILURE(rc))
+        vrc = RTPollSetAddSocket(m->hPollSet, m->hSocket, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, USBIP_POLL_ID_SOCKET);
+        if (RT_FAILURE(vrc))
         {
             RTTcpClientCloseEx(m->hSocket, false /*fGracefulShutdown*/);
             m->hSocket = NIL_RTSOCKET;
@@ -762,8 +760,8 @@ int USBProxyBackendUsbIp::reconnect()
         RTSemFastMutexRelease(m->hMtxDevices);
     }
 
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("returns vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 /**
@@ -773,7 +771,7 @@ int USBProxyBackendUsbIp::reconnect()
  */
 int USBProxyBackendUsbIp::startListExportedDevicesReq()
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     LogFlowFunc(("\n"));
 
@@ -783,9 +781,9 @@ int USBProxyBackendUsbIp::startListExportedDevicesReq()
      */
     Assert(m->enmRecvState == kUsbIpRecvState_None);
     if (m->enmRecvState != kUsbIpRecvState_None)
-        rc = reconnect();
+        vrc = reconnect();
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /* Send of the request. */
         UsbIpReqDevList ReqDevList;
@@ -793,13 +791,13 @@ int USBProxyBackendUsbIp::startListExportedDevicesReq()
         ReqDevList.u16Cmd     = RT_H2N_U16(USBIP_INDICATOR_REQ | USBIP_REQ_RET_DEVLIST);
         ReqDevList.i32Status  = RT_H2N_S32(0);
 
-        rc = RTTcpWrite(m->hSocket, &ReqDevList, sizeof(ReqDevList));
-        if (RT_SUCCESS(rc))
+        vrc = RTTcpWrite(m->hSocket, &ReqDevList, sizeof(ReqDevList));
+        if (RT_SUCCESS(vrc))
             advanceState(kUsbIpRecvState_Hdr);
     }
 
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("returns vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 /**
@@ -851,19 +849,18 @@ void USBProxyBackendUsbIp::advanceState(USBIPRECVSTATE enmRecvState)
  */
 int USBProxyBackendUsbIp::receiveData()
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     size_t cbRecvd = 0;
 
     LogFlowFunc(("\n"));
 
     do
     {
-        rc = RTTcpReadNB(m->hSocket, m->pbRecvBuf, m->cbResidualRecv, &cbRecvd);
+        vrc = RTTcpReadNB(m->hSocket, m->pbRecvBuf, m->cbResidualRecv, &cbRecvd);
 
-        LogFlowFunc(("RTTcpReadNB(%#p, %#p, %zu, %zu) -> %Rrc\n",
-                     m->hSocket, m->pbRecvBuf, m->cbResidualRecv, cbRecvd, rc));
+        LogFlowFunc(("RTTcpReadNB(%#p, %#p, %zu, %zu) -> %Rrc\n", m->hSocket, m->pbRecvBuf, m->cbResidualRecv, cbRecvd, vrc));
 
-        if (   rc == VINF_SUCCESS
+        if (   vrc == VINF_SUCCESS
             && cbRecvd > 0)
         {
             m->cbResidualRecv -= cbRecvd;
@@ -871,22 +868,22 @@ int USBProxyBackendUsbIp::receiveData()
             /* In case we received everything for the current state process the data. */
             if (!m->cbResidualRecv)
             {
-                rc = processData();
-                if (   RT_SUCCESS(rc)
+                vrc = processData();
+                if (   RT_SUCCESS(vrc)
                     && m->enmRecvState == kUsbIpRecvState_None)
                     break;
             }
         }
-        else if (rc == VINF_TRY_AGAIN)
+        else if (vrc == VINF_TRY_AGAIN)
             Assert(!cbRecvd);
 
-    } while (rc == VINF_SUCCESS && cbRecvd > 0);
+    } while (vrc == VINF_SUCCESS && cbRecvd > 0);
 
-    if (rc == VINF_TRY_AGAIN)
-        rc = VINF_SUCCESS;
+    if (vrc == VINF_TRY_AGAIN)
+        vrc = VINF_SUCCESS;
 
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("returns vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 /**
@@ -896,7 +893,7 @@ int USBProxyBackendUsbIp::receiveData()
  */
 int USBProxyBackendUsbIp::processData()
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     switch (m->enmRecvState)
     {
@@ -923,7 +920,7 @@ int USBProxyBackendUsbIp::processData()
                 /* Disconnect and start over. */
                 advanceState(kUsbIpRecvState_None);
                 disconnect();
-                rc = VERR_NET_SHUTDOWN;
+                vrc = VERR_NET_SHUTDOWN;
             }
             break;
         }
@@ -931,8 +928,8 @@ int USBProxyBackendUsbIp::processData()
         {
             /* Create a new device and add it to the list. */
             usbProxyBackendUsbIpExportedDeviceN2H(&m->Scratch.ExportedDevice);
-            rc = addDeviceToList(&m->Scratch.ExportedDevice);
-            if (RT_SUCCESS(rc))
+            vrc = addDeviceToList(&m->Scratch.ExportedDevice);
+            if (RT_SUCCESS(vrc))
             {
                 m->cInterfacesLeft = m->Scratch.ExportedDevice.bNumInterfaces;
                 if (m->cInterfacesLeft)
@@ -973,7 +970,7 @@ int USBProxyBackendUsbIp::processData()
             return VERR_INVALID_STATE;
     }
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -985,7 +982,7 @@ int USBProxyBackendUsbIp::processData()
  */
 int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     PUSBDEVICE pNew = (PUSBDEVICE)RTMemAllocZ(sizeof(USBDEVICE));
     if (!pNew)
         return VERR_NO_MEMORY;
@@ -1054,9 +1051,9 @@ int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
         m->cDevicesCur++;
     }
     else
-        rc = VERR_NO_STR_MEMORY;
+        vrc = VERR_NO_STR_MEMORY;
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
         if (pNew->pszManufacturer)
             RTStrFree((char *)pNew->pszManufacturer);
@@ -1069,7 +1066,7 @@ int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
         RTMemFree(pNew);
     }
 
-    return rc;
+    return vrc;
 }
 
 /**

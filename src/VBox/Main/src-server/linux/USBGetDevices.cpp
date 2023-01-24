@@ -292,9 +292,9 @@ static int usbfsReadNum(const char *pszValue, unsigned uBase, uint32_t u32Mask, 
             return VERR_OUT_OF_RANGE;
         }
 
-        int rc = usbfsReadSkipSuffix(&pszNext);
-        if (RT_FAILURE(rc))
-            return rc;
+        int vrc = usbfsReadSkipSuffix(&pszNext);
+        if (RT_FAILURE(vrc))
+            return vrc;
 
         *ppszNext = pszNext;
 
@@ -378,9 +378,9 @@ static int usbfsReadBCD(const char *pszValue, unsigned uBase, uint16_t *pu16, ch
         /*
          * Validate and skip stuff following the number.
          */
-        int rc = usbfsReadSkipSuffix(&pszNext);
-        if (RT_FAILURE(rc))
-            return rc;
+        int vrc = usbfsReadSkipSuffix(&pszNext);
+        if (RT_FAILURE(vrc))
+            return vrc;
         *ppszNext = pszNext;
 
         /*
@@ -470,7 +470,7 @@ static char *usbfsPrefix(char *psz, const char *pszPref, size_t cchPref)
 
 /** Just a worker for USBProxyServiceLinux::getDevices that avoids some code duplication. */
 static int usbfsAddDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, const char *pszUsbfsRoot,
-                                 bool fUnsupportedDevicesToo, int rc)
+                                 bool fUnsupportedDevicesToo, int vrc)
 {
     /* usbDeterminState requires the address. */
     PUSBDEVICE pDevNew = (PUSBDEVICE)RTMemDup(pDev, sizeof(*pDev));
@@ -494,16 +494,16 @@ static int usbfsAddDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVIC
         else
         {
             deviceFree(pDevNew);
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
     }
     else
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
         deviceFreeMembers(pDev);
     }
 
-    return rc;
+    return vrc;
 }
 
 
@@ -534,9 +534,8 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
 {
     PUSBDEVICE pFirst = NULL;
     FILE *pFile = NULL;
-    int rc;
-    rc = usbfsOpenDevicesFile(pszUsbfsRoot, &pFile);
-    if (RT_SUCCESS(rc))
+    int vrc = usbfsOpenDevicesFile(pszUsbfsRoot, &pFile);
+    if (RT_SUCCESS(vrc))
     {
         PUSBDEVICE     *ppNext = NULL;
         int             cHits = 0;
@@ -546,11 +545,11 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
         Dev.enmState = USBDEVICESTATE_UNUSED;
 
         /* Set close on exit and hope no one is racing us. */
-        rc = fcntl(fileno(pFile), F_SETFD, FD_CLOEXEC) >= 0
-           ? VINF_SUCCESS
-           : RTErrConvertFromErrno(errno);
-        while (     RT_SUCCESS(rc)
-               &&   fgets(szLine, sizeof(szLine), pFile))
+        vrc = fcntl(fileno(pFile), F_SETFD, FD_CLOEXEC) >= 0
+            ? VINF_SUCCESS
+            : RTErrConvertFromErrno(errno);
+        while (   RT_SUCCESS(vrc)
+               && fgets(szLine, sizeof(szLine), pFile))
         {
             char   *psz;
             char   *pszValue;
@@ -595,7 +594,7 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                     /* add */
                     AssertMsg(cHits >= 3 || cHits == 0, ("cHits=%d\n", cHits));
                     if (cHits >= 3)
-                        rc = usbfsAddDeviceToChain(&Dev, &pFirst, &ppNext, pszUsbfsRoot, fUnsupportedDevicesToo, rc);
+                        vrc = usbfsAddDeviceToChain(&Dev, &pFirst, &ppNext, pszUsbfsRoot, fUnsupportedDevicesToo, vrc);
                     else
                         deviceFreeMembers(&Dev);
 
@@ -605,16 +604,16 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                     cHits = 1;
 
                     /* parse the line. */
-                    while (*psz && RT_SUCCESS(rc))
+                    while (*psz && RT_SUCCESS(vrc))
                     {
                         if (PREFIX("Bus="))
-                            rc = usbfsRead8(pszValue, 10, &Dev.bBus, &psz);
+                            vrc = usbfsRead8(pszValue, 10, &Dev.bBus, &psz);
                         else if (PREFIX("Port="))
-                            rc = usbfsRead8(pszValue, 10, &Dev.bPort, &psz);
+                            vrc = usbfsRead8(pszValue, 10, &Dev.bPort, &psz);
                         else if (PREFIX("Spd="))
-                            rc = usbfsReadSpeed(pszValue, &Dev.enmSpeed, &psz);
+                            vrc = usbfsReadSpeed(pszValue, &Dev.enmSpeed, &psz);
                         else if (PREFIX("Dev#="))
-                            rc = usbfsRead8(pszValue, 10, &Dev.bDevNum, &psz);
+                            vrc = usbfsRead8(pszValue, 10, &Dev.bDevNum, &psz);
                         else
                             psz = usbfsReadSkip(psz);
                         psz = RTStrStripL(psz);
@@ -643,24 +642,24 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                  * |__Device info tag #1
                  */
                 case 'D':
-                    while (*psz && RT_SUCCESS(rc))
+                    while (*psz && RT_SUCCESS(vrc))
                     {
                         if (PREFIX("Ver="))
-                            rc = usbfsReadBCD(pszValue, 16, &Dev.bcdUSB, &psz);
+                            vrc = usbfsReadBCD(pszValue, 16, &Dev.bcdUSB, &psz);
                         else if (PREFIX("Cls="))
                         {
-                            rc = usbfsRead8(pszValue, 16, &Dev.bDeviceClass, &psz);
-                            if (RT_SUCCESS(rc) && Dev.bDeviceClass == 9 /* HUB */)
+                            vrc = usbfsRead8(pszValue, 16, &Dev.bDeviceClass, &psz);
+                            if (RT_SUCCESS(vrc) && Dev.bDeviceClass == 9 /* HUB */)
                                 Dev.enmState = USBDEVICESTATE_UNSUPPORTED;
                         }
                         else if (PREFIX("Sub="))
-                            rc = usbfsRead8(pszValue, 16, &Dev.bDeviceSubClass, &psz);
+                            vrc = usbfsRead8(pszValue, 16, &Dev.bDeviceSubClass, &psz);
                         else if (PREFIX("Prot="))
-                            rc = usbfsRead8(pszValue, 16, &Dev.bDeviceProtocol, &psz);
+                            vrc = usbfsRead8(pszValue, 16, &Dev.bDeviceProtocol, &psz);
                         //else if (PREFIX("MxPS="))
-                        //    rc = usbRead16(pszValue, 10, &Dev.wMaxPacketSize, &psz);
+                        //    vrc = usbRead16(pszValue, 10, &Dev.wMaxPacketSize, &psz);
                         else if (PREFIX("#Cfgs="))
-                            rc = usbfsRead8(pszValue, 10, &Dev.bNumConfigurations, &psz);
+                            vrc = usbfsRead8(pszValue, 10, &Dev.bNumConfigurations, &psz);
                         else
                             psz = usbfsReadSkip(psz);
                         psz = RTStrStripL(psz);
@@ -676,14 +675,14 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                  * |__Device info tag #2
                  */
                 case 'P':
-                    while (*psz && RT_SUCCESS(rc))
+                    while (*psz && RT_SUCCESS(vrc))
                     {
                         if (PREFIX("Vendor="))
-                            rc = usbfsRead16(pszValue, 16, &Dev.idVendor, &psz);
+                            vrc = usbfsRead16(pszValue, 16, &Dev.idVendor, &psz);
                         else if (PREFIX("ProdID="))
-                            rc = usbfsRead16(pszValue, 16, &Dev.idProduct, &psz);
+                            vrc = usbfsRead16(pszValue, 16, &Dev.idProduct, &psz);
                         else if (PREFIX("Rev="))
-                            rc = usbfsReadBCD(pszValue, 16, &Dev.bcdDevice, &psz);
+                            vrc = usbfsReadBCD(pszValue, 16, &Dev.bcdDevice, &psz);
                         else
                             psz = usbfsReadSkip(psz);
                         psz = RTStrStripL(psz);
@@ -696,13 +695,13 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                  */
                 case 'S':
                     if (PREFIX("Manufacturer="))
-                        rc = usbfsReadStr(pszValue, &Dev.pszManufacturer);
+                        vrc = usbfsReadStr(pszValue, &Dev.pszManufacturer);
                     else if (PREFIX("Product="))
-                        rc = usbfsReadStr(pszValue, &Dev.pszProduct);
+                        vrc = usbfsReadStr(pszValue, &Dev.pszProduct);
                     else if (PREFIX("SerialNumber="))
                     {
-                        rc = usbfsReadStr(pszValue, &Dev.pszSerialNumber);
-                        if (RT_SUCCESS(rc))
+                        vrc = usbfsReadStr(pszValue, &Dev.pszSerialNumber);
+                        if (RT_SUCCESS(vrc))
                             Dev.u64SerialHash = USBLibHashSerial(pszValue);
                     }
                     break;
@@ -734,12 +733,12 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                 case 'I':
                 {
                     /* Check for thing we don't support.  */
-                    while (*psz && RT_SUCCESS(rc))
+                    while (*psz && RT_SUCCESS(vrc))
                     {
                         if (PREFIX("Driver="))
                         {
                             const char *pszDriver = NULL;
-                            rc = usbfsReadStr(pszValue, &pszDriver);
+                            vrc = usbfsReadStr(pszValue, &pszDriver);
                             if (   !pszDriver
                                 || !*pszDriver
                                 || !strcmp(pszDriver, "(none)")
@@ -755,8 +754,8 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
                         else if (PREFIX("Cls="))
                         {
                             uint8_t bInterfaceClass;
-                            rc = usbfsRead8(pszValue, 16, &bInterfaceClass, &psz);
-                            if (RT_SUCCESS(rc) && bInterfaceClass == 9 /* HUB */)
+                            vrc = usbfsRead8(pszValue, 16, &bInterfaceClass, &psz);
+                            if (RT_SUCCESS(vrc) && bInterfaceClass == 9 /* HUB */)
                                 Dev.enmState = USBDEVICESTATE_UNSUPPORTED;
                         }
                         else
@@ -788,12 +787,12 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
          */
         AssertMsg(cHits >= 3 || cHits == 0, ("cHits=%d\n", cHits));
         if (cHits >= 3)
-            rc = usbfsAddDeviceToChain(&Dev, &pFirst, &ppNext, pszUsbfsRoot, fUnsupportedDevicesToo, rc);
+            vrc = usbfsAddDeviceToChain(&Dev, &pFirst, &ppNext, pszUsbfsRoot, fUnsupportedDevicesToo, vrc);
 
         /*
          * Success?
          */
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
             while (pFirst)
             {
@@ -803,8 +802,8 @@ static PUSBDEVICE usbfsGetDevices(const char *pszUsbfsRoot, bool fUnsupportedDev
             }
         }
     }
-    if (RT_FAILURE(rc))
-        LogFlow(("USBProxyServiceLinux::getDevices: rc=%Rrc\n", rc));
+    if (RT_FAILURE(vrc))
+        LogFlow(("USBProxyServiceLinux::getDevices: vrc=%Rrc\n", vrc));
     return pFirst;
 }
 
@@ -891,8 +890,8 @@ static int usbsysfsAddIfDevice(const char *pszDevicesRoot, const char *pszNode, 
         return VINF_SUCCESS;
 
     int64_t device;
-    int rc = RTLinuxSysFsReadIntFile(10, &device, "%s/devnum", pszNode);
-    if (RT_FAILURE(rc))
+    int vrc = RTLinuxSysFsReadIntFile(10, &device, "%s/devnum", pszNode);
+    if (RT_FAILURE(vrc))
         return VINF_SUCCESS;
 
     dev_t devnum = usbsysfsMakeDevNum(bus, (int)device);
@@ -900,18 +899,16 @@ static int usbsysfsAddIfDevice(const char *pszDevicesRoot, const char *pszNode, 
         return VINF_SUCCESS;
 
     char szDevPath[RTPATH_MAX];
-    rc = RTLinuxCheckDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
-                                szDevPath, sizeof(szDevPath),
-                                "%s/%.3d/%.3d",
-                                pszDevicesRoot, bus, device);
-    if (RT_FAILURE(rc))
+    vrc = RTLinuxCheckDevicePath(devnum, RTFS_TYPE_DEV_CHAR, szDevPath, sizeof(szDevPath),
+                                 "%s/%.3d/%.3d", pszDevicesRoot, bus, device);
+    if (RT_FAILURE(vrc))
         return VINF_SUCCESS;
 
     USBDeviceInfo info;
     if (usbsysfsInitDevInfo(&info, szDevPath, pszNode))
     {
-        rc = VEC_PUSH_BACK_OBJ(pvecDevInfo, USBDeviceInfo, &info);
-        if (RT_SUCCESS(rc))
+        vrc = VEC_PUSH_BACK_OBJ(pvecDevInfo, USBDeviceInfo, &info);
+        if (RT_SUCCESS(vrc))
             return VINF_SUCCESS;
     }
     usbsysfsCleanupDevInfo(&info);
@@ -990,8 +987,8 @@ static int usbsysfsAddIfInterfaceOf(const char *pszNode, USBDeviceInfo *pInfo)
     char *pszDup = (char *)RTStrDup(pszNode);
     if (pszDup)
     {
-        int rc = VEC_PUSH_BACK_PTR(&pInfo->mvecpszInterfaces, char *, pszDup);
-        if (RT_SUCCESS(rc))
+        int vrc = VEC_PUSH_BACK_PTR(&pInfo->mvecpszInterfaces, char *, pszDup);
+        if (RT_SUCCESS(vrc))
             return VINF_SUCCESS;
         RTStrFree(pszDup);
     }
@@ -1009,7 +1006,7 @@ static int usbsysfsAddIfInterfaceOf(const char *pszNode, USBDeviceInfo *pInfo)
 static int usbsysfsReadFilePathsFromDir(const char *pszPath, DIR *pDir, VECTOR_PTR(char *) *pvecpchDevs)
 {
     struct dirent entry, *pResult;
-    int err, rc;
+    int err;
 
 #if RT_GNUC_PREREQ(4, 6)
 # pragma GCC diagnostic push
@@ -1032,8 +1029,9 @@ static int usbsysfsReadFilePathsFromDir(const char *pszPath, DIR *pDir, VECTOR_P
         char *pszPathCopy = RTStrDup(szRealPath);
         if (!pszPathCopy)
             return VERR_NO_MEMORY;
-        if (RT_FAILURE(rc = VEC_PUSH_BACK_PTR(pvecpchDevs, char *, pszPathCopy)))
-            return rc;
+        int vrc = VEC_PUSH_BACK_PTR(pvecpchDevs, char *, pszPathCopy);
+        if (RT_FAILURE(vrc))
+            return vrc;
     }
     return RTErrConvertFromErrno(err);
 }
@@ -1057,10 +1055,10 @@ static int usbsysfsReadFilePaths(const char *pszPath, VECTOR_PTR(char *) *pvecpc
     DIR *pDir = opendir(pszPath);
     if (!pDir)
         return RTErrConvertFromErrno(errno);
-    int rc = usbsysfsReadFilePathsFromDir(pszPath, pDir, pvecpchDevs);
-    if (closedir(pDir) < 0 && RT_SUCCESS(rc))
-        rc = RTErrConvertFromErrno(errno);
-    return rc;
+    int vrc = usbsysfsReadFilePathsFromDir(pszPath, pDir, pvecpchDevs);
+    if (closedir(pDir) < 0 && RT_SUCCESS(vrc))
+        vrc = RTErrConvertFromErrno(errno);
+    return vrc;
 }
 
 
@@ -1080,25 +1078,25 @@ static int usbsysfsEnumerateHostDevicesWorker(const char *pszDevicesRoot,
     AssertPtrReturn(pvecDevInfo, VERR_INVALID_POINTER);
     LogFlowFunc (("pvecDevInfo=%p\n", pvecDevInfo));
 
-    int rc = usbsysfsReadFilePaths("/sys/bus/usb/devices", pvecpchDevs);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = usbsysfsReadFilePaths("/sys/bus/usb/devices", pvecpchDevs);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     char **ppszEntry;
     VEC_FOR_EACH(pvecpchDevs, char *, ppszEntry)
     {
-        rc = usbsysfsAddIfDevice(pszDevicesRoot, *ppszEntry, pvecDevInfo);
-        if (RT_FAILURE(rc))
-            return rc;
+        vrc = usbsysfsAddIfDevice(pszDevicesRoot, *ppszEntry, pvecDevInfo);
+        if (RT_FAILURE(vrc))
+            return vrc;
     }
 
     USBDeviceInfo *pInfo;
     VEC_FOR_EACH(pvecDevInfo, USBDeviceInfo, pInfo)
         VEC_FOR_EACH(pvecpchDevs, char *, ppszEntry)
         {
-            rc = usbsysfsAddIfInterfaceOf(*ppszEntry, pInfo);
-            if (RT_FAILURE(rc))
-                return rc;
+            vrc = usbsysfsAddIfInterfaceOf(*ppszEntry, pInfo);
+            if (RT_FAILURE(vrc))
+                return vrc;
         }
     return VINF_SUCCESS;
 }
@@ -1111,10 +1109,10 @@ static int usbsysfsEnumerateHostDevices(const char *pszDevicesRoot, VECTOR_OBJ(U
     AssertReturn(VEC_SIZE_OBJ(pvecDevInfo) == 0, VERR_INVALID_PARAMETER);
     LogFlowFunc(("entered\n"));
     VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
-    int rc = usbsysfsEnumerateHostDevicesWorker(pszDevicesRoot, pvecDevInfo, &vecpchDevs);
+    int vrc = usbsysfsEnumerateHostDevicesWorker(pszDevicesRoot, pvecDevInfo, &vecpchDevs);
     VEC_CLEANUP_PTR(&vecpchDevs);
-    LogFlowFunc(("rc=%Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 
@@ -1184,10 +1182,10 @@ static int usbsysfsGetPortFromStr(const char *pszPath, uint8_t *pu8Port)
     const char *pszLastPort = pchDot != NULL
                             ? pchDot  + 1
                             : pchDash + 1;
-    int rc = RTStrToUInt8Full(pszLastPort, 10, pu8Port);
-    if (rc != VINF_SUCCESS)
+    int vrc = RTStrToUInt8Full(pszLastPort, 10, pu8Port);
+    if (vrc != VINF_SUCCESS)
     {
-        Log(("usbGetPortFromSysfsPath(%s): failed [3], rc=%Rrc\n", pszPath, rc));
+        Log(("usbGetPortFromSysfsPath(%s): failed [3], vrc=%Rrc\n", pszPath, vrc));
         return VERR_INVALID_PARAMETER;
     }
     if (*pu8Port == 0)
@@ -1218,9 +1216,9 @@ static int usbsysfsConvertStrToBCD(const char *pszBuf, uint16_t *pu16)
     int32_t i32;
 
     pszBuf = RTStrStripL(pszBuf);
-    int rc = RTStrToInt32Ex(pszBuf, &pszNext, 16, &i32);
-    if (   RT_FAILURE(rc)
-        || rc == VWRN_NUMBER_TOO_BIG
+    int vrc = RTStrToInt32Ex(pszBuf, &pszNext, 16, &i32);
+    if (   RT_FAILURE(vrc)
+        || vrc == VWRN_NUMBER_TOO_BIG
         || i32 < 0)
         return VERR_NUMBER_TOO_BIG;
     if (*pszNext == '.')
@@ -1228,9 +1226,9 @@ static int usbsysfsConvertStrToBCD(const char *pszBuf, uint16_t *pu16)
         if (i32 > 255)
             return VERR_NUMBER_TOO_BIG;
         int32_t i32Lo;
-        rc = RTStrToInt32Ex(pszNext+1, &pszNext, 16, &i32Lo);
-        if (   RT_FAILURE(rc)
-            || rc == VWRN_NUMBER_TOO_BIG
+        vrc = RTStrToInt32Ex(pszNext+1, &pszNext, 16, &i32Lo);
+        if (   RT_FAILURE(vrc)
+            || vrc == VWRN_NUMBER_TOO_BIG
             || i32Lo > 255
             || i32Lo < 0)
             return VERR_NUMBER_TOO_BIG;
@@ -1251,22 +1249,21 @@ static int usbsysfsConvertStrToBCD(const char *pszBuf, uint16_t *pu16)
  *
  * @returns uint8_t value of the given property.
  * @param   uBase       The base of the number in the sysfs property.
- * @param   bDef        The default to set on error.
+ * @param   fDef        The default to set on error.
  * @param   pszFormat   The format string for the property.
  * @param   ...         Arguments for the format string.
  */
-static uint8_t usbsysfsReadDevicePropertyU8Def(unsigned uBase, uint8_t bDef, const char *pszFormat, ...)
+static uint8_t usbsysfsReadDevicePropertyU8Def(unsigned uBase, uint8_t fDef, const char *pszFormat, ...)
 {
     int64_t i64Tmp = 0;
 
     va_list va;
     va_start(va, pszFormat);
-    int rc = RTLinuxSysFsReadIntFileV(uBase, &i64Tmp, pszFormat, va);
+    int vrc = RTLinuxSysFsReadIntFileV(uBase, &i64Tmp, pszFormat, va);
     va_end(va);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
         return (uint8_t)i64Tmp;
-    else
-        return bDef;
+    return fDef;
 }
 
 
@@ -1286,18 +1283,17 @@ static uint16_t usbsysfsReadDevicePropertyU16Def(unsigned uBase, uint16_t u16Def
 
     va_list va;
     va_start(va, pszFormat);
-    int rc = RTLinuxSysFsReadIntFileV(uBase, &i64Tmp, pszFormat, va);
+    int vrc = RTLinuxSysFsReadIntFileV(uBase, &i64Tmp, pszFormat, va);
     va_end(va);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
         return (uint16_t)i64Tmp;
-    else
-        return u16Def;
+    return u16Def;
 }
 
 
 static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
 {
-    int rc;
+    int vrc;
     const char *pszSysfsPath = pInfo->mSysfsPath;
 
     /* Fill in the simple fields */
@@ -1318,8 +1314,8 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     size_t cchRead;
 
     /* For simplicity, we just do strcmps on the next one. */
-    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/speed", pszSysfsPath);
-    if (RT_FAILURE(rc) || cchRead == sizeof(szBuf))
+    vrc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/speed", pszSysfsPath);
+    if (RT_FAILURE(vrc) || cchRead == sizeof(szBuf))
         pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
     else
         pDev->enmSpeed = !strcmp(szBuf, "1.5")  ? USBDEVICESPEED_LOW
@@ -1328,47 +1324,47 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
                        : !strcmp(szBuf, "5000") ? USBDEVICESPEED_SUPER
                        : USBDEVICESPEED_UNKNOWN;
 
-    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/version", pszSysfsPath);
-    if (RT_FAILURE(rc) || cchRead == sizeof(szBuf))
+    vrc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/version", pszSysfsPath);
+    if (RT_FAILURE(vrc) || cchRead == sizeof(szBuf))
         pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
     else
     {
-        rc = usbsysfsConvertStrToBCD(szBuf, &pDev->bcdUSB);
-        if (RT_FAILURE(rc))
+        vrc = usbsysfsConvertStrToBCD(szBuf, &pDev->bcdUSB);
+        if (RT_FAILURE(vrc))
         {
             pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
             pDev->bcdUSB   = UINT16_MAX;
         }
     }
 
-    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/bcdDevice", pszSysfsPath);
-    if (RT_FAILURE(rc) || cchRead == sizeof(szBuf))
+    vrc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/bcdDevice", pszSysfsPath);
+    if (RT_FAILURE(vrc) || cchRead == sizeof(szBuf))
         pDev->bcdDevice = UINT16_MAX;
     else
     {
-        rc = usbsysfsConvertStrToBCD(szBuf, &pDev->bcdDevice);
-        if (RT_FAILURE(rc))
+        vrc = usbsysfsConvertStrToBCD(szBuf, &pDev->bcdDevice);
+        if (RT_FAILURE(vrc))
             pDev->bcdDevice = UINT16_MAX;
     }
 
     /* Now do things that need string duplication */
-    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/product", pszSysfsPath);
-    if (RT_SUCCESS(rc) && cchRead < sizeof(szBuf))
+    vrc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/product", pszSysfsPath);
+    if (RT_SUCCESS(vrc) && cchRead < sizeof(szBuf))
     {
         USBLibPurgeEncoding(szBuf);
         pDev->pszProduct = RTStrDup(szBuf);
     }
 
-    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/serial", pszSysfsPath);
-    if (RT_SUCCESS(rc) && cchRead < sizeof(szBuf))
+    vrc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/serial", pszSysfsPath);
+    if (RT_SUCCESS(vrc) && cchRead < sizeof(szBuf))
     {
         USBLibPurgeEncoding(szBuf);
         pDev->pszSerialNumber = RTStrDup(szBuf);
         pDev->u64SerialHash = USBLibHashSerial(szBuf);
     }
 
-    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/manufacturer", pszSysfsPath);
-    if (RT_SUCCESS(rc) && cchRead < sizeof(szBuf))
+    vrc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/manufacturer", pszSysfsPath);
+    if (RT_SUCCESS(vrc) && cchRead < sizeof(szBuf))
     {
         USBLibPurgeEncoding(szBuf);
         pDev->pszManufacturer = RTStrDup(szBuf);
@@ -1382,8 +1378,8 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     char **ppszIf;
     VEC_FOR_EACH(&pInfo->mvecpszInterfaces, char *, ppszIf)
     {
-        rc = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), NULL, "%s/driver", *ppszIf);
-        if (RT_SUCCESS(rc) && pDev->enmState != USBDEVICESTATE_UNSUPPORTED)
+        vrc = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), NULL, "%s/driver", *ppszIf);
+        if (RT_SUCCESS(vrc) && pDev->enmState != USBDEVICESTATE_UNSUPPORTED)
             pDev->enmState = (strcmp(szBuf, "hub") == 0)
                            ? USBDEVICESTATE_UNSUPPORTED
                            : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
@@ -1415,20 +1411,19 @@ static PUSBDEVICE usbsysfsGetDevices(const char *pszDevicesRoot, bool fUnsupport
     PUSBDEVICE pLast  = NULL;
     VECTOR_OBJ(USBDeviceInfo) vecDevInfo;
     USBDeviceInfo *pInfo;
-    int rc;
 
     VEC_INIT_OBJ(&vecDevInfo, USBDeviceInfo, usbsysfsCleanupDevInfo);
-    rc = usbsysfsEnumerateHostDevices(pszDevicesRoot, &vecDevInfo);
-    if (RT_FAILURE(rc))
+    int vrc = usbsysfsEnumerateHostDevices(pszDevicesRoot, &vecDevInfo);
+    if (RT_FAILURE(vrc))
         return NULL;
     VEC_FOR_EACH(&vecDevInfo, USBDeviceInfo, pInfo)
     {
         USBDEVICE *pDev = (USBDEVICE *)RTMemAllocZ(sizeof(USBDEVICE));
         if (!pDev)
-            rc = VERR_NO_MEMORY;
-        if (RT_SUCCESS(rc))
+            vrc = VERR_NO_MEMORY;
+        if (RT_SUCCESS(vrc))
             usbsysfsFillInDevice(pDev, pInfo);
-        if (   RT_SUCCESS(rc)
+        if (   RT_SUCCESS(vrc)
             && (   pDev->enmState != USBDEVICESTATE_UNSUPPORTED
                 || fUnsupportedDevicesToo)
             && pDev->pszAddress != NULL
@@ -1444,10 +1439,10 @@ static PUSBDEVICE usbsysfsGetDevices(const char *pszDevicesRoot, bool fUnsupport
         }
         else
             deviceFree(pDev);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             break;
     }
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         deviceListFree(&pFirst);
 
     VEC_CLEANUP_OBJ(&vecDevInfo);

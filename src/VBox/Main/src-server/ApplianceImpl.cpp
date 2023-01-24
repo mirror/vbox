@@ -545,7 +545,6 @@ HRESULT VirtualBox::createAppliance(ComPtr<IAppliance> &aAppliance)
  */
 HRESULT Appliance::init(VirtualBox *aVirtualBox)
 {
-    HRESULT rc = S_OK;
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -558,12 +557,12 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
     m->m_pSecretKeyStore = new SecretKeyStore(false /* fRequireNonPageable*/);
     AssertReturn(m->m_pSecretKeyStore, E_FAIL);
 
-    rc = i_initBackendNames();
+    HRESULT hrc = i_initBackendNames();
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -702,7 +701,7 @@ HRESULT Appliance::createVFSExplorer(const com::Utf8Str &aURI, ComPtr<IVFSExplor
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<VFSExplorer> explorer;
-    HRESULT rc = S_OK;
+    HRESULT hrc;
     try
     {
         Utf8Str uri(aURI);
@@ -711,18 +710,18 @@ HRESULT Appliance::createVFSExplorer(const com::Utf8Str &aURI, ComPtr<IVFSExplor
         i_parseURI(aURI, li);
         /* Create the explorer object */
         explorer.createObject();
-        rc = explorer->init(li.storageType, li.strPath, li.strHostname, li.strUsername, li.strPassword, mVirtualBox);
+        hrc = explorer->init(li.storageType, li.strPath, li.strHostname, li.strUsername, li.strPassword, mVirtualBox);
     }
     catch (HRESULT aRC)
     {
-        rc = aRC;
+        hrc = aRC;
     }
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         /* Return explorer to the caller */
         explorer.queryInterfaceTo(aExplorer.asOutParam());
 
-    return rc;
+    return hrc;
 }
 
 
@@ -737,7 +736,7 @@ HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCre
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     uint32_t lQuantity = aRequested;
     uint32_t i=0;
 
@@ -748,11 +747,11 @@ HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCre
         for (; i<lQuantity; ++i)
         {
             ComObjPtr<VirtualSystemDescription> opVSD;
-            rc = opVSD.createObject();
-            if (SUCCEEDED(rc))
+            hrc = opVSD.createObject();
+            if (SUCCEEDED(hrc))
             {
-                rc = opVSD->init();
-                if (SUCCEEDED(rc))
+                hrc = opVSD->init();
+                if (SUCCEEDED(hrc))
                     m->virtualSystemDescriptions.push_back(opVSD);
                 else
                     break;
@@ -776,10 +775,10 @@ HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCre
             else
                 break;
         }
-        rc = aRC;
+        hrc = aRC;
     }
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -836,8 +835,8 @@ HRESULT Appliance::addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
     for (unsigned i = 0; i < aIdentifiers.size(); i++)
     {
         SecretKey *pKey = NULL;
-        int rc = m->m_pSecretKeyStore->retainSecretKey(aIdentifiers[i], &pKey);
-        if (rc != VERR_NOT_FOUND)
+        int vrc = m->m_pSecretKeyStore->retainSecretKey(aIdentifiers[i], &pKey);
+        if (vrc != VERR_NOT_FOUND)
         {
             AssertPtr(pKey);
             if (pKey)
@@ -851,13 +850,13 @@ HRESULT Appliance::addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
         size_t cbKey = aPasswords[i].length() + 1; /* Include terminator */
         const uint8_t *pbKey = (const uint8_t *)aPasswords[i].c_str();
 
-        int rc = m->m_pSecretKeyStore->addSecretKey(aIdentifiers[i], pbKey, cbKey);
-        if (RT_SUCCESS(rc))
+        int vrc = m->m_pSecretKeyStore->addSecretKey(aIdentifiers[i], pbKey, cbKey);
+        if (RT_SUCCESS(vrc))
             m->m_cPwProvided++;
-        else if (rc == VERR_NO_MEMORY)
+        else if (vrc == VERR_NO_MEMORY)
             hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate enough secure memory for the key"));
         else
-            hrc = setError(E_FAIL, tr("Unknown error happened while adding a password (%Rrc)"), rc);
+            hrc = setErrorBoth(E_FAIL, vrc, tr("Unknown error happened while adding a password (%Rrc)"), vrc);
     }
 
     return hrc;
@@ -946,7 +945,7 @@ std::set<Utf8Str> Appliance::i_URIFromTypeOfVirtualDiskFormat(Utf8Str type)
  */
 HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, ComObjPtr<MediumFormat>& mf)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
@@ -976,10 +975,9 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
             else
             {
                 mf.setNull();
-                rc = setError(E_FAIL,
-                              tr("Internal inconsistency looking up medium format for the disk image '%s'"),
-                              di.strHref.c_str());
-                return rc;
+                hrc = setError(E_FAIL, tr("Internal inconsistency looking up medium format for the disk image '%s'"),
+                               di.strHref.c_str());
+                return hrc;
             }
         }
         /* Figure out from extension which format the image of disk has. */
@@ -997,10 +995,9 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
         mf = pSysProps->i_mediumFormat(strSrcFormat);
 
     if (mf.isNull())
-        rc = setError(E_FAIL, tr("Internal inconsistency looking up medium format for the disk image '%s'"),
-                      di.strHref.c_str());
+        hrc = setError(E_FAIL, tr("Internal inconsistency looking up medium format for the disk image '%s'"), di.strHref.c_str());
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -1036,7 +1033,7 @@ RTVFSIOSTREAM Appliance::i_manifestSetupDigestCalculationForGivenIoStream(RTVFSI
     if (RT_SUCCESS(vrc))
         return hVfsIosPt;
 
-    setErrorVrc(vrc, tr("RTManifestEntryAddPassthruIoStream failed with rc=%Rrc"), vrc);
+    setErrorVrc(vrc, tr("RTManifestEntryAddPassthruIoStream failed with vrc=%Rrc"), vrc);
     return NIL_RTVFSIOSTREAM;
 }
 
@@ -1092,8 +1089,8 @@ HRESULT Appliance::i_ensureUniqueImageFilePath(const Utf8Str &aMachineFolder, De
     for (unsigned i = 1;; i++)
     {
         /* Complete the path (could be relative to machine folder). */
-        int rc = RTPathAbsExCxx(strAbsName, aMachineFolder, aName);
-        AssertRCReturn(rc, Global::vboxStatusCodeToCOM(rc));  /** @todo stupid caller ignores this */
+        int vrc = RTPathAbsExCxx(strAbsName, aMachineFolder, aName);
+        AssertRCReturn(vrc, Global::vboxStatusCodeToCOM(vrc));  /** @todo stupid caller ignores this */
 
         /* Check that the file does not exist and that there is no media somehow matching the name. */
         if (!RTPathExists(strAbsName.c_str()))
@@ -1126,14 +1123,14 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
                                    const Utf8Str &strDescription,
                                    SetUpProgressMode mode)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     /* Create the progress object */
     try
     {
-        rc = pProgress.createObject();
-        if (FAILED(rc))
-            return rc;
+        hrc = pProgress.createObject();
+        if (FAILED(hrc))
+            return hrc;
     }
     catch (std::bad_alloc &)
     {
@@ -1334,53 +1331,53 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
         case TaskOVF::Read:
             pAppliance->m->resetReadData();
             if (pTask->locInfo.storageType == VFSType_File)
-                pTask->rc = pAppliance->i_readFS(pTask);
+                pTask->hrc = pAppliance->i_readFS(pTask);
             else
-                pTask->rc = E_NOTIMPL;
+                pTask->hrc = E_NOTIMPL;
             break;
 
         case TaskOVF::Import:
             /** @todo allow overriding these? */
             if (!pAppliance->m->fSignatureValid && pAppliance->m->pbSignedDigest)
-                pTask->rc = pAppliance->setError(E_FAIL, tr("The manifest signature for '%s' is not valid"),
-                                                 pTask->locInfo.strPath.c_str());
+                pTask->hrc = pAppliance->setError(E_FAIL, tr("The manifest signature for '%s' is not valid"),
+                                                  pTask->locInfo.strPath.c_str());
             else if (!pAppliance->m->fCertificateValid && pAppliance->m->pbSignedDigest)
             {
                 if (pAppliance->m->strCertError.isNotEmpty())
-                    pTask->rc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is not valid: %s"),
-                                                     pTask->locInfo.strPath.c_str(), pAppliance->m->strCertError.c_str());
+                    pTask->hrc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is not valid: %s"),
+                                                      pTask->locInfo.strPath.c_str(), pAppliance->m->strCertError.c_str());
                 else
-                    pTask->rc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is not valid"),
-                                                     pTask->locInfo.strPath.c_str());
+                    pTask->hrc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is not valid"),
+                                                      pTask->locInfo.strPath.c_str());
             }
             // fusion does not consider this a show stopper (we've filed a warning during read).
             //else if (pAppliance->m->fCertificateMissingPath && pAppliance->m->pbSignedDigest)
-            //    pTask->rc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is does not have a valid CA path"),
-            //                                     pTask->locInfo.strPath.c_str());
+            //    pTask->hrc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is does not have a valid CA path"),
+            //                                      pTask->locInfo.strPath.c_str());
             else
             {
                 if (pTask->locInfo.storageType == VFSType_File)
-                    pTask->rc = pAppliance->i_importFS(pTask);
+                    pTask->hrc = pAppliance->i_importFS(pTask);
                 else
-                    pTask->rc = E_NOTIMPL;
+                    pTask->hrc = E_NOTIMPL;
             }
             break;
 
         case TaskOVF::Write:
             if (pTask->locInfo.storageType == VFSType_File)
-                pTask->rc = pAppliance->i_writeFS(pTask);
+                pTask->hrc = pAppliance->i_writeFS(pTask);
             else
-                pTask->rc = E_NOTIMPL;
+                pTask->hrc = E_NOTIMPL;
             break;
 
         default:
             AssertFailed();
-            pTask->rc = E_FAIL;
+            pTask->hrc = E_FAIL;
             break;
     }
 
     if (!pTask->pProgress.isNull())
-        pTask->pProgress->i_notifyComplete(pTask->rc);
+        pTask->pProgress->i_notifyComplete(pTask->hrc);
 
     LogFlowFuncLeave();
 }
@@ -1417,17 +1414,17 @@ void Appliance::i_exportOPCThreadTask(TaskOPC *pTask)
     switch (pTask->taskType)
     {
         case TaskOPC::Export:
-            pTask->rc = pAppliance->i_writeFSOPC(pTask);
+            pTask->hrc = pAppliance->i_writeFSOPC(pTask);
             break;
 
         default:
             AssertFailed();
-            pTask->rc = E_FAIL;
+            pTask->hrc = E_FAIL;
             break;
     }
 
     if (!pTask->pProgress.isNull())
-        pTask->pProgress->i_notifyComplete(pTask->rc);
+        pTask->pProgress->i_notifyComplete(pTask->hrc);
 
     LogFlowFuncLeave();
 }
@@ -1466,26 +1463,26 @@ void Appliance::i_importOrExportCloudThreadTask(TaskCloud *pTask)
     {
         case TaskCloud::Export:
             pAppliance->i_setApplianceState(ApplianceExporting);
-            pTask->rc = pAppliance->i_exportCloudImpl(pTask);
+            pTask->hrc = pAppliance->i_exportCloudImpl(pTask);
             break;
         case TaskCloud::Import:
             pAppliance->i_setApplianceState(ApplianceImporting);
-            pTask->rc = pAppliance->i_importCloudImpl(pTask);
+            pTask->hrc = pAppliance->i_importCloudImpl(pTask);
             break;
         case TaskCloud::ReadData:
             pAppliance->i_setApplianceState(ApplianceImporting);
-            pTask->rc = pAppliance->i_gettingCloudData(pTask);
+            pTask->hrc = pAppliance->i_gettingCloudData(pTask);
             break;
         default:
             AssertFailed();
-            pTask->rc = E_FAIL;
+            pTask->hrc = E_FAIL;
             break;
     }
 
     pAppliance->i_setApplianceState(ApplianceIdle);
 
     if (!pTask->pProgress.isNull())
-        pTask->pProgress->i_notifyComplete(pTask->rc);
+        pTask->pProgress->i_notifyComplete(pTask->hrc);
 
     LogFlowFuncLeave();
 }
