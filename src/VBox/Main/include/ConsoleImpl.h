@@ -445,9 +445,6 @@ private:
         }
         /** Returns the result of Console::addVMCaller() */
         HRESULT hrc() const { return mRC; }
-        /** Returns the result of Console::addVMCaller()
-         * @deprecated Use #hrc() instead.  */
-        HRESULT rc() const { return mRC; }
         /** Shortcut to SUCCEEDED(hrc()) */
         bool isOk() const { return SUCCEEDED(mRC); }
     protected:
@@ -543,9 +540,6 @@ private:
 
         /** The combined result of Console::addVMCaller() and Console::safeVMPtrRetainer */
         HRESULT hrc() const { return Base::isOk() ? mRC : Base::hrc(); }
-        /** The combined result of Console::addVMCaller() and Console::safeVMPtrRetainer
-         * @deprecated Use hrc() instead.  */
-        HRESULT rc() const { return Base::isOk() ? mRC : Base::hrc(); }
         /** Shortcut to SUCCEEDED(hrc()) */
         bool isOk() const { return SUCCEEDED(mRC) && Base::isOk(); }
 
@@ -885,7 +879,7 @@ private:
 
     static DECLCALLBACK(int)    i_stateProgressCallback(PUVM pUVM, unsigned uPercent, void *pvUser);
 
-    static DECLCALLBACK(void)   i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
+    static DECLCALLBACK(void)   i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int vrc, RT_SRC_POS_DECL,
                                                             const char *pszErrorFmt, va_list va);
 
     void                        i_atVMRuntimeErrorCallbackF(uint32_t fFatal, const char *pszErrorId, const char *pszFormat, ...);
