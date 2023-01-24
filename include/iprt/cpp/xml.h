@@ -163,6 +163,11 @@ public:
         return mRC;
     }
 
+    int getStatus() const
+    {
+        return mRC;
+    }
+
 private:
     int mRC;
 };

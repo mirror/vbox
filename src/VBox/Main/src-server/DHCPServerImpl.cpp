@@ -1005,7 +1005,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
         }
         catch (const xml::EIPRTFailure &e)
         {
-            vrc = e.rc();
+            vrc = e.getStatus();
             LogThisFunc(("caught xml::EIPRTFailure: rc=%Rrc (attempt %u, msg=%s)\n", vrc, uReadAttempt, e.what()));
             if (   (   vrc == VERR_FILE_NOT_FOUND
                     || vrc == VERR_OPEN_FAILED

@@ -6259,8 +6259,7 @@ HRESULT Console::i_onUSBDeviceDetach(IN_BSTR aId,
         AutoVMCallerQuiet autoVMCaller(this);
         if (FAILED(autoVMCaller.hrc()))
         {
-            LogFlowThisFunc(("Detach request ignored (mMachineState=%d).\n",
-                              mMachineState));
+            LogFlowThisFunc(("Detach request ignored (mMachineState=%d).\n", mMachineState));
             return autoVMCaller.hrc();
         }
 

@@ -607,7 +607,7 @@ HRESULT VirtualBox::init()
             // this is thrown by the XML backend if the RTOpen() call fails;
             // only if the main settings file does not exist, create it,
             // if there's something more serious, then do fail!
-            if (e.rc() == VERR_FILE_NOT_FOUND)
+            if (e.getStatus() == VERR_FILE_NOT_FOUND)
                 fCreate = true;
             else
                 throw;
