@@ -163,14 +163,14 @@ static const char * const g_apszOglMethods[] =
  */
 DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
 {
-    int rc;
+    int vrc;
 
 #ifdef RT_OS_WINDOWS
     static RTLDRMOD s_hOpenGL32 = NULL;
     if (s_hOpenGL32 == NULL)
     {
-        rc = RTLdrLoadSystem("opengl32", /* fNoUnload = */ true, &s_hOpenGL32);
-        if (RT_FAILURE(rc))
+        vrc = RTLdrLoadSystem("opengl32", /* fNoUnload = */ true, &s_hOpenGL32);
+        if (RT_FAILURE(vrc))
            s_hOpenGL32 = NULL;
     }
 
@@ -180,8 +180,8 @@ DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
     {
         if (s_hOpenGL32 != NULL)
         {
-            rc = RTLdrGetSymbol(s_hOpenGL32, "wglGetProcAddress", (void **)&s_wglGetProcAddress);
-            if (RT_FAILURE(rc))
+            vrc = RTLdrGetSymbol(s_hOpenGL32, "wglGetProcAddress", (void **)&s_wglGetProcAddress);
+            if (RT_FAILURE(vrc))
                s_wglGetProcAddress = NULL;
         }
     }
@@ -194,8 +194,8 @@ DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
             return p;
 
         /* Might be an exported symbol. */
-        rc = RTLdrGetSymbol(s_hOpenGL32, pszSymbol, (void **)&p);
-        if (RT_SUCCESS(rc))
+        vrc = RTLdrGetSymbol(s_hOpenGL32, pszSymbol, (void **)&p);
+        if (RT_SUCCESS(vrc))
             return p;
     }
 #else /* The X11 gang */
@@ -203,8 +203,8 @@ DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
     if (s_hGL == NULL)
     {
         static const char s_szLibGL[] = "libGL.so.1";
-        rc = RTLdrLoadEx(s_szLibGL, &s_hGL, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
-        if (RT_FAILURE(rc))
+        vrc = RTLdrLoadEx(s_szLibGL, &s_hGL, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
+        if (RT_FAILURE(vrc))
         {
             s_hGL = NULL;
             return NULL;
@@ -215,8 +215,8 @@ DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
     static PFNGLXGETPROCADDRESS s_glXGetProcAddress = NULL;
     if (s_glXGetProcAddress == NULL)
     {
-        rc = RTLdrGetSymbol(s_hGL, "glXGetProcAddress", (void **)&s_glXGetProcAddress);
-        if (RT_FAILURE(rc))
+        vrc = RTLdrGetSymbol(s_hGL, "glXGetProcAddress", (void **)&s_glXGetProcAddress);
+        if (RT_FAILURE(vrc))
         {
             s_glXGetProcAddress = NULL;
             return NULL;
@@ -228,8 +228,8 @@ DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
         return p;
 
     /* Might be an exported symbol. */
-    rc = RTLdrGetSymbol(s_hGL, pszSymbol, (void **)&p);
-    if (RT_SUCCESS(rc))
+    vrc = RTLdrGetSymbol(s_hGL, pszSymbol, (void **)&p);
+    if (RT_SUCCESS(vrc))
         return p;
 #endif
 
@@ -389,11 +389,11 @@ int main(int argc, char **argv)
 {
     RTR3InitExe(argc, &argv, 0);
 
-    int rc = 0;
+    int vrc = 0;
     if (argc < 2)
     {
         /* backwards compatibility: check 3D */
-        rc = vboxCheck3DAccelerationSupported();
+        vrc = vboxCheck3DAccelerationSupported();
     }
     else
     {
@@ -408,33 +408,33 @@ int main(int argc, char **argv)
         };
 
         RTGETOPTSTATE State;
-        rc = RTGetOptInit(&State, argc, argv, &s_aOptionDefs[0], RT_ELEMENTS(s_aOptionDefs), 1, 0);
-        AssertRCReturn(rc, 49);
+        vrc = RTGetOptInit(&State, argc, argv, &s_aOptionDefs[0], RT_ELEMENTS(s_aOptionDefs), 1, 0);
+        AssertRCReturn(vrc, 49);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        bool bTest2D = false;
+        bool fTest2D = false;
 #endif
-        bool bTest3D = false;
+        bool fTest3D = false;
 #ifdef VBOXGLTEST_WITH_LOGGING
-        bool bLog = false;
-        bool bLogSuffix = false;
+        bool fLog = false;
+        bool fLogSuffix = false;
         const char * pLog = NULL;
 #endif
 
         for (;;)
         {
             RTGETOPTUNION Val;
-            rc = RTGetOpt(&State, &Val);
-            if (!rc)
+            vrc = RTGetOpt(&State, &Val);
+            if (!vrc)
                 break;
-            switch (rc)
+            switch (vrc)
             {
                 case 't':
                     if (!strcmp(Val.psz, "3D") || !strcmp(Val.psz, "3d"))
-                        bTest3D = true;
+                        fTest3D = true;
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     else if (!strcmp(Val.psz, "2D") || !strcmp(Val.psz, "2d"))
-                        bTest2D = true;
+                        fTest2D = true;
 #endif
                     else
                         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unknown test: %s", Val.psz);
@@ -442,11 +442,11 @@ int main(int argc, char **argv)
 
 #ifdef VBOXGLTEST_WITH_LOGGING
                 case 'l':
-                    bLog = true;
+                    fLog = true;
                     pLog = Val.psz;
                     break;
                 case 'L':
-                    bLog = true;
+                    fLog = true;
                     pLog = NULL;
                     break;
 #endif
@@ -477,7 +477,7 @@ int main(int argc, char **argv)
                 case VERR_GETOPT_UNKNOWN_OPTION:
                 case VINF_GETOPT_NOT_OPTION:
                 default:
-                    return RTGetOptPrintError(rc, &Val);
+                    return RTGetOptPrintError(vrc, &Val);
             }
         }
 
@@ -485,34 +485,34 @@ int main(int argc, char **argv)
          * Init logging and output.
          */
 #ifdef VBOXGLTEST_WITH_LOGGING
-        if (!bLog)
+        if (!fLog)
         {
             /* check the VBOXGLTEST_LOG env var */
             pLog = RTEnvGet("VBOXGLTEST_LOG");
             if(pLog)
-                bLog = true;
-            bLogSuffix = true;
+                fLog = true;
+            fLogSuffix = true;
         }
-        if (bLog)
-            rc = vboxInitLogging(pLog, bLogSuffix);
+        if (fLog)
+            vrc = vboxInitLogging(pLog, fLogSuffix);
         else
 #endif
-            rc = vboxInitQuietMode();
+            vrc = vboxInitQuietMode();
 
         /*
          * Do the job.
          */
-        if (!rc && bTest3D)
-            rc = vboxCheck3DAccelerationSupported();
+        if (!vrc && fTest3D)
+            vrc = vboxCheck3DAccelerationSupported();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        if (!rc && bTest2D)
-            rc = vboxCheck2DVideoAccelerationSupported();
+        if (!vrc && fTest2D)
+            vrc = vboxCheck2DVideoAccelerationSupported();
 #endif
     }
 
     /*RTR3Term();*/
-    return rc;
+    return vrc;
 
 }
 

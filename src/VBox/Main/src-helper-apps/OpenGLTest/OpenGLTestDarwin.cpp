@@ -101,8 +101,8 @@ bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void)
        execute once construct to make sure there aren't any threading issues. */
     static RTONCE s_Once = RTONCE_INITIALIZER;
     static bool   s_fCached = false;
-    int rc = RTOnce(&s_Once, vboxOglIsOfflineRenderingAppropriateOnce, &s_fCached);
-    AssertRC(rc);
+    int vrc = RTOnce(&s_Once, vboxOglIsOfflineRenderingAppropriateOnce, &s_fCached);
+    AssertRC(vrc);
     return s_fCached;
 }
 

@@ -172,11 +172,11 @@ static bool IsValidCertificateDir(const char *pszCertDir)
      * Just be darn strict for now.
      */
     char szCorrect[RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch(szCorrect, sizeof(szCorrect));
-    if (RT_FAILURE(rc))
+    int vrc = RTPathAppPrivateNoArch(szCorrect, sizeof(szCorrect));
+    if (RT_FAILURE(vrc))
         return false;
-    rc = RTPathAppend(szCorrect, sizeof(szCorrect), VBOX_EXTPACK_CERT_DIR);
-    if (RT_FAILURE(rc))
+    vrc = RTPathAppend(szCorrect, sizeof(szCorrect), VBOX_EXTPACK_CERT_DIR);
+    if (RT_FAILURE(vrc))
         return false;
 
     return RTPathCompare(szCorrect, pszCertDir) == 0;
@@ -195,11 +195,11 @@ static bool IsValidBaseDir(const char *pszBaseDir)
      * Just be darn strict for now.
      */
     char szCorrect[RTPATH_MAX];
-    int rc = RTPathAppPrivateArchTop(szCorrect, sizeof(szCorrect));
-    if (RT_FAILURE(rc))
+    int vrc = RTPathAppPrivateArchTop(szCorrect, sizeof(szCorrect));
+    if (RT_FAILURE(vrc))
         return false;
-    rc = RTPathAppend(szCorrect, sizeof(szCorrect), VBOX_EXTPACK_INSTALL_DIR);
-    if (RT_FAILURE(rc))
+    vrc = RTPathAppend(szCorrect, sizeof(szCorrect), VBOX_EXTPACK_INSTALL_DIR);
+    if (RT_FAILURE(vrc))
         return false;
 
     return RTPathCompare(szCorrect, pszBaseDir) == 0;
@@ -220,11 +220,11 @@ static bool IsValidBaseDir(const char *pszBaseDir)
 static RTEXITCODE RemoveExtPackDir(const char *pszDir, bool fTemporary)
 {
     /** @todo May have to undo 555 modes here later.  */
-    int rc = RTDirRemoveRecursive(pszDir, RTDIRRMREC_F_CONTENT_AND_DIR);
-    if (RT_FAILURE(rc))
+    int vrc = RTDirRemoveRecursive(pszDir, RTDIRRMREC_F_CONTENT_AND_DIR);
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "Failed to delete the %sextension pack directory: %Rrc ('%s')",
-                              fTemporary ? "temporary " : "", rc, pszDir);
+                              fTemporary ? "temporary " : "", vrc, pszDir);
     return RTEXITCODE_SUCCESS;
 }
 
@@ -239,11 +239,11 @@ static int CommonDirRenameWrapper(const char *pszSrc, const char *pszDst, uint32
     uint64_t nsNow = RTTimeNanoTS();
     for (;;)
     {
-        int rc = RTDirRename(pszSrc, pszDst, fFlags);
-        if (   (   rc != VERR_ACCESS_DENIED
-                && rc != VERR_SHARING_VIOLATION)
+        int vrc = RTDirRename(pszSrc, pszDst, fFlags);
+        if (   (   vrc != VERR_ACCESS_DENIED
+                && vrc != VERR_SHARING_VIOLATION)
             || RTTimeNanoTS() - nsNow > RT_NS_15SEC)
-            return rc;
+            return vrc;
         RTThreadSleep(128);
     }
 #else
@@ -262,26 +262,26 @@ static RTEXITCODE CommonUninstallWorker(const char *pszExtPackDir)
     /* Rename the extension pack directory before deleting it to prevent new
        VM processes from picking it up. */
     char szExtPackUnInstDir[RTPATH_MAX];
-    int rc = RTStrCopy(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), pszExtPackDir);
-    if (RT_SUCCESS(rc))
-        rc = RTStrCat(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), "-_-uninst");
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct temporary extension pack path: %Rrc", rc);
+    int vrc = RTStrCopy(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), pszExtPackDir);
+    if (RT_SUCCESS(vrc))
+        vrc = RTStrCat(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), "-_-uninst");
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct temporary extension pack path: %Rrc", vrc);
 
-    rc = CommonDirRenameWrapper(pszExtPackDir, szExtPackUnInstDir, RTPATHRENAME_FLAGS_NO_REPLACE);
-    if (rc == VERR_ALREADY_EXISTS)
+    vrc = CommonDirRenameWrapper(pszExtPackDir, szExtPackUnInstDir, RTPATHRENAME_FLAGS_NO_REPLACE);
+    if (vrc == VERR_ALREADY_EXISTS)
     {
         /* Automatic cleanup and try again.  It's in theory possible that we're
            racing another cleanup operation here, so just ignore errors and try
            again. (There is no installation race due to the exclusive temporary
            installation directory.) */
         RemoveExtPackDir(szExtPackUnInstDir, false /*fTemporary*/);
-        rc = CommonDirRenameWrapper(pszExtPackDir, szExtPackUnInstDir, RTPATHRENAME_FLAGS_NO_REPLACE);
+        vrc = CommonDirRenameWrapper(pszExtPackDir, szExtPackUnInstDir, RTPATHRENAME_FLAGS_NO_REPLACE);
     }
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "Failed to rename the extension pack directory: %Rrc\n"
-                              "If the problem persists, try running the command: VBoxManage extpack cleanup", rc);
+                              "If the problem persists, try running the command: VBoxManage extpack cleanup", vrc);
 
     /* Recursively delete the directory content. */
     return RemoveExtPackDir(szExtPackUnInstDir, false /*fTemporary*/);
@@ -298,8 +298,8 @@ static RTEXITCODE CommonUninstallWorker(const char *pszExtPackDir)
 static RTEXITCODE OpenTarFss(RTFILE hTarballFile, PRTVFSFSSTREAM phTarFss)
 {
     char szError[8192];
-    int rc = VBoxExtPackOpenTarFss(hTarballFile, szError, sizeof(szError), phTarFss, NULL);
-    if (RT_FAILURE(rc))
+    int vrc = VBoxExtPackOpenTarFss(hTarballFile, szError, sizeof(szError), phTarFss, NULL);
+    if (RT_FAILURE(vrc))
     {
         Assert(szError[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", szError);
@@ -323,9 +323,9 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
 {
     RTMsgInfo("Setting permissions...");
 #if !defined(RT_OS_WINDOWS)
-     int rc = RTPathSetMode(pszDir, 0755);
-     if (RT_FAILURE(rc))
-         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions: %Rrc ('%s')", rc, pszDir);
+     int vrc = RTPathSetMode(pszDir, 0755);
+     if (RT_FAILURE(vrc))
+         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions: %Rrc ('%s')", vrc, pszDir);
 #else
      /** @todo TrustedInstaller? */
      RT_NOREF1(pszDir);
@@ -346,8 +346,8 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
 static RTEXITCODE ValidateMemberOfExtPack(const char *pszName, RTVFSOBJTYPE enmType, RTVFSOBJ hVfsObj)
 {
     char szError[8192];
-    int rc = VBoxExtPackValidateMember(pszName, enmType, hVfsObj, szError, sizeof(szError));
-    if (RT_FAILURE(rc))
+    int vrc = VBoxExtPackValidateMember(pszName, enmType, hVfsObj, szError, sizeof(szError));
+    if (RT_FAILURE(vrc))
     {
         Assert(szError[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", szError);
@@ -377,9 +377,9 @@ static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTar
 
     RTERRINFOSTATIC ErrInfo;
     RTErrInfoInitStatic(&ErrInfo);
-    int rc = SUPR3HardenedVerifyDir(pszDir, true /*fRecursive*/, true /*fCheckFiles*/, &ErrInfo.Core);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Hardening check failed with %Rrc: %s", rc, ErrInfo.Core.pszMsg);
+    int vrc = SUPR3HardenedVerifyDir(pszDir, true /*fRecursive*/, true /*fCheckFiles*/, &ErrInfo.Core);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Hardening check failed with %Rrc: %s", vrc, ErrInfo.Core.pszMsg);
     return RTEXITCODE_SUCCESS;
 }
 
@@ -397,22 +397,22 @@ static RTEXITCODE UnpackExtPackDir(const char *pszDstDirName, RTVFSOBJ hVfsObj)
      * Get the mode mask before creating the directory.
      */
     RTFSOBJINFO ObjInfo;
-    int rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszDstDirName, rc);
+    int vrc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszDstDirName, vrc);
     ObjInfo.Attr.fMode &= ~(RTFS_UNIX_IWOTH | RTFS_UNIX_IWGRP);
 
-    rc = RTDirCreate(pszDstDirName, ObjInfo.Attr.fMode, 0);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszDstDirName, rc);
+    vrc = RTDirCreate(pszDstDirName, ObjInfo.Attr.fMode, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszDstDirName, vrc);
 
 #ifndef RT_OS_WINDOWS
     /*
      * Because of umask, we have to apply the mode again.
      */
-    rc = RTPathSetMode(pszDstDirName, ObjInfo.Attr.fMode);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions on '%s': %Rrc", pszDstDirName, rc);
+    vrc = RTPathSetMode(pszDstDirName, ObjInfo.Attr.fMode);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions on '%s': %Rrc", pszDstDirName, vrc);
 #else
     /** @todo Ownership tricks on windows? */
 #endif
@@ -437,42 +437,42 @@ static RTEXITCODE UnpackExtPackFile(const char *pszName, const char *pszDstFilen
      * setting the file mode.
      */
     RTFSOBJINFO ObjInfo;
-    int rc = RTVfsIoStrmQueryInfo(hVfsIosSrc, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsIoStrmQueryInfo failed with %Rrc on '%s'", rc, pszDstFilename);
+    int vrc = RTVfsIoStrmQueryInfo(hVfsIosSrc, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsIoStrmQueryInfo failed with %Rrc on '%s'", vrc, pszDstFilename);
 
     /*
      * Create the file.
      */
     uint32_t fFlags = RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE | (0600 << RTFILE_O_CREATE_MODE_SHIFT);
     RTFILE   hFile;
-    rc = RTFileOpen(&hFile, pszDstFilename, fFlags);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create '%s': %Rrc", pszDstFilename, rc);
+    vrc = RTFileOpen(&hFile, pszDstFilename, fFlags);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create '%s': %Rrc", pszDstFilename, vrc);
 
     /*
      * Create a I/O stream for the destination file, stack a manifest entry
      * creator on top of it.
      */
     RTVFSIOSTREAM hVfsIosDst2;
-    rc = RTVfsIoStrmFromRTFile(hFile, fFlags, true /*fLeaveOpen*/, &hVfsIosDst2);
-    if (RT_SUCCESS(rc))
+    vrc = RTVfsIoStrmFromRTFile(hFile, fFlags, true /*fLeaveOpen*/, &hVfsIosDst2);
+    if (RT_SUCCESS(vrc))
     {
         RTVFSIOSTREAM hVfsIosDst;
-        rc = RTManifestEntryAddPassthruIoStream(hUnpackManifest, hVfsIosDst2, pszName,
-                                                RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256,
-                                                false /*fReadOrWrite*/, &hVfsIosDst);
+        vrc = RTManifestEntryAddPassthruIoStream(hUnpackManifest, hVfsIosDst2, pszName,
+                                                 RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256,
+                                                 false /*fReadOrWrite*/, &hVfsIosDst);
         RTVfsIoStrmRelease(hVfsIosDst2);
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             /*
              * Pump the data thru.
              */
-            rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, (uint32_t)RT_MIN(ObjInfo.cbObject, _1G));
-            if (RT_SUCCESS(rc))
+            vrc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, (uint32_t)RT_MIN(ObjInfo.cbObject, _1G));
+            if (RT_SUCCESS(vrc))
             {
-                rc = RTManifestPtIosAddEntryNow(hVfsIosDst);
-                if (RT_SUCCESS(rc))
+                vrc = RTManifestPtIosAddEntryNow(hVfsIosDst);
+                if (RT_SUCCESS(vrc))
                 {
                     RTVfsIoStrmRelease(hVfsIosDst);
                     hVfsIosDst = NIL_RTVFSIOSTREAM;
@@ -481,28 +481,28 @@ static RTEXITCODE UnpackExtPackFile(const char *pszName, const char *pszDstFilen
                      * Set the mode mask.
                      */
                     ObjInfo.Attr.fMode &= ~(RTFS_UNIX_IWOTH | RTFS_UNIX_IWGRP);
-                    rc = RTFileSetMode(hFile, ObjInfo.Attr.fMode);
+                    vrc = RTFileSetMode(hFile, ObjInfo.Attr.fMode);
                     /** @todo Windows needs to do more here, I think. */
-                    if (RT_SUCCESS(rc))
+                    if (RT_SUCCESS(vrc))
                     {
                         RTFileClose(hFile);
                         return RTEXITCODE_SUCCESS;
                     }
 
-                    RTMsgError("Failed to set the mode of '%s' to %RTfmode: %Rrc", pszDstFilename, ObjInfo.Attr.fMode, rc);
+                    RTMsgError("Failed to set the mode of '%s' to %RTfmode: %Rrc", pszDstFilename, ObjInfo.Attr.fMode, vrc);
                 }
                 else
-                    RTMsgError("RTManifestPtIosAddEntryNow failed for '%s': %Rrc", pszDstFilename, rc);
+                    RTMsgError("RTManifestPtIosAddEntryNow failed for '%s': %Rrc", pszDstFilename, vrc);
             }
             else
-                RTMsgError("RTVfsUtilPumpIoStreams failed for '%s': %Rrc", pszDstFilename, rc);
+                RTMsgError("RTVfsUtilPumpIoStreams failed for '%s': %Rrc", pszDstFilename, vrc);
             RTVfsIoStrmRelease(hVfsIosDst);
         }
         else
-            RTMsgError("RTManifestEntryAddPassthruIoStream failed: %Rrc", rc);
+            RTMsgError("RTManifestEntryAddPassthruIoStream failed: %Rrc", vrc);
     }
     else
-        RTMsgError("RTVfsIoStrmFromRTFile failed: %Rrc", rc);
+        RTMsgError("RTVfsIoStrmFromRTFile failed: %Rrc", vrc);
     RTFileClose(hFile);
     return RTEXITCODE_FAILURE;
 }
@@ -531,9 +531,9 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
      * Set up the destination path.
      */
     char szDstPath[RTPATH_MAX];
-    int rc = RTPathAbs(pszDirDst, szDstPath, sizeof(szDstPath) - VBOX_EXTPACK_MAX_MEMBER_NAME_LENGTH - 2);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs('%s',,) failed: %Rrc", pszDirDst, rc);
+    int vrc = RTPathAbs(pszDirDst, szDstPath, sizeof(szDstPath) - VBOX_EXTPACK_MAX_MEMBER_NAME_LENGTH - 2);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs('%s',,) failed: %Rrc", pszDirDst, vrc);
     size_t offDstPath = RTPathStripTrailingSlash(szDstPath);
     szDstPath[offDstPath++] = '/';
     szDstPath[offDstPath]   = '\0';
@@ -547,8 +547,8 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
         return rcExit;
 
     RTMANIFEST hUnpackManifest;
-    rc = RTManifestCreate(0 /*fFlags*/, &hUnpackManifest);
-    if (RT_SUCCESS(rc))
+    vrc = RTManifestCreate(0 /*fFlags*/, &hUnpackManifest);
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Process the tarball (would be nice to move this to a function).
@@ -561,11 +561,11 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
             char           *pszName;
             RTVFSOBJ        hVfsObj;
             RTVFSOBJTYPE    enmType;
-            rc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
-            if (RT_FAILURE(rc))
+            vrc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
+            if (RT_FAILURE(vrc))
             {
-                if (rc != VERR_EOF)
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFsStrmNext failed: %Rrc", rc);
+                if (vrc != VERR_EOF)
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFsStrmNext failed: %Rrc", vrc);
                 break;
             }
             const char     *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
@@ -577,8 +577,8 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
             if (rcExit == RTEXITCODE_SUCCESS)
             {
                 szDstPath[offDstPath] = '\0';
-                rc = RTStrCopy(&szDstPath[offDstPath], sizeof(szDstPath) - offDstPath, pszAdjName);
-                if (RT_SUCCESS(rc))
+                vrc = RTStrCopy(&szDstPath[offDstPath], sizeof(szDstPath) - offDstPath, pszAdjName);
+                if (RT_SUCCESS(vrc))
                 {
                     if (   enmType == RTVFSOBJTYPE_FILE
                         || enmType == RTVFSOBJTYPE_IO_STREAM)
@@ -591,7 +591,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
                         rcExit = UnpackExtPackDir(szDstPath, hVfsObj);
                 }
                 else
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszAdjName, rc);
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszAdjName, vrc);
             }
 
             /*
@@ -610,14 +610,14 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
         if (rcExit == RTEXITCODE_SUCCESS)
         {
             char szError[RTPATH_MAX];
-            rc = RTManifestEqualsEx(hUnpackManifest, hValidManifest, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttr*/,
-                                    0 /*fFlags*/, szError, sizeof(szError));
-            if (RT_SUCCESS(rc))
+            vrc = RTManifestEqualsEx(hUnpackManifest, hValidManifest, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttr*/,
+                                     0 /*fFlags*/, szError, sizeof(szError));
+            if (RT_SUCCESS(vrc))
                 rcExit = RTEXITCODE_SUCCESS;
-            else if (rc == VERR_NOT_EQUAL && szError[0])
+            else if (vrc == VERR_NOT_EQUAL && szError[0])
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Manifest mismatch: %s", szError);
             else
-                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEqualsEx failed: %Rrc", rc);
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEqualsEx failed: %Rrc", vrc);
         }
 #if 0
         RTVFSIOSTREAM hVfsIosStdOut = NIL_RTVFSIOSTREAM;
@@ -657,9 +657,9 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
     Assert(pszTarballDigest && *pszTarballDigest);
 
     char szError[8192];
-    int rc = VBoxExtPackValidateTarball(hTarballFile, pszExtPackName, pszTarball, pszTarballDigest,
-                                        szError, sizeof(szError), phValidManifest, NULL /*phXmlFile*/, NULL /*pStrDigest*/);
-    if (RT_FAILURE(rc))
+    int vrc = VBoxExtPackValidateTarball(hTarballFile, pszExtPackName, pszTarball, pszTarballDigest,
+                                         szError, sizeof(szError), phValidManifest, NULL /*phXmlFile*/, NULL /*pStrDigest*/);
+    if (RT_FAILURE(vrc))
     {
         Assert(szError[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", szError);
@@ -694,18 +694,18 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
      * Do some basic validation of the tarball file.
      */
     RTFSOBJINFO ObjInfo;
-    int rc = RTFileQueryInfo(hTarballFile, &ObjInfo, RTFSOBJATTRADD_UNIX);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTFileQueryInfo failed with %Rrc on '%s'", rc, pszTarball);
+    int vrc = RTFileQueryInfo(hTarballFile, &ObjInfo, RTFSOBJATTRADD_UNIX);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTFileQueryInfo failed with %Rrc on '%s'", vrc, pszTarball);
     if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Not a regular file: %s", pszTarball);
 
     if (hTarballFileOpt != NIL_RTFILE)
     {
         RTFSOBJINFO ObjInfo2;
-        rc = RTFileQueryInfo(hTarballFileOpt, &ObjInfo2, RTFSOBJATTRADD_UNIX);
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTFileQueryInfo failed with %Rrc on --tarball-fd", rc);
+        vrc = RTFileQueryInfo(hTarballFileOpt, &ObjInfo2, RTFSOBJATTRADD_UNIX);
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTFileQueryInfo failed with %Rrc on --tarball-fd", vrc);
         if (   ObjInfo.Attr.u.Unix.INodeIdDevice != ObjInfo2.Attr.u.Unix.INodeIdDevice
             || ObjInfo.Attr.u.Unix.INodeId       != ObjInfo2.Attr.u.Unix.INodeId)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "--tarball and --tarball-fd does not match");
@@ -715,42 +715,42 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
      * Construct the paths to the two directories we'll be using.
      */
     char szFinalPath[RTPATH_MAX];
-    rc = RTPathJoin(szFinalPath, sizeof(szFinalPath), pszBaseDir, pszMangledName);
-    if (RT_FAILURE(rc))
+    vrc = RTPathJoin(szFinalPath, sizeof(szFinalPath), pszBaseDir, pszMangledName);
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "Failed to construct the path to the final extension pack directory: %Rrc", rc);
+                              "Failed to construct the path to the final extension pack directory: %Rrc", vrc);
 
     char szTmpPath[RTPATH_MAX];
-    rc = RTPathJoin(szTmpPath, sizeof(szTmpPath) - 64, pszBaseDir, pszMangledName);
-    if (RT_SUCCESS(rc))
+    vrc = RTPathJoin(szTmpPath, sizeof(szTmpPath) - 64, pszBaseDir, pszMangledName);
+    if (RT_SUCCESS(vrc))
     {
         size_t cchTmpPath = strlen(szTmpPath);
         RTStrPrintf(&szTmpPath[cchTmpPath], sizeof(szTmpPath) - cchTmpPath, "-_-inst-%u", (uint32_t)RTProcSelf());
     }
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "Failed to construct the path to the temporary extension pack directory: %Rrc", rc);
+                              "Failed to construct the path to the temporary extension pack directory: %Rrc", vrc);
 
     /*
      * Check that they don't exist at this point in time, unless fReplace=true.
      */
-    rc = RTPathQueryInfoEx(szFinalPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-    if (RT_SUCCESS(rc) && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+    vrc = RTPathQueryInfoEx(szFinalPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (RT_SUCCESS(vrc) && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
     {
         if (!fReplace)
             return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                   "The extension pack is already installed. You must uninstall the old one first.");
     }
-    else if (RT_SUCCESS(rc))
+    else if (RT_SUCCESS(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "Found non-directory file system object where the extension pack would be installed ('%s')",
                               szFinalPath);
-    else if (rc != VERR_FILE_NOT_FOUND && rc != VERR_PATH_NOT_FOUND)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unexpected RTPathQueryInfoEx status code %Rrc for '%s'", rc, szFinalPath);
+    else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unexpected RTPathQueryInfoEx status code %Rrc for '%s'", vrc, szFinalPath);
 
-    rc = RTPathQueryInfoEx(szTmpPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-    if (rc != VERR_FILE_NOT_FOUND && rc != VERR_PATH_NOT_FOUND)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unexpected RTPathQueryInfoEx status code %Rrc for '%s'", rc, szFinalPath);
+    vrc = RTPathQueryInfoEx(szTmpPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unexpected RTPathQueryInfoEx status code %Rrc for '%s'", vrc, szFinalPath);
 
     /*
      * Create the temporary directory and prepare the extension pack within it.
@@ -761,15 +761,15 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
     /*
      * Because of umask, we have to apply the mode again.
      */
-    rc = RTPathSetMode(pszBaseDir, 0755);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions on '%s': %Rrc", pszBaseDir, rc);
+    vrc = RTPathSetMode(pszBaseDir, 0755);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions on '%s': %Rrc", pszBaseDir, vrc);
 #else
     /** @todo Ownership tricks on windows? */
 #endif
-    rc = RTDirCreate(szTmpPath, 0700, 0);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", rc, szTmpPath);
+    vrc = RTDirCreate(szTmpPath, 0700, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", vrc, szTmpPath);
 
     RTMANIFEST hValidManifest = NIL_RTMANIFEST;
     RTEXITCODE rcExit = ValidateExtPackTarball(hTarballFile, pszName, pszTarball, pszTarballDigest, &hValidManifest);
@@ -783,22 +783,22 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
 
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        rc = CommonDirRenameWrapper(szTmpPath, szFinalPath, RTPATHRENAME_FLAGS_NO_REPLACE);
-        if (   RT_FAILURE(rc)
+        vrc = CommonDirRenameWrapper(szTmpPath, szFinalPath, RTPATHRENAME_FLAGS_NO_REPLACE);
+        if (   RT_FAILURE(vrc)
             && fReplace
             && RTDirExists(szFinalPath))
         {
             /* Automatic uninstall if --replace was given. */
             rcExit = CommonUninstallWorker(szFinalPath);
             if (rcExit == RTEXITCODE_SUCCESS)
-                rc = CommonDirRenameWrapper(szTmpPath, szFinalPath, RTPATHRENAME_FLAGS_NO_REPLACE);
+                vrc = CommonDirRenameWrapper(szTmpPath, szFinalPath, RTPATHRENAME_FLAGS_NO_REPLACE);
         }
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
             RTMsgInfo("Successfully installed '%s' (%s)", pszName, pszTarball);
         else if (rcExit == RTEXITCODE_SUCCESS)
             rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,
                                     "Failed to rename the temporary directory to the final one: %Rrc ('%s' -> '%s')",
-                                    rc, szTmpPath, szFinalPath);
+                                    vrc, szTmpPath, szFinalPath);
     }
 
     /*
@@ -840,9 +840,9 @@ static RTEXITCODE DoInstall(int argc, char **argv)
         { "--sha-256",      's',   RTGETOPT_REQ_STRING  }
     };
     RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", vrc);
 
     const char     *pszBaseDir          = NULL;
     const char     *pszCertDir          = NULL;
@@ -894,9 +894,9 @@ static RTEXITCODE DoInstall(int argc, char **argv)
                 RTHCUINTPTR hNative = (RTHCUINTPTR)ValueUnion.u64;
                 if (hNative != ValueUnion.u64)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The --tarball-fd value is out of range: %#RX64", ValueUnion.u64);
-                rc = RTFileFromNative(&hTarballFileOpt, hNative);
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "RTFileFromNative failed on --target-fd value: %Rrc", rc);
+                vrc = RTFileFromNative(&hTarballFileOpt, hNative);
+                if (RT_FAILURE(vrc))
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "RTFileFromNative failed on --target-fd value: %Rrc", vrc);
                 break;
             }
 
@@ -911,9 +911,9 @@ static RTEXITCODE DoInstall(int argc, char **argv)
                 pszTarballDigest = ValueUnion.psz;
 
                 uint8_t abDigest[RTSHA256_HASH_SIZE];
-                rc = RTSha256FromString(pszTarballDigest, abDigest);
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Bad SHA-256 string: %Rrc", rc);
+                vrc = RTSha256FromString(pszTarballDigest, abDigest);
+                if (RT_FAILURE(vrc))
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Bad SHA-256 string: %Rrc", vrc);
                 break;
             }
 
@@ -945,15 +945,15 @@ static RTEXITCODE DoInstall(int argc, char **argv)
 
     RTEXITCODE  rcExit;
     RTFILE      hTarballFile;
-    rc = RTFileOpen(&hTarballFile, pszTarball, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_SUCCESS(rc))
+    vrc = RTFileOpen(&hTarballFile, pszTarball, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(vrc))
     {
         rcExit = DoInstall2(pszBaseDir, pszCertDir, pszTarball, pszTarballDigest, hTarballFile, hTarballFileOpt,
                             pszName, pstrMangledName->c_str(), fReplace);
         RTFileClose(hTarballFile);
     }
     else
-        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open the extension pack tarball: %Rrc ('%s')", rc, pszTarball);
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open the extension pack tarball: %Rrc ('%s')", vrc, pszTarball);
 
     delete pstrMangledName;
     return rcExit;
@@ -982,9 +982,9 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
         { "--forced",       'f',   RTGETOPT_REQ_NOTHING },
     };
     RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", vrc);
 
     const char     *pszBaseDir = NULL;
     const char     *pszName    = NULL;
@@ -1041,9 +1041,9 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
      */
     /* Check that it exists. */
     char szExtPackDir[RTPATH_MAX];
-    rc = RTPathJoin(szExtPackDir, sizeof(szExtPackDir), pszBaseDir, strMangledName.c_str());
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct extension pack path: %Rrc", rc);
+    vrc = RTPathJoin(szExtPackDir, sizeof(szExtPackDir), pszBaseDir, strMangledName.c_str());
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct extension pack path: %Rrc", vrc);
 
     if (!RTDirExists(szExtPackDir))
     {
@@ -1078,9 +1078,9 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
         { "--base-dir",     'b',   RTGETOPT_REQ_STRING },
     };
     RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", vrc);
 
     const char     *pszBaseDir = NULL;
     RTGETOPTUNION   ValueUnion;
@@ -1112,20 +1112,20 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
      * Ok, down to business.
      */
     RTDIR hDir;
-    rc = RTDirOpen(&hDir, pszBaseDir);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed open the base directory: %Rrc ('%s')", rc, pszBaseDir);
+    vrc = RTDirOpen(&hDir, pszBaseDir);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed open the base directory: %Rrc ('%s')", vrc, pszBaseDir);
 
     uint32_t    cCleaned = 0;
     RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
     for (;;)
     {
         RTDIRENTRYEX Entry;
-        rc = RTDirReadEx(hDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-        if (RT_FAILURE(rc))
+        vrc = RTDirReadEx(hDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+        if (RT_FAILURE(vrc))
         {
-            if (rc != VERR_NO_MORE_FILES)
-                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirReadEx returns %Rrc", rc);
+            if (vrc != VERR_NO_MORE_FILES)
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirReadEx returns %Rrc", vrc);
             break;
         }
 
@@ -1149,8 +1149,8 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
                  * Recursive delete, safe.
                  */
                 char szPath[RTPATH_MAX];
-                rc = RTPathJoin(szPath, sizeof(szPath), pszBaseDir, Entry.szName);
-                if (RT_SUCCESS(rc))
+                vrc = RTPathJoin(szPath, sizeof(szPath), pszBaseDir, Entry.szName);
+                if (RT_SUCCESS(vrc))
                 {
                     RTEXITCODE rcExit2 = RemoveExtPackDir(szPath, true /*fTemporary*/);
                     if (rcExit2 == RTEXITCODE_SUCCESS)
@@ -1159,7 +1159,7 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
                         rcExit = rcExit2;
                 }
                 else
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathJoin failed with %Rrc for '%s'", rc, Entry.szName);
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathJoin failed with %Rrc for '%s'", vrc, Entry.szName);
                 cCleaned++;
             }
         }
@@ -1204,12 +1204,12 @@ static bool FindExecTool(char *pszPath, size_t cbPath, const char *pszName)
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszPaths); i++)
     {
-        int rc = RTPathJoin(pszPath, cbPath, s_apszPaths[i], pszName);
-        if (RT_SUCCESS(rc))
+        int vrc = RTPathJoin(pszPath, cbPath, s_apszPaths[i], pszName);
+        if (RT_SUCCESS(vrc))
         {
             RTFSOBJINFO ObjInfo;
-            rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
-            if (RT_SUCCESS(rc))
+            vrc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
+            if (RT_SUCCESS(vrc))
             {
                 if (!(ObjInfo.Attr.fMode & RTFS_UNIX_IWOTH))
                     return true;
@@ -1232,30 +1232,30 @@ static bool FindExecTool(char *pszPath, size_t cbPath, const char *pszName)
  */
 static void CopyFileToStdXxx(RTFILE hSrc, PRTSTREAM pDst, bool fComplain)
 {
-    int rc;
+    int vrc;
     for (;;)
     {
         char abBuf[0x1000];
         size_t cbRead;
-        rc = RTFileRead(hSrc, abBuf, sizeof(abBuf), &cbRead);
-        if (RT_FAILURE(rc))
+        vrc = RTFileRead(hSrc, abBuf, sizeof(abBuf), &cbRead);
+        if (RT_FAILURE(vrc))
         {
-            RTMsgError("RTFileRead failed: %Rrc", rc);
+            RTMsgError("RTFileRead failed: %Rrc", vrc);
             break;
         }
         if (!cbRead)
             break;
-        rc = RTStrmWrite(pDst, abBuf, cbRead);
-        if (RT_FAILURE(rc))
+        vrc = RTStrmWrite(pDst, abBuf, cbRead);
+        if (RT_FAILURE(vrc))
         {
             if (fComplain)
-                RTMsgError("RTStrmWrite failed: %Rrc", rc);
+                RTMsgError("RTStrmWrite failed: %Rrc", vrc);
             break;
         }
     }
-    rc = RTStrmFlush(pDst);
-    if (RT_FAILURE(rc) && fComplain)
-        RTMsgError("RTStrmFlush failed: %Rrc", rc);
+    vrc = RTStrmFlush(pDst);
+    if (RT_FAILURE(vrc) && fComplain)
+        RTMsgError("RTStrmFlush failed: %Rrc", vrc);
 }
 
 
@@ -1290,15 +1290,15 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
     Info.fMask  = SEE_MASK_NOCLOSEPROCESS;
     Info.hwnd   = NULL;
     Info.lpVerb = L"runas";
-    int rc = RTStrToUtf16(pszExecPath, (PRTUTF16 *)&Info.lpFile);
-    if (RT_SUCCESS(rc))
+    int vrc = RTStrToUtf16(pszExecPath, (PRTUTF16 *)&Info.lpFile);
+    if (RT_SUCCESS(vrc))
     {
         char *pszCmdLine;
-        rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs + 1], RTGETOPTARGV_CNV_QUOTE_MS_CRT);
-        if (RT_SUCCESS(rc))
+        vrc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs + 1], RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+        if (RT_SUCCESS(vrc))
         {
-            rc = RTStrToUtf16(pszCmdLine, (PRTUTF16 *)&Info.lpParameters);
-            if (RT_SUCCESS(rc))
+            vrc = RTStrToUtf16(pszCmdLine, (PRTUTF16 *)&Info.lpParameters);
+            if (RT_SUCCESS(vrc))
             {
                 Info.lpDirectory = NULL;
                 Info.nShow       = SW_SHOWMAXIMIZED;
@@ -1317,8 +1317,8 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                     if (pszArg)
                     {
                         uint64_t u64Hwnd;
-                        rc = RTStrToUInt64Ex(pszArg + sizeof("hwnd=") - 1, NULL, 0, &u64Hwnd);
-                        if (RT_SUCCESS(rc))
+                        vrc = RTStrToUInt64Ex(pszArg + sizeof("hwnd=") - 1, NULL, 0, &u64Hwnd);
+                        if (RT_SUCCESS(vrc))
                         {
                             HWND hwnd = (HWND)(uintptr_t)u64Hwnd;
                             Info.hwnd = hwnd;
@@ -1384,16 +1384,16 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
         RTUtf16Free((PRTUTF16)Info.lpFile);
     }
     else
-        RTMsgError("RTStrToUtf16 failed: %Rc", rc);
+        RTMsgError("RTStrToUtf16 failed: %Rc", vrc);
 
 #elif defined(RT_OS_DARWIN)
     RT_NOREF(pszDisplayInfoHack);
     char szIconName[RTPATH_MAX];
-    int rc = RTPathAppPrivateArch(szIconName, sizeof(szIconName));
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szIconName, sizeof(szIconName), "../Resources/virtualbox.png");
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct icon path: %Rrc", rc);
+    int vrc = RTPathAppPrivateArch(szIconName, sizeof(szIconName));
+    if (RT_SUCCESS(vrc))
+        vrc = RTPathAppend(szIconName, sizeof(szIconName), "../Resources/virtualbox.png");
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct icon path: %Rrc", vrc);
 
     AuthorizationRef AuthRef;
     OSStatus orc = AuthorizationCreate(NULL, 0, kAuthorizationFlagDefaults, &AuthRef);
@@ -1470,9 +1470,9 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
      * Several of the alternatives below will require a command line.
      */
     char *pszCmdLine;
-    int rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs], RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvToString failed: %Rrc", rc);
+    int vrc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs], RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvToString failed: %Rrc", vrc);
 
     /*
      * Look for various standard stuff for executing a program as root.
@@ -1578,14 +1578,14 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
          * program to complete.
          */
         RTPROCESS hProcess;
-        rc = RTProcCreateEx(papszArgs[iSuArg], &papszArgs[iSuArg], RTENV_DEFAULT, 0 /*fFlags*/, NULL /*phStdIn*/,
-                            NULL /*phStdOut*/, NULL /*phStdErr*/, NULL /*pszAsUser*/, NULL /*pszPassword*/, NULL /* pvExtraData*/,
-                            &hProcess);
-        if (RT_SUCCESS(rc))
+        vrc = RTProcCreateEx(papszArgs[iSuArg], &papszArgs[iSuArg], RTENV_DEFAULT, 0 /*fFlags*/, NULL /*phStdIn*/,
+                             NULL /*phStdOut*/, NULL /*phStdErr*/, NULL /*pszAsUser*/, NULL /*pszPassword*/, NULL /* pvExtraData*/,
+                             &hProcess);
+        if (RT_SUCCESS(vrc))
         {
             RTPROCSTATUS Status;
-            rc = RTProcWait(hProcess, RTPROCWAIT_FLAGS_BLOCK, &Status);
-            if (RT_SUCCESS(rc))
+            vrc = RTProcWait(hProcess, RTPROCWAIT_FLAGS_BLOCK, &Status);
+            if (RT_SUCCESS(vrc))
             {
                 if (Status.enmReason == RTPROCEXITREASON_NORMAL)
                     rcExit = (RTEXITCODE)Status.iStatus;
@@ -1593,10 +1593,10 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                     rcExit = RTEXITCODE_FAILURE;
             }
             else
-                RTMsgError("Error while waiting for '%s': %Rrc", papszArgs[iSuArg], rc);
+                RTMsgError("Error while waiting for '%s': %Rrc", papszArgs[iSuArg], vrc);
         }
         else
-            RTMsgError("Failed to execute '%s': %Rrc", papszArgs[iSuArg], rc);
+            RTMsgError("Failed to execute '%s': %Rrc", papszArgs[iSuArg], vrc);
     }
     RTStrFree(pszCmdLine);
 
@@ -1627,33 +1627,33 @@ static RTEXITCODE RelaunchElevated(int argc, char **argv, int iCmd, const char *
      * Create a couple of temporary files for stderr and stdout.
      */
     char szTempDir[RTPATH_MAX - sizeof("/stderr")];
-    int rc = RTPathTemp(szTempDir, sizeof(szTempDir));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathTemp failed: %Rrc", rc);
-    rc = RTPathAppend(szTempDir, sizeof(szTempDir), "VBoxExtPackHelper-XXXXXX");
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAppend failed: %Rrc", rc);
-    rc = RTDirCreateTemp(szTempDir, 0700);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirCreateTemp failed: %Rrc", rc);
+    int vrc = RTPathTemp(szTempDir, sizeof(szTempDir));
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathTemp failed: %Rrc", vrc);
+    vrc = RTPathAppend(szTempDir, sizeof(szTempDir), "VBoxExtPackHelper-XXXXXX");
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAppend failed: %Rrc", vrc);
+    vrc = RTDirCreateTemp(szTempDir, 0700);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirCreateTemp failed: %Rrc", vrc);
 
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
     char szStdOut[RTPATH_MAX];
     char szStdErr[RTPATH_MAX];
-    rc = RTPathJoin(szStdOut, sizeof(szStdOut), szTempDir, "stdout");
-    if (RT_SUCCESS(rc))
-        rc = RTPathJoin(szStdErr, sizeof(szStdErr), szTempDir, "stderr");
-    if (RT_SUCCESS(rc))
+    vrc = RTPathJoin(szStdOut, sizeof(szStdOut), szTempDir, "stdout");
+    if (RT_SUCCESS(vrc))
+        vrc = RTPathJoin(szStdErr, sizeof(szStdErr), szTempDir, "stderr");
+    if (RT_SUCCESS(vrc))
     {
         RTFILE hStdOut;
-        rc = RTFileOpen(&hStdOut, szStdOut, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE
-                        | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
-        if (RT_SUCCESS(rc))
+        vrc = RTFileOpen(&hStdOut, szStdOut, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE
+                         | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+        if (RT_SUCCESS(vrc))
         {
             RTFILE hStdErr;
-            rc = RTFileOpen(&hStdErr, szStdErr, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE
-                            | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
-            if (RT_SUCCESS(rc))
+            vrc = RTFileOpen(&hStdErr, szStdErr, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE
+                             | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+            if (RT_SUCCESS(vrc))
             {
                 /*
                  * Insert the --elevated and stdout/err names into the argument
@@ -1814,8 +1814,8 @@ static RTEXITCODE ElevationCheck(bool *pfElevated)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcGetExecutablePath failed");
 
     RTFSOBJINFO ObjInfo;
-    int rc = RTPathQueryInfoEx(szExecPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
-    if (RT_FAILURE(rc))
+    int vrc = RTPathQueryInfoEx(szExecPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathQueryInfoEx failed");
 
     *pfElevated = ObjInfo.Attr.u.Unix.uid == geteuid()
@@ -1832,18 +1832,18 @@ int main(int argc, char **argv)
      * Initialize IPRT and check that we're correctly installed.
      */
 #ifdef RT_OS_WINDOWS
-    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_UTF8_ARGV); /* WinMain gives us UTF-8, see below. */
+    int vrc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_UTF8_ARGV); /* WinMain gives us UTF-8, see below. */
 #else
-    int rc = RTR3InitExe(argc, &argv, 0);
+    int vrc = RTR3InitExe(argc, &argv, 0);
 #endif
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 
     SUPR3HardenedVerifyInit();
     RTERRINFOSTATIC ErrInfo;
     RTErrInfoInitStatic(&ErrInfo);
-    rc = SUPR3HardenedVerifySelf(argv[0], true /*fInternal*/, &ErrInfo.Core);
-    if (RT_FAILURE(rc))
+    vrc = SUPR3HardenedVerifySelf(argv[0], true /*fInternal*/, &ErrInfo.Core);
+    if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", ErrInfo.Core.pszMsg);
 
     /*
@@ -1874,9 +1874,9 @@ int main(int argc, char **argv)
         { "--display-info-hack",    OPT_DISP_INFO_HACK, RTGETOPT_REQ_STRING  },
     };
     RTGETOPTSTATE GetState;
-    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+    vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", vrc);
     for (;;)
     {
         RTGETOPTUNION ValueUnion;
@@ -1942,9 +1942,9 @@ int main(int argc, char **argv)
             {
 # ifdef RT_OS_WINDOWS
                 PRTUTF16 pwszName = NULL;
-                rc = RTStrToUtf16(ValueUnion.psz, &pwszName);
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error converting '%s' to UTF-16: %Rrc\n", ValueUnion.psz, rc);
+                vrc = RTStrToUtf16(ValueUnion.psz, &pwszName);
+                if (RT_FAILURE(vrc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error converting '%s' to UTF-16: %Rrc\n", ValueUnion.psz, vrc);
                 FILE *pFile = _wfreopen(pwszName, L"r+", ch == OPT_STDOUT ? stdout : stderr);
                 RTUtf16Free(pwszName);
 # else
@@ -1952,8 +1952,8 @@ int main(int argc, char **argv)
 # endif
                 if (!pFile)
                 {
-                    rc = RTErrConvertFromErrno(errno);
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "freopen on '%s': %Rrc", ValueUnion.psz, rc);
+                    vrc = RTErrConvertFromErrno(errno);
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "freopen on '%s': %Rrc", ValueUnion.psz, vrc);
                 }
                 break;
             }
@@ -1984,34 +1984,33 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPST
     g_hInstance = hInstance;
     NOREF(hPrevInstance); NOREF(nShowCmd); NOREF(lpCmdLine);
 
-    int rc = RTR3InitExeNoArguments(0);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
+    int vrc = RTR3InitExeNoArguments(0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 
     LPWSTR pwszCmdLine = GetCommandLineW();
     if (!pwszCmdLine)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "GetCommandLineW failed");
 
     char *pszCmdLine;
-    rc = RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine); /* leaked */
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to convert the command line: %Rrc", rc);
+    vrc = RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine); /* leaked */
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to convert the command line: %Rrc", vrc);
 
     int    cArgs;
     char **papszArgs;
-    rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, RTGETOPTARGV_CNV_QUOTE_MS_CRT, NULL);
-    if (RT_SUCCESS(rc))
+    vrc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, RTGETOPTARGV_CNV_QUOTE_MS_CRT, NULL);
+    if (RT_SUCCESS(vrc))
     {
-
-        rc = main(cArgs, papszArgs);
+        vrc = main(cArgs, papszArgs);
 
         RTGetOptArgvFree(papszArgs);
     }
     else
-        rc = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvFromString failed: %Rrc", rc);
+        vrc = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvFromString failed: %Rrc", vrc);
     RTStrFree(pszCmdLine);
 
-    return rc;
+    return vrc;
 }
 #endif
 

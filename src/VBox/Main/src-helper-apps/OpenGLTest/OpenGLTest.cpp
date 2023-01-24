@@ -49,10 +49,6 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
 
     static char pszVBoxPath[RTPATH_MAX];
     const char *papszArgs[4] = { NULL, "-test", "3D", NULL};
-    int rc;
-    RTPROCESS Process;
-    RTPROCSTATUS ProcStatus;
-    uint64_t StartTS;
 
 #ifdef __SANITIZE_ADDRESS__
     /* The OpenGL test tool contains a number of memory leaks which cause it to
@@ -62,30 +58,33 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
         return false;
     RTEnvPutEx(env, "ASAN_OPTIONS=detect_leaks=0");  /* If this fails we will notice later */
 #endif
-    rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, false);
+    int vrc = RTPathExecDir(pszVBoxPath, RTPATH_MAX);
+    AssertRCReturn(vrc, false);
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
+    vrc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
 #else
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
+    vrc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
 #endif
     papszArgs[0] = pszVBoxPath;         /* argv[0] */
-    AssertRCReturn(rc, false);
+    AssertRCReturn(vrc, false);
 
+    RTPROCESS Process;
 #ifndef __SANITIZE_ADDRESS__
-    rc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
+    vrc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
 #else
-    rc = RTProcCreate(pszVBoxPath, papszArgs, env, 0, &Process);
+    vrc = RTProcCreate(pszVBoxPath, papszArgs, env, 0, &Process);
     RTEnvDestroy(env);
 #endif
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
         return false;
 
-    StartTS = RTTimeMilliTS();
+    uint64_t StartTS = RTTimeMilliTS();
 
+    RTPROCSTATUS ProcStatus = {0};
     while (1)
     {
-        rc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ProcStatus);
-        if (rc != VERR_PROCESS_RUNNING)
+        vrc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ProcStatus);
+        if (vrc != VERR_PROCESS_RUNNING)
             break;
 
 #ifndef DEBUG_misha
@@ -100,13 +99,10 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
         RTThreadSleep(100);
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        if ((ProcStatus.enmReason==RTPROCEXITREASON_NORMAL) && (ProcStatus.iStatus==0))
-        {
+    if (RT_SUCCESS(vrc))
+        if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
+            && ProcStatus.iStatus   == 0)
             return true;
-        }
-    }
 
     return false;
 }

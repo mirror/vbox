@@ -355,31 +355,30 @@ void VBoxGLInfo::init(const MY_QOpenGLContext *pContext)
 
 void VBoxGLInfo::initExtSupport(const MY_QOpenGLContext &context)
 {
-    int rc = 0;
+    int vrc = VINF_SUCCESS;
     do
     {
-        rc = 0;
         mMultiTexNumSupported = 1; /* default, 1 means not supported */
         if(mGLVersion >= 0x010201) /* ogl >= 1.2.1 */
         {
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_ACTIVE_TEXTURE, ActiveTexture, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2I, MultiTexCoord2i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2D, MultiTexCoord2d, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2F, MultiTexCoord2f, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_ACTIVE_TEXTURE, ActiveTexture, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2I, MultiTexCoord2i, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2D, MultiTexCoord2d, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2F, MultiTexCoord2f, vrc);
         }
         else if(m_GL_ARB_multitexture)
         {
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_ACTIVE_TEXTURE, ActiveTexture, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2I, MultiTexCoord2i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2D, MultiTexCoord2d, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2F, MultiTexCoord2f, rc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_ACTIVE_TEXTURE, ActiveTexture, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2I, MultiTexCoord2i, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2D, MultiTexCoord2d, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2F, MultiTexCoord2f, vrc);
         }
         else
         {
             break;
         }
 
-        if(RT_FAILURE(rc))
+        if(RT_FAILURE(vrc))
             break;
 
         GLint maxCoords, maxUnits;
@@ -402,24 +401,24 @@ void VBoxGLInfo::initExtSupport(const MY_QOpenGLContext &context)
 
     do
     {
-        rc = 0;
+        vrc = 0;
         mPBOSupported = false;
 
         if(m_GL_ARB_pixel_buffer_object)
         {
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_GEN_BUFFERS, GenBuffers, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_DELETE_BUFFERS, DeleteBuffers, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_BIND_BUFFER, BindBuffer, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_BUFFER_DATA, BufferData, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MAP_BUFFER, MapBuffer, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNMAP_BUFFER, UnmapBuffer, rc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_GEN_BUFFERS, GenBuffers, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_DELETE_BUFFERS, DeleteBuffers, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_BIND_BUFFER, BindBuffer, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_BUFFER_DATA, BufferData, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MAP_BUFFER, MapBuffer, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNMAP_BUFFER, UnmapBuffer, vrc);
         }
         else
         {
             break;
         }
 
-        if(RT_FAILURE(rc))
+        if(RT_FAILURE(vrc))
             break;
 
         mPBOSupported = true;
@@ -427,83 +426,83 @@ void VBoxGLInfo::initExtSupport(const MY_QOpenGLContext &context)
 
     do
     {
-        rc = 0;
+        vrc = 0;
         mFragmentShaderSupported = false;
 
         if(mGLVersion >= 0x020000)  /* if ogl >= 2.0*/
         {
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_CREATE_SHADER, CreateShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_SHADER_SOURCE, ShaderSource, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_COMPILE_SHADER, CompileShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DELETE_SHADER, DeleteShader, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_CREATE_SHADER, CreateShader, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_SHADER_SOURCE, ShaderSource, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_COMPILE_SHADER, CompileShader, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DELETE_SHADER, DeleteShader, vrc);
 
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_CREATE_PROGRAM, CreateProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_ATTACH_SHADER, AttachShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DETACH_SHADER, DetachShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_LINK_PROGRAM, LinkProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_CREATE_PROGRAM, CreateProgram, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_ATTACH_SHADER, AttachShader, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DETACH_SHADER, DetachShader, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_LINK_PROGRAM, LinkProgram, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, vrc);
 
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_IS_SHADER, IsShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_IS_PROGRAM, IsProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders,  rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_PROGRAM_INFO_LOG, GetProgramInfoLog, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_IS_SHADER, IsShader, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_IS_PROGRAM, IsProgram, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders,  vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_PROGRAM_INFO_LOG, GetProgramInfoLog, vrc);
 
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_UNIFORM_LOCATION, GetUniformLocation, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_UNIFORM_LOCATION, GetUniformLocation, vrc);
 
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM1F, Uniform1f, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM2F, Uniform2f, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM3F, Uniform3f, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM4F, Uniform4f, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM1F, Uniform1f, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM2F, Uniform2f, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM3F, Uniform3f, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM4F, Uniform4f, vrc);
 
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM1I, Uniform1i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM2I, Uniform2i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM3I, Uniform3i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM4I, Uniform4i, rc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM1I, Uniform1i, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM2I, Uniform2i, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM3I, Uniform3i, vrc);
+            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM4I, Uniform4i, vrc);
         }
         else if(m_GL_ARB_shader_objects && m_GL_ARB_fragment_shader)
         {
-            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_CREATE_SHADER, CreateShader, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_SHADER_SOURCE, ShaderSource, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_COMPILE_SHADER, CompileShader, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_SHADER, DeleteShader, DeleteObjectARB, rc);
+            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_CREATE_SHADER, CreateShader, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_SHADER_SOURCE, ShaderSource, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_COMPILE_SHADER, CompileShader, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_SHADER, DeleteShader, DeleteObjectARB, vrc);
 
-            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_CREATE_PROGRAM, CreateProgram, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_ATTACH_SHADER, AttachShader, AttachObjectARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DETACH_SHADER, DetachShader, DetachObjectARB, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_LINK_PROGRAM, LinkProgram, rc);
-            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, DeleteObjectARB, rc);
+            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_CREATE_PROGRAM, CreateProgram, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_ATTACH_SHADER, AttachShader, AttachObjectARB, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DETACH_SHADER, DetachShader, DetachObjectARB, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_LINK_PROGRAM, LinkProgram, vrc);
+            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, DeleteObjectARB, vrc);
 
-        /// @todo    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_SHADER, IsShader, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, GetObjectParameterivARB, rc);
-        /// @todo    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_PROGRAM, IsProgram, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, GetObjectParameterivARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders, GetAttachedObjectsARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, GetInfoLogARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAM_INFO_LOG, GetProgramInfoLog, GetInfoLogARB, rc);
+        /// @todo    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_SHADER, IsShader, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, GetObjectParameterivARB, vrc);
+        /// @todo    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_PROGRAM, IsProgram, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, GetObjectParameterivARB, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders, GetAttachedObjectsARB, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, GetInfoLogARB, vrc);
+            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAM_INFO_LOG, GetProgramInfoLog, GetInfoLogARB, vrc);
 
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_GET_UNIFORM_LOCATION, GetUniformLocation, rc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_GET_UNIFORM_LOCATION, GetUniformLocation, vrc);
 
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM1F, Uniform1f, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM2F, Uniform2f, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM3F, Uniform3f, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM4F, Uniform4f, rc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM1F, Uniform1f, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM2F, Uniform2f, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM3F, Uniform3f, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM4F, Uniform4f, vrc);
 
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM1I, Uniform1i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM2I, Uniform2i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM3I, Uniform3i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM4I, Uniform4i, rc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM1I, Uniform1i, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM2I, Uniform2i, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM3I, Uniform3i, vrc);
+            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM4I, Uniform4i, vrc);
         }
         else
         {
             break;
         }
 
-        if(RT_FAILURE(rc))
+        if(RT_FAILURE(vrc))
             break;
 
         mFragmentShaderSupported = true;
@@ -511,27 +510,27 @@ void VBoxGLInfo::initExtSupport(const MY_QOpenGLContext &context)
 
     do
     {
-        rc = 0;
+        vrc = 0;
         mFBOSupported = false;
 
         if(m_GL_EXT_framebuffer_object)
         {
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_IS_FRAMEBUFFER, IsFramebuffer, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_BIND_FRAMEBUFFER, BindFramebuffer, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_DELETE_FRAMEBUFFERS, DeleteFramebuffers, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_GEN_FRAMEBUFFERS, GenFramebuffers, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_CHECK_FRAMEBUFFER_STATUS, CheckFramebufferStatus, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_FRAMEBUFFER_TEXTURE1D, FramebufferTexture1D, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_FRAMEBUFFER_TEXTURE2D, FramebufferTexture2D, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_FRAMEBUFFER_TEXTURE3D, FramebufferTexture3D, rc);
-            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_GET_FRAMEBUFFER_ATTACHMENT_PARAMETRIV, GetFramebufferAttachmentParameteriv, rc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_IS_FRAMEBUFFER, IsFramebuffer, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_BIND_FRAMEBUFFER, BindFramebuffer, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_DELETE_FRAMEBUFFERS, DeleteFramebuffers, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_GEN_FRAMEBUFFERS, GenFramebuffers, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_CHECK_FRAMEBUFFER_STATUS, CheckFramebufferStatus, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_FRAMEBUFFER_TEXTURE1D, FramebufferTexture1D, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_FRAMEBUFFER_TEXTURE2D, FramebufferTexture2D, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_FRAMEBUFFER_TEXTURE3D, FramebufferTexture3D, vrc);
+            VBOXVHWA_PFNINIT_EXT(context, PFNVBOXVHWA_GET_FRAMEBUFFER_ATTACHMENT_PARAMETRIV, GetFramebufferAttachmentParameteriv, vrc);
         }
         else
         {
             break;
         }
 
-        if(RT_FAILURE(rc))
+        if(RT_FAILURE(vrc))
             break;
 
         mFBOSupported = true;
@@ -624,33 +623,31 @@ bool VBoxVHWAInfo::checkVHWASupport()
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     static char pszVBoxPath[RTPATH_MAX];
     const char *papszArgs[] = { NULL, "-test", "2D", NULL};
-    int rc;
-    RTPROCESS Process;
-    RTPROCSTATUS ProcStatus;
-    uint64_t StartTS;
 
-    rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, false);
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
-#else
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
-#endif
+    int vrc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(vrc, false);
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    vrc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
+# else
+    vrc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
+# endif
     papszArgs[0] = pszVBoxPath;         /* argv[0] */
-    AssertRCReturn(rc, false);
+    AssertRCReturn(vrc, false);
 
-    rc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
-    if (RT_FAILURE(rc))
+    RTPROCESS Process;
+    vrc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
+    if (RT_FAILURE(vrc))
     {
         VBOXQGLLOGREL(("2D support test failed: failed to create a test process\n"));
         return false;
     }
 
-    StartTS = RTTimeMilliTS();
+    uint64_t const StartTS = RTTimeMilliTS();
 
+    RTPROCSTATUS ProcStatus = {0};
     while (1)
     {
-        rc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ProcStatus);
-        if (rc != VERR_PROCESS_RUNNING)
+        vrc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ProcStatus);
+        if (vrc != VERR_PROCESS_RUNNING)
             break;
 
         if (RTTimeMilliTS() - StartTS > 30*1000 /* 30 sec */)
@@ -664,7 +661,7 @@ bool VBoxVHWAInfo::checkVHWASupport()
         RTThreadSleep(100);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         if ((ProcStatus.enmReason==RTPROCEXITREASON_NORMAL) && (ProcStatus.iStatus==0))
         {
@@ -673,7 +670,7 @@ bool VBoxVHWAInfo::checkVHWASupport()
         }
     }
 
-    VBOXQGLLOGREL(("2D support test failed: err code (%Rra)\n", rc));
+    VBOXQGLLOGREL(("2D support test failed: err code (%Rra)\n", vrc));
 
     return false;
 #else
