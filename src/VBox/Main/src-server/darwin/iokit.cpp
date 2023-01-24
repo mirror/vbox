@@ -125,16 +125,16 @@ static bool darwinOpenMasterPort(void)
 
         /* Get the darwin version we are running on. */
         char szVersion[64];
-        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, &szVersion[0], sizeof(szVersion));
-        if (RT_SUCCESS(rc))
+        int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, &szVersion[0], sizeof(szVersion));
+        if (RT_SUCCESS(vrc))
         {
-            rc = RTStrToUInt32Ex(&szVersion[0], NULL, 10, &g_uMajorDarwin);
-            AssertLogRelMsg(rc == VINF_SUCCESS || rc == VWRN_TRAILING_CHARS,
+            vrc = RTStrToUInt32Ex(&szVersion[0], NULL, 10, &g_uMajorDarwin);
+            AssertLogRelMsg(vrc == VINF_SUCCESS || vrc == VWRN_TRAILING_CHARS,
                             ("Failed to convert the major part of the version string '%s' into an integer: %Rrc\n",
-                             szVersion, rc));
+                             szVersion, vrc));
         }
         else
-            AssertLogRelMsgFailed(("Failed to query the OS release version with %Rrc\n", rc));
+            AssertLogRelMsgFailed(("Failed to query the OS release version with %Rrc\n", vrc));
     }
     return true;
 }
@@ -658,30 +658,31 @@ void *DarwinSubscribeUSBNotifications(void)
             /*
              * Create the notification callbacks.
              */
-            kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
-                                                                kIOPublishNotification,
-                                                                IOServiceMatching(kIOUSBDeviceClassName),
-                                                                darwinUSBAttachNotification1,
-                                                                pNotify,
-                                                                &pNotify->AttachIterator);
-            if (rc == KERN_SUCCESS)
+            kern_return_t krc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
+                                                                 kIOPublishNotification,
+                                                                 IOServiceMatching(kIOUSBDeviceClassName),
+                                                                 darwinUSBAttachNotification1,
+                                                                 pNotify,
+                                                                 &pNotify->AttachIterator);
+            if (krc == KERN_SUCCESS)
             {
                 darwinDrainIterator(pNotify->AttachIterator);
-                rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
-                                                      kIOMatchedNotification,
-                                                      IOServiceMatching(kIOUSBDeviceClassName),
-                                                      darwinUSBAttachNotification2,
-                                                      pNotify,
-                                                      &pNotify->AttachIterator2);
-                if (rc == KERN_SUCCESS)
+                krc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
+                                                       kIOMatchedNotification,
+                                                       IOServiceMatching(kIOUSBDeviceClassName),
+                                                       darwinUSBAttachNotification2,
+                                                       pNotify,
+                                                       &pNotify->AttachIterator2);
+                if (krc == KERN_SUCCESS)
                 {
                     darwinDrainIterator(pNotify->AttachIterator2);
-                    rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
-                                                          kIOTerminatedNotification,
-                                                          IOServiceMatching(kIOUSBDeviceClassName),
-                                                          darwinUSBDetachNotification,
-                                                          pNotify,
-                                                          &pNotify->DetachIterator);
+                    krc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
+                                                           kIOTerminatedNotification,
+                                                           IOServiceMatching(kIOUSBDeviceClassName),
+                                                           darwinUSBDetachNotification,
+                                                           pNotify,
+                                                           &pNotify->DetachIterator);
+                    if (krc == KERN_SUCCESS)
                     {
                         darwinDrainIterator(pNotify->DetachIterator);
                         return pNotify;
