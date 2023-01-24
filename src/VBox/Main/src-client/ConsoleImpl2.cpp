@@ -291,7 +291,7 @@ public:
     ConfigError(const char *pcszFunction,
                 int vrc,
                 const char *pcszName)
-        : RTCError(Utf8StrFmt(Console::tr("%s failed: rc=%Rrc, pcszName=%s"), pcszFunction, vrc, pcszName)),
+        : RTCError(Utf8StrFmt(Console::tr("%s failed: vrc=%Rrc, pcszName=%s"), pcszFunction, vrc, pcszName)),
           m_vrc(vrc)
     {
         AssertMsgFailed(("%s\n", what())); // in strict mode, hit a breakpoint here
@@ -4139,7 +4139,7 @@ int Console::i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMac
             else
                 hrc = pMachine->GetExtraData(Bstr(strKey).raw(), bstrExtraDataValue.asOutParam());
             if (FAILED(hrc))
-                LogRel(("Warning: Cannot get extra data key %s, rc = %Rhrc\n", strKey.c_str(), hrc));
+                LogRel(("Warning: Cannot get extra data key %s, hrc = %Rhrc\n", strKey.c_str(), hrc));
 
             if (fFirst)
             {
@@ -4912,7 +4912,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         Bstr    bstr;
         PCFGMNODE pCtlInst = NULL;
 
-// #define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc)
+// #define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), vrc)
 #define H()         AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
 
         LONG lDev;
@@ -5527,7 +5527,7 @@ int Console::i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const
     int vrc = RTHttpCreate(&hHttp);
     if (RT_FAILURE(vrc))
     {
-        LogRel(("CLOUD-NET: Failed to create HTTP context (rc=%Rrc)\n", vrc));
+        LogRel(("CLOUD-NET: Failed to create HTTP context (vrc=%Rrc)\n", vrc));
         return vrc;
     }
 
@@ -5597,7 +5597,7 @@ int Console::i_configProxy(ComPtr<IVirtualBox> virtualBox, PCFGMNODE pCfg, const
         RTHttpDestroy(hHttp);
         if (RT_FAILURE(vrc))
         {
-            LogRel(("CLOUD-NET: Failed to get proxy for %s (rc=%Rrc)\n", strIpAddr.c_str(), vrc));
+            LogRel(("CLOUD-NET: Failed to get proxy for %s (vrc=%Rrc)\n", strIpAddr.c_str(), vrc));
             return vrc;
         }
 
@@ -6000,7 +6000,7 @@ int Console::i_configNetwork(const char *pszDevice,
                                                            hostInterface.asOutParam());
                 if (!SUCCEEDED(hrc))
                 {
-                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)\n", hrc, hrc));
+                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
                     return pVMM->pfnVMR3SetError(pUVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                                  N_("Nonexistent host networking interface, name '%ls'"),
                                                  BridgedIfName.raw());
