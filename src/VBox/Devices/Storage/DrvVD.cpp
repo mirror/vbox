@@ -2304,6 +2304,15 @@ static void drvvdMediaExIoReqWarningISCSI(PPDMDRVINS pDrvIns)
     AssertRC(rc);
 }
 
+static void drvvdMediaExIoReqWarningFileStale(PPDMDRVINS pDrvIns)
+{
+    int rc;
+    LogRel(("VD#%u: File handle became stale\n", pDrvIns->iInstance));
+    rc = PDMDrvHlpVMSetRuntimeError(pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_ISCSIDOWN",
+                                    N_("The file became stale (often due to a restarted NFS server). VM execution is suspended. You can resume when it is available again"));
+    AssertRC(rc);
+}
+
 static void drvvdMediaExIoReqWarningDekMissing(PPDMDRVINS pDrvIns)
 {
     LogRel(("VD#%u: DEK is missing\n", pDrvIns->iInstance));
@@ -2341,6 +2350,12 @@ bool drvvdMediaExIoReqIsRedoSetWarning(PVBOXDISK pThis, int rc)
          * connection (second error). Pause VM. On resume we'll retry. */
         if (ASMAtomicCmpXchgBool(&pThis->fRedo, true, false))
             drvvdMediaExIoReqWarningISCSI(pThis->pDrvIns);
+        return true;
+    }
+    if (rc == VERR_STALE_FILE_HANDLE)
+    {
+        if (ASMAtomicCmpXchgBool(&pThis->fRedo, true, false))
+            drvvdMediaExIoReqWarningFileStale(pThis->pDrvIns);
         return true;
     }
     if (rc == VERR_VD_DEK_MISSING)

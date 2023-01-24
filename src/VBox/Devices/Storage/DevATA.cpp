@@ -1722,6 +1722,16 @@ static void ataR3WarningISCSI(PPDMDEVINS pDevIns)
     AssertRC(rc);
 }
 
+static void ataR3WarningFileStale(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("PIIX3 ATA: File handle became stale\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevATA_FILESTALE",
+                                    N_("The file became stale (often due to a restarted NFS server). VM execution is suspended. You can resume when it is available again"));
+    AssertRC(rc);
+}
+
+
 static bool ataR3IsRedoSetWarning(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, int rc)
 {
     Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pCtl->lock));
@@ -1743,6 +1753,12 @@ static bool ataR3IsRedoSetWarning(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, int r
         /* iSCSI connection abort (first error) or failure to reestablish
          * connection (second error). Pause VM. On resume we'll retry. */
         ataR3WarningISCSI(pDevIns);
+        return true;
+    }
+    if (rc == VERR_STALE_FILE_HANDLE)
+    {
+        pCtl->fRedoIdle = true;
+        ataR3WarningFileStale(pDevIns);
         return true;
     }
     if (rc == VERR_VD_DEK_MISSING)
