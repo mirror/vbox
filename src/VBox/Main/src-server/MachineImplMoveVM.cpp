@@ -49,25 +49,22 @@ struct fileList_t
 {
     HRESULT add(const Utf8Str &folder, const Utf8Str &file)
     {
-        HRESULT rc = S_OK;
         m_list.insert(std::make_pair(folder, file));
-        return rc;
+        return S_OK;
     }
 
     HRESULT add(const Utf8Str &fullPath)
     {
-        HRESULT rc = S_OK;
         Utf8Str folder = fullPath;
         folder.stripFilename();
         Utf8Str filename = fullPath;
         filename.stripPath();
         m_list.insert(std::make_pair(folder, filename));
-        return rc;
+        return S_OK;
     }
 
     HRESULT removeFileFromList(const Utf8Str &fullPath)
     {
-        HRESULT rc = S_OK;
         Utf8Str folder = fullPath;
         folder.stripFilename();
         Utf8Str filename = fullPath;
@@ -85,12 +82,11 @@ struct fileList_t
                 ++it;
         }
 
-        return rc;
+        return S_OK;
     }
 
     HRESULT removeFileFromList(const Utf8Str &path, const Utf8Str &fileName)
     {
-        HRESULT rc = S_OK;
         rangeRes_t res = m_list.equal_range(path);
         for (it_t it=res.first; it!=res.second;)
         {
@@ -103,14 +99,13 @@ struct fileList_t
             else
                 ++it;
         }
-        return rc;
+        return S_OK;
     }
 
     HRESULT removeFolderFromList(const Utf8Str &path)
     {
-        HRESULT rc = S_OK;
         m_list.erase(path);
-        return rc;
+        return S_OK;
     }
 
     rangeRes_t getFilesInRange(const Utf8Str &path)
@@ -589,13 +584,13 @@ DECLCALLBACK(int) MachineMoveVM::copyFileProgress(unsigned uPercentage, void *pv
     ComObjPtr<Progress> pProgress = *static_cast<ComObjPtr<Progress> *>(pvUser);
 
     BOOL fCanceled = false;
-    HRESULT rc = pProgress->COMGETTER(Canceled)(&fCanceled);
-    if (FAILED(rc)) return VERR_GENERAL_FAILURE;
+    HRESULT hrc = pProgress->COMGETTER(Canceled)(&fCanceled);
+    if (FAILED(hrc)) return VERR_GENERAL_FAILURE;
     /* If canceled by the user tell it to the copy operation. */
     if (fCanceled) return VERR_CANCELLED;
     /* Set the new process. */
-    rc = pProgress->SetCurrentOperationProgress(uPercentage);
-    if (FAILED(rc)) return VERR_GENERAL_FAILURE;
+    hrc = pProgress->SetCurrentOperationProgress(uPercentage);
+    if (FAILED(hrc)) return VERR_GENERAL_FAILURE;
 
     return VINF_SUCCESS;
 }
@@ -1140,7 +1135,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
 HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &listOfDisks,
                                     const Utf8Str &strTargetFolder)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     ComObjPtr<Machine> &machine = m_pMachine;
     Utf8Str strLocation;
 
@@ -1157,14 +1152,14 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &lis
             Bstr bstrLocation;
             Bstr bstrSrcName;
 
-            rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
-            if (FAILED(rc)) throw rc;
+            hrc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
+            if (FAILED(hrc)) throw hrc;
 
             if (strTargetFolder.isNotEmpty())
             {
                 strTargetImageName = strTargetFolder;
-                rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
-                if (FAILED(rc)) throw rc;
+                hrc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+                if (FAILED(hrc)) throw hrc;
                 strLocation = bstrLocation;
 
                 if (mt.fSnapshot == true)
@@ -1173,18 +1168,14 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &lis
                     strLocation.stripPath();
 
                 strTargetImageName.append(RTPATH_DELIMITER).append(strLocation);
-                rc = m_pProgress->SetNextOperation(BstrFmt(tr("Moving medium '%ls' ..."),
-                                                           bstrSrcName.raw()).raw(),
-                                                   mt.uWeight);
-                if (FAILED(rc)) throw rc;
+                hrc = m_pProgress->SetNextOperation(BstrFmt(tr("Moving medium '%ls' ..."), bstrSrcName.raw()).raw(), mt.uWeight);
+                if (FAILED(hrc)) throw hrc;
             }
             else
             {
                 strTargetImageName = mt.strBaseName;//Should contain full path to the image
-                rc = m_pProgress->SetNextOperation(BstrFmt(tr("Moving medium '%ls' back..."),
-                                                           bstrSrcName.raw()).raw(),
-                                                   mt.uWeight);
-                if (FAILED(rc)) throw rc;
+                hrc = m_pProgress->SetNextOperation(BstrFmt(tr("Moving medium '%ls' back..."), bstrSrcName.raw()).raw(), mt.uWeight);
+                if (FAILED(hrc)) throw hrc;
             }
 
 
@@ -1195,31 +1186,31 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &lis
             bstrLocation = strTargetImageName.c_str();
 
             MediumType_T mediumType;//immutable, shared, passthrough
-            rc = pMedium->COMGETTER(Type)(&mediumType);
-            if (FAILED(rc)) throw rc;
+            hrc = pMedium->COMGETTER(Type)(&mediumType);
+            if (FAILED(hrc)) throw hrc;
 
             DeviceType_T deviceType;//floppy, hard, DVD
-            rc = pMedium->COMGETTER(DeviceType)(&deviceType);
-            if (FAILED(rc)) throw rc;
+            hrc = pMedium->COMGETTER(DeviceType)(&deviceType);
+            if (FAILED(hrc)) throw hrc;
 
             /* Drop lock early because IMedium::MoveTo needs to get the VirtualBox one. */
             machineLock.release();
 
             ComPtr<IProgress> moveDiskProgress;
-            rc = pMedium->MoveTo(bstrLocation.raw(), moveDiskProgress.asOutParam());
-            if (SUCCEEDED(rc))
+            hrc = pMedium->MoveTo(bstrLocation.raw(), moveDiskProgress.asOutParam());
+            if (SUCCEEDED(hrc))
             {
                 /* In case of failure moveDiskProgress would be in the invalid state or not initialized at all
                  * Call i_waitForOtherProgressCompletion only in success
                  */
                 /* Wait until the other process has finished. */
-                rc = m_pProgress->WaitForOtherProgressCompletion(moveDiskProgress, 0 /* indefinite wait */);
+                hrc = m_pProgress->WaitForOtherProgressCompletion(moveDiskProgress, 0 /* indefinite wait */);
             }
 
             /*acquire the lock back*/
             machineLock.acquire();
 
-            if (FAILED(rc)) throw rc;
+            if (FAILED(hrc)) throw hrc;
 
             Log2(("Moving %s has been finished\n", strTargetImageName.c_str()));
 
@@ -1228,27 +1219,27 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &lis
 
         machineLock.release();
     }
-    catch(HRESULT hrc)
+    catch (HRESULT hrcXcpt)
     {
-        Log2(("Exception during moving the disk %s\n", strLocation.c_str()));
-        rc = hrc;
+        Log2(("Exception during moving the disk %s: %Rhrc\n", strLocation.c_str(), hrcXcpt));
+        hrc = hrcXcpt;
         machineLock.release();
     }
     catch (...)
     {
         Log2(("Exception during moving the disk %s\n", strLocation.c_str()));
-        rc = VirtualBoxBase::handleUnexpectedExceptions(m_pMachine, RT_SRC_POS);
+        hrc = VirtualBoxBase::handleUnexpectedExceptions(m_pMachine, RT_SRC_POS);
         machineLock.release();
     }
 
-    return rc;
+    return hrc;
 }
 
 void MachineMoveVM::updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath)
 {
     ComObjPtr<Snapshot> pSnapshot;
-    HRESULT rc = m_pMachine->i_findSnapshotById(Guid() /* zero */, pSnapshot, true);
-    if (SUCCEEDED(rc) && !pSnapshot.isNull())
+    HRESULT hrc = m_pMachine->i_findSnapshotById(Guid() /* zero */, pSnapshot, true);
+    if (SUCCEEDED(hrc) && !pSnapshot.isNull())
         pSnapshot->i_updateSavedStatePaths(sourcePath.c_str(),
                                            targetPath.c_str());
     if (m_pMachine->mSSData->strStateFilePath.isNotEmpty())
@@ -1268,8 +1259,8 @@ void MachineMoveVM::updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf
 void MachineMoveVM::updatePathsToNVRAMFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath)
 {
     ComObjPtr<Snapshot> pSnapshot;
-    HRESULT rc = m_pMachine->i_findSnapshotById(Guid() /* zero */, pSnapshot, true);
-    if (SUCCEEDED(rc) && !pSnapshot.isNull())
+    HRESULT hrc = m_pMachine->i_findSnapshotById(Guid() /* zero */, pSnapshot, true);
+    if (SUCCEEDED(hrc) && !pSnapshot.isNull())
         pSnapshot->i_updateNVRAMPaths(sourcePath.c_str(),
                                       targetPath.c_str());
     ComObjPtr<NvramStore> pNvramStore(m_pMachine->mNvramStore);
@@ -1412,36 +1403,36 @@ HRESULT MachineMoveVM::getFolderSize(const Utf8Str &strRootFolder, uint64_t &siz
 HRESULT MachineMoveVM::queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const
 {
     ComPtr<IMedium> pBaseMedium;
-    HRESULT rc = pMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = pMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
+    if (FAILED(hrc)) return hrc;
     Bstr bstrBaseName;
-    rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
-    if (FAILED(rc)) return rc;
+    hrc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
+    if (FAILED(hrc)) return hrc;
     strBaseName = bstrBaseName;
-    return rc;
+    return hrc;
 }
 
 HRESULT MachineMoveVM::createMachineList(const ComPtr<ISnapshot> &pSnapshot)
 {
     Bstr name;
-    HRESULT rc = pSnapshot->COMGETTER(Name)(name.asOutParam());
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = pSnapshot->COMGETTER(Name)(name.asOutParam());
+    if (FAILED(hrc)) return hrc;
 
     ComPtr<IMachine> l_pMachine;
-    rc = pSnapshot->COMGETTER(Machine)(l_pMachine.asOutParam());
-    if (FAILED(rc)) return rc;
+    hrc = pSnapshot->COMGETTER(Machine)(l_pMachine.asOutParam());
+    if (FAILED(hrc)) return hrc;
     machineList.push_back((Machine*)(IMachine*)l_pMachine);
 
     SafeIfaceArray<ISnapshot> sfaChilds;
-    rc = pSnapshot->COMGETTER(Children)(ComSafeArrayAsOutParam(sfaChilds));
-    if (FAILED(rc)) return rc;
+    hrc = pSnapshot->COMGETTER(Children)(ComSafeArrayAsOutParam(sfaChilds));
+    if (FAILED(hrc)) return hrc;
     for (size_t i = 0; i < sfaChilds.size(); ++i)
     {
-        rc = createMachineList(sfaChilds[i]);
-        if (FAILED(rc)) return rc;
+        hrc = createMachineList(sfaChilds[i]);
+        if (FAILED(hrc)) return hrc;
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT MachineMoveVM::queryMediasForAllStates()
@@ -1449,7 +1440,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
     /* In this case we create a exact copy of the original VM. This means just
      * adding all directly and indirectly attached disk images to the worker
      * list. */
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     for (size_t i = 0; i < machineList.size(); ++i)
     {
         const ComObjPtr<Machine> &machine = machineList.at(i);
@@ -1457,42 +1448,38 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
         /* Add all attachments (and their parents) of the different
          * machines to a worker list. */
         SafeIfaceArray<IMediumAttachment> sfaAttachments;
-        rc = machine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
-        if (FAILED(rc)) return rc;
+        hrc = machine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
+        if (FAILED(hrc)) return hrc;
         for (size_t a = 0; a < sfaAttachments.size(); ++a)
         {
             const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[a];
             DeviceType_T deviceType;//floppy, hard, DVD
-            rc = pAtt->COMGETTER(Type)(&deviceType);
-            if (FAILED(rc)) return rc;
+            hrc = pAtt->COMGETTER(Type)(&deviceType);
+            if (FAILED(hrc)) return hrc;
 
             /* Valid medium attached? */
             ComPtr<IMedium> pMedium;
-            rc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
-            if (FAILED(rc)) return rc;
+            hrc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
+            if (FAILED(hrc)) return hrc;
 
             if (pMedium.isNull())
                 continue;
 
             Bstr bstrLocation;
-            rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
-            if (FAILED(rc)) return rc;
+            hrc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+            if (FAILED(hrc)) return hrc;
 
             /* Cast to ComObjPtr<Medium> */
             ComObjPtr<Medium> pObjMedium = (Medium *)(IMedium *)pMedium;
 
             /* Check for "read-only" medium in terms that VBox can't create this one */
-            rc = isMediumTypeSupportedForMoving(pMedium);
-            if (FAILED(rc))
+            hrc = isMediumTypeSupportedForMoving(pMedium);
+            if (FAILED(hrc))
             {
-                if (rc == S_FALSE)
-                {
-                    Log2(("Skipping file %ls because of this medium type hasn't been supported for moving.\n",
-                          bstrLocation.raw()));
-                    continue;
-                }
-                else
-                    return rc;
+                if (hrc != S_FALSE)
+                    return hrc;
+                Log2(("Skipping file %ls because of this medium type hasn't been supported for moving.\n", bstrLocation.raw()));
+                continue;
             }
 
             MEDIUMTASKCHAINMOVE mtc;
@@ -1504,19 +1491,19 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
             {
                 /* Refresh the state so that the file size get read. */
                 MediumState_T e;
-                rc = pMedium->RefreshState(&e);
-                if (FAILED(rc)) return rc;
+                hrc = pMedium->RefreshState(&e);
+                if (FAILED(hrc)) return hrc;
 
                 LONG64 lSize;
-                rc = pMedium->COMGETTER(Size)(&lSize);
-                if (FAILED(rc)) return rc;
+                hrc = pMedium->COMGETTER(Size)(&lSize);
+                if (FAILED(hrc)) return hrc;
 
                 MediumType_T mediumType;//immutable, shared, passthrough
-                rc = pMedium->COMGETTER(Type)(&mediumType);
-                if (FAILED(rc)) return rc;
+                hrc = pMedium->COMGETTER(Type)(&mediumType);
+                if (FAILED(hrc)) return hrc;
 
-                rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
-                if (FAILED(rc)) return rc;
+                hrc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+                if (FAILED(hrc)) return hrc;
 
                 MEDIUMTASKMOVE mt;// = {false, "basename", NULL, 0, 0};
                 mt.strBaseName = bstrLocation;
@@ -1533,20 +1520,20 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
                 mtc.chain.append(mt);
 
                 /* Query next parent. */
-                rc = pMedium->COMGETTER(Parent)(pMedium.asOutParam());
-                if (FAILED(rc)) return rc;
+                hrc = pMedium->COMGETTER(Parent)(pMedium.asOutParam());
+                if (FAILED(hrc)) return hrc;
             }
 
             m_llMedias.append(mtc);
         }
 
         /* Add the save state files of this machine if there is one. */
-        rc = addSaveState(machine);
-        if (FAILED(rc)) return rc;
+        hrc = addSaveState(machine);
+        if (FAILED(hrc)) return hrc;
 
         /* Add the NVRAM files of this machine if there is one. */
-        rc = addNVRAM(machine);
-        if (FAILED(rc)) return rc;
+        hrc = addNVRAM(machine);
+        if (FAILED(hrc)) return hrc;
     }
 
     /* Build up the index list of the image chain. Unfortunately we can't do
@@ -1560,14 +1547,14 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
             mtc.chain[a - 1].uIdx = uIdx++;
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
 {
     Bstr bstrSrcSaveStatePath;
-    HRESULT rc = machine->COMGETTER(StateFilePath)(bstrSrcSaveStatePath.asOutParam());
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = machine->COMGETTER(StateFilePath)(bstrSrcSaveStatePath.asOutParam());
+    if (FAILED(hrc)) return hrc;
     if (!bstrSrcSaveStatePath.isEmpty())
     {
         SNAPFILETASKMOVE sft;
@@ -1594,11 +1581,11 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
 HRESULT MachineMoveVM::addNVRAM(const ComObjPtr<Machine> &machine)
 {
     ComPtr<INvramStore> pNvramStore;
-    HRESULT rc = machine->COMGETTER(NonVolatileStore)(pNvramStore.asOutParam());
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = machine->COMGETTER(NonVolatileStore)(pNvramStore.asOutParam());
+    if (FAILED(hrc)) return hrc;
     Bstr bstrSrcNVRAMPath;
-    rc = pNvramStore->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
-    if (FAILED(rc)) return rc;
+    hrc = pNvramStore->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
+    if (FAILED(hrc)) return hrc;
     Utf8Str strSrcNVRAMPath(bstrSrcNVRAMPath);
     if (!strSrcNVRAMPath.isEmpty() && RTFileExists(strSrcNVRAMPath.c_str()))
     {
@@ -1651,25 +1638,25 @@ void MachineMoveVM::updateProgressStats(MEDIUMTASKCHAINMOVE &mtc, ULONG &uCount,
 HRESULT MachineMoveVM::isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMedium)
 {
     Bstr bstrLocation;
-    HRESULT rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
 
     DeviceType_T deviceType;
-    rc = pMedium->COMGETTER(DeviceType)(&deviceType);
-    if (FAILED(rc))
-        return rc;
+    hrc = pMedium->COMGETTER(DeviceType)(&deviceType);
+    if (FAILED(hrc))
+        return hrc;
 
     ComPtr<IMediumFormat> mediumFormat;
-    rc = pMedium->COMGETTER(MediumFormat)(mediumFormat.asOutParam());
-    if (FAILED(rc))
-        return rc;
+    hrc = pMedium->COMGETTER(MediumFormat)(mediumFormat.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
 
     /* Check whether VBox is able to create this medium format or not, i.e. medium can be "read-only" */
     Bstr bstrFormatName;
-    rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-    if (FAILED(rc))
-        return rc;
+    hrc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
 
     Utf8Str formatName = Utf8Str(bstrFormatName);
     if (formatName.compare("VHDX", Utf8Str::CaseInsensitive) == 0)

@@ -105,9 +105,9 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
     {
         i_parseURI(aFile, m->locInfo); /* may throw hrc. */
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        return aRC;
+        return hrcXcpt;
     }
     catch (std::bad_alloc &)
     {
@@ -794,11 +794,11 @@ HRESULT Appliance::interpret()
             m->virtualSystemDescriptions.push_back(pNewDesc);
         }
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
         /* On error we clear the list & return */
         m->virtualSystemDescriptions.clear();
-        hrc = aRC;
+        hrc = hrcXcpt;
     }
 
     // reset the appliance state
@@ -2571,9 +2571,9 @@ HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const
     {
         hrc = setError(VBOX_E_FILE_ERROR, rXcpt.what());
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        hrc = aRC;
+        hrc = hrcXcpt;
     }
     catch (...)
     {
@@ -4864,7 +4864,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (FAILED(hrc)) throw hrc;
             stack.fSessionOpen = false;
         }
-        catch(HRESULT aRC)
+        catch (HRESULT hrcXcpt)
         {
             com::ErrorInfo info;
 
@@ -4872,9 +4872,9 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 stack.pSession->UnlockMachine();
 
             if (info.isFullAvailable())
-                throw setError(aRC, Utf8Str(info.getText()).c_str());
+                throw setError(hrcXcpt, Utf8Str(info.getText()).c_str());
             else
-                throw setError(aRC, tr("Unknown error during OVF import"));
+                throw setError(hrcXcpt, tr("Unknown error during OVF import"));
         }
     }
 
@@ -5216,16 +5216,16 @@ l_skipped:
                 throw hrc;
             stack.fSessionOpen = false;
         }
-        catch(HRESULT aRC)
+        catch (HRESULT hrcXcpt)
         {
             com::ErrorInfo info;
             if (stack.fSessionOpen)
                 stack.pSession->UnlockMachine();
 
             if (info.isFullAvailable())
-                throw setError(aRC, Utf8Str(info.getText()).c_str());
+                throw setError(hrcXcpt, Utf8Str(info.getText()).c_str());
             else
-                throw setError(aRC, tr("Unknown error during OVF import"));
+                throw setError(hrcXcpt, tr("Unknown error during OVF import"));
         }
     }
     LogFlowFuncLeave();

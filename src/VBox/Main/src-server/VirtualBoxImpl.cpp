@@ -867,9 +867,9 @@ HRESULT VirtualBox::init()
             RTThreadUserWait(m->threadAsyncEvent, RT_INDEFINITE_WAIT);
             ComAssertThrow(m->pAsyncEventQ, E_FAIL);
         }
-        catch (HRESULT aRC)
+        catch (HRESULT hrcXcpt)
         {
-            hrc = aRC;
+            hrc = hrcXcpt;
         }
     }
 

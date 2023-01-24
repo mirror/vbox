@@ -313,9 +313,9 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
             if (aTask->m_ptrProgress)
                 aTask->m_ptrProgress->SetCurrentOperationProgress(66);
         }
-        catch (HRESULT aRC)
+        catch (HRESULT hrcXcpt)
         {
-            rc = aRC;
+            rc = hrcXcpt;
         }
 
         /* Clean up */
@@ -373,9 +373,9 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
                 aTask->m_ptrProgress->SetCurrentOperationProgress((ULONG)(fPercentStep * (float)i));
         }
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        rc = aRC;
+        rc = hrcXcpt;
     }
 
     aTask->m_rc = rc;
@@ -415,9 +415,9 @@ HRESULT VFSExplorer::update(ComPtr<IProgress> &aProgress)
         //this function delete task in case of exceptions, so there is no need in the call of delete operator
         rc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        rc = aRC;
+        rc = hrcXcpt;
     }
 
      if (SUCCEEDED(rc))
@@ -533,9 +533,9 @@ HRESULT VFSExplorer::remove(const std::vector<com::Utf8Str> &aNames,
         //this function delete task in case of exceptions, so there is no need in the call of delete operator
         rc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        rc = aRC;
+        rc = hrcXcpt;
     }
 
     if (SUCCEEDED(rc))

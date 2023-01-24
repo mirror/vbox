@@ -114,18 +114,18 @@ public:
           mProgress(pProgress),
           mVirtualBoxCaller(NULL)
     {
-        AssertReturnVoidStmt(pMediumIO, mRC = E_FAIL);
-        AssertReturnVoidStmt(pDataStream, mRC = E_FAIL);
-        mRC = mMediumCaller.hrc();
-        if (FAILED(mRC))
+        AssertReturnVoidStmt(pMediumIO, mHrc = E_FAIL);
+        AssertReturnVoidStmt(pDataStream, mHrc = E_FAIL);
+        mHrc = mMediumCaller.hrc();
+        if (FAILED(mHrc))
             return;
 
         /* Get strong VirtualBox reference, see below. */
         VirtualBox *pVirtualBox = pMediumIO->m->ptrVirtualBox;
         mVirtualBox = pVirtualBox;
         mVirtualBoxCaller.attach(pVirtualBox);
-        mRC = mVirtualBoxCaller.hrc();
-        if (FAILED(mRC))
+        mHrc = mVirtualBoxCaller.hrc();
+        if (FAILED(mHrc))
             return;
     }
 
@@ -135,10 +135,10 @@ public:
         /* send the notification of completion.*/
         if (   isAsync()
             && !mProgress.isNull())
-            mProgress->i_notifyComplete(mRC);
+            mProgress->i_notifyComplete(mHrc);
     }
 
-    HRESULT hrc() const { return mRC; }
+    HRESULT hrc() const { return mHrc; }
     bool isOk() const { return SUCCEEDED(hrc()); }
 
     const ComPtr<Progress>& GetProgressObject() const {return mProgress;}
@@ -152,8 +152,8 @@ public:
         LogFlowFuncEnter();
         try
         {
-            mRC = executeTask(); /* (destructor picks up mRC, see above) */
-            LogFlowFunc(("hrc=%Rhrc\n", mRC));
+            mHrc = executeTask(); /* (destructor picks up mHrc, see above) */
+            LogFlowFunc(("hrc=%Rhrc\n", mHrc));
         }
         catch (...)
         {
@@ -167,7 +167,7 @@ public:
     AutoCaller mMediumCaller;
 
 protected:
-    HRESULT         mRC;
+    HRESULT         mHrc;
 
     ComObjPtr<DataStream> m_pDataStream;
     MediumVariant_T m_fMediumVariant;
@@ -842,7 +842,7 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
         if (FAILED(rc))
             throw rc;
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT hrcXcpt) { rc = hrcXcpt; }
 
     if (SUCCEEDED(rc))
     {

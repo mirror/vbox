@@ -2587,9 +2587,9 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
             }
         }
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        rc = aRC;
+        rc = hrcXcpt;
     }
 
     if (FAILED(rc))
@@ -3574,8 +3574,9 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
             mParent->i_markRegistryModified(i_getId());
         }
     }
-    catch (HRESULT aRC) {
-        mrc = aRC;
+    catch (HRESULT hrcXcpt)
+    {
+        mrc = hrcXcpt;
     }
 
     if (FAILED(mrc))
@@ -4140,7 +4141,7 @@ HRESULT SessionMachine::i_onlineMergeMedium(const ComObjPtr<MediumAttachment> &a
         if (FAILED(rc))
             throw rc;
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT hrcXcpt) { rc = hrcXcpt; }
 
     // The callback mentioned above takes care of update the medium state
 

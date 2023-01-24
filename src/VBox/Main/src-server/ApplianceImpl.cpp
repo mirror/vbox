@@ -712,9 +712,9 @@ HRESULT Appliance::createVFSExplorer(const com::Utf8Str &aURI, ComPtr<IVFSExplor
         explorer.createObject();
         hrc = explorer->init(li.storageType, li.strPath, li.strHostname, li.strUsername, li.strPassword, mVirtualBox);
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
-        hrc = aRC;
+        hrc = hrcXcpt;
     }
 
     if (SUCCEEDED(hrc))
@@ -766,7 +766,7 @@ HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCre
 
         *aCreated = i;
     }
-    catch (HRESULT aRC)
+    catch (HRESULT hrcXcpt)
     {
         for (; i>0; --i)
         {
@@ -775,7 +775,7 @@ HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCre
             else
                 break;
         }
-        hrc = aRC;
+        hrc = hrcXcpt;
     }
 
     return hrc;
