@@ -69,55 +69,55 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     LogFlow(("VBoxDriversRegister: u32Version=%#x\n", u32Version));
     AssertReleaseMsg(u32Version == VBOX_VERSION, ("u32Version=%#x VBOX_VERSION=%#x\n", u32Version, VBOX_VERSION));
 
-    int rc = pCallbacks->pfnRegister(pCallbacks, &Mouse::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = pCallbacks->pfnRegister(pCallbacks, &Mouse::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-    rc = pCallbacks->pfnRegister(pCallbacks, &Keyboard::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &Keyboard::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-    rc = pCallbacks->pfnRegister(pCallbacks, &Display::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &Display::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-    rc = pCallbacks->pfnRegister(pCallbacks, &VMMDev::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &VMMDev::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 #ifdef VBOX_WITH_AUDIO_VRDE
-    rc = pCallbacks->pfnRegister(pCallbacks, &AudioVRDE::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &AudioVRDE::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 #endif
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    rc = pCallbacks->pfnRegister(pCallbacks, &AudioVideoRec::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &AudioVideoRec::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 #endif
 
-    rc = pCallbacks->pfnRegister(pCallbacks, &EmWebcam::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &EmWebcam::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
 #ifdef VBOX_WITH_USB_CARDREADER
-    rc = pCallbacks->pfnRegister(pCallbacks, &UsbCardReader::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &UsbCardReader::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 #endif
 
-    rc = pCallbacks->pfnRegister(pCallbacks, &Console::DrvStatusReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &Console::DrvStatusReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    rc = pCallbacks->pfnRegister(pCallbacks, &PCIRawDev::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &PCIRawDev::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 #endif
 
-    rc = pCallbacks->pfnRegister(pCallbacks, &NvramStore::DrvReg);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = pCallbacks->pfnRegister(pCallbacks, &NvramStore::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     return VINF_SUCCESS;
 }
