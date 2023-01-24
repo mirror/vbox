@@ -751,7 +751,7 @@ HRESULT Guest::i_setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
         pm::VMSTATMASK_NONE
     };
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -898,7 +898,7 @@ void Guest::i_setAdditionsInfo(const com::Utf8Str &aInterfaceVersion, VBOXOSTYPE
     RTTimeNow(&TimeSpecTS);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1094,7 +1094,7 @@ void Guest::i_onUserStateChanged(const Utf8Str &aUser, const Utf8Str &aDomain, V
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     Utf8Str strDetails; /** @todo Implement state details here. */
 
@@ -1122,7 +1122,7 @@ void Guest::i_setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestF
            && a_enmFacility <= VBoxGuestFacilityType_All); /* Paranoia, VMMDev checks for this. */
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1170,7 +1170,7 @@ void Guest::i_setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestF
 void Guest::i_setSupportedFeatures(uint32_t aCaps)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

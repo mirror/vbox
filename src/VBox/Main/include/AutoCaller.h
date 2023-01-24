@@ -68,7 +68,7 @@ class VirtualBoxBase;
  * STDMETHODIMP Component::Foo()
  * {
  *     AutoCaller autoCaller(this);
- *     HRESULT hrc = autoCaller.rc();
+ *     HRESULT hrc = autoCaller.hrc();
  *     if (SUCCEEDED(hrc))
  *     {
  *         ...
@@ -114,9 +114,19 @@ public:
     }
 
     /**
+     * Returns the stored result code returned by ObjectState::addCaller() after
+     * instance creation or after the last #add() call.
+     *
+     * A successful result code means the number of callers was successfully
+     * increased.
+     */
+    HRESULT hrc() const { return mRC; }
+
+    /**
      * Returns the stored result code returned by ObjectState::addCaller()
      * after instance creation or after the last #add() call. A successful
      * result code means the number of callers was successfully increased.
+     * @deprecated use hrc()
      */
     HRESULT rc() const { return mRC; }
 
@@ -229,7 +239,7 @@ private:
  * STDMETHODIMP Component::Bar()
  * {
  *     AutoLimitedCaller autoCaller(this);
- *     HRESULT hrc = autoCaller.rc();
+ *     HRESULT hrc = autoCaller.hrc();
  *     if (SUCCEEDED(hrc))
  *     {
  *         ...

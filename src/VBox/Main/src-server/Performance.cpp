@@ -266,7 +266,7 @@ HRESULT CollectorGuest::enableVMMStats(bool mCollectVMMStats)
     {
         /** @todo replace this with a direct call to mGuest in trunk! */
         AutoCaller autoCaller(mMachine);
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+        if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
         ComPtr<IInternalSessionControl> directControl;
 
@@ -309,7 +309,7 @@ HRESULT CollectorGuest::enableInternal(ULONG mask)
          * terminate (the VM processes stop processing events shortly before
          * closing the session). This avoids the hang. */
         AutoCaller autoCaller(mMachine);
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+        if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
         mMachineName = mMachine->i_getName();
 
@@ -1108,7 +1108,7 @@ void MachineDiskUsage::collect()
         AssertContinue(!pMedium.isNull());
 
         AutoCaller localAutoCaller(pMedium);
-        if (FAILED(localAutoCaller.rc())) continue;
+        if (FAILED(localAutoCaller.hrc())) continue;
 
         AutoReadLock local_alock(pMedium COMMA_LOCKVAL_SRC_POS);
 

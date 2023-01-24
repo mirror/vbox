@@ -83,7 +83,7 @@ HRESULT NATEngine::init(Machine *aParent, INetworkAdapter *aAdapter, NATEngine *
     Log(("init that:%p this:%p\n", aThat, this));
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
 
@@ -104,7 +104,7 @@ HRESULT NATEngine::initCopy(Machine *aParent, INetworkAdapter *aAdapter, NATEngi
     Log(("initCopy that:%p this:%p\n", aThat, this));
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
 
@@ -141,7 +141,7 @@ bool NATEngine::i_isModified()
 void NATEngine::i_rollback()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -151,11 +151,11 @@ void NATEngine::i_rollback()
 void NATEngine::i_commit()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(mPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -174,11 +174,11 @@ void NATEngine::i_copyFrom(NATEngine *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -193,7 +193,7 @@ void NATEngine::i_applyDefaults()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -204,7 +204,7 @@ bool NATEngine::i_hasDefaults()
 {
    /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), true);
+    AssertComRCReturn(autoCaller.hrc(), true);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -365,7 +365,7 @@ HRESULT NATEngine::removeRedirect(const com::Utf8Str &aName)
 HRESULT NATEngine::i_loadSettings(const settings::NAT &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     mData->m.assignCopy(&data);
@@ -376,7 +376,7 @@ HRESULT NATEngine::i_loadSettings(const settings::NAT &data)
 HRESULT NATEngine::i_saveSettings(settings::NAT &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = S_OK;

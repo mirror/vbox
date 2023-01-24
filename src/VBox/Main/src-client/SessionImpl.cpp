@@ -569,7 +569,7 @@ HRESULT Session::uninitialize()
     else
     {
         Log1WarningThisFunc(("UNEXPECTED uninitialization!\n"));
-        hrc = autoCaller.rc();
+        hrc = autoCaller.hrc();
     }
 
     LogFlowThisFunc(("hrc=%08X\n", hrc));

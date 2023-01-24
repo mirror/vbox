@@ -137,7 +137,7 @@ HRESULT SerialPort::init(Machine *aParent, SerialPort *aThat)
     unconst(m->pPeer) = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.share(aThat->m->bd);
@@ -171,7 +171,7 @@ HRESULT SerialPort::initCopy(Machine *aParent, SerialPort *aThat)
     /* pPeer is left null */
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy(aThat->m->bd);
@@ -223,7 +223,7 @@ HRESULT SerialPort::setEnabled(BOOL aEnabled)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -260,7 +260,7 @@ HRESULT SerialPort::setHostMode(PortMode_T aHostMode)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -352,7 +352,7 @@ HRESULT SerialPort::setIRQ(ULONG aIRQ)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -395,11 +395,11 @@ HRESULT SerialPort::setIOBase(ULONG aIOBase)
                         m->bd->ulSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -438,7 +438,7 @@ HRESULT SerialPort::setPath(const com::Utf8Str &aPath)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -477,7 +477,7 @@ HRESULT SerialPort::setServer(BOOL aServer)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -513,7 +513,7 @@ HRESULT SerialPort::setUartType(UartType_T aUartType)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -551,7 +551,7 @@ HRESULT SerialPort::i_loadSettings(const settings::SerialPort &data)
 {
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -573,7 +573,7 @@ HRESULT SerialPort::i_loadSettings(const settings::SerialPort &data)
 HRESULT SerialPort::i_saveSettings(settings::SerialPort &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -600,7 +600,7 @@ void SerialPort::i_rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -615,11 +615,11 @@ void SerialPort::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (pPeer is "master" so locked
      * first) */
@@ -646,11 +646,11 @@ void SerialPort::i_copyFrom(SerialPort *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -671,7 +671,7 @@ void SerialPort::i_applyDefaults(GuestOSType *aOsType)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -722,7 +722,7 @@ bool SerialPort::i_hasDefaults()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), true);
+    AssertComRCReturn(autoCaller.hrc(), true);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

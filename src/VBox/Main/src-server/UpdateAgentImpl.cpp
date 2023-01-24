@@ -656,7 +656,7 @@ HRESULT UpdateAgent::getSupportedChannels(std::vector<UpdateChannel_T> &aSupport
 HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -684,7 +684,7 @@ HRESULT UpdateAgent::i_loadSettings(const settings::UpdateAgent &data)
 HRESULT UpdateAgent::i_saveSettings(settings::UpdateAgent &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -702,7 +702,7 @@ HRESULT UpdateAgent::i_saveSettings(settings::UpdateAgent &data)
 HRESULT UpdateAgent::i_setCheckCount(ULONG aCount)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -721,7 +721,7 @@ HRESULT UpdateAgent::i_setCheckCount(ULONG aCount)
 HRESULT UpdateAgent::i_setLastCheckDate(const com::Utf8Str &aDate)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

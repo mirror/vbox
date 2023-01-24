@@ -417,9 +417,8 @@ private:
         uint32_t                    mProtocolVersion;
         /** Session timeout (in ms). */
         uint32_t                    mTimeout;
-        /** The last returned session status
-         *  returned from the guest side. */
-        int                         mRC;
+        /** The last returned session VBox status status returned from the guest side. */
+        int                         mVrc;
         /** Object ID allocation bitmap; clear bits are free, set bits are busy. */
         uint64_t                    bmObjectIds[VBOX_GUESTCTRL_MAX_OBJECTS / sizeof(uint64_t) / 8];
 
@@ -442,7 +441,7 @@ private:
             , mObjects(rThat.mObjects)
             , mProtocolVersion(rThat.mProtocolVersion)
             , mTimeout(rThat.mTimeout)
-            , mRC(rThat.mRC)
+            , mVrc(rThat.mVrc)
         {
             memcpy(&bmObjectIds, &rThat.bmObjectIds, sizeof(bmObjectIds));
         }

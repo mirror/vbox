@@ -1553,8 +1553,8 @@ STDMETHODIMP EventSourceAggregator::RegisterListener(IEventListener *aListener,
     CheckComArgSafeArrayNotNull(aInterested);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     ComPtr<IEventListener> proxy;
     HRESULT hrc = createProxyListener(aListener, proxy.asOutParam());
@@ -1580,8 +1580,8 @@ STDMETHODIMP EventSourceAggregator::UnregisterListener(IEventListener *aListener
     CheckComArgNotNull(aListener);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1610,8 +1610,8 @@ STDMETHODIMP EventSourceAggregator::FireEvent(IEvent *aEvent,
     CheckComArgOutPointerValid(aProcessed);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     /* Aggregator event source shall not have direct event firing, but we may

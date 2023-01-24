@@ -43,10 +43,10 @@
      *
      *  @code
      *      AutoCaller autoCaller(this);
-     *      if (FAILED(autoCaller.rc())) return autoCaller.rc();
+     *      if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
      *
      *      Machine::AutoStateDependency<MutableStateDep> adep(mParent);
-     *      if (FAILED(stateDep.rc())) return stateDep.rc();
+     *      if (FAILED(stateDep.hrc())) return stateDep.hrc();
      *      ...
      *      // code that depends on the particular machine state
      *      ...
@@ -102,9 +102,12 @@
         }
 
         /** Returns the result of Machine::addStateDependency(). */
+        HRESULT hrc() const { return mRC; }
+        /** Returns the result of Machine::addStateDependency().
+         * @deprecated Use #hrc() instead.  */
         HRESULT rc() const { return mRC; }
 
-        /** Shortcut to SUCCEEDED(rc()). */
+        /** Shortcut to SUCCEEDED(hrc()). */
         bool isOk() const { return SUCCEEDED(mRC); }
 
         /** Returns the machine state value as returned by
@@ -135,7 +138,7 @@
      *  Accepts any machine state and guarantees the state won't change before
      *  this object is destroyed. If the machine state cannot be protected (as
      *  a result of the state change currently in progress), this instance's
-     *  #rc() method will indicate a failure, and the caller is not allowed to
+     *  #hrc() method will indicate a failure, and the caller is not allowed to
      *  rely on any particular machine state and should return the failed
      *  result code to the upper level.
      */
@@ -147,7 +150,7 @@
      *
      *  Succeeds only if the machine state is in one of the mutable states, and
      *  guarantees the given mutable state won't change before this object is
-     *  destroyed. If the machine is not mutable, this instance's #rc() method
+     *  destroyed. If the machine is not mutable, this instance's #hrc() method
      *  will indicate a failure, and the caller is not allowed to rely on any
      *  particular machine state and should return the failed result code to
      *  the upper level.
@@ -166,7 +169,7 @@
      *  Succeeds only if the machine state is in one of the mutable states, or
      *  if the machine is in the Saved state, and guarantees the given mutable
      *  state won't change before this object is destroyed. If the machine is
-     *  not mutable, this instance's #rc() method will indicate a failure, and
+     *  not mutable, this instance's #hrc() method will indicate a failure, and
      *  the caller is not allowed to rely on any particular machine state and
      *  should return the failed result code to the upper level.
      *
@@ -182,7 +185,7 @@
      *  Succeeds only if the machine state is in one of the mutable states, or
      *  if the machine is in the Running or Paused state, and guarantees the
      *  given mutable state won't change before this object is destroyed. If
-     *  the machine is not mutable, this instance's #rc() method will indicate
+     *  the machine is not mutable, this instance's #hrc() method will indicate
      *  a failure, and the caller is not allowed to rely on any particular
      *  machine state and should return the failed result code to the upper
      *  level.
@@ -199,7 +202,7 @@
      *  Succeeds only if the machine state is in one of the mutable states, or
      *  if the machine is in the Running, Paused or Saved state, and guarantees
      *  the given mutable state won't change before this object is destroyed.
-     *  If the machine is not mutable, this instance's #rc() method will
+     *  If the machine is not mutable, this instance's #hrc() method will
      *  indicate a failure, and the caller is not allowed to rely on any
      *  particular machine state and should return the failed result code to
      *  the upper level.

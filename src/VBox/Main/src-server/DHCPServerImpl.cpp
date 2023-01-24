@@ -327,7 +327,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::DHCPServer &rD
 HRESULT DHCPServer::i_saveSettings(settings::DHCPServer &rData)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

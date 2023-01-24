@@ -1283,7 +1283,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> autoCaller(this);
-        hrc = autoCaller.rc();
+        hrc = autoCaller.hrc();
         if (SUCCEEDED(hrc))
         {
 </xsl:text>
@@ -1431,7 +1431,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
           </xsl:otherwise>
         </xsl:choose>
         <xsl:text> autoCaller(this);
-        hrc = autoCaller.rc();
+        hrc = autoCaller.hrc();
         if (SUCCEEDED(hrc))
         {
 </xsl:text>
@@ -1904,7 +1904,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> autoCaller(this);
-        hrc = autoCaller.rc();
+        hrc = autoCaller.hrc();
         if (SUCCEEDED(hrc))
         {
 </xsl:text>

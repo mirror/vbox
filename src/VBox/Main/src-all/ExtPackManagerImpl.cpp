@@ -2582,7 +2582,7 @@ HRESULT ExtPackManager::cleanup(void)
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -3088,7 +3088,7 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
     RTCString const * const pStrTarballDigest = &a_pExtPackFile->m->strDigest;
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3225,7 +3225,7 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3356,7 +3356,7 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
 void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return;
     AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3391,7 +3391,7 @@ HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector
         a_pstrExtPackNames->clear();
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3431,7 +3431,7 @@ HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector
 void ExtPackManager::i_callAllConsoleReadyHooks(IConsole *a_pConsole)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return;
     AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3458,7 +3458,7 @@ void ExtPackManager::i_callAllConsoleReadyHooks(IConsole *a_pConsole)
 void ExtPackManager::i_callAllVmCreatedHooks(IMachine *a_pMachine)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return;
     AutoWriteLock           autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3484,7 +3484,7 @@ void ExtPackManager::i_callAllVmCreatedHooks(IMachine *a_pMachine)
 int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return Global::vboxStatusCodeFromCOM(hrc);
     AutoWriteLock           autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3514,7 +3514,7 @@ int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM
 int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return Global::vboxStatusCodeFromCOM(hrc);
     AutoWriteLock           autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3542,7 +3542,7 @@ int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM, PCV
 void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return;
     AutoWriteLock           autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3565,7 +3565,7 @@ void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM, P
 HRESULT ExtPackManager::i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3594,7 +3594,7 @@ HRESULT ExtPackManager::i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
 int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3620,7 +3620,7 @@ int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack,
 HRESULT ExtPackManager::i_checkCryptoExtPack(Utf8Str const *a_pstrExtPack)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3649,7 +3649,7 @@ HRESULT ExtPackManager::i_checkCryptoExtPack(Utf8Str const *a_pstrExtPack)
 int ExtPackManager::i_getCryptoLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrCryptoLibrary)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3678,7 +3678,7 @@ int ExtPackManager::i_getCryptoLibraryPathForExtPack(Utf8Str const *a_pstrExtPac
 HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, const char *a_pszExtPack, Utf8Str *a_pstrLibrary)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3706,7 +3706,7 @@ HRESULT ExtPackManager::i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
     a_pstrExtPack->setNull();
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3738,7 +3738,7 @@ HRESULT ExtPackManager::i_getDefaultCryptoExtPack(Utf8Str *a_pstrExtPack)
     a_pstrExtPack->setNull();
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3766,7 +3766,7 @@ HRESULT ExtPackManager::i_getDefaultCryptoExtPack(Utf8Str *a_pstrExtPack)
 bool ExtPackManager::i_isExtPackUsable(const char *a_pszExtPack)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return false;
     AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3782,7 +3782,7 @@ bool ExtPackManager::i_isExtPackUsable(const char *a_pszExtPack)
 void ExtPackManager::i_dumpAllToReleaseLog(void)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return;
     AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
@@ -3829,7 +3829,7 @@ void ExtPackManager::i_dumpAllToReleaseLog(void)
 uint64_t ExtPackManager::i_getUpdateCounter(void)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (FAILED(hrc))
         return 0;
     AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);

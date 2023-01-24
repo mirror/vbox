@@ -99,7 +99,7 @@ HRESULT MediumLock::Lock(bool aIgnoreLockedMedia)
         return S_OK;
 
     mMediumCaller.attach(mMedium);
-    if (FAILED(mMediumCaller.rc()))
+    if (FAILED(mMediumCaller.hrc()))
     {
         mMediumCaller.attach(NULL);
         return VBOX_E_INVALID_OBJECT_STATE;

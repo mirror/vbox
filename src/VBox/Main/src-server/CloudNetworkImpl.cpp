@@ -104,7 +104,7 @@ void CloudNetwork::uninit()
 HRESULT CloudNetwork::i_loadSettings(const settings::CloudNetwork &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->s = data;
@@ -115,7 +115,7 @@ HRESULT CloudNetwork::i_loadSettings(const settings::CloudNetwork &data)
 HRESULT CloudNetwork::i_saveSettings(settings::CloudNetwork &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);

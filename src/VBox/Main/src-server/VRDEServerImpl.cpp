@@ -131,7 +131,7 @@ HRESULT VRDEServer::init(Machine *aParent, VRDEServer *aThat)
     unconst(mPeer) = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.share(aThat->mData);
@@ -163,7 +163,7 @@ HRESULT VRDEServer::initCopy(Machine *aParent, VRDEServer *aThat)
     /* mPeer is left null */
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.attachCopy(aThat->mData);
@@ -206,7 +206,7 @@ HRESULT VRDEServer::i_loadSettings(const settings::VRDESettings &data)
     using namespace settings;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     mData.assignCopy(&data);
@@ -224,7 +224,7 @@ HRESULT VRDEServer::i_loadSettings(const settings::VRDESettings &data)
 HRESULT VRDEServer::i_saveSettings(settings::VRDESettings &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     data = *mData.data();
@@ -248,7 +248,7 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
 {
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -274,7 +274,7 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
         {
             /* Failed to enable/disable the server. Revert the internal state. */
             adep.add();
-            if (SUCCEEDED(adep.rc()))
+            if (SUCCEEDED(adep.hrc()))
             {
                 alock.acquire();
                 mData->fEnabled = !RT_BOOL(aEnabled);
@@ -376,7 +376,7 @@ HRESULT VRDEServer::setVRDEProperty(const com::Utf8Str &aKey, const com::Utf8Str
 
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -622,7 +622,7 @@ HRESULT VRDEServer::setAuthType(AuthType_T aType)
 {
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -658,7 +658,7 @@ HRESULT VRDEServer::setAuthTimeout(ULONG aTimeout)
 {
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -715,7 +715,7 @@ HRESULT VRDEServer::setAuthLibrary(const com::Utf8Str &aLibrary)
 {
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -752,7 +752,7 @@ HRESULT VRDEServer::setAllowMultiConnection(BOOL aAllowMultiConnection)
 {
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -787,7 +787,7 @@ HRESULT VRDEServer::getReuseSingleConnection(BOOL *aReuseSingleConnection)
 HRESULT VRDEServer::setReuseSingleConnection(BOOL aReuseSingleConnection)
 {
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -855,7 +855,7 @@ HRESULT VRDEServer::setVRDEExtPack(const com::Utf8Str &aExtPack)
     HRESULT hrc = S_OK;
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
-    hrc = adep.rc();
+    hrc = adep.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -912,7 +912,7 @@ void VRDEServer::i_rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -927,11 +927,11 @@ void VRDEServer::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(mPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -958,11 +958,11 @@ void VRDEServer::i_copyFrom(VRDEServer *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */

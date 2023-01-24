@@ -1076,7 +1076,7 @@ HRESULT MachineCloneVM::run()
     ComObjPtr<Machine> &p = d->p;
 
     AutoCaller autoCaller(p);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock  srcLock(p COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock trgLock(d->pTrgMachine COMMA_LOCKVAL_SRC_POS);
@@ -1463,7 +1463,7 @@ HRESULT MachineCloneVM::run()
         {
             const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
             AutoCaller mac(pMedium);
-            if (FAILED(mac.rc())) throw mac.rc();
+            if (FAILED(mac.hrc())) throw mac.hrc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
             Guid uuid = d->pTrgMachine->mData->mUuid;
             if (d->options.contains(CloneOptions_Link))
@@ -1473,7 +1473,7 @@ HRESULT MachineCloneVM::run()
                 if (!pParent.isNull())
                 {
                     AutoCaller mac2(pParent);
-                    if (FAILED(mac2.rc())) throw mac2.rc();
+                    if (FAILED(mac2.hrc())) throw mac2.hrc();
                     AutoReadLock mlock2(pParent COMMA_LOCKVAL_SRC_POS);
                     if (pParent->i_getFirstRegistryMachineId(uuid))
                     {

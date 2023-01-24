@@ -381,7 +381,7 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
 #ifndef VBOX_COM_INPROC
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     Utf8Str strPath;
     NvramStore::getNonVolatileStorageFile(strPath);
@@ -466,7 +466,7 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     Utf8Str strPath;
     NvramStore::getNonVolatileStorageFile(strPath);
@@ -987,7 +987,7 @@ HRESULT NvramStore::i_updateEncryptionSettings(const com::Utf8Str &strKeyId,
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1011,7 +1011,7 @@ HRESULT NvramStore::i_getEncryptionSettings(com::Utf8Str &strKeyId,
                                             com::Utf8Str &strKeyStore)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1025,7 +1025,7 @@ HRESULT NvramStore::i_getEncryptionSettings(com::Utf8Str &strKeyId,
 int NvramStore::i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPassword)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), VERR_INVALID_STATE);
+    AssertComRCReturn(autoCaller.hrc(), VERR_INVALID_STATE);
 
     /* keep only required password */
     if (strKeyId != m->bd->strKeyId)
@@ -1039,7 +1039,7 @@ int NvramStore::i_addPassword(const Utf8Str &strKeyId, const Utf8Str &strPasswor
 int NvramStore::i_removePassword(const Utf8Str &strKeyId)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), VERR_INVALID_STATE);
+    AssertComRCReturn(autoCaller.hrc(), VERR_INVALID_STATE);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->mpKeyStore->deleteSecretKey(strKeyId);
@@ -1049,7 +1049,7 @@ int NvramStore::i_removePassword(const Utf8Str &strKeyId)
 int NvramStore::i_removeAllPasswords()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), VERR_INVALID_STATE);
+    AssertComRCReturn(autoCaller.hrc(), VERR_INVALID_STATE);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->mpKeyStore->deleteAllSecretKeys(false, true);
@@ -1063,7 +1063,7 @@ HRESULT NvramStore::i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1111,7 +1111,7 @@ HRESULT NvramStore::i_releaseUefiVarStore(RTVFS hVfs)
 HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1142,7 +1142,7 @@ HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
 HRESULT NvramStore::i_saveSettings(settings::NvramSettings &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1245,7 +1245,7 @@ void NvramStore::i_updateNonVolatileStorageFile(const Utf8Str &aNonVolatileStora
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

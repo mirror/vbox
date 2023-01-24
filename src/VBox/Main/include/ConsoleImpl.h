@@ -436,7 +436,7 @@ private:
             Assert(SUCCEEDED(mRC));
             doRelease();
         }
-        /** Restores the number of callers after by #release(). #rc() must be
+        /** Restores the number of callers after by #release(). #hrc() must be
          *  rechecked to ensure the operation succeeded. */
         void addYY()
         {
@@ -444,8 +444,11 @@ private:
             mRC = mThat->i_addVMCaller(taQuiet, taAllowNullVM);
         }
         /** Returns the result of Console::addVMCaller() */
+        HRESULT hrc() const { return mRC; }
+        /** Returns the result of Console::addVMCaller()
+         * @deprecated Use #hrc() instead.  */
         HRESULT rc() const { return mRC; }
-        /** Shortcut to SUCCEEDED(rc()) */
+        /** Shortcut to SUCCEEDED(hrc()) */
         bool isOk() const { return SUCCEEDED(mRC); }
     protected:
         Console *mThat;
@@ -470,7 +473,7 @@ private:
      *  with mpUVM. The usage pattern is:
      *  <code>
      *      AutoVMCaller autoVMCaller(this);
-     *      if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+     *      if (FAILED(autoVMCaller.hrc())) return autoVMCaller.hrc();
      *      ...
      *      VMR3ReqCall (mpUVM, ...
      *  </code>
@@ -539,8 +542,11 @@ private:
         }
 
         /** The combined result of Console::addVMCaller() and Console::safeVMPtrRetainer */
-        HRESULT rc() const { return Base::isOk()? mRC: Base::rc(); }
-        /** Shortcut to SUCCEEDED(rc()) */
+        HRESULT hrc() const { return Base::isOk() ? mRC : Base::hrc(); }
+        /** The combined result of Console::addVMCaller() and Console::safeVMPtrRetainer
+         * @deprecated Use hrc() instead.  */
+        HRESULT rc() const { return Base::isOk() ? mRC : Base::hrc(); }
+        /** Shortcut to SUCCEEDED(hrc()) */
         bool isOk() const { return SUCCEEDED(mRC) && Base::isOk(); }
 
     private:
@@ -568,7 +574,7 @@ public:
      *  <code>
      *      Console::SafeVMPtr ptrVM(mParent);
      *      if (!ptrVM.isOk())
-     *          return ptrVM.rc();
+     *          return ptrVM.hrc();
      *      ...
      *      VMR3ReqCall(ptrVM.rawUVM(), ...
      *      ...
@@ -587,7 +593,7 @@ public:
      *  failure to the caller. The usage pattern is:
      *  <code>
      *      Console::SafeVMPtrQuiet pVM(mParent);
-     *      if (pVM.rc())
+     *      if (pVM.hrc())
      *          VMR3ReqCall(pVM, ...
      *      return S_OK;
      *  </code>

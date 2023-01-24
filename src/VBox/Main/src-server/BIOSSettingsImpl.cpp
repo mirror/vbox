@@ -209,7 +209,7 @@ HRESULT BIOSSettings::setLogoFadeIn(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -237,7 +237,7 @@ HRESULT BIOSSettings::setLogoFadeOut(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -268,7 +268,7 @@ HRESULT BIOSSettings::setLogoDisplayTime(ULONG displayTime)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -295,7 +295,7 @@ HRESULT BIOSSettings::setLogoImagePath(const com::Utf8Str &imagePath)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -321,7 +321,7 @@ HRESULT BIOSSettings::setBootMenuMode(BIOSBootMenuMode_T bootMenuMode)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -349,7 +349,7 @@ HRESULT BIOSSettings::setACPIEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -377,7 +377,7 @@ HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -405,7 +405,7 @@ HRESULT BIOSSettings::setAPICMode(APICMode_T aAPICMode)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -433,7 +433,7 @@ HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -461,7 +461,7 @@ HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -489,7 +489,7 @@ HRESULT BIOSSettings::setSMBIOSUuidLittleEndian(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -521,7 +521,7 @@ HRESULT BIOSSettings::setSMBIOSUuidLittleEndian(BOOL enable)
 HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -541,7 +541,7 @@ HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
 HRESULT BIOSSettings::i_saveSettings(settings::BIOSSettings &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -560,11 +560,11 @@ void BIOSSettings::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -588,11 +588,11 @@ void BIOSSettings::i_copyFrom(BIOSSettings *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -607,7 +607,7 @@ void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

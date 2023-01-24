@@ -173,7 +173,7 @@ HRESULT MachineDebugger::getSingleStep(BOOL *aSingleStep)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         RT_NOREF(aSingleStep); /** @todo */
@@ -192,7 +192,7 @@ HRESULT MachineDebugger::setSingleStep(BOOL aSingleStep)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         NOREF(aSingleStep); /** @todo */
@@ -213,7 +213,7 @@ HRESULT MachineDebugger::i_getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL 
     CheckComArgOutPointerValid(pfEnforced);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -223,7 +223,7 @@ HRESULT MachineDebugger::i_getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL 
         {
             bool fEnforced = false;
             Console::SafeVMPtrQuiet ptrVM(mParent);
-            hrc = ptrVM.rc();
+            hrc = ptrVM.hrc();
             if (SUCCEEDED(hrc))
                 ptrVM.vtable()->pfnEMR3QueryExecutionPolicy(ptrVM.rawUVM(), enmPolicy, &fEnforced);
             *pfEnforced = fEnforced;
@@ -242,7 +242,7 @@ HRESULT MachineDebugger::i_getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL 
 HRESULT MachineDebugger::i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL fEnforce)
 {
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -251,7 +251,7 @@ HRESULT MachineDebugger::i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL 
         else
         {
             Console::SafeVMPtrQuiet ptrVM(mParent);
-            hrc = ptrVM.rc();
+            hrc = ptrVM.hrc();
             if (SUCCEEDED(hrc))
             {
                 int vrc = ptrVM.vtable()->pfnEMR3SetExecutionPolicy(ptrVM.rawUVM(), enmPolicy, fEnforce != FALSE);
@@ -326,7 +326,7 @@ HRESULT MachineDebugger::setLogEnabled(BOOL aLogEnabled)
     }
 
     Console::SafeVMPtr ptrVM(mParent);
-    if (FAILED(ptrVM.rc())) return ptrVM.rc();
+    if (FAILED(ptrVM.hrc())) return ptrVM.hrc();
 
 #ifdef LOG_ENABLED
     int vrc = ptrVM.vtable()->pfnDBGFR3LogModifyFlags(ptrVM.rawUVM(), aLogEnabled ? "enabled" : "disabled");
@@ -345,7 +345,7 @@ HRESULT MachineDebugger::i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLog
     /* Make sure the VM is powered up. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (FAILED(hrc))
         return hrc;
 
@@ -507,7 +507,7 @@ HRESULT MachineDebugger::getOSName(com::Utf8Str &aOSName)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -529,7 +529,7 @@ HRESULT MachineDebugger::getOSVersion(com::Utf8Str &aOSVersion)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -579,7 +579,7 @@ HRESULT MachineDebugger::getVirtualTimeRate(ULONG *aVirtualTimeRate)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
         *aVirtualTimeRate = ptrVM.vtable()->pfnTMR3GetWarpDrive(ptrVM.rawUVM());
 
@@ -605,7 +605,7 @@ HRESULT MachineDebugger::setVirtualTimeRate(ULONG aVirtualTimeRate)
     else
     {
         Console::SafeVMPtr ptrVM(mParent);
-        hrc = ptrVM.rc();
+        hrc = ptrVM.hrc();
         if (SUCCEEDED(hrc))
         {
             int vrc = ptrVM.vtable()->pfnTMR3SetWarpDrive(ptrVM.rawUVM(), aVirtualTimeRate);
@@ -628,7 +628,7 @@ HRESULT MachineDebugger::getUptime(LONG64 *aUptime)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
         *aUptime = (int64_t)ptrVM.vtable()->pfnTMR3TimeVirtGetMilli(ptrVM.rawUVM());
 
@@ -645,7 +645,7 @@ HRESULT MachineDebugger::dumpGuestCore(const com::Utf8Str &aFilename, const com:
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         int vrc = ptrVM.vtable()->pfnDBGFR3CoreWrite(ptrVM.rawUVM(), aFilename.c_str(), false /*fReplaceFile*/);
@@ -785,12 +785,12 @@ HRESULT MachineDebugger::info(const com::Utf8Str &aName, const com::Utf8Str &aAr
      * Do the autocaller and lock bits.
      */
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         Console::SafeVMPtr ptrVM(mParent);
-        hrc = ptrVM.rc();
+        hrc = ptrVM.hrc();
         if (SUCCEEDED(hrc))
         {
             /*
@@ -820,7 +820,7 @@ HRESULT MachineDebugger::injectNMI()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         int vrc = ptrVM.vtable()->pfnDBGFR3InjectNMI(ptrVM.rawUVM(), 0);
@@ -837,7 +837,7 @@ HRESULT MachineDebugger::modifyLogFlags(const com::Utf8Str &aSettings)
     LogFlowThisFunc(("aSettings=%s\n", aSettings.c_str()));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         int vrc = ptrVM.vtable()->pfnDBGFR3LogModifyFlags(ptrVM.rawUVM(), aSettings.c_str());
@@ -854,7 +854,7 @@ HRESULT MachineDebugger::modifyLogGroups(const com::Utf8Str &aSettings)
     LogFlowThisFunc(("aSettings=%s\n", aSettings.c_str()));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         int vrc = ptrVM.vtable()->pfnDBGFR3LogModifyGroups(ptrVM.rawUVM(), aSettings.c_str());
@@ -871,7 +871,7 @@ HRESULT MachineDebugger::modifyLogDestinations(const com::Utf8Str &aSettings)
     LogFlowThisFunc(("aSettings=%s\n", aSettings.c_str()));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         int vrc = ptrVM.vtable()->pfnDBGFR3LogModifyDestinations(ptrVM.rawUVM(), aSettings.c_str());
@@ -914,7 +914,7 @@ HRESULT MachineDebugger::loadPlugIn(const com::Utf8Str &aName, com::Utf8Str &aPl
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -947,7 +947,7 @@ HRESULT MachineDebugger::unloadPlugIn(const com::Utf8Str &aName)
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -982,7 +982,7 @@ HRESULT MachineDebugger::detectOS(com::Utf8Str &aOs)
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -1005,7 +1005,7 @@ HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDme
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         PDBGFOSIDMESG pDmesg = (PDBGFOSIDMESG)ptrVM.vtable()->pfnDBGFR3OSQueryInterface(ptrVM.rawUVM(), DBGFOSINTERFACE_DMESG);
@@ -1053,7 +1053,7 @@ HRESULT MachineDebugger::getRegister(ULONG aCpuId, const com::Utf8Str &aName, co
     LogFlowThisFunc(("\n"));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -1094,7 +1094,7 @@ HRESULT MachineDebugger::getRegisters(ULONG aCpuId, std::vector<com::Utf8Str> &a
     LogFlowThisFunc(("\n"));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -1165,7 +1165,7 @@ HRESULT MachineDebugger::dumpGuestStack(ULONG aCpuId, com::Utf8Str &aStack)
     LogFlowThisFunc(("\n"));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         /*
@@ -1401,7 +1401,7 @@ HRESULT MachineDebugger::takeGuestSample(const com::Utf8Str &aFilename, ULONG aU
     LogFlowThisFunc(("\n"));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         if (!m_hSampleReport)
@@ -1478,7 +1478,7 @@ HRESULT MachineDebugger::getUVMAndVMMFunctionTable(LONG64 aMagicVersion, LONG64 
              * Use safe VM pointer to get both the UVM and VMM function table.
              */
             Console::SafeVMPtr ptrVM(mParent);
-            HRESULT hrc = ptrVM.rc();
+            HRESULT hrc = ptrVM.hrc();
             if (SUCCEEDED(hrc))
             {
                 if (VMMR3VTABLE_IS_COMPATIBLE_EX(ptrVM.vtable()->uMagicVersion, (uint64_t)aMagicVersion))

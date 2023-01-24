@@ -153,7 +153,7 @@ HRESULT UefiVariableStore::getSecureBootEnabled(BOOL *pfEnabled)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(true /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -197,7 +197,7 @@ HRESULT UefiVariableStore::setSecureBootEnabled(BOOL fEnabled)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -232,7 +232,7 @@ HRESULT UefiVariableStore::addVariable(const com::Utf8Str &aName, const com::Gui
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -255,7 +255,7 @@ HRESULT UefiVariableStore::deleteVariable(const com::Utf8Str &aName, const com::
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -290,7 +290,7 @@ HRESULT UefiVariableStore::changeVariable(const com::Utf8Str &aName, const std::
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -325,7 +325,7 @@ HRESULT UefiVariableStore::queryVariableByName(const com::Utf8Str &aName, com::G
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(true /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -371,7 +371,7 @@ HRESULT UefiVariableStore::queryVariables(std::vector<com::Utf8Str> &aNames,
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(true /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -419,7 +419,7 @@ HRESULT UefiVariableStore::enrollOraclePlatformKey(void)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -447,7 +447,7 @@ HRESULT UefiVariableStore::enrollPlatformKey(const std::vector<BYTE> &aData, con
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -466,7 +466,7 @@ HRESULT UefiVariableStore::addKek(const std::vector<BYTE> &aData, const com::Gui
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -485,7 +485,7 @@ HRESULT UefiVariableStore::addSignatureToDb(const std::vector<BYTE> &aData, cons
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -504,7 +504,7 @@ HRESULT UefiVariableStore::addSignatureToDbx(const std::vector<BYTE> &aData, con
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;
@@ -522,7 +522,7 @@ HRESULT UefiVariableStore::addSignatureToDbx(const std::vector<BYTE> &aData, con
 HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
 {
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
     if (FAILED(hrc)) return hrc;

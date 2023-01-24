@@ -181,7 +181,7 @@ void Snapshot::uninit()
          * make sure that the possible fake error is undone. */
         ErrorInfoKeeper eik;
         AutoLimitedCaller autoCaller(this);
-        if (FAILED(autoCaller.rc()))
+        if (FAILED(autoCaller.hrc()))
             return;
     }
 
@@ -267,7 +267,7 @@ void Snapshot::uninit()
 void Snapshot::i_beginSnapshotDelete()
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
         return;
 
     // caller must have acquired the machine's write lock
@@ -523,7 +523,7 @@ const Utf8Str& Snapshot::i_getStateFilePath() const
 uint32_t Snapshot::i_getDepth()
 {
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
@@ -546,7 +546,7 @@ uint32_t Snapshot::i_getDepth()
 ULONG Snapshot::i_getChildrenCount()
 {
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
@@ -561,7 +561,7 @@ ULONG Snapshot::i_getChildrenCount()
 ULONG Snapshot::i_getAllChildrenCount()
 {
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
@@ -644,7 +644,7 @@ ComObjPtr<Snapshot> Snapshot::i_findChildOrSelf(IN_GUID aId)
     ComObjPtr<Snapshot> child;
 
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     // no need to lock, uuid is const
     if (m->uuid == aId)
@@ -676,7 +676,7 @@ ComObjPtr<Snapshot> Snapshot::i_findChildOrSelf(const Utf8Str &aName)
     AssertReturn(!aName.isEmpty(), child);
 
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -747,7 +747,7 @@ void Snapshot::i_updateSavedStatePaths(const Utf8Str &strOldPath,
     LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", strOldPath.c_str(), strNewPath.c_str()));
 
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     // snapshots tree is protected by machine lock
     AutoWriteLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
@@ -846,7 +846,7 @@ void Snapshot::i_updateNVRAMPaths(const Utf8Str &strOldPath,
     LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", strOldPath.c_str(), strNewPath.c_str()));
 
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     // snapshots tree is protected by machine lock
     AutoWriteLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
@@ -912,7 +912,7 @@ HRESULT Snapshot::i_saveSnapshot(settings::Snapshot &data) const
         for (SnapshotsList::const_iterator it = itBegin; it != itEnd; ++it)
         {
             AutoCaller autoCaller(*it);
-            if (FAILED(autoCaller.rc()))
+            if (FAILED(autoCaller.hrc()))
                 continue;
 
             llSnapshotsTodo.push_back(*it);
@@ -1748,7 +1748,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
     HRESULT rc = S_OK;
     AutoCaller autoCaller(this);
     LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
@@ -2969,7 +2969,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
     MultiResult mrc(S_OK);
     AutoCaller autoCaller(this);
     LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */

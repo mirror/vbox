@@ -423,7 +423,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(Cancelable)(BOOL *aCancelable)
     CheckComArgOutPointerValid(aCancelable);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -449,7 +449,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(Percent)(ULONG *aPercent)
     CheckComArgOutPointerValid(aPercent);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -481,7 +481,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(TimeRemaining)(LONG *aTimeRemaining)
     CheckComArgOutPointerValid(aTimeRemaining);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -505,7 +505,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(Canceled)(BOOL *aCanceled)
     CheckComArgOutPointerValid(aCanceled);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         /* Check the local data first, then the other object. */
@@ -542,7 +542,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(Operation)(ULONG *aOperation)
     CheckComArgOutPointerValid(aOperation);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -564,7 +564,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(OperationDescription)(BSTR *aOperationDesc
     CheckComArgOutPointerValid(aOperationDescription);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -581,7 +581,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(OperationPercent)(ULONG *aOperationPercent
     CheckComArgOutPointerValid(aOperationPercent);
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -633,7 +633,7 @@ STDMETHODIMP ProgressProxy::WaitForOperationCompletion(ULONG aOperation, LONG aT
     LogFlowThisFunc(("aOperation=%d aTimeout=%d\n", aOperation, aTimeout));
 
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -668,7 +668,7 @@ STDMETHODIMP ProgressProxy::Cancel()
 {
     LogFlowThisFunc(("\n"));
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

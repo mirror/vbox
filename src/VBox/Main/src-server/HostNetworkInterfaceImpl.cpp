@@ -755,7 +755,7 @@ HRESULT HostNetworkInterface::dHCPRediscover()
 HRESULT HostNetworkInterface::i_setVirtualBox(VirtualBox *pVirtualBox)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AssertReturn(mVirtualBox != pVirtualBox, S_OK);
 

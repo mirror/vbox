@@ -288,7 +288,7 @@ DECLCALLBACK(int) Display::i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, PCVMMR3VT
     }
     else
     {
-        LogFunc(("Failed to get VM pointer 0x%x\n", ptrVM.rc()));
+        LogFunc(("Failed to get VM pointer 0x%x\n", ptrVM.hrc()));
     }
 
     /* Regardless of rc, save what is available:
@@ -1165,7 +1165,7 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
-        return ptrVM.rc();
+        return ptrVM.hrc();
     if (mfHostCursorCapabilities == fHostCursorCapabilities)
         return S_OK;
     CHECK_CONSOLE_DRV(mpDrv);
@@ -1185,7 +1185,7 @@ HRESULT Display::i_reportHostCursorPosition(int32_t x, int32_t y, bool fOutOfRan
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
-        return ptrVM.rc();
+        return ptrVM.hrc();
     CHECK_CONSOLE_DRV(mpDrv);
     alock.release();  /* Release before calling up for lock order reasons. */
     if (fOutOfRange)
@@ -1981,7 +1981,7 @@ HRESULT Display::takeScreenShotWorker(ULONG aScreenId,
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
-        return ptrVM.rc();
+        return ptrVM.hrc();
 
     int vrc = i_displayTakeScreenshot(ptrVM.rawUVM(), ptrVM.vtable(), this, mpDrv, aScreenId, aAddress, aWidth, aHeight);
     if (RT_SUCCESS(vrc))
@@ -2281,7 +2281,7 @@ HRESULT Display::drawToScreen(ULONG aScreenId, BYTE *aAddress, ULONG aX, ULONG a
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
-        return ptrVM.rc();
+        return ptrVM.hrc();
 
     /* Release lock because the call scheduled on EMT may also try to take it. */
     alock.release();
@@ -2419,7 +2419,7 @@ HRESULT Display::invalidateAndUpdate()
     CHECK_CONSOLE_DRV(mpDrv);
 
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         LogRelFlowFunc(("Sending DPYUPDATE request\n"));
@@ -2444,7 +2444,7 @@ HRESULT Display::invalidateAndUpdateScreen(ULONG aScreenId)
     LogRelFlowFunc(("\n"));
 
     Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
+    HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
         int vrc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
@@ -2486,7 +2486,7 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
-        return ptrVM.rc();
+        return ptrVM.hrc();
 
     CHECK_CONSOLE_DRV(mpDrv);
 

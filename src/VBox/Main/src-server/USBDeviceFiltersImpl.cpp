@@ -332,7 +332,7 @@ HRESULT USBDeviceFilters::createDeviceFilter(const com::Utf8Str &aName,
 
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -359,7 +359,7 @@ HRESULT USBDeviceFilters::insertDeviceFilter(ULONG aPosition,
 
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -419,7 +419,7 @@ HRESULT USBDeviceFilters::removeDeviceFilter(ULONG aPosition,
 #ifdef VBOX_WITH_USB
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -494,7 +494,7 @@ HRESULT USBDeviceFilters::removeDeviceFilter(ULONG aPosition,
 HRESULT USBDeviceFilters::i_loadSettings(const settings::USB &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -539,7 +539,7 @@ HRESULT USBDeviceFilters::i_loadSettings(const settings::USB &data)
 HRESULT USBDeviceFilters::i_saveSettings(settings::USB &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -588,11 +588,11 @@ HRESULT USBDeviceFilters::i_saveSettings(settings::USB &data)
 void USBDeviceFilters::i_rollback()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* we need the machine state */
     AutoAnyStateDependency adep(m->pParent);
-    AssertComRCReturnVoid(adep.rc());
+    AssertComRCReturnVoid(adep.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -681,11 +681,11 @@ void USBDeviceFilters::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -778,15 +778,15 @@ void USBDeviceFilters::i_copyFrom(USBDeviceFilters *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* even more sanity */
     AutoAnyStateDependency adep(m->pParent);
-    AssertComRCReturnVoid(adep.rc());
+    AssertComRCReturnVoid(adep.hrc());
     /* Machine::copyFrom() may not be called when the VM is running */
     AssertReturnVoid(!Global::IsOnline(adep.machineState()));
 
@@ -827,11 +827,11 @@ HRESULT USBDeviceFilters::i_onDeviceFilterChange(USBDeviceFilter *aFilter,
                                                  BOOL aActiveChanged /* = FALSE */)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     /* we need the machine state */
     AutoAnyStateDependency adep(m->pParent);
-    AssertComRCReturnRC(adep.rc());
+    AssertComRCReturnRC(adep.hrc());
 
     /* nothing to do if the machine isn't running */
     if (!Global::IsOnline(adep.machineState()))
@@ -892,7 +892,7 @@ HRESULT USBDeviceFilters::i_onDeviceFilterChange(USBDeviceFilter *aFilter,
 bool USBDeviceFilters::i_hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     /* It is not possible to work with USB device if there is no USB controller present. */
     if (!m->pParent->i_isUSBControllerPresent())
@@ -933,7 +933,7 @@ bool USBDeviceFilters::i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaske
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     /* It is not possible to work with USB device if there is no USB controller present. */
     if (!m->pParent->i_isUSBControllerPresent())
@@ -1039,7 +1039,7 @@ HRESULT USBDeviceFilters::i_notifyProxy(bool aInsertFilters)
     LogFlowThisFunc(("aInsertFilters=%RTbool\n", aInsertFilters));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

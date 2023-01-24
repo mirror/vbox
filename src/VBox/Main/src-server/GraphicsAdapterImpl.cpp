@@ -114,7 +114,7 @@ HRESULT GraphicsAdapter::init(Machine *aParent, GraphicsAdapter *aThat)
     unconst(mPeer) = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.share(aThat->mData);
@@ -146,7 +146,7 @@ HRESULT GraphicsAdapter::initCopy(Machine *aParent, GraphicsAdapter *aThat)
     /* mPeer is left null */
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.attachCopy(aThat->mData);
@@ -205,7 +205,7 @@ HRESULT GraphicsAdapter::setGraphicsControllerType(GraphicsControllerType_T aGra
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -235,7 +235,7 @@ HRESULT GraphicsAdapter::setVRAMSize(ULONG aVRAMSize)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -259,7 +259,7 @@ HRESULT GraphicsAdapter::setAccelerate3DEnabled(BOOL aAccelerate3DEnabled)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -287,7 +287,7 @@ HRESULT GraphicsAdapter::setAccelerate2DVideoEnabled(BOOL aAccelerate2DVideoEnab
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -319,7 +319,7 @@ HRESULT GraphicsAdapter::setMonitorCount(ULONG aMonitorCount)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -347,7 +347,7 @@ HRESULT GraphicsAdapter::setMonitorCount(ULONG aMonitorCount)
 HRESULT GraphicsAdapter::i_loadSettings(const settings::GraphicsAdapter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -366,7 +366,7 @@ HRESULT GraphicsAdapter::i_loadSettings(const settings::GraphicsAdapter &data)
 HRESULT GraphicsAdapter::i_saveSettings(settings::GraphicsAdapter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -382,7 +382,7 @@ void GraphicsAdapter::i_rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -397,11 +397,11 @@ void GraphicsAdapter::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(mPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -428,11 +428,11 @@ void GraphicsAdapter::i_copyFrom(GraphicsAdapter *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */

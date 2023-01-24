@@ -1959,7 +1959,7 @@ HRESULT SystemProperties::getSupportedTpmTypes(std::vector<TpmType_T> &aSupporte
 HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = S_OK;
@@ -2010,7 +2010,7 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
 HRESULT SystemProperties::i_saveSettings(settings::SystemProperties &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2032,7 +2032,7 @@ ComObjPtr<MediumFormat> SystemProperties::i_mediumFormat(const Utf8Str &aFormat)
     ComObjPtr<MediumFormat> format;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), format);
+    AssertComRCReturn (autoCaller.hrc(), format);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2065,7 +2065,7 @@ ComObjPtr<MediumFormat> SystemProperties::i_mediumFormatFromExtension(const Utf8
     ComObjPtr<MediumFormat> format;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), format);
+    AssertComRCReturn (autoCaller.hrc(), format);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

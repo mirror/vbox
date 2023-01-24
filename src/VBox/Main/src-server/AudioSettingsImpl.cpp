@@ -129,7 +129,7 @@ HRESULT AudioSettings::init(Machine *aParent, AudioSettings *aThat)
     unconst(m->pPeer)    = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
@@ -239,7 +239,7 @@ HRESULT AudioSettings::setHostAudioDevice(const ComPtr<IHostAudioDevice> &aDevic
 bool AudioSettings::i_canChangeSettings(void)
 {
     AutoAnyStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc()))
+    if (FAILED(adep.hrc()))
         return false;
 
     /** @todo Do some more checks here? */
@@ -297,7 +297,7 @@ void AudioSettings::i_onSettingsChanged(void)
 HRESULT AudioSettings::i_loadSettings(const settings::AudioAdapter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -318,7 +318,7 @@ HRESULT AudioSettings::i_loadSettings(const settings::AudioAdapter &data)
 HRESULT AudioSettings::i_saveSettings(settings::AudioAdapter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -345,11 +345,11 @@ void AudioSettings::i_copyFrom(AudioSettings *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -368,7 +368,7 @@ void AudioSettings::i_copyFrom(AudioSettings *aThat)
 HRESULT AudioSettings::i_applyDefaults(ComObjPtr<GuestOSType> &aGuestOsType)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AudioControllerType_T audioController;
     HRESULT rc = aGuestOsType->COMGETTER(RecommendedAudioController)(&audioController);
@@ -406,7 +406,7 @@ void AudioSettings::i_rollback(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -425,7 +425,7 @@ void AudioSettings::i_commit(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     m->pAdapter->i_commit();
 

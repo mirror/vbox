@@ -73,14 +73,14 @@ public:
     GuestSessionTaskInternal(GuestSession *pSession)
         : ThreadTask("GenericGuestSessionTaskInternal")
         , mSession(pSession)
-        , mRC(VINF_SUCCESS) { }
+        , mVrc(VINF_SUCCESS) { }
 
     virtual ~GuestSessionTaskInternal(void) { }
 
     /** Returns the last set result code. */
-    int rc(void) const { return mRC; }
+    int vrc(void) const { return mVrc; }
     /** Returns whether the last set result code indicates success or not. */
-    bool isOk(void) const { return RT_SUCCESS(mRC); }
+    bool isOk(void) const { return RT_SUCCESS(mVrc); }
     /** Returns the task's guest session object. */
     const ComObjPtr<GuestSession> &Session(void) const { return mSession; }
 
@@ -88,8 +88,8 @@ protected:
 
     /** Guest session the task belongs to. */
     const ComObjPtr<GuestSession>    mSession;
-    /** The last set result code. */
-    int                              mRC;
+    /** The last set VBox status code. */
+    int                              mVrc;
 };
 
 /**
@@ -235,7 +235,7 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     mData.mCredentials.mDomain = guestCreds.mDomain;
 
     /* Initialize the remainder of the data. */
-    mData.mRC = VINF_SUCCESS;
+    mData.mVrc = VINF_SUCCESS;
     mData.mStatus = GuestSessionStatus_Undefined;
     mData.mpBaseEnvironment = NULL;
 
@@ -2337,7 +2337,7 @@ int GuestSession::i_startSessionAsync(void)
         LogFlow(("GuestSession: Failed to create thread for GuestSessionTaskInternalOpen task.\n"));
     }
     else
-        LogFlow(("GuestSession: GuestSessionTaskInternalStart creation failed: %Rhrc.\n", pTask->rc()));
+        LogFlow(("GuestSession: GuestSessionTaskInternalStart creation failed: %Rhrc.\n", pTask->vrc()));
     LogFlowFuncLeaveRC(VERR_GENERAL_FAILURE);
     return VERR_GENERAL_FAILURE;
 }
@@ -2358,7 +2358,7 @@ int GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalStart *pTask)
     Assert(!pSession.isNull());
 
     AutoCaller autoCaller(pSession);
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
         return VERR_COM_INVALID_OBJECT_STATE;
 
     int vrc = pSession->i_startSession(NULL /* Guest rc, ignored */);
@@ -2977,7 +2977,7 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
         AssertMsg(RT_FAILURE(sessionRc), ("Guest rc must be an error (%Rrc)\n", sessionRc));
         /* Do not allow overwriting an already set error. If this happens
          * this means we forgot some error checking/locking somewhere. */
-        AssertMsg(RT_SUCCESS(mData.mRC), ("Guest rc already set (to %Rrc)\n", mData.mRC));
+        AssertMsg(RT_SUCCESS(mData.mVrc), ("Guest rc already set (to %Rrc)\n", mData.mVrc));
     }
     else
         AssertMsg(RT_SUCCESS(sessionRc), ("Guest rc must not be an error (%Rrc)\n", sessionRc));
@@ -2989,7 +2989,7 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
     if (mData.mStatus != sessionStatus)
     {
         mData.mStatus = sessionStatus;
-        mData.mRC     = sessionRc;
+        mData.mVrc    = sessionRc;
 
         /* Make sure to notify all underlying objects first. */
         vrc = i_objectsNotifyAboutStatusChange(sessionStatus);
@@ -3161,9 +3161,9 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
     if (mData.mStatus == GuestSessionStatus_Error)
     {
         waitResult = GuestSessionWaitResult_Error;
-        AssertMsg(RT_FAILURE(mData.mRC), ("No error rc (%Rrc) set when guest session indicated an error\n", mData.mRC));
+        AssertMsg(RT_FAILURE(mData.mVrc), ("No error rc (%Rrc) set when guest session indicated an error\n", mData.mVrc));
         if (prcGuest)
-            *prcGuest = mData.mRC; /* Return last set error. */
+            *prcGuest = mData.mVrc; /* Return last set error. */
         return VERR_GSTCTL_GUEST_ERROR;
     }
 
@@ -3240,15 +3240,14 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
         }
     }
 
-    LogFlowThisFunc(("sessionStatus=%RU32, sessionRc=%Rrc, waitResult=%RU32\n",
-                     mData.mStatus, mData.mRC, waitResult));
+    LogFlowThisFunc(("sessionStatus=%RU32, sessionRc=%Rrc, waitResult=%RU32\n", mData.mStatus, mData.mVrc, waitResult));
 
     /* No waiting needed? Return immediately using the last set error. */
     if (waitResult != GuestSessionWaitResult_None)
     {
         if (prcGuest)
-            *prcGuest = mData.mRC; /* Return last set error (if any). */
-        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
+            *prcGuest = mData.mVrc; /* Return last set error (if any). */
+        return RT_SUCCESS(mData.mVrc) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
 
     int vrc = VINF_SUCCESS;

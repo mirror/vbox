@@ -1096,7 +1096,7 @@ void Machine::uninit()
     if (uRegistryNeedsSaving)
     {
         AutoCaller autoCaller(this);
-        if (SUCCEEDED(autoCaller.rc()))
+        if (SUCCEEDED(autoCaller.hrc()))
         {
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
             i_saveSettings(NULL, alock, Machine::SaveS_Force);
@@ -3922,7 +3922,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         return setError(E_INVALIDARG, tr("The given medium pointer is invalid"));
 
     AutoCaller mediumCaller(medium);
-    if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+    if (FAILED(mediumCaller.hrc())) return mediumCaller.hrc();
 
     AutoWriteLock mediumLock(medium COMMA_LOCKVAL_SRC_POS);
 
@@ -4153,7 +4153,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                     /* use the previously attached hard disk */
                     medium = (*foundIt)->i_getMedium();
                     mediumCaller.attach(medium);
-                    if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+                    if (FAILED(mediumCaller.hrc())) return mediumCaller.hrc();
                     mediumLock.attach(medium);
                     /* not implicit, doesn't require association with this VM */
                     fIndirect = false;
@@ -4237,7 +4237,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
             {
                 medium = base;
                 mediumCaller.attach(medium);
-                if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+                if (FAILED(mediumCaller.hrc())) return mediumCaller.hrc();
                 mediumLock.attach(medium);
             }
         }
@@ -4327,7 +4327,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         /* use the created diff for the actual attachment */
         medium = diff;
         mediumCaller.attach(medium);
-        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+        if (FAILED(mediumCaller.hrc())) return mediumCaller.hrc();
         mediumLock.attach(medium);
     }
     while (0);
@@ -4906,7 +4906,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
         return S_OK;
 
     AutoCaller mediumCaller(pMedium);
-    if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+    if (FAILED(mediumCaller.hrc())) return mediumCaller.hrc();
 
     AutoWriteLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
     if (pMedium)
@@ -5453,7 +5453,7 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
 
     AutoCaller autoCaller(this);
     LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
@@ -5489,7 +5489,7 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
             ComObjPtr<Medium> pMedium = (Medium*)(IMedium*)(task.m_llMediums.at(i));
             {
                 AutoCaller mac(pMedium);
-                if (FAILED(mac.rc())) throw mac.rc();
+                if (FAILED(mac.hrc())) throw mac.hrc();
                 Utf8Str strLocation = pMedium->i_getLocationFull();
                 LogFunc(("Deleting file %s\n", strLocation.c_str()));
                 rc = task.m_pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), strLocation.c_str()).raw(), 1);
@@ -6416,7 +6416,7 @@ HRESULT Machine::removeStorageController(const com::Utf8Str &aName)
             MediumAttachment *pAttachTemp = *it;
 
             AutoCaller localAutoCaller(pAttachTemp);
-            if (FAILED(localAutoCaller.rc())) return localAutoCaller.rc();
+            if (FAILED(localAutoCaller.hrc())) return localAutoCaller.hrc();
 
             AutoReadLock local_alock(pAttachTemp COMMA_LOCKVAL_SRC_POS);
 
@@ -7559,7 +7559,7 @@ void Machine::i_setModifiedLock(uint32_t fModification, bool fAllowStateModifica
 HRESULT Machine::i_saveRegistryEntry(settings::MachineRegistryEntry &data)
 {
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7583,7 +7583,7 @@ HRESULT Machine::i_saveRegistryEntry(settings::MachineRegistryEntry &data)
 int Machine::i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), Global::vboxStatusCodeFromCOM(autoCaller.rc()));
+    AssertComRCReturn(autoCaller.hrc(), Global::vboxStatusCodeFromCOM(autoCaller.hrc()));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7614,7 +7614,7 @@ void Machine::i_copyPathRelativeToMachine(const Utf8Str &strSource,
                                           Utf8Str &strTarget)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), (void)0);
+    AssertComRCReturn(autoCaller.hrc(), (void)0);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7643,7 +7643,7 @@ void Machine::i_copyPathRelativeToMachine(const Utf8Str &strSource,
 void Machine::i_getLogFolder(Utf8Str &aLogFolder)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7718,7 +7718,7 @@ Utf8Str Machine::i_getHardeningLogFilename(void)
 Utf8Str Machine::i_getDefaultNVRAMFilename()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
+    AssertComRCReturn(autoCaller.hrc(), Utf8Str::Empty);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7741,7 +7741,7 @@ Utf8Str Machine::i_getDefaultNVRAMFilename()
 Utf8Str Machine::i_getSnapshotNVRAMFilename()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
+    AssertComRCReturn(autoCaller.hrc(), Utf8Str::Empty);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7765,7 +7765,7 @@ Utf8Str Machine::i_getSnapshotNVRAMFilename()
 SettingsVersion_T Machine::i_getSettingsVersion(void)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), SettingsVersion_Null);
+    AssertComRCReturn(autoCaller.hrc(), SettingsVersion_Null);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7793,7 +7793,7 @@ SettingsVersion_T Machine::i_getSettingsVersion(void)
 void Machine::i_composeSavedStateFilename(Utf8Str &strStateFilePath)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -7817,7 +7817,7 @@ void Machine::i_composeSavedStateFilename(Utf8Str &strStateFilePath)
 bool Machine::i_isUSBControllerPresent()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7841,7 +7841,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     AssertReturn(!strFrontend.isEmpty(), E_FAIL);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -8171,7 +8171,7 @@ bool Machine::i_isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
                               bool aAllowClosing /*= false*/)
 {
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     /* just return false for inaccessible machines */
     if (getObjectState().getState() != ObjectState::Ready)
@@ -8205,7 +8205,7 @@ bool Machine::i_isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
 bool Machine::i_isSessionSpawning()
 {
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     /* just return false for inaccessible machines */
     if (getObjectState().getState() != ObjectState::Ready)
@@ -8338,7 +8338,7 @@ HRESULT Machine::i_prepareRegister()
     AssertReturn(mParent->isWriteLockOnCurrentThread(), E_FAIL);
 
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -8415,7 +8415,7 @@ HRESULT Machine::i_addStateDependency(StateDependency aDepType /* = AnyStateDep 
                                       BOOL *aRegistered /* = NULL */)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -8457,7 +8457,7 @@ HRESULT Machine::i_addStateDependency(StateDependency aDepType /* = AnyStateDep 
 void Machine::i_releaseStateDependency()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -8625,7 +8625,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
 HRESULT Machine::initDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
     AssertReturn(   getObjectState().getState() == ObjectState::InInit
                  || getObjectState().getState() == ObjectState::Limited, E_FAIL);
 
@@ -8722,7 +8722,7 @@ HRESULT Machine::initDataAndChildObjects()
 void Machine::uninitDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
     /* Machine object has state = ObjectState::InInit during registeredInit, even if it fails to get settings */
     AssertReturnVoid(   getObjectState().getState() == ObjectState::InInit
                      || getObjectState().getState() == ObjectState::InUninit
@@ -8939,7 +8939,7 @@ HRESULT Machine::i_setMachineState(MachineState_T aMachineState)
     Assert(aMachineState != MachineState_Null);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -9867,7 +9867,7 @@ HRESULT Machine::i_loadStorageDevices(StorageController *aStorageController,
         if (!medium.isNull())
         {
             AutoCaller medCaller(medium);
-            if (FAILED(medCaller.rc())) return medCaller.rc();
+            if (FAILED(medCaller.hrc())) return medCaller.hrc();
             AutoWriteLock mlock(medium COMMA_LOCKVAL_SRC_POS);
 
             if (i_isSnapshotMachine())
@@ -10057,7 +10057,7 @@ HRESULT Machine::i_getMediumAttachmentsOfController(const Utf8Str &aName,
                                                     MediumAttachmentList &atts)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -10072,10 +10072,10 @@ HRESULT Machine::i_getMediumAttachmentsOfController(const Utf8Str &aName,
 
         // getControllerName() needs caller+read lock
         AutoCaller autoAttCaller(pAtt);
-        if (FAILED(autoAttCaller.rc()))
+        if (FAILED(autoAttCaller.hrc()))
         {
             atts.clear();
-            return autoAttCaller.rc();
+            return autoAttCaller.hrc();
         }
         AutoReadLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
 
@@ -11100,7 +11100,7 @@ HRESULT Machine::i_saveStateSettings(int aFlags)
         return S_OK;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     /* This object's write lock is also necessary to serialize file access
      * (prevent concurrent reads and writes) */
@@ -11290,7 +11290,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
     AssertReturn(!!pProgressControl, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -11516,7 +11516,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
     LogFlowThisFunc(("aOnline=%d\n", aOnline));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -11941,7 +11941,7 @@ HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,
         if (!pMedium.isNull())
         {
             AutoCaller mac(pMedium);
-            if (FAILED(mac.rc())) return mac.rc();
+            if (FAILED(mac.hrc())) return mac.hrc();
             AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
             DeviceType_T devType = pMedium->i_getDeviceType();
             size_t cBackRefs = pMedium->i_getMachineBackRefCount();
@@ -11975,7 +11975,7 @@ HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,
                 while (!pParent.isNull())
                 {
                     AutoCaller mac1(pParent);
-                    if (FAILED(mac1.rc())) return mac1.rc();
+                    if (FAILED(mac1.hrc())) return mac1.hrc();
                     AutoReadLock lock1(pParent COMMA_LOCKVAL_SRC_POS);
                     if (pParent->i_getChildren().size() == 1)
                     {
@@ -12018,7 +12018,7 @@ HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,
 void Machine::i_commitMedia(bool aOnline /*= false*/)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -12200,7 +12200,7 @@ void Machine::i_commitMedia(bool aOnline /*= false*/)
 void Machine::i_rollbackMedia()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     // AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("Entering rollbackMedia\n"));
@@ -12292,7 +12292,7 @@ bool Machine::i_isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
 void Machine::i_rollback(bool aNotify)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), (void)0);
+    AssertComRCReturn(autoCaller.hrc(), (void)0);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -12495,10 +12495,10 @@ void Machine::i_rollback(bool aNotify)
 void Machine::i_commit()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoCaller peerCaller(mPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     AutoMultiWriteLock2 alock(mPeer, this COMMA_LOCKVAL_SRC_POS);
 
@@ -12860,7 +12860,7 @@ void Machine::i_getDiskList(MediaList &list)
         AssertContinue(pAttach);
 
         AutoCaller localAutoCallerA(pAttach);
-        if (FAILED(localAutoCallerA.rc())) continue;
+        if (FAILED(localAutoCallerA.hrc())) continue;
 
         AutoReadLock local_alockA(pAttach COMMA_LOCKVAL_SRC_POS);
 
@@ -13602,7 +13602,7 @@ void SessionMachine::i_saveStateHandler(SaveStateTask &task)
 
     AutoCaller autoCaller(this);
     LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
@@ -14350,7 +14350,7 @@ HRESULT SessionMachine::ejectMedium(const ComPtr<IMediumAttachment> &aAttachment
 
         {
             AutoCaller autoAttachCaller(this);
-            if (FAILED(autoAttachCaller.rc())) return autoAttachCaller.rc();
+            if (FAILED(autoAttachCaller.hrc())) return autoAttachCaller.hrc();
 
             AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
             if (!oldmedium.isNull())
@@ -14530,7 +14530,7 @@ void SessionMachine::i_getTokenId(Utf8Str &strTokenId)
     strTokenId.setNull();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     Assert(mClientToken);
     if (mClientToken)
@@ -14542,7 +14542,7 @@ IToken *SessionMachine::i_getToken()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), NULL);
+    AssertComRCReturn(autoCaller.hrc(), NULL);
 
     Assert(mClientToken);
     if (mClientToken)
@@ -14557,7 +14557,7 @@ Machine::ClientToken *SessionMachine::i_getClientToken()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), NULL);
+    AssertComRCReturn(autoCaller.hrc(), NULL);
 
     return mClientToken;
 }
@@ -14571,7 +14571,7 @@ HRESULT SessionMachine::i_onNetworkAdapterChange(INetworkAdapter *networkAdapter
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14597,7 +14597,7 @@ HRESULT SessionMachine::i_onNATRedirectRuleChanged(ULONG ulSlot, BOOL aNatRuleRe
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14626,7 +14626,7 @@ HRESULT SessionMachine::i_onAudioAdapterChange(IAudioAdapter *audioAdapter)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14650,7 +14650,7 @@ HRESULT SessionMachine::i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOO
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14674,7 +14674,7 @@ HRESULT SessionMachine::i_onSerialPortChange(ISerialPort *serialPort)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14698,7 +14698,7 @@ HRESULT SessionMachine::i_onParallelPortChange(IParallelPort *parallelPort)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14722,7 +14722,7 @@ HRESULT SessionMachine::i_onStorageControllerChange(const Guid &aMachineId, cons
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14748,7 +14748,7 @@ HRESULT SessionMachine::i_onMediumChange(IMediumAttachment *aAttachment, BOOL aF
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14771,7 +14771,7 @@ HRESULT SessionMachine::i_onVMProcessPriorityChange(VMProcPriority_T aPriority)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14795,7 +14795,7 @@ HRESULT SessionMachine::i_onCPUChange(ULONG aCPU, BOOL aRemove)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14816,7 +14816,7 @@ HRESULT SessionMachine::i_onCPUExecutionCapChange(ULONG aExecutionCap)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14840,7 +14840,7 @@ HRESULT SessionMachine::i_onVRDEServerChange(BOOL aRestart)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14864,7 +14864,7 @@ HRESULT SessionMachine::i_onRecordingChange(BOOL aEnable)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14888,7 +14888,7 @@ HRESULT SessionMachine::i_onUSBControllerChange()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14912,7 +14912,7 @@ HRESULT SessionMachine::i_onSharedFolderChange()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14936,7 +14936,7 @@ HRESULT SessionMachine::i_onClipboardModeChange(ClipboardMode_T aClipboardMode)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14960,7 +14960,7 @@ HRESULT SessionMachine::i_onClipboardFileTransferModeChange(BOOL aEnable)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -14984,7 +14984,7 @@ HRESULT SessionMachine::i_onDnDModeChange(DnDMode_T aDnDMode)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15008,7 +15008,7 @@ HRESULT SessionMachine::i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGrou
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15032,7 +15032,7 @@ HRESULT SessionMachine::i_onStorageDeviceChange(IMediumAttachment *aAttachment, 
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15056,7 +15056,7 @@ HRESULT SessionMachine::i_onGuestDebugControlChange(IGuestDebugControl *guestDeb
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15123,7 +15123,7 @@ HRESULT SessionMachine::i_onUSBDeviceAttach(IUSBDevice *aDevice,
 
     /* This notification may happen after the machine object has been
      * uninitialized (the session was closed), so don't assert. */
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15156,7 +15156,7 @@ HRESULT SessionMachine::i_onUSBDeviceDetach(IN_BSTR aId,
 
     /* This notification may happen after the machine object has been
      * uninitialized (the session was closed), so don't assert. */
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15230,7 +15230,7 @@ void SessionMachine::i_releaseSavedStateFile(const Utf8Str &strStateFile,
 HRESULT SessionMachine::i_lockMedia()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -15309,7 +15309,7 @@ HRESULT SessionMachine::i_lockMedia()
 HRESULT SessionMachine::i_unlockMedia()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(),autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(),autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -15336,7 +15336,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -15584,7 +15584,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
 HRESULT SessionMachine::i_updateMachineStateOnClient()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -15845,7 +15845,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     /* it's assumed the machine already registered. If not, it's a problem of the caller */
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(),autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(),autoCaller.hrc());
 
     HRESULT rc = S_OK;
 
@@ -16540,7 +16540,7 @@ void Machine::i_changeEncryptionHandler(ChangeEncryptionTask &task)
 
     AutoCaller autoCaller(this);
     LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
@@ -16763,7 +16763,7 @@ HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
     }
 
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -16781,7 +16781,7 @@ HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
         if (!pMedium.isNull())
         {
             AutoCaller mac(pMedium);
-            if (FAILED(mac.rc())) return mac.rc();
+            if (FAILED(mac.hrc())) return mac.hrc();
             AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
             DeviceType_T devType = pMedium->i_getDeviceType();
             if (devType == DeviceType_HardDisk)
@@ -16800,7 +16800,7 @@ HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
                 while (pTmpMedium.isNotNull())
                 {
                     AutoCaller mediumAC(pTmpMedium);
-                    if (FAILED(mediumAC.rc())) return mac.rc();
+                    if (FAILED(mediumAC.hrc())) return mac.hrc();
                     AutoReadLock mlock(pTmpMedium COMMA_LOCKVAL_SRC_POS);
 
                     /* Cannot encrypt media which are attached to more than one virtual machine. */
@@ -16823,7 +16823,7 @@ HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
                 while (pTmpMedium.isNotNull() && pTmpMedium->i_getChildren().size() != 0)
                 {
                     AutoCaller mediumAC(pTmpMedium);
-                    if (FAILED(mediumAC.rc())) return mac.rc();
+                    if (FAILED(mediumAC.hrc())) return mac.hrc();
                     AutoReadLock mlock(pTmpMedium COMMA_LOCKVAL_SRC_POS);
 
                     /* Cannot encrypt media which are attached to more than one virtual machine. */
@@ -16883,7 +16883,7 @@ HRESULT Machine::getEncryptionSettings(com::Utf8Str &aCipher,
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     PCVBOXCRYPTOIF pCryptoIf = NULL;
     HRESULT hrc = mParent->i_retainCryptoIf(&pCryptoIf);
@@ -16923,7 +16923,7 @@ HRESULT Machine::checkEncryptionPassword(const com::Utf8Str &aPassword)
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     PCVBOXCRYPTOIF pCryptoIf = NULL;
     HRESULT hrc = mParent->i_retainCryptoIf(&pCryptoIf);
@@ -16964,7 +16964,7 @@ HRESULT Machine::addEncryptionPassword(const com::Utf8Str &aId,
     return setError(VBOX_E_NOT_SUPPORTED, tr("Full VM encryption is not available with this build"));
 #else
     AutoLimitedCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

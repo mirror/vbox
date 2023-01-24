@@ -131,7 +131,7 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *aThat)
     unconst(m->pPeer)    = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
@@ -249,7 +249,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -500,7 +500,7 @@ HRESULT RecordingSettings::i_loadSettings(const settings::RecordingSettings &dat
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -567,7 +567,7 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AssertPtr(m->pMachine);
     ComPtr<IGraphicsAdapter> pGraphicsAdapter;
@@ -602,7 +602,7 @@ void RecordingSettings::i_rollback(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -620,11 +620,11 @@ void RecordingSettings::i_commit(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -656,11 +656,11 @@ HRESULT RecordingSettings::i_copyFrom(RecordingSettings *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), VBOX_E_INVALID_OBJECT_STATE);
+    AssertComRCReturn(autoCaller.hrc(), VBOX_E_INVALID_OBJECT_STATE);
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturn(thatCaller.rc(), VBOX_E_INVALID_OBJECT_STATE);
+    AssertComRCReturn(thatCaller.hrc(), VBOX_E_INVALID_OBJECT_STATE);
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -700,7 +700,7 @@ void RecordingSettings::i_applyDefaults(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AssertPtr(m->pMachine);
     ComPtr<IGraphicsAdapter> pGraphicsAdapter;
@@ -792,7 +792,7 @@ int RecordingSettings::i_getFilename(Utf8Str &strFile, uint32_t idScreen, const 
 bool RecordingSettings::i_canChangeSettings(void)
 {
     AutoAnyStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc()))
+    if (FAILED(adep.hrc()))
         return false;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

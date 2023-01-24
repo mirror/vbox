@@ -2227,7 +2227,7 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
     LogFlowFunc(("ENTER appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     HRESULT rc = S_OK;
 

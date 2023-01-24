@@ -410,7 +410,7 @@ int GuestDirectory::i_read(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *prcGuest)
 HRESULT GuestDirectory::close()
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFlowThisFuncEnter();
 
@@ -447,7 +447,7 @@ HRESULT GuestDirectory::close()
 HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFlowThisFuncEnter();
 

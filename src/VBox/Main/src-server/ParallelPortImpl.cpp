@@ -136,7 +136,7 @@ HRESULT ParallelPort::init(Machine *aParent, ParallelPort *aThat)
     unconst(m->pPeer) = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.share(aThat->m->bd);
@@ -170,7 +170,7 @@ HRESULT ParallelPort::initCopy(Machine *aParent, ParallelPort *aThat)
     /* m->pPeer is left null */
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy(aThat->m->bd);
@@ -220,7 +220,7 @@ HRESULT ParallelPort::setEnabled(BOOL aEnabled)
     LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -272,7 +272,7 @@ HRESULT ParallelPort::setIRQ(ULONG aIRQ)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -315,7 +315,7 @@ HRESULT ParallelPort::setIOBase(ULONG aIOBase)
 
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -351,7 +351,7 @@ HRESULT ParallelPort::setPath(const com::Utf8Str &aPath)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -389,7 +389,7 @@ HRESULT ParallelPort::setPath(const com::Utf8Str &aPath)
 HRESULT ParallelPort::i_loadSettings(const settings::ParallelPort &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -411,7 +411,7 @@ HRESULT ParallelPort::i_loadSettings(const settings::ParallelPort &data)
 HRESULT ParallelPort::i_saveSettings(settings::ParallelPort &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -438,7 +438,7 @@ void ParallelPort::i_rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -453,11 +453,11 @@ void ParallelPort::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (m->pPeer is "master" so locked
      * first) */
@@ -484,11 +484,11 @@ void ParallelPort::i_copyFrom(ParallelPort *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -509,7 +509,7 @@ void ParallelPort::i_applyDefaults()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -538,7 +538,7 @@ bool ParallelPort::i_hasDefaults()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), true);
+    AssertComRCReturn(autoCaller.hrc(), true);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

@@ -610,7 +610,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
     ComObjPtr<Machine> &machine = taskMoveVM->m_pMachine;
 
     AutoCaller autoCaller(machine);
-//  if (FAILED(autoCaller.rc())) return;//Should we return something here?
+//  if (FAILED(autoCaller.hrc())) return;//Should we return something here?
 
     Utf8Str strTargetFolder = taskMoveVM->m_targetPath;
     {

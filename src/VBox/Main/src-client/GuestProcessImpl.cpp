@@ -77,14 +77,14 @@ public:
     GuestProcessTask(GuestProcess *pProcess)
         : ThreadTask("GenericGuestProcessTask")
         , mProcess(pProcess)
-        , mRC(VINF_SUCCESS) { }
+        , mVrc(VINF_SUCCESS) { }
 
     virtual ~GuestProcessTask(void) { }
 
     /** Returns the last set result code. */
-    int i_rc(void) const { return mRC; }
+    int i_vrc(void) const { return mVrc; }
     /** Returns whether the last set result is okay (successful) or not. */
-    bool i_isOk(void) const { return RT_SUCCESS(mRC); }
+    bool i_isOk(void) const { return RT_SUCCESS(mVrc); }
     /** Returns the reference of the belonging progress object. */
     const ComObjPtr<GuestProcess> &i_process(void) const { return mProcess; }
 
@@ -93,7 +93,7 @@ protected:
     /** Progress object this process belongs to. */
     const ComObjPtr<GuestProcess>    mProcess;
     /** Last set result code. */
-    int                              mRC;
+    int                              mVrc;
 };
 
 /**
@@ -1369,7 +1369,7 @@ int GuestProcess::i_startProcessThreadTask(GuestProcessStartTask *pTask)
     Assert(!pProcess.isNull());
 
     AutoCaller autoCaller(pProcess);
-    if (FAILED(autoCaller.rc()))
+    if (FAILED(autoCaller.hrc()))
         return VERR_COM_UNEXPECTED;
 
     int vrc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */, NULL /* Guest rc, ignored */);
@@ -2029,7 +2029,7 @@ int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
 HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
@@ -2078,7 +2078,7 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
 HRESULT GuestProcess::terminate()
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFlowThisFuncEnter();
 
@@ -2144,7 +2144,7 @@ HRESULT GuestProcess::terminate()
 HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFlowThisFuncEnter();
 
@@ -2212,7 +2212,7 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
                             aFlags, aFlags & ~s_fValidFlags);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFlowThisFuncEnter();
 

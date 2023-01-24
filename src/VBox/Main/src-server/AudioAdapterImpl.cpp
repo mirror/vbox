@@ -146,7 +146,7 @@ HRESULT AudioAdapter::init(AudioSettings *aParent, AudioAdapter *aThat)
     unconst(m->pPeer)   = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.share(aThat->m->bd);
@@ -182,7 +182,7 @@ HRESULT AudioAdapter::initCopy(AudioSettings *aParent, AudioAdapter *aThat)
     /* mPeer is left null */
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy(aThat->m->bd);
@@ -217,7 +217,7 @@ void AudioAdapter::uninit(void)
 HRESULT AudioAdapter::getEnabled(BOOL *aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -229,7 +229,7 @@ HRESULT AudioAdapter::getEnabled(BOOL *aEnabled)
 HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -249,7 +249,7 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
 HRESULT AudioAdapter::getEnabledIn(BOOL *aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -261,7 +261,7 @@ HRESULT AudioAdapter::getEnabledIn(BOOL *aEnabled)
 HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -282,7 +282,7 @@ HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
 HRESULT AudioAdapter::getEnabledOut(BOOL *aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -294,7 +294,7 @@ HRESULT AudioAdapter::getEnabledOut(BOOL *aEnabled)
 HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -315,7 +315,7 @@ HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
 HRESULT AudioAdapter::getAudioDriver(AudioDriverType_T *aAudioDriver)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -327,7 +327,7 @@ HRESULT AudioAdapter::getAudioDriver(AudioDriverType_T *aAudioDriver)
 HRESULT AudioAdapter::setAudioDriver(AudioDriverType_T aAudioDriver)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -357,7 +357,7 @@ HRESULT AudioAdapter::setAudioDriver(AudioDriverType_T aAudioDriver)
 HRESULT AudioAdapter::getAudioController(AudioControllerType_T *aAudioController)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -369,7 +369,7 @@ HRESULT AudioAdapter::getAudioController(AudioControllerType_T *aAudioController
 HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -419,7 +419,7 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
 HRESULT AudioAdapter::getAudioCodec(AudioCodecType_T *aAudioCodec)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -431,7 +431,7 @@ HRESULT AudioAdapter::getAudioCodec(AudioCodecType_T *aAudioCodec)
 HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -491,7 +491,7 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
 HRESULT AudioAdapter::getPropertiesList(std::vector<com::Utf8Str>& aProperties)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     using namespace settings;
 
@@ -512,7 +512,7 @@ HRESULT AudioAdapter::getPropertiesList(std::vector<com::Utf8Str>& aProperties)
 HRESULT AudioAdapter::getProperty(const com::Utf8Str &aKey, com::Utf8Str &aValue)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -526,7 +526,7 @@ HRESULT AudioAdapter::getProperty(const com::Utf8Str &aKey, com::Utf8Str &aValue
 HRESULT AudioAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str &aValue)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -570,7 +570,7 @@ HRESULT AudioAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str &
 HRESULT AudioAdapter::i_loadSettings(const settings::AudioAdapter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -600,7 +600,7 @@ HRESULT AudioAdapter::i_loadSettings(const settings::AudioAdapter &data)
 HRESULT AudioAdapter::i_saveSettings(settings::AudioAdapter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -618,7 +618,7 @@ void AudioAdapter::i_rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -635,11 +635,11 @@ void AudioAdapter::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -673,11 +673,11 @@ void AudioAdapter::i_copyFrom(AudioAdapter *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */

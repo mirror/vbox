@@ -1289,7 +1289,7 @@ HRESULT VirtualBox::getMachineGroups(std::vector<com::Utf8Str> &aMachineGroups)
     {
         const ComObjPtr<Machine> &pMachine = *it;
         AutoCaller autoMachineCaller(pMachine);
-        if (FAILED(autoMachineCaller.rc()))
+        if (FAILED(autoMachineCaller.hrc()))
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
@@ -1542,10 +1542,10 @@ HRESULT VirtualBox::removeHostOnlyNetwork(const ComPtr<IHostOnlyNetwork> &aNetwo
     HostOnlyNetwork *network = static_cast<HostOnlyNetwork *>(p);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller HostOnlyNetworkCaller(network);
-    AssertComRCReturnRC(HostOnlyNetworkCaller.rc());
+    AssertComRCReturnRC(HostOnlyNetworkCaller.hrc());
 
     m->allHostOnlyNetworks.removeChild(network);
 
@@ -1596,7 +1596,7 @@ HRESULT VirtualBox::getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetw
     {
         const ComObjPtr<Machine> &pMachine = *it;
         AutoCaller autoMachineCaller(pMachine);
-        if (FAILED(autoMachineCaller.rc()))
+        if (FAILED(autoMachineCaller.hrc()))
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
@@ -1647,7 +1647,7 @@ HRESULT VirtualBox::getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGeneric
     {
         const ComObjPtr<Machine> &pMachine = *it;
         AutoCaller autoMachineCaller(pMachine);
-        if (FAILED(autoMachineCaller.rc()))
+        if (FAILED(autoMachineCaller.hrc()))
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
@@ -1771,10 +1771,10 @@ HRESULT VirtualBox::removeCloudNetwork(const ComPtr<ICloudNetwork> &aNetwork)
     CloudNetwork *network = static_cast<CloudNetwork *>(p);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller cloudNetworkCaller(network);
-    AssertComRCReturnRC(cloudNetworkCaller.rc());
+    AssertComRCReturnRC(cloudNetworkCaller.hrc());
 
     m->allCloudNetworks.removeChild(network);
 
@@ -2258,7 +2258,7 @@ HRESULT VirtualBox::registerMachine(const ComPtr<IMachine> &aMachine)
     Machine *pMachine = static_cast<Machine*>(aM);
 
     AutoCaller machCaller(pMachine);
-    ComAssertComRCRetRC(machCaller.rc());
+    ComAssertComRCRetRC(machCaller.hrc());
 
     rc = i_registerMachine(pMachine);
     /* fire an event */
@@ -2329,7 +2329,7 @@ HRESULT VirtualBox::getMachinesByGroups(const std::vector<com::Utf8Str> &aGroups
     {
         const ComObjPtr<Machine> &pMachine = *it;
         AutoCaller autoMachineCaller(pMachine);
-        if (FAILED(autoMachineCaller.rc()))
+        if (FAILED(autoMachineCaller.hrc()))
             continue;
         AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
 
@@ -2764,7 +2764,7 @@ int VirtualBox::i_decryptSettings()
     {
         ComObjPtr<Medium> pMedium = *mt;
         AutoCaller medCaller(pMedium);
-        if (FAILED(medCaller.rc()))
+        if (FAILED(medCaller.hrc()))
             continue;
         AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
         int vrc = i_decryptMediumSettings(pMedium);
@@ -2991,7 +2991,7 @@ HRESULT VirtualBox::i_postEvent(Event *event)
 
     HRESULT rc;
     AutoCaller autoCaller(this);
-    if (SUCCEEDED((rc = autoCaller.rc())))
+    if (SUCCEEDED((rc = autoCaller.hrc())))
     {
         if (getObjectState().getState() != ObjectState::Ready)
             Log1WarningFunc(("VirtualBox has been uninitialized (state=%d), the event is discarded!\n",
@@ -3024,7 +3024,7 @@ HRESULT VirtualBox::i_addProgress(IProgress *aProgress)
     CheckComArgNotNull(aProgress);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     Bstr id;
     HRESULT rc = aProgress->COMGETTER(Id)(id.asOutParam());
@@ -3048,7 +3048,7 @@ HRESULT VirtualBox::i_addProgress(IProgress *aProgress)
 HRESULT VirtualBox::i_removeProgress(IN_GUID aId)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     ComPtr<IProgress> progress;
 
@@ -3188,7 +3188,7 @@ HRESULT VirtualBox::i_startSVCHelperClient(bool aPrivileged,
     AssertReturn(aProgress, E_POINTER);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     /* create the i_SVCHelperClientThreadTask() argument */
 
@@ -3244,7 +3244,7 @@ void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
         if (!autoCaller.isOk())
         {
             /* it's too late */
-            rc = autoCaller.rc();
+            rc = autoCaller.hrc();
             break;
         }
 
@@ -3366,7 +3366,7 @@ void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
 void VirtualBox::i_updateClientWatcher()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AssertPtrReturnVoid(m->pClientWatcher);
     m->pClientWatcher->update();
@@ -3381,7 +3381,7 @@ void VirtualBox::i_updateClientWatcher()
 void VirtualBox::i_addProcessToReap(RTPROCESS pid)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AssertPtrReturnVoid(m->pClientWatcher);
     m->pClientWatcher->addProcess(pid);
@@ -3492,7 +3492,7 @@ BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, const Utf8Str &aKey, co
     LogFlowThisFunc(("machine={%RTuuid} aKey={%s} aValue={%s}\n", aId.raw(), aKey.c_str(), aValue.c_str()));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), FALSE);
+    AssertComRCReturn(autoCaller.hrc(), FALSE);
 
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateExtraDataCanChangeEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toString(), aKey, aValue);
@@ -3849,7 +3849,7 @@ void VirtualBox::i_getOpenedMachines(SessionMachinesList &aMachines,
                                      InternalControlList *aControls /*= NULL*/)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     aMachines.clear();
     if (aControls)
@@ -3904,7 +3904,7 @@ HRESULT VirtualBox::i_findMachine(const Guid &aId,
     HRESULT rc = VBOX_E_OBJECT_NOT_FOUND;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     {
         AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -3919,7 +3919,7 @@ HRESULT VirtualBox::i_findMachine(const Guid &aId,
             {
                 // skip inaccessible machines
                 AutoCaller machCaller(pMachine);
-                if (FAILED(machCaller.rc()))
+                if (FAILED(machCaller.hrc()))
                     continue;
             }
 
@@ -4180,7 +4180,7 @@ HRESULT VirtualBox::i_findHardDiskByLocation(const Utf8Str &strLocation,
         const ComObjPtr<Medium> &pHD = (*it).second;
 
         AutoCaller autoCaller(pHD);
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+        if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
         AutoWriteLock mlock(pHD COMMA_LOCKVAL_SRC_POS);
 
         Utf8Str strLocationFull = pHD->i_getLocationFull();
@@ -4489,7 +4489,7 @@ const Utf8Str& VirtualBox::i_homeDir() const
 int VirtualBox::i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), VERR_GENERAL_FAILURE);
+    AssertComRCReturn(autoCaller.hrc(), VERR_GENERAL_FAILURE);
 
     /* no need to lock since strHomeDir is const */
 
@@ -4517,7 +4517,7 @@ void VirtualBox::i_copyPathRelativeToConfig(const Utf8Str &strSource,
                                             Utf8Str &strTarget)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     // no need to lock since mHomeDir is const
 
@@ -4866,7 +4866,7 @@ void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
         {
             Medium *pMedium = *it;
             AutoCaller autoCaller(pMedium);
-            if (FAILED(autoCaller.rc())) throw autoCaller.rc();
+            if (FAILED(autoCaller.hrc())) throw autoCaller.hrc();
             AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
             if (pMedium->i_isInRegistry(uuidRegistry))
@@ -4895,7 +4895,7 @@ void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
 HRESULT VirtualBox::i_saveSettings()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(!m->strSettingsFilePath.isEmpty(), E_FAIL);
@@ -5033,7 +5033,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
     ComAssertRet(aMachine, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     HRESULT rc = S_OK;
 
@@ -5049,7 +5049,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
         {
             /* sanity */
             AutoLimitedCaller machCaller(pMachine);
-            AssertComRC(machCaller.rc());
+            AssertComRC(machCaller.hrc());
 
             return setError(E_INVALIDARG,
                             tr("Registered machine with UUID {%RTuuid} ('%s') already exists"),
@@ -5104,10 +5104,10 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
     Assert(i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller mediumCaller(pMedium);
-    AssertComRCReturnRC(mediumCaller.rc());
+    AssertComRCReturnRC(mediumCaller.hrc());
 
     bool fAddToGlobalRegistry = false;
     const char *pszDevType = NULL;
@@ -5224,10 +5224,10 @@ HRESULT VirtualBox::i_unregisterMedium(Medium *pMedium)
     AssertReturn(pMedium != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller mediumCaller(pMedium);
-    AssertComRCReturnRC(mediumCaller.rc());
+    AssertComRCReturnRC(mediumCaller.hrc());
 
     // caller must hold the media tree write lock
     Assert(i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
@@ -5290,7 +5290,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     MediaList llMedia2Close;
 
@@ -5303,7 +5303,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
         {
             ComObjPtr<Medium> pMedium = *it;
             AutoCaller medCaller(pMedium);
-            if (FAILED(medCaller.rc())) return medCaller.rc();
+            if (FAILED(medCaller.hrc())) return medCaller.hrc();
             AutoReadLock medlock(pMedium COMMA_LOCKVAL_SRC_POS);
             Log(("Looking at medium %RTuuid\n", pMedium->i_getId().raw()));
 
@@ -5398,7 +5398,7 @@ HRESULT VirtualBox::i_unregisterMachine(Machine *pMachine,
         {
             ComObjPtr<Medium> &pMedium = *it;
             AutoCaller medCaller(pMedium);
-            if (FAILED(medCaller.rc())) return medCaller.rc();
+            if (FAILED(medCaller.hrc())) return medCaller.hrc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
             if (pMedium->i_removeRegistryAll(id))
@@ -5459,7 +5459,7 @@ void VirtualBox::i_markRegistryModified(const Guid &uuid)
         if (SUCCEEDED(rc))
         {
             AutoCaller machineCaller(pMachine);
-            if (SUCCEEDED(machineCaller.rc()) && pMachine->i_isAccessible())
+            if (SUCCEEDED(machineCaller.hrc()) && pMachine->i_isAccessible())
                 ASMAtomicIncU64(&pMachine->uRegistryNeedsSaving);
         }
     }
@@ -5496,7 +5496,7 @@ void VirtualBox::i_unmarkRegistryModified(const Guid &uuid)
         if (SUCCEEDED(rc))
         {
             AutoCaller machineCaller(pMachine);
-            if (SUCCEEDED(machineCaller.rc()))
+            if (SUCCEEDED(machineCaller.hrc()))
             {
                 for (;;)
                 {
@@ -5547,7 +5547,7 @@ void VirtualBox::i_saveModifiedRegistries()
             if (uOld)
             {
                 AutoCaller autoCaller(pMachine);
-                if (FAILED(autoCaller.rc()))
+                if (FAILED(autoCaller.hrc()))
                     continue;
                 /* object is already dead, no point in saving settings */
                 if (getObjectState().getState() != ObjectState::Ready)
@@ -5853,7 +5853,7 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
     AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     // Acquire a lock on the VirtualBox object early to avoid lock order issues
     // when we call i_saveSettings() later on.
@@ -5864,7 +5864,7 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
     AutoWriteLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     AutoCaller dhcpServerCaller(aDHCPServer);
-    AssertComRCReturnRC(dhcpServerCaller.rc());
+    AssertComRCReturnRC(dhcpServerCaller.hrc());
 
     Bstr bstrNetworkName;
     HRESULT rc = S_OK;
@@ -5913,10 +5913,10 @@ HRESULT VirtualBox::i_unregisterDHCPServer(DHCPServer *aDHCPServer)
     AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller dhcpServerCaller(aDHCPServer);
-    AssertComRCReturnRC(dhcpServerCaller.rc());
+    AssertComRCReturnRC(dhcpServerCaller.hrc());
 
     AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -6035,10 +6035,10 @@ HRESULT VirtualBox::i_registerNATNetwork(NATNetwork *aNATNetwork,
     AssertReturn(aNATNetwork != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller natNetworkCaller(aNATNetwork);
-    AssertComRCReturnRC(natNetworkCaller.rc());
+    AssertComRCReturnRC(natNetworkCaller.hrc());
 
     Bstr name;
     HRESULT rc;
@@ -6096,10 +6096,10 @@ HRESULT VirtualBox::i_unregisterNATNetwork(NATNetwork *aNATNetwork,
     AssertReturn(aNATNetwork != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoCaller natNetworkCaller(aNATNetwork);
-    AssertComRCReturnRC(natNetworkCaller.rc());
+    AssertComRCReturnRC(natNetworkCaller.hrc());
 
     Bstr name;
     HRESULT rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());
@@ -6162,7 +6162,7 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
     AssertReturn(ppCryptoIf != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     /*
      * No object lock due to some lock order fun with Machine objects.
@@ -6256,7 +6256,7 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
 HRESULT VirtualBox::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AssertReturn(pCryptoIf == m->pCryptoIf, E_INVALIDARG);
 
@@ -6275,7 +6275,7 @@ HRESULT VirtualBox::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 HRESULT VirtualBox::i_unloadCryptoIfModule(void)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 

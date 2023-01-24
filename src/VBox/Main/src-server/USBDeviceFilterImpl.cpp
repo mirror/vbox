@@ -357,7 +357,7 @@ HRESULT USBDeviceFilter::init(USBDeviceFilters *aParent, USBDeviceFilter *aThat,
 
     /* sanity */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     if (aReshare)
     {
@@ -409,7 +409,7 @@ HRESULT USBDeviceFilter::initCopy(USBDeviceFilters *aParent, USBDeviceFilter *aT
 
     /* sanity */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     bd.attachCopy(aThat->bd);
@@ -463,7 +463,7 @@ HRESULT USBDeviceFilter::setName(const com::Utf8Str &aName)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent->i_getMachine());
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -501,7 +501,7 @@ HRESULT USBDeviceFilter::setActive(const BOOL aActive)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent->i_getMachine());
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -610,7 +610,7 @@ HRESULT USBDeviceFilter::setRemote(const com::Utf8Str &aRemote)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent->i_getMachine());
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Bstr bRemote = Bstr(aRemote).raw();
 
@@ -655,7 +655,7 @@ HRESULT USBDeviceFilter::setMaskedInterfaces(ULONG aMaskedIfs)
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent->i_getMachine());
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -685,7 +685,7 @@ HRESULT USBDeviceFilter::setMaskedInterfaces(ULONG aMaskedIfs)
 bool USBDeviceFilter::i_isModified()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.hrc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m_fModified;
@@ -698,7 +698,7 @@ void USBDeviceFilter::i_rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -713,11 +713,11 @@ void USBDeviceFilter::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(mPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -745,11 +745,11 @@ void USBDeviceFilter::unshare()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(mPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* peer is not modified, lock it for reading (mPeer is "master" so locked
      * first) */
@@ -796,7 +796,7 @@ HRESULT USBDeviceFilter::i_usbFilterFieldSetter(USBFILTERIDX aIdx,
 {
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent->i_getMachine());
-    if (FAILED(adep.rc())) return adep.rc();
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1234,7 +1234,7 @@ HRESULT HostUSBDeviceFilter::i_usbFilterFieldGetter(USBFILTERIDX aIdx, com::Utf8
 void HostUSBDeviceFilter::i_saveSettings(settings::USBDeviceFilter &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     data.strName = bd->mData.strName;

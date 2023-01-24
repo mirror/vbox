@@ -198,7 +198,7 @@ HRESULT GuestDnDTarget::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSu
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -215,7 +215,7 @@ HRESULT GuestDnDTarget::getFormats(GuestDnDMIMEList &aFormats)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -232,7 +232,7 @@ HRESULT GuestDnDTarget::addFormats(const GuestDnDMIMEList &aFormats)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -247,7 +247,7 @@ HRESULT GuestDnDTarget::removeFormats(const GuestDnDMIMEList &aFormats)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -277,7 +277,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         return setError(E_INVALIDARG, tr("Number of supported formats is empty"));
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     /* Default action is ignoring. */
     DnDAction_T resAction = DnDAction_Ignore;
@@ -395,7 +395,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     /* Input validation. */
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     /* Default action is ignoring. */
     DnDAction_T resAction = DnDAction_Ignore;
@@ -500,7 +500,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (autoCaller.isNotOk()) return autoCaller.rc();
+    if (autoCaller.isNotOk()) return autoCaller.hrc();
 
     GuestDnDState *pState = GuestDnDInst()->getState();
     AssertPtrReturn(pState, E_POINTER);
@@ -576,7 +576,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     /* aResultAction is optional. */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     /* Default action is ignoring. */
     DnDAction_T resAct = DnDAction_Ignore;
@@ -697,7 +697,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     /* Input validation. */
     if (RT_UNLIKELY((aFormat.c_str()) == NULL || *(aFormat.c_str()) == '\0'))

@@ -153,7 +153,7 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
     unconst(m->pPeer)   = aThat;
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
@@ -198,7 +198,7 @@ HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingS
     /* mPeer is left null. */
 
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnRC(thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.hrc());
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
@@ -252,7 +252,7 @@ void RecordingScreenSettings::uninit()
 HRESULT RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T aFeature, BOOL *aEnabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -267,7 +267,7 @@ HRESULT RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T aFeature, B
 HRESULT RecordingScreenSettings::getId(ULONG *id)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -279,7 +279,7 @@ HRESULT RecordingScreenSettings::getId(ULONG *id)
 HRESULT RecordingScreenSettings::getEnabled(BOOL *enabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -291,7 +291,7 @@ HRESULT RecordingScreenSettings::getEnabled(BOOL *enabled)
 HRESULT RecordingScreenSettings::setEnabled(BOOL enabled)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFlowThisFunc(("Screen %RU32\n", m->uScreenId));
 
@@ -316,7 +316,7 @@ HRESULT RecordingScreenSettings::setEnabled(BOOL enabled)
 HRESULT RecordingScreenSettings::getFeatures(std::vector<RecordingFeature_T> &aFeatures)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -337,7 +337,7 @@ HRESULT RecordingScreenSettings::getFeatures(std::vector<RecordingFeature_T> &aF
 HRESULT RecordingScreenSettings::setFeatures(const std::vector<RecordingFeature_T> &aFeatures)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change features while recording is enabled"));
@@ -379,7 +379,7 @@ HRESULT RecordingScreenSettings::setFeatures(const std::vector<RecordingFeature_
 HRESULT RecordingScreenSettings::getDestination(RecordingDestination_T *aDestination)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -391,7 +391,7 @@ HRESULT RecordingScreenSettings::getDestination(RecordingDestination_T *aDestina
 HRESULT RecordingScreenSettings::setDestination(RecordingDestination_T aDestination)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change destination type while recording is enabled"));
@@ -415,7 +415,7 @@ HRESULT RecordingScreenSettings::setDestination(RecordingDestination_T aDestinat
 HRESULT RecordingScreenSettings::getFilename(com::Utf8Str &aFilename)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -439,7 +439,7 @@ HRESULT RecordingScreenSettings::getFilename(com::Utf8Str &aFilename)
 HRESULT RecordingScreenSettings::setFilename(const com::Utf8Str &aFilename)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change file name while recording is enabled"));
@@ -478,7 +478,7 @@ HRESULT RecordingScreenSettings::setFilename(const com::Utf8Str &aFilename)
 HRESULT RecordingScreenSettings::getMaxTime(ULONG *aMaxTimeS)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -490,7 +490,7 @@ HRESULT RecordingScreenSettings::getMaxTime(ULONG *aMaxTimeS)
 HRESULT RecordingScreenSettings::setMaxTime(ULONG aMaxTimeS)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change maximum time while recording is enabled"));
@@ -513,7 +513,7 @@ HRESULT RecordingScreenSettings::setMaxTime(ULONG aMaxTimeS)
 HRESULT RecordingScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -525,7 +525,7 @@ HRESULT RecordingScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
 HRESULT RecordingScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change maximum file size while recording is enabled"));
@@ -548,7 +548,7 @@ HRESULT RecordingScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
 HRESULT RecordingScreenSettings::getOptions(com::Utf8Str &aOptions)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -560,7 +560,7 @@ HRESULT RecordingScreenSettings::getOptions(com::Utf8Str &aOptions)
 HRESULT RecordingScreenSettings::setOptions(const com::Utf8Str &aOptions)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change options while recording is enabled"));
@@ -582,7 +582,7 @@ HRESULT RecordingScreenSettings::setOptions(const com::Utf8Str &aOptions)
 HRESULT RecordingScreenSettings::getAudioCodec(RecordingAudioCodec_T *aCodec)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -594,7 +594,7 @@ HRESULT RecordingScreenSettings::getAudioCodec(RecordingAudioCodec_T *aCodec)
 HRESULT RecordingScreenSettings::setAudioCodec(RecordingAudioCodec_T aCodec)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio codec while recording is enabled"));
@@ -620,7 +620,7 @@ HRESULT RecordingScreenSettings::setAudioCodec(RecordingAudioCodec_T aCodec)
 HRESULT RecordingScreenSettings::getAudioDeadline(RecordingCodecDeadline_T *aDeadline)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -632,7 +632,7 @@ HRESULT RecordingScreenSettings::getAudioDeadline(RecordingCodecDeadline_T *aDea
 HRESULT RecordingScreenSettings::setAudioDeadline(RecordingCodecDeadline_T aDeadline)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio deadline while recording is enabled"));
@@ -655,7 +655,7 @@ HRESULT RecordingScreenSettings::setAudioDeadline(RecordingCodecDeadline_T aDead
 HRESULT RecordingScreenSettings::getAudioRateControlMode(RecordingRateControlMode_T *aMode)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -667,7 +667,7 @@ HRESULT RecordingScreenSettings::getAudioRateControlMode(RecordingRateControlMod
 HRESULT RecordingScreenSettings::setAudioRateControlMode(RecordingRateControlMode_T aMode)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio rate control mode while recording is enabled"));
@@ -683,7 +683,7 @@ HRESULT RecordingScreenSettings::setAudioRateControlMode(RecordingRateControlMod
 HRESULT RecordingScreenSettings::getAudioHz(ULONG *aHz)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -695,7 +695,7 @@ HRESULT RecordingScreenSettings::getAudioHz(ULONG *aHz)
 HRESULT RecordingScreenSettings::setAudioHz(ULONG aHz)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio Hertz rate while recording is enabled"));
@@ -718,7 +718,7 @@ HRESULT RecordingScreenSettings::setAudioHz(ULONG aHz)
 HRESULT RecordingScreenSettings::getAudioBits(ULONG *aBits)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -730,7 +730,7 @@ HRESULT RecordingScreenSettings::getAudioBits(ULONG *aBits)
 HRESULT RecordingScreenSettings::setAudioBits(ULONG aBits)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio bits while recording is enabled"));
@@ -753,7 +753,7 @@ HRESULT RecordingScreenSettings::setAudioBits(ULONG aBits)
 HRESULT RecordingScreenSettings::getAudioChannels(ULONG *aChannels)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -765,7 +765,7 @@ HRESULT RecordingScreenSettings::getAudioChannels(ULONG *aChannels)
 HRESULT RecordingScreenSettings::setAudioChannels(ULONG aChannels)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio channels while recording is enabled"));
@@ -788,7 +788,7 @@ HRESULT RecordingScreenSettings::setAudioChannels(ULONG aChannels)
 HRESULT RecordingScreenSettings::getVideoCodec(RecordingVideoCodec_T *aCodec)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -800,7 +800,7 @@ HRESULT RecordingScreenSettings::getVideoCodec(RecordingVideoCodec_T *aCodec)
 HRESULT RecordingScreenSettings::setVideoCodec(RecordingVideoCodec_T aCodec)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video codec while recording is enabled"));
@@ -826,7 +826,7 @@ HRESULT RecordingScreenSettings::setVideoCodec(RecordingVideoCodec_T aCodec)
 HRESULT RecordingScreenSettings::getVideoDeadline(RecordingCodecDeadline_T *aDeadline)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -838,7 +838,7 @@ HRESULT RecordingScreenSettings::getVideoDeadline(RecordingCodecDeadline_T *aDea
 HRESULT RecordingScreenSettings::setVideoDeadline(RecordingCodecDeadline_T aDeadline)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video deadline while recording is enabled"));
@@ -861,7 +861,7 @@ HRESULT RecordingScreenSettings::setVideoDeadline(RecordingCodecDeadline_T aDead
 HRESULT RecordingScreenSettings::getVideoWidth(ULONG *aVideoWidth)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -873,7 +873,7 @@ HRESULT RecordingScreenSettings::getVideoWidth(ULONG *aVideoWidth)
 HRESULT RecordingScreenSettings::setVideoWidth(ULONG aVideoWidth)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video width while recording is enabled"));
@@ -896,7 +896,7 @@ HRESULT RecordingScreenSettings::setVideoWidth(ULONG aVideoWidth)
 HRESULT RecordingScreenSettings::getVideoHeight(ULONG *aVideoHeight)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -908,7 +908,7 @@ HRESULT RecordingScreenSettings::getVideoHeight(ULONG *aVideoHeight)
 HRESULT RecordingScreenSettings::setVideoHeight(ULONG aVideoHeight)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video height while recording is enabled"));
@@ -931,7 +931,7 @@ HRESULT RecordingScreenSettings::setVideoHeight(ULONG aVideoHeight)
 HRESULT RecordingScreenSettings::getVideoRate(ULONG *aVideoRate)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -943,7 +943,7 @@ HRESULT RecordingScreenSettings::getVideoRate(ULONG *aVideoRate)
 HRESULT RecordingScreenSettings::setVideoRate(ULONG aVideoRate)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video rate while recording is enabled"));
@@ -966,7 +966,7 @@ HRESULT RecordingScreenSettings::setVideoRate(ULONG aVideoRate)
 HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordingRateControlMode_T *aMode)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -978,7 +978,7 @@ HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordingRateControlMod
 HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordingRateControlMode_T aMode)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video rate control mode while recording is enabled"));
@@ -994,7 +994,7 @@ HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordingRateControlMod
 HRESULT RecordingScreenSettings::getVideoFPS(ULONG *aVideoFPS)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1006,7 +1006,7 @@ HRESULT RecordingScreenSettings::getVideoFPS(ULONG *aVideoFPS)
 HRESULT RecordingScreenSettings::setVideoFPS(ULONG aVideoFPS)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video FPS while recording is enabled"));
@@ -1029,7 +1029,7 @@ HRESULT RecordingScreenSettings::setVideoFPS(ULONG aVideoFPS)
 HRESULT RecordingScreenSettings::getVideoScalingMode(RecordingVideoScalingMode_T *aMode)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1041,7 +1041,7 @@ HRESULT RecordingScreenSettings::getVideoScalingMode(RecordingVideoScalingMode_T
 HRESULT RecordingScreenSettings::setVideoScalingMode(RecordingVideoScalingMode_T aMode)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video scaling mode while recording is enabled"));
@@ -1095,7 +1095,7 @@ int RecordingScreenSettings::i_initInternal(void)
 HRESULT RecordingScreenSettings::i_loadSettings(const settings::RecordingScreenSettings &data)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1117,7 +1117,7 @@ HRESULT RecordingScreenSettings::i_saveSettings(settings::RecordingScreenSetting
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1136,11 +1136,11 @@ void RecordingScreenSettings::i_commit(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid(peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.hrc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -1164,11 +1164,11 @@ void RecordingScreenSettings::i_copyFrom(RecordingScreenSettings *aThat)
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     /* sanity too */
     AutoCaller thatCaller(aThat);
-    AssertComRCReturnVoid(thatCaller.rc());
+    AssertComRCReturnVoid(thatCaller.hrc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -1188,7 +1188,7 @@ void RecordingScreenSettings::i_applyDefaults(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.hrc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1199,7 +1199,7 @@ settings::RecordingScreenSettings &RecordingScreenSettings::i_getData(void)
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRC(autoCaller.rc());
+    AssertComRC(autoCaller.hrc());
 
     AssertPtr(m);
     return *m->bd.data();

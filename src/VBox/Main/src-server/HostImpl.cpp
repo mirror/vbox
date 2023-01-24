@@ -1268,7 +1268,7 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 
     /* Do the job. */
     AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    HRESULT hrc = autoCaller.hrc();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -2079,8 +2079,8 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
     HRESULT rc = S_OK;
 #ifdef VBOX_WITH_USB
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2123,8 +2123,8 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
 HRESULT Host::i_saveSettings(settings::Host &data)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2557,8 +2557,8 @@ USBProxyService* Host::i_usbProxyService()
 HRESULT Host::i_addChild(HostUSBDeviceFilter *pChild)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2570,8 +2570,8 @@ HRESULT Host::i_addChild(HostUSBDeviceFilter *pChild)
 HRESULT Host::i_removeChild(HostUSBDeviceFilter *pChild)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2601,8 +2601,8 @@ HRESULT Host::i_onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
                                         BOOL aActiveChanged /* = FALSE */)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3599,8 +3599,8 @@ bool Host::i_validateDevice(const char *deviceNode, bool isCDROM)
 HRESULT Host::i_checkUSBProxyService()
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return autoCaller.rc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

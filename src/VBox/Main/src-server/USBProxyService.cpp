@@ -581,7 +581,7 @@ void USBProxyService::i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
 
         /* Assert that the object is still alive. */
         AutoCaller devCaller(pHostDevice);
-        AssertComRC(devCaller.rc());
+        AssertComRC(devCaller.hrc());
 
         AutoWriteLock curLock(pHostDevice COMMA_LOCKVAL_SRC_POS);
         if (   pHostDevice->i_getUsbProxyBackend() == aDevice->i_getUsbProxyBackend()

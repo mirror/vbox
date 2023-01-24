@@ -280,7 +280,7 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -347,7 +347,7 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -482,7 +482,7 @@ HRESULT VFSExplorer::exists(const std::vector<com::Utf8Str> &aNames,
 {
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aExists.resize(0);
@@ -506,7 +506,7 @@ HRESULT VFSExplorer::remove(const std::vector<com::Utf8Str> &aNames,
                             ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

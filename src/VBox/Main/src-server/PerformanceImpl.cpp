@@ -534,7 +534,7 @@ void PerformanceCollector::registerBaseMetric(pm::BaseMetric *baseMetric)
 {
     //LogFlowThisFuncEnter();
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Log7Func(("{%p}: obj=%p name=%s\n", this, (void *)baseMetric->getObject(), baseMetric->getName()));
@@ -546,7 +546,7 @@ void PerformanceCollector::registerMetric(pm::Metric *metric)
 {
     //LogFlowThisFuncEnter();
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Log7Func(("{%p}: obj=%p name=%s\n", this, (void *)metric->getObject(), metric->getName()));
@@ -558,7 +558,7 @@ void PerformanceCollector::unregisterBaseMetricsFor(const ComPtr<IUnknown> &aObj
 {
     //LogFlowThisFuncEnter();
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     pm::Filter filter(name, aObject);
 
@@ -579,7 +579,7 @@ void PerformanceCollector::unregisterMetricsFor(const ComPtr<IUnknown> &aObject,
 {
     //LogFlowThisFuncEnter();
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     pm::Filter filter(name, aObject);
 
@@ -600,7 +600,7 @@ void PerformanceCollector::unregisterMetricsFor(const ComPtr<IUnknown> &aObject,
 void PerformanceCollector::registerGuest(pm::CollectorGuest* pGuest)
 {
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m.gm->registerGuest(pGuest);
@@ -609,7 +609,7 @@ void PerformanceCollector::registerGuest(pm::CollectorGuest* pGuest)
 void PerformanceCollector::unregisterGuest(pm::CollectorGuest* pGuest)
 {
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m.gm->unregisterGuest(pGuest);
@@ -618,7 +618,7 @@ void PerformanceCollector::unregisterGuest(pm::CollectorGuest* pGuest)
 void PerformanceCollector::suspendSampling()
 {
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     int rc = RTTimerLRStop(m.sampler);
     if (   RT_FAILURE(rc)
@@ -629,7 +629,7 @@ void PerformanceCollector::suspendSampling()
 void PerformanceCollector::resumeSampling()
 {
     AutoCaller autoCaller(this);
-    if (!SUCCEEDED(autoCaller.rc())) return;
+    if (!SUCCEEDED(autoCaller.hrc())) return;
 
     int rc = RTTimerLRStart(m.sampler, 0);
     if (   RT_FAILURE(rc)

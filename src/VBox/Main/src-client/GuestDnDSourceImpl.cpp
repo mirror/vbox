@@ -102,7 +102,7 @@ public:
         Assert(!pThis.isNull());
 
         AutoCaller autoCaller(pThis);
-        if (FAILED(autoCaller.rc()))
+        if (FAILED(autoCaller.hrc()))
             return;
 
         int vrc = pThis->i_receiveData(mpCtx, RT_INDEFINITE_WAIT /* msTimeout */);
@@ -208,7 +208,7 @@ HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSu
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -225,7 +225,7 @@ HRESULT GuestDnDSource::getFormats(GuestDnDMIMEList &aFormats)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -242,7 +242,7 @@ HRESULT GuestDnDSource::addFormats(const GuestDnDMIMEList &aFormats)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -257,7 +257,7 @@ HRESULT GuestDnDSource::removeFormats(const GuestDnDMIMEList &aFormats)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -278,7 +278,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
     /* aDefaultAction is optional. */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     /* Default is ignoring the action. */
     if (aDefaultAction)
@@ -403,7 +403,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     LogFunc(("aFormat=%s, aAction=%RU32\n", aFormat.c_str(), aAction));
 
@@ -502,7 +502,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
