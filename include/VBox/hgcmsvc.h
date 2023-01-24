@@ -108,7 +108,7 @@ typedef struct VBOXHGCMCALLHANDLE_TYPEDEF *VBOXHGCMCALLHANDLE;
 typedef struct VBOXHGCMSVCHELPERS
 {
     /** The service has processed the Call request. */
-    DECLR3CALLBACKMEMBER(int, pfnCallComplete, (VBOXHGCMCALLHANDLE callHandle, int32_t rc));
+    DECLR3CALLBACKMEMBER(int, pfnCallComplete, (VBOXHGCMCALLHANDLE callHandle, int32_t vrc));
 
     void *pvInstance;
 
