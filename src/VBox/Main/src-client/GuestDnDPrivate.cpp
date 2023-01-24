@@ -161,35 +161,31 @@
 
 
 /*********************************************************************************************************************************
- * Internal macros.                                                                                                              *
- ********************************************************************************************************************************/
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 
 /** Tries locking the GuestDnD object and returns on failure. */
-#define GUESTDND_LOCK() \
-    { \
-        int rcLock = RTCritSectEnter(&m_CritSect); \
-        if (RT_FAILURE(rcLock)) \
-            return rcLock; \
-    }
+#define GUESTDND_LOCK() do { \
+        int const vrcLock = RTCritSectEnter(&m_CritSect); \
+        if (RT_SUCCESS(vrcLock)) { /* likely */ } else return vrcLock; \
+    } while (0)
 
 /** Tries locking the GuestDnD object and returns a_Ret failure. */
-#define GUESTDND_LOCK_RET(a_Ret) \
-    { \
-        int rcLock = RTCritSectEnter(&m_CritSect); \
-        if (RT_FAILURE(rcLock)) \
-            return a_Ret; \
-    }
+#define GUESTDND_LOCK_RET(a_Ret) do { \
+        int const vrcLock = RTCritSectEnter(&m_CritSect); \
+        if (RT_SUCCESS(vrcLock)) { /* likely */ } else return vrcLock; \
+    } while (0)
 
 /** Unlocks a formerly locked GuestDnD object. */
-#define GUESTDND_UNLOCK() \
-    { \
-        int rcUnlock = RTCritSectLeave(&m_CritSect); RT_NOREF(rcUnlock); \
-        AssertRC(rcUnlock); \
-    }
+#define GUESTDND_UNLOCK() do { \
+        int const vrcUnlock = RTCritSectLeave(&m_CritSect); \
+        AssertRC(vrcUnlock); \
+    } while (0)
+
 
 /*********************************************************************************************************************************
- * GuestDnDSendCtx implementation.                                                                                               *
- ********************************************************************************************************************************/
+*   GuestDnDSendCtx implementation.                                                                                              *
+*********************************************************************************************************************************/
 
 GuestDnDSendCtx::GuestDnDSendCtx(void)
     : pTarget(NULL)
@@ -207,15 +203,16 @@ void GuestDnDSendCtx::reset(void)
 
     Transfer.reset();
 
-    int rc2 = EventCallback.Reset();
-    AssertRC(rc2);
+    int vrc2 = EventCallback.Reset();
+    AssertRC(vrc2);
 
     GuestDnDData::reset();
 }
 
+
 /*********************************************************************************************************************************
- * GuestDnDRecvCtx implementation.                                                                                               *
- ********************************************************************************************************************************/
+*   GuestDnDRecvCtx implementation.                                                                                              *
+*********************************************************************************************************************************/
 
 GuestDnDRecvCtx::GuestDnDRecvCtx(void)
     : pSource(NULL)
@@ -236,15 +233,16 @@ void GuestDnDRecvCtx::reset(void)
 
     Transfer.reset();
 
-    int rc2 = EventCallback.Reset();
-    AssertRC(rc2);
+    int vrc2 = EventCallback.Reset();
+    AssertRC(vrc2);
 
     GuestDnDData::reset();
 }
 
+
 /*********************************************************************************************************************************
- * GuestDnDCallbackEvent implementation.                                                                                         *
- ********************************************************************************************************************************/
+*   GuestDnDCallbackEvent implementation.                                                                                        *
+*********************************************************************************************************************************/
 
 GuestDnDCallbackEvent::~GuestDnDCallbackEvent(void)
 {
@@ -257,24 +255,24 @@ GuestDnDCallbackEvent::~GuestDnDCallbackEvent(void)
  */
 int GuestDnDCallbackEvent::Reset(void)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
-    if (NIL_RTSEMEVENT == m_SemEvent)
-        rc = RTSemEventCreate(&m_SemEvent);
+    if (m_SemEvent == NIL_RTSEMEVENT)
+        vrc = RTSemEventCreate(&m_SemEvent);
 
-    m_Rc = VINF_SUCCESS;
-    return rc;
+    m_vrc = VINF_SUCCESS;
+    return vrc;
 }
 
 /**
  * Completes a callback event by notifying the waiting side.
  *
  * @returns VBox status code.
- * @param   rc                  Result code to use for the event completion.
+ * @param   vrc                 Result code to use for the event completion.
  */
-int GuestDnDCallbackEvent::Notify(int rc /* = VINF_SUCCESS */)
+int GuestDnDCallbackEvent::Notify(int vrc /* = VINF_SUCCESS */)
 {
-    m_Rc = rc;
+    m_vrc = vrc;
     return RTSemEventSignal(m_SemEvent);
 }
 
@@ -289,9 +287,10 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
     return RTSemEventWait(m_SemEvent, msTimeout);
 }
 
-/********************************************************************************************************************************
- *
- ********************************************************************************************************************************/
+
+/*********************************************************************************************************************************
+*   GuestDnDState implementation                                                                                                 *
+*********************************************************************************************************************************/
 
 GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
     : m_uProtocolVersion(0)
@@ -301,32 +300,32 @@ GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
 {
     reset();
 
-    int rc = RTCritSectInit(&m_CritSect);
-    if (RT_FAILURE(rc))
-        throw rc;
-    rc = RTSemEventCreate(&m_EventSem);
-    if (RT_FAILURE(rc))
-        throw rc;
+    int vrc = RTCritSectInit(&m_CritSect);
+    if (RT_FAILURE(vrc))
+        throw vrc;
+    vrc = RTSemEventCreate(&m_EventSem);
+    if (RT_FAILURE(vrc))
+        throw vrc;
 }
 
 GuestDnDState::~GuestDnDState(void)
 {
-    int rc = RTSemEventDestroy(m_EventSem);
-    AssertRC(rc);
-    rc = RTCritSectDelete(&m_CritSect);
-    AssertRC(rc);
+    int vrc = RTSemEventDestroy(m_EventSem);
+    AssertRC(vrc);
+    vrc = RTCritSectDelete(&m_CritSect);
+    AssertRC(vrc);
 }
 
 /**
  * Notifies the waiting side about a guest notification response.
  *
  * @returns VBox status code.
- * @param   rcGuest             Guest rc to set for the response.
- *                              Defaults to VINF_SUCCESS (for success).
+ * @param   vrcGuest    Guest VBox status code to set for the response.
+ *                      Defaults to VINF_SUCCESS (for success).
  */
-int GuestDnDState::notifyAboutGuestResponse(int rcGuest /* = VINF_SUCCESS */)
+int GuestDnDState::notifyAboutGuestResponse(int vrcGuest /* = VINF_SUCCESS */)
 {
-    m_rcGuest = rcGuest;
+    m_vrcGuest = vrcGuest;
     return RTSemEventSignal(m_EventSem);
 }
 
@@ -345,7 +344,7 @@ void GuestDnDState::reset(void)
     m_lstFormats.clear();
     m_mapCallbacks.clear();
 
-    m_rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    m_vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 }
 
 /**
@@ -408,7 +407,7 @@ DECLCALLBACK(int) GuestDnDState::i_defaultCallback(uint32_t uMsg, void *pvParms,
             break;
     }
 
-    LogFlowFunc(("Returning rc=%Rrc\n", vrc));
+    LogFlowFunc(("Returning vrc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -425,15 +424,11 @@ HRESULT GuestDnDState::resetProgress(const ComObjPtr<Guest>& pParent, const Utf8
 
     m_pProgress.setNull();
 
-    HRESULT hr = m_pProgress.createObject();
-    if (SUCCEEDED(hr))
-    {
-        hr = m_pProgress->init(static_cast<IGuest *>(pParent),
-                               Bstr(strDesc).raw(),
-                               TRUE /* aCancelable */);
-    }
+    HRESULT hrc = m_pProgress.createObject();
+    if (SUCCEEDED(hrc))
+        hrc = m_pProgress->init(static_cast<IGuest *>(pParent), Bstr(strDesc).raw(), TRUE /* aCancelable */);
 
-    return hr;
+    return hrc;
 }
 
 /**
@@ -447,8 +442,8 @@ bool GuestDnDState::isProgressCanceled(void) const
         return true;
 
     BOOL fCanceled;
-    HRESULT hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
-    AssertComRCReturn(hr, false);
+    HRESULT hrc = m_pProgress->COMGETTER(Canceled)(&fCanceled);
+    AssertComRCReturn(hrc, false);
     return RT_BOOL(fCanceled);
 }
 
@@ -463,8 +458,8 @@ bool GuestDnDState::isProgressRunning(void) const
         return false;
 
     BOOL fCompleted;
-    HRESULT const hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
-    AssertComRCReturn(hr, false);
+    HRESULT const hrc = m_pProgress->COMGETTER(Completed)(&fCompleted);
+    AssertComRCReturn(hrc, false);
     return !RT_BOOL(fCompleted);
 }
 
@@ -507,42 +502,39 @@ int GuestDnDState::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, v
  * @returns VBox status code.
  * @param   uPercentage         Percentage (0-100) to set.
  * @param   uStatus             Status (of type DND_PROGRESS_XXX) to set.
- * @param   rcOp                IPRT-style result code to set. Optional.
+ * @param   vrcOp               VBox status code to set. Optional.
  * @param   strMsg              Message to set. Optional.
  */
 int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
-                               int rcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
+                               int vrcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
 {
-    LogFlowFunc(("uPercentage=%u, uStatus=%RU32, , rcOp=%Rrc, strMsg=%s\n",
-                 uPercentage, uStatus, rcOp, strMsg.c_str()));
-
-    HRESULT hr = S_OK;
+    LogFlowFunc(("uPercentage=%u, uStatus=%RU32, , vrcOp=%Rrc, strMsg=%s\n",
+                 uPercentage, uStatus, vrcOp, strMsg.c_str()));
 
     if (m_pProgress.isNull())
         return VINF_SUCCESS;
 
     BOOL fCompleted = FALSE;
-    hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
-    AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
+    HRESULT hrc = m_pProgress->COMGETTER(Completed)(&fCompleted);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
 
     BOOL fCanceled  = FALSE;
-    hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
-    AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
+    hrc = m_pProgress->COMGETTER(Canceled)(&fCanceled);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
 
     LogFlowFunc(("Progress fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     switch (uStatus)
     {
         case DragAndDropSvc::DND_PROGRESS_ERROR:
         {
-            LogRel(("DnD: Guest reported error %Rrc\n", rcOp));
+            LogRel(("DnD: Guest reported error %Rrc\n", vrcOp));
 
             if (!fCompleted)
-                hr = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR,
-                                                   COM_IIDOF(IGuest),
-                                                   m_pParent->getComponentName(), strMsg.c_str());
+                hrc = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR, COM_IIDOF(IGuest),
+                                                    m_pParent->getComponentName(), strMsg.c_str());
             break;
         }
 
@@ -552,14 +544,14 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
 
             if (!fCanceled)
             {
-                hr = m_pProgress->Cancel();
-                AssertComRC(hr);
+                hrc = m_pProgress->Cancel();
+                AssertComRC(hrc);
             }
 
             if (!fCompleted)
             {
-                hr = m_pProgress->i_notifyComplete(S_OK);
-                AssertComRC(hr);
+                hrc = m_pProgress->i_notifyComplete(S_OK);
+                AssertComRC(hrc);
             }
             break;
         }
@@ -573,13 +565,13 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
             if (   !fCompleted
                 && !fCanceled)
             {
-                hr = m_pProgress->SetCurrentOperationProgress(uPercentage);
-                AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
+                hrc = m_pProgress->SetCurrentOperationProgress(uPercentage);
+                AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
                 if (   uStatus     == DragAndDropSvc::DND_PROGRESS_COMPLETE
                     || uPercentage >= 100)
                 {
-                    hr = m_pProgress->i_notifyComplete(S_OK);
-                    AssertComRCReturn(hr, VERR_COM_UNEXPECTED);
+                    hrc = m_pProgress->i_notifyComplete(S_OK);
+                    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
                 }
             }
             break;
@@ -589,8 +581,8 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
             break;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -605,7 +597,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
 {
     LogFlowFunc(("u32Function=%RU32, pvParms=%p, cbParms=%RU32\n", u32Function, pvParms, cbParms));
 
-    int rc = VERR_WRONG_ORDER; /* Play safe. */
+    int vrc = VERR_WRONG_ORDER; /* Play safe. */
 
     /* Whether or not to try calling host-installed callbacks after successfully processing the message. */
     bool fTryCallbacks = false;
@@ -624,7 +616,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
 
             LogThisFunc(("Client connected, using protocol v%RU32\n", m_uProtocolVersion));
 
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
             break;
         }
 
@@ -639,7 +631,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
 
             LogThisFunc(("Client reported features: %#RX64\n", m_fGuestFeatures0));
 
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
             break;
         }
 
@@ -649,7 +641,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
         case DragAndDropSvc::GUEST_DND_FN_DISCONNECT:
         {
             LogThisFunc(("Client disconnected\n"));
-            rc = setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+            vrc = setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
             break;
         }
 
@@ -663,7 +655,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             LogRel2(("DnD: Guest responded with action '%s' for host->guest drag event\n", DnDActionToStr(pCBData->uAction)));
 
             setActionDefault(pCBData->uAction);
-            rc = notifyAboutGuestResponse();
+            vrc = notifyAboutGuestResponse();
             break;
         }
 
@@ -677,22 +669,18 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             if (   pCBData->cbFormat  == 0
                 || pCBData->cbFormat  > _64K /** @todo Make this configurable? */
                 || pCBData->pszFormat == NULL)
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
+                vrc = VERR_INVALID_PARAMETER;
             else if (!RTStrIsValidEncoding(pCBData->pszFormat))
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
+                vrc = VERR_INVALID_PARAMETER;
             else
             {
                 setFormats(GuestDnD::toFormatList(pCBData->pszFormat));
-                rc = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
             }
 
-            int rc2 = notifyAboutGuestResponse();
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+            int vrc2 = notifyAboutGuestResponse();
+            if (RT_SUCCESS(vrc))
+                vrc = vrc2;
             break;
         }
 
@@ -704,9 +692,9 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGEVTPROGRESSDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
-            rc = setProgress(pCBData->uPercentage, pCBData->uStatus, pCBData->rc);
-            if (RT_SUCCESS(rc))
-                rc = notifyAboutGuestResponse(pCBData->rc);
+            vrc = setProgress(pCBData->uPercentage, pCBData->uStatus, pCBData->rc);
+            if (RT_SUCCESS(vrc))
+                vrc = notifyAboutGuestResponse(pCBData->rc);
             break;
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -724,25 +712,21 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             if (   pCBData->cbFormat  == 0
                 || pCBData->cbFormat  > _64K /** @todo Make the maximum size configurable? */
                 || pCBData->pszFormat == NULL)
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
+                vrc = VERR_INVALID_PARAMETER;
             else if (!RTStrIsValidEncoding(pCBData->pszFormat))
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
+                vrc = VERR_INVALID_PARAMETER;
             else
             {
                 setFormats   (GuestDnD::toFormatList(pCBData->pszFormat));
                 setActionDefault (pCBData->uDefAction);
                 setActionsAllowed(pCBData->uAllActions);
 
-                rc = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
             }
 
-            int rc2 = notifyAboutGuestResponse();
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+            int vrc2 = notifyAboutGuestResponse();
+            if (RT_SUCCESS(vrc))
+                vrc = vrc2;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
@@ -761,17 +745,17 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
         if (it != m_mapCallbacks.end())
         {
             AssertPtr(it->second.pfnCallback);
-            rc = it->second.pfnCallback(u32Function, pvParms, cbParms, it->second.pvUser);
+            vrc = it->second.pfnCallback(u32Function, pvParms, cbParms, it->second.pvUser);
         }
         else
         {
             /* Invoke the default callback handler in case we don't have any registered callback above. */
-            rc = i_defaultCallback(u32Function, pvParms, cbParms, this /* pvUser */);
+            vrc = i_defaultCallback(u32Function, pvParms, cbParms, this /* pvUser */);
         }
     }
 
-    LogFlowFunc(("Returning rc=%Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("Returning vrc=%Rrc\n", vrc));
+    return vrc;
 }
 
 /**
@@ -792,17 +776,18 @@ HRESULT GuestDnDState::queryProgressTo(IProgress **ppProgress)
  * @retval  VERR_TIMEOUT when waiting has timed out.
  * @retval  VERR_DND_GUEST_ERROR on an error reported back from the guest.
  * @param   msTimeout           Timeout (in ms) for waiting. Optional, waits 3000 ms if not specified.
- * @param   prcGuest            Where to return the guest error when VERR_DND_GUEST_ERROR is returned. Optional.
+ * @param   pvrcGuest           Where to return the guest error when
+ *                              VERR_DND_GUEST_ERROR is returned. Optional.
  */
-int GuestDnDState::waitForGuestResponseEx(RTMSINTERVAL msTimeout /* = 3000 */, int *prcGuest /* = NULL */)
+int GuestDnDState::waitForGuestResponseEx(RTMSINTERVAL msTimeout /* = 3000 */, int *pvrcGuest /* = NULL */)
 {
     int vrc = RTSemEventWait(m_EventSem, msTimeout);
     if (RT_SUCCESS(vrc))
     {
-        if (RT_FAILURE(m_rcGuest))
+        if (RT_FAILURE(m_vrcGuest))
             vrc = VERR_DND_GUEST_ERROR;
-        if (prcGuest)
-            *prcGuest = m_rcGuest;
+        if (pvrcGuest)
+            *pvrcGuest = m_vrcGuest;
     }
     return vrc;
 }
@@ -813,13 +798,14 @@ int GuestDnDState::waitForGuestResponseEx(RTMSINTERVAL msTimeout /* = 3000 */, i
  * @returns VBox status code.
  * @retval  VERR_TIMEOUT when waiting has timed out.
  * @retval  VERR_DND_GUEST_ERROR on an error reported back from the guest.
- * @param   prcGuest            Where to return the guest error when VERR_DND_GUEST_ERROR is returned. Optional.
+ * @param   pvrcGuest            Where to return the guest error when
+ *                               VERR_DND_GUEST_ERROR is returned. Optional.
  *
  * @note    Uses the default timeout of 3000 ms.
  */
-int GuestDnDState::waitForGuestResponse(int *prcGuest /* = NULL */)
+int GuestDnDState::waitForGuestResponse(int *pvrcGuest /* = NULL */)
 {
-    return waitForGuestResponseEx(3000 /* ms */, prcGuest);
+    return waitForGuestResponseEx(3000 /* ms */, pvrcGuest);
 }
 
 /*********************************************************************************************************************************
@@ -844,9 +830,9 @@ GuestDnD::GuestDnD(const ComObjPtr<Guest> &pGuest)
         throw VERR_NO_MEMORY;
     }
 
-    int rc = RTCritSectInit(&m_CritSect);
-    if (RT_FAILURE(rc))
-        throw rc;
+    int vrc = RTCritSectInit(&m_CritSect);
+    if (RT_FAILURE(vrc))
+        throw vrc;
 
     /* List of supported default MIME types. */
     LogRel2(("DnD: Supported default host formats:\n"));
@@ -887,17 +873,16 @@ HRESULT GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *pu
      * (depending on the screen number). */
     ComObjPtr<Console> pConsole = m_pGuest->i_getConsole();
     ComPtr<IDisplay> pDisplay;
-    HRESULT hr = pConsole->COMGETTER(Display)(pDisplay.asOutParam());
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = pConsole->COMGETTER(Display)(pDisplay.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
 
     ULONG dummy;
     LONG xShift, yShift;
     GuestMonitorStatus_T monitorStatus;
-    hr = pDisplay->GetScreenResolution(uScreenId, &dummy, &dummy, &dummy,
-                                       &xShift, &yShift, &monitorStatus);
-    if (FAILED(hr))
-        return hr;
+    hrc = pDisplay->GetScreenResolution(uScreenId, &dummy, &dummy, &dummy, &xShift, &yShift, &monitorStatus);
+    if (FAILED(hrc))
+        return hrc;
 
     if (puX)
         *puX += xShift;
@@ -1542,11 +1527,11 @@ int GuestDnDBase::sendCancel(void)
 
     LogRel2(("DnD: Cancelling operation on guest ...\n"));
 
-    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
-    if (RT_FAILURE(rc))
-        LogRel(("DnD: Cancelling operation on guest failed with %Rrc\n", rc));
+    int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    if (RT_FAILURE(vrc))
+        LogRel(("DnD: Cancelling operation on guest failed with %Rrc\n", vrc));
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -1578,12 +1563,9 @@ int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDState *pState,
 
     LogRel2(("DnD: Transfer %RU8%% complete\n", uPercent));
 
-    int rc = pState->setProgress(uPercent,
-                                   pData->isComplete()
-                                 ? DND_PROGRESS_COMPLETE
-                                 : DND_PROGRESS_RUNNING);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    int vrc = pState->setProgress(uPercent, pData->isComplete() ? DND_PROGRESS_COMPLETE : DND_PROGRESS_RUNNING);
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /**
@@ -1599,7 +1581,7 @@ int GuestDnDBase::waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDState *pSt
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
     AssertPtrReturn(pState, VERR_INVALID_POINTER);
 
-    int rc;
+    int vrc;
 
     LogFlowFunc(("msTimeout=%RU32\n", msTimeout));
 
@@ -1611,32 +1593,33 @@ int GuestDnDBase::waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDState *pSt
          * wait event. As we don't want to block if the guest does not
          * respond, do busy waiting here.
          */
-        rc = pEvent->Wait(500 /* ms */);
-        if (RT_SUCCESS(rc))
+        vrc = pEvent->Wait(500 /* ms */);
+        if (RT_SUCCESS(vrc))
         {
-            rc = pEvent->Result();
-            LogFlowFunc(("Callback done, result is %Rrc\n", rc));
+            vrc = pEvent->Result();
+            LogFlowFunc(("Callback done, result is %Rrc\n", vrc));
             break;
         }
-        else if (rc == VERR_TIMEOUT) /* Continue waiting. */
-            rc = VINF_SUCCESS;
+        if (vrc == VERR_TIMEOUT) /* Continue waiting. */
+            vrc = VINF_SUCCESS;
 
         if (   msTimeout != RT_INDEFINITE_WAIT
             && RTTimeMilliTS() - tsStart > msTimeout)
         {
-            rc = VERR_TIMEOUT;
+            vrc = VERR_TIMEOUT;
             LogRel2(("DnD: Error: Guest did not respond within time\n"));
         }
         else if (pState->isProgressCanceled())
         {
             LogRel2(("DnD: Operation was canceled by user\n"));
-            rc = VERR_CANCELLED;
+            vrc = VERR_CANCELLED;
         }
 
-    } while (RT_SUCCESS(rc));
+    } while (RT_SUCCESS(vrc));
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
+
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 

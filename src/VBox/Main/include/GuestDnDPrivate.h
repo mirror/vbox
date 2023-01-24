@@ -67,7 +67,7 @@ public:
 
     GuestDnDCallbackEvent(void)
         : m_SemEvent(NIL_RTSEMEVENT)
-        , m_Rc(VINF_SUCCESS) { }
+        , m_vrc(VINF_SUCCESS) { }
 
     virtual ~GuestDnDCallbackEvent(void);
 
@@ -75,9 +75,9 @@ public:
 
     int Reset(void);
 
-    int Notify(int rc = VINF_SUCCESS);
+    int Notify(int vrc = VINF_SUCCESS);
 
-    int Result(void) const { return m_Rc; }
+    int Result(void) const { return m_vrc; }
 
     int Wait(RTMSINTERVAL msTimeout);
 
@@ -86,7 +86,7 @@ protected:
     /** Event semaphore to notify on error/completion. */
     RTSEMEVENT m_SemEvent;
     /** Callback result. */
-    int        m_Rc;
+    int        m_vrc;
 };
 
 /**
@@ -123,8 +123,8 @@ struct GuestDnDMetaData
         const size_t cbAllocatedTmp = cbData + cbDataAdd;
         if (cbAllocatedTmp > cbAllocated)
         {
-            int rc = resize(cbAllocatedTmp);
-            if (RT_FAILURE(rc))
+            int vrc = resize(cbAllocatedTmp);
+            if (RT_FAILURE(vrc))
                 return 0;
         }
 
@@ -439,8 +439,8 @@ struct GuestDnDTransferSendData : public GuestDnDTransferData
         : fObjState(0)
     {
         RT_ZERO(List);
-        int rc2 = DnDTransferListInit(&List);
-        AssertRC(rc2);
+        int vrc2 = DnDTransferListInit(&List);
+        AssertRC(vrc2);
     }
 
     virtual ~GuestDnDTransferSendData()
@@ -505,16 +505,16 @@ struct GuestDnDTransferRecvData : public GuestDnDTransferData
     GuestDnDTransferRecvData()
     {
         RT_ZERO(DroppedFiles);
-        int rc2 = DnDDroppedFilesInit(&DroppedFiles);
-        AssertRC(rc2);
+        int vrc2 = DnDDroppedFilesInit(&DroppedFiles);
+        AssertRC(vrc2);
 
         RT_ZERO(List);
-        rc2 = DnDTransferListInit(&List);
-        AssertRC(rc2);
+        vrc2 = DnDTransferListInit(&List);
+        AssertRC(vrc2);
 
         RT_ZERO(ObjCur);
-        rc2 = DnDTransferObjectInit(&ObjCur);
-        AssertRC(rc2);
+        vrc2 = DnDTransferObjectInit(&ObjCur);
+        AssertRC(vrc2);
     }
 
     virtual ~GuestDnDTransferRecvData()
@@ -827,9 +827,9 @@ public:
 
     /** @name Guest response handling.
      * @{ */
-    int notifyAboutGuestResponse(int rcGuest = VINF_SUCCESS);
-    int waitForGuestResponseEx(RTMSINTERVAL msTimeout = 3000, int *prcGuest = NULL);
-    int waitForGuestResponse(int *prcGuest = NULL);
+    int notifyAboutGuestResponse(int vrcGuest = VINF_SUCCESS);
+    int waitForGuestResponseEx(RTMSINTERVAL msTimeout = 3000, int *pvrcGuest = NULL);
+    int waitForGuestResponse(int *pvrcGuest = NULL);
     /** @} */
 
     void setActionsAllowed(VBOXDNDACTIONLIST a) { m_dndLstActionsAllowed = a; }
@@ -853,7 +853,8 @@ public:
      * @{ */
     bool isProgressCanceled(void) const;
     bool isProgressRunning(void) const;
-    int setProgress(unsigned uPercentage, uint32_t uState, int rcOp = VINF_SUCCESS, const Utf8Str &strMsg = "");
+    int setProgress(unsigned uPercentage, uint32_t uState, int vrcOp = VINF_SUCCESS,
+                    const Utf8Str &strMsg = Utf8Str::Empty /** @todo figure out what's the best way to pass empty Utf8Str by default - probably = Utf8Str() */);
     HRESULT resetProgress(const ComObjPtr<Guest>& pParent, const Utf8Str &strDesc);
     HRESULT queryProgressTo(IProgress **ppProgress);
     /** @} */
@@ -882,7 +883,7 @@ public:
     RTSEMEVENT            m_EventSem;
     /** Last error reported from guest.
      *  Set to VERR_IPE_UNINITIALIZED_STATUS if not set yet. */
-    int                   m_rcGuest;
+    int                   m_vrcGuest;
     /** Default action to perform in case of a
      *  successful drop. */
     VBOXDNDACTION         m_dndActionDefault;
@@ -950,7 +951,7 @@ protected:
     /** List of registered DnD targets. */
     typedef std::list< ComObjPtr<GuestDnDTarget> > GuestDnDTgtList;
 
-    /** Constructor; will throw rc on failure. */
+    /** Constructor; will throw vrc on failure. */
     GuestDnD(const ComObjPtr<Guest>& pGuest);
     virtual ~GuestDnD(void);
 
