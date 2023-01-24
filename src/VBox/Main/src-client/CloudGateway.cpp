@@ -60,8 +60,8 @@
 
 static HRESULT setMacAddress(const Utf8Str& str, RTMAC& mac)
 {
-    int rc = RTNetStrToMacAddr(str.c_str(), &mac);
-    if (RT_FAILURE(rc))
+    int vrc = RTNetStrToMacAddr(str.c_str(), &mac);
+    if (RT_FAILURE(vrc))
     {
         LogRel(("CLOUD-NET: Invalid MAC address '%s'\n", str.c_str()));
         return E_INVALIDARG;
@@ -103,7 +103,7 @@ static void handleErrors(HRESULT hrc, const char *pszFormat, ...)
         va_start(va, pszFormat);
         Utf8Str strError(pszFormat, va);
         va_end(va);
-        LogRel(("CLOUD-NET: %s (rc=%x)\n", strError.c_str(), hrc));
+        LogRel(("CLOUD-NET: %s (hrc=%x)\n", strError.c_str(), hrc));
         throw CloudError(hrc, strError);
     }
 
@@ -219,24 +219,24 @@ HRESULT stopCloudGateway(ComPtr<IVirtualBox> virtualBox, GatewayInfo& gateway)
 # ifdef DEBUG
         char szKeyPath[RTPATH_MAX];
 
-        int rc = GetVBoxUserHomeDirectory(szKeyPath, sizeof(szKeyPath), false /* fCreateDir */);
-        if (RT_SUCCESS(rc))
+        int vrc = GetVBoxUserHomeDirectory(szKeyPath, sizeof(szKeyPath), false /* fCreateDir */);
+        if (RT_SUCCESS(vrc))
         {
-            rc = RTPathAppend(szKeyPath, sizeof(szKeyPath), "gateway-key.pem");
-            AssertRCReturn(rc, rc);
-            rc = RTFileDelete(szKeyPath);
-            if (RT_FAILURE(rc))
-                LogRel(("WARNING! Failed to delete private key %s with rc=%d\n", szKeyPath, rc));
+            vrc = RTPathAppend(szKeyPath, sizeof(szKeyPath), "gateway-key.pem");
+            AssertRCReturn(vrc, vrc);
+            vrc = RTFileDelete(szKeyPath);
+            if (RT_FAILURE(vrc))
+                LogRel(("WARNING! Failed to delete private key %s with vrc=%d\n", szKeyPath, vrc));
         }
         else
-            LogRel(("WARNING! Failed to get VirtualBox user home directory with '%Rrc'\n", rc));
+            LogRel(("WARNING! Failed to get VirtualBox user home directory with '%Rrc'\n", vrc));
 # endif /* DEBUG */
 #endif
     }
     catch (CloudError e)
     {
         hrc = e.getRc();
-        LogRel(("CLOUD-NET: Failed to terminate cloud gateway instance (rc=%x).\n", hrc));
+        LogRel(("CLOUD-NET: Failed to terminate cloud gateway instance (hrc=%x).\n", hrc));
     }
     gateway.mGatewayInstanceId.setNull();
     return hrc;
@@ -250,18 +250,18 @@ HRESULT generateKeys(GatewayInfo& gateway)
     return E_NOTIMPL;
 #else /* VBOX_WITH_LIBSSH */
     ssh_key single_use_key;
-    int rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &single_use_key);
-    if (rc != SSH_OK)
+    int iRcSsh = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &single_use_key);
+    if (iRcSsh != SSH_OK)
     {
-        LogRel(("Failed to generate a key pair. rc = %d\n", rc));
+        LogRel(("Failed to generate a key pair. iRcSsh = %d\n", iRcSsh));
         return E_FAIL;
     }
 
     char *pstrKey = NULL;
-    rc = ssh_pki_export_privkey_base64(single_use_key, NULL, NULL, NULL, &pstrKey);
-    if (rc != SSH_OK)
+    iRcSsh = ssh_pki_export_privkey_base64(single_use_key, NULL, NULL, NULL, &pstrKey);
+    if (iRcSsh != SSH_OK)
     {
-        LogRel(("Failed to export private key. rc = %d\n", rc));
+        LogRel(("Failed to export private key. iRcSsh = %d\n", iRcSsh));
         return E_FAIL;
     }
     gateway.mPrivateSshKey = pstrKey;
@@ -269,35 +269,35 @@ HRESULT generateKeys(GatewayInfo& gateway)
 # ifdef DEBUG
     char szConfigPath[RTPATH_MAX];
 
-    rc = GetVBoxUserHomeDirectory(szConfigPath, sizeof(szConfigPath), false /* fCreateDir */);
-    if (RT_SUCCESS(rc))
+    vrc = GetVBoxUserHomeDirectory(szConfigPath, sizeof(szConfigPath), false /* fCreateDir */);
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTPathAppend(szConfigPath, sizeof(szConfigPath), "gateway-key.pem");
-        AssertRCReturn(rc, rc);
-        rc = ssh_pki_export_privkey_file(single_use_key, NULL, NULL, NULL, szConfigPath);
-        if (rc != SSH_OK)
+        vrc = RTPathAppend(szConfigPath, sizeof(szConfigPath), "gateway-key.pem");
+        AssertRCReturn(vrc, E_FAIL);
+        iRcSsh = ssh_pki_export_privkey_file(single_use_key, NULL, NULL, NULL, szConfigPath);
+        if (iRcSsh != SSH_OK)
         {
-            LogRel(("Failed to export private key to %s with rc=%d\n", szConfigPath, rc));
+            LogRel(("Failed to export private key to %s with iRcSsh=%d\n", szConfigPath, iRcSsh));
             return E_FAIL;
         }
 #  ifndef RT_OS_WINDOWS
-        rc = RTPathSetMode(szConfigPath, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR); /* Satisfy ssh client */
-        AssertRCReturn(rc, rc);
+        vrc = RTPathSetMode(szConfigPath, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR); /* Satisfy ssh client */
+        AssertRCReturn(vrc, E_FAIL);
 #  endif
     }
     else
     {
-        LogRel(("Failed to get VirtualBox user home directory with '%Rrc'\n", rc));
+        LogRel(("Failed to get VirtualBox user home directory with '%Rrc'\n", vrc));
         return E_FAIL;
     }
 # endif /* DEBUG */
 #endif
     ssh_string_free_char(pstrKey);
     pstrKey = NULL;
-    rc = ssh_pki_export_pubkey_base64(single_use_key, &pstrKey);
-    if (rc != SSH_OK)
+    iRcSsh = ssh_pki_export_pubkey_base64(single_use_key, &pstrKey);
+    if (iRcSsh != SSH_OK)
     {
-        LogRel(("Failed to export public key. rc = %d\n", rc));
+        LogRel(("Failed to export public key. iRcSsh = %d\n", iRcSsh));
         return E_FAIL;
     }
     gateway.mPublicSshKey = Utf8StrFmt("ssh-rsa %s single-use-key", pstrKey);
