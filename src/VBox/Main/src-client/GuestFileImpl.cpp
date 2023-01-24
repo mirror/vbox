@@ -1575,11 +1575,9 @@ HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
-#ifndef VBOX_WITH_GSTCTL_NO_TOOLBOX
             GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, vrcGuest, mData.mOpenInfo.mFilename.c_str());
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file information failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
-#endif
         }
         else
             hrc = setErrorVrc(vrc,
@@ -1610,11 +1608,9 @@ HRESULT GuestFile::querySize(LONG64 *aSize)
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
-#ifndef VBOX_WITH_GSTCTL_NO_TOOLBOX
             GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, vrcGuest, mData.mOpenInfo.mFilename.c_str());
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file size failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
-#endif
         }
         else
             hrc = setErrorVrc(vrc, tr("Querying guest file size for \"%s\" failed: %Rrc"), mData.mOpenInfo.mFilename.c_str(), vrc);
