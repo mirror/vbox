@@ -373,7 +373,7 @@ static DECLCALLBACK(int) drvCardReaderDownStatus(PPDMICARDREADERDOWN pInterface,
     return vrc;
 }
 
-/** @interface_method_impl{PDMICARDREADERDOWN,pfnStatusChange} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnGetStatusChange} */
 static DECLCALLBACK(int) drvCardReaderDownGetStatusChange(PPDMICARDREADERDOWN pInterface,
                                                           void *pvUser,
                                                           uint32_t u32Timeout,

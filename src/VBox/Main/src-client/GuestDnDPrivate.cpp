@@ -506,7 +506,7 @@ int GuestDnDState::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, v
  * @param   strMsg              Message to set. Optional.
  */
 int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
-                               int vrcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
+                               int vrcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = Utf8Str::Empty */)
 {
     LogFlowFunc(("uPercentage=%u, uStatus=%RU32, , vrcOp=%Rrc, strMsg=%s\n",
                  uPercentage, uStatus, vrcOp, strMsg.c_str()));

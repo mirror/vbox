@@ -853,7 +853,7 @@ public:
      * @{ */
     bool isProgressCanceled(void) const;
     bool isProgressRunning(void) const;
-    int setProgress(unsigned uPercentage, uint32_t uState, int vrcOp = VINF_SUCCESS,
+    int setProgress(unsigned uPercentage, uint32_t uStatus, int vrcOp = VINF_SUCCESS,
                     const Utf8Str &strMsg = Utf8Str::Empty /** @todo figure out what's the best way to pass empty Utf8Str by default - probably = Utf8Str() */);
     HRESULT resetProgress(const ComObjPtr<Guest>& pParent, const Utf8Str &strDesc);
     HRESULT queryProgressTo(IProgress **ppProgress);
