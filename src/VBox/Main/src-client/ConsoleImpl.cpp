@@ -5333,7 +5333,7 @@ HRESULT Console::i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew,
     if (SUCCEEDED(hrc))
         ::FireHostAudioDeviceChangedEvent(mEventSource, aDevice, aNew, aState, aErrInfo);
 
-    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    LogFlowThisFunc(("Leaving S_OK\n"));
     return S_OK;
 }
 
@@ -6826,10 +6826,10 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
 
 HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments)
 {
-    HRESULT rc = S_OK;
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
+    if (FAILED(autoCaller.hrc()))
+        return autoCaller.hrc();
 
     /* get the VM handle. */
     SafeVMPtr ptrVM(this);
@@ -6838,58 +6838,61 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    HRESULT rc = S_OK;
     for (size_t i = 0; i < aAttachments.size(); ++i)
     {
-        ComPtr<IStorageController> pStorageController;
-        Bstr controllerName;
-        ULONG lInstance;
-        StorageControllerType_T enmController;
-        StorageBus_T enmBus;
-        BOOL fUseHostIOCache;
-
         /*
          * We could pass the objects, but then EMT would have to do lots of
          * IPC (to VBoxSVC) which takes a significant amount of time.
          * Better query needed values here and pass them.
          */
-        rc = aAttachments[i]->COMGETTER(Controller)(controllerName.asOutParam());
-        if (FAILED(rc))
-            throw rc;
+        Bstr controllerName;
+        HRESULT hrc = aAttachments[i]->COMGETTER(Controller)(controllerName.asOutParam());
+        if (FAILED(hrc))
+            return hrc;
 
-        rc = mMachine->GetStorageControllerByName(controllerName.raw(), pStorageController.asOutParam());
-        if (FAILED(rc))
-            throw rc;
+        ComPtr<IStorageController> pStorageController;
+        hrc = mMachine->GetStorageControllerByName(controllerName.raw(), pStorageController.asOutParam());
+        if (FAILED(hrc))
+            return hrc;
 
-        rc = pStorageController->COMGETTER(ControllerType)(&enmController);
-        if (FAILED(rc))
-            throw rc;
-        rc = pStorageController->COMGETTER(Instance)(&lInstance);
-        if (FAILED(rc))
-            throw rc;
-        rc = pStorageController->COMGETTER(Bus)(&enmBus);
-        if (FAILED(rc))
-            throw rc;
-        rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
-        if (FAILED(rc))
-            throw rc;
+        StorageControllerType_T enmController;
+        hrc = pStorageController->COMGETTER(ControllerType)(&enmController);
+        if (FAILED(hrc))
+            return hrc;
+        const char * const pcszDevice = i_storageControllerTypeToStr(enmController);
 
-        const char *pcszDevice = i_storageControllerTypeToStr(enmController);
+        ULONG lInstance;
+        hrc = pStorageController->COMGETTER(Instance)(&lInstance);
+        if (FAILED(hrc))
+            return hrc;
+
+        StorageBus_T enmBus;
+        hrc = pStorageController->COMGETTER(Bus)(&enmBus);
+        if (FAILED(hrc))
+            return hrc;
+
+        BOOL fUseHostIOCache;
+        hrc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
+        if (FAILED(hrc))
+            return hrc;
 
         BOOL fBuiltinIOCache;
         rc = mMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);
         if (FAILED(rc))
-            throw rc;
+            return hrc;
 
         bool fInsertDiskIntegrityDrv = false;
         Bstr strDiskIntegrityFlag;
-        rc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableDiskIntegrityDriver").raw(),
-                                    strDiskIntegrityFlag.asOutParam());
-        if (   rc   == S_OK
+        hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableDiskIntegrityDriver").raw(),
+                                     strDiskIntegrityFlag.asOutParam());
+        if (   hrc   == S_OK
             && strDiskIntegrityFlag == "1")
             fInsertDiskIntegrityDrv = true;
 
         alock.release();
 
+        hrc = S_OK;
         IMediumAttachment *pAttachment = aAttachments[i];
         int vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
                                                       (PFNRT)i_reconfigureMediumAttachment, 15,
@@ -6899,13 +6902,13 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
                                                       pAttachment, mMachineState, &rc);
         if (RT_FAILURE(vrc))
             throw setErrorBoth(E_FAIL, vrc, "%Rrc", vrc);
-        if (FAILED(rc))
-            throw rc;
+        if (FAILED(hrc))
+            throw hrc;
 
         alock.acquire();
     }
 
-    return rc;
+    return S_OK;
 }
 
 HRESULT Console::i_onVMProcessPriorityChange(VMProcPriority_T priority)
