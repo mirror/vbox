@@ -280,7 +280,7 @@ static DECLCALLBACK(void) drvCardReaderCmdControl(PUSBCARDREADER pThis,
  * PDMICARDREADERDOWN - interface
  */
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnConnect} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnConnect} */
 static DECLCALLBACK(int) drvCardReaderDownConnect(PPDMICARDREADERDOWN pInterface,
                                                   void *pvUser,
                                                   const char *pcszCardReaderName,
@@ -299,7 +299,7 @@ static DECLCALLBACK(int) drvCardReaderDownConnect(PPDMICARDREADERDOWN pInterface
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnDisconnect} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnDisconnect} */
 static DECLCALLBACK(int) drvCardReaderDownDisconnect(PPDMICARDREADERDOWN pInterface,
                                                      void *pvUser,
                                                      uint32_t u32Disposition)
@@ -316,7 +316,7 @@ static DECLCALLBACK(int) drvCardReaderDownDisconnect(PPDMICARDREADERDOWN pInterf
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnEstablishContext} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnEstablishContext} */
 static DECLCALLBACK(int) drvCardReaderDownEstablishContext(PPDMICARDREADERDOWN pInterface)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_PARAMETER);
@@ -330,7 +330,7 @@ static DECLCALLBACK(int) drvCardReaderDownEstablishContext(PPDMICARDREADERDOWN p
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnReleaseContext} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnReleaseContext} */
 static DECLCALLBACK(int) drvCardReaderDownReleaseContext(PPDMICARDREADERDOWN pInterface,
                                                          void *pvUser)
 {
@@ -353,7 +353,7 @@ static DECLCALLBACK(int) drvCardReaderDownReleaseContext(PPDMICARDREADERDOWN pIn
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnStatus} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnStatus} */
 static DECLCALLBACK(int) drvCardReaderDownStatus(PPDMICARDREADERDOWN pInterface,
                                                  void *pvUser,
                                                  uint32_t cchReaderName,
@@ -373,7 +373,7 @@ static DECLCALLBACK(int) drvCardReaderDownStatus(PPDMICARDREADERDOWN pInterface,
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnStatusChange} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnStatusChange} */
 static DECLCALLBACK(int) drvCardReaderDownGetStatusChange(PPDMICARDREADERDOWN pInterface,
                                                           void *pvUser,
                                                           uint32_t u32Timeout,
@@ -392,7 +392,7 @@ static DECLCALLBACK(int) drvCardReaderDownGetStatusChange(PPDMICARDREADERDOWN pI
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnBeginTransaction} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnBeginTransaction} */
 static DECLCALLBACK(int) drvCardReaderDownBeginTransaction(PPDMICARDREADERDOWN pInterface,
                                                            void *pvUser)
 {
@@ -407,7 +407,7 @@ static DECLCALLBACK(int) drvCardReaderDownBeginTransaction(PPDMICARDREADERDOWN p
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnEndTransaction} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnEndTransaction} */
 static DECLCALLBACK(int) drvCardReaderDownEndTransaction(PPDMICARDREADERDOWN pInterface,
                                                          void *pvUser,
                                                          uint32_t u32Disposition)
@@ -423,7 +423,7 @@ static DECLCALLBACK(int) drvCardReaderDownEndTransaction(PPDMICARDREADERDOWN pIn
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnTransmit} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnTransmit} */
 static DECLCALLBACK(int) drvCardReaderDownTransmit(PPDMICARDREADERDOWN pInterface,
                                                    void *pvUser,
                                                    const PDMICARDREADER_IO_REQUEST *pIoSendRequest,
@@ -461,7 +461,7 @@ static DECLCALLBACK(int) drvCardReaderDownTransmit(PPDMICARDREADERDOWN pInterfac
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnGetAttr} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnGetAttr} */
 static DECLCALLBACK(int) drvCardReaderDownGetAttr(PPDMICARDREADERDOWN pInterface,
                                                   void *pvUser,
                                                   uint32_t u32AttribId,
@@ -479,7 +479,7 @@ static DECLCALLBACK(int) drvCardReaderDownGetAttr(PPDMICARDREADERDOWN pInterface
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnSetAttr} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnSetAttr} */
 static DECLCALLBACK(int) drvCardReaderDownSetAttr(PPDMICARDREADERDOWN pInterface,
                                                   void *pvUser,
                                                   uint32_t u32AttribId,
@@ -505,7 +505,7 @@ static DECLCALLBACK(int) drvCardReaderDownSetAttr(PPDMICARDREADERDOWN pInterface
     return vrc;
 }
 
-/** @implement_interface_method{PDMICARDREADERDOWN,pfnControl} */
+/** @interface_method_impl{PDMICARDREADERDOWN,pfnControl} */
 static DECLCALLBACK(int) drvCardReaderDownControl(PPDMICARDREADERDOWN pInterface,
                                                   void *pvUser,
                                                   uint32_t u32ControlCode,
