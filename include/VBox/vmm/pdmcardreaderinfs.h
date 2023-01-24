@@ -82,7 +82,7 @@ struct PDMICARDREADERDOWN
     DECLR3CALLBACKMEMBER(int, pfnBeginTransaction,(PPDMICARDREADERDOWN pInterface, void *pvUser));
     DECLR3CALLBACKMEMBER(int, pfnEndTransaction,(PPDMICARDREADERDOWN pInterface, void *pvUser, uint32_t u32Disposition));
     DECLR3CALLBACKMEMBER(int, pfnTransmit,(PPDMICARDREADERDOWN pInterface, void *pvUser,
-                                           const PDMICARDREADER_IO_REQUEST *pioSendRequest,
+                                           const PDMICARDREADER_IO_REQUEST *pIoSendRequest,
                                            const uint8_t *pu8SendBuffer, uint32_t cbSendBuffer, uint32_t cbRecvBuffer));
     /**
      * Up level provides pvInBuffer of cbInBuffer bytes to call SCardControl, also it specify bytes it expects to receive

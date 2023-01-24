@@ -2287,7 +2287,7 @@ typedef struct PDMIPCIRAWCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnDeviceConstructComplete, (PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
                                                            uint32_t uHostPciAddress, uint32_t uGuestPciAddress,
-                                                           int rc));
+                                                           int vrc));
 
 } PDMIPCIRAWCONNECTOR;
 /** PDMIPCIRAWCONNECTOR interface ID. */
