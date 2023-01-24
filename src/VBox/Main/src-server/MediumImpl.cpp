@@ -347,7 +347,6 @@ public:
     }
 
     HRESULT hrc() const { return mRC; }
-    HRESULT rc() const { return mRC; }
     bool isOk() const { return SUCCEEDED(hrc()); }
     bool NotifyAboutChanges() const { return mNotifyAboutChanges; }
 

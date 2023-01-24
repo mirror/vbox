@@ -53,7 +53,7 @@ class VirtualBoxBase;
  * and decreases it back when the created instance goes out of scope (i.e. gets
  * destroyed).
  *
- * If #rc() returns a failure after the instance creation, it means that
+ * If #hrc() returns a failure after the instance creation, it means that
  * the managed VirtualBoxBase object is not Ready, or in any other invalid
  * state, so that the caller must not use the object and can return this
  * failed result code to the upper level.
@@ -96,7 +96,7 @@ public:
      *
      * @param aObj      Object to add a normal caller to. If NULL, this
      *                  instance is effectively turned to no-op (where
-     *                  rc() will return S_OK).
+     *                  hrc() will return S_OK).
      */
     AutoCaller(VirtualBoxBase *aObj)
     {
@@ -123,29 +123,21 @@ public:
     HRESULT hrc() const { return mRC; }
 
     /**
-     * Returns the stored result code returned by ObjectState::addCaller()
-     * after instance creation or after the last #add() call. A successful
-     * result code means the number of callers was successfully increased.
-     * @deprecated use hrc()
-     */
-    HRESULT rc() const { return mRC; }
-
-    /**
-     * Returns |true| if |SUCCEEDED(rc())| is |true|, for convenience.
-     * |true| means the number of callers was successfully increased.
+     * Returns |true| if |SUCCEEDED(hrc())| is |true|, for convenience. |true| means
+     * the number of callers was successfully increased.
      */
     bool isOk() const { return SUCCEEDED(mRC); }
 
     /**
-     * Returns |true| if |FAILED(rc())| is |true|, for convenience.
-     * |true| means the number of callers was _not_ successfully increased.
+     * Returns |true| if |FAILED(hrc())| is |true|, for convenience. |true| means
+     * the number of callers was _not_ successfully increased.
      */
     bool isNotOk() const { return FAILED(mRC); }
 
     /**
      * Temporarily decreases the number of callers of the managed object.
-     * May only be called if #isOk() returns |true|. Note that #rc() will
-     * return E_FAIL after this method succeeds.
+     * May only be called if #isOk() returns |true|. Note that #hrc() will return
+     * E_FAIL after this method succeeds.
      */
     void release()
     {
@@ -203,8 +195,8 @@ protected:
      * ObjectState::addCaller() for the corresponding member instance.
      *
      * @param aObj      Object to add a caller to. If NULL, this
-     *                  instance is effectively turned to no-op (where
-     *                  rc() will return S_OK).
+     *                  instance is effectively turned to no-op (where hrc() will
+     *                  return S_OK).
      * @param aLimited  If |false|, then it's a regular caller, otherwise a
      *                  limited caller.
      */
@@ -267,8 +259,8 @@ public:
      * ObjectState::addCaller() for the corresponding member instance.
      *
      * @param aObj      Object to add a limited caller to. If NULL, this
-     *                  instance is effectively turned to no-op (where
-     *                  rc() will return S_OK).
+     *                  instance is effectively turned to no-op (where hrc() will
+     *                  return S_OK).
      */
     AutoLimitedCaller(VirtualBoxBase *aObj)
     {

@@ -83,7 +83,7 @@
         }
 
         /** Decreases the number of dependencies before the instance is
-         *  destroyed. Note that will reset #rc() to E_FAIL. */
+         *  destroyed. Note that will reset #hrc() to E_FAIL. */
         void release()
         {
             AssertReturnVoid(SUCCEEDED(mRC));
@@ -91,7 +91,7 @@
             mRC = E_FAIL;
         }
 
-        /** Restores the number of callers after by #release(). #rc() will be
+        /** Restores the number of callers after by #release(). #hrc() will be
          *  reset to the result of calling addStateDependency() and must be
          *  rechecked to ensure the operation succeeded. */
         void add()
@@ -103,9 +103,6 @@
 
         /** Returns the result of Machine::addStateDependency(). */
         HRESULT hrc() const { return mRC; }
-        /** Returns the result of Machine::addStateDependency().
-         * @deprecated Use #hrc() instead.  */
-        HRESULT rc() const { return mRC; }
 
         /** Shortcut to SUCCEEDED(hrc()). */
         bool isOk() const { return SUCCEEDED(mRC); }

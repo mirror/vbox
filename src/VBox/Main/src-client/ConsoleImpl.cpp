@@ -211,7 +211,6 @@ public:
     }
 
     HRESULT hrc() const { return mRC; }
-    HRESULT rc() const { return mRC; }
     bool isOk() const { return SUCCEEDED(hrc()); }
 
     /** Releases the VM caller before destruction. Not normally necessary. */
@@ -6254,7 +6253,7 @@ HRESULT Console::i_onUSBDeviceDetach(IN_BSTR aId,
 
         /* The VM may be no more operational when this message arrives
          * (e.g. it may be Saving or Stopping or just PoweredOff). Use
-         * AutoVMCaller to detect it -- AutoVMCaller::rc() will return a
+         * AutoVMCaller to detect it -- AutoVMCaller::hrc() will return a
          * failure in this case. */
 
         AutoVMCallerQuiet autoVMCaller(this);
