@@ -1148,17 +1148,15 @@ int GuestFile::i_setFileStatus(FileStatus_T fileStatus, int vrcFile)
 
         ComObjPtr<VirtualBoxErrorInfo> errorInfo;
         HRESULT hrc = errorInfo.createObject();
-        ComAssertComRC(hrc);
-        /** @todo r=bird: this aint making any sense, creating the object and using it
-         *        w/o checking the status code, but discarding it unused based on
-         *        an function input. */
+        ComAssertComRCRet(hrc, VERR_COM_UNEXPECTED);
         if (RT_FAILURE(vrcFile))
         {
-            hrc = errorInfo->initEx(VBOX_E_IPRT_ERROR, vrcFile,
+            hrc = errorInfo->initEx(VBOX_E_GSTCTL_GUEST_ERROR, vrcFile,
                                     COM_IIDOF(IGuestFile), getComponentName(),
                                     i_guestErrorToString(vrcFile, mData.mOpenInfo.mFilename.c_str()));
-            ComAssertComRC(hrc);
+            ComAssertComRCRet(hrc, VERR_COM_UNEXPECTED);
         }
+        /* Note: On vrcFile success, errorInfo is set to S_OK and also sent via the event below. */
 
         alock.release(); /* Release lock before firing off event. */
 
@@ -1577,9 +1575,11 @@ HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
+#ifndef VBOX_WITH_GSTCTL_NO_TOOLBOX
             GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, vrcGuest, mData.mOpenInfo.mFilename.c_str());
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file information failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
+#endif
         }
         else
             hrc = setErrorVrc(vrc,
@@ -1610,9 +1610,11 @@ HRESULT GuestFile::querySize(LONG64 *aSize)
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
+#ifndef VBOX_WITH_GSTCTL_NO_TOOLBOX
             GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, vrcGuest, mData.mOpenInfo.mFilename.c_str());
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file size failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
+#endif
         }
         else
             hrc = setErrorVrc(vrc, tr("Querying guest file size for \"%s\" failed: %Rrc"), mData.mOpenInfo.mFilename.c_str(), vrc);
