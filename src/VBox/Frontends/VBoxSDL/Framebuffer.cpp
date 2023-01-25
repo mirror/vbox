@@ -113,11 +113,9 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
 
     mScreenId       = uScreenId;
     mfUpdateImage   = fUpdateImage;
-#ifdef VBOX_WITH_SDL2
     mpWindow        = NULL;
     mpTexture       = NULL;
     mpRenderer      = NULL;
-#endif
     mSurfVRAM       = NULL;
     mfInitialized   = false;
     mfFullscreen    = fFullscreen;
@@ -149,7 +147,6 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     Log(("CoCreateFreeThreadedMarshaler hr %08X\n", hr)); NOREF(hr);
 #endif
 
-#ifdef VBOX_WITH_SDL2
     rc = SDL_GetRendererInfo(mpRenderer, &mRenderInfo);
     if (RT_SUCCESS(rc))
     {
@@ -162,7 +159,6 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
                      mRenderInfo.flags,
                      RTEnvGet("SDL_VIDEODRIVER"));
     }
-#endif
 
     return rc;
 }
@@ -207,10 +203,7 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
     }
     gfSdlInitialized = true;
 
-#ifdef VBOX_WITH_SDL2
     RT_NOREF(fShowSDLConfig);
-#endif /* !VBOX_WITH_SDL2 */
-
     return true;
 }
 
@@ -717,7 +710,6 @@ void VBoxSDLFB::resizeSDL(void)
 {
     LogFlow(("VBoxSDL:resizeSDL\n"));
 
-#ifdef VBOX_WITH_SDL2
     const int cDisplays = SDL_GetNumVideoDisplays();
     if (cDisplays > 0)
     {
@@ -750,7 +742,6 @@ void VBoxSDLFB::resizeSDL(void)
     }
     else
         AssertFailed(); /** @todo */
-#endif /* VBOX_WITH_SDL2 */
 
     uint32_t newWidth;
     uint32_t newHeight;
@@ -774,7 +765,6 @@ void VBoxSDLFB::resizeSDL(void)
     /* we don't have any extra space by default */
     mTopOffset = 0;
 
-#ifdef VBOX_WITH_SDL2
     int sdlWindowFlags = SDL_WINDOW_SHOWN;
     if (mfResizable)
         sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
@@ -833,7 +823,6 @@ void VBoxSDLFB::resizeSDL(void)
         if (!mpTexture)
             AssertReleaseFailed();
     }
-#endif /* VBOX_WITH_SDL2 */
 }
 
 /**
@@ -905,9 +894,6 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     dstRect.w = w;
     dstRect.h = RT_MAX(0, h - yCutoffGuest);
 
-
-    /* hardware surfaces don't need update notifications */
-#if defined(VBOX_WITH_SDL2)
     SDL_Texture *pNewTexture = SDL_CreateTextureFromSurface(mpRenderer, mSurfVRAM);
     /** @todo Do we need to update the dirty rect for the texture for SDL2 here as well? */
     // SDL_RenderClear(mpRenderer);
@@ -916,7 +902,6 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     SDL_RenderCopy(mpRenderer, pNewTexture, &srcRect, &dstRect);
     SDL_RenderPresent(mpRenderer);
     SDL_DestroyTexture(pNewTexture);
-#endif
     RTCritSectLeave(&mUpdateLock);
 }
 
@@ -957,7 +942,6 @@ void VBoxSDLFB::setFullscreen(bool fFullscreen)
  */
 void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
 {
-#ifdef VBOX_WITH_SDL2
     SDL_DisplayMode dm;
     int rc = SDL_GetDesktopDisplayMode(0, &dm); /** @BUGBUG Handle multi monitor setups! */
     if (rc == 0)
@@ -965,14 +949,11 @@ void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
         *width  = dm.w;
         *height = dm.w;
     }
-#endif
 }
 
-#ifdef VBOX_WITH_SDL2
 int VBoxSDLFB::setWindowTitle(const char *pcszTitle)
 {
     SDL_SetWindowTitle(mpWindow, pcszTitle);
 
     return VINF_SUCCESS;
 }
-#endif

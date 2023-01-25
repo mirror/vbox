@@ -175,11 +175,7 @@ static Uint32  ResizeTimer(Uint32 interval, void *param) RT_NOTHROW_PROTO;
 static Uint32  QuitTimer(Uint32 interval, void *param) RT_NOTHROW_PROTO;
 static int     WaitSDLEvent(SDL_Event *event);
 static void    SetFullscreen(bool enable);
-
-#ifdef VBOX_WITH_SDL2
 static VBoxSDLFB *getFbFromWinId(Uint32 id);
-#endif
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -225,17 +221,9 @@ static ULONG       gcMonitors = 1;
 static ComObjPtr<VBoxSDLFB> gpFramebuffer[64];
 static Bstr gaFramebufferId[64];
 static SDL_Cursor *gpDefaultCursor = NULL;
-#ifdef VBOXSDL_WITH_X11
-static Cursor      gpDefaultOrigX11Cursor;
-#endif
-static SDL_Cursor *gpCustomCursor = 0;
 static SDL_Cursor *gpOffCursor = NULL;
 static SDL_TimerID gSdlResizeTimer = 0;
 static SDL_TimerID gSdlQuitTimer = 0;
-
-#if defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITH_SDL2)
-static SDL_SysWMinfo gSdlInfo;
-#endif
 
 static RTSEMEVENT g_EventSemSDLEvents;
 static volatile int32_t g_cNotifyUpdateEventsPending;
@@ -498,25 +486,12 @@ public:
                 /* SDL feature not available on Quartz */
 #else
                 bool fCanShow = false;
-
-# ifdef VBOX_WITH_SDL2
                 Uint32 winId = 0;
-
                 VBoxSDLFB *fb = getFbFromWinId(winId);
-
                 SDL_SysWMinfo info;
                 SDL_VERSION(&info.version);
                 if (SDL_GetWindowWMInfo(fb->getWindow(), &info))
                     fCanShow = true;
-# else
-                SDL_SysWMinfo info;
-                SDL_VERSION(&info.version);
-                if (!SDL_GetWMInfo(&info))
-                    fCanShow = false;
-                else
-                    fCanShow = true;
-# endif /* VBOX_WITH_SDL2 */
-
                 if (fCanShow)
                     pCSWEv->AddApproval(NULL);
                 else
@@ -536,25 +511,13 @@ public:
 #ifndef RT_OS_DARWIN
                 SDL_SysWMinfo info;
                 SDL_VERSION(&info.version);
-# ifdef VBOX_WITH_SDL2
                 VBoxSDLFB *fb = getFbFromWinId(winId);
                 if (SDL_GetWindowWMInfo(fb->getWindow(), &info))
-# else
-                if (SDL_GetWMInfo(&info))
-# endif /* VBOX_WITH_SDL2 */
                 {
 # if defined(VBOXSDL_WITH_X11)
-#  ifdef VBOX_WITH_SDL2
                     pSWEv->COMSETTER(WinId)((LONG64)info.info.x11.window);
-#  else
-                    pSWEv->COMSETTER(WinId)((LONG64)info.info.x11.wmwindow);
-#  endif
 # elif defined(RT_OS_WINDOWS)
-#  ifdef VBOX_WITH_SDL2
                     pSWEv->COMSETTER(WinId)((intptr_t)info.info.win.window);
-#  else
-                    pSWEv->COMSETTER(WinId)((intptr_t)info.window);
-#  endif /* VBOX_WITH_SDL2 */
 # else /* !RT_OS_WINDOWS */
                     AssertFailed();
 # endif
@@ -1964,39 +1927,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     /* memorize the default cursor */
     gpDefaultCursor = SDL_GetCursor();
-
-#if !defined(VBOX_WITH_SDL2)
-# if defined(VBOXSDL_WITH_X11)
-    /* Get Window Manager info. We only need the X11 display. */
-    SDL_VERSION(&gSdlInfo.version);
-    if (!SDL_GetWMInfo(&gSdlInfo))
-        RTPrintf("Error: could not get SDL Window Manager info -- no Xcursor support!\n");
-    else
-        gfXCursorEnabled = TRUE;
-
-#  if !defined(VBOX_WITHOUT_XCURSOR)
-    /* SDL uses its own (plain) default cursor. Use the left arrow cursor instead which might look
-     * much better if a mouse cursor theme is installed. */
-    if (gfXCursorEnabled)
-    {
-        gpDefaultOrigX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
-        *(Cursor*)gpDefaultCursor->wm_cursor = XCreateFontCursor(gSdlInfo.info.x11.display, XC_left_ptr);
-        SDL_SetCursor(gpDefaultCursor);
-    }
-#  endif
-    /* Initialise the keyboard */
-    X11DRV_InitKeyboard(gSdlInfo.info.x11.display, NULL, NULL, NULL, NULL);
-# endif /* VBOXSDL_WITH_X11 */
-
-    /* create a fake empty cursor */
-    {
-        uint8_t cursorData[1] = {0};
-        gpCustomCursor = SDL_CreateCursor(cursorData, cursorData, 8, 1, 0, 0);
-        gpCustomOrigWMcursor = gpCustomCursor->wm_cursor;
-        gpCustomCursor->wm_cursor = NULL;
-    }
-#endif /* !VBOX_WITH_SDL2 */
-
     /*
      * Register our user signal handler.
      */
@@ -2237,15 +2167,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     UpdateTitlebar(TITLEBAR_NORMAL);
 
-#ifdef VBOX_WITH_SDL2
-    /* Key repeats are enabled by default on SDL2. */
-#else
-    /*
-     * Enable keyboard repeats
-     */
-    SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-#endif
-
     /*
      * Create PID file.
      */
@@ -2278,7 +2199,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /*
              * The screen needs to be repainted.
              */
-#ifdef VBOX_WITH_SDL2
             case SDL_WINDOWEVENT:
             {
                 switch (event.window.event)
@@ -2318,14 +2238,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     default:
                         break;
                 }
-            }
-#else
-            case SDL_VIDEOEXPOSE:
-            {
-                gpFramebuffer[0]->repaint();
                 break;
             }
-#endif
 
             /*
              * Keyboard events.
@@ -2333,11 +2247,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case SDL_KEYDOWN:
             case SDL_KEYUP:
             {
-#ifdef VBOX_WITH_SDL2
                 SDL_Keycode ksym = event.key.keysym.sym;
-#else
-                SDLKey ksym = event.key.keysym.sym;
-#endif
                 switch (enmHKeyState)
                 {
                     case HKEYSTATE_NORMAL:
@@ -2479,11 +2389,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 if (gfGrabbed || UseAbsoluteMouse())
                 {
                     VBoxSDLFB *fb;
-#ifdef VBOX_WITH_SDL2
                     fb = getFbFromWinId(event.motion.windowID);
-#else
-                    fb = gpFramebuffer[0];
-#endif
                     AssertPtrBreak(fb);
                     SendMouseEvent(fb, 0, 0, 0);
                 }
@@ -2508,15 +2414,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
                 else if (gfGrabbed || UseAbsoluteMouse())
                 {
-#ifdef VBOX_WITH_SDL2
                     int dz = 0; /** @todo Implement mouse wheel support with SDL2 (event SDL_MOUSEWHEEL). */
-#else
-                    int dz = bev->button == SDL_BUTTON_WHEELUP
-                                         ? -1
-                                         : bev->button == SDL_BUTTON_WHEELDOWN
-                                                       ? +1
-                                                       :  0;
-#endif
                     /* end host key combination (CTRL+MouseButton) */
                     switch (enmHKeyState)
                     {
@@ -2542,18 +2440,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     }
 
                     VBoxSDLFB *fb;
-#ifdef VBOX_WITH_SDL2
                     fb = getFbFromWinId(event.button.windowID);
-#else
-                    fb = gpFramebuffer[0];
-#endif
                     AssertPtrBreak(fb);
                     SendMouseEvent(fb, dz, event.type == SDL_MOUSEBUTTONDOWN, bev->button);
                 }
                 break;
             }
 
-#ifndef 0
+#if 0
             /*
              * The window has gained or lost focus.
              */
@@ -3086,8 +2980,6 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
     int keycode = ev->keysym.scancode;
 
 #ifdef VBOXSDL_WITH_X11
-# ifdef VBOX_WITH_SDL2
-
     switch (ev->keysym.sym)
     {
         case SDLK_ESCAPE:           return 0x01;
@@ -3209,9 +3101,6 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         default:
                                     return 0;
     }
-# else
-    keycode = X11DRV_KeyEvent(gSdlInfo.info.x11.display, keycode);
-# endif
 #elif defined(RT_OS_DARWIN)
     /* This is derived partially from SDL_QuartzKeys.h and partially from testing. */
     static const uint16_t s_aMacToSet1[] =
@@ -3420,7 +3309,7 @@ static void ResetKeys(void)
  */
 static void ProcessKey(SDL_KeyboardEvent *ev)
 {
-#if (defined(DEBUG) || defined(VBOX_WITH_STATISTICS)) && !defined(VBOX_WITH_SDL2)
+#if 0 //(defined(DEBUG) || defined(VBOX_WITH_STATISTICS)) && !defined(VBOX_WITH_SDL2)
     if (gpMachineDebugger && ev->type == SDL_KEYDOWN)
     {
         // first handle the debugger hotkeys
@@ -3652,13 +3541,7 @@ static void InputGrabStart(void)
 #endif
     if (!gfGuestNeedsHostCursor && gfRelativeMouseGuest)
         SDL_ShowCursor(SDL_DISABLE);
-#ifdef VBOX_WITH_SDL2
     SDL_SetRelativeMouseMode(SDL_TRUE);
-#else
-    SDL_WM_GrabInput(SDL_GRAB_ON);
-    // dummy read to avoid moving the mouse
-    SDL_GetRelativeMouseState(NULL, NULL);
-#endif
     gfGrabbed = TRUE;
     UpdateTitlebar(TITLEBAR_NORMAL);
 }
@@ -3668,11 +3551,7 @@ static void InputGrabStart(void)
  */
 static void InputGrabEnd(void)
 {
-#ifdef VBOX_WITH_SDL2
     SDL_SetRelativeMouseMode(SDL_FALSE);
-#else
-    SDL_WM_GrabInput(SDL_GRAB_OFF);
-#endif
     if (!gfGuestNeedsHostCursor && gfRelativeMouseGuest)
         SDL_ShowCursor(SDL_ENABLE);
 #ifdef RT_OS_DARWIN
@@ -3692,16 +3571,12 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
     int  x, y, state, buttons;
     bool abs;
 
-#ifdef VBOX_WITH_SDL2
     if (!fb)
     {
         SDL_GetMouseState(&x, &y);
         RTPrintf("MouseEvent: Cannot find fb mouse = %d,%d\n", x, y);
         return;
     }
-#else
-    AssertRelease(fb != NULL);
-#endif
 
     /*
      * If supported and we're not in grabbed mode, we'll use the absolute mouse.
@@ -4136,12 +4011,8 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 #ifdef VBOX_WIN32_UI
     setUITitle(szTitle);
 #else
-# ifdef VBOX_WITH_SDL2
     for (unsigned i = 0; i < gcMonitors; i++)
         gpFramebuffer[i]->setWindowTitle(szTitle);
-# else
-    SDL_WM_SetCaption(szTitle, VBOX_PRODUCT);
-# endif
 #endif
 }
 
@@ -4733,11 +4604,7 @@ int PushSDLEventForSure(SDL_Event *event)
     {
         int rc = SDL_PushEvent(event);
         RTSemEventSignal(g_EventSemSDLEvents);
-#ifdef VBOX_WITH_SDL2
         if (rc == 1)
-#else
-        if (rc == 0)
-#endif
             return 0;
         Log(("PushSDLEventForSure: waiting for 2ms (rc = %d)\n", rc));
         RTThreadSleep(2);
@@ -4755,11 +4622,7 @@ int PushSDLEventForSure(SDL_Event *event)
 void PushNotifyUpdateEvent(SDL_Event *event)
 {
     int rc = SDL_PushEvent(event);
-#ifdef VBOX_WITH_SDL2
     bool fSuccess = (rc == 1);
-#else
-    bool fSuccess = (rc == 0);
-#endif
 
     RTSemEventSignal(g_EventSemSDLEvents);
     AssertMsg(fSuccess, ("SDL_PushEvent returned SDL error\n"));
@@ -4826,7 +4689,6 @@ static void SetFullscreen(bool enable)
     }
 }
 
-#ifdef VBOX_WITH_SDL2
 static VBoxSDLFB *getFbFromWinId(Uint32 id)
 {
     for (unsigned i = 0; i < gcMonitors; i++)
@@ -4835,4 +4697,3 @@ static VBoxSDLFB *getFbFromWinId(Uint32 id)
 
     return NULL;
 }
-#endif

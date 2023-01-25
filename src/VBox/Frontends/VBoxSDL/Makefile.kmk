@@ -62,9 +62,6 @@ VBoxSDL_SOURCES.darwin = \
 	Framebuffer-darwin.m
 
 VBoxSDL_DEFS       =
-ifdef VBOX_WITH_SDL2
- VBoxSDL_DEFS     += VBOX_WITH_SDL2
-endif
 VBoxSDL_DEFS.freebsd = VBOXSDL_WITH_X11
 VBoxSDL_DEFS.linux = _GNU_SOURCE VBOXSDL_WITH_X11
 VBoxSDL_DEFS.solaris = VBOXSDL_WITH_X11
@@ -121,7 +118,7 @@ endif
 #
 # tstSDL
 #
-ifndef VBOX_WITH_SDL2
+if 0
 PROGRAMS += tstSDL
 tstSDL_TEMPLATE = VBoxR3TstExe
 tstSDL_SDKS = LIBSDL

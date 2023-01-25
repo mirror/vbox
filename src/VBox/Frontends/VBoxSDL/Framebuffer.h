@@ -112,18 +112,15 @@ public:
     int32_t getOriginY() { return mOriginY; }
     int32_t getXOffset() { return mCenterXOffset; }
     int32_t getYOffset() { return mCenterYOffset; }
-#ifdef VBOX_WITH_SDL2
     SDL_Window *getWindow() { return mpWindow; }
     bool hasWindow(uint32_t id) { return SDL_GetWindowID(mpWindow) == id; }
     int setWindowTitle(const char *pcszTitle);
-#endif
     void setWinId(int64_t winId) { mWinId = winId; }
     void setOrigin(int32_t axOrigin, int32_t ayOrigin) { mOriginX = axOrigin; mOriginY = ayOrigin; }
     bool getFullscreen() { return mfFullscreen; }
 
 private:
 
-#ifdef VBOX_WITH_SDL2
     /** the SDL window */
     SDL_Window *mpWindow;
     /** the texture */
@@ -132,7 +129,6 @@ private:
     SDL_Renderer *mpRenderer;
     /** render info */
     SDL_RendererInfo mRenderInfo;
-#endif
     /** false if constructor failed */
     bool mfInitialized;
     /** the screen number of this framebuffer */
