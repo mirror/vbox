@@ -58,6 +58,7 @@
 /src-global/*cpp: --no-rc-use
 /src-helper-apps/*cpp: --no-rc-use
 /src-server/*cpp: --no-rc-use
+/include/*: --no-rc-use
 
 # IDL and XML
 /idl/VirtualBox.xidl:                   --treat-as .xml

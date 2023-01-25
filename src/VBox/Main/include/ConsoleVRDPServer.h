@@ -311,7 +311,7 @@ private:
                                                void *pvData,
                                                uint32_t cbData);
     static DECLCALLBACK(int) VRDESCardCbResponse(void *pvContext,
-                                                 int rcRequest,
+                                                 int vrcRequest,
                                                  void *pvUser,
                                                  uint32_t u32Function,
                                                  void *pvData,
@@ -348,19 +348,19 @@ private:
                                                         const void *pvData,
                                                         uint32_t cbData);
     static DECLCALLBACK(void) VRDECallbackVideoInDeviceDesc(void *pvCallback,
-                                                            int rcRequest,
+                                                            int vrcRequest,
                                                             void *pDeviceCtx,
                                                             void *pvUser,
                                                             const VRDEVIDEOINDEVICEDESC *pDeviceDesc,
                                                             uint32_t cbDevice);
     static DECLCALLBACK(void) VRDECallbackVideoInControl(void *pvCallback,
-                                                         int rcRequest,
+                                                         int vrcRequest,
                                                          void *pDeviceCtx,
                                                          void *pvUser,
                                                          const VRDEVIDEOINCTRLHDR *pControl,
                                                          uint32_t cbControl);
     static DECLCALLBACK(void) VRDECallbackVideoInFrame(void *pvCallback,
-                                                       int rcRequest,
+                                                       int vrcRequest,
                                                        void *pDeviceCtx,
                                                        const VRDEVIDEOINPAYLOADHDR *pFrame,
                                                        uint32_t cbFrame);
@@ -370,7 +370,7 @@ private:
     VRDEINPUTINTERFACE m_interfaceInput;
     VRDEINPUTCALLBACKS m_interfaceCallbacksInput;
     static DECLCALLBACK(void) VRDECallbackInputSetup(void *pvCallback,
-                                                     int rcRequest,
+                                                     int vrcRequest,
                                                      uint32_t u32Method,
                                                      const void *pvResult,
                                                      uint32_t cbResult);

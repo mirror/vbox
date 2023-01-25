@@ -205,11 +205,13 @@ DECLINLINE(void) vecInitPtr(VECTOR_PTR *pvec, size_t cbElement,
 DECLINLINE(int) vecPushBackObj(VECTOR_OBJ *pvec, unsigned uTypeHash,
                                  void *pvElement)
 {
-    int rc2;
     AssertReturn(pvec->muTypeHash == uTypeHash, VERR_INVALID_PARAMETER);
-    if (   pvec->mcElements == pvec->mcCapacity
-        && RT_FAILURE((rc2 = VEC_EXPAND(pvec))))
-        return rc2;
+    if (pvec->mcElements == pvec->mcCapacity)
+    {
+        int vrc2 = VEC_EXPAND(pvec);
+        if (RT_FAILURE(vrc2))
+            return vrc2;
+    }
     memcpy(VEC_GET_ELEMENT_OBJ(pvec->mpvaElements, pvec->mcbElement,
                                pvec->mcElements), pvElement, pvec->mcbElement);
     ++pvec->mcElements;
@@ -220,11 +222,13 @@ DECLINLINE(int) vecPushBackObj(VECTOR_OBJ *pvec, unsigned uTypeHash,
 DECLINLINE(int) vecPushBackPtr(VECTOR_PTR *pvec, unsigned uTypeHash,
                                  void *pv)
 {
-    int rc2;
     AssertReturn(pvec->muTypeHash == uTypeHash, VERR_INVALID_PARAMETER);
-    if (   pvec->mcElements == pvec->mcCapacity
-        && RT_FAILURE((rc2 = VEC_EXPAND(pvec))))
-        return rc2;
+    if (pvec->mcElements == pvec->mcCapacity)
+    {
+        int vrc2 = VEC_EXPAND(pvec);
+        if (RT_FAILURE(vrc2))
+            return vrc2;
+    }
     VEC_GET_ELEMENT_PTR(pvec->mpvaElements, pvec->mcElements) = pv;
     ++pvec->mcElements;
     return VINF_SUCCESS;
