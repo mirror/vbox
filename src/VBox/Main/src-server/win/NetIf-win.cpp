@@ -1978,7 +1978,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 netIfLog(("Adding %ls as %s\n", (*it).pName,
                         enmType == HostNetworkInterfaceType_Bridged ? "bridged" :
                         enmType == HostNetworkInterfaceType_HostOnly ? "host-only" : "unknown"));
-                HRESULT hrc = iface->init((*it).pName, enmType, &info);
+                hrc = iface->init((*it).pName, enmType, &info);
                 if (FAILED(hrc))
                     LogRelFunc(("HostNetworkInterface::init() -> %Rrc\n", hrc));
                 else
