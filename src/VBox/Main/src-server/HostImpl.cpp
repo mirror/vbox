@@ -1877,7 +1877,7 @@ HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
     for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         HostNetworkInterfaceType_T t;
-        HRESULT hrc = (*it)->COMGETTER(InterfaceType)(&t);
+        hrc = (*it)->COMGETTER(InterfaceType)(&t);
         if (FAILED(hrc))
             return hrc;
 
