@@ -359,7 +359,7 @@ private:
     bool    i_resetMoveOperationData();
     Utf8Str i_getNewLocationForMoving() const;
 
-    static DECLCALLBACK(void) i_vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
+    static DECLCALLBACK(void) i_vdErrorCall(void *pvUser, int vrc, RT_SRC_POS_DECL,
                                             const char *pszFormat, va_list va);
     static DECLCALLBACK(bool) i_vdConfigAreKeysValid(void *pvUser,
                                                      const char *pszzValid);
