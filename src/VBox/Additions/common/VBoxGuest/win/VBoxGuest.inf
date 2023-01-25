@@ -56,11 +56,9 @@ DefaultDestDir = 12 ; drivers
 VBoxTray_CopyFiles = 11 ; system32
 
 [Manufacturer]
-;x86   %ORACLE%=VBoxGuest
-;amd64 %ORACLE%=VBoxGuest, NTamd64
+%ORACLE%=VBoxGuest@COMMA-NT-ARCH@
 
-;x86   [VBoxGuest]
-;amd64 [VBoxGuest.NTamd64]
+[VBoxGuest@DOT-NT-ARCH@]
 %VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
 
 [VBoxGuest_Install]

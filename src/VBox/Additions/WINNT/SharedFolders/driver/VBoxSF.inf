@@ -45,11 +45,9 @@ DefaultDestDir      = 12 ; drivers
 VBoxMRXNP_CopyFiles = 11 ; system32
 
 [Manufacturer]
-;x86   %ORACLE%=VBoxSF
-;amd64 %ORACLE%=VBoxSF, NTamd64
+%ORACLE%=VBoxSF@COMMA-NT-ARCH@
 
-;x86   [VBoxSF]
-;amd64 [VBoxSF.NTamd64]
+[VBoxSF@DOT-NT-ARCH@]
 %VBoxSF.DeviceDesc%=VBoxSF_Install,PCI\VEN_80ee&DEV_cafe
 
 [VBoxSF_Install]

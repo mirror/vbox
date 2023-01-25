@@ -40,17 +40,16 @@ VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 
 [Manufacturer]
-;x86   %ORACLE%=Model
-;amd64 %ORACLE%=Model, NTamd64, NTamd64.6.0
+;x86   %ORACLE%=VBoxVideo@COMMA-NT-ARCH@
+;amd64 %ORACLE%=VBoxVideo@COMMA-NT-ARCH@@COMMA-NT-ARCH@.6.0
 
-;x86   [Model]
-;amd64 [Model.NTamd64]
-%VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
+[VBoxVideo@DOT-NT-ARCH@]
+%VBoxVideo.SvcDesc% = VBoxVideo_Install, PCI\VEN_80EE&DEV_BEEF
 
-;amd64 [Model.NTamd64.6.0]
-;amd64 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
+;amd64 [VBoxVideo@DOT-NT-ARCH@.6.0]
+;amd64 %VBoxVideo.SvcDesc% = VBoxVideo_Install, PCI\VEN_80EE&DEV_BEEF
 
-[VBoxVideo]
+[VBoxVideo_Install]
 ;amd64 FeatureScore = F8
 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
 
