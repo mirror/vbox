@@ -6607,7 +6607,7 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
                             tr("Saved thumbnail data is not available (%Rrc)"),
                             vrc);
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = S_OK;
 
     *aWidth = u32Width;
     *aHeight = u32Height;
@@ -6661,9 +6661,7 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
                     memcpy(&aData.front(), pu8PNG, cbPNG);
             }
             else
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                  tr("Could not convert saved thumbnail to PNG (%Rrc)"),
-                                  vrc);
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not convert saved thumbnail to PNG (%Rrc)"), vrc);
 
             RTMemFree(pu8PNG);
         }
@@ -6671,7 +6669,7 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
 
     freeSavedDisplayScreenshot(pu8Data);
 
-    return hr;
+    return hrc;
 }
 
 HRESULT Machine::querySavedScreenshotInfo(ULONG aScreenId,
@@ -14325,7 +14323,7 @@ HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aA
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = S_OK;
 
     if (!mAuthLibCtx.hAuthLibrary)
     {
@@ -14337,16 +14335,16 @@ HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aA
 
         int vrc = AuthLibLoad(&mAuthLibCtx, filename.c_str());
         if (RT_FAILURE(vrc))
-            hr = setErrorBoth(E_FAIL, vrc,
-                              tr("Could not load the external authentication library '%s' (%Rrc)"),
-                              filename.c_str(), vrc);
+            hrc = setErrorBoth(E_FAIL, vrc,
+                               tr("Could not load the external authentication library '%s' (%Rrc)"),
+                               filename.c_str(), vrc);
     }
 
     /* The auth library might need the machine lock. */
     alock.release();
 
-    if (FAILED(hr))
-       return hr;
+    if (FAILED(hrc))
+       return hrc;
 
     if (aAuthParams[0] == "VRDEAUTH" && aAuthParams.size() == 7)
     {
@@ -14403,10 +14401,10 @@ HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aA
     }
     else
     {
-        hr = E_INVALIDARG;
+        hrc = E_INVALIDARG;
     }
 
-    return hr;
+    return hrc;
 }
 
 // public methods only for internal purposes

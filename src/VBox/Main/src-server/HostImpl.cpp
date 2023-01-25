@@ -631,20 +631,19 @@ HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
 static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *pPist,
                                   INetCfgComponent *pncc)
 {
-    LPWSTR lpszName;
-    GUID IfGuid;
-    HRESULT hr;
     int vrc = VERR_GENERAL_FAILURE;
 
-    hr = pncc->GetDisplayName(&lpszName);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    LPWSTR lpszName = NULL;
+    HRESULT hrc = pncc->GetDisplayName(&lpszName);
+    Assert(hrc == S_OK);
+    if (hrc == S_OK)
     {
         Bstr name((CBSTR)lpszName);
 
-        hr = pncc->GetInstanceGuid(&IfGuid);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        GUID IfGuid;
+        hrc = pncc->GetInstanceGuid(&IfGuid);
+        Assert(hrc == S_OK);
+        if (hrc == S_OK)
         {
             /* create a new object and add it to the list */
             ComObjPtr<HostNetworkInterface> iface;
@@ -872,39 +871,36 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 
 #  elif defined RT_OS_WINDOWS
 #   ifndef VBOX_WITH_NETFLT
-    hr = E_NOTIMPL;
+    hrc = E_NOTIMPL;
 #   else /* #  if defined VBOX_WITH_NETFLT */
     INetCfg              *pNc;
     INetCfgComponent     *pMpNcc;
     INetCfgComponent     *pTcpIpNcc;
     LPWSTR               lpszApp;
-    HRESULT              hr;
+    HRESULT              hrc;
     IEnumNetCfgBindingPath      *pEnumBp;
     INetCfgBindingPath          *pBp;
     IEnumNetCfgBindingInterface *pEnumBi;
     INetCfgBindingInterface *pBi;
 
     /* we are using the INetCfg API for getting the list of miniports */
-    hr = VBoxNetCfgWinQueryINetCfg(FALSE,
-                                   VBOX_APP_NAME,
-                                   &pNc,
-                                   &lpszApp);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    hrc = VBoxNetCfgWinQueryINetCfg(FALSE, VBOX_APP_NAME, &pNc, &lpszApp);
+    Assert(hrc == S_OK);
+    if (hrc == S_OK)
     {
 #    ifdef VBOX_NETFLT_ONDEMAND_BIND
         /* for the protocol-based approach for now we just get all miniports the MS_TCPIP protocol binds to */
-        hr = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
+        hrc = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
 #    else
         /* for the filter-based approach we get all miniports our filter (oracle_VBoxNetLwf)is bound to */
-        hr = pNc->FindComponent(L"oracle_VBoxNetLwf", &pTcpIpNcc);
-        if (hr != S_OK)
+        hrc = pNc->FindComponent(L"oracle_VBoxNetLwf", &pTcpIpNcc);
+        if (hrc != S_OK)
         {
             /* fall back to NDIS5 miniport lookup (sun_VBoxNetFlt) */
-            hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
+            hrc = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
         }
 #     ifndef VBOX_WITH_HARDENING
-        if (hr != S_OK)
+        if (hrc != S_OK)
         {
             /** @todo try to install the netflt from here */
         }
@@ -912,53 +908,51 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 
 #    endif
 
-        if (hr == S_OK)
+        if (hrc == S_OK)
         {
-            hr = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+            hrc = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
+            Assert(hrc == S_OK);
+            if (hrc == S_OK)
             {
-                hr = VBoxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
-                Assert(hr == S_OK || hr == S_FALSE);
-                while (hr == S_OK)
+                hrc = VBoxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
+                Assert(hrc == S_OK || hrc == S_FALSE);
+                while (hrc == S_OK)
                 {
                     /* S_OK == enabled, S_FALSE == disabled */
                     if (pBp->IsEnabled() == S_OK)
                     {
-                        hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
+                        hrc = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
+                        Assert(hrc == S_OK);
+                        if (hrc == S_OK)
                         {
-                            hr = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
-                            Assert(hr == S_OK);
-                            while (hr == S_OK)
+                            hrc = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
+                            Assert(hrc == S_OK);
+                            while (hrc == S_OK)
                             {
-                                hr = pBi->GetLowerComponent(&pMpNcc);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
+                                hrc = pBi->GetLowerComponent(&pMpNcc);
+                                Assert(hrc == S_OK);
+                                if (hrc == S_OK)
                                 {
                                     ULONG uComponentStatus;
-                                    hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
-                                    Assert(hr == S_OK);
-                                    if (hr == S_OK)
+                                    hrc = pMpNcc->GetDeviceStatus(&uComponentStatus);
+                                    Assert(hrc == S_OK);
+                                    if (hrc == S_OK)
                                     {
                                         if (uComponentStatus == 0)
-                                        {
                                             vboxNetWinAddComponent(&list, pMpNcc);
-                                        }
                                     }
                                     VBoxNetCfgWinReleaseRef(pMpNcc);
                                 }
                                 VBoxNetCfgWinReleaseRef(pBi);
 
-                                hr = VBoxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
+                                hrc = VBoxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
                             }
                             VBoxNetCfgWinReleaseRef(pEnumBi);
                         }
                     }
                     VBoxNetCfgWinReleaseRef(pBp);
 
-                    hr = VBoxNetCfgWinGetNextBindingPath(pEnumBp, &pBp);
+                    hrc = VBoxNetCfgWinGetNextBindingPath(pEnumBp, &pBp);
                 }
                 VBoxNetCfgWinReleaseRef(pEnumBp);
             }
@@ -966,7 +960,7 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
         }
         else
         {
-            LogRel(("failed to get the oracle_VBoxNetLwf(sun_VBoxNetFlt) component, error (0x%x)\n", hr));
+            LogRel(("failed to get the oracle_VBoxNetLwf(sun_VBoxNetFlt) component, error (0x%x)\n", hrc));
         }
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
@@ -1883,9 +1877,9 @@ HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
     for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         HostNetworkInterfaceType_T t;
-        HRESULT hr = (*it)->COMGETTER(InterfaceType)(&t);
-        if (FAILED(hr))
-            return hr;
+        HRESULT hrc = (*it)->COMGETTER(InterfaceType)(&t);
+        if (FAILED(hrc))
+            return hrc;
 
         if (t == aType)
             resultList.push_back(*it);

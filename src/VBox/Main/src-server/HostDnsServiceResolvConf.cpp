@@ -75,8 +75,8 @@ HostDnsServiceResolvConf::~HostDnsServiceResolvConf()
 
 HRESULT HostDnsServiceResolvConf::init(HostDnsMonitorProxy *pProxy, const char *aResolvConfFileName)
 {
-    HRESULT hr = HostDnsServiceBase::init(pProxy);
-    AssertComRCReturn(hr, hr);
+    HRESULT hrc = HostDnsServiceBase::init(pProxy);
+    AssertComRCReturn(hrc, hrc);
 
     m = new Data(aResolvConfFileName);
     AssertPtrReturn(m, E_OUTOFMEMORY);

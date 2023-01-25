@@ -101,14 +101,14 @@ static HRESULT hostVideoInputDeviceAdd(HostVideoInputDeviceList *pList,
                                        const com::Utf8Str &alias)
 {
     ComObjPtr<HostVideoInputDevice> obj;
-    HRESULT hr = obj.createObject();
-    if (SUCCEEDED(hr))
+    HRESULT hrc = obj.createObject();
+    if (SUCCEEDED(hrc))
     {
-        hr = obj->init(name, path, alias);
-        if (SUCCEEDED(hr))
+        hrc = obj->init(name, path, alias);
+        if (SUCCEEDED(hrc))
             pList->push_back(obj);
     }
-    return hr;
+    return hrc;
 }
 
 static DECLCALLBACK(int) hostWebcamAdd(void *pvUser,
@@ -118,10 +118,10 @@ static DECLCALLBACK(int) hostWebcamAdd(void *pvUser,
                                        uint64_t *pu64Result)
 {
     HostVideoInputDeviceList *pList = (HostVideoInputDeviceList *)pvUser;
-    HRESULT hr = hostVideoInputDeviceAdd(pList, pszName, pszPath, pszAlias);
-    if (FAILED(hr))
+    HRESULT hrc = hostVideoInputDeviceAdd(pList, pszName, pszPath, pszAlias);
+    if (FAILED(hrc))
     {
-        *pu64Result = (uint64_t)hr;
+        *pu64Result = (uint64_t)hrc;
         return VERR_NOT_SUPPORTED;
     }
     return VINF_SUCCESS;
@@ -194,17 +194,15 @@ static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHO
 
 static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList *pList)
 {
-    HRESULT hr;
     Utf8Str strLibrary;
-
 #ifdef VBOX_WITH_EXTPACK
     ExtPackManager *pExtPackMgr = pVirtualBox->i_getExtPackManager();
-    hr = pExtPackMgr->i_getLibraryPathForExtPack("VBoxHostWebcam", ORACLE_PUEL_EXTPACK_NAME, &strLibrary);
+    HRESULT hrc = pExtPackMgr->i_getLibraryPathForExtPack("VBoxHostWebcam", ORACLE_PUEL_EXTPACK_NAME, &strLibrary);
 #else
-    hr = E_NOTIMPL;
+    HRESULT hrc = E_NOTIMPL;
 #endif
 
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hrc))
     {
         PFNVBOXHOSTWEBCAMLIST pfn = NULL;
         RTLDRMOD hmod = NIL_RTLDRMOD;
@@ -222,35 +220,29 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
             vrc = pfn(hostWebcamAdd, pList, &u64Result);
             Log(("VBoxHostWebcamList vrc %Rrc, result 0x%08RX64\n", vrc, u64Result));
             if (RT_FAILURE(vrc))
-            {
-                hr = (HRESULT)u64Result;
-            }
+                hrc = (HRESULT)u64Result;
 
             RTLdrClose(hmod);
             hmod = NIL_RTLDRMOD;
         }
 
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hrc))
         {
             if (RT_FAILURE(vrc))
-                hr = pVirtualBox->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                               HostVideoInputDevice::tr("Failed to get webcam list: %Rrc"), vrc);
+                hrc = pVirtualBox->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                                HostVideoInputDevice::tr("Failed to get webcam list: %Rrc"), vrc);
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 /* static */ HRESULT HostVideoInputDevice::queryHostDevices(VirtualBox *pVirtualBox, HostVideoInputDeviceList *pList)
 {
-    HRESULT hr = fillDeviceList(pVirtualBox, pList);
-
-    if (FAILED(hr))
-    {
+    HRESULT hrc = fillDeviceList(pVirtualBox, pList);
+    if (FAILED(hrc))
         pList->clear();
-    }
-
-    return hr;
+    return hrc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
