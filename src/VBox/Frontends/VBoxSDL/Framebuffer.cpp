@@ -190,12 +190,7 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
     /* default to DirectX if nothing else set */
     if (!RTEnvExist("SDL_VIDEODRIVER"))
     {
-# ifndef VBOX_WITH_SDL2
-        /* Always select the windib driver by default, as the directx one is known to be broken on newer Windows OSes. */
-        RTEnvSet("SDL_VIDEODRIVER", "windib");
-# else
         RTEnvSet("SDL_VIDEODRIVER", "directx");
-# endif
     }
 #endif
 #ifdef VBOXSDL_WITH_X11

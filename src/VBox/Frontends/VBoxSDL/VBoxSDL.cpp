@@ -229,9 +229,6 @@ static SDL_Cursor *gpDefaultCursor = NULL;
 static Cursor      gpDefaultOrigX11Cursor;
 #endif
 static SDL_Cursor *gpCustomCursor = 0;
-#ifndef VBOX_WITH_SDL2
-static WMcursor   *gpCustomOrigWMcursor = NULL;
-#endif
 static SDL_Cursor *gpOffCursor = NULL;
 static SDL_TimerID gSdlResizeTimer = 0;
 static SDL_TimerID gSdlQuitTimer = 0;
@@ -758,7 +755,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * and work around the missing KeyPress/KeyRelease events in ProcessKeys().
      */
     {
-#ifndef VBOX_WITH_SDL2
+#if 0
         const SDL_version *pVersion = SDL_Linked_Version();
         if (  SDL_VERSIONNUM(pVersion->major, pVersion->minor, pVersion->patch)
             < SDL_VERSIONNUM(1, 2, 14))
@@ -775,25 +772,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                       || !strcmp(argv[1], "--detecthostkey")))
     {
         Uint32 fInitSubSystem = SDL_INIT_VIDEO | SDL_INIT_TIMER;
-#ifndef VBOX_WITH_SDL2
-        fInitSubSystem |= SDL_INIT_NOPARACHUTE;
-#endif
         int rc = SDL_InitSubSystem(fInitSubSystem);
         if (rc != 0)
         {
             RTPrintf("Error: SDL_InitSubSystem failed with message '%s'\n", SDL_GetError());
             return 1;
         }
-        /* we need a video window for the keyboard stuff to work */
-#ifndef VBOX_WITH_SDL2 /** @todo Is this correct? */
-        if (!SDL_SetVideoMode(640, 480, 16, SDL_SWSURFACE))
-        {
-            RTPrintf("Error: could not set SDL video mode\n");
-            return 1;
-        }
-#endif
         RTPrintf("Please hit one or two function key(s) to get the --hostkey value...\n");
-
         SDL_Event event1;
         while (SDL_WaitEvent(&event1))
         {
@@ -2568,7 +2553,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
 
-#ifndef VBOX_WITH_SDL2
+#ifndef 0
             /*
              * The window has gained or lost focus.
              */
@@ -2612,7 +2597,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
 #endif
-
             /*
              * User specific update event.
              */
@@ -2826,43 +2810,6 @@ leave:
         hrc = pSession->UnlockMachine();
         AssertComRC(hrc);
     }
-
-#ifndef VBOX_WITH_SDL2
-    /* restore the default cursor and free the custom one if any */
-    if (gpDefaultCursor)
-    {
-# ifdef VBOXSDL_WITH_X11
-        Cursor pDefaultTempX11Cursor = 0;
-        if (gfXCursorEnabled)
-        {
-            pDefaultTempX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
-            *(Cursor*)gpDefaultCursor->wm_cursor = gpDefaultOrigX11Cursor;
-        }
-# endif /* VBOXSDL_WITH_X11 */
-        SDL_SetCursor(gpDefaultCursor);
-# if defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
-        if (gfXCursorEnabled)
-            XFreeCursor(gSdlInfo.info.x11.display, pDefaultTempX11Cursor);
-# endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
-    }
-
-    if (gpCustomCursor)
-    {
-        WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
-        gpCustomCursor->wm_cursor = gpCustomOrigWMcursor;
-        SDL_FreeCursor(gpCustomCursor);
-        if (pCustomTempWMCursor)
-        {
-# if defined(RT_OS_WINDOWS)
-            ::DestroyCursor(*(HCURSOR *)pCustomTempWMCursor);
-# elif defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
-            if (gfXCursorEnabled)
-                XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *)pCustomTempWMCursor);
-# endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
-            free(pCustomTempWMCursor);
-        }
-    }
-#endif
 
     LogFlow(("Releasing mouse, keyboard, remote desktop server, display, console...\n"));
     if (gpDisplay)
@@ -4381,40 +4328,6 @@ static void SetPointerShape(const PointerShapeChangeData *data)
                 srcShapePtr += srcShapePtrScan;
                 dstShapePtr += data->width;
             }
-
-#ifndef VBOX_WITH_SDL2 /** @BUGBUG Implement alpha cursor support handling. */
-            ICONINFO ii;
-            ii.fIcon = FALSE;
-            ii.xHotspot = data->xHot;
-            ii.yHotspot = data->yHot;
-            ii.hbmMask = hMonoBitmap;
-            ii.hbmColor = hBitmap;
-
-            HCURSOR hAlphaCursor = ::CreateIconIndirect(&ii);
-            Assert(hAlphaCursor);
-            if (hAlphaCursor)
-            {
-                // here we do a dirty trick by substituting a Window Manager's
-                // cursor handle with the handle we created
-
-                WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
-                // see SDL12/src/video/wincommon/SDL_sysmouse.c
-                void *wm_cursor = malloc(sizeof(HCURSOR) + sizeof(uint8_t *) * 2);
-                *(HCURSOR *)wm_cursor = hAlphaCursor;
-
-                gpCustomCursor->wm_cursor = (WMcursor *)wm_cursor;
-                SDL_SetCursor(gpCustomCursor);
-                SDL_ShowCursor(SDL_ENABLE);
-
-                if (pCustomTempWMCursor)
-                {
-                    ::DestroyCursor(*(HCURSOR *)pCustomTempWMCursor);
-                    free(pCustomTempWMCursor);
-                }
-
-                ok = true;
-            }
-#endif
         }
 
         if (hMonoBitmap)
@@ -4469,34 +4382,6 @@ static void SetPointerShape(const PointerShapeChangeData *data)
                     srcShapePtr += srcShapePtrScan;
                     dstShapePtr += data->width;
                 }
-
-#ifndef VBOX_WITH_SDL2
-                Cursor cur = XcursorImageLoadCursor(gSdlInfo.info.x11.display, img);
-                Assert(cur);
-                if (cur)
-                {
-                    // here we do a dirty trick by substituting a Window Manager's
-                    // cursor handle with the handle we created
-
-                    WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
-
-                    // see SDL12/src/video/x11/SDL_x11mouse.c
-                    void *wm_cursor = malloc(sizeof(Cursor));
-                    *(Cursor *)wm_cursor = cur;
-
-                    gpCustomCursor->wm_cursor = (WMcursor *)wm_cursor;
-                    SDL_SetCursor(gpCustomCursor);
-                    SDL_ShowCursor(SDL_ENABLE);
-
-                    if (pCustomTempWMCursor)
-                    {
-                        XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *)pCustomTempWMCursor);
-                        free(pCustomTempWMCursor);
-                    }
-
-                    ok = true;
-                }
-#endif
             }
             XcursorImageDestroy(img);
         }
