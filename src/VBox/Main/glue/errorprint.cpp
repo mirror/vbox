@@ -56,7 +56,7 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
 
     try
     {
-        HRESULT rc = S_OK;
+        HRESULT hrc = S_OK;
         Utf8Str str;
         RTCList<Utf8Str> comp;
 
@@ -66,8 +66,8 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
                              bstrDetailsText.raw());
         if (haveResultCode)
         {
-            rc = info.getResultCode();
-            comp.append(Utf8StrFmt("code %Rhrc (0x%RX32)", rc, rc));
+            hrc = info.getResultCode();
+            comp.append(Utf8StrFmt("code %Rhrc (0x%RX32)", hrc, hrc));
         }
         if (haveComponent)
             comp.append(Utf8StrFmt("component %ls",
@@ -89,7 +89,7 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
         }
 
         // print and log
-        if (FAILED(rc))
+        if (FAILED(hrc))
         {
             RTMsgError("%s", str.c_str());
             Log(("ERROR: %s", str.c_str()));
@@ -125,24 +125,24 @@ void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, 
     }
 }
 
-void GluePrintRCMessage(HRESULT rc)
+void GluePrintRCMessage(HRESULT hrc)
 {
     // print and log
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
-        RTMsgError("Code %Rhra (extended info not available)\n", rc);
-        Log(("ERROR: Code %Rhra (extended info not available)\n", rc));
+        RTMsgError("Code %Rhra (extended info not available)\n", hrc);
+        Log(("ERROR: Code %Rhra (extended info not available)\n", hrc));
     }
     else
     {
-        RTMsgWarning("Code %Rhra (extended info not available)\n", rc);
-        Log(("WARNING: Code %Rhra (extended info not available)\n", rc));
+        RTMsgWarning("Code %Rhra (extended info not available)\n", hrc);
+        Log(("WARNING: Code %Rhra (extended info not available)\n", hrc));
     }
 }
 
 static void glueHandleComErrorInternal(com::ErrorInfo &info,
                                        const char *pcszContext,
-                                       HRESULT rc,
+                                       HRESULT hrc,
                                        const char *pcszSourceFile,
                                        uint32_t ulLine)
 {
@@ -153,11 +153,11 @@ static void glueHandleComErrorInternal(com::ErrorInfo &info,
         {
             GluePrintErrorInfo(*pInfo);
 
-            /* Use rc for figuring out if there were just warnings. */
-            HRESULT rc2 = pInfo->getResultCode();
-            if (   (SUCCEEDED_WARNING(rc) && FAILED(rc2))
-                || (SUCCEEDED(rc) && (FAILED(rc2) || SUCCEEDED_WARNING(rc2))))
-                rc = rc2;
+            /* Use hrc for figuring out if there were just warnings. */
+            HRESULT hrc2 = pInfo->getResultCode();
+            if (   (SUCCEEDED_WARNING(hrc) && FAILED(hrc2))
+                || (SUCCEEDED(hrc) && (FAILED(hrc2) || SUCCEEDED_WARNING(hrc2))))
+                hrc = hrc2;
 
             pInfo = pInfo->getNext();
             /* If there is more than one error, separate them visually. */
@@ -170,19 +170,18 @@ static void glueHandleComErrorInternal(com::ErrorInfo &info,
 
                 RTMsgError("--------\n");
             }
-        }
-        while (pInfo);
+        } while (pInfo);
     }
     else
-        GluePrintRCMessage(rc);
+        GluePrintRCMessage(hrc);
 
     if (pcszContext != NULL || pcszSourceFile != NULL)
-        GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine, SUCCEEDED_WARNING(rc));
+        GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine, SUCCEEDED_WARNING(hrc));
 }
 
 void GlueHandleComError(ComPtr<IUnknown> iface,
                         const char *pcszContext,
-                        HRESULT rc,
+                        HRESULT hrc,
                         const char *pcszSourceFile,
                         uint32_t ulLine)
 {
@@ -192,20 +191,20 @@ void GlueHandleComError(ComPtr<IUnknown> iface,
 
     glueHandleComErrorInternal(info,
                                pcszContext,
-                               rc,
+                               hrc,
                                pcszSourceFile,
                                ulLine);
 
 }
 
-void GlueHandleComErrorNoCtx(ComPtr<IUnknown> iface, HRESULT rc)
+void GlueHandleComErrorNoCtx(ComPtr<IUnknown> iface, HRESULT hrc)
 {
-    GlueHandleComError(iface, NULL, rc, NULL, 0);
+    GlueHandleComError(iface, NULL, hrc, NULL, 0);
 }
 
 void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
                                 const char *pcszContext,
-                                HRESULT rc,
+                                HRESULT hrc,
                                 const char *pcszSourceFile,
                                 uint32_t ulLine)
 {
@@ -214,7 +213,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
 
     glueHandleComErrorInternal(ei,
                                pcszContext,
-                               rc,
+                               hrc,
                                pcszSourceFile,
                                ulLine);
 }

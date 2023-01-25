@@ -93,9 +93,9 @@ int main(int argc, char* argv[])
     const char *pcszArgEndpoint = "http://localhost:18083/";
 
     /* SSL callbacks drag in IPRT sem/thread use, so make sure it is ready. */
-    int rc = RTR3InitExe(argc, &argv, 0);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
+    int vrc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 
     int ap;
     for (ap = 1; ap < argc; ap++)

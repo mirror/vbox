@@ -43,10 +43,10 @@ static char *readfileIntoBuffer(const char *pszFile, size_t *pcbFile)
     FILE *pFileIn = fopen(pszFile, "rb");
     if (pFileIn)
     {
-        int rc2 = fseek(pFileIn, 0, SEEK_END);
+        int iRc2 = fseek(pFileIn, 0, SEEK_END);
         long cbFileIn = ftell(pFileIn);
-        int rc3 = fseek(pFileIn, 0, SEEK_SET);
-        if (rc3 != -1 && rc2 != -1 && cbFileIn >= 0)
+        int iRc3 = fseek(pFileIn, 0, SEEK_SET);
+        if (iRc3 != -1 && iRc2 != -1 && cbFileIn >= 0)
         {
             char *pBuffer = (char *)malloc(cbFileIn + 1);
             if (pBuffer)

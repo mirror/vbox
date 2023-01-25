@@ -111,8 +111,8 @@ Bstr::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbC
     if (cbChars)
     {
         size_t cwcAppend;
-        int rc = ::RTStrCalcUtf16LenEx(pachChars, cbChars, &cwcAppend);
-        AssertRCReturnStmt(rc, pArgs->hrc = E_UNEXPECTED, 0);
+        int vrc = ::RTStrCalcUtf16LenEx(pachChars, cbChars, &cwcAppend);
+        AssertRCReturnStmt(vrc, pArgs->hrc = E_UNEXPECTED, 0);
 
         /*
          * Ensure we've got sufficient memory.
@@ -142,8 +142,8 @@ Bstr::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbC
          */
         PRTUTF16 pwszDst = pThis->m_bstr + pArgs->offDst;
         Assert(pArgs->cwcAlloc > pArgs->offDst);
-        rc = ::RTStrToUtf16Ex(pachChars, cbChars, &pwszDst, pArgs->cwcAlloc - pArgs->offDst, &cwcAppend);
-        AssertRCReturnStmt(rc, pArgs->hrc = E_UNEXPECTED, 0);
+        vrc = ::RTStrToUtf16Ex(pachChars, cbChars, &pwszDst, pArgs->cwcAlloc - pArgs->offDst, &cwcAppend);
+        AssertRCReturnStmt(vrc, pArgs->hrc = E_UNEXPECTED, 0);
         pArgs->offDst += cwcAppend;
     }
     return cbChars;
@@ -268,12 +268,12 @@ int Bstr::compareUtf8(const char *a_pszRight, CaseSensitivity a_enmCase /*= Case
     for (;;)
     {
         RTUNICP ucLeft;
-        int rc = RTUtf16GetCpEx(&pwszLeft, &ucLeft);
-        AssertRCReturn(rc, 1);
+        int vrc = RTUtf16GetCpEx(&pwszLeft, &ucLeft);
+        AssertRCReturn(vrc, 1);
 
         RTUNICP ucRight;
-        rc = RTStrGetCpEx(&a_pszRight, &ucRight);
-        AssertRCReturn(rc, -1);
+        vrc = RTStrGetCpEx(&a_pszRight, &ucRight);
+        AssertRCReturn(vrc, -1);
         if (ucLeft == ucRight)
         {
             if (ucLeft)
@@ -576,11 +576,11 @@ HRESULT Bstr::appendWorkerUtf16NoThrow(PCRTUTF16 pwszSrc, size_t cwcSrc) RT_NOEX
 Bstr &Bstr::appendWorkerUtf8(const char *pszSrc, size_t cchSrc)
 {
     size_t cwcSrc;
-    int rc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
+    int vrc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
 #ifdef RT_EXCEPTIONS_ENABLED
-    AssertRCStmt(rc, throw std::bad_alloc());
+    AssertRCStmt(vrc, throw std::bad_alloc());
 #else
-    AssertRCReturn(rc, *this);
+    AssertRCReturn(vrc, *this);
 #endif
 
     size_t cwcOld = length();
@@ -589,11 +589,11 @@ Bstr &Bstr::appendWorkerUtf8(const char *pszSrc, size_t cchSrc)
     if (cwcSrc)
     {
         PRTUTF16 pwszDst = &m_bstr[cwcOld];
-        rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
+        vrc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
 #ifdef RT_EXCEPTIONS_ENABLED
-        AssertRCStmt(rc, throw std::bad_alloc());
+        AssertRCStmt(vrc, throw std::bad_alloc());
 #else
-        AssertRC(rc);
+        AssertRC(vrc);
 #endif
     }
     m_bstr[cwcTotal] = '\0';
@@ -604,8 +604,8 @@ Bstr &Bstr::appendWorkerUtf8(const char *pszSrc, size_t cchSrc)
 HRESULT Bstr::appendWorkerUtf8NoThrow(const char *pszSrc, size_t cchSrc) RT_NOEXCEPT
 {
     size_t cwcSrc;
-    int rc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
-    AssertRCStmt(rc, E_INVALIDARG);
+    int vrc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
+    AssertRCStmt(vrc, E_INVALIDARG);
 
     size_t cwcOld = length();
     size_t cwcTotal = cwcOld + cwcSrc;
@@ -614,8 +614,8 @@ HRESULT Bstr::appendWorkerUtf8NoThrow(const char *pszSrc, size_t cchSrc) RT_NOEX
     if (cwcSrc)
     {
         PRTUTF16 pwszDst = &m_bstr[cwcOld];
-        rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
-        AssertRCStmt(rc, E_INVALIDARG);
+        vrc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
+        AssertRCStmt(vrc, E_INVALIDARG);
     }
     m_bstr[cwcTotal] = '\0';
     return S_OK;

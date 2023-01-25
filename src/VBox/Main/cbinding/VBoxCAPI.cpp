@@ -228,18 +228,18 @@ VBoxSafeArrayDestroy(SAFEARRAY *psa)
     return S_OK;
 #else /* !VBOX_WITH_XPCOM */
     VARTYPE vt = VT_UNKNOWN;
-    HRESULT rc = SafeArrayGetVartype(psa, &vt);
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = SafeArrayGetVartype(psa, &vt);
+    if (FAILED(hrc))
+        return hrc;
     if (vt == VT_BSTR)
     {
         /* Special treatment: strings are to be freed explicitly, see sample
          * C binding code, so zap it here. No way to reach compatible code
          * behavior between COM and XPCOM without this kind of trickery. */
         void *pData;
-        rc = SafeArrayAccessData(psa, &pData);
-        if (FAILED(rc))
-            return rc;
+        hrc = SafeArrayAccessData(psa, &pData);
+        if (FAILED(hrc))
+            return hrc;
         ULONG cbElement = VBoxVTElemSize(vt);
         if (!cbElement)
             return E_INVALIDARG;
@@ -264,9 +264,9 @@ VBoxSafeArrayCopyInParamHelper(SAFEARRAY *psa, const void *pv, ULONG cb)
 #ifdef VBOX_WITH_XPCOM
     pData = psa->pv;
 #else /* !VBOX_WITH_XPCOM */
-    HRESULT rc = SafeArrayAccessData(psa, &pData);
-    if (FAILED(rc))
-        return rc;
+    HRESULT hrc = SafeArrayAccessData(psa, &pData);
+    if (FAILED(hrc))
+        return hrc;
 #endif /* !VBOX_WITH_XPCOM */
     memcpy(pData, pv, cb);
 #ifndef VBOX_WITH_XPCOM
@@ -304,13 +304,13 @@ VBoxSafeArrayCopyOutParamHelper(void **ppv, ULONG *pcb, VARTYPE vt, SAFEARRAY *p
     pData = psa->pv;
     cElements = psa->c;
 #else /* !VBOX_WITH_XPCOM */
-    HRESULT rc = SafeArrayAccessData(psa, &pData);
-    if (FAILED(rc))
+    HRESULT hrc = SafeArrayAccessData(psa, &pData);
+    if (FAILED(hrc))
     {
         *ppv = NULL;
         if (pcb)
             *pcb = 0;
-        return rc;
+        return hrc;
     }
     cElements = psa->rgsabound[0].cElements;
 #endif /* !VBOX_WITH_XPCOM */
@@ -342,12 +342,12 @@ static HRESULT
 VBoxSafeArrayCopyOutIfaceParamHelper(IUnknown ***ppaObj, ULONG *pcObj, SAFEARRAY *psa)
 {
     ULONG mypcb;
-    HRESULT rc = VBoxSafeArrayCopyOutParamHelper((void **)ppaObj, &mypcb, VT_UNKNOWN, psa);
-    if (FAILED(rc))
+    HRESULT hrc = VBoxSafeArrayCopyOutParamHelper((void **)ppaObj, &mypcb, VT_UNKNOWN, psa);
+    if (FAILED(hrc))
     {
         if (pcObj)
             *pcObj = 0;
-        return rc;
+        return hrc;
     }
     ULONG cElements = mypcb / sizeof(void *);
     if (pcObj)
@@ -403,19 +403,19 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
     else
         sessionIID = IID_ISession;
 
-    HRESULT rc = com::Initialize(VBOX_COM_INIT_F_DEFAULT | VBOX_COM_INIT_F_NO_COM_PATCHING);
-    if (FAILED(rc))
+    HRESULT hrc = com::Initialize(VBOX_COM_INIT_F_DEFAULT | VBOX_COM_INIT_F_NO_COM_PATCHING);
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: COM/XPCOM could not be initialized! rc=%Rhrc\n", rc));
+        Log(("Cbinding: COM/XPCOM could not be initialized! hrc=%Rhrc\n", hrc));
         VBoxComUninitialize();
         return;
     }
 
 #ifdef VBOX_WITH_XPCOM
-    rc = NS_GetMainEventQ(&g_EventQueue);
-    if (FAILED(rc))
+    hrc = NS_GetMainEventQ(&g_EventQueue);
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: Could not get XPCOM event queue! rc=%Rhrc\n", rc));
+        Log(("Cbinding: Could not get XPCOM event queue! hrc=%Rhrc\n", hrc));
         VBoxComUninitialize();
         return;
     }
@@ -423,36 +423,36 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 
 #ifdef VBOX_WITH_XPCOM
     nsIComponentManager *pManager;
-    rc = NS_GetComponentManager(&pManager);
-    if (FAILED(rc))
+    hrc = NS_GetComponentManager(&pManager);
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: Could not get component manager! rc=%Rhrc\n", rc));
+        Log(("Cbinding: Could not get component manager! hrc=%Rhrc\n", hrc));
         VBoxComUninitialize();
         return;
     }
 
-    rc = pManager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
-                                              nsnull,
-                                              virtualBoxIID,
-                                              (void **)&g_VirtualBox);
+    hrc = pManager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
+                                               nsnull,
+                                               virtualBoxIID,
+                                               (void **)&g_VirtualBox);
 #else /* !VBOX_WITH_XPCOM */
     IVirtualBoxClient *pVirtualBoxClient;
-    rc = CoCreateInstance(CLSID_VirtualBoxClient, NULL, CLSCTX_INPROC_SERVER, IID_IVirtualBoxClient, (void **)&pVirtualBoxClient);
-    if (SUCCEEDED(rc))
+    hrc = CoCreateInstance(CLSID_VirtualBoxClient, NULL, CLSCTX_INPROC_SERVER, IID_IVirtualBoxClient, (void **)&pVirtualBoxClient);
+    if (SUCCEEDED(hrc))
     {
         IVirtualBox *pVirtualBox;
-        rc = pVirtualBoxClient->get_VirtualBox(&pVirtualBox);
-        if (SUCCEEDED(rc))
+        hrc = pVirtualBoxClient->get_VirtualBox(&pVirtualBox);
+        if (SUCCEEDED(hrc))
         {
-            rc = pVirtualBox->QueryInterface(virtualBoxIID, (void **)&g_VirtualBox);
+            hrc = pVirtualBox->QueryInterface(virtualBoxIID, (void **)&g_VirtualBox);
             pVirtualBox->Release();
         }
         pVirtualBoxClient->Release();
     }
 #endif /* !VBOX_WITH_XPCOM */
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: Could not instantiate VirtualBox object! rc=%Rhrc\n",rc));
+        Log(("Cbinding: Could not instantiate VirtualBox object! hrc=%Rhrc\n",hrc));
 #ifdef VBOX_WITH_XPCOM
         pManager->Release();
         pManager = NULL;
@@ -464,16 +464,13 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
     Log(("Cbinding: IVirtualBox object created.\n"));
 
 #ifdef VBOX_WITH_XPCOM
-    rc = pManager->CreateInstanceByContractID(NS_SESSION_CONTRACTID,
-                                              nsnull,
-                                              sessionIID,
-                                              (void **)&g_Session);
+    hrc = pManager->CreateInstanceByContractID(NS_SESSION_CONTRACTID, nsnull, sessionIID, (void **)&g_Session);
 #else /* !VBOX_WITH_XPCOM */
-    rc = CoCreateInstance(CLSID_Session, NULL, CLSCTX_INPROC_SERVER, sessionIID, (void **)&g_Session);
+    hrc = CoCreateInstance(CLSID_Session, NULL, CLSCTX_INPROC_SERVER, sessionIID, (void **)&g_Session);
 #endif /* !VBOX_WITH_XPCOM */
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: Could not instantiate Session object! rc=%Rhrc\n",rc));
+        Log(("Cbinding: Could not instantiate Session object! hrc=%Rhrc\n",hrc));
 #ifdef VBOX_WITH_XPCOM
         pManager->Release();
         pManager = NULL;
@@ -567,42 +564,42 @@ VBoxInterruptEventQueueProcessing(void)
 static HRESULT
 VBoxGetException(IErrorInfo **ppException)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
     *ppException = NULL;
 
 #ifdef VBOX_WITH_XPCOM
     nsIServiceManager *mgr = NULL;
-    rc = NS_GetServiceManager(&mgr);
-    if (FAILED(rc) || !mgr)
-        return rc;
+    hrc = NS_GetServiceManager(&mgr);
+    if (FAILED(hrc) || !mgr)
+        return hrc;
 
     IID esid = NS_IEXCEPTIONSERVICE_IID;
     nsIExceptionService *es = NULL;
-    rc = mgr->GetServiceByContractID(NS_EXCEPTIONSERVICE_CONTRACTID, esid, (void **)&es);
-    if (FAILED(rc) || !es)
+    hrc = mgr->GetServiceByContractID(NS_EXCEPTIONSERVICE_CONTRACTID, esid, (void **)&es);
+    if (FAILED(hrc) || !es)
     {
         mgr->Release();
-        return rc;
+        return hrc;
     }
 
     nsIExceptionManager *em;
-    rc = es->GetCurrentExceptionManager(&em);
-    if (FAILED(rc) || !em)
+    hrc = es->GetCurrentExceptionManager(&em);
+    if (FAILED(hrc) || !em)
     {
         es->Release();
         mgr->Release();
-        return rc;
+        return hrc;
     }
 
     nsIException *ex;
-    rc = em->GetCurrentException(&ex);
-    if (FAILED(rc))
+    hrc = em->GetCurrentException(&ex);
+    if (FAILED(hrc))
     {
         em->Release();
         es->Release();
         mgr->Release();
-        return rc;
+        return hrc;
     }
 
     *ppException = ex;
@@ -611,54 +608,54 @@ VBoxGetException(IErrorInfo **ppException)
     mgr->Release();
 #else /* !VBOX_WITH_XPCOM */
     IErrorInfo *ex;
-    rc = ::GetErrorInfo(0, &ex);
-    if (FAILED(rc))
-        return rc;
+    hrc = ::GetErrorInfo(0, &ex);
+    if (FAILED(hrc))
+        return hrc;
 
     *ppException = ex;
 #endif /* !VBOX_WITH_XPCOM */
 
-    return rc;
+    return hrc;
 }
 
 static HRESULT
 VBoxClearException(void)
 {
-    HRESULT rc;
+    HRESULT hrc;
 
 #ifdef VBOX_WITH_XPCOM
     nsIServiceManager *mgr = NULL;
-    rc = NS_GetServiceManager(&mgr);
-    if (FAILED(rc) || !mgr)
-        return rc;
+    hrc = NS_GetServiceManager(&mgr);
+    if (FAILED(hrc) || !mgr)
+        return hrc;
 
     IID esid = NS_IEXCEPTIONSERVICE_IID;
     nsIExceptionService *es = NULL;
-    rc = mgr->GetServiceByContractID(NS_EXCEPTIONSERVICE_CONTRACTID, esid, (void **)&es);
-    if (FAILED(rc) || !es)
+    hrc = mgr->GetServiceByContractID(NS_EXCEPTIONSERVICE_CONTRACTID, esid, (void **)&es);
+    if (FAILED(hrc) || !es)
     {
         mgr->Release();
-        return rc;
+        return hrc;
     }
 
     nsIExceptionManager *em;
-    rc = es->GetCurrentExceptionManager(&em);
-    if (FAILED(rc) || !em)
+    hrc = es->GetCurrentExceptionManager(&em);
+    if (FAILED(hrc) || !em)
     {
         es->Release();
         mgr->Release();
-        return rc;
+        return hrc;
     }
 
-    rc = em->SetCurrentException(NULL);
+    hrc = em->SetCurrentException(NULL);
     em->Release();
     es->Release();
     mgr->Release();
 #else /* !VBOX_WITH_XPCOM */
-    rc = ::SetErrorInfo(0, NULL);
+    hrc = ::SetErrorInfo(0, NULL);
 #endif /* !VBOX_WITH_XPCOM */
 
-    return rc;
+    return hrc;
 }
 
 static HRESULT
@@ -678,50 +675,50 @@ VBoxClientInitialize(const char *pszVirtualBoxClientIID, IVirtualBoxClient **ppV
     else
         virtualBoxClientIID = IID_IVirtualBoxClient;
 
-    HRESULT rc = com::Initialize(VBOX_COM_INIT_F_DEFAULT | VBOX_COM_INIT_F_NO_COM_PATCHING);
-    if (FAILED(rc))
+    HRESULT hrc = com::Initialize(VBOX_COM_INIT_F_DEFAULT | VBOX_COM_INIT_F_NO_COM_PATCHING);
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: COM/XPCOM could not be initialized! rc=%Rhrc\n", rc));
+        Log(("Cbinding: COM/XPCOM could not be initialized! hrc=%Rhrc\n", hrc));
         VBoxClientUninitialize();
-        return rc;
+        return hrc;
     }
 
 #ifdef VBOX_WITH_XPCOM
-    rc = NS_GetMainEventQ(&g_EventQueue);
-    if (NS_FAILED(rc))
+    hrc = NS_GetMainEventQ(&g_EventQueue);
+    if (NS_FAILED(hrc))
     {
-        Log(("Cbinding: Could not get XPCOM event queue! rc=%Rhrc\n", rc));
+        Log(("Cbinding: Could not get XPCOM event queue! hrc=%Rhrc\n", hrc));
         VBoxClientUninitialize();
-        return rc;
+        return hrc;
     }
 #endif /* VBOX_WITH_XPCOM */
 
 #ifdef VBOX_WITH_XPCOM
     nsIComponentManager *pManager;
-    rc = NS_GetComponentManager(&pManager);
-    if (FAILED(rc))
+    hrc = NS_GetComponentManager(&pManager);
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: Could not get component manager! rc=%Rhrc\n", rc));
+        Log(("Cbinding: Could not get component manager! hrc=%Rhrc\n", hrc));
         VBoxClientUninitialize();
-        return rc;
+        return hrc;
     }
 
-    rc = pManager->CreateInstanceByContractID(NS_VIRTUALBOXCLIENT_CONTRACTID,
-                                              nsnull,
-                                              virtualBoxClientIID,
-                                              (void **)ppVirtualBoxClient);
+    hrc = pManager->CreateInstanceByContractID(NS_VIRTUALBOXCLIENT_CONTRACTID,
+                                               nsnull,
+                                               virtualBoxClientIID,
+                                               (void **)ppVirtualBoxClient);
 #else /* !VBOX_WITH_XPCOM */
-    rc = CoCreateInstance(CLSID_VirtualBoxClient, NULL, CLSCTX_INPROC_SERVER, virtualBoxClientIID, (void **)ppVirtualBoxClient);
+    hrc = CoCreateInstance(CLSID_VirtualBoxClient, NULL, CLSCTX_INPROC_SERVER, virtualBoxClientIID, (void **)ppVirtualBoxClient);
 #endif /* !VBOX_WITH_XPCOM */
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
-        Log(("Cbinding: Could not instantiate VirtualBoxClient object! rc=%Rhrc\n",rc));
+        Log(("Cbinding: Could not instantiate VirtualBoxClient object! hrc=%Rhrc\n",hrc));
 #ifdef VBOX_WITH_XPCOM
         pManager->Release();
         pManager = NULL;
 #endif /* VBOX_WITH_XPCOM */
         VBoxClientUninitialize();
-        return rc;
+        return hrc;
     }
 
 #ifdef VBOX_WITH_XPCOM

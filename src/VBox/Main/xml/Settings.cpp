@@ -496,15 +496,15 @@ void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
              && (pcsz[16] == ':')
            )
         {
-            int rc;
-            if (    (RT_SUCCESS(rc = RTStrToInt32Ex(pcsz, NULL, 0, &yyyy)))
+            int vrc;
+            if (    (RT_SUCCESS(vrc = RTStrToInt32Ex(pcsz, NULL, 0, &yyyy)))
                         // could theoretically be negative but let's assume that nobody
                         // created virtual machines before the Christian era
-                 && (RT_SUCCESS(rc = RTStrToUInt32Ex(pcsz + 5, NULL, 0, &mm)))
-                 && (RT_SUCCESS(rc = RTStrToUInt32Ex(pcsz + 8, NULL, 0, &dd)))
-                 && (RT_SUCCESS(rc = RTStrToUInt32Ex(pcsz + 11, NULL, 0, &hh)))
-                 && (RT_SUCCESS(rc = RTStrToUInt32Ex(pcsz + 14, NULL, 0, &min)))
-                 && (RT_SUCCESS(rc = RTStrToUInt32Ex(pcsz + 17, NULL, 0, &secs)))
+                 && (RT_SUCCESS(vrc = RTStrToUInt32Ex(pcsz + 5, NULL, 0, &mm)))
+                 && (RT_SUCCESS(vrc = RTStrToUInt32Ex(pcsz + 8, NULL, 0, &dd)))
+                 && (RT_SUCCESS(vrc = RTStrToUInt32Ex(pcsz + 11, NULL, 0, &hh)))
+                 && (RT_SUCCESS(vrc = RTStrToUInt32Ex(pcsz + 14, NULL, 0, &min)))
+                 && (RT_SUCCESS(vrc = RTStrToUInt32Ex(pcsz + 17, NULL, 0, &secs)))
                )
             {
                 RTTIME time =
@@ -526,7 +526,7 @@ void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
                         return;
             }
 
-            throw ConfigFileError(this, pElm, N_("Cannot parse ISO timestamp '%s': runtime error, %Rra"), str.c_str(), rc);
+            throw ConfigFileError(this, pElm, N_("Cannot parse ISO timestamp '%s': runtime error, %Rra"), str.c_str(), vrc);
         }
 
         throw ConfigFileError(this, pElm, N_("Cannot parse ISO timestamp '%s': invalid format"), str.c_str());
@@ -2273,13 +2273,13 @@ bool MainConfigFile::convertGuiProxySettings(const com::Utf8Str &strUIProxySetti
                     uint16_t uPort = 1080;
                     if (pszEnd)
                     {
-                        int rc = RTStrToUInt16Ex(RTStrStripL(pszEnd + 1), NULL, 10, &uPort);
-                        if (RT_FAILURE(rc))
+                        int vrc = RTStrToUInt16Ex(RTStrStripL(pszEnd + 1), NULL, 10, &uPort);
+                        if (RT_FAILURE(vrc))
                             uPort = 1080;
                     }
                     RTURIPARSED Parsed;
-                    int rc = RTUriParse(systemProperties.strProxyUrl.c_str(), &Parsed);
-                    if (RT_SUCCESS(rc))
+                    int vrc = RTUriParse(systemProperties.strProxyUrl.c_str(), &Parsed);
+                    if (RT_SUCCESS(vrc))
                     {
                         if (Parsed.uAuthorityPort == UINT32_MAX)
                             systemProperties.strProxyUrl.appendPrintf(systemProperties.strProxyUrl.endsWith(":")
@@ -5009,16 +5009,16 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
         /* Check guest property 'name' and 'value' for correctness before
          * placing it to local cache. */
 
-        int rc = GuestPropValidateName(prop.strName.c_str(), prop.strName.length() + 1  /* '\0' */);
-        if (RT_FAILURE(rc))
+        int vrc = GuestPropValidateName(prop.strName.c_str(), prop.strName.length() + 1  /* '\0' */);
+        if (RT_FAILURE(vrc))
         {
             LogRel(("WARNING: Guest property with invalid name (%s) present in VM configuration file. Guest property will be dropped.\n",
                     prop.strName.c_str()));
             continue;
         }
 
-        rc = GuestPropValidateValue(prop.strValue.c_str(), prop.strValue.length() + 1  /* '\0' */);
-        if (rc == VERR_TOO_MUCH_DATA)
+        vrc = GuestPropValidateValue(prop.strValue.c_str(), prop.strValue.length() + 1  /* '\0' */);
+        if (vrc == VERR_TOO_MUCH_DATA)
         {
             LogRel(("WARNING: Guest property '%s' present in VM configuration file and has too long value. Guest property value will be truncated.\n",
                     prop.strName.c_str()));
@@ -5027,7 +5027,7 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
              * should be less than GUEST_PROP_MAX_VALUE_LEN. Chop it down to an appropriate length. */
             prop.strValue.truncate(GUEST_PROP_MAX_VALUE_LEN - 1 /*terminator*/);
         }
-        else if (RT_FAILURE(rc))
+        else if (RT_FAILURE(vrc))
         {
             LogRel(("WARNING: Guest property '%s' present in VM configuration file and has invalid value. Guest property will be dropped.\n",
                     prop.strName.c_str()));
@@ -6762,8 +6762,8 @@ void MachineConfigFile::readMachineEncrypted(const xml::ElementNode &elmMachine,
         }
 
         VBOXCRYPTOCTX hCryptoCtx = NULL;
-        int rc = pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), pszPassword, &hCryptoCtx);
-        if (RT_SUCCESS(rc))
+        int vrc = pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), pszPassword, &hCryptoCtx);
+        if (RT_SUCCESS(vrc))
         {
             com::Utf8Str str = elmMachine.getValue();
             IconBlob abEncrypted; /** @todo Rename IconBlob because this is not about icons. */
@@ -6772,23 +6772,23 @@ void MachineConfigFile::readMachineEncrypted(const xml::ElementNode &elmMachine,
             {
                 parseBase64(abEncrypted, str, &elmMachine);
             }
-            catch(...)
+            catch (...)
             {
-                int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
-                AssertRC(rc2);
+                int vrc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+                AssertRC(vrc2);
                 throw;
             }
 
             IconBlob abDecrypted(abEncrypted.size());
             size_t cbDecrypted = 0;
-            rc = pCryptoIf->pfnCryptoCtxDecrypt(hCryptoCtx, false /*fPartial*/,
-                                                &abEncrypted[0], abEncrypted.size(),
-                                                uuid.raw(), sizeof(RTUUID),
-                                                &abDecrypted[0], abDecrypted.size(), &cbDecrypted);
-            int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
-            AssertRC(rc2);
+            vrc = pCryptoIf->pfnCryptoCtxDecrypt(hCryptoCtx, false /*fPartial*/,
+                                                 &abEncrypted[0], abEncrypted.size(),
+                                                 uuid.raw(), sizeof(RTUUID),
+                                                 &abDecrypted[0], abDecrypted.size(), &cbDecrypted);
+            int vrc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+            AssertRC(vrc2);
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 abDecrypted.resize(cbDecrypted);
                 xml::XmlMemParser parser;
@@ -6802,12 +6802,12 @@ void MachineConfigFile::readMachineEncrypted(const xml::ElementNode &elmMachine,
             }
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
-            if (rc == VERR_ACCESS_DENIED)
+            if (vrc == VERR_ACCESS_DENIED)
                 enmParseState = ParseState_PasswordError;
             else
-                throw ConfigFileError(this, &elmMachine, N_("Parsing config failed. (%Rrc)"), rc);
+                throw ConfigFileError(this, &elmMachine, N_("Parsing config failed. (%Rrc)"), vrc);
         }
     }
     else
@@ -8803,19 +8803,19 @@ void MachineConfigFile::buildMachineEncryptedXML(xml::ElementNode &elmMachine,
     buildMachineXML(*pelmRoot, fl, pllElementsWithUuidAttributes);
     xml::XmlStringWriter writer;
     com::Utf8Str strMachineXml;
-    int rc = writer.write(*pDoc, &strMachineXml);
+    int vrc = writer.write(*pDoc, &strMachineXml);
     delete pDoc;
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         VBOXCRYPTOCTX hCryptoCtx;
         if (strKeyStore.isEmpty())
         {
-            rc = pCryptoIf->pfnCryptoCtxCreate("AES-GCM256", pszPassword, &hCryptoCtx);
-            if (RT_SUCCESS(rc))
+            vrc = pCryptoIf->pfnCryptoCtxCreate("AES-GCM256", pszPassword, &hCryptoCtx);
+            if (RT_SUCCESS(vrc))
             {
                 char *pszNewKeyStore;
-                rc = pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszNewKeyStore);
-                if (RT_SUCCESS(rc))
+                vrc = pCryptoIf->pfnCryptoCtxSave(hCryptoCtx, &pszNewKeyStore);
+                if (RT_SUCCESS(vrc))
                 {
                     strKeyStore = pszNewKeyStore;
                     RTStrFree(pszNewKeyStore);
@@ -8825,22 +8825,22 @@ void MachineConfigFile::buildMachineEncryptedXML(xml::ElementNode &elmMachine,
             }
         }
         else
-            rc = pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), pszPassword, &hCryptoCtx);
-        if (RT_SUCCESS(rc))
+            vrc = pCryptoIf->pfnCryptoCtxLoad(strKeyStore.c_str(), pszPassword, &hCryptoCtx);
+        if (RT_SUCCESS(vrc))
         {
             IconBlob abEncrypted;
             size_t cbEncrypted = 0;
-            rc = pCryptoIf->pfnCryptoCtxQueryEncryptedSize(hCryptoCtx, strMachineXml.length(), &cbEncrypted);
-            if (RT_SUCCESS(rc))
+            vrc = pCryptoIf->pfnCryptoCtxQueryEncryptedSize(hCryptoCtx, strMachineXml.length(), &cbEncrypted);
+            if (RT_SUCCESS(vrc))
             {
                 abEncrypted.resize(cbEncrypted);
-                rc = pCryptoIf->pfnCryptoCtxEncrypt(hCryptoCtx, false /*fPartial*/, NULL /*pvIV*/, 0 /*cbIV*/,
-                                                    strMachineXml.c_str(), strMachineXml.length(),
-                                                    uuid.raw(), sizeof(RTUUID),
-                                                    &abEncrypted[0], abEncrypted.size(), &cbEncrypted);
-                int rc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
-                AssertRC(rc2);
-                if (RT_SUCCESS(rc))
+                vrc = pCryptoIf->pfnCryptoCtxEncrypt(hCryptoCtx, false /*fPartial*/, NULL /*pvIV*/, 0 /*cbIV*/,
+                                                     strMachineXml.c_str(), strMachineXml.length(),
+                                                     uuid.raw(), sizeof(RTUUID),
+                                                     &abEncrypted[0], abEncrypted.size(), &cbEncrypted);
+                int vrc2 = pCryptoIf->pfnCryptoCtxDestroy(hCryptoCtx);
+                AssertRC(vrc2);
+                if (RT_SUCCESS(vrc))
                 {
                     abEncrypted.resize(cbEncrypted);
                     toBase64(strMachineXml, abEncrypted);
@@ -8852,11 +8852,11 @@ void MachineConfigFile::buildMachineEncryptedXML(xml::ElementNode &elmMachine,
             }
         }
 
-        if (RT_FAILURE(rc))
-            throw ConfigFileError(this, &elmMachine, N_("Creating machine encrypted xml failed. (%Rrc)"), rc);
+        if (RT_FAILURE(vrc))
+            throw ConfigFileError(this, &elmMachine, N_("Creating machine encrypted xml failed. (%Rrc)"), vrc);
     }
     else
-        throw ConfigFileError(this, &elmMachine, N_("Creating machine xml failed. (%Rrc)"), rc);
+        throw ConfigFileError(this, &elmMachine, N_("Creating machine xml failed. (%Rrc)"), vrc);
 }
 
 /**

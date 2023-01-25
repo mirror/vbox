@@ -162,24 +162,22 @@ NativeEventQueue::NativeEventQueue()
     // a VirtualBox::uninit() call from where it is already not possible to post
     // NULL to the event thread (because it stopped accepting events).
 
-    nsresult rc = NS_GetEventQueueService(getter_AddRefs(mEventQService));
+    nsresult hrc = NS_GetEventQueueService(getter_AddRefs(mEventQService));
 
-    if (NS_SUCCEEDED(rc))
+    if (NS_SUCCEEDED(hrc))
     {
-        rc = mEventQService->GetThreadEventQueue(NS_CURRENT_THREAD,
-                                                 getter_AddRefs(mEventQ));
-        if (rc == NS_ERROR_NOT_AVAILABLE)
+        hrc = mEventQService->GetThreadEventQueue(NS_CURRENT_THREAD, getter_AddRefs(mEventQ));
+        if (hrc == NS_ERROR_NOT_AVAILABLE)
         {
-            rc = mEventQService->CreateThreadEventQueue();
-            if (NS_SUCCEEDED(rc))
+            hrc = mEventQService->CreateThreadEventQueue();
+            if (NS_SUCCEEDED(hrc))
             {
                 mEQCreated = true;
-                rc = mEventQService->GetThreadEventQueue(NS_CURRENT_THREAD,
-                                                         getter_AddRefs(mEventQ));
+                hrc = mEventQService->GetThreadEventQueue(NS_CURRENT_THREAD, getter_AddRefs(mEventQ));
             }
         }
     }
-    AssertComRC(rc);
+    AssertComRC(hrc);
 
 #endif // VBOX_WITH_XPCOM
 }
@@ -355,26 +353,27 @@ static int waitForEventsOnXPCOM(nsIEventQueue *pQueue, RTMSINTERVAL cMsTimeout)
         ptv = &tv;
     }
 
-    int rc = select(fd + 1, &fdsetR, NULL, &fdsetE, ptv);
-    if (rc > 0)
-        rc = VINF_SUCCESS;
-    else if (rc == 0)
-        rc = VERR_TIMEOUT;
+    int iRc = select(fd + 1, &fdsetR, NULL, &fdsetE, ptv);
+    int vrc;
+    if (iRc > 0)
+        vrc = VINF_SUCCESS;
+    else if (iRc == 0)
+        vrc = VERR_TIMEOUT;
     else if (errno == EINTR)
-        rc = VINF_INTERRUPTED;
+        vrc = VINF_INTERRUPTED;
     else
     {
         static uint32_t s_ErrorCount = 0;
         if (s_ErrorCount < 500)
         {
-            LogRel(("waitForEventsOnXPCOM rc=%d errno=%d\n", rc, errno));
+            LogRel(("waitForEventsOnXPCOM iRc=%d errno=%d\n", iRc, errno));
             ++s_ErrorCount;
         }
 
-        AssertMsgFailed(("rc=%d errno=%d\n", rc, errno));
-        rc = VERR_INTERNAL_ERROR_4;
+        AssertMsgFailed(("iRc=%d errno=%d\n", iRc, errno));
+        vrc = VERR_INTERNAL_ERROR_4;
     }
-    return rc;
+    return vrc;
 }
 
 # endif // !RT_OS_DARWIN
@@ -387,12 +386,12 @@ static int waitForEventsOnXPCOM(nsIEventQueue *pQueue, RTMSINTERVAL cMsTimeout)
  *
  * This will pick out our events and handle them specially.
  *
- * @returns @a rc or VERR_INTERRUPTED (WM_QUIT or NULL msg).
+ * @returns @a vrc or VERR_INTERRUPTED (WM_QUIT or NULL msg).
  * @param   pMsg    The message to dispatch.
- * @param   rc      The current status code.
+ * @param   vrc     The current status code.
  */
 /*static*/
-int NativeEventQueue::dispatchMessageOnWindows(MSG const *pMsg, int rc)
+int NativeEventQueue::dispatchMessageOnWindows(MSG const *pMsg, int vrc)
 {
     /*
      * Check for and dispatch our events.
@@ -409,8 +408,8 @@ int NativeEventQueue::dispatchMessageOnWindows(MSG const *pMsg, int rc)
                 delete pEvent;
             }
             else
-                rc = VERR_INTERRUPTED;
-            return rc;
+                vrc = VERR_INTERRUPTED;
+            return vrc;
         }
         AssertMsgFailed(("lParam=%p wParam=%p\n", pMsg->lParam, pMsg->wParam));
     }
@@ -419,11 +418,11 @@ int NativeEventQueue::dispatchMessageOnWindows(MSG const *pMsg, int rc)
      * Check for the quit message and dispatch the message the normal way.
      */
     if (pMsg->message == WM_QUIT)
-        rc = VERR_INTERRUPTED;
+        vrc = VERR_INTERRUPTED;
     TranslateMessage(pMsg);
     DispatchMessage(pMsg);
 
-    return rc;
+    return vrc;
 }
 
 
@@ -436,16 +435,16 @@ int NativeEventQueue::dispatchMessageOnWindows(MSG const *pMsg, int rc)
  */
 static int processPendingEvents(void)
 {
-    int rc = VERR_TIMEOUT;
+    int vrc = VERR_TIMEOUT;
     MSG Msg;
     if (PeekMessage(&Msg, NULL /*hWnd*/, 0 /*wMsgFilterMin*/, 0 /*wMsgFilterMax*/, PM_REMOVE))
     {
-        rc = VINF_SUCCESS;
+        vrc = VINF_SUCCESS;
         do
-            rc = NativeEventQueue::dispatchMessageOnWindows(&Msg, rc);
+            vrc = NativeEventQueue::dispatchMessageOnWindows(&Msg, vrc);
         while (PeekMessage(&Msg, NULL /*hWnd*/, 0 /*wMsgFilterMin*/, 0 /*wMsgFilterMax*/, PM_REMOVE));
     }
-    return rc;
+    return vrc;
 }
 
 #else // VBOX_WITH_XPCOM
@@ -462,25 +461,25 @@ static int processPendingEvents(nsIEventQueue *pQueue)
 {
     /* ProcessPendingEvents doesn't report back what it did, so check here. */
     PRBool fHasEvents = PR_FALSE;
-    nsresult hr = pQueue->PendingEvents(&fHasEvents);
-    if (NS_FAILED(hr))
+    nsresult hrc = pQueue->PendingEvents(&fHasEvents);
+    if (NS_FAILED(hrc))
         return VERR_INTERNAL_ERROR_2;
 
     /* Process pending events. */
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (fHasEvents)
         pQueue->ProcessPendingEvents();
     else
-        rc = VERR_TIMEOUT;
+        vrc = VERR_TIMEOUT;
 
 # ifdef RT_OS_DARWIN
     /* Process pending native events. */
-    int rc2 = waitForEventsOnDarwin(0);
-    if (rc == VERR_TIMEOUT || rc2 == VERR_INTERRUPTED)
-        rc = rc2;
+    int vrc2 = waitForEventsOnDarwin(0);
+    if (vrc == VERR_TIMEOUT || vrc2 == VERR_INTERRUPTED)
+        vrc = vrc2;
 # endif
 
-    return rc;
+    return vrc;
 }
 
 #endif // VBOX_WITH_XPCOM
@@ -513,7 +512,7 @@ static int processPendingEvents(nsIEventQueue *pQueue)
  */
 int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 {
-    int rc;
+    int vrc;
     CHECK_THREAD_RET(VERR_INVALID_CONTEXT);
 
 #ifdef VBOX_WITH_XPCOM
@@ -526,8 +525,8 @@ int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
      * Note! Unfortunately, WaitForEvent isn't interruptible with Ctrl-C,
      *       while select() is.  So we cannot use it for indefinite waits.
      */
-    rc = processPendingEvents(mEventQ);
-    if (    rc == VERR_TIMEOUT
+    vrc = processPendingEvents(mEventQ);
+    if (    vrc == VERR_TIMEOUT
         &&  cMsTimeout > 0)
     {
 # ifdef RT_OS_DARWIN
@@ -537,27 +536,27 @@ int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
          *         has any way of expressing it via their return values.  So, if
          *         Ctrl-C handling is important, signal needs to be handled on
          *         a different thread or something. */
-        rc = waitForEventsOnDarwin(cMsTimeout);
+        vrc = waitForEventsOnDarwin(cMsTimeout);
 # else // !RT_OS_DARWIN
-        rc = waitForEventsOnXPCOM(mEventQ, cMsTimeout);
+        vrc = waitForEventsOnXPCOM(mEventQ, cMsTimeout);
 # endif // !RT_OS_DARWIN
-        if (    RT_SUCCESS(rc)
-            ||  rc == VERR_TIMEOUT)
+        if (    RT_SUCCESS(vrc)
+            ||  vrc == VERR_TIMEOUT)
         {
-            int rc2 = processPendingEvents(mEventQ);
+            int vrc2 = processPendingEvents(mEventQ);
             /* If the wait was successful don't fail the whole operation. */
-            if (RT_FAILURE(rc) && RT_FAILURE(rc2))
-                rc = rc2;
+            if (RT_FAILURE(vrc) && RT_FAILURE(vrc2))
+                vrc = vrc2;
         }
     }
 
-    if (  (   RT_SUCCESS(rc)
-           || rc == VERR_INTERRUPTED
-           || rc == VERR_TIMEOUT)
+    if (  (   RT_SUCCESS(vrc)
+           || vrc == VERR_INTERRUPTED
+           || vrc == VERR_TIMEOUT)
         && mInterrupted)
     {
         mInterrupted = false;
-        rc = VERR_INTERRUPTED;
+        vrc = VERR_INTERRUPTED;
     }
 
 #else // !VBOX_WITH_XPCOM
@@ -565,20 +564,20 @@ int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
     {
         BOOL fRet = 0; /* Shut up MSC */
         MSG  Msg;
-        rc = VINF_SUCCESS;
-        while (   rc != VERR_INTERRUPTED
+        vrc = VINF_SUCCESS;
+        while (   vrc != VERR_INTERRUPTED
                && (fRet = GetMessage(&Msg, NULL /*hWnd*/, WM_USER, WM_USER))
                && fRet != -1)
-            rc = NativeEventQueue::dispatchMessageOnWindows(&Msg, rc);
+            vrc = NativeEventQueue::dispatchMessageOnWindows(&Msg, vrc);
         if (fRet == 0)
-            rc = VERR_INTERRUPTED;
+            vrc = VERR_INTERRUPTED;
         else if (fRet == -1)
-            rc = RTErrConvertFromWin32(GetLastError());
+            vrc = RTErrConvertFromWin32(GetLastError());
     }
     else
     {
-        rc = processPendingEvents();
-        if (   rc == VERR_TIMEOUT
+        vrc = processPendingEvents();
+        if (   vrc == VERR_TIMEOUT
             && cMsTimeout != 0)
         {
             DWORD rcW = MsgWaitForMultipleObjects(1,
@@ -589,13 +588,13 @@ int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
             AssertMsgReturn(rcW == WAIT_TIMEOUT || rcW == WAIT_OBJECT_0,
                             ("%d\n", rcW),
                             VERR_INTERNAL_ERROR_4);
-            rc = processPendingEvents();
+            vrc = processPendingEvents();
         }
     }
 #endif // !VBOX_WITH_XPCOM
 
-    Assert(rc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
-    return rc;
+    Assert(vrc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
+    return vrc;
 }
 
 /**
@@ -645,8 +644,8 @@ BOOL NativeEventQueue::postEvent(NativeEvent *pEvent)
         MyPLEvent *pMyEvent = new MyPLEvent(pEvent);
         mEventQ->InitEvent(pMyEvent, this, com::NativeEventQueue::plEventHandler,
                            com::NativeEventQueue::plEventDestructor);
-        HRESULT rc = mEventQ->PostEvent(pMyEvent);
-        return NS_SUCCEEDED(rc);
+        HRESULT hrc = mEventQ->PostEvent(pMyEvent);
+        return NS_SUCCEEDED(hrc);
     }
     catch (std::bad_alloc &ba)
     {

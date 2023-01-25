@@ -55,12 +55,12 @@ namespace com
 
 HRESULT ErrorInfo::getVirtualBoxErrorInfo(ComPtr<IVirtualBoxErrorInfo> &pVirtualBoxErrorInfo)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     if (mErrorInfo)
-        rc = mErrorInfo.queryInterfaceTo(pVirtualBoxErrorInfo.asOutParam());
+        hrc = mErrorInfo.queryInterfaceTo(pVirtualBoxErrorInfo.asOutParam());
     else
         pVirtualBoxErrorInfo.setNull();
-    return rc;
+    return hrc;
 }
 
 void ErrorInfo::copyFrom(const ErrorInfo &x)
@@ -110,36 +110,36 @@ void ErrorInfo::cleanup()
 
 void ErrorInfo::init(bool aKeepObj /* = false */)
 {
-    HRESULT rc = E_FAIL;
+    HRESULT hrc = E_FAIL;
 
 #if !defined(VBOX_WITH_XPCOM)
 
     ComPtr<IErrorInfo> err;
-    rc = ::GetErrorInfo(0, err.asOutParam());
-    if (rc == S_OK && err)
+    hrc = ::GetErrorInfo(0, err.asOutParam());
+    if (hrc == S_OK && err)
     {
         if (aKeepObj)
             mErrorInfo = err;
 
         ComPtr<IVirtualBoxErrorInfo> info;
-        rc = err.queryInterfaceTo(info.asOutParam());
-        if (SUCCEEDED(rc) && info)
+        hrc = err.queryInterfaceTo(info.asOutParam());
+        if (SUCCEEDED(hrc) && info)
             init(info);
 
         if (!mIsFullAvailable)
         {
             bool gotSomething = false;
 
-            rc = err->GetGUID(mInterfaceID.asOutParam());
-            gotSomething |= SUCCEEDED(rc);
-            if (SUCCEEDED(rc))
+            hrc = err->GetGUID(mInterfaceID.asOutParam());
+            gotSomething |= SUCCEEDED(hrc);
+            if (SUCCEEDED(hrc))
                 GetInterfaceNameByIID(mInterfaceID.ref(), mInterfaceName.asOutParam());
 
-            rc = err->GetSource(mComponent.asOutParam());
-            gotSomething |= SUCCEEDED(rc);
+            hrc = err->GetSource(mComponent.asOutParam());
+            gotSomething |= SUCCEEDED(hrc);
 
-            rc = err->GetDescription(mText.asOutParam());
-            gotSomething |= SUCCEEDED(rc);
+            hrc = err->GetDescription(mText.asOutParam());
+            gotSomething |= SUCCEEDED(hrc);
 
             if (gotSomething)
                 mIsBasicAvailable = true;
@@ -151,36 +151,36 @@ void ErrorInfo::init(bool aKeepObj /* = false */)
 #else // defined(VBOX_WITH_XPCOM)
 
     nsCOMPtr<nsIExceptionService> es;
-    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-    if (NS_SUCCEEDED(rc))
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &hrc);
+    if (NS_SUCCEEDED(hrc))
     {
         nsCOMPtr<nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
-        if (NS_SUCCEEDED(rc))
+        hrc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+        if (NS_SUCCEEDED(hrc))
         {
             ComPtr<nsIException> ex;
-            rc = em->GetCurrentException(ex.asOutParam());
-            if (NS_SUCCEEDED(rc) && ex)
+            hrc = em->GetCurrentException(ex.asOutParam());
+            if (NS_SUCCEEDED(hrc) && ex)
             {
                 if (aKeepObj)
                     mErrorInfo = ex;
 
                 ComPtr<IVirtualBoxErrorInfo> info;
-                rc = ex.queryInterfaceTo(info.asOutParam());
-                if (NS_SUCCEEDED(rc) && info)
+                hrc = ex.queryInterfaceTo(info.asOutParam());
+                if (NS_SUCCEEDED(hrc) && info)
                     init(info);
 
                 if (!mIsFullAvailable)
                 {
                     bool gotSomething = false;
 
-                    rc = ex->GetResult(&mResultCode);
-                    gotSomething |= NS_SUCCEEDED(rc);
+                    hrc = ex->GetResult(&mResultCode);
+                    gotSomething |= NS_SUCCEEDED(hrc);
 
                     char *pszMsg;
-                    rc = ex->GetMessage(&pszMsg);
-                    gotSomething |= NS_SUCCEEDED(rc);
-                    if (NS_SUCCEEDED(rc))
+                    hrc = ex->GetMessage(&pszMsg);
+                    gotSomething |= NS_SUCCEEDED(hrc);
+                    if (NS_SUCCEEDED(hrc))
                     {
                         mText = Bstr(pszMsg);
                         nsMemory::Free(pszMsg);
@@ -195,15 +195,15 @@ void ErrorInfo::init(bool aKeepObj /* = false */)
                 // set the exception to NULL (to emulate Win32 behavior)
                 em->SetCurrentException(NULL);
 
-                rc = NS_OK;
+                hrc = NS_OK;
             }
         }
     }
     /* Ignore failure when called after nsComponentManagerImpl::Shutdown(). */
-    else if (rc == NS_ERROR_UNEXPECTED)
-        rc = NS_OK;
+    else if (hrc == NS_ERROR_UNEXPECTED)
+        hrc = NS_OK;
 
-    AssertComRC(rc);
+    AssertComRC(hrc);
 
 #endif // defined(VBOX_WITH_XPCOM)
 }
@@ -218,11 +218,11 @@ void ErrorInfo::init(IUnknown *aI,
 
     ComPtr<IUnknown> iface = aI;
     ComPtr<ISupportErrorInfo> serr;
-    HRESULT rc = iface.queryInterfaceTo(serr.asOutParam());
-    if (SUCCEEDED(rc))
+    HRESULT hrc = iface.queryInterfaceTo(serr.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        rc = serr->InterfaceSupportsErrorInfo(aIID);
-        if (SUCCEEDED(rc))
+        hrc = serr->InterfaceSupportsErrorInfo(aIID);
+        if (SUCCEEDED(hrc))
             init(aKeepObj);
     }
 
@@ -243,51 +243,51 @@ void ErrorInfo::init(IVirtualBoxErrorInfo *info)
 {
     AssertReturnVoid(info);
 
-    HRESULT rc = E_FAIL;
+    HRESULT hrc = E_FAIL;
     bool gotSomething = false;
     bool gotAll = true;
     LONG lrc, lrd;
 
-    rc = info->COMGETTER(ResultCode)(&lrc); mResultCode = lrc;
-    gotSomething |= SUCCEEDED(rc);
-    gotAll &= SUCCEEDED(rc);
+    hrc = info->COMGETTER(ResultCode)(&lrc); mResultCode = lrc;
+    gotSomething |= SUCCEEDED(hrc);
+    gotAll &= SUCCEEDED(hrc);
 
-    rc = info->COMGETTER(ResultDetail)(&lrd); mResultDetail = lrd;
-    gotSomething |= SUCCEEDED(rc);
-    gotAll &= SUCCEEDED(rc);
+    hrc = info->COMGETTER(ResultDetail)(&lrd); mResultDetail = lrd;
+    gotSomething |= SUCCEEDED(hrc);
+    gotAll &= SUCCEEDED(hrc);
 
     Bstr iid;
-    rc = info->COMGETTER(InterfaceID)(iid.asOutParam());
-    gotSomething |= SUCCEEDED(rc);
-    gotAll &= SUCCEEDED(rc);
-    if (SUCCEEDED(rc))
+    hrc = info->COMGETTER(InterfaceID)(iid.asOutParam());
+    gotSomething |= SUCCEEDED(hrc);
+    gotAll &= SUCCEEDED(hrc);
+    if (SUCCEEDED(hrc))
     {
         mInterfaceID = iid;
         GetInterfaceNameByIID(mInterfaceID.ref(), mInterfaceName.asOutParam());
     }
 
-    rc = info->COMGETTER(Component)(mComponent.asOutParam());
-    gotSomething |= SUCCEEDED(rc);
-    gotAll &= SUCCEEDED(rc);
+    hrc = info->COMGETTER(Component)(mComponent.asOutParam());
+    gotSomething |= SUCCEEDED(hrc);
+    gotAll &= SUCCEEDED(hrc);
 
-    rc = info->COMGETTER(Text)(mText.asOutParam());
-    gotSomething |= SUCCEEDED(rc);
-    gotAll &= SUCCEEDED(rc);
+    hrc = info->COMGETTER(Text)(mText.asOutParam());
+    gotSomething |= SUCCEEDED(hrc);
+    gotAll &= SUCCEEDED(hrc);
 
     m_pNext = NULL;
 
     ComPtr<IVirtualBoxErrorInfo> next;
-    rc = info->COMGETTER(Next)(next.asOutParam());
-    if (SUCCEEDED(rc) && !next.isNull())
+    hrc = info->COMGETTER(Next)(next.asOutParam());
+    if (SUCCEEDED(hrc) && !next.isNull())
     {
         m_pNext = new ErrorInfo(next);
         Assert(m_pNext != NULL);
         if (!m_pNext)
-            rc = E_OUTOFMEMORY;
+            hrc = E_OUTOFMEMORY;
     }
 
-    gotSomething |= SUCCEEDED(rc);
-    gotAll &= SUCCEEDED(rc);
+    gotSomething |= SUCCEEDED(hrc);
+    gotAll &= SUCCEEDED(hrc);
 
     mIsBasicAvailable = gotSomething;
     mIsFullAvailable = gotAll;
@@ -311,8 +311,8 @@ ProgressErrorInfo::ProgressErrorInfo(IProgress *progress) :
         return;
 
     ComPtr<IVirtualBoxErrorInfo> info;
-    HRESULT rc = progress->COMGETTER(ErrorInfo)(info.asOutParam());
-    if (SUCCEEDED(rc) && info)
+    HRESULT hrc = progress->COMGETTER(ErrorInfo)(info.asOutParam());
+    if (SUCCEEDED(hrc) && info)
         init(info);
 }
 
@@ -327,47 +327,47 @@ HRESULT ErrorInfoKeeper::restore()
     if (mForgot)
         return S_OK;
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
 #if !defined(VBOX_WITH_XPCOM)
 
     ComPtr<IErrorInfo> err;
     if (!mErrorInfo.isNull())
     {
-        rc = mErrorInfo.queryInterfaceTo(err.asOutParam());
-        AssertComRC(rc);
+        hrc = mErrorInfo.queryInterfaceTo(err.asOutParam());
+        AssertComRC(hrc);
     }
-    rc = ::SetErrorInfo(0, err);
+    hrc = ::SetErrorInfo(0, err);
 
 #else // defined(VBOX_WITH_XPCOM)
 
     nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-    if (NS_SUCCEEDED(rc))
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &hrc);
+    if (NS_SUCCEEDED(hrc))
     {
         nsCOMPtr <nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
-        if (NS_SUCCEEDED(rc))
+        hrc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+        if (NS_SUCCEEDED(hrc))
         {
             ComPtr<nsIException> ex;
             if (!mErrorInfo.isNull())
             {
-                rc = mErrorInfo.queryInterfaceTo(ex.asOutParam());
-                AssertComRC(rc);
+                hrc = mErrorInfo.queryInterfaceTo(ex.asOutParam());
+                AssertComRC(hrc);
             }
-            rc = em->SetCurrentException(ex);
+            hrc = em->SetCurrentException(ex);
         }
     }
 
 #endif // defined(VBOX_WITH_XPCOM)
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         mErrorInfo.setNull();
         mForgot = true;
     }
 
-    return rc;
+    return hrc;
 }
 
 } /* namespace com */

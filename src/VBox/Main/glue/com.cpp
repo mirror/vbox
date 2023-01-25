@@ -77,28 +77,26 @@ void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName)
 
 #if !defined(VBOX_WITH_XPCOM)
 
-    LONG rc;
     LPOLESTR iidStr = NULL;
     if (StringFromIID(aIID, &iidStr) == S_OK)
     {
         HKEY ifaceKey;
-        rc = RegOpenKeyExW(HKEY_CLASSES_ROOT, L"Interface",
-                           0, KEY_QUERY_VALUE, &ifaceKey);
-        if (rc == ERROR_SUCCESS)
+        LSTATUS lrc = RegOpenKeyExW(HKEY_CLASSES_ROOT, L"Interface", 0, KEY_QUERY_VALUE, &ifaceKey);
+        if (lrc == ERROR_SUCCESS)
         {
             HKEY iidKey;
-            rc = RegOpenKeyExW(ifaceKey, iidStr, 0, KEY_QUERY_VALUE, &iidKey);
-            if (rc == ERROR_SUCCESS)
+            lrc = RegOpenKeyExW(ifaceKey, iidStr, 0, KEY_QUERY_VALUE, &iidKey);
+            if (lrc == ERROR_SUCCESS)
             {
                 /* determine the size and type */
                 DWORD sz, type;
-                rc = RegQueryValueExW(iidKey, NULL, NULL, &type, NULL, &sz);
-                if (rc == ERROR_SUCCESS && type == REG_SZ)
+                lrc = RegQueryValueExW(iidKey, NULL, NULL, &type, NULL, &sz);
+                if (lrc == ERROR_SUCCESS && type == REG_SZ)
                 {
                     /* query the value to BSTR */
                     *aName = SysAllocStringLen(NULL, (sz + 1) / sizeof(TCHAR) + 1);
-                    rc = RegQueryValueExW(iidKey, NULL, NULL, NULL, (LPBYTE) *aName, &sz);
-                    if (rc != ERROR_SUCCESS)
+                    lrc = RegQueryValueExW(iidKey, NULL, NULL, NULL, (LPBYTE) *aName, &sz);
+                    if (lrc != ERROR_SUCCESS)
                     {
                         SysFreeString(*aName);
                         *aName = NULL;
@@ -148,23 +146,23 @@ HRESULT GlueCreateObjectOnServer(const CLSID &clsid,
                                  const nsIID &id,
                                  void** ppobj)
 {
-    HRESULT rc;
-    nsCOMPtr<ipcIService> ipcServ = do_GetService(IPC_SERVICE_CONTRACTID, &rc);
-    if (SUCCEEDED(rc))
+    HRESULT hrc = E_UNEXPECTED;
+    nsCOMPtr<ipcIService> ipcServ = do_GetService(IPC_SERVICE_CONTRACTID, &hrc);
+    if (SUCCEEDED(hrc))
     {
         PRUint32 serverID = 0;
-        rc = ipcServ->ResolveClientName(serverName, &serverID);
-        if (SUCCEEDED (rc))
+        hrc = ipcServ->ResolveClientName(serverName, &serverID);
+        if (SUCCEEDED (hrc))
         {
-            nsCOMPtr<ipcIDConnectService> dconServ = do_GetService(IPC_DCONNECTSERVICE_CONTRACTID, &rc);
-            if (SUCCEEDED(rc))
-                rc = dconServ->CreateInstance(serverID,
-                                              clsid,
-                                              id,
-                                              ppobj);
+            nsCOMPtr<ipcIDConnectService> dconServ = do_GetService(IPC_DCONNECTSERVICE_CONTRACTID, &hrc);
+            if (SUCCEEDED(hrc))
+                hrc = dconServ->CreateInstance(serverID,
+                                               clsid,
+                                               id,
+                                               ppobj);
         }
     }
-    return rc;
+    return hrc;
 }
 
 HRESULT GlueCreateInstance(const CLSID &clsid,
@@ -172,13 +170,13 @@ HRESULT GlueCreateInstance(const CLSID &clsid,
                            void** ppobj)
 {
     nsCOMPtr<nsIComponentManager> manager;
-    HRESULT rc = NS_GetComponentManager(getter_AddRefs(manager));
-    if (SUCCEEDED(rc))
-        rc = manager->CreateInstance(clsid,
-                                     nsnull,
-                                     id,
-                                     ppobj);
-    return rc;
+    HRESULT hrc = NS_GetComponentManager(getter_AddRefs(manager));
+    if (SUCCEEDED(hrc))
+        hrc = manager->CreateInstance(clsid,
+                                      nsnull,
+                                      id,
+                                      ppobj);
+    return hrc;
 }
 
 #endif // VBOX_WITH_XPCOM

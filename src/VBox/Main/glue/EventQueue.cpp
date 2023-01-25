@@ -48,20 +48,20 @@ EventQueue::EventQueue(void)
     : mUserCnt(0),
       mShutdown(false)
 {
-    int rc = RTCritSectInit(&mCritSect);
-    AssertRC(rc);
+    int vrc = RTCritSectInit(&mCritSect);
+    AssertRC(vrc);
 
-    rc = RTSemEventCreate(&mSemEvent);
-    AssertRC(rc);
+    vrc = RTSemEventCreate(&mSemEvent);
+    AssertRC(vrc);
 }
 
 EventQueue::~EventQueue(void)
 {
-    int rc = RTCritSectDelete(&mCritSect);
-    AssertRC(rc);
+    int vrc = RTCritSectDelete(&mCritSect);
+    AssertRC(vrc);
 
-    rc = RTSemEventDestroy(mSemEvent);
-    AssertRC(rc);
+    vrc = RTSemEventDestroy(mSemEvent);
+    AssertRC(vrc);
 
     EventQueueListIterator it  = mEvents.begin();
     while (it != mEvents.end())
@@ -97,8 +97,8 @@ EventQueue::~EventQueue(void)
 int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 {
     size_t cNumEvents;
-    int rc = RTCritSectEnter(&mCritSect);
-    if (RT_SUCCESS(rc))
+    int vrc = RTCritSectEnter(&mCritSect);
+    if (RT_SUCCESS(vrc))
     {
         if (mUserCnt == 0) /* No concurrent access allowed. */
         {
@@ -107,38 +107,38 @@ int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
             cNumEvents = mEvents.size();
             if (!cNumEvents)
             {
-                int rc2 = RTCritSectLeave(&mCritSect);
-                AssertRC(rc2);
+                int vrc2 = RTCritSectLeave(&mCritSect);
+                AssertRC(vrc2);
 
-                rc = RTSemEventWaitNoResume(mSemEvent, cMsTimeout);
+                vrc = RTSemEventWaitNoResume(mSemEvent, cMsTimeout);
 
-                rc2 = RTCritSectEnter(&mCritSect);
-                AssertRC(rc2);
+                vrc2 = RTCritSectEnter(&mCritSect);
+                AssertRC(vrc2);
 
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     if (mShutdown)
-                        rc = VERR_INTERRUPTED;
+                        vrc = VERR_INTERRUPTED;
                     cNumEvents = mEvents.size();
                 }
             }
 
-            if (RT_SUCCESS(rc))
-                rc = processPendingEvents(cNumEvents);
+            if (RT_SUCCESS(vrc))
+                vrc = processPendingEvents(cNumEvents);
 
             Assert(mUserCnt);
             mUserCnt--;
         }
         else
-            rc = VERR_WRONG_ORDER;
+            vrc = VERR_WRONG_ORDER;
 
-        int rc2 = RTCritSectLeave(&mCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        int vrc2 = RTCritSectLeave(&mCritSect);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
     }
 
-    Assert(rc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
-    return rc;
+    Assert(vrc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
+    return vrc;
 }
 
 /**
@@ -153,7 +153,7 @@ int EventQueue::processPendingEvents(size_t cNumEvents)
     if (!cNumEvents) /* Nothing to process? Bail out early. */
         return VINF_SUCCESS;
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     EventQueueListIterator it = mEvents.begin();
     for (size_t i = 0;
@@ -165,24 +165,24 @@ int EventQueue::processPendingEvents(size_t cNumEvents)
 
         mEvents.erase(it);
 
-        int rc2 = RTCritSectLeave(&mCritSect);
-        AssertRC(rc2);
+        int vrc2 = RTCritSectLeave(&mCritSect);
+        AssertRC(vrc2);
 
         pEvent->handler();
         pEvent->Release();
 
-        rc2 = RTCritSectEnter(&mCritSect);
-        AssertRC(rc2);
+        vrc2 = RTCritSectEnter(&mCritSect);
+        AssertRC(vrc2);
 
         it = mEvents.begin();
         if (mShutdown)
         {
-            rc = VERR_INTERRUPTED;
+            vrc = VERR_INTERRUPTED;
             break;
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -207,8 +207,8 @@ int EventQueue::interruptEventQueueProcessing(void)
  */
 BOOL EventQueue::postEvent(Event *pEvent)
 {
-    int rc = RTCritSectEnter(&mCritSect);
-    if (RT_SUCCESS(rc))
+    int vrc = RTCritSectEnter(&mCritSect);
+    if (RT_SUCCESS(vrc))
     {
         try
         {
@@ -230,27 +230,27 @@ BOOL EventQueue::postEvent(Event *pEvent)
             }
 
             /* Leave critical section before signalling event. */
-            rc = RTCritSectLeave(&mCritSect);
-            if (RT_SUCCESS(rc))
+            vrc = RTCritSectLeave(&mCritSect);
+            if (RT_SUCCESS(vrc))
             {
-                int rc2 = RTSemEventSignal(mSemEvent);
-                AssertRC(rc2);
+                int vrc2 = RTSemEventSignal(mSemEvent);
+                AssertRC(vrc2);
             }
         }
         catch (std::bad_alloc &ba)
         {
             NOREF(ba);
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
-            int rc2 = RTCritSectLeave(&mCritSect);
-            AssertRC(rc2);
+            int vrc2 = RTCritSectLeave(&mCritSect);
+            AssertRC(vrc2);
         }
     }
 
-    return RT_SUCCESS(rc) ? TRUE : FALSE;
+    return RT_SUCCESS(vrc) ? TRUE : FALSE;
 }
 
 }

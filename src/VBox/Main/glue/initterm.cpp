@@ -442,7 +442,7 @@ static uint32_t gCOMMainInitCount = 0;
  */
 HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
 {
-    HRESULT rc = E_FAIL;
+    HRESULT hrc = E_FAIL;
 
 #if !defined(VBOX_WITH_XPCOM)
 
@@ -510,25 +510,25 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
                   | COINIT_DISABLE_OLE1DDE
                   | COINIT_SPEED_OVER_MEMORY;
 
-    rc = CoInitializeEx(NULL, flags);
+    hrc = CoInitializeEx(NULL, flags);
 
     /* the overall result must be either S_OK or S_FALSE (S_FALSE means
      * "already initialized using the same apartment model") */
-    AssertMsg(rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
+    AssertMsg(hrc == S_OK || hrc == S_FALSE, ("hrc=%08X\n", hrc));
 
 #if defined(VBOX_WITH_SDS)
     // Setup COM Security to enable impersonation
-    HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
-                                                             -1,
-                                                             NULL,
-                                                             NULL,
-                                                             RPC_C_AUTHN_LEVEL_DEFAULT,
-                                                             RPC_C_IMP_LEVEL_IMPERSONATE,
-                                                             NULL,
-                                                             EOAC_NONE,
-                                                             NULL);
-    NOREF(hrGUICoInitializeSecurity);
-    Assert(SUCCEEDED(hrGUICoInitializeSecurity) || hrGUICoInitializeSecurity == RPC_E_TOO_LATE);
+    HRESULT hrcGUICoInitializeSecurity = CoInitializeSecurity(NULL,
+                                                              -1,
+                                                              NULL,
+                                                              NULL,
+                                                              RPC_C_AUTHN_LEVEL_DEFAULT,
+                                                              RPC_C_IMP_LEVEL_IMPERSONATE,
+                                                              NULL,
+                                                              EOAC_NONE,
+                                                              NULL);
+    NOREF(hrcGUICoInitializeSecurity);
+    Assert(SUCCEEDED(hrcGUICoInitializeSecurity) || hrcGUICoInitializeSecurity == RPC_E_TOO_LATE);
 #endif
 
     /*
@@ -555,17 +555,17 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
     if (!fRc)
     {
         if (   gCOMMainThread == hSelf
-            && SUCCEEDED(rc))
+            && SUCCEEDED(hrc))
             gCOMMainInitCount++;
 
-        AssertComRC(rc);
-        return rc;
+        AssertComRC(hrc);
+        return hrc;
     }
     Assert(RTThreadIsMain(hSelf));
 
     /* this is the first main thread initialization */
     Assert(gCOMMainInitCount == 0);
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         gCOMMainInitCount = 1;
 
 #else /* !defined(VBOX_WITH_XPCOM) */
@@ -582,18 +582,18 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
          * Win32). */
 
         nsCOMPtr<nsIEventQueue> eventQ;
-        rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
+        hrc = NS_GetMainEventQ(getter_AddRefs(eventQ));
 
-        if (NS_SUCCEEDED(rc))
+        if (NS_SUCCEEDED(hrc))
         {
             PRBool isOnMainThread = PR_FALSE;
-            rc = eventQ->IsOnCurrentThread(&isOnMainThread);
-            if (NS_SUCCEEDED(rc) && isOnMainThread)
+            hrc = eventQ->IsOnCurrentThread(&isOnMainThread);
+            if (NS_SUCCEEDED(hrc) && isOnMainThread)
                 ++gXPCOMInitCount;
         }
 
-        AssertComRC(rc);
-        return rc;
+        AssertComRC(hrc);
+        return hrc;
     }
     Assert(RTThreadIsMain(RTThreadSelf()));
 
@@ -681,20 +681,20 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
         }
         if (RT_FAILURE(vrc))
         {
-            rc = NS_ERROR_FAILURE;
+            hrc = NS_ERROR_FAILURE;
             continue;
         }
         char szCompDir[RTPATH_MAX];
         vrc = RTStrCopy(szCompDir, sizeof(szCompDir), szAppHomeDir);
         if (RT_FAILURE(vrc))
         {
-            rc = NS_ERROR_FAILURE;
+            hrc = NS_ERROR_FAILURE;
             continue;
         }
         vrc = RTPathAppend(szCompDir, sizeof(szCompDir), "components");
         if (RT_FAILURE(vrc))
         {
-            rc = NS_ERROR_FAILURE;
+            hrc = NS_ERROR_FAILURE;
             continue;
         }
         LogFlowFunc(("component directory : \"%s\"\n", szCompDir));
@@ -702,10 +702,10 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
         nsCOMPtr<DirectoryServiceProvider> dsProv;
         dsProv = new DirectoryServiceProvider();
         if (dsProv)
-            rc = dsProv->init(szCompReg, szXptiDat, szCompDir, szAppHomeDir);
+            hrc = dsProv->init(szCompReg, szXptiDat, szCompDir, szAppHomeDir);
         else
-            rc = NS_ERROR_OUT_OF_MEMORY;
-        if (NS_FAILED(rc))
+            hrc = NS_ERROR_OUT_OF_MEMORY;
+        if (NS_FAILED(hrc))
             break;
 
         /* Setup the application path for NS_InitXPCOM2. Note that we properly
@@ -720,17 +720,16 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
             if (RT_SUCCESS(vrc))
             {
                 nsCOMPtr<nsILocalFile> file;
-                rc = NS_NewNativeLocalFile(nsEmbedCString(appDirCP),
-                                           PR_FALSE, getter_AddRefs(file));
-                if (NS_SUCCEEDED(rc))
-                    appDir = do_QueryInterface(file, &rc);
+                hrc = NS_NewNativeLocalFile(nsEmbedCString(appDirCP), PR_FALSE, getter_AddRefs(file));
+                if (NS_SUCCEEDED(hrc))
+                    appDir = do_QueryInterface(file, &hrc);
 
                 RTStrFree(appDirCP);
             }
             else
-                rc = NS_ERROR_FAILURE;
+                hrc = NS_ERROR_FAILURE;
         }
-        if (NS_FAILED(rc))
+        if (NS_FAILED(hrc))
             break;
 
         /* Set VBOX_XPCOM_HOME to the same app path to make XPCOM sources that
@@ -741,15 +740,14 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
         /* Finally, initialize XPCOM */
         {
             nsCOMPtr<nsIServiceManager> serviceManager;
-            rc = NS_InitXPCOM2(getter_AddRefs(serviceManager), appDir, dsProv);
-            if (NS_SUCCEEDED(rc))
+            hrc = NS_InitXPCOM2(getter_AddRefs(serviceManager), appDir, dsProv);
+            if (NS_SUCCEEDED(hrc))
             {
-                nsCOMPtr<nsIComponentRegistrar> registrar =
-                    do_QueryInterface(serviceManager, &rc);
-                if (NS_SUCCEEDED(rc))
+                nsCOMPtr<nsIComponentRegistrar> registrar = do_QueryInterface(serviceManager, &hrc);
+                if (NS_SUCCEEDED(hrc))
                 {
-                    rc = registrar->AutoRegister(nsnull);
-                    if (NS_SUCCEEDED(rc))
+                    hrc = registrar->AutoRegister(nsnull);
+                    if (NS_SUCCEEDED(hrc))
                     {
                         /* We succeeded, stop probing paths */
                         LogFlowFunc(("Succeeded.\n"));
@@ -760,9 +758,9 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
         }
 
         /* clean up before the new try */
-        HRESULT rc2 = NS_ShutdownXPCOM(nsnull);
-        if (SUCCEEDED(rc))
-            rc = rc2;
+        HRESULT hrc2 = NS_ShutdownXPCOM(nsnull);
+        if (SUCCEEDED(hrc))
+            hrc = hrc2;
 
         if (i == 0)
         {
@@ -773,7 +771,7 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
 
 #endif /* !defined(VBOX_WITH_XPCOM) */
 
-    AssertComRCReturnRC(rc);
+    AssertComRCReturnRC(hrc);
 
     // for both COM and XPCOM, we only get here if this is the main thread;
     // only then initialize the autolock system (AutoLock.cpp)
@@ -783,15 +781,15 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
     /*
      * Init the main event queue (ASSUMES it cannot fail).
      */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         NativeEventQueue::init();
 
-    return rc;
+    return hrc;
 }
 
 HRESULT Shutdown()
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
 #if !defined(VBOX_WITH_XPCOM)
 
@@ -812,9 +810,9 @@ HRESULT Shutdown()
 #else /* !defined(VBOX_WITH_XPCOM) */
 
     nsCOMPtr<nsIEventQueue> eventQ;
-    rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
+    hrc = NS_GetMainEventQ(getter_AddRefs(eventQ));
 
-    if (NS_SUCCEEDED(rc) || rc == NS_ERROR_NOT_AVAILABLE)
+    if (NS_SUCCEEDED(hrc) || hrc == NS_ERROR_NOT_AVAILABLE)
     {
         /* NS_ERROR_NOT_AVAILABLE seems to mean that
          * nsIEventQueue::StopAcceptingEvents() has been called (see
@@ -824,25 +822,25 @@ HRESULT Shutdown()
          * StopAcceptingEvents() on the main event queue). */
 
         PRBool isOnMainThread = PR_FALSE;
-        if (NS_SUCCEEDED(rc))
+        if (NS_SUCCEEDED(hrc))
         {
-            rc = eventQ->IsOnCurrentThread(&isOnMainThread);
+            hrc = eventQ->IsOnCurrentThread(&isOnMainThread);
             eventQ = nsnull; /* early release before shutdown */
         }
         else
         {
             isOnMainThread = RTThreadIsMain(RTThreadSelf());
-            rc = NS_OK;
+            hrc = NS_OK;
         }
 
-        if (NS_SUCCEEDED(rc) && isOnMainThread)
+        if (NS_SUCCEEDED(hrc) && isOnMainThread)
         {
             /* only the main thread needs to uninitialize XPCOM and only if
              * init counter drops to zero */
             if (--gXPCOMInitCount == 0)
             {
                 NativeEventQueue::uninit();
-                rc = NS_ShutdownXPCOM(nsnull);
+                hrc = NS_ShutdownXPCOM(nsnull);
 
                 /* This is a thread initialized XPCOM and set gIsXPCOMInitialized to
                  * true. Reset it back to false. */
@@ -855,9 +853,9 @@ HRESULT Shutdown()
 
 #endif /* !defined(VBOX_WITH_XPCOM) */
 
-    AssertComRC(rc);
+    AssertComRC(hrc);
 
-    return rc;
+    return hrc;
 }
 
 } /* namespace com */

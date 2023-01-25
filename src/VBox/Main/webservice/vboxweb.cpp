@@ -385,16 +385,16 @@ public:
         soap_set_imode(m_soap, SOAP_IO_KEEPALIVE | SOAP_C_UTFSTRING);
         m_soap->max_keep_alive = g_cMaxKeepAlive;
 
-        int rc = RTThreadCreate(&m_pThread,
-                                fntWrapper,
-                                this,           // pvUser
-                                0,              // cbStack
-                                RTTHREADTYPE_MAIN_HEAVY_WORKER,
-                                0,
-                                m_strThread.c_str());
-        if (RT_FAILURE(rc))
+        int vrc = RTThreadCreate(&m_pThread,
+                                 fntWrapper,
+                                 this,           // pvUser
+                                 0,              // cbStack
+                                 RTTHREADTYPE_MAIN_HEAVY_WORKER,
+                                 0,
+                                 m_strThread.c_str());
+        if (RT_FAILURE(vrc))
         {
-            RTMsgError("Cannot start worker thread %d: %Rrc\n", u, rc);
+            RTMsgError("Cannot start worker thread %d: %Rrc\n", u, vrc);
             exit(1);
         }
     }
@@ -836,10 +836,10 @@ static int CRYPTO_thread_setup()
 
     for (int i = 0; i < num_locks; i++)
     {
-        int rc = RTCritSectInitEx(&g_pSSLMutexes[i], RTCRITSECT_FLAGS_NO_LOCK_VAL,
-                                  NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE,
-                                  "openssl-%d", i);
-        if (RT_FAILURE(rc))
+        int vrc = RTCritSectInitEx(&g_pSSLMutexes[i], RTCRITSECT_FLAGS_NO_LOCK_VAL,
+                                   NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE,
+                                   "openssl-%d", i);
+        if (RT_FAILURE(vrc))
         {
             for ( ; i >= 0; i--)
                 RTCritSectDelete(&g_pSSLMutexes[i]);
@@ -1075,9 +1075,9 @@ static void websrvSignalHandler(int iSignal)
 int main(int argc, char *argv[])
 {
     // initialize runtime
-    int rc = RTR3InitExe(argc, &argv, 0);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
+    int vrc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 #ifdef RT_OS_WINDOWS
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
@@ -1132,12 +1132,12 @@ int main(int argc, char *argv[])
                         StrmIn = g_pStdIn;
                     else
                     {
-                        int vrc = RTStrmOpen(ValueUnion.psz, "r", &StrmIn);
+                        vrc = RTStrmOpen(ValueUnion.psz, "r", &StrmIn);
                         if (RT_FAILURE(vrc))
                             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open password file (%s, %Rrc)", ValueUnion.psz, vrc);
                     }
                     char szPasswd[512];
-                    int vrc = RTStrmGetLine(StrmIn, szPasswd, sizeof(szPasswd));
+                    vrc = RTStrmGetLine(StrmIn, szPasswd, sizeof(szPasswd));
                     if (RT_FAILURE(vrc))
                         return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to read password (%s, %Rrc)", ValueUnion.psz, vrc);
                     g_pcszPassword = RTStrDup(szPasswd);
@@ -1222,21 +1222,20 @@ int main(int argc, char *argv[])
                 return 0;
 
             default:
-                rc = RTGetOptPrintError(c, &ValueUnion);
-                return rc;
+                return RTGetOptPrintError(c, &ValueUnion);
         }
     }
 
     /* create release logger, to stdout */
     RTERRINFOSTATIC ErrInfo;
-    rc = com::VBoxLogRelCreate("web service", g_fDaemonize ? NULL : pszLogFile,
-                               RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
-                               "all", "VBOXWEBSRV_RELEASE_LOG",
-                               RTLOGDEST_STDOUT, UINT32_MAX /* cMaxEntriesPerGroup */,
-                               g_cHistory, g_uHistoryFileTime, g_uHistoryFileSize,
-                               RTErrInfoInitStatic(&ErrInfo));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", ErrInfo.Core.pszMsg, rc);
+    vrc = com::VBoxLogRelCreate("web service", g_fDaemonize ? NULL : pszLogFile,
+                                RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
+                                "all", "VBOXWEBSRV_RELEASE_LOG",
+                                RTLOGDEST_STDOUT, UINT32_MAX /* cMaxEntriesPerGroup */,
+                                g_cHistory, g_uHistoryFileTime, g_uHistoryFileSize,
+                                RTErrInfoInitStatic(&ErrInfo));
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", ErrInfo.Core.pszMsg, vrc);
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     if (g_fDaemonize)
@@ -1246,28 +1245,28 @@ int main(int argc, char *argv[])
 
         if (!pszLogFile || !*pszLogFile)
         {
-            rc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
-            if (RT_FAILURE(rc))
-                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not get base directory for logging: %Rrc", rc);
-            rc = RTPathAppend(szLogFile, sizeof(szLogFile), "vboxwebsrv.log");
-            if (RT_FAILURE(rc))
-                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not construct logging path: %Rrc", rc);
+            vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+            if (RT_FAILURE(vrc))
+                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not get base directory for logging: %Rrc", vrc);
+            vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "vboxwebsrv.log");
+            if (RT_FAILURE(vrc))
+                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not construct logging path: %Rrc", vrc);
             pszLogFile = szLogFile;
         }
 
-        rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
+        vrc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, vrc=%Rrc. exiting.", vrc);
 
         /* create release logger, to file */
-        rc = com::VBoxLogRelCreate("web service", pszLogFile,
-                                   RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
-                                   "all", "VBOXWEBSRV_RELEASE_LOG",
-                                   RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
-                                   g_cHistory, g_uHistoryFileTime, g_uHistoryFileSize,
-                                   RTErrInfoInitStatic(&ErrInfo));
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", ErrInfo.Core.pszMsg, rc);
+        vrc = com::VBoxLogRelCreate("web service", pszLogFile,
+                                    RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
+                                    "all", "VBOXWEBSRV_RELEASE_LOG",
+                                    RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
+                                    g_cHistory, g_uHistoryFileTime, g_uHistoryFileSize,
+                                    RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", ErrInfo.Core.pszMsg, vrc);
     }
 #endif
 
@@ -1309,7 +1308,7 @@ int main(int argc, char *argv[])
     hrc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
     if (FAILED(hrc))
     {
-        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", hrc);
+        RTMsgError("Failed to get VirtualBox object (hrc=%Rhrc)!", hrc);
         return RTEXITCODE_FAILURE;
     }
 
@@ -1344,37 +1343,37 @@ int main(int argc, char *argv[])
 
     // SOAP queue pumper thread
     RTTHREAD threadQPumper;
-    rc = RTThreadCreate(&threadQPumper,
-                        fntQPumper,
-                        NULL,        // pvUser
-                        0,           // cbStack (default)
-                        RTTHREADTYPE_MAIN_WORKER,
-                        RTTHREADFLAGS_WAITABLE,
-                        "SQPmp");
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start SOAP queue pumper thread: %Rrc", rc);
+    vrc = RTThreadCreate(&threadQPumper,
+                         fntQPumper,
+                         NULL,        // pvUser
+                         0,           // cbStack (default)
+                         RTTHREADTYPE_MAIN_WORKER,
+                         RTTHREADFLAGS_WAITABLE,
+                         "SQPmp");
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start SOAP queue pumper thread: %Rrc", vrc);
 
     // watchdog thread
     RTTHREAD threadWatchdog = NIL_RTTHREAD;
     if (g_iWatchdogTimeoutSecs > 0)
     {
         // start our watchdog thread
-        rc = RTThreadCreate(&threadWatchdog,
-                            fntWatchdog,
-                            NULL,
-                            0,
-                            RTTHREADTYPE_MAIN_WORKER,
-                            RTTHREADFLAGS_WAITABLE,
-                            "Watchdog");
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start watchdog thread: %Rrc", rc);
+        vrc = RTThreadCreate(&threadWatchdog,
+                             fntWatchdog,
+                             NULL,
+                             0,
+                             RTTHREADTYPE_MAIN_WORKER,
+                             RTTHREADFLAGS_WAITABLE,
+                             "Watchdog");
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start watchdog thread: %Rrc", vrc);
     }
 
 #ifdef RT_OS_WINDOWS
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)websrvSignalHandler, TRUE /* Add handler */))
     {
-        rc = RTErrConvertFromWin32(GetLastError());
-        RTMsgError("Unable to install console control handler, rc=%Rrc\n", rc);
+        vrc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError("Unable to install console control handler, vrc=%Rrc\n", vrc);
     }
 #else
     signal(SIGINT,   websrvSignalHandler);
@@ -1389,9 +1388,9 @@ int main(int argc, char *argv[])
     {
         // we have to process main event queue
         WEBDEBUG(("Pumping COM event queue\n"));
-        rc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(rc))
-            RTMsgError("processEventQueue -> %Rrc", rc);
+        vrc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(vrc))
+            RTMsgError("processEventQueue -> %Rrc", vrc);
     }
 
     LogRel(("requested termination, cleaning up\n"));
@@ -1399,8 +1398,8 @@ int main(int argc, char *argv[])
 #ifdef RT_OS_WINDOWS
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)websrvSignalHandler, FALSE /* Remove handler */))
     {
-        rc = RTErrConvertFromWin32(GetLastError());
-        RTMsgError("Unable to remove console control handler, rc=%Rrc\n", rc);
+        vrc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError("Unable to remove console control handler, vrc=%Rrc\n", vrc);
     }
 #else
     signal(SIGINT,   SIG_DFL);
@@ -1653,10 +1652,8 @@ std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData))
     RTCString aStr;
 
     aStr.reserve(cchOut+1);
-    int rc = RTBase64Encode(sfaData.raw(), cbData,
-                            aStr.mutableRaw(), aStr.capacity(),
-                            NULL);
-    AssertRC(rc);
+    int vrc = RTBase64Encode(sfaData.raw(), cbData, aStr.mutableRaw(), aStr.capacity(), NULL);
+    AssertRC(vrc);
     aStr.jolt();
 
     return aStr.c_str();
@@ -1675,10 +1672,10 @@ void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeAr
     }
 
     com::SafeArray<BYTE> result(cbOut);
-    int rc = RTBase64Decode(pszStr, result.raw(), cbOut, NULL, NULL);
-    if (FAILED(rc))
+    int vrc = RTBase64Decode(pszStr, result.raw(), cbOut, NULL, NULL);
+    if (FAILED(vrc))
     {
-        LogRel(("String Decoding Failed. Error code: %Rrc\n", rc));
+        LogRel(("String Decoding Failed. Error code: %Rrc\n", vrc));
         RaiseSoapRuntimeFault(soap, idThis, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
@@ -1722,7 +1719,7 @@ void RaiseSoapRuntimeFault(struct soap *soap,
     }
 
     // compose descriptive message
-    com::Utf8Str str = com::Utf8StrFmt("VirtualBox error: rc=%#lx", apirc);
+    com::Utf8StrFmt str("VirtualBox error: apirc=%#lx", apirc);
     if (info.isFullAvailable() || info.isBasicAvailable())
     {
         const com::ErrorInfo *pInfo = &info;
@@ -1874,14 +1871,14 @@ int WebServiceSession::authenticate(const char *pcszUsername,
                                     const char *pcszPassword,
                                     IVirtualBox **ppVirtualBox)
 {
-    int rc = VERR_WEB_NOT_AUTHENTICATED;
+    int vrc = VERR_WEB_NOT_AUTHENTICATED;
     ComPtr<IVirtualBox> pVirtualBox;
     {
         util::AutoReadLock vlock(g_pVirtualBoxLockHandle COMMA_LOCKVAL_SRC_POS);
         pVirtualBox = g_pVirtualBox;
     }
     if (pVirtualBox.isNull())
-        return rc;
+        return vrc;
     pVirtualBox.queryInterfaceTo(ppVirtualBox);
 
     util::AutoReadLock lock(g_pAuthLibLockHandle COMMA_LOCKVAL_SRC_POS);
@@ -1912,30 +1909,29 @@ int WebServiceSession::authenticate(const char *pcszUsername,
             do
             {
                 if (RTPathHavePath(filename.c_str()))
-                    rc = RTLdrLoad(filename.c_str(), &hlibAuth);
+                    vrc = RTLdrLoad(filename.c_str(), &hlibAuth);
                 else
-                    rc = RTLdrLoadAppPriv(filename.c_str(), &hlibAuth);
-
-                if (RT_FAILURE(rc))
+                    vrc = RTLdrLoadAppPriv(filename.c_str(), &hlibAuth);
+                if (RT_FAILURE(vrc))
                 {
                     WEBDEBUG(("%s() Failed to load external authentication library '%s'. Error code: %Rrc\n",
-                              __FUNCTION__, filename.c_str(), rc));
+                              __FUNCTION__, filename.c_str(), vrc));
                     break;
                 }
 
-                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY3_NAME, (void**)&pfnAuthEntry3)))
+                if (RT_FAILURE(vrc = RTLdrGetSymbol(hlibAuth, AUTHENTRY3_NAME, (void**)&pfnAuthEntry3)))
                 {
                     WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n",
-                              __FUNCTION__, AUTHENTRY3_NAME, rc));
+                              __FUNCTION__, AUTHENTRY3_NAME, vrc));
 
-                    if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY2_NAME, (void**)&pfnAuthEntry2)))
+                    if (RT_FAILURE(vrc = RTLdrGetSymbol(hlibAuth, AUTHENTRY2_NAME, (void**)&pfnAuthEntry2)))
                     {
                         WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n",
-                                  __FUNCTION__, AUTHENTRY2_NAME, rc));
+                                  __FUNCTION__, AUTHENTRY2_NAME, vrc));
 
-                        if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY_NAME, (void**)&pfnAuthEntry)))
+                        if (RT_FAILURE(vrc = RTLdrGetSymbol(hlibAuth, AUTHENTRY_NAME, (void**)&pfnAuthEntry)))
                             WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n",
-                                      __FUNCTION__, AUTHENTRY_NAME, rc));
+                                      __FUNCTION__, AUTHENTRY_NAME, vrc));
                     }
                 }
 
@@ -1949,12 +1945,12 @@ int WebServiceSession::authenticate(const char *pcszUsername,
     if (strlen(pcszUsername) >= _1K)
     {
         LogRel(("Access denied, excessive username length: %zu\n", strlen(pcszUsername)));
-        rc = VERR_WEB_NOT_AUTHENTICATED;
+        vrc = VERR_WEB_NOT_AUTHENTICATED;
     }
     else if (strlen(pcszPassword) >= _1K)
     {
         LogRel(("Access denied, excessive password length: %zu\n", strlen(pcszPassword)));
-        rc = VERR_WEB_NOT_AUTHENTICATED;
+        vrc = VERR_WEB_NOT_AUTHENTICATED;
     }
     else if (pfnAuthEntry3 || pfnAuthEntry2 || pfnAuthEntry)
     {
@@ -1980,30 +1976,30 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         if (result == AuthResultAccessGranted)
         {
             LogRel(("Access for user '%s' granted\n", pcszUsername));
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
         }
         else
         {
             if (result == AuthResultAccessDenied)
                 LogRel(("Access for user '%s' denied\n", pcszUsername));
-            rc = VERR_WEB_NOT_AUTHENTICATED;
+            vrc = VERR_WEB_NOT_AUTHENTICATED;
         }
     }
     else if (fAuthLibLoaded)
     {
         // fAuthLibLoaded = true but all pointers are NULL:
         // The authlib was "null" and auth was disabled
-        rc = VINF_SUCCESS;
+        vrc = VINF_SUCCESS;
     }
     else
     {
         WEBDEBUG(("Could not resolve AuthEntry, VRDPAuth2 or VRDPAuth entry point"));
-        rc = VERR_WEB_NOT_AUTHENTICATED;
+        vrc = VERR_WEB_NOT_AUTHENTICATED;
     }
 
     lock.release();
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -2231,7 +2227,7 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
                                     ManagedObjectRef **pRef,
                                     bool fNullAllowed)
 {
-    int rc = 0;
+    int vrc = VINF_SUCCESS;
 
     do
     {
@@ -2249,7 +2245,7 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
                                    &websessId,
                                    &objId))
         {
-            rc = VERR_WEB_INVALID_MANAGED_OBJECT_REFERENCE;
+            vrc = VERR_WEB_INVALID_MANAGED_OBJECT_REFERENCE;
             break;
         }
 
@@ -2257,7 +2253,7 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
         if (it == g_mapWebsessions.end())
         {
             WEBDEBUG(("   %s: cannot find websession for objref %s\n", __FUNCTION__, id.c_str()));
-            rc = VERR_WEB_INVALID_SESSION_ID;
+            vrc = VERR_WEB_INVALID_SESSION_ID;
             break;
         }
 
@@ -2269,7 +2265,7 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
         if (iter == pWebsession->_pp->_mapManagedObjectsById.end())
         {
             WEBDEBUG(("   %s: cannot find comobj for objref %s\n", __FUNCTION__, id.c_str()));
-            rc = VERR_WEB_INVALID_OBJECT_ID;
+            vrc = VERR_WEB_INVALID_OBJECT_ID;
             break;
         }
 
@@ -2277,7 +2273,7 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
 
     } while (0);
 
-    return rc;
+    return vrc;
 }
 
 /****************************************************************************
@@ -2303,7 +2299,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     _vbox__IManagedObjectRef_USCOREgetInterfaceNameResponse *resp)
 {
     RT_NOREF(soap);
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK; /** @todo r=bird: hrc is not set.... */
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do
@@ -2317,8 +2313,8 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
 
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
-    if (FAILED(rc))
+    WEBDEBUG(("-- leaving %s, hrc: %#lx\n", __FUNCTION__, hrc));
+    if (FAILED(hrc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -2339,7 +2335,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
     _vbox__IManagedObjectRef_USCOREreleaseResponse *resp)
 {
     RT_NOREF(resp);
-    HRESULT rc;
+    HRESULT hrc;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     {
@@ -2347,8 +2343,8 @@ int __vbox__IManagedObjectRef_USCORErelease(
         util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         ManagedObjectRef *pRef;
-        rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false);
-        if (rc == S_OK)
+        hrc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false);
+        if (hrc == S_OK)
         {
             WEBDEBUG(("   found reference; deleting!\n"));
             // this removes the object from all stacks; since
@@ -2361,8 +2357,8 @@ int __vbox__IManagedObjectRef_USCORErelease(
             RaiseSoapInvalidObjectFault(soap, req->_USCOREthis);
     }
 
-    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
-    if (FAILED(rc))
+    WEBDEBUG(("-- leaving %s, hrc: %#lx\n", __FUNCTION__, hrc));
+    if (FAILED(hrc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -2404,7 +2400,7 @@ int __vbox__IWebsessionManager_USCORElogon(
         _vbox__IWebsessionManager_USCORElogonResponse *resp)
 {
     RT_NOREF(soap);
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do
@@ -2435,11 +2431,11 @@ int __vbox__IWebsessionManager_USCORElogon(
             WEBDEBUG(("VirtualBox object ref is %s\n", resp->returnval.c_str()));
         }
         else
-            rc = E_FAIL;
+            hrc = E_FAIL;
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
-    if (FAILED(rc))
+    WEBDEBUG(("-- leaving %s, hrc: %#lx\n", __FUNCTION__, hrc));
+    if (FAILED(hrc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -2455,15 +2451,15 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
         _vbox__IWebsessionManager_USCOREgetSessionObject *req,
         _vbox__IWebsessionManager_USCOREgetSessionObjectResponse *resp)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do
     {
         // create a new ISession object
         ComPtr<ISession> pSession;
-        rc = g_pVirtualBoxClient->COMGETTER(Session)(pSession.asOutParam());
-        if (FAILED(rc))
+        hrc = g_pVirtualBoxClient->COMGETTER(Session)(pSession.asOutParam());
+        if (FAILED(hrc))
         {
             WEBDEBUG(("ERROR: cannot create session object!"));
             break;
@@ -2474,8 +2470,8 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
         WEBDEBUG(("Session object ref is %s\n", resp->returnval.c_str()));
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
-    if (FAILED(rc))
+    WEBDEBUG(("-- leaving %s, hrc: %#lx\n", __FUNCTION__, hrc));
+    if (FAILED(hrc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -2493,7 +2489,7 @@ int __vbox__IWebsessionManager_USCORElogoff(
         _vbox__IWebsessionManager_USCORElogoffResponse *resp)
 {
     RT_NOREF(resp);
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     {
@@ -2511,8 +2507,8 @@ int __vbox__IWebsessionManager_USCORElogoff(
         }
     }
 
-    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
-    if (FAILED(rc))
+    WEBDEBUG(("-- leaving %s, hrc: %#lx\n", __FUNCTION__, hrc));
+    if (FAILED(hrc))
         return SOAP_FAULT;
     return SOAP_OK;
 }

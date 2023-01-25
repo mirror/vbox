@@ -122,7 +122,7 @@ public:
         return mEventQ.get();
     }
 #else
-    static int dispatchMessageOnWindows(MSG const *pMsg, int rc);
+    static int dispatchMessageOnWindows(MSG const *pMsg, int vrc);
 #endif
 
 private:
