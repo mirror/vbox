@@ -38,21 +38,6 @@
 
 #include <iprt/critsect.h>
 
-#ifdef VBOX_SECURELABEL
-#include <SDL_ttf.h>
-/* function pointers */
-extern "C"
-{
-extern DECLSPEC int (SDLCALL *pTTF_Init)(void);
-extern DECLSPEC TTF_Font* (SDLCALL *pTTF_OpenFont)(const char *file, int ptsize);
-extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Solid)(TTF_Font *font, const char *text, SDL_Color fg);
-extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Shaded)(TTF_Font *font, const char *text, SDL_Color fg, SDL_Color bg);
-extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Blended)(TTF_Font *font, const char *text, SDL_Color fg);
-extern DECLSPEC void (SDLCALL *pTTF_CloseFont)(TTF_Font *font);
-extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
-}
-#endif /* VBOX_SECURELABEL && !VBOX_WITH_SDL2 */
-
 class VBoxSDLFBOverlay;
 
 class ATL_NO_VTABLE VBoxSDLFB :
@@ -132,12 +117,6 @@ public:
     bool hasWindow(uint32_t id) { return SDL_GetWindowID(mpWindow) == id; }
     int setWindowTitle(const char *pcszTitle);
 #endif
-#ifdef VBOX_SECURELABEL
-    int  initSecureLabel(uint32_t height, char *font, uint32_t pointsize, uint32_t labeloffs);
-    void setSecureLabelText(const char *text);
-    void setSecureLabelColor(uint32_t colorFG, uint32_t colorBG);
-    void paintSecureLabel(int x, int y, int w, int h, bool fForce);
-#endif
     void setWinId(int64_t winId) { mWinId = winId; }
     void setOrigin(int32_t axOrigin, int32_t ayOrigin) { mOriginX = axOrigin; mOriginY = ayOrigin; }
     bool getFullscreen() { return mfFullscreen; }
@@ -195,22 +174,6 @@ private:
     bool mfShowSDLConfig;
     /** handle to window where framebuffer context is being drawn*/
     int64_t mWinId;
-#ifdef VBOX_SECURELABEL
-    /** current secure label text */
-    Utf8Str mSecureLabelText;
-    /** current secure label foreground color (RGB) */
-    uint32_t mSecureLabelColorFG;
-    /** current secure label background color (RGB) */
-    uint32_t mSecureLabelColorBG;
-    /** secure label font handle */
-    TTF_Font *mLabelFont;
-    /** secure label height in pixels */
-    uint32_t mLabelHeight;
-    /** secure label offset from the top of the secure label */
-    uint32_t mLabelOffs;
-
-#endif
-
     SDL_Surface *mSurfVRAM;
 
     BYTE *mPtrVRAM;

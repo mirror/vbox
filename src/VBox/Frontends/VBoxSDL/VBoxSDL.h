@@ -60,16 +60,14 @@
 #define SDL_USER_EVENT_UPDATE_TITLEBAR    (SDL_USEREVENT + 7)
 /** custom SDL user event for terminating the session */
 #define SDL_USER_EVENT_TERMINATE          (SDL_USEREVENT + 8)
-/** custom SDL user event for secure label update notification */
-#define SDL_USER_EVENT_SECURELABEL_UPDATE (SDL_USEREVENT + 9)
 /** custom SDL user event for pointer shape change request */
-#define SDL_USER_EVENT_POINTER_CHANGE     (SDL_USEREVENT + 10)
+#define SDL_USER_EVENT_POINTER_CHANGE     (SDL_USEREVENT + 9)
 /** custom SDL user event for a regular timer */
-#define SDL_USER_EVENT_TIMER              (SDL_USEREVENT + 11)
+#define SDL_USER_EVENT_TIMER              (SDL_USEREVENT + 10)
 /** custom SDL user event for resetting mouse cursor */
-#define SDL_USER_EVENT_GUEST_CAP_CHANGED  (SDL_USEREVENT + 12)
+#define SDL_USER_EVENT_GUEST_CAP_CHANGED  (SDL_USEREVENT + 11)
 /** custom SDL user event for window resize done */
-#define SDL_USER_EVENT_WINDOW_RESIZE_DONE (SDL_USEREVENT + 13)
+#define SDL_USER_EVENT_WINDOW_RESIZE_DONE (SDL_USEREVENT + 12)
 
 
 /** The user.code field of the SDL_USER_EVENT_TERMINATE event.

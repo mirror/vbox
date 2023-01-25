@@ -69,19 +69,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS2_CI(VBoxSDLFBOverlay, IFramebufferOverlay, IFramebu
 NS_DECL_CLASSINFO(VBoxSDLFBOverlay)
 #endif
 
-#ifdef VBOX_SECURELABEL
-/* function pointers */
-extern "C"
-{
-DECLSPEC int (SDLCALL *pTTF_Init)(void);
-DECLSPEC TTF_Font* (SDLCALL *pTTF_OpenFont)(const char *file, int ptsize);
-DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Solid)(TTF_Font *font, const char *text, SDL_Color fg);
-DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Blended)(TTF_Font *font, const char *text, SDL_Color fg);
-DECLSPEC void (SDLCALL *pTTF_CloseFont)(TTF_Font *font);
-DECLSPEC void (SDLCALL *pTTF_Quit)(void);
-}
-#endif /* VBOX_SECURELABEL */
-
 static bool gfSdlInitialized = false;           /**< if SDL was initialized */
 static SDL_Surface *gWMIcon = NULL;             /**< the application icon */
 static RTNATIVETHREAD gSdlNativeThread = NIL_RTNATIVETHREAD; /**< the SDL thread */
@@ -150,12 +137,6 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     mBitsPerPixel   = 0;
     mBytesPerLine   = 0;
     mfSameSizeRequested = false;
-#ifdef VBOX_SECURELABEL
-    mLabelFont      = NULL;
-    mLabelHeight    = 0;
-    mLabelOffs      = 0;
-#endif
-
     mfUpdates = false;
 
     int rc = RTCritSectInit(&mUpdateLock);
@@ -194,14 +175,6 @@ VBoxSDLFB::~VBoxSDLFB()
         SDL_FreeSurface(mSurfVRAM);
         mSurfVRAM = NULL;
     }
-
-#ifdef VBOX_SECURELABEL
-    if (mLabelFont)
-        pTTF_CloseFont(mLabelFont);
-    if (pTTF_Quit)
-        pTTF_Quit();
-#endif
-
     RTCritSectDelete(&mUpdateLock);
 }
 
@@ -343,11 +316,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(HeightReduction)(ULONG *heightReduction)
 {
     if (!heightReduction)
         return E_POINTER;
-#ifdef VBOX_SECURELABEL
-    *heightReduction = mLabelHeight;
-#else
     *heightReduction = 0;
-#endif
     return S_OK;
 }
 
@@ -804,11 +773,7 @@ void VBoxSDLFB::resizeSDL(void)
     else
     {
         newWidth  = RT_MIN(mGuestXRes, mMaxScreenWidth);
-#ifdef VBOX_SECURELABEL
-        newHeight = RT_MIN(mGuestYRes + mLabelHeight, mMaxScreenHeight);
-#else
         newHeight = RT_MIN(mGuestYRes, mMaxScreenHeight);
-#endif
     }
 
     /* we don't have any extra space by default */
@@ -874,39 +839,6 @@ void VBoxSDLFB::resizeSDL(void)
             AssertReleaseFailed();
     }
 #endif /* VBOX_WITH_SDL2 */
-#ifdef VBOX_SECURELABEL
-    /*
-     * For non fixed SDL resolution, the above call tried to add the label height
-     * to the guest height. If it worked, we have an offset. If it didn't the below
-     * code will try again with the original guest resolution.
-     */
-    if (mFixedSDLWidth == ~(uint32_t)0)
-    {
-        /* if it didn't work, then we have to go for the original resolution and paint over the guest */
-        if (!mScreenSurface)
-        {
-            mScreenSurface = SDL_SetVideoMode(newWidth, newHeight - mLabelHeight, 0, sdlFlags);
-        }
-        else
-        {
-            /* we now have some extra space */
-            mTopOffset = mLabelHeight;
-        }
-    }
-    else
-    {
-        /* in case the guest resolution is small enough, we do have a top offset */
-        if (mFixedSDLHeight - mGuestYRes >= mLabelHeight)
-            mTopOffset = mLabelHeight;
-
-        /* we also might have to center the guest picture */
-        if (mFixedSDLWidth > mGuestXRes)
-            mCenterXOffset = (mFixedSDLWidth - mGuestXRes) / 2;
-        if (mFixedSDLHeight > mGuestYRes + mLabelHeight)
-            mCenterYOffset = (mFixedSDLHeight - (mGuestYRes + mLabelHeight)) / 2;
-    }
-#endif /* VBOX_SECURELABEL */
-
 }
 
 /**
@@ -947,17 +879,6 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
 
     /* this is how many pixels we have to cut off from the height for this specific blit */
     int yCutoffGuest = 0;
-
-#ifdef VBOX_SECURELABEL
-    bool fPaintLabel = false;
-    /* if we have a label and no space for it, we have to cut off a bit */
-    if (mLabelHeight && !mTopOffset)
-    {
-        if (y < (int)mLabelHeight)
-            yCutoffGuest = mLabelHeight - y;
-    }
-#endif
-
     /**
      * If we get a SDL window relative update, we
      * just perform a full screen update to keep things simple.
@@ -966,11 +887,6 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
      */
     if (!fGuestRelative)
     {
-#ifdef VBOX_SECURELABEL
-        /* repaint the label if necessary */
-        if (y < (int)mLabelHeight)
-            fPaintLabel = true;
-#endif
         x = 0;
         w = mGuestXRes;
         y = 0;
@@ -990,11 +906,7 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
      * yCutoffGuest >= 0)
      */
     dstRect.x = x + mCenterXOffset;
-#ifdef VBOX_SECURELABEL
-    dstRect.y = RT_MAX(mLabelHeight, y + yCutoffGuest + mTopOffset) + mCenterYOffset;
-#else
     dstRect.y = y + yCutoffGuest + mTopOffset + mCenterYOffset;
-#endif
     dstRect.w = w;
     dstRect.h = RT_MAX(0, h - yCutoffGuest);
 
@@ -1009,11 +921,6 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     SDL_RenderCopy(mpRenderer, pNewTexture, &srcRect, &dstRect);
     SDL_RenderPresent(mpRenderer);
     SDL_DestroyTexture(pNewTexture);
-#endif
-
-#ifdef VBOX_SECURELABEL
-    if (fPaintLabel)
-        paintSecureLabel(0, 0, 0, 0, false);
 #endif
     RTCritSectLeave(&mUpdateLock);
 }
@@ -1074,109 +981,3 @@ int VBoxSDLFB::setWindowTitle(const char *pcszTitle)
     return VINF_SUCCESS;
 }
 #endif
-
-
-#ifdef VBOX_SECURELABEL
-
-/**
- * Setup the secure labeling parameters
- *
- * @returns         VBox status code
- * @param height    height of the secure label area in pixels
- * @param font      file path fo the TrueType font file
- * @param pointsize font size in points
- */
-int VBoxSDLFB::initSecureLabel(uint32_t height, char *font, uint32_t pointsize, uint32_t labeloffs)
-{
-    LogFlow(("VBoxSDLFB:initSecureLabel: new offset: %d pixels, new font: %s, new pointsize: %d\n",
-              height, font, pointsize));
-    mLabelHeight = height;
-    mLabelOffs = labeloffs;
-    Assert(font);
-    pTTF_Init();
-    mLabelFont = pTTF_OpenFont(font, pointsize);
-    if (!mLabelFont)
-    {
-        AssertMsgFailed(("Failed to open TTF font file %s\n", font));
-        return VERR_OPEN_FAILED;
-    }
-    mSecureLabelColorFG = 0x0000FF00;
-    mSecureLabelColorBG = 0x00FFFF00;
-    repaint();
-    return VINF_SUCCESS;
-}
-
-/**
- * Set the secure label text and repaint the label
- *
- * @param   text UTF-8 string of new label
- * @remarks must be called from the SDL thread!
- */
-void VBoxSDLFB::setSecureLabelText(const char *text)
-{
-    mSecureLabelText = text;
-    paintSecureLabel(0, 0, 0, 0, true);
-}
-
-/**
- * Sets the secure label background color.
- *
- * @param   colorFG encoded RGB value for text
- * @param   colorBG encored RGB value for background
- * @remarks must be called from the SDL thread!
- */
-void VBoxSDLFB::setSecureLabelColor(uint32_t colorFG, uint32_t colorBG)
-{
-    mSecureLabelColorFG = colorFG;
-    mSecureLabelColorBG = colorBG;
-    paintSecureLabel(0, 0, 0, 0, true);
-}
-
-/**
- * Paint the secure label if required
- *
- * @param   fForce Force the repaint
- * @remarks must be called from the SDL thread!
- */
-void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
-{
-    RT_NOREF(x, w, h);
-# ifdef VBOXSDL_WITH_X11
-    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
-# endif
-    /* only when the function is present */
-    if (!pTTF_RenderUTF8_Solid)
-        return;
-    /* check if we can skip the paint */
-    if (!fForce && ((uint32_t)y > mLabelHeight))
-    {
-        return;
-    }
-    /* first fill the background */
-    SDL_Rect rect = {0, 0, (Uint16)mScreen->w, (Uint16)mLabelHeight};
-    SDL_FillRect(mScreen, &rect, SDL_MapRGB(mScreen->format,
-                                            (mSecureLabelColorBG & 0x00FF0000) >> 16,   /* red   */
-                                            (mSecureLabelColorBG & 0x0000FF00) >> 8,   /* green */
-                                            mSecureLabelColorBG & 0x000000FF)); /* blue  */
-
-    /* now the text */
-    if (    mLabelFont != NULL
-         && !mSecureLabelText.isEmpty()
-       )
-    {
-        SDL_Color clrFg = {(uint8_t)((mSecureLabelColorFG & 0x00FF0000) >> 16),
-                           (uint8_t)((mSecureLabelColorFG & 0x0000FF00) >> 8),
-                           (uint8_t)( mSecureLabelColorFG & 0x000000FF      ), 0};
-        SDL_Surface *sText = (pTTF_RenderUTF8_Blended != NULL)
-                                 ? pTTF_RenderUTF8_Blended(mLabelFont, mSecureLabelText.c_str(), clrFg)
-                                 : pTTF_RenderUTF8_Solid(mLabelFont, mSecureLabelText.c_str(), clrFg);
-        rect.x = 10;
-        rect.y = mLabelOffs;
-        SDL_BlitSurface(sText, NULL, mScreen, &rect);
-        SDL_FreeSurface(sText);
-    }
-    /* make sure to update the screen */
-    SDL_UpdateRect(mScreen, 0, 0, mScreen->w, mLabelHeight);
-}
-
-#endif /* VBOX_SECURELABEL */

@@ -110,13 +110,6 @@ using namespace com;
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#ifdef VBOX_SECURELABEL
-/** extra data key for the secure label */
-#define VBOXSDL_SECURELABEL_EXTRADATA "VBoxSDL/SecureLabel"
-/** label area height in pixels */
-#define SECURE_LABEL_HEIGHT 20
-#endif
-
 /** Enables the rawr[0|3], patm, and casm options. */
 #define VBOXSDL_ADVANCED_OPTIONS
 
@@ -247,15 +240,6 @@ static SDL_TimerID gSdlQuitTimer = 0;
 static SDL_SysWMinfo gSdlInfo;
 #endif
 
-#ifdef VBOX_SECURELABEL
-#ifdef RT_OS_WINDOWS
-#define LIBSDL_TTF_NAME "SDL_ttf"
-#else
-#define LIBSDL_TTF_NAME "libSDL_ttf-2.0.so.0"
-#endif
-RTLDRMOD gLibrarySDL_ttf = NIL_RTLDRMOD;
-#endif
-
 static RTSEMEVENT g_EventSemSDLEvents;
 static volatile int32_t g_cNotifyUpdateEventsPending;
 
@@ -342,39 +326,7 @@ public:
         switch (aType)
         {
             case VBoxEventType_OnExtraDataChanged:
-            {
-#ifdef VBOX_SECURELABEL
-                ComPtr<IExtraDataChangedEvent> pEDCEv = aEvent;
-                Assert(pEDCEv);
-                Bstr bstrMachineId;
-                pEDCEv->COMGETTER(MachineId)(bstrMachineId.asOutParam());
-                if (gpMachine)
-                {
-                    /*
-                     * check if we're interested in the message
-                     */
-                    Bstr bstrOurId;
-                    gpMachine->COMGETTER(Id)(bstrOurId.asOutParam());
-                    if (bstrOurId == bstrMachineId)
-                    {
-                        Bstr bstrKey;
-                        pEDCEv->COMGETTER(Key)(bstrKey.asOutParam());
-                        if (bstrKey == VBOXSDL_SECURELABEL_EXTRADATA)
-                        {
-                            /*
-                             * Notify SDL thread of the string update
-                             */
-                            SDL_Event event  = {0};
-                            event.type       = SDL_USEREVENT;
-                            event.user.type  = SDL_USER_EVENT_SECURELABEL_UPDATE;
-                            PushSDLEventForSure(&event);
-                        }
-                    }
-                }
-#endif
                 break;
-            }
-
             default:
                 AssertFailed();
         }
@@ -687,14 +639,6 @@ static void show_usage()
              "  --discardstate           Discard saved state (if present) and revert to last snapshot (if present)\n"
              "  --settingspw <pw>        Specify the settings password\n"
              "  --settingspwfile <file>  Specify a file containing the settings password\n"
-#ifdef VBOX_SECURELABEL
-             "  --securelabel            Display a secure VM label at the top of the screen\n"
-             "  --seclabelfnt            TrueType (.ttf) font file for secure session label\n"
-             "  --seclabelsiz            Font point size for secure session label (default 12)\n"
-             "  --seclabelofs            Font offset within the secure label (default 0)\n"
-             "  --seclabelfgcol <rgb>    Secure label text color RGB value in 6 digit hexadecimal (eg: FFFF00)\n"
-             "  --seclabelbgcol <rgb>    Secure label background color RGB value in 6 digit hexadecimal (eg: FF0000)\n"
-#endif
 #ifdef VBOXSDL_ADVANCED_OPTIONS
              "  --warpdrive <pct>        Sets the warp driver rate in percent (100 = normal)\n"
 #endif
@@ -908,14 +852,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     bool fDiscardState = false;
     const char *pcszSettingsPw = NULL;
     const char *pcszSettingsPwFile = NULL;
-#ifdef VBOX_SECURELABEL
-    BOOL fSecureLabel = false;
-    uint32_t secureLabelPointSize = 12;
-    uint32_t secureLabelFontOffs = 0;
-    char *secureLabelFontFile = NULL;
-    uint32_t secureLabelColorFG = 0x0000FF00;
-    uint32_t secureLabelColorBG = 0x00FFFF00;
-#endif
 #ifdef VBOXSDL_ADVANCED_OPTIONS
     uint32_t u32WarpDrive = 0;
 #endif
@@ -1289,64 +1225,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             pcszSettingsPwFile = argv[curArg];
         }
-#ifdef VBOX_SECURELABEL
-        else if (   !strcmp(argv[curArg], "--securelabel")
-                 || !strcmp(argv[curArg], "-securelabel"))
-        {
-            fSecureLabel = true;
-            LogFlow(("Secure labelling turned on\n"));
-        }
-        else if (   !strcmp(argv[curArg], "--seclabelfnt")
-                 || !strcmp(argv[curArg], "-seclabelfnt"))
-        {
-            if (++curArg >= argc)
-            {
-                RTPrintf("Error: missing font file name for secure label!\n");
-                return 1;
-            }
-            secureLabelFontFile = argv[curArg];
-        }
-        else if (   !strcmp(argv[curArg], "--seclabelsiz")
-                 || !strcmp(argv[curArg], "-seclabelsiz"))
-        {
-            if (++curArg >= argc)
-            {
-                RTPrintf("Error: missing font point size for secure label!\n");
-                return 1;
-            }
-            secureLabelPointSize = atoi(argv[curArg]);
-        }
-        else if (   !strcmp(argv[curArg], "--seclabelofs")
-                 || !strcmp(argv[curArg], "-seclabelofs"))
-        {
-            if (++curArg >= argc)
-            {
-                RTPrintf("Error: missing font pixel offset for secure label!\n");
-                return 1;
-            }
-            secureLabelFontOffs = atoi(argv[curArg]);
-        }
-        else if (   !strcmp(argv[curArg], "--seclabelfgcol")
-                 || !strcmp(argv[curArg], "-seclabelfgcol"))
-        {
-            if (++curArg >= argc)
-            {
-                RTPrintf("Error: missing text color value for secure label!\n");
-                return 1;
-            }
-            sscanf(argv[curArg], "%X", &secureLabelColorFG);
-        }
-        else if (   !strcmp(argv[curArg], "--seclabelbgcol")
-                 || !strcmp(argv[curArg], "-seclabelbgcol"))
-        {
-            if (++curArg >= argc)
-            {
-                RTPrintf("Error: missing background color value for secure label!\n");
-                return 1;
-            }
-            sscanf(argv[curArg], "%X", &secureLabelColorBG);
-        }
-#endif
 #ifdef VBOXSDL_ADVANCED_OPTIONS
         else if (   !strcmp(argv[curArg], "--warpdrive")
                  || !strcmp(argv[curArg], "-warpdrive"))
@@ -1987,52 +1865,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             SetFullscreen(true);
     }
 
-#ifdef VBOX_SECURELABEL
-    if (fSecureLabel)
-    {
-        if (!secureLabelFontFile)
-        {
-            RTPrintf("Error: no font file specified for secure label!\n");
-            goto leave;
-        }
-        /* load the SDL_ttf library and get the required imports */
-        vrc = RTLdrLoadSystem(LIBSDL_TTF_NAME, true /*fNoUnload*/, &gLibrarySDL_ttf);
-        if (RT_SUCCESS(vrc))
-            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Init", (void**)&pTTF_Init);
-        if (RT_SUCCESS(vrc))
-            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_OpenFont", (void**)&pTTF_OpenFont);
-        if (RT_SUCCESS(vrc))
-            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Solid", (void**)&pTTF_RenderUTF8_Solid);
-        if (RT_SUCCESS(vrc))
-        {
-            /* silently ignore errors here */
-            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Blended", (void**)&pTTF_RenderUTF8_Blended);
-            if (RT_FAILURE(vrc))
-                pTTF_RenderUTF8_Blended = NULL;
-            vrc = VINF_SUCCESS;
-        }
-        if (RT_SUCCESS(vrc))
-            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_CloseFont", (void**)&pTTF_CloseFont);
-        if (RT_SUCCESS(vrc))
-            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Quit", (void**)&pTTF_Quit);
-        if (RT_SUCCESS(vrc))
-            vrc = gpFramebuffer[0]->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize, secureLabelFontOffs);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error: could not initialize secure labeling: rc = %Rrc\n", vrc);
-            goto leave;
-        }
-        Bstr bstrLabel;
-        gpMachine->GetExtraData(Bstr(VBOXSDL_SECURELABEL_EXTRADATA).raw(), bstrLabel.asOutParam());
-        Utf8Str labelUtf8(bstrLabel);
-        /*
-         * Now update the label
-         */
-        gpFramebuffer[0]->setSecureLabelColor(secureLabelColorFG, secureLabelColorBG);
-        gpFramebuffer[0]->setSecureLabelText(labelUtf8.c_str());
-    }
-#endif
-
 #ifdef VBOXSDL_WITH_X11
     /* NOTE1: We still want Ctrl-C to work, so we undo the SDL redirections.
      * NOTE2: We have to remove the PidFile if this file exists. */
@@ -2491,12 +2323,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                 break;
                             }
                             uResizeWidth  = event.window.data1;
-#ifdef VBOX_SECURELABEL
-                            if (fSecureLabel)
-                                uResizeHeight = RT_MAX(0, event.window.data2 - SECURE_LABEL_HEIGHT);
-                            else
-#endif
-                                uResizeHeight = event.window.data2;
+                            uResizeHeight = event.window.data2;
                             if (gSdlResizeTimer)
                                 SDL_RemoveTimer(gSdlResizeTimer);
                             gSdlResizeTimer = SDL_AddTimer(300, ResizeTimer, NULL);
@@ -2777,12 +2604,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         break;
                     }
                     uResizeWidth  = event.resize.w;
-#ifdef VBOX_SECURELABEL
-                    if (fSecureLabel)
-                        uResizeHeight = RT_MAX(0, event.resize.h - SECURE_LABEL_HEIGHT);
-                    else
-#endif
-                        uResizeHeight = event.resize.h;
+                    uResizeHeight = event.resize.h;
                     if (gSdlResizeTimer)
                         SDL_RemoveTimer(gSdlResizeTimer);
                     gSdlResizeTimer = SDL_AddTimer(300, ResizeTimer, NULL);
@@ -2891,27 +2713,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     RTPrintf("Error: VM terminated abnormally!\n");
                 goto leave;
             }
-
-#ifdef VBOX_SECURELABEL
-            /*
-             * User specific secure label update event
-             */
-            case SDL_USER_EVENT_SECURELABEL_UPDATE:
-            {
-                /*
-                 * Query the new label text
-                 */
-                Bstr bstrLabel;
-                gpMachine->GetExtraData(Bstr(VBOXSDL_SECURELABEL_EXTRADATA).raw(), bstrLabel.asOutParam());
-                Utf8Str labelUtf8(bstrLabel);
-                /*
-                 * Now update the label
-                 */
-                gpFramebuffer[0]->setSecureLabelText(labelUtf8.c_str());
-                break;
-            }
-#endif /* VBOX_SECURELABEL */
-
             /*
              * User specific pointer shape change event
              */
@@ -3090,12 +2891,6 @@ leave:
     }
 
     VBoxSDLFB::uninit();
-
-#ifdef VBOX_SECURELABEL
-    /* must do this after destructing the framebuffer */
-    if (gLibrarySDL_ttf)
-        RTLdrClose(gLibrarySDL_ttf);
-#endif
 
     /* VirtualBox (server) listener unregistration. */
     if (pVBoxListener)

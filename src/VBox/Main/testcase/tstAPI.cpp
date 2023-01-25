@@ -709,17 +709,6 @@ int main(int argc, char *argv[])
         CHECK_ERROR_BREAK(virtualBox, FindMachine(name, machine.asOutParam()));
         RTPrintf("Accessing the machine in read-only mode:\n");
         readAndChangeMachineSettings(machine);
-#if 0
-        if (argc != 2)
-        {
-            RTPrintf("Error: a string has to be supplied!\n");
-        }
-        else
-        {
-            Bstr secureLabel = argv[1];
-            machine->COMSETTER(ExtraData)(L"VBoxSDL/SecureLabel", secureLabel);
-        }
-#endif
     }
     while (0);
     RTPrintf("\n");
@@ -1141,12 +1130,6 @@ int main(int argc, char *argv[])
         ComPtr<IMachine> sessionMachine;
         RTPrintf("Getting machine session object...\n");
         CHECK_RC_BREAK(session->COMGETTER(Machine)(sessionMachine.asOutParam()));
-
-#if 0
-        Bstr extraDataKey = "VBoxSDL/SecureLabel";
-        Bstr extraData = "Das kommt jetzt noch viel krasser vom total konkreten API!";
-        CHECK_RC(sessionMachine->SetExtraData(extraDataKey, extraData));
-#endif
 #if 0
         ComPtr<IConsole> console;
         RTPrintf("Getting console object...\n");

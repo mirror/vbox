@@ -463,10 +463,6 @@
     <?endif ?>
         <File Id="file_SDL.dll" Name="SDL.dll"
               Source="$(env.PATH_OUT)\bin\SDL.dll" />
-    <?if $(env.VBOX_WITH_SECURELABEL) = "yes" ?>
-            <File Id="file_SDL_ttf.dll" Name="SDL_ttf.dll"
-                  Source="$(env.PATH_OUT)\bin\SDL_ttf.dll" />
-    <?endif?>
     </Component> <!-- SDL frontend -->
 <?endif ?>
 

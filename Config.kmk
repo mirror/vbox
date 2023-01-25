@@ -808,10 +808,6 @@ VBOX_WITH_FE_BUGREPORT = 1
 # purposes. For production use it's recommended to use the Qt GUI which can
 # be also stripped down. See VBOX_WITH_QTGUI.
 VBOX_WITH_VBOXSDL =
-# Build VBoxSDL with secure label support.
-ifeq ($(filter win.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) # too much work with freetype and all that.
-VBOX_WITH_SECURELABEL = 1
-endif
 # Start VBoxSVC in windows session 0 (services session).
 VBOX_WITH_VBOXSVC_SESSION_0 = 1
 # The headless frontend.
@@ -1259,8 +1255,6 @@ ifn1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
- # Don't bother with SDL ttf for now.
- VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP_RDESKTOP=
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
@@ -1290,8 +1284,6 @@ ifeq ($(KBUILD_TARGET),freebsd)
 endif
 
 ifeq ($(KBUILD_TARGET),haiku)
- # Don't bother with SDL ttf for now.
- VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP_RDESKTOP=
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
@@ -1314,7 +1306,6 @@ endif
 ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_WEBSERVICES=
  VBOX_WITH_INSTALLER=
- VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
  VBOX_WITH_VALIDATIONKIT=
@@ -1324,10 +1315,6 @@ ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_DOCS=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  VBOX_WITH_HARDENING=
-endif
-
-ifeq ($(KBUILD_TARGET),solaris)
- VBOX_WITH_SECURELABEL=
 endif
 
 ifeq ($(KBUILD_TARGET),win)
@@ -1351,7 +1338,6 @@ ifn1of ($(KBUILD_TARGET_ARCH), x86 amd64 arm64)
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  VBOX_WITH_QTGUI=
  VBOX_WITH_RAW_MODE=
- VBOX_WITH_SECURELABEL=
  VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_USB=
  VBOX_WITH_VBOXDRV=
@@ -1453,7 +1439,6 @@ ifdef VBOX_OSE
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_LIBSSH=
  # not yet
- VBOX_WITH_SECURELABEL=
  VBOX_WITH_PLUGIN_CRYPT=
  VBOX_WITH_DRAG_AND_DROP_PROMISES=
  ifn1of ($(KBUILD_TARGET), linux)
