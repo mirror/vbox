@@ -354,21 +354,21 @@ static RTEXITCODE errorSyntaxInternal(USAGECATEGORY enmCommand, const char *pszF
  * @returns RTEXITCODE_SYNTAX.
  *
  * @param   enmCommand      The command.
- * @param   rc              The RTGetOpt return code.
+ * @param   vrc             The RTGetOpt return code.
  * @param   pValueUnion     The value union.
  */
-static RTEXITCODE errorGetOptInternal(USAGECATEGORY enmCommand, int rc, union RTGETOPTUNION const *pValueUnion)
+static RTEXITCODE errorGetOptInternal(USAGECATEGORY enmCommand, int vrc, union RTGETOPTUNION const *pValueUnion)
 {
     /*
      * Check if it is an unhandled standard option.
      */
-    if (rc == 'V')
+    if (vrc == 'V')
     {
         RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
         return RTEXITCODE_SUCCESS;
     }
 
-    if (rc == 'h')
+    if (vrc == 'h')
     {
         showLogo(g_pStdErr);
         printUsageInternal(enmCommand, g_pStdOut);
@@ -382,21 +382,21 @@ static RTEXITCODE errorGetOptInternal(USAGECATEGORY enmCommand, int rc, union RT
 
     printUsageInternal(enmCommand, g_pStdErr);
 
-    if (rc == VINF_GETOPT_NOT_OPTION)
+    if (vrc == VINF_GETOPT_NOT_OPTION)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Invalid parameter '%s'"), pValueUnion->psz);
-    if (rc > 0)
+    if (vrc > 0)
     {
-        if (RT_C_IS_PRINT(rc))
-            return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Invalid option -%c"), rc);
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Invalid option case %i"), rc);
+        if (RT_C_IS_PRINT(vrc))
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Invalid option -%c"), vrc);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Invalid option case %i"), vrc);
     }
-    if (rc == VERR_GETOPT_UNKNOWN_OPTION)
+    if (vrc == VERR_GETOPT_UNKNOWN_OPTION)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Unknown option: %s"), pValueUnion->psz);
-    if (rc == VERR_GETOPT_INVALID_ARGUMENT_FORMAT)
+    if (vrc == VERR_GETOPT_INVALID_ARGUMENT_FORMAT)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, Internal::tr("Invalid argument format: %s"), pValueUnion->psz);
     if (pValueUnion->pDef)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%s: %Rrs", pValueUnion->pDef->pszLong, rc);
-    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%Rrs", rc);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%s: %Rrs", pValueUnion->pDef->pszLong, vrc);
+    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%Rrs", vrc);
 }
 
 
@@ -495,8 +495,8 @@ static HRESULT RemoveKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, cons
         return S_OK;
 
     char *pszKeys;
-    int rc = RTUtf16ToUtf8(Keys.raw(), &pszKeys);
-    if (RT_SUCCESS(rc))
+    int vrc = RTUtf16ToUtf8(Keys.raw(), &pszKeys);
+    if (RT_SUCCESS(vrc))
     {
         /* locate it */
         size_t cchKey = strlen(pszKey);
@@ -530,7 +530,7 @@ static HRESULT RemoveKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, cons
     }
     else
         RTMsgError(Internal::tr("Failed to delete key '%s' from '%s',  string conversion error %Rrc!"),
-                   pszKey,  pszKeyBase, rc);
+                   pszKey,  pszKeyBase, vrc);
 
     return E_FAIL;
 }
@@ -629,7 +629,7 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
     {
         int vrc = RTStrToInt64Ex(argv[2], NULL, 0, &offDelta);
         if (RT_FAILURE(vrc))
-            return errorArgument(argv[0], Internal::tr("Failed to read delta '%s', rc=%Rrc\n"), argv[2], vrc);
+            return errorArgument(argv[0], Internal::tr("Failed to read delta '%s', vrc=%Rrc\n"), argv[2], vrc);
     }
 
     /* pszModule */
@@ -641,7 +641,7 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
     {
         int vrc = RTStrToUInt64Ex(argv[4], NULL, 0, &ModuleAddress);
         if (RT_FAILURE(vrc))
-            return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', rc=%Rrc\n"), argv[4], vrc);
+            return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', vrc=%Rrc\n"), argv[4], vrc);
     }
 
     /* ModuleSize */
@@ -649,7 +649,7 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
     {
         int vrc = RTStrToUInt64Ex(argv[5], NULL, 0, &ModuleSize);
         if (RT_FAILURE(vrc))
-            return errorArgument(argv[0], Internal::tr("Failed to read module size '%s', rc=%Rrc\n"), argv[5], vrc);
+            return errorArgument(argv[0], Internal::tr("Failed to read module size '%s', vrc=%Rrc\n"), argv[5], vrc);
     }
 
     /*
@@ -706,7 +706,7 @@ static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
         return errorArgument(Internal::tr("Missing the module address argument!\n"));
     int vrc = RTStrToUInt64Ex(argv[2], NULL, 0, &ModuleAddress);
     if (RT_FAILURE(vrc))
-        return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', rc=%Rrc\n"), argv[2], vrc);
+        return errorArgument(argv[0], Internal::tr("Failed to read module address '%s', vrc=%Rrc\n"), argv[2], vrc);
 
     /* name (optional) */
     if (argc > 3)
@@ -717,7 +717,7 @@ static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
     {
         vrc = RTStrToUInt64Ex(argv[4], NULL, 0, &offSubtrahend);
         if (RT_FAILURE(vrc))
-            return errorArgument(argv[0], Internal::tr("Failed to read subtrahend '%s', rc=%Rrc\n"), argv[4], vrc);
+            return errorArgument(argv[0], Internal::tr("Failed to read subtrahend '%s', vrc=%Rrc\n"), argv[4], vrc);
     }
 
     /* segment (optional) */
@@ -725,7 +725,7 @@ static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
     {
         vrc = RTStrToUInt32Ex(argv[5], NULL, 0, &iSeg);
         if (RT_FAILURE(vrc))
-            return errorArgument(argv[0], Internal::tr("Failed to read segment number '%s', rc=%Rrc\n"), argv[5], vrc);
+            return errorArgument(argv[0], Internal::tr("Failed to read segment number '%s', vrc=%Rrc\n"), argv[5], vrc);
     }
 
     /*
@@ -748,11 +748,11 @@ static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
 }
 
 
-static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+static DECLCALLBACK(void) handleVDError(void *pvUser, int vrc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     RT_NOREF(pvUser);
     RTMsgErrorV(pszFormat, va);
-    RTMsgError(Internal::tr("Error code %Rrc at %s(%u) in function %s"), rc, RT_SRC_POS_ARGS);
+    RTMsgError(Internal::tr("Error code %Rrc at %s(%u) in function %s"), vrc, RT_SRC_POS_ARGS);
 }
 
 static DECLCALLBACK(int) handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
@@ -800,10 +800,9 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         argv[1], VDTYPE_INVALID, &pszFormat, &enmType);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Format autodetect failed: %Rrc"), rc);
+    int vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */, argv[1], VDTYPE_INVALID, &pszFormat, &enmType);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Format autodetect failed: %Rrc"), vrc);
 
     PVDISK pDisk = NULL;
 
@@ -812,31 +811,31 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     vdInterfaceError.pfnError     = handleVDError;
     vdInterfaceError.pfnMessage   = handleVDMessage;
 
-    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
-    AssertRC(rc);
+    vrc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
+    AssertRC(vrc);
 
-    rc = VDCreate(pVDIfs, enmType, &pDisk);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot create the virtual disk container: %Rrc"), rc);
+    vrc = VDCreate(pVDIfs, enmType, &pDisk);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot create the virtual disk container: %Rrc"), vrc);
 
     /* Open the image */
-    rc = VDOpen(pDisk, pszFormat, argv[1], VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_INFO, NULL);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot open the image: %Rrc"), rc);
+    vrc = VDOpen(pDisk, pszFormat, argv[1], VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_INFO, NULL);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot open the image: %Rrc"), vrc);
 
     if (uuidType == HDUUID)
-      rc = VDSetUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
+      vrc = VDSetUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
     else
-      rc = VDSetParentUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
-    if (RT_FAILURE(rc))
-        RTMsgError(Internal::tr("Cannot set a new UUID: %Rrc"), rc);
+      vrc = VDSetParentUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
+    if (RT_FAILURE(vrc))
+        RTMsgError(Internal::tr("Cannot set a new UUID: %Rrc"), vrc);
     else
         RTPrintf(Internal::tr("UUID changed to: %s\n"), uuid.toString().c_str());
 
     VDCloseAll(pDisk);
 
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -853,10 +852,9 @@ static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         argv[0], VDTYPE_INVALID, &pszFormat, &enmType);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Format autodetect failed: %Rrc"), rc);
+    int vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */, argv[0], VDTYPE_INVALID, &pszFormat, &enmType);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Format autodetect failed: %Rrc"), vrc);
 
     PVDISK pDisk = NULL;
 
@@ -865,24 +863,24 @@ static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     vdInterfaceError.pfnError     = handleVDError;
     vdInterfaceError.pfnMessage   = handleVDMessage;
 
-    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
-    AssertRC(rc);
+    vrc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
+    AssertRC(vrc);
 
-    rc = VDCreate(pVDIfs, enmType, &pDisk);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot create the virtual disk container: %Rrc"), rc);
+    vrc = VDCreate(pVDIfs, enmType, &pDisk);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot create the virtual disk container: %Rrc"), vrc);
 
     /* Open the image */
-    rc = VDOpen(pDisk, pszFormat, argv[0], VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO, NULL);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot open the image: %Rrc"), rc);
+    vrc = VDOpen(pDisk, pszFormat, argv[0], VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO, NULL);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Internal::tr("Cannot open the image: %Rrc"), vrc);
 
     VDDumpImages(pDisk);
 
     VDCloseAll(pDisk);
 
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
@@ -891,16 +889,15 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     uint8_t partitionTableHeader[512];
     uint32_t sector_size = 512;
     uint64_t lastUsableLBA = 0;
-    int rc;
 
     VDISKPARTTYPE partitioningType;
 
     pPart->cPartitions = 0;
     memset(pPart->aPartitions, '\0', sizeof(pPart->aPartitions));
 
-    rc = RTFileReadAt(File, 0, &aBuffer, sizeof(aBuffer), NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = RTFileReadAt(File, 0, &aBuffer, sizeof(aBuffer), NULL);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     if (aBuffer[450] == 0xEE)/* check the sign of the GPT disk*/
     {
@@ -910,8 +907,8 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
             return VERR_INVALID_PARAMETER;
 
-        rc = RTFileReadAt(File, sector_size, &partitionTableHeader, sector_size, NULL);
-        if (RT_SUCCESS(rc))
+        vrc = RTFileReadAt(File, sector_size, &partitionTableHeader, sector_size, NULL);
+        if (RT_SUCCESS(vrc))
         {
             /** @todo r=bird: This is a 64-bit magic value, right... */
             const char *l_ppth = (char *)partitionTableHeader;
@@ -970,12 +967,12 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
             /* partition entries begin from LBA2 */
             /** @todo r=aeichner: Reading from LBA 2 is not always correct, the header will contain the starting LBA. */
-            rc = RTFileReadAt(File, 1024, pbPartTable, RT_ALIGN_Z(partitionEntrySize * partitionsNumber, 512), NULL);
-            if (RT_FAILURE(rc))
+            vrc = RTFileReadAt(File, 1024, pbPartTable, RT_ALIGN_Z(partitionEntrySize * partitionsNumber, 512), NULL);
+            if (RT_FAILURE(vrc))
             {
                 RTMsgError(Internal::tr("Reading the partition table failed"));
                 RTMemFree(pbPartTable);
-                return rc;
+                return vrc;
             }
 
             while (currentEntry < partitionsNumber)
@@ -1081,9 +1078,9 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
             do
             {
-                rc = RTFileReadAt(File, (uStart + uOffset) * 512, &aBuffer, sizeof(aBuffer), NULL);
-                if (RT_FAILURE(rc))
-                    return rc;
+                vrc = RTFileReadAt(File, (uStart + uOffset) * 512, &aBuffer, sizeof(aBuffer), NULL);
+                if (RT_FAILURE(vrc))
+                    return vrc;
 
                 if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
                 {
@@ -1830,8 +1827,8 @@ static RTEXITCODE CmdRepairHardDisk(int argc, char **argv, ComPtr<IVirtualBox> a
  */
 static RTEXITCODE CmdModUninstall(void)
 {
-    int rc = SUPR3Uninstall();
-    if (RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED)
+    int vrc = SUPR3Uninstall();
+    if (RT_SUCCESS(vrc) || vrc == VERR_NOT_IMPLEMENTED)
         return RTEXITCODE_SUCCESS;
     return RTEXITCODE_FAILURE;
 }
@@ -1843,8 +1840,8 @@ static RTEXITCODE CmdModUninstall(void)
  */
 static RTEXITCODE CmdModInstall(void)
 {
-    int rc = SUPR3Install();
-    if (RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED)
+    int vrc = SUPR3Install();
+    if (RT_SUCCESS(vrc) || vrc == VERR_NOT_IMPLEMENTED)
         return RTEXITCODE_SUCCESS;
     return RTEXITCODE_FAILURE;
 }

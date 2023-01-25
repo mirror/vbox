@@ -516,20 +516,19 @@ static HRESULT setExtraData(ComPtr<IMachine> &rSessionMachine, const char *pszVa
 /** Parse PCI address in format 01:02.03 and convert it to the numeric representation. */
 static int32_t parsePci(const char* szPciAddr)
 {
-    char* pszNext = (char*)szPciAddr;
-    int rc;
     uint8_t aVals[3] = {0, 0, 0};
 
-    rc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &aVals[0]);
-    if (RT_FAILURE(rc) || pszNext == NULL || *pszNext != ':')
+    char *pszNext;
+    int vrc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &aVals[0]);
+    if (RT_FAILURE(vrc) || pszNext == NULL || *pszNext != ':')
         return -1;
 
-    rc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[1]);
-    if (RT_FAILURE(rc) || pszNext == NULL || *pszNext != '.')
+    vrc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[1]);
+    if (RT_FAILURE(vrc) || pszNext == NULL || *pszNext != '.')
         return -1;
 
-    rc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[2]);
-    if (RT_FAILURE(rc) || pszNext == NULL)
+    vrc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[2]);
+    if (RT_FAILURE(vrc) || pszNext == NULL)
         return -1;
 
     return (aVals[0] << 8) | (aVals[1] << 3) | (aVals[2] << 0);
@@ -573,8 +572,8 @@ int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
     {
         char *pszNext;
         uint32_t iScreen;
-        int rc = RTStrToUInt32Ex(pcszScreens, &pszNext, 0, &iScreen);
-        if (RT_FAILURE(rc))
+        int vrc = RTStrToUInt32Ex(pcszScreens, &pszNext, 0, &iScreen);
+        if (RT_FAILURE(vrc))
             return VERR_PARSE_ERROR;
         if (iScreen >= pScreens->size())
             return VERR_PARSE_ERROR;

@@ -74,12 +74,12 @@ static RTEXITCODE handleDebugVM_GetRegisters(HandlerArg *pArgs, IMachineDebugger
     {
         { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'c':
                 idCpu = ValueUnion.u32;
@@ -117,7 +117,7 @@ static RTEXITCODE handleDebugVM_GetRegisters(HandlerArg *pArgs, IMachineDebugger
                 break;
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -142,12 +142,12 @@ static RTEXITCODE handleDebugVM_Info(HandlerArg *pArgs, IMachineDebugger *pDebug
     const char    *pszArgs = NULL;
     RTGETOPTSTATE  GetState;
     RTGETOPTUNION  ValueUnion;
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, NULL, 0, 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, NULL, 0, 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case VINF_GETOPT_NOT_OPTION:
                 if (!pszInfo)
@@ -158,7 +158,7 @@ static RTEXITCODE handleDebugVM_Info(HandlerArg *pArgs, IMachineDebugger *pDebug
                     return errorTooManyParameters(&pArgs->argv[GetState.iNext - 1]);
                 break;
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -222,18 +222,18 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
         { "--debug",        DEBUGVM_LOG_DEBUG,   RTGETOPT_REQ_NOTHING },
         { "--release",      DEBUGVM_LOG_RELEASE, RTGETOPT_REQ_NOTHING }
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2,
-                          /*
-                           * Note: RTGETOPTINIT_FLAGS_NO_STD_OPTS is needed to not get into an infinite hang in the following
-                           *       while-loop when processing log groups starting with "h",
-                           *       e.g. "VBoxManage debugvm <VM Name> log --debug -hex".
-                           */
+    /*
+     * Note: RTGETOPTINIT_FLAGS_NO_STD_OPTS is needed to not get into an infinite hang in the following
+     *       while-loop when processing log groups starting with "h",
+     *       e.g. "VBoxManage debugvm <VM Name> log --debug -hex".
+     */
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2,
                           RTGETOPTINIT_FLAGS_OPTS_FIRST | RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case DEBUGVM_LOG_RELEASE:
                 fRelease = true;
@@ -301,12 +301,12 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
         { "--filename",     'f', RTGETOPT_REQ_STRING },
         { "--compression",  'c', RTGETOPT_REQ_STRING }
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'c':
                 if (pszCompression)
@@ -319,7 +319,7 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
                 pszFilename = ValueUnion.psz;
                 break;
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -330,9 +330,9 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
      * Make the filename absolute before handing it on to the API.
      */
     char szAbsFilename[RTPATH_MAX];
-    rc = RTPathAbs(pszFilename, szAbsFilename, sizeof(szAbsFilename));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, DebugVM::tr("RTPathAbs failed on '%s': %Rrc"), pszFilename, rc);
+    vrc = RTPathAbs(pszFilename, szAbsFilename, sizeof(szAbsFilename));
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, DebugVM::tr("RTPathAbs failed on '%s': %Rrc"), pszFilename, vrc);
 
     com::Bstr bstrFilename(szAbsFilename);
     com::Bstr bstrCompression(pszCompression);
@@ -402,13 +402,13 @@ static RTEXITCODE handleDebugVM_OSDmesg(HandlerArg *pArgs, IMachineDebugger *pDe
     {
         { "--lines", 'n', RTGETOPT_REQ_UINT32 },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
-        switch (rc)
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        switch (vrc)
         {
             case 'n': uMaxMessages = ValueUnion.u32; break;
-            default: return errorGetOpt(rc, &ValueUnion);
+            default: return errorGetOpt(vrc, &ValueUnion);
         }
 
     /*
@@ -442,12 +442,12 @@ static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger
     {
         { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'c':
                 idCpu = ValueUnion.u32;
@@ -476,7 +476,7 @@ static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger
             }
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -601,12 +601,12 @@ static RTEXITCODE handleDebugVM_Show(HandlerArg *pArgs, IMachineDebugger *pDebug
         { "--sh-eval",        'E', RTGETOPT_REQ_NOTHING },
         { "--cmd-set",        's', RTGETOPT_REQ_NOTHING  },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'H':
                 fFlags = (fFlags & ~DEBUGVM_SHOW_FLAGS_FMT_MASK) | DEBUGVM_SHOW_FLAGS_HUMAN_READABLE;
@@ -645,7 +645,7 @@ static RTEXITCODE handleDebugVM_Show(HandlerArg *pArgs, IMachineDebugger *pDebug
             }
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
     return RTEXITCODE_SUCCESS;
@@ -671,19 +671,19 @@ static RTEXITCODE handleDebugVM_Stack(HandlerArg *pArgs, IMachineDebugger *pDebu
     {
         { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'c':
                 idCpu = ValueUnion.u32;
                 break;
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -746,12 +746,12 @@ static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *
         { "--pattern",      'p', RTGETOPT_REQ_STRING  },
         { "--reset",        'r', RTGETOPT_REQ_NOTHING  },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'd':
                 fWithDescriptions = true;
@@ -768,7 +768,7 @@ static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *
                 break;
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -820,12 +820,12 @@ static RTEXITCODE handleDebugVM_GuestSample(HandlerArg *pArgs, IMachineDebugger 
         { "--sample-interval-us", 'i', RTGETOPT_REQ_UINT32 },
         { "--sample-time-us",     't', RTGETOPT_REQ_UINT64 },
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             case 'f':
                 pszFilename = ValueUnion.psz;
@@ -838,7 +838,7 @@ static RTEXITCODE handleDebugVM_GuestSample(HandlerArg *pArgs, IMachineDebugger 
                 break;
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 

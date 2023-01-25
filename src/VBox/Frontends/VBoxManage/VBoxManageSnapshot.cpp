@@ -284,9 +284,9 @@ typedef enum SnapshotUniqueFlags
 
 static int parseSnapshotUniqueFlags(const char *psz, SnapshotUniqueFlags *pUnique)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     unsigned uUnique = 0;
-    while (psz && *psz && RT_SUCCESS(rc))
+    while (psz && *psz && RT_SUCCESS(vrc))
     {
         size_t len;
         const char *pszComma = strchr(psz, ',');
@@ -305,7 +305,7 @@ static int parseSnapshotUniqueFlags(const char *psz, SnapshotUniqueFlags *pUniqu
             else if (!RTStrNICmp(psz, "force", len))
                 uUnique |= SnapshotUniqueFlags_Force;
             else
-                rc = VERR_PARSE_ERROR;
+                vrc = VERR_PARSE_ERROR;
         }
         if (pszComma)
             psz += len + 1;
@@ -313,9 +313,9 @@ static int parseSnapshotUniqueFlags(const char *psz, SnapshotUniqueFlags *pUniqu
             psz += len;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
         *pUnique = (SnapshotUniqueFlags)uUnique;
-    return rc;
+    return vrc;
 }
 
 /**

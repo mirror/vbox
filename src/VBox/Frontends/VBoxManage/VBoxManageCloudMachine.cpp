@@ -119,8 +119,8 @@ handleCloudMachine(HandlerArg *a, int iFirst,
                    const char *pcszProfileName)
 {
     CMachineHandlerArg handlerArg(*a);
-    int rc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
-    if (RT_FAILURE(rc))
+    int vrc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
+    if (RT_FAILURE(vrc))
         return RTEXITCODE_FAILURE;
 
     return handleCloudMachineImpl(&handlerArg, iFirst);
@@ -244,8 +244,7 @@ selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
 
     if (aProfiles.size() > 1)
     {
-        RTMsgError(CloudMachine::tr("cloud: multiple profiles exist,"
-                                    " '--profile' option is required"));
+        RTMsgError(CloudMachine::tr("cloud: multiple profiles exist, '--profile' option is required"));
         return VERR_MISSING;
     }
 
@@ -260,23 +259,18 @@ getCloudClient(CMachineHandlerArg &a,
                 const char *pcszProviderName,
                 const char *pcszProfileName)
 {
-    HRESULT hrc;
-    int rc;
-
     ComPtr<ICloudProvider> pProvider;
-    rc = selectCloudProvider(pProvider, a.virtualBox, pcszProviderName);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = selectCloudProvider(pProvider, a.virtualBox, pcszProviderName);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     ComPtr<ICloudProfile> pProfile;
-    rc = selectCloudProfile(pProfile, pProvider, pcszProfileName);
-    if (RT_FAILURE(rc))
-        return rc;
+    vrc = selectCloudProfile(pProfile, pProvider, pcszProfileName);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     ComPtr<ICloudClient> pCloudClient;
-    CHECK_ERROR2_RET(hrc, pProfile,
-        CreateCloudClient(pCloudClient.asOutParam()),
-            VERR_GENERAL_FAILURE);
+    CHECK_ERROR2I_RET(pProfile, CreateCloudClient(pCloudClient.asOutParam()), VERR_GENERAL_FAILURE);
 
     a.pClient = pCloudClient;
     return VINF_SUCCESS;
@@ -357,9 +351,7 @@ getMachineByName(CMachineHandlerArg *a)
             continue;
 
         if (pMachineFound.isNull())
-        {
             pMachineFound = pMachine;
-        }
         else
         {
             com::Bstr bstrId1, bstrId2;
@@ -397,8 +389,8 @@ getMachineByGuess(CMachineHandlerArg *a)
     HRESULT hrc;
 
     RTUUID Uuid;
-    int rc = RTUuidFromStr(&Uuid, a->pcszSpec);
-    if (RT_SUCCESS(rc))
+    int vrc = RTUuidFromStr(&Uuid, a->pcszSpec);
+    if (RT_SUCCESS(vrc))
         hrc = getMachineById(a);
     else
         hrc = getMachineByName(a);
@@ -448,7 +440,7 @@ static int
 checkMachineSpecArgument(CMachineHandlerArg *a,
                          int ch, const RTGETOPTUNION &Val)
 {
-    int rc;
+    int vrc;
 
     switch (ch)
     {
@@ -471,8 +463,8 @@ checkMachineSpecArgument(CMachineHandlerArg *a,
             }
 
             RTUUID Uuid;
-            rc = RTUuidFromStr(&Uuid, pcszId);
-            if (RT_FAILURE(rc))
+            vrc = RTUuidFromStr(&Uuid, pcszId);
+            if (RT_FAILURE(vrc))
             {
                 RTMsgError(CloudMachine::tr("not a valid uuid: %s"), pcszId);
                 return VERR_PARSE_ERROR;
@@ -610,8 +602,6 @@ getMachineBySpec(CMachineHandlerArg *a)
 static RTEXITCODE
 handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
 {
-    int rc;
-
     enum
     {
         kMachineIota = 1000,
@@ -642,11 +632,9 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
     };
 
     RTGETOPTSTATE OptState;
-    rc = RTGetOptInit(&OptState, a->argc, a->argv,
-                      s_aOptions, RT_ELEMENTS(s_aOptions),
-                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
-                                      CloudMachine::tr("cloud machine: RTGetOptInit: %Rra"), rc));
+    int vrc = RTGetOptInit(&OptState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
+                           iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(vrc, RTMsgErrorExit(RTEXITCODE_INIT, CloudMachine::tr("cloud machine: RTGetOptInit: %Rra"), vrc));
 
     int ch;
     RTGETOPTUNION Val;
@@ -667,12 +655,12 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
          * Allow --id/--name after "machine", before the command.
          * Also handles --help.
          */
-        rc = checkMachineSpecArgument(a, ch, Val);
-        if (rc == VINF_SUCCESS)
+        vrc = checkMachineSpecArgument(a, ch, Val);
+        if (vrc == VINF_SUCCESS)
             continue;
-        else if (rc == VINF_CALLBACK_RETURN)
+        if (vrc == VINF_CALLBACK_RETURN)
             return RTEXITCODE_SUCCESS;
-        else if (rc == VERR_PARSE_ERROR)
+        if (vrc == VERR_PARSE_ERROR)
             return RTEXITCODE_SYNTAX;
 
         /*
@@ -730,8 +718,8 @@ listCloudMachines(HandlerArg *a, int iFirst,
                   const char *pcszProfileName)
 {
     CMachineHandlerArg handlerArg(*a);
-    int rc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
-    if (RT_FAILURE(rc))
+    int vrc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
+    if (RT_FAILURE(vrc))
         return RTEXITCODE_FAILURE;
 
     return listCloudMachinesImpl(&handlerArg, iFirst);
@@ -745,9 +733,6 @@ listCloudMachines(HandlerArg *a, int iFirst,
 static RTEXITCODE
 listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
 {
-    HRESULT hrc;
-    int rc;
-
     // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_LIST);
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -768,11 +753,9 @@ listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
 
 
     RTGETOPTSTATE OptState;
-    rc = RTGetOptInit(&OptState, a->argc, a->argv,
-                      s_aOptions, RT_ELEMENTS(s_aOptions),
-                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
-                                      CloudMachine::tr("cloud machine list: RTGetOptInit: %Rra"), rc));
+    int vrc = RTGetOptInit(&OptState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
+                           iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(vrc, RTMsgErrorExit(RTEXITCODE_INIT, CloudMachine::tr("cloud machine list: RTGetOptInit: %Rra"), vrc));
 
     int ch;
     RTGETOPTUNION Val;
@@ -804,7 +787,7 @@ listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
     }
 
     com::SafeIfaceArray<ICloudMachine> aMachines;
-    hrc = getMachineList(aMachines, a->pClient);
+    HRESULT hrc = getMachineList(aMachines, a->pClient);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
@@ -896,8 +879,8 @@ handleCloudShowVMInfo(HandlerArg *a, int iFirst,
                       const char *pcszProfileName)
 {
     CMachineHandlerArg handlerArg(*a);
-    int rc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
-    if (RT_FAILURE(rc))
+    int vrc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
+    if (RT_FAILURE(vrc))
         return RTEXITCODE_FAILURE;
 
     return handleCloudMachineInfo(&handlerArg, iFirst);
@@ -910,9 +893,6 @@ handleCloudShowVMInfo(HandlerArg *a, int iFirst,
 static RTEXITCODE
 handleCloudMachineInfo(CMachineHandlerArg *a, int iFirst)
 {
-    HRESULT hrc;
-    int rc;
-
     enum
     {
         kMachineInfoIota = 1000,
@@ -928,22 +908,20 @@ handleCloudMachineInfo(CMachineHandlerArg *a, int iFirst)
     };
 
     RTGETOPTSTATE OptState;
-    rc = RTGetOptInit(&OptState, a->argc, a->argv,
-                      s_aOptions, RT_ELEMENTS(s_aOptions),
-                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
-                           "RTGetOptInit: %Rra", rc));
+    int vrc = RTGetOptInit(&OptState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
+                           iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(vrc, RTMsgErrorExit(RTEXITCODE_INIT, "RTGetOptInit: %Rra", vrc));
 
     int ch;
     RTGETOPTUNION Val;
     while ((ch = RTGetOpt(&OptState, &Val)) != 0)
     {
-        rc = checkMachineSpecArgument(a, ch, Val);
-        if (rc == VINF_SUCCESS)
+        vrc = checkMachineSpecArgument(a, ch, Val);
+        if (vrc == VINF_SUCCESS)
             continue;
-        else if (rc == VINF_CALLBACK_RETURN)
+        if (vrc == VINF_CALLBACK_RETURN)
             return RTEXITCODE_SUCCESS;
-        else if (rc == VERR_PARSE_ERROR)
+        if (vrc == VERR_PARSE_ERROR)
             return RTEXITCODE_SYNTAX;
 
         switch (ch)
@@ -957,7 +935,7 @@ handleCloudMachineInfo(CMachineHandlerArg *a, int iFirst)
         }
     }
 
-    hrc = getMachineBySpec(a);
+    HRESULT hrc = getMachineBySpec(a);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
@@ -1268,9 +1246,6 @@ printFormValue(const ComPtr<IFormValue> &pValue)
 static RTEXITCODE
 getMachineFromArgs(CMachineHandlerArg *a, int iFirst)
 {
-    HRESULT hrc;
-    int rc;
-
     static const RTGETOPTDEF s_aOptions[] =
     {
         CLOUD_MACHINE_RTGETOPTDEF_MACHINE,
@@ -1278,23 +1253,20 @@ getMachineFromArgs(CMachineHandlerArg *a, int iFirst)
     };
 
     RTGETOPTSTATE OptState;
-    rc = RTGetOptInit(&OptState, a->argc, a->argv,
-                      s_aOptions, RT_ELEMENTS(s_aOptions),
-                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCStmt(rc,
-        return RTMsgErrorExit(RTEXITCODE_INIT, /* internal error */
-                   "RTGetOptInit: %Rra", rc));
+    int vrc = RTGetOptInit(&OptState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
+                           iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(vrc, RTMsgErrorExit(RTEXITCODE_INIT, /* internal error */ "RTGetOptInit: %Rra", vrc));
 
     int ch;
     RTGETOPTUNION Val;
     while ((ch = RTGetOpt(&OptState, &Val)) != 0)
     {
-        rc = checkMachineSpecArgument(a, ch, Val);
-        if (rc == VINF_SUCCESS)
+        vrc = checkMachineSpecArgument(a, ch, Val);
+        if (vrc == VINF_SUCCESS)
             continue;
-        else if (rc == VINF_CALLBACK_RETURN)
+        if (vrc == VINF_CALLBACK_RETURN)
             return RTEXITCODE_SUCCESS;
-        else if (rc == VERR_PARSE_ERROR)
+        if (vrc == VERR_PARSE_ERROR)
             return RTEXITCODE_SYNTAX;
 
         switch (ch)
@@ -1305,7 +1277,7 @@ getMachineFromArgs(CMachineHandlerArg *a, int iFirst)
         }
     }
 
-    hrc = getMachineBySpec(a);
+    HRESULT hrc = getMachineBySpec(a);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 

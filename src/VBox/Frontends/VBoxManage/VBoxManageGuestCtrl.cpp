@@ -278,12 +278,12 @@ static int gctlSignalHandlerInstall(void)
 {
     g_fGuestCtrlCanceled = false;
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)gctlSignalHandler, TRUE /* Add handler */))
     {
-        rc = RTErrConvertFromWin32(GetLastError());
-        RTMsgError(GuestCtrl::tr("Unable to install console control handler, rc=%Rrc\n"), rc);
+        vrc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError(GuestCtrl::tr("Unable to install console control handler, vrc=%Rrc\n"), vrc);
     }
 #else
     signal(SIGINT,   gctlSignalHandler);
@@ -293,10 +293,10 @@ static int gctlSignalHandlerInstall(void)
 # endif
 #endif
 
-    if (RT_SUCCESS(rc))
-        rc = RTSemEventCreate(&g_SemEventGuestCtrlCanceled);
+    if (RT_SUCCESS(vrc))
+        vrc = RTSemEventCreate(&g_SemEventGuestCtrlCanceled);
 
-    return rc;
+    return vrc;
 }
 
 
@@ -305,12 +305,12 @@ static int gctlSignalHandlerInstall(void)
  */
 static int gctlSignalHandlerUninstall(void)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
     {
-        rc = RTErrConvertFromWin32(GetLastError());
-        RTMsgError(GuestCtrl::tr("Unable to uninstall console control handler, rc=%Rrc\n"), rc);
+        vrc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError(GuestCtrl::tr("Unable to uninstall console control handler, vrc=%Rrc\n"), vrc);
     }
 #else
     signal(SIGINT,   SIG_DFL);
@@ -325,7 +325,7 @@ static int gctlSignalHandlerUninstall(void)
         RTSemEventDestroy(g_SemEventGuestCtrlCanceled);
         g_SemEventGuestCtrlCanceled = NIL_RTSEMEVENT;
     }
-    return rc;
+    return vrc;
 }
 
 
@@ -571,8 +571,8 @@ static RTEXITCODE gctrCmdCtxInit(PGCTLCMDCTX pCtx, HandlerArg *pArg)
      * The user name defaults to the host one, if we can get at it.
      */
     char szUser[1024];
-    int rc = RTProcQueryUsername(RTProcSelf(), szUser, sizeof(szUser), NULL);
-    if (   RT_SUCCESS(rc)
+    int vrc = RTProcQueryUsername(RTProcSelf(), szUser, sizeof(szUser), NULL);
+    if (   RT_SUCCESS(vrc)
         && RTStrIsValidEncoding(szUser)) /* paranoia was required on posix at some point, not needed any more! */
     {
         try
@@ -852,8 +852,8 @@ static RTEXITCODE gctlCtxPostOptionParsingInit(PGCTLCMDCTX pCtx)
              */
             if (!(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_NO_SIGNAL_HANDLER))
             {
-                int rc = gctlSignalHandlerInstall();
-                pCtx->fInstalledSignalHandler = RT_SUCCESS(rc);
+                int vrc = gctlSignalHandlerInstall();
+                pCtx->fInstalledSignalHandler = RT_SUCCESS(vrc);
             }
         }
     }
@@ -1065,7 +1065,7 @@ static int gctlRunPumpOutput(IProcess *pProcess, RTVFSIOSTREAM hVfsIosDst, ULONG
 
             vrc = RTVfsIoStrmWrite(hVfsIosDst, pbBuf, cbOutputData, true /*fBlocking*/,  NULL);
             if (RT_FAILURE(vrc))
-                RTMsgError(GuestCtrl::tr("Unable to write output, rc=%Rrc\n"), vrc);
+                RTMsgError(GuestCtrl::tr("Unable to write output, vrc=%Rrc\n"), vrc);
         }
     }
     else
@@ -1761,7 +1761,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     }
 
     if (RT_FAILURE(vrc))
-        return RTMsgErrorExitFailure(GuestCtrl::tr("Error looking file system information for source '%s', rc=%Rrc"),
+        return RTMsgErrorExitFailure(GuestCtrl::tr("Error looking file system information for source '%s', vrc=%Rrc"),
                                      papszSources[iSrc], vrc);
 
     ComPtr<IProgress> pProgress;
@@ -2156,7 +2156,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
     }
 
     if (RT_FAILURE(vrc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, GuestCtrl::tr("Failed to initialize, rc=%Rrc\n"), vrc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, GuestCtrl::tr("Failed to initialize, vrc=%Rrc\n"), vrc);
 
     size_t cSources = vecSources.size();
     if (!cSources)
@@ -2735,23 +2735,23 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
 
 #if 0
         ComPtr<IGuest> guest;
-        rc = pConsole->COMGETTER(Guest)(guest.asOutParam());
+        HRESULT hrc = pConsole->COMGETTER(Guest)(guest.asOutParam());
         if (SUCCEEDED(hrc) && !guest.isNull())
         {
             SHOW_STRING_PROP_NOT_EMPTY(guest, OSTypeId, "GuestOSType", GuestCtrl::tr("OS type:"));
 
             AdditionsRunLevelType_T guestRunLevel; /** @todo Add a runlevel-to-string (e.g. 0 = "None") method? */
-            rc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
+            hrc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
             if (SUCCEEDED(hrc))
                 SHOW_ULONG_VALUE("GuestAdditionsRunLevel", GuestCtrl::tr("Additions run level:"), (ULONG)guestRunLevel, "");
 
             Bstr guestString;
-            rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
+            hrc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
             if (   SUCCEEDED(hrc)
                 && !guestString.isEmpty())
             {
                 ULONG uRevision;
-                rc = guest->COMGETTER(AdditionsRevision)(&uRevision);
+                hrc = guest->COMGETTER(AdditionsRevision)(&uRevision);
                 if (FAILED(hrc))
                     uRevision = 0;
                 RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
@@ -3169,7 +3169,8 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     std::vector < uint32_t > vecPID;
     ULONG idSession = UINT32_MAX;
@@ -3194,11 +3195,11 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
             {
                 /* Treat every else specified as a PID to kill. */
                 uint32_t uPid;
-                int rc = RTStrToUInt32Ex(ValueUnion.psz, NULL, 0, &uPid);
-                if (   RT_SUCCESS(rc)
-                    && rc != VWRN_TRAILING_CHARS
-                    && rc != VWRN_NUMBER_TOO_BIG
-                    && rc != VWRN_NEGATIVE_UNSIGNED)
+                vrc = RTStrToUInt32Ex(ValueUnion.psz, NULL, 0, &uPid);
+                if (   RT_SUCCESS(vrc)
+                    && vrc != VWRN_TRAILING_CHARS
+                    && vrc != VWRN_NUMBER_TOO_BIG
+                    && vrc != VWRN_NEGATIVE_UNSIGNED)
                 {
                     if (uPid != 0)
                     {
@@ -3215,7 +3216,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
                         return errorSyntax(GuestCtrl::tr("Invalid PID value: 0"));
                 }
                 else
-                    return errorSyntax(GuestCtrl::tr("Error parsing PID value: %Rrc"), rc);
+                    return errorSyntax(GuestCtrl::tr("Error parsing PID value: %Rrc"), vrc);
                 break;
             }
 

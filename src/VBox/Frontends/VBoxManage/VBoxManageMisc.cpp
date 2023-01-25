@@ -466,7 +466,7 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
                 {
                     vrc = RTPathAbs(ValueUnion.psz, szTargetFolder, sizeof(szTargetFolder));
                     if (RT_FAILURE(vrc))
-                        return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("RTPathAbs(%s,,) failed with rc=%Rrc"),
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("RTPathAbs(%s,,) failed with vrc=%Rrc"),
                                               ValueUnion.psz, vrc);
                 } else {
                     szTargetFolder[0] = '\0';
@@ -487,9 +487,7 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
 
 
     if (!pszType)
-    {
         pszType = "basic";
-    }
 
     /* Check for required options */
     if (!pszSrcName)
@@ -557,8 +555,8 @@ static int parseCloneMode(const char *psz, CloneMode_T *pMode)
 
 static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *options)
 {
-    int rc = VINF_SUCCESS;
-    while (psz && *psz && RT_SUCCESS(rc))
+    int vrc = VINF_SUCCESS;
+    while (psz && *psz && RT_SUCCESS(vrc))
     {
         size_t len;
         const char *pszComma = strchr(psz, ',');
@@ -581,7 +579,7 @@ static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *op
                      || !RTStrNICmp(psz, "KeepHwUUID", len))
                 options->push_back(CloneOptions_KeepHwUUIDs);
             else
-                rc = VERR_PARSE_ERROR;
+                vrc = VERR_PARSE_ERROR;
         }
         if (pszComma)
             psz += len + 1;
@@ -589,7 +587,7 @@ static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *op
             psz += len;
     }
 
-    return rc;
+    return vrc;
 }
 
 RTEXITCODE handleCloneVM(HandlerArg *a)
@@ -1864,7 +1862,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
         char szPath[RTPATH_MAX];
         int vrc = RTPathAbs(pszName, szPath, sizeof(szPath));
         if (RT_FAILURE(vrc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("RTPathAbs(%s,,) failed with rc=%Rrc"), pszName, vrc);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("RTPathAbs(%s,,) failed with vrc=%Rrc"), pszName, vrc);
 
         Bstr bstrTarball(szPath);
         Bstr bstrName;

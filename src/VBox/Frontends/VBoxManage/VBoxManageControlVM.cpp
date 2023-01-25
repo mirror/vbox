@@ -66,8 +66,8 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
 {
     uint32_t u32;
     char *pszNext;
-    int rc = RTStrToUInt32Ex(psz, &pszNext, 10, &u32);
-    if (    RT_SUCCESS(rc)
+    int vrc = RTStrToUInt32Ex(psz, &pszNext, 10, &u32);
+    if (    RT_SUCCESS(vrc)
         &&  *pszNext == '\0'
         &&  u32 >= 1
         &&  u32 <= cMaxNum)

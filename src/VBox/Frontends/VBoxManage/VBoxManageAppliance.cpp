@@ -99,8 +99,8 @@ static bool findArgValue(Utf8Str &strOut,
 
 static int parseImportOptions(const char *psz, com::SafeArray<ImportOptions_T> *options)
 {
-    int rc = VINF_SUCCESS;
-    while (psz && *psz && RT_SUCCESS(rc))
+    int vrc = VINF_SUCCESS;
+    while (psz && *psz && RT_SUCCESS(vrc))
     {
         size_t len;
         const char *pszComma = strchr(psz, ',');
@@ -117,7 +117,7 @@ static int parseImportOptions(const char *psz, com::SafeArray<ImportOptions_T> *
             else if (!RTStrNICmp(psz, "ImportToVDI", len))
                 options->push_back(ImportOptions_ImportToVDI);
             else
-                rc = VERR_PARSE_ERROR;
+                vrc = VERR_PARSE_ERROR;
         }
         if (pszComma)
             psz += len + 1;
@@ -125,7 +125,7 @@ static int parseImportOptions(const char *psz, com::SafeArray<ImportOptions_T> *
             psz += len;
     }
 
-    return rc;
+    return vrc;
 }
 
 /**
@@ -1426,8 +1426,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
 
 static int parseExportOptions(const char *psz, com::SafeArray<ExportOptions_T> *options)
 {
-    int rc = VINF_SUCCESS;
-    while (psz && *psz && RT_SUCCESS(rc))
+    int vrc = VINF_SUCCESS;
+    while (psz && *psz && RT_SUCCESS(vrc))
     {
         size_t len;
         const char *pszComma = strchr(psz, ',');
@@ -1454,7 +1454,7 @@ static int parseExportOptions(const char *psz, com::SafeArray<ExportOptions_T> *
             else if (!RTStrNICmp(psz, "nomacsbutnat", len))
                 options->push_back(ExportOptions_StripAllNonNATMACs);
             else
-                rc = VERR_PARSE_ERROR;
+                vrc = VERR_PARSE_ERROR;
         }
         if (pszComma)
             psz += len + 1;
@@ -1462,7 +1462,7 @@ static int parseExportOptions(const char *psz, com::SafeArray<ExportOptions_T> *
             psz += len;
     }
 
-    return rc;
+    return vrc;
 }
 
 static const RTGETOPTDEF g_aExportOptions[] =
@@ -2121,15 +2121,15 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
      * Open the file as a tar file system stream.
      */
     RTVFSFILE hVfsFileOva;
-    int rc = RTVfsFileOpenNormal(pszOva, RTFILE_O_OPEN | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE, &hVfsFileOva);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure(Appliance::tr("Failed to open OVA '%s' for updating: %Rrc"), pszOva, rc);
+    int vrc = RTVfsFileOpenNormal(pszOva, RTFILE_O_OPEN | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE, &hVfsFileOva);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExitFailure(Appliance::tr("Failed to open OVA '%s' for updating: %Rrc"), pszOva, vrc);
 
     RTVFSFSSTREAM hVfsFssOva;
-    rc = RTZipTarFsStreamForFile(hVfsFileOva, RTZIPTARFORMAT_DEFAULT, RTZIPTAR_C_UPDATE, &hVfsFssOva);
+    vrc = RTZipTarFsStreamForFile(hVfsFileOva, RTZIPTARFORMAT_DEFAULT, RTZIPTAR_C_UPDATE, &hVfsFssOva);
     RTVfsFileRelease(hVfsFileOva);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure(Appliance::tr("Failed to open OVA '%s' as a TAR file: %Rrc"), pszOva, rc);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExitFailure(Appliance::tr("Failed to open OVA '%s' as a TAR file: %Rrc"), pszOva, vrc);
     *phVfsFssOva = hVfsFssOva;
 
     /*
@@ -2146,13 +2146,13 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
         char           *pszName;
         RTVFSOBJTYPE    enmType;
         RTVFSOBJ        hVfsObj;
-        rc = RTVfsFsStrmNext(hVfsFssOva, &pszName, &enmType, &hVfsObj);
-        if (RT_FAILURE(rc))
+        vrc = RTVfsFsStrmNext(hVfsFssOva, &pszName, &enmType, &hVfsObj);
+        if (RT_FAILURE(vrc))
         {
-            if (rc == VERR_EOF)
-                rc = VINF_SUCCESS;
+            if (vrc == VERR_EOF)
+                vrc = VINF_SUCCESS;
             else
-                RTMsgError(Appliance::tr("RTVfsFsStrmNext returned %Rrc"), rc);
+                RTMsgError(Appliance::tr("RTVfsFsStrmNext returned %Rrc"), vrc);
             break;
         }
 
@@ -2168,25 +2168,25 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
             && (enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE))
         {
             if (*phVfsManifest != NIL_RTVFSFILE)
-                rc = RTMsgErrorRc(VERR_DUPLICATE, Appliance::tr("OVA contains multiple manifests! first: %s  second: %s"),
-                                  pStrManifestName->c_str(), pszName);
+                vrc = RTMsgErrorRc(VERR_DUPLICATE, Appliance::tr("OVA contains multiple manifests! first: %s  second: %s"),
+                                   pStrManifestName->c_str(), pszName);
             else if (pszSignatureName)
-                rc = RTMsgErrorRc(VERR_WRONG_ORDER,
-                                  Appliance::tr("Unsupported OVA file ordering! Signature file ('%s') as succeeded by '%s'."),
-                                  pszSignatureName, pszName);
+                vrc = RTMsgErrorRc(VERR_WRONG_ORDER,
+                                   Appliance::tr("Unsupported OVA file ordering! Signature file ('%s') as succeeded by '%s'."),
+                                   pszSignatureName, pszName);
             else
             {
                 if (iVerbosity >= 2)
                     RTMsgInfo(Appliance::tr("Found manifest file: %s"), pszName);
-                rc = pStrManifestName->assignNoThrow(pszName);
-                if (RT_SUCCESS(rc))
+                vrc = pStrManifestName->assignNoThrow(pszName);
+                if (RT_SUCCESS(vrc))
                 {
                     RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
                     Assert(hVfsIos != NIL_RTVFSIOSTREAM);
-                    rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsManifest);
+                    vrc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsManifest);
                     RTVfsIoStrmRelease(hVfsIos);     /* consumes stream handle.  */
-                    if (RT_FAILURE(rc))
-                        rc = RTMsgErrorRc(VERR_DUPLICATE, Appliance::tr("Failed to memorize the manifest: %Rrc"), rc);
+                    if (RT_FAILURE(vrc))
+                        vrc = RTMsgErrorRc(VERR_DUPLICATE, Appliance::tr("Failed to memorize the manifest: %Rrc"), vrc);
                 }
                 else
                     RTMsgError(Appliance::tr("Out of memory!"));
@@ -2197,7 +2197,7 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
                  && (enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE))
         {
             if (*phVfsOldSignature != NIL_RTVFSOBJ)
-                rc = RTMsgErrorRc(VERR_WRONG_ORDER, Appliance::tr("Multiple signature files! (%s)"), pszName);
+                vrc = RTMsgErrorRc(VERR_WRONG_ORDER, Appliance::tr("Multiple signature files! (%s)"), pszName);
             else
             {
                 if (iVerbosity >= 2)
@@ -2209,31 +2209,31 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
             }
         }
         else if (pszSignatureName)
-            rc = RTMsgErrorRc(VERR_WRONG_ORDER,
-                              Appliance::tr("Unsupported OVA file ordering! Signature file ('%s') as succeeded by '%s'."),
-                              pszSignatureName, pszName);
+            vrc = RTMsgErrorRc(VERR_WRONG_ORDER,
+                               Appliance::tr("Unsupported OVA file ordering! Signature file ('%s') as succeeded by '%s'."),
+                               pszSignatureName, pszName);
 
         /*
          * Release the current object and string.
          */
         RTVfsObjRelease(hVfsObj);
         RTStrFree(pszName);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             break;
     }
 
     /*
      * Complain if no manifest.
      */
-    if (RT_SUCCESS(rc) && *phVfsManifest == NIL_RTVFSFILE)
-        rc = RTMsgErrorRc(VERR_NOT_FOUND, Appliance::tr("The OVA contains no manifest and cannot be signed!"));
-    else if (RT_SUCCESS(rc) && *phVfsOldSignature != NIL_RTVFSOBJ && !fReSign)
-        rc = RTMsgErrorRc(VERR_ALREADY_EXISTS,
-                          Appliance::tr("The OVA is already signed ('%s')! (Use the --force option to force re-signing it.)"),
-                          pszSignatureName);
+    if (RT_SUCCESS(vrc) && *phVfsManifest == NIL_RTVFSFILE)
+        vrc = RTMsgErrorRc(VERR_NOT_FOUND, Appliance::tr("The OVA contains no manifest and cannot be signed!"));
+    else if (RT_SUCCESS(vrc) && *phVfsOldSignature != NIL_RTVFSOBJ && !fReSign)
+        vrc = RTMsgErrorRc(VERR_ALREADY_EXISTS,
+                           Appliance::tr("The OVA is already signed ('%s')! (Use the --force option to force re-signing it.)"),
+                           pszSignatureName);
 
     RTStrFree(pszSignatureName);
-    return rc;
+    return vrc;
 }
 
 
@@ -2254,34 +2254,34 @@ static int updateTheOvaSignature(RTVFSFSSTREAM hVfsFssOva, const char *pszOva, c
     /*
      * Truncate the file at the old signature, if present.
      */
-    int rc;
+    int vrc;
     if (hVfsOldSignature != NIL_RTVFSOBJ)
     {
-        rc = RTZipTarFsStreamTruncate(hVfsFssOva, hVfsOldSignature, false /*fAfter*/);
-        if (RT_FAILURE(rc))
-            return RTMsgErrorRc(rc, Appliance::tr("RTZipTarFsStreamTruncate failed on '%s': %Rrc"), pszOva, rc);
+        vrc = RTZipTarFsStreamTruncate(hVfsFssOva, hVfsOldSignature, false /*fAfter*/);
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorRc(vrc, Appliance::tr("RTZipTarFsStreamTruncate failed on '%s': %Rrc"), pszOva, vrc);
     }
 
     /*
      * Append the signature file.  We have to rewind it first or
      * we'll end up with VERR_EOF, probably not a great idea...
      */
-    rc = RTVfsFileSeek(hVfsFileSignature, 0, RTFILE_SEEK_BEGIN, NULL);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, Appliance::tr("RTVfsFileSeek(hVfsFileSignature) failed: %Rrc"), rc);
+    vrc = RTVfsFileSeek(hVfsFileSignature, 0, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorRc(vrc, Appliance::tr("RTVfsFileSeek(hVfsFileSignature) failed: %Rrc"), vrc);
 
     RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFileSignature);
-    rc = RTVfsFsStrmAdd(hVfsFssOva, pszSignatureName, hVfsObj, 0 /*fFlags*/);
+    vrc = RTVfsFsStrmAdd(hVfsFssOva, pszSignatureName, hVfsObj, 0 /*fFlags*/);
     RTVfsObjRelease(hVfsObj);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, Appliance::tr("RTVfsFsStrmAdd('%s') failed on '%s': %Rrc"), pszSignatureName, pszOva, rc);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorRc(vrc, Appliance::tr("RTVfsFsStrmAdd('%s') failed on '%s': %Rrc"), pszSignatureName, pszOva, vrc);
 
     /*
      * Terminate the file system stream.
      */
-    rc = RTVfsFsStrmEnd(hVfsFssOva);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, Appliance::tr("RTVfsFsStrmEnd failed on '%s': %Rrc"), pszOva, rc);
+    vrc = RTVfsFsStrmEnd(hVfsFssOva);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorRc(vrc, Appliance::tr("RTVfsFsStrmEnd failed on '%s': %Rrc"), pszOva, vrc);
 
     return VINF_SUCCESS;
 }
@@ -2293,7 +2293,7 @@ static int updateTheOvaSignature(RTVFSFSSTREAM hVfsFssOva, const char *pszOva, c
 static int doCheckPkcs7SignatureWorker(PRTCRPKCS7CONTENTINFO pContentInfo, void const *pvManifest, size_t cbManifest,
                                        unsigned iVerbosity, const char *pszTag, PRTERRINFOSTATIC pErrInfo)
 {
-    int rc;
+    int vrc;
 
     /*
      * It must be signedData.
@@ -2310,11 +2310,11 @@ static int doCheckPkcs7SignatureWorker(PRTCRPKCS7CONTENTINFO pContentInfo, void 
             /*
              * Check that things add up.
              */
-            rc = RTCrPkcs7SignedData_CheckSanity(pSignedData,
-                                                 RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
-                                                 | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
-                                                 RTErrInfoInitStatic(pErrInfo), "SD");
-            if (RT_SUCCESS(rc))
+            vrc = RTCrPkcs7SignedData_CheckSanity(pSignedData,
+                                                  RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
+                                                  | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
+                                                  RTErrInfoInitStatic(pErrInfo), "SD");
+            if (RT_SUCCESS(vrc))
             {
                 if (iVerbosity > 2 && pszTag == NULL)
                     RTMsgInfo(Appliance::tr("  Successfully decoded the PKCS#7/CMS signature..."));
@@ -2324,34 +2324,34 @@ static int doCheckPkcs7SignatureWorker(PRTCRPKCS7CONTENTINFO pContentInfo, void 
                  * we probably don't necessarily have the correct root certs handy here.
                  */
                 RTTIMESPEC Now;
-                rc = RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo, RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS,
-                                                               NIL_RTCRSTORE /*hAdditionalCerts*/,
-                                                               NIL_RTCRSTORE /*hTrustedCerts*/,
-                                                               RTTimeNow(&Now),
-                                                               NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
-                                                               pvManifest, cbManifest, RTErrInfoInitStatic(pErrInfo));
-                if (RT_SUCCESS(rc))
+                vrc = RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo, RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS,
+                                                                NIL_RTCRSTORE /*hAdditionalCerts*/,
+                                                                NIL_RTCRSTORE /*hTrustedCerts*/,
+                                                                RTTimeNow(&Now),
+                                                                NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
+                                                                pvManifest, cbManifest, RTErrInfoInitStatic(pErrInfo));
+                if (RT_SUCCESS(vrc))
                 {
                     if (iVerbosity > 1 && pszTag != NULL)
                         RTMsgInfo(Appliance::tr("  Successfully verified the PKCS#7/CMS signature"));
                 }
                 else
-                    rc = RTMsgErrorRc(rc, Appliance::tr("Failed to verify the PKCS#7/CMS signature: %Rrc%RTeim"),
-                                      rc, &pErrInfo->Core);
+                    vrc = RTMsgErrorRc(vrc, Appliance::tr("Failed to verify the PKCS#7/CMS signature: %Rrc%RTeim"),
+                                       vrc, &pErrInfo->Core);
             }
             else
                 RTMsgError(Appliance::tr("RTCrPkcs7SignedData_CheckSanity failed on PKCS#7/CMS signature: %Rrc%RTeim"),
-                           rc, &pErrInfo->Core);
+                           vrc, &pErrInfo->Core);
 
         }
         else
-            rc = RTMsgErrorRc(VERR_WRONG_TYPE, Appliance::tr("PKCS#7/CMS signature inner ContentType isn't 'data' but: %s"),
-                              pSignedData->ContentInfo.ContentType.szObjId);
+            vrc = RTMsgErrorRc(VERR_WRONG_TYPE, Appliance::tr("PKCS#7/CMS signature inner ContentType isn't 'data' but: %s"),
+                               pSignedData->ContentInfo.ContentType.szObjId);
     }
     else
-        rc = RTMsgErrorRc(VERR_WRONG_TYPE, Appliance::tr("PKCS#7/CMD signature is not 'signedData': %s"),
-                          pContentInfo->ContentType.szObjId);
-    return rc;
+        vrc = RTMsgErrorRc(VERR_WRONG_TYPE, Appliance::tr("PKCS#7/CMD signature is not 'signedData': %s"),
+                           pContentInfo->ContentType.szObjId);
+    return vrc;
 }
 
 /**
@@ -2369,36 +2369,36 @@ static int doCheckPkcs7Signature(void const *pvSignature, size_t cbSignature, PC
 
     RTCRPKCS7CONTENTINFO ContentInfo;
     RT_ZERO(ContentInfo);
-    int rc = RTCrPkcs7ContentInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &ContentInfo, "CI");
-    if (RT_SUCCESS(rc))
+    int vrc = RTCrPkcs7ContentInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &ContentInfo, "CI");
+    if (RT_SUCCESS(vrc))
     {
         if (iVerbosity > 5)
             RTAsn1Dump(&ContentInfo.SeqCore.Asn1Core, 0 /*fFlags*/, 0 /*uLevel*/, RTStrmDumpPrintfV, g_pStdOut);
 
-        rc = doCheckPkcs7SignatureWorker(&ContentInfo, pvManifest, cbManifest, iVerbosity, NULL, pErrInfo);
-        if (RT_SUCCESS(rc))
+        vrc = doCheckPkcs7SignatureWorker(&ContentInfo, pvManifest, cbManifest, iVerbosity, NULL, pErrInfo);
+        if (RT_SUCCESS(vrc))
         {
             /*
              * Clone it and repeat.  This is to catch IPRT paths assuming
              * that encoded data is always on hand.
              */
             RTCRPKCS7CONTENTINFO ContentInfo2;
-            rc = RTCrPkcs7ContentInfo_Clone(&ContentInfo2, &ContentInfo, &g_RTAsn1DefaultAllocator);
-            if (RT_SUCCESS(rc))
+            vrc = RTCrPkcs7ContentInfo_Clone(&ContentInfo2, &ContentInfo, &g_RTAsn1DefaultAllocator);
+            if (RT_SUCCESS(vrc))
             {
-                rc = doCheckPkcs7SignatureWorker(&ContentInfo2, pvManifest, cbManifest, iVerbosity, "cloned", pErrInfo);
+                vrc = doCheckPkcs7SignatureWorker(&ContentInfo2, pvManifest, cbManifest, iVerbosity, "cloned", pErrInfo);
                 RTCrPkcs7ContentInfo_Delete(&ContentInfo2);
             }
             else
-                rc = RTMsgErrorRc(rc, Appliance::tr("RTCrPkcs7ContentInfo_Clone failed: %Rrc"), rc);
+                vrc = RTMsgErrorRc(vrc, Appliance::tr("RTCrPkcs7ContentInfo_Clone failed: %Rrc"), vrc);
         }
     }
     else
         RTMsgError(Appliance::tr("RTCrPkcs7ContentInfo_DecodeAsn1 failed to decode PKCS#7/CMS signature: %Rrc%RTemi"),
-                   rc, &pErrInfo->Core);
+                   vrc, &pErrInfo->Core);
 
     RTCrPkcs7ContentInfo_Delete(&ContentInfo);
-    return rc;
+    return vrc;
 }
 
 
@@ -2413,17 +2413,17 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
     /*
      * Add a blank line, just for good measure.
      */
-    int rc = RTVfsFileWrite(hVfsFileSignature, "\n", 1, NULL);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, "RTVfsFileWrite/signature: %Rrc", rc);
+    int vrc = RTVfsFileWrite(hVfsFileSignature, "\n", 1, NULL);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorRc(vrc, "RTVfsFileWrite/signature: %Rrc", vrc);
 
     /*
      * Read the manifest into a single memory block.
      */
     uint64_t cbManifest;
-    rc = RTVfsFileQuerySize(hVfsFileManifest, &cbManifest);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, "RTVfsFileQuerySize/manifest: %Rrc", rc);
+    vrc = RTVfsFileQuerySize(hVfsFileManifest, &cbManifest);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorRc(vrc, "RTVfsFileQuerySize/manifest: %Rrc", vrc);
     if (cbManifest > _4M)
         return RTMsgErrorRc(VERR_OUT_OF_RANGE, Appliance::tr("Manifest is too big: %#RX64 bytes, max 4MiB", "", cbManifest),
                             cbManifest);
@@ -2432,8 +2432,8 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
     if (!pvManifest)
         return RTMsgErrorRc(VERR_NO_MEMORY, Appliance::tr("Out of memory!"));
 
-    rc = RTVfsFileReadAt(hVfsFileManifest, 0, pvManifest, (size_t)cbManifest, NULL);
-    if (RT_SUCCESS(rc))
+    vrc = RTVfsFileReadAt(hVfsFileManifest, 0, pvManifest, (size_t)cbManifest, NULL);
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Load intermediate certificates.
@@ -2441,34 +2441,35 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
         RTCRSTORE hIntermediateCerts = NIL_RTCRSTORE;
         if (cIntermediateCerts)
         {
-            rc = RTCrStoreCreateInMem(&hIntermediateCerts, cIntermediateCerts);
-            if (RT_SUCCESS(rc))
+            vrc = RTCrStoreCreateInMem(&hIntermediateCerts, cIntermediateCerts);
+            if (RT_SUCCESS(vrc))
             {
                 for (unsigned i = 0; i < cIntermediateCerts; i++)
                 {
                     const char *pszFile = papszIntermediateCerts[i];
-                    rc = RTCrStoreCertAddFromFile(hIntermediateCerts, 0 /*fFlags*/, pszFile, &pErrInfo->Core);
-                    if (RT_FAILURE(rc))
+                    vrc = RTCrStoreCertAddFromFile(hIntermediateCerts, 0 /*fFlags*/, pszFile, &pErrInfo->Core);
+                    if (RT_FAILURE(vrc))
                     {
-                        RTMsgError(Appliance::tr("RTCrStoreCertAddFromFile failed on '%s': %Rrc%#RTeim"), pszFile, rc, &pErrInfo->Core);
+                        RTMsgError(Appliance::tr("RTCrStoreCertAddFromFile failed on '%s': %Rrc%#RTeim"),
+                                   pszFile, vrc, &pErrInfo->Core);
                         break;
                     }
                 }
             }
             else
-                RTMsgError(Appliance::tr("RTCrStoreCreateInMem failed: %Rrc"), rc);
+                RTMsgError(Appliance::tr("RTCrStoreCreateInMem failed: %Rrc"), vrc);
         }
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             /*
              * Do a dry run to determin the size of the signed data.
              */
             size_t cbResult = 0;
-            rc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP,
-                                               pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest, enmDigestType,
-                                               hIntermediateCerts, NULL /*pAdditionalAuthenticatedAttribs*/,
-                                               NULL /*pvResult*/, &cbResult, RTErrInfoInitStatic(pErrInfo));
-            if (rc == VERR_BUFFER_OVERFLOW)
+            vrc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP,
+                                                pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest, enmDigestType,
+                                                hIntermediateCerts, NULL /*pAdditionalAuthenticatedAttribs*/,
+                                                NULL /*pvResult*/, &cbResult, RTErrInfoInitStatic(pErrInfo));
+            if (vrc == VERR_BUFFER_OVERFLOW)
             {
                 /*
                  * Allocate a buffer of the right size and do the real run.
@@ -2476,17 +2477,17 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                 void *pvResult = RTMemAllocZ(cbResult);
                 if (pvResult)
                 {
-                    rc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP,
-                                                       pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest, enmDigestType,
-                                                       hIntermediateCerts, NULL /*pAdditionalAuthenticatedAttribs*/,
-                                                       pvResult, &cbResult, RTErrInfoInitStatic(pErrInfo));
-                    if (RT_SUCCESS(rc))
+                    vrc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP,
+                                                        pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest, enmDigestType,
+                                                        hIntermediateCerts, NULL /*pAdditionalAuthenticatedAttribs*/,
+                                                        pvResult, &cbResult, RTErrInfoInitStatic(pErrInfo));
+                    if (RT_SUCCESS(vrc))
                     {
                         /*
                          * Add it to the signature file in PEM format.
                          */
-                        rc = (int)RTCrPemWriteBlobToVfsFile(hVfsFileSignature, pvResult, cbResult, "CMS");
-                        if (RT_SUCCESS(rc))
+                        vrc = (int)RTCrPemWriteBlobToVfsFile(hVfsFileSignature, pvResult, cbResult, "CMS");
+                        if (RT_SUCCESS(vrc))
                         {
                             if (iVerbosity > 1)
                                 RTMsgInfo(Appliance::tr("Created PKCS#7/CMS signature: %zu bytes, %s.", "", cbResult),
@@ -2497,25 +2498,25 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                             /*
                              * Try decode and verify the signature.
                              */
-                            rc = doCheckPkcs7Signature(pvResult, cbResult, pCertificate, hIntermediateCerts,
-                                                       pvManifest, (size_t)cbManifest, iVerbosity, pErrInfo);
+                            vrc = doCheckPkcs7Signature(pvResult, cbResult, pCertificate, hIntermediateCerts,
+                                                        pvManifest, (size_t)cbManifest, iVerbosity, pErrInfo);
                         }
                         else
-                            RTMsgError(Appliance::tr("RTCrPemWriteBlobToVfsFile failed: %Rrc"), rc);
+                            RTMsgError(Appliance::tr("RTCrPemWriteBlobToVfsFile failed: %Rrc"), vrc);
                     }
                     RTMemFree(pvResult);
                 }
                 else
-                    rc = RTMsgErrorRc(VERR_NO_MEMORY, Appliance::tr("Out of memory!"));
+                    vrc = RTMsgErrorRc(VERR_NO_MEMORY, Appliance::tr("Out of memory!"));
             }
             else
-                RTMsgError(Appliance::tr("RTCrPkcs7SimpleSignSignedData failed: %Rrc%#RTeim"), rc, &pErrInfo->Core);
+                RTMsgError(Appliance::tr("RTCrPkcs7SimpleSignSignedData failed: %Rrc%#RTeim"), vrc, &pErrInfo->Core);
         }
     }
     else
-        RTMsgError(Appliance::tr("RTVfsFileReadAt failed: %Rrc"), rc);
+        RTMsgError(Appliance::tr("RTVfsFileReadAt failed: %Rrc"), vrc);
     RTMemFree(pvManifest);
-    return rc;
+    return vrc;
 }
 
 
@@ -2573,14 +2574,14 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
      * Digest the manifest file.
      */
     RTCRDIGEST hDigest = NIL_RTCRDIGEST;
-    int rc = RTCrDigestCreateByType(&hDigest, enmDigestType);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, Appliance::tr("Failed to create digest for %s: %Rrc"), RTCrDigestTypeToName(enmDigestType), rc);
+    int vrc = RTCrDigestCreateByType(&hDigest, enmDigestType);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorRc(vrc, Appliance::tr("Failed to create digest for %s: %Rrc"), RTCrDigestTypeToName(enmDigestType), vrc);
 
-    rc = RTCrDigestUpdateFromVfsFile(hDigest, hVfsFileManifest, true /*fRewindFile*/);
-    if (RT_SUCCESS(rc))
-        rc = RTCrDigestFinal(hDigest, NULL, 0);
-    if (RT_SUCCESS(rc))
+    vrc = RTCrDigestUpdateFromVfsFile(hDigest, hVfsFileManifest, true /*fRewindFile*/);
+    if (RT_SUCCESS(vrc))
+        vrc = RTCrDigestFinal(hDigest, NULL, 0);
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Sign the digest.  Two passes, first to figure the signature size, the
@@ -2589,16 +2590,16 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
         PCRTASN1OBJID const   pAlgorithm  = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
         PCRTASN1DYNTYPE const pAlgoParams = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Parameters;
         size_t cbSignature = 0;
-        rc = RTCrPkixPubKeySignDigest(pAlgorithm, hPrivateKey, pAlgoParams, hDigest, 0 /*fFlags*/,
-                                      NULL /*pvSignature*/, &cbSignature, RTErrInfoInitStatic(pErrInfo));
-        if (rc == VERR_BUFFER_OVERFLOW)
+        vrc = RTCrPkixPubKeySignDigest(pAlgorithm, hPrivateKey, pAlgoParams, hDigest, 0 /*fFlags*/,
+                                       NULL /*pvSignature*/, &cbSignature, RTErrInfoInitStatic(pErrInfo));
+        if (vrc == VERR_BUFFER_OVERFLOW)
         {
             void *pvSignature = RTMemAllocZ(cbSignature);
             if (pvSignature)
             {
-                rc = RTCrPkixPubKeySignDigest(pAlgorithm, hPrivateKey, pAlgoParams, hDigest, 0,
-                                              pvSignature, &cbSignature, RTErrInfoInitStatic(pErrInfo));
-                if (RT_SUCCESS(rc))
+                vrc = RTCrPkixPubKeySignDigest(pAlgorithm, hPrivateKey, pAlgoParams, hDigest, 0,
+                                               pvSignature, &cbSignature, RTErrInfoInitStatic(pErrInfo));
+                if (RT_SUCCESS(vrc))
                 {
                     if (iVerbosity > 1)
                         RTMsgInfo(Appliance::tr("Created OVA signature: %zu bytes, %s", "", cbSignature), cbSignature,
@@ -2608,10 +2609,10 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                      * Verify the signature using the certificate to make sure we've
                      * been given the right private key.
                      */
-                    rc = RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(&pCertificate->TbsCertificate.SubjectPublicKeyInfo,
-                                                                          pvSignature, cbSignature, hDigest,
-                                                                          RTErrInfoInitStatic(pErrInfo));
-                    if (RT_SUCCESS(rc))
+                    vrc = RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(&pCertificate->TbsCertificate.SubjectPublicKeyInfo,
+                                                                           pvSignature, cbSignature, hDigest,
+                                                                           RTErrInfoInitStatic(pErrInfo));
+                    if (RT_SUCCESS(vrc))
                     {
                         if (iVerbosity > 2)
                             RTMsgInfo(Appliance::tr("  Successfully decoded and verified the OVA signature.\n"));
@@ -2620,22 +2621,22 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                          * Create the output file.
                          */
                         RTVFSFILE hVfsFileSignature;
-                        rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, _8K, &hVfsFileSignature);
-                        if (RT_SUCCESS(rc))
+                        vrc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, _8K, &hVfsFileSignature);
+                        if (RT_SUCCESS(vrc))
                         {
-                            rc = (int)RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %#.*Rhxs\n\n",
-                                                      pszDigestType, pszManifestName, cbSignature, pvSignature);
-                            if (RT_SUCCESS(rc))
+                            vrc = (int)RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %#.*Rhxs\n\n",
+                                                       pszDigestType, pszManifestName, cbSignature, pvSignature);
+                            if (RT_SUCCESS(vrc))
                             {
-                                rc = (int)RTCrX509Certificate_WriteToVfsFile(hVfsFileSignature, pCertificate,
-                                                                             RTErrInfoInitStatic(pErrInfo));
-                                if (RT_SUCCESS(rc))
+                                vrc = (int)RTCrX509Certificate_WriteToVfsFile(hVfsFileSignature, pCertificate,
+                                                                              RTErrInfoInitStatic(pErrInfo));
+                                if (RT_SUCCESS(vrc))
                                 {
                                     if (fPkcs7)
-                                        rc = doAddPkcs7Signature(pCertificate, hPrivateKey, enmPkcs7DigestType,
-                                                                 cIntermediateCerts, papszIntermediateCerts, hVfsFileManifest,
-                                                                 iVerbosity, pErrInfo, hVfsFileSignature);
-                                    if (RT_SUCCESS(rc))
+                                        vrc = doAddPkcs7Signature(pCertificate, hPrivateKey, enmPkcs7DigestType,
+                                                                  cIntermediateCerts, papszIntermediateCerts, hVfsFileManifest,
+                                                                  iVerbosity, pErrInfo, hVfsFileSignature);
+                                    if (RT_SUCCESS(vrc))
                                     {
                                         /*
                                          * Success.
@@ -2646,34 +2647,34 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                                 }
                                 else
                                     RTMsgError(Appliance::tr("Failed to write certificate to signature file: %Rrc%#RTeim"),
-                                               rc, &pErrInfo->Core);
+                                               vrc, &pErrInfo->Core);
                             }
                             else
-                                RTMsgError(Appliance::tr("Failed to produce signature file: %Rrc"), rc);
+                                RTMsgError(Appliance::tr("Failed to produce signature file: %Rrc"), vrc);
                             RTVfsFileRelease(hVfsFileSignature);
                         }
                         else
-                            RTMsgError(Appliance::tr("RTVfsMemFileCreate failed: %Rrc"), rc);
+                            RTMsgError(Appliance::tr("RTVfsMemFileCreate failed: %Rrc"), vrc);
                     }
                     else
                         RTMsgError(Appliance::tr("Encountered a problem when validating the signature we just created: %Rrc%#RTeim\n"
                                         "Please make sure the certificate and private key matches."),
-                                   rc, &pErrInfo->Core);
+                                   vrc, &pErrInfo->Core);
                 }
                 else
-                    RTMsgError(Appliance::tr("2nd RTCrPkixPubKeySignDigest call failed: %Rrc%#RTeim"), rc, pErrInfo->Core);
+                    RTMsgError(Appliance::tr("2nd RTCrPkixPubKeySignDigest call failed: %Rrc%#RTeim"), vrc, pErrInfo->Core);
                 RTMemFree(pvSignature);
             }
             else
-                rc = RTMsgErrorRc(VERR_NO_MEMORY, Appliance::tr("Out of memory!"));
+                vrc = RTMsgErrorRc(VERR_NO_MEMORY, Appliance::tr("Out of memory!"));
         }
         else
-            RTMsgError(Appliance::tr("RTCrPkixPubKeySignDigest failed: %Rrc%#RTeim"), rc, pErrInfo->Core);
+            RTMsgError(Appliance::tr("RTCrPkixPubKeySignDigest failed: %Rrc%#RTeim"), vrc, pErrInfo->Core);
     }
     else
-        RTMsgError(Appliance::tr("Failed to create digest %s: %Rrc"), RTCrDigestTypeToName(enmDigestType), rc);
+        RTMsgError(Appliance::tr("Failed to create digest %s: %Rrc"), RTCrDigestTypeToName(enmDigestType), vrc);
     RTCrDigestRelease(hDigest);
-    return rc;
+    return vrc;
 }
 
 
@@ -2704,8 +2705,8 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     };
 
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, arg->argc, arg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    int vrc = RTGetOptInit(&GetState, arg->argc, arg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     const char     *pszOva              = NULL;
     const char     *pszCertificate      = NULL;
@@ -2830,25 +2831,25 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     RTVFSOBJ        hVfsOldSignature = NIL_RTVFSOBJ;
     RTVFSFILE       hVfsFileManifest = NIL_RTVFSFILE;
     Utf8Str         strManifestName;
-    rc = openOvaAndGetManifestAndOldSignature(pszOva, iVerbosity, fReSign,
-                                              &hVfsFssOva, &strManifestName, &hVfsFileManifest, &hVfsOldSignature);
-    if (RT_SUCCESS(rc))
+    vrc = openOvaAndGetManifestAndOldSignature(pszOva, iVerbosity, fReSign,
+                                               &hVfsFssOva, &strManifestName, &hVfsFileManifest, &hVfsOldSignature);
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Read the certificate and private key.
          */
         RTERRINFOSTATIC     ErrInfo;
         RTCRX509CERTIFICATE Certificate;
-        rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
-                                              RTErrInfoInitStatic(&ErrInfo));
-        if (RT_FAILURE(rc))
+        vrc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
+                                               RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(vrc))
             return RTMsgErrorExitFailure(Appliance::tr("Error reading certificate from '%s': %Rrc%#RTeim"),
-                                         pszCertificate, rc, &ErrInfo.Core);
+                                         pszCertificate, vrc, &ErrInfo.Core);
 
         RTCRKEY hPrivateKey = NIL_RTCRKEY;
-        rc = RTCrKeyCreateFromFile(&hPrivateKey, 0 /*fFlags*/, pszPrivateKey, strPrivateKeyPassword.c_str(),
-                                   RTErrInfoInitStatic(&ErrInfo));
-        if (RT_SUCCESS(rc))
+        vrc = RTCrKeyCreateFromFile(&hPrivateKey, 0 /*fFlags*/, pszPrivateKey, strPrivateKeyPassword.c_str(),
+                                    RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(vrc))
         {
             if (iVerbosity > 1)
                 RTMsgInfo(Appliance::tr("Successfully read the certificate and private key."));
@@ -2857,33 +2858,33 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
              * Do the signing and create the signature file.
              */
             RTVFSFILE hVfsFileSignature = NIL_RTVFSFILE;
-            rc = doTheOvaSigning(&Certificate, hPrivateKey, enmDigestType, strManifestName.c_str(), hVfsFileManifest,
-                                 fPkcs7, cIntermediateCerts, apszIntermediateCerts, iVerbosity, &ErrInfo, &hVfsFileSignature);
+            vrc = doTheOvaSigning(&Certificate, hPrivateKey, enmDigestType, strManifestName.c_str(), hVfsFileManifest,
+                                  fPkcs7, cIntermediateCerts, apszIntermediateCerts, iVerbosity, &ErrInfo, &hVfsFileSignature);
 
             /*
              * Construct the signature filename:
              */
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 Utf8Str strSignatureName;
-                rc = strSignatureName.assignNoThrow(strManifestName);
-                if (RT_SUCCESS(rc))
-                    rc = strSignatureName.stripSuffix().appendNoThrow(".cert");
-                if (RT_SUCCESS(rc) && !fDryRun)
+                vrc = strSignatureName.assignNoThrow(strManifestName);
+                if (RT_SUCCESS(vrc))
+                    vrc = strSignatureName.stripSuffix().appendNoThrow(".cert");
+                if (RT_SUCCESS(vrc) && !fDryRun)
                 {
                     /*
                      * Update the OVA.
                      */
-                    rc = updateTheOvaSignature(hVfsFssOva, pszOva, strSignatureName.c_str(),
-                                               hVfsFileSignature, hVfsOldSignature, iVerbosity);
-                    if (RT_SUCCESS(rc) && iVerbosity > 0)
+                    vrc = updateTheOvaSignature(hVfsFssOva, pszOva, strSignatureName.c_str(),
+                                                hVfsFileSignature, hVfsOldSignature, iVerbosity);
+                    if (RT_SUCCESS(vrc) && iVerbosity > 0)
                         RTMsgInfo(Appliance::tr("Successfully signed '%s'."), pszOva);
                 }
             }
             RTCrKeyRelease(hPrivateKey);
         }
         else
-            RTPrintf(Appliance::tr("Error reading the private key from %s: %Rrc%#RTeim"), pszPrivateKey, rc, &ErrInfo.Core);
+            RTPrintf(Appliance::tr("Error reading the private key from %s: %Rrc%#RTeim"), pszPrivateKey, vrc, &ErrInfo.Core);
         RTCrX509Certificate_Delete(&Certificate);
     }
 
@@ -2891,5 +2892,5 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     RTVfsFileRelease(hVfsFileManifest);
     RTVfsFsStrmRelease(hVfsFssOva);
 
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

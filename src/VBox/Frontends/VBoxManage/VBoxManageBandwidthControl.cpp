@@ -65,9 +65,9 @@ static const char *parseLimit(const char *pcszLimit, int64_t *pLimit)
 {
     int iMultiplier = _1M;
     char *pszNext = NULL;
-    int rc = RTStrToInt64Ex(pcszLimit, &pszNext, 10, pLimit);
+    int vrc = RTStrToInt64Ex(pcszLimit, &pszNext, 10, pLimit);
 
-    switch (rc)
+    switch (vrc)
     {
         case VINF_SUCCESS:
             break;

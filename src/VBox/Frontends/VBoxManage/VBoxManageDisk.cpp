@@ -67,18 +67,18 @@ DECLARE_TRANSLATION_CONTEXT(Disk);
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+static DECLCALLBACK(void) handleVDError(void *pvUser, int vrc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     RT_NOREF(pvUser);
     RTMsgErrorV(pszFormat, va);
-    RTMsgError(Disk::tr("Error code %Rrc at %s(%u) in function %s"), rc, RT_SRC_POS_ARGS);
+    RTMsgError(Disk::tr("Error code %Rrc at %s(%u) in function %s"), vrc, RT_SRC_POS_ARGS);
 }
 
 static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     unsigned uMediumVariant = (unsigned)(*pMediumVariant);
-    while (psz && *psz && RT_SUCCESS(rc))
+    while (psz && *psz && RT_SUCCESS(vrc))
     {
         size_t len;
         const char *pszComma = strchr(psz, ',');
@@ -110,7 +110,7 @@ static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
                      || !RTStrNICmp(psz, "rawdisk", len))
                 uMediumVariant |= MediumVariant_VmdkRawDisk;
             else
-                rc = VERR_PARSE_ERROR;
+                vrc = VERR_PARSE_ERROR;
         }
         if (pszComma)
             psz += len + 1;
@@ -118,14 +118,14 @@ static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
             psz += len;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
         *pMediumVariant = (MediumVariant_T)uMediumVariant;
-    return rc;
+    return vrc;
 }
 
 int parseMediumType(const char *psz, MediumType_T *penmMediumType)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     MediumType_T enmMediumType = MediumType_Normal;
     if (!RTStrICmp(psz, "normal"))
         enmMediumType = MediumType_Normal;
@@ -140,39 +140,35 @@ int parseMediumType(const char *psz, MediumType_T *penmMediumType)
     else if (!RTStrICmp(psz, "multiattach"))
         enmMediumType = MediumType_MultiAttach;
     else
-        rc = VERR_PARSE_ERROR;
+        vrc = VERR_PARSE_ERROR;
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
         *penmMediumType = enmMediumType;
-    return rc;
+    return vrc;
 }
 
 /** @todo move this into getopt, as getting bool values is generic */
 int parseBool(const char *psz, bool *pb)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (    !RTStrICmp(psz, "on")
         ||  !RTStrICmp(psz, "yes")
         ||  !RTStrICmp(psz, "true")
-        ||  !RTStrICmp(psz, "1")
+        ||  !RTStrCmp(psz, "1")
         ||  !RTStrICmp(psz, "enable")
         ||  !RTStrICmp(psz, "enabled"))
-    {
         *pb = true;
-    }
     else if (   !RTStrICmp(psz, "off")
              || !RTStrICmp(psz, "no")
              || !RTStrICmp(psz, "false")
-             || !RTStrICmp(psz, "0")
+             || !RTStrCmp(psz, "0")
              || !RTStrICmp(psz, "disable")
              || !RTStrICmp(psz, "disabled"))
-    {
         *pb = false;
-    }
     else
-        rc = VERR_PARSE_ERROR;
+        vrc = VERR_PARSE_ERROR;
 
-    return rc;
+    return vrc;
 }
 
 HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
@@ -1235,7 +1231,6 @@ static const RTGETOPTDEF g_aConvertFromRawHardDiskOptions[] =
 
 RTEXITCODE handleConvertFromRaw(HandlerArg *a)
 {
-    int rc = VINF_SUCCESS;
     bool fReadFromStdIn = false;
     const char *format = "VDI";
     const char *srcfilename = NULL;
@@ -1250,8 +1245,10 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     // start at 0 because main() has hacked both the argc and argv given to us
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aConvertFromRawHardDiskOptions, RT_ELEMENTS(g_aConvertFromRawHardDiskOptions),
-                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv,
+                           g_aConvertFromRawHardDiskOptions, RT_ELEMENTS(g_aConvertFromRawHardDiskOptions),
+                           0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
@@ -1268,8 +1265,8 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
             case 'm':   // --variant
             {
                 MediumVariant_T enmMediumVariant = MediumVariant_Standard;
-                rc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
-                if (RT_FAILURE(rc))
+                vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
+                if (RT_FAILURE(vrc))
                     return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
                 /// @todo cleaner solution than assuming 1:1 mapping?
                 uImageFlags = (unsigned)enmMediumVariant;
@@ -1306,19 +1303,19 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     vdInterfaceError.pfnError     = handleVDError;
     vdInterfaceError.pfnMessage   = NULL;
 
-    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
-    AssertRC(rc);
+    vrc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
+    AssertRC(vrc);
 
     /* open raw image file. */
     RTFILE File;
     if (fReadFromStdIn)
-        rc = RTFileFromNative(&File, RTFILE_NATIVE_STDIN);
+        vrc = RTFileFromNative(&File, RTFILE_NATIVE_STDIN);
     else
-        rc = RTFileOpen(&File, srcfilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(rc))
+        vrc = RTFileOpen(&File, srcfilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_FAILURE(vrc))
     {
-        RTMsgError(Disk::tr("Cannot open file \"%s\": %Rrc"), srcfilename, rc);
+        RTMsgError(Disk::tr("Cannot open file \"%s\": %Rrc"), srcfilename, vrc);
         goto out;
     }
 
@@ -1327,10 +1324,10 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     if (fReadFromStdIn)
         cbFile = RTStrToUInt64(filesize);
     else
-        rc = RTFileQuerySize(File, &cbFile);
-    if (RT_FAILURE(rc))
+        vrc = RTFileQuerySize(File, &cbFile);
+    if (RT_FAILURE(vrc))
     {
-        RTMsgError(Disk::tr("Cannot get image size for file \"%s\": %Rrc"), srcfilename, rc);
+        RTMsgError(Disk::tr("Cannot get image size for file \"%s\": %Rrc"), srcfilename, vrc);
         goto out;
     }
 
@@ -1339,10 +1336,10 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
                  cbFile, (cbFile + _1M - 1) / _1M);
     char pszComment[256];
     RTStrPrintf(pszComment, sizeof(pszComment), Disk::tr("Converted image from %s"), srcfilename);
-    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
-    if (RT_FAILURE(rc))
+    vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
+    if (RT_FAILURE(vrc))
     {
-        RTMsgError(Disk::tr("Cannot create the virtual disk container: %Rrc"), rc);
+        RTMsgError(Disk::tr("Cannot create the virtual disk container: %Rrc"), vrc);
         goto out;
     }
 
@@ -1355,12 +1352,12 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     LCHS.cCylinders = 0;
     LCHS.cHeads = 0;
     LCHS.cSectors = 0;
-    rc = VDCreateBase(pDisk, format, dstfilename, cbFile,
-                      uImageFlags, pszComment, &PCHS, &LCHS, pUuid,
-                      VD_OPEN_FLAGS_NORMAL, NULL, NULL);
-    if (RT_FAILURE(rc))
+    vrc = VDCreateBase(pDisk, format, dstfilename, cbFile,
+                       uImageFlags, pszComment, &PCHS, &LCHS, pUuid,
+                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
+    if (RT_FAILURE(vrc))
     {
-        RTMsgError(Disk::tr("Cannot create the disk image \"%s\": %Rrc"), dstfilename, rc);
+        RTMsgError(Disk::tr("Cannot create the disk image \"%s\": %Rrc"), dstfilename, vrc);
         goto out;
     }
 
@@ -1369,8 +1366,8 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     pvBuf = RTMemAlloc(cbBuffer);
     if (!pvBuf)
     {
-        rc = VERR_NO_MEMORY;
-        RTMsgError(Disk::tr("Out of memory allocating buffers for image \"%s\": %Rrc"), dstfilename, rc);
+        vrc = VERR_NO_MEMORY;
+        RTMsgError(Disk::tr("Out of memory allocating buffers for image \"%s\": %Rrc"), dstfilename, vrc);
         goto out;
     }
 
@@ -1383,13 +1380,13 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         cbRead = 0;
         cbToRead = cbFile - offFile >= (uint64_t)cbBuffer ?
                             cbBuffer : (size_t)(cbFile - offFile);
-        rc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
-        if (RT_FAILURE(rc) || !cbRead)
+        vrc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
+        if (RT_FAILURE(vrc) || !cbRead)
             break;
-        rc = VDWrite(pDisk, offFile, pvBuf, cbRead);
-        if (RT_FAILURE(rc))
+        vrc = VDWrite(pDisk, offFile, pvBuf, cbRead);
+        if (RT_FAILURE(vrc))
         {
-            RTMsgError(Disk::tr("Failed to write to disk image \"%s\": %Rrc"), dstfilename, rc);
+            RTMsgError(Disk::tr("Failed to write to disk image \"%s\": %Rrc"), dstfilename, vrc);
             goto out;
         }
         offFile += cbRead;
@@ -1399,11 +1396,11 @@ out:
     if (pvBuf)
         RTMemFree(pvBuf);
     if (pDisk)
-        VDClose(pDisk, RT_FAILURE(rc));
+        VDClose(pDisk, RT_FAILURE(vrc));
     if (File != NIL_RTFILE)
         RTFileClose(File);
 
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
@@ -2317,12 +2314,12 @@ static RTEXITCODE handleMediumIOFormatFat(HandlerArg *a, int iFirst, PMEDIUMIOCO
     };
 
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
-    AssertRC(rc);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             MEDIUMIOCOMMONOPT_CASES(pCommonOpts);
 
@@ -2331,7 +2328,7 @@ static RTEXITCODE handleMediumIOFormatFat(HandlerArg *a, int iFirst, PMEDIUMIOCO
                 break;
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -2368,12 +2365,12 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
     uint64_t    cb        = UINT64_MAX;
 
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
-    AssertRC(rc);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             MEDIUMIOCOMMONOPT_CASES(pCommonOpts);
 
@@ -2394,7 +2391,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                 break;
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -2412,7 +2409,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
         PRTSTREAM pOut = NULL;
         if (pszOutput && (pszOutput[0] != '-' || pszOutput[1] != '\0'))
         {
-            int vrc = RTStrmOpen(pszOutput, fHex ? "wt" : "wb", &pOut);
+            vrc = RTStrmOpen(pszOutput, fHex ? "wt" : "wb", &pOut);
             if (RT_FAILURE(vrc))
                 rcExit = RTMsgErrorExitFailure(Disk::tr("Error opening '%s' for writing: %Rrc"), pszOutput, vrc);
         }
@@ -2470,12 +2467,12 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                 if (cbReturned)
                 {
                     BYTE const *pbBuf = SafeArrayBuf.raw();
-                    int vrc = VINF_SUCCESS;
                     if (!fHex)
                         vrc = RTStrmWrite(pOut, pbBuf, cbReturned);
                     else
                     {
                         /* hexdump -C */
+                        vrc = VINF_SUCCESS;
                         uint64_t        offHex    = off;
                         uint64_t const  offHexEnd = off + cbReturned;
                         while (offHex < offHexEnd)
@@ -2560,7 +2557,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
              */
             if (pOut != g_pStdOut)
             {
-                int vrc = RTStrmClose(pOut);
+                vrc = RTStrmClose(pOut);
                 if (RT_FAILURE(vrc))
                     rcExit = RTMsgErrorExitFailure(Disk::tr("Error closing '%s': %Rrc"), pszOutput, vrc);
             }
@@ -2591,12 +2588,12 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
     Bstr strFormat;
 
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
-    AssertRC(rc);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             MEDIUMIOCOMMONOPT_CASES(pCommonOpts);
 
@@ -2608,14 +2605,14 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
                 break;
             case 'v':   // --variant
             {
-                int vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
+                vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
                 if (RT_FAILURE(vrc))
                     return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
                 break;
             }
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
 
@@ -2633,7 +2630,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
         PRTSTREAM pOut = NULL;
         if (pszOutput && (pszOutput[0] != '-' || pszOutput[1] != '\0'))
         {
-            int vrc = RTStrmOpen(pszOutput, "wb", &pOut);
+            vrc = RTStrmOpen(pszOutput, "wb", &pOut);
             if (RT_FAILURE(vrc))
                 rcExit = RTMsgErrorExitFailure(Disk::tr("Error opening '%s' for writing: %Rrc"), pszOutput, vrc);
         }
@@ -2675,7 +2672,6 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
                     if (cbReturned)
                     {
                         BYTE const *pbBuf = SafeArrayBuf.raw();
-                        int vrc = VINF_SUCCESS;
                         vrc = RTStrmWrite(pOut, pbBuf, cbReturned);
                         if (RT_FAILURE(vrc))
                         {
@@ -2698,7 +2694,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
              */
             if (pOut != g_pStdOut)
             {
-                int vrc = RTStrmClose(pOut);
+                vrc = RTStrmClose(pOut);
                 if (RT_FAILURE(vrc))
                     rcExit = RTMsgErrorExitFailure(Disk::tr("Error closing '%s': %Rrc"), pszOutput, vrc);
             }
@@ -2726,12 +2722,12 @@ RTEXITCODE handleMediumIO(HandlerArg *a)
     MEDIUMIOCOMMONOPT   CommonOpts = { NULL, DeviceType_Null, NULL };
 
     RTGETOPTSTATE       GetState;
-    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
-    AssertRC(rc);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     RTGETOPTUNION       ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        switch (rc)
+        switch (vrc)
         {
             MEDIUMIOCOMMONOPT_CASES(&CommonOpts);
 
@@ -2750,7 +2746,7 @@ RTEXITCODE handleMediumIO(HandlerArg *a)
                 return errorUnknownSubcommand(ValueUnion.psz);
 
             default:
-                return errorGetOpt(rc, &ValueUnion);
+                return errorGetOpt(vrc, &ValueUnion);
         }
     }
     return errorNoSubcommand();
