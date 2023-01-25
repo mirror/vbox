@@ -29,7 +29,6 @@
 #include <iprt/dir.h>
 #include <iprt/path.h>
 #include <iprt/file.h>
-#include <iprt/s3.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/com/array.h>

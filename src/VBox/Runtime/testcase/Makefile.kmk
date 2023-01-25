@@ -204,8 +204,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  ifdef VBOX_WITH_LIBCURL
   PROGRAMS += \
   	tstRTHttp-1 \
-  	tstRTCRest-1 \
-  	tstRTS3
+  	tstRTCRest-1
  endif
 
  if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
@@ -788,9 +787,6 @@ tstRand_SOURCES = tstRand.cpp
 
 tstRTReqPool_TEMPLATE = VBoxR3TstExe
 tstRTReqPool_SOURCES = tstRTReqPool.cpp
-
-tstRTS3_TEMPLATE = VBoxR3TstExe
-tstRTS3_SOURCES = tstRTS3.cpp
 
 tstSemMutex_TEMPLATE = VBoxR3TstExe
 tstSemMutex_SOURCES = tstSemMutex.cpp

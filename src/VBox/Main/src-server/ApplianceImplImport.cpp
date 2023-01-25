@@ -31,7 +31,6 @@
 #include <iprt/cpp/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
-#include <iprt/s3.h>
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
 #include <iprt/tar.h>

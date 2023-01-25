@@ -30,7 +30,6 @@
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/param.h>
-#include <iprt/s3.h>
 #include <iprt/manifest.h>
 #include <iprt/stream.h>
 #include <iprt/zip.h>
