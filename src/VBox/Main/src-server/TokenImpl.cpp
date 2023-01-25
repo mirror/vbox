@@ -186,13 +186,13 @@ void MediumLockToken::uninit()
     {
         if (m.fWrite)
         {
-            HRESULT rc = m.pMedium->i_unlockWrite(NULL);
-            AssertComRC(rc);
+            HRESULT hrc = m.pMedium->i_unlockWrite(NULL);
+            AssertComRC(hrc);
         }
         else
         {
-            HRESULT rc = m.pMedium->i_unlockRead(NULL);
-            AssertComRC(rc);
+            HRESULT hrc = m.pMedium->i_unlockRead(NULL);
+            AssertComRC(hrc);
         }
         m.pMedium.setNull();
     }

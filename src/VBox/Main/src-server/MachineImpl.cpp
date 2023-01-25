@@ -3495,8 +3495,8 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
             // the already known session name.
             {
                 Bstr bstrSessionName;
-                HRESULT rc2 = aSession->COMGETTER(Name)(bstrSessionName.asOutParam());
-                if (SUCCEEDED(rc2))
+                HRESULT hrc2 = aSession->COMGETTER(Name)(bstrSessionName.asOutParam());
+                if (SUCCEEDED(hrc2))
                     strSessionName = bstrSessionName;
             }
 
@@ -11436,8 +11436,8 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
     {
         ErrorInfoKeeper eik;
 
-        HRESULT rc1 = lockedMediaMap->Clear();
-        AssertComRC(rc1);
+        HRESULT hrc2 = lockedMediaMap->Clear();
+        AssertComRC(hrc2);
     }
 
     return hrc;
@@ -11607,8 +11607,8 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
         {
             ErrorInfoKeeper eik;
 
-            HRESULT rc1 = lockedMediaMap->Clear();
-            AssertComRC(rc1);
+            HRESULT hrc2 = lockedMediaMap->Clear();
+            AssertComRC(hrc2);
         }
 
         /* rollback hard disk changes */
@@ -11676,8 +11676,8 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
     {
         ErrorInfoKeeper eik;
 
-        HRESULT rc1 = lockedMediaMap->Clear();
-        AssertComRC(rc1);
+        HRESULT hrc2 = lockedMediaMap->Clear();
+        AssertComRC(hrc2);
     }
 
     return hrc;

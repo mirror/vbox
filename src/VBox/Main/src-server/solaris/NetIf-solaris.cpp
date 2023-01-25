@@ -460,8 +460,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         struct lifnum IfNum;
         RT_ZERO(IfNum);
         IfNum.lifn_family = AF_INET;
-        int rc = ioctl(Sock, SIOCGLIFNUM, &IfNum);
-        if (!rc)
+        int iRc = ioctl(Sock, SIOCGLIFNUM, &IfNum);
+        if (!iRc)
         {
             int cIfaces = RT_MIN(1024, IfNum.lifn_count); /* sane limit */
             size_t cbIfaces = (unsigned)RT_MAX(cIfaces, 1) * sizeof(struct lifreq);
@@ -473,8 +473,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 IfConfig.lifc_family = AF_INET;
                 IfConfig.lifc_len = (int)cbIfaces;
                 IfConfig.lifc_buf = (caddr_t)paIfaces;
-                rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
-                if (!rc)
+                iRc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
+                if (!iRc)
                 {
                     for (int i = 0; i < cIfaces; i++)
                     {
@@ -485,8 +485,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                             continue;
 
 #if 0
-                        rc = ioctl(Sock, SIOCGLIFADDR, &(paIfaces[i]));
-                        if (rc >= 0)
+                        iRc = ioctl(Sock, SIOCGLIFADDR, &(paIfaces[i]));
+                        if (iRc >= 0)
                         {
                             memcpy(Info.IPAddress.au8, ((struct sockaddr *)&paIfaces[i].lifr_addr)->sa_data,
                                    sizeof(Info.IPAddress.au8));
@@ -500,8 +500,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                              * But, if it has not acquired an IP address we cannot obtain it's MAC
                              * address this way, so we just use all zeros there.
                              */
-                            rc = ioctl(Sock, SIOCGARP, &ArpReq);
-                            if (rc >= 0)
+                            iRc = ioctl(Sock, SIOCGARP, &ArpReq);
+                            if (iRc >= 0)
                                 memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
 
                             char szNICDesc[LIFNAMSIZ + 256];

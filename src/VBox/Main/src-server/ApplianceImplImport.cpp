@@ -3684,13 +3684,13 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
             Guid guid = *itID;
             Bstr bstrGuid = guid.toUtf16();
             ComPtr<IMachine> failedMachine;
-            HRESULT rc2 = mVirtualBox->FindMachine(bstrGuid.raw(), failedMachine.asOutParam());
-            if (SUCCEEDED(rc2))
+            HRESULT hrc2 = mVirtualBox->FindMachine(bstrGuid.raw(), failedMachine.asOutParam());
+            if (SUCCEEDED(hrc2))
             {
                 SafeIfaceArray<IMedium> aMedia;
-                rc2 = failedMachine->Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(aMedia));
+                hrc2 = failedMachine->Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(aMedia));
                 ComPtr<IProgress> pProgress2;
-                rc2 = failedMachine->DeleteConfig(ComSafeArrayAsInParam(aMedia), pProgress2.asOutParam());
+                hrc2 = failedMachine->DeleteConfig(ComSafeArrayAsInParam(aMedia), pProgress2.asOutParam());
                 pProgress2->WaitForCompletion(-1);
             }
         }
@@ -4364,13 +4364,13 @@ HRESULT Appliance::i_verifyStorageControllerPortValid(const StorageControllerTyp
         return VBOX_E_OBJECT_NOT_FOUND;
 
     StorageBus_T enmStorageBus = StorageBus_Null;
-    HRESULT vrc = pSysProps->GetStorageBusForStorageControllerType(aStorageControllerType, &enmStorageBus);
-    if (FAILED(vrc))
-        return vrc;
+    HRESULT hrc = pSysProps->GetStorageBusForStorageControllerType(aStorageControllerType, &enmStorageBus);
+    if (FAILED(hrc))
+        return hrc;
 
-    vrc = pSysProps->GetMaxPortCountForStorageBus(enmStorageBus, aMaxPortCount);
-    if (FAILED(vrc))
-        return vrc;
+    hrc = pSysProps->GetMaxPortCountForStorageBus(enmStorageBus, aMaxPortCount);
+    if (FAILED(hrc))
+        return hrc;
 
     if (uControllerPort >= *aMaxPortCount)
         return E_INVALIDARG;

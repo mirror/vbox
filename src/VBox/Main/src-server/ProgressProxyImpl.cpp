@@ -54,8 +54,7 @@ HRESULT ProgressProxy::FinalConstruct()
     muOtherProgressWeight = 0;
     muOtherProgressStartOperation = 0;
 
-    HRESULT rc = Progress::FinalConstruct();
-    return rc;
+    return Progress::FinalConstruct();
 }
 
 /**

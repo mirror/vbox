@@ -53,12 +53,12 @@ HostPowerServiceWin::HostPowerServiceWin(VirtualBox *aVirtualBox) : HostPowerSer
 {
     mHwnd = 0;
 
-    int rc = RTThreadCreate(&mThread, HostPowerServiceWin::NotificationThread, this, 65536,
-                            RTTHREADTYPE_GUI, RTTHREADFLAGS_WAITABLE, "MainPower");
+    int vrc = RTThreadCreate(&mThread, HostPowerServiceWin::NotificationThread, this, 65536,
+                             RTTHREADTYPE_GUI, RTTHREADFLAGS_WAITABLE, "MainPower");
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        Log(("HostPowerServiceWin::HostPowerServiceWin: RTThreadCreate failed with %Rrc\n", rc));
+        Log(("HostPowerServiceWin::HostPowerServiceWin: RTThreadCreate failed with %Rrc\n", vrc));
         return;
     }
 }
@@ -85,7 +85,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread(RTTHREAD hThreadSelf, 
     HWND                 hwnd = 0;
 
     /* Create a window and make it a power event notification handler. */
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
 
@@ -107,7 +107,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread(RTTHREAD hThreadSelf, 
 
     if (atomWindowClass == 0)
     {
-        rc = VERR_NOT_SUPPORTED;
+        vrc = VERR_NOT_SUPPORTED;
         Log(("HostPowerServiceWin::NotificationThread: RegisterClassA failed with %x\n", GetLastError()));
     }
     else
@@ -121,7 +121,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread(RTTHREAD hThreadSelf, 
         if (hwnd == NULL)
         {
             Log(("HostPowerServiceWin::NotificationThread: CreateWindowExA failed with %x\n", GetLastError()));
-            rc = VERR_NOT_SUPPORTED;
+            vrc = VERR_NOT_SUPPORTED;
         }
         else
         {
@@ -191,17 +191,15 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
                         {
                             if (SystemPowerStatus.BatteryFlag == 2 /* low > 33% */)
                             {
-                                LONG rc;
                                 SYSTEM_BATTERY_STATE BatteryState;
-
-                                rc = CallNtPowerInformation(SystemBatteryState, NULL, 0, (PVOID)&BatteryState,
-                                                            sizeof(BatteryState));
+                                LONG lrc = CallNtPowerInformation(SystemBatteryState, NULL, 0, (PVOID)&BatteryState,
+                                                                  sizeof(BatteryState));
 #ifdef LOG_ENABLED
-                                if (rc == 0 /* STATUS_SUCCESS */)
+                                if (lrc == 0 /* STATUS_SUCCESS */)
                                     Log(("CallNtPowerInformation claims %d seconds of power left\n",
                                          BatteryState.EstimatedTime));
 #endif
-                                if (    rc == 0 /* STATUS_SUCCESS */
+                                if (    lrc == 0 /* STATUS_SUCCESS */
                                     &&  BatteryState.EstimatedTime < 60*5)
                                 {
                                     pPowerObj->notify(Reason_HostBatteryLow);

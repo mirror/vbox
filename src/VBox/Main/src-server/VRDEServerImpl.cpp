@@ -252,7 +252,7 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     if (mData->fEnabled != RT_BOOL(aEnabled))
     {
@@ -269,8 +269,8 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
         /* Avoid deadlock when i_onVRDEServerChange eventually calls SetExtraData. */
         adep.release();
 
-        rc = mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
-        if (FAILED(rc))
+        hrc = mParent->i_onVRDEServerChange(/* aRestart */ TRUE);
+        if (FAILED(hrc))
         {
             /* Failed to enable/disable the server. Revert the internal state. */
             adep.add();
@@ -285,7 +285,7 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
         }
     }
 
-    return rc;
+    return hrc;
 }
 
 static int i_portParseNumber(uint16_t *pu16Port, const char *pszStart, const char *pszEnd)
@@ -353,18 +353,18 @@ static int i_vrdpServerVerifyPortsString(const com::Utf8Str &aPortRange)
         }
 
         /* A probably valid range. Verify and parse it. */
-        int rc;
+        int vrc;
         if (pszDash)
         {
-            rc = i_portParseNumber(NULL, pszStart, pszDash);
-            if (RT_SUCCESS(rc))
-                rc = i_portParseNumber(NULL, pszDash + 1, pszEnd);
+            vrc = i_portParseNumber(NULL, pszStart, pszDash);
+            if (RT_SUCCESS(vrc))
+                vrc = i_portParseNumber(NULL, pszDash + 1, pszEnd);
         }
         else
-            rc = i_portParseNumber(NULL, pszStart, pszEnd);
+            vrc = i_portParseNumber(NULL, pszStart, pszEnd);
 
-        if (RT_FAILURE(rc))
-            return rc;
+        if (RT_FAILURE(vrc))
+            return vrc;
     }
 
     return VINF_SUCCESS;
@@ -475,37 +475,35 @@ static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, void *pp
 static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, PFNVRDESUPPORTEDPROPERTIES *ppfn)
 #endif
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     RTLDRMOD hmod = NIL_RTLDRMOD;
 
     RTERRINFOSTATIC ErrInfo;
     RTErrInfoInitStatic(&ErrInfo);
     if (RTPathHavePath(pszLibraryName))
-        rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &hmod, &ErrInfo.Core);
+        vrc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &hmod, &ErrInfo.Core);
     else
-        rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &hmod, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
-    if (RT_SUCCESS(rc))
+        vrc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &hmod, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
+    if (RT_SUCCESS(vrc))
     {
-        rc = RTLdrGetSymbol(hmod, "VRDESupportedProperties", (void **)ppfn);
+        vrc = RTLdrGetSymbol(hmod, "VRDESupportedProperties", (void **)ppfn);
 
-        if (RT_FAILURE(rc) && rc != VERR_SYMBOL_NOT_FOUND)
-            LogRel(("VRDE: Error resolving symbol '%s', rc %Rrc.\n", "VRDESupportedProperties", rc));
+        if (RT_FAILURE(vrc) && vrc != VERR_SYMBOL_NOT_FOUND)
+            LogRel(("VRDE: Error resolving symbol '%s', vrc %Rrc.\n", "VRDESupportedProperties", vrc));
     }
     else
     {
         if (RTErrInfoIsSet(&ErrInfo.Core))
-            LogRel(("VRDE: Error loading the library '%s': %s (%Rrc)\n", pszLibraryName, ErrInfo.Core.pszMsg, rc));
+            LogRel(("VRDE: Error loading the library '%s': %s (%Rrc)\n", pszLibraryName, ErrInfo.Core.pszMsg, vrc));
         else
-            LogRel(("VRDE: Error loading the library '%s' rc = %Rrc.\n", pszLibraryName, rc));
+            LogRel(("VRDE: Error loading the library '%s' vrc = %Rrc.\n", pszLibraryName, vrc));
 
         hmod = NIL_RTLDRMOD;
     }
 
-    if (RT_SUCCESS(rc))
-    {
+    if (RT_SUCCESS(vrc))
         *phmod = hmod;
-    }
     else
     {
         if (hmod != NIL_RTLDRMOD)
@@ -515,7 +513,7 @@ static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, PFNVRDES
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
@@ -556,7 +554,7 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
         vrc = VERR_FILE_NOT_FOUND;
 #endif
     }
-    Log(("VRDEPROP: library get rc %Rrc\n", vrc));
+    Log(("VRDEPROP: library get vrc %Rrc\n", vrc));
 
     if (RT_SUCCESS(vrc))
     {
@@ -570,7 +568,7 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
 #else
         vrc = loadVRDELibrary(strVrdeLibrary.c_str(), &hmod, &pfn);
 #endif
-        Log(("VRDEPROP: load library [%s] rc %Rrc\n", strVrdeLibrary.c_str(), vrc));
+        Log(("VRDEPROP: load library [%s] vrc %Rrc\n", strVrdeLibrary.c_str(), vrc));
         if (RT_SUCCESS(vrc))
         {
             const char * const *papszNames = pfn();

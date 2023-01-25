@@ -338,10 +338,10 @@ HRESULT USBDeviceFilters::createDeviceFilter(const com::Utf8Str &aName,
 
     ComObjPtr<USBDeviceFilter> pFilter;
     pFilter.createObject();
-    HRESULT rc = pFilter->init(this, Bstr(aName).raw());
-    ComAssertComRCRetRC(rc);
-    rc = pFilter.queryInterfaceTo(aFilter.asOutParam());
-    AssertComRCReturnRC(rc);
+    HRESULT hrc = pFilter->init(this, Bstr(aName).raw());
+    ComAssertComRCRetRC(hrc);
+    hrc = pFilter.queryInterfaceTo(aFilter.asOutParam());
+    AssertComRCReturnRC(hrc);
 
     return S_OK;
 #else
@@ -515,9 +515,8 @@ HRESULT USBDeviceFilters::i_loadSettings(const settings::USB &data)
         const settings::USBDeviceFilter &f = *it;
         ComObjPtr<USBDeviceFilter> pFilter;
         pFilter.createObject();
-        HRESULT rc = pFilter->init(this,        // parent
-                                   f);
-        if (FAILED(rc)) return rc;
+        HRESULT hrc = pFilter->init(this /*aParent*/, f);
+        if (FAILED(hrc)) return hrc;
 
         m->llDeviceFilters->push_back(pFilter);
         pFilter->mInList = true;
@@ -941,61 +940,59 @@ bool USBDeviceFilters::i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaske
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
-
     /* query fields */
     USBFILTER dev;
     USBFilterInit(&dev, USBFILTERTYPE_CAPTURE);
 
     USHORT vendorId = 0;
-    rc = aUSBDevice->COMGETTER(VendorId)(&vendorId);
-    ComAssertComRCRet(rc, false);
+    HRESULT hrc = aUSBDevice->COMGETTER(VendorId)(&vendorId);
+    ComAssertComRCRet(hrc, false);
     ComAssertRet(vendorId, false);
     int vrc = USBFilterSetNumExact(&dev, USBFILTERIDX_VENDOR_ID, vendorId, true); AssertRC(vrc);
 
     USHORT productId = 0;
-    rc = aUSBDevice->COMGETTER(ProductId)(&productId);
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(ProductId)(&productId);
+    ComAssertComRCRet(hrc, false);
     vrc = USBFilterSetNumExact(&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
 
     USHORT revision;
-    rc = aUSBDevice->COMGETTER(Revision)(&revision);
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(Revision)(&revision);
+    ComAssertComRCRet(hrc, false);
     vrc = USBFilterSetNumExact(&dev, USBFILTERIDX_DEVICE, revision, true); AssertRC(vrc);
 
     Bstr manufacturer;
-    rc = aUSBDevice->COMGETTER(Manufacturer)(manufacturer.asOutParam());
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(Manufacturer)(manufacturer.asOutParam());
+    ComAssertComRCRet(hrc, false);
     if (!manufacturer.isEmpty())
         USBFilterSetStringExact(&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(),
                                 true /*fMustBePresent*/, false /*fPurge*/);
 
     Bstr product;
-    rc = aUSBDevice->COMGETTER(Product)(product.asOutParam());
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(Product)(product.asOutParam());
+    ComAssertComRCRet(hrc, false);
     if (!product.isEmpty())
         USBFilterSetStringExact(&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(),
                                 true /*fMustBePresent*/, false /*fPurge*/);
 
     Bstr serialNumber;
-    rc = aUSBDevice->COMGETTER(SerialNumber)(serialNumber.asOutParam());
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(SerialNumber)(serialNumber.asOutParam());
+    ComAssertComRCRet(hrc, false);
     if (!serialNumber.isEmpty())
         USBFilterSetStringExact(&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(),
                                 true /*fMustBePresent*/, false /*fPurge*/);
 
     Bstr address;
-    rc = aUSBDevice->COMGETTER(Address)(address.asOutParam());
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(Address)(address.asOutParam());
+    ComAssertComRCRet(hrc, false);
 
     USHORT port = 0;
-    rc = aUSBDevice->COMGETTER(Port)(&port);
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(Port)(&port);
+    ComAssertComRCRet(hrc, false);
     USBFilterSetNumExact(&dev, USBFILTERIDX_PORT, port, true);
 
     BOOL remote = FALSE;
-    rc = aUSBDevice->COMGETTER(Remote)(&remote);
-    ComAssertComRCRet(rc, false);
+    hrc = aUSBDevice->COMGETTER(Remote)(&remote);
+    ComAssertComRCRet(hrc, false);
     ComAssertRet(remote == TRUE, false);
 
     bool match = false;

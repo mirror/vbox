@@ -602,8 +602,8 @@ void USBProxyService::i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
         alock.release();
         SessionMachinesList llOpenedMachines;
         mHost->i_parent()->i_getOpenedMachines(llOpenedMachines);
-        HRESULT rc = runAllFiltersOnDevice(aDevice, llOpenedMachines, NULL /* aIgnoreMachine */);
-        AssertComRC(rc);
+        HRESULT hrc = runAllFiltersOnDevice(aDevice, llOpenedMachines, NULL /* aIgnoreMachine */);
+        AssertComRC(hrc);
     }
 }
 
@@ -701,8 +701,8 @@ void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, bool fRun
     {
         SessionMachinesList llOpenedMachines;
         mHost->i_parent()->i_getOpenedMachines(llOpenedMachines);
-        HRESULT rc = runAllFiltersOnDevice(aDevice, llOpenedMachines, aIgnoreMachine);
-        AssertComRC(rc);
+        HRESULT hrc = runAllFiltersOnDevice(aDevice, llOpenedMachines, aIgnoreMachine);
+        AssertComRC(hrc);
     }
 }
 
@@ -958,14 +958,14 @@ HRESULT USBProxyService::setError(HRESULT aResultCode, const char *aText, ...)
 {
     va_list va;
     va_start(va, aText);
-    HRESULT rc = VirtualBoxBase::setErrorInternalV(aResultCode,
-                                                   COM_IIDOF(IHost),
-                                                   "USBProxyService",
-                                                   aText, va,
-                                                   false /* aWarning*/,
-                                                   true /* aLogIt*/);
+    HRESULT hrc = VirtualBoxBase::setErrorInternalV(aResultCode,
+                                                    COM_IIDOF(IHost),
+                                                    "USBProxyService",
+                                                    aText, va,
+                                                    false /* aWarning*/,
+                                                    true /* aLogIt*/);
     va_end(va);
-    return rc;
+    return hrc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

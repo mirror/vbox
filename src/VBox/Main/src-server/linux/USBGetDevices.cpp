@@ -1583,7 +1583,7 @@ const char *s_pszTestDevicesRoot;
 /** Should the device node tree be accessible to the current user? */
 bool s_fTestDevicesAccessible;
 /** The result of the usbfs/inotify-specific init */
-int s_rcTestMethodInitResult;
+int s_vrcTestMethodInitResult;
 /** The value of the VBOX_USB environment variable. */
 const char *s_pszTestEnvUsb;
 /** The value of the VBOX_USB_ROOT environment variable. */
@@ -1595,13 +1595,13 @@ const char *s_pszTestEnvUsbRoot;
  * the access method-specific initialisation. */
 void TestUSBSetupInit(const char *pszUsbfsRoot, bool fUsbfsAccessible,
                       const char *pszDevicesRoot, bool fDevicesAccessible,
-                      int rcMethodInitResult)
+                      int vrcMethodInitResult)
 {
     s_pszTestUsbfsRoot = pszUsbfsRoot;
     s_fTestUsbfsAccessible = fUsbfsAccessible;
     s_pszTestDevicesRoot = pszDevicesRoot;
     s_fTestDevicesAccessible = fDevicesAccessible;
-    s_rcTestMethodInitResult = rcMethodInitResult;
+    s_vrcTestMethodInitResult = vrcMethodInitResult;
 }
 
 

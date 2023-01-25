@@ -246,8 +246,8 @@ HRESULT NATNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
 
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
 
     return S_OK;
 }
@@ -270,8 +270,8 @@ HRESULT NATNetwork::setEnabled(const BOOL aEnabled)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
@@ -290,14 +290,11 @@ HRESULT NATNetwork::getNetwork(com::Utf8Str &aNetwork)
 
 HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 {
-    RTNETADDRIPV4 Net, Mask;
+    RTNETADDRIPV4 Net;
     int iPrefix;
-    int rc;
-
-    rc = RTNetStrToIPv4Cidr(aIPv4NetworkCidr.c_str(), &Net, &iPrefix);
-    if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("%s is not a valid IPv4 CIDR notation"),
-                        aIPv4NetworkCidr.c_str());
+    int vrc = RTNetStrToIPv4Cidr(aIPv4NetworkCidr.c_str(), &Net, &iPrefix);
+    if (RT_FAILURE(vrc))
+        return setErrorBoth(E_FAIL, vrc, tr("%s is not a valid IPv4 CIDR notation"), aIPv4NetworkCidr.c_str());
 
     /*
      * /32 is a single address, not a network, /31 is the degenerate
@@ -311,15 +308,14 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
     if (iPrefix == 0)
         return setError(E_FAIL, tr("%s specifies zero prefix"), aIPv4NetworkCidr.c_str());
 
-    rc = RTNetPrefixToMaskIPv4(iPrefix, &Mask);
-    AssertRCReturn(rc, setError(E_FAIL,
-        "%s: internal error: failed to convert prefix %d to netmask: %Rrc",
-        aIPv4NetworkCidr.c_str(), iPrefix, rc));
+    RTNETADDRIPV4 Mask;
+    vrc = RTNetPrefixToMaskIPv4(iPrefix, &Mask);
+    AssertRCReturn(vrc, setErrorBoth(E_FAIL, vrc, tr("%s: internal error: failed to convert prefix %d to netmask: %Rrc"),
+                                     aIPv4NetworkCidr.c_str(), iPrefix, vrc));
 
     if ((Net.u & ~Mask.u) != 0)
-        return setError(E_FAIL,
-            tr("%s: the specified address is longer than the specified prefix"),
-            aIPv4NetworkCidr.c_str());
+        return setError(E_FAIL, tr("%s: the specified address is longer than the specified prefix"),
+                        aIPv4NetworkCidr.c_str());
 
     /** @todo r=uwe Check the address is unicast, not a loopback, etc. */
 
@@ -359,19 +355,18 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 void NATNetwork::Data::recalculatePortForwarding(const RTNETADDRIPV4 &NetNew,
                                                  const RTNETADDRIPV4 &MaskNew)
 {
-    RTNETADDRIPV4 NetOld, MaskOld;
-    int iPrefixOld;
-    int rc;
-
     if (s.mapPortForwardRules4.empty())
         return;                 /* nothing to do */
 
-    rc = RTNetStrToIPv4Cidr(s.strIPv4NetworkCidr.c_str(), &NetOld, &iPrefixOld);
-    if (RT_FAILURE(rc))
+    RTNETADDRIPV4 NetOld;
+    int iPrefixOld;
+    int vrc = RTNetStrToIPv4Cidr(s.strIPv4NetworkCidr.c_str(), &NetOld, &iPrefixOld);
+    if (RT_FAILURE(vrc))
         return;
 
-    rc = RTNetPrefixToMaskIPv4(iPrefixOld, &MaskOld);
-    if (RT_FAILURE(rc))
+    RTNETADDRIPV4 MaskOld;
+    vrc = RTNetPrefixToMaskIPv4(iPrefixOld, &MaskOld);
+    if (RT_FAILURE(vrc))
         return;
 
     for (settings::NATRulesMap::iterator it = s.mapPortForwardRules4.begin();
@@ -382,8 +377,8 @@ void NATNetwork::Data::recalculatePortForwarding(const RTNETADDRIPV4 &NetNew,
 
         /* parse the old destination address */
         RTNETADDRIPV4 AddrOld;
-        rc = RTNetStrToIPv4Addr(rule.strGuestIP.c_str(), &AddrOld);
-        if (RT_FAILURE(rc))
+        vrc = RTNetStrToIPv4Addr(rule.strGuestIP.c_str(), &AddrOld);
+        if (RT_FAILURE(vrc))
             continue;
 
         /* is it in the old network? (likely) */
@@ -432,8 +427,8 @@ HRESULT NATNetwork::setIPv6Enabled(const BOOL aIPv6Enabled)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
 
     return S_OK;
 }
@@ -450,7 +445,7 @@ HRESULT NATNetwork::getIPv6Prefix(com::Utf8Str &aIPv6Prefix)
 HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
 {
     HRESULT hrc;
-    int rc;
+    int vrc;
 
     /* Since we store it in text form, use canonical representation */
     com::Utf8Str strNormalizedIPv6Prefix;
@@ -460,41 +455,31 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
     {
         RTNETADDRIPV6 Net6;
         int iPrefixLength;
-        rc = RTNetStrToIPv6Cidr(aIPv6Prefix.c_str(), &Net6, &iPrefixLength);
-        if (RT_FAILURE(rc))
-            return setError(E_INVALIDARG,
-                            tr("%s is not a valid IPv6 prefix"),
-                            aIPv6Prefix.c_str());
+        vrc = RTNetStrToIPv6Cidr(aIPv6Prefix.c_str(), &Net6, &iPrefixLength);
+        if (RT_FAILURE(vrc))
+            return setError(E_INVALIDARG, tr("%s is not a valid IPv6 prefix"), aIPv6Prefix.c_str());
 
         /* Accept both addr:: and addr::/64 */
         if (iPrefixLength == 128)   /* no length was specified after the address? */
             iPrefixLength = 64;     /*   take it to mean /64 which we require anyway */
         else if (iPrefixLength != 64)
-            return setError(E_INVALIDARG,
-                            tr("Invalid IPv6 prefix length %d, must be 64"),
-                            iPrefixLength);
+            return setError(E_INVALIDARG, tr("Invalid IPv6 prefix length %d, must be 64"), iPrefixLength);
 
         /* Verify the address is unicast. */
-        if (   ((Net6.au8[0] & 0xe0) != 0x20)  /* global 2000::/3 */
-            && ((Net6.au8[0] & 0xfe) != 0xfc)) /* local  fc00::/7 */
-            return setError(E_INVALIDARG,
-                            tr("IPv6 prefix %RTnaipv6 is not unicast"),
-                            &Net6);
+        if (   (Net6.au8[0] & 0xe0) != 0x20  /* global 2000::/3 */
+            && (Net6.au8[0] & 0xfe) != 0xfc) /* local  fc00::/7 */
+            return setError(E_INVALIDARG, tr("IPv6 prefix %RTnaipv6 is not unicast"), &Net6);
 
         /* Verify the interfaces ID part is zero */
         if (Net6.au64[1] != 0)
-            return setError(E_INVALIDARG,
-                            tr("Non-zero bits in the interface ID part"
-                               " of the IPv6 prefix %RTnaipv6/64"),
-                            &Net6);
+            return setError(E_INVALIDARG, tr("Non-zero bits in the interface ID part of the IPv6 prefix %RTnaipv6/64"), &Net6);
 
-        rc = strNormalizedIPv6Prefix.printfNoThrow("%RTnaipv6/64", &Net6);
-        if (RT_FAILURE(rc))
+        vrc = strNormalizedIPv6Prefix.printfNoThrow("%RTnaipv6/64", &Net6);
+        if (RT_FAILURE(vrc))
         {
-            if (rc == VERR_NO_MEMORY)
+            if (vrc == VERR_NO_MEMORY)
                 return setError(E_OUTOFMEMORY);
-            else
-                return setError(E_FAIL, tr("Internal error"));
+            return setError(E_FAIL, tr("Internal error"));
         }
     }
 
@@ -556,8 +541,8 @@ HRESULT NATNetwork::setAdvertiseDefaultIPv6RouteEnabled(const BOOL aAdvertiseDef
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
 
     return S_OK;
 }
@@ -585,8 +570,8 @@ HRESULT NATNetwork::setNeedDhcpServer(const BOOL aNeedDhcpServer)
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
 
     return S_OK;
 }
@@ -610,10 +595,9 @@ HRESULT NATNetwork::getLocalMappings(std::vector<com::Utf8Str> &aLocalMappings)
 
 HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
 {
-    RTNETADDRIPV4 addr, net, mask;
-
-    int rc = RTNetStrToIPv4Addr(Utf8Str(aHostId).c_str(), &addr);
-    if (RT_FAILURE(rc))
+    RTNETADDRIPV4 addr;
+    int vrc = RTNetStrToIPv4Addr(Utf8Str(aHostId).c_str(), &addr);
+    if (RT_FAILURE(vrc))
         return E_INVALIDARG;
 
     /* check against 127/8 */
@@ -621,8 +605,9 @@ HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
         return E_INVALIDARG;
 
     /* check against networkid vs network mask */
-    rc = RTCidrStrToIPv4(Utf8Str(m->s.strIPv4NetworkCidr).c_str(), &net, &mask);
-    if (RT_FAILURE(rc))
+    RTNETADDRIPV4 net, mask;
+    vrc = RTCidrStrToIPv4(Utf8Str(m->s.strIPv4NetworkCidr).c_str(), &net, &mask);
+    if (RT_FAILURE(vrc))
         return E_INVALIDARG;
 
     if (((net.u + (uint32_t)aOffset) & mask.u) != net.u)
@@ -772,8 +757,8 @@ HRESULT NATNetwork::addPortForwardRule(BOOL aIsIpv6,
     }
     {
         AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        HRESULT rc = m->pVirtualBox->i_saveSettings();
-        ComAssertComRCRetRC(rc);
+        HRESULT hrc = m->pVirtualBox->i_saveSettings();
+        ComAssertComRCRetRC(hrc);
     }
 
     m->pVirtualBox->i_onNATNetworkPortForward(m->s.strNetworkName, TRUE, aIsIpv6,
@@ -817,8 +802,8 @@ HRESULT NATNetwork::removePortForwardRule(BOOL aIsIpv6, const com::Utf8Str &aPor
 
     {
         AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        HRESULT rc = m->pVirtualBox->i_saveSettings();
-        ComAssertComRCRetRC(rc);
+        HRESULT hrc = m->pVirtualBox->i_saveSettings();
+        ComAssertComRCRetRC(hrc);
     }
 
     m->pVirtualBox->i_onNATNetworkPortForward(m->s.strNetworkName, FALSE, aIsIpv6, aPortForwardRuleName, proto,
@@ -856,11 +841,10 @@ void NATNetwork::i_updateDomainNameOption(ComPtr<IHost> &host)
 void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
 {
     RTNETADDRIPV4 networkid, netmask;
-
-    int rc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(), &networkid, &netmask);
-    if (RT_FAILURE(rc))
+    int vrc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(), &networkid, &netmask);
+    if (RT_FAILURE(vrc))
     {
-        LogRel(("NATNetwork: Failed to parse cidr %s with %Rrc\n", m->s.strIPv4NetworkCidr.c_str(), rc));
+        LogRel(("NATNetwork: Failed to parse cidr %s with %Rrc\n", m->s.strIPv4NetworkCidr.c_str(), vrc));
         return;
     }
 
@@ -897,13 +881,12 @@ void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
 
         for (size_t i = 0; i < cAddresses; ++i)
         {
-            RTNETADDRIPV4 addr;
-
             com::Utf8Str strNameServerAddress(nameServers[i]);
-            rc = RTNetStrToIPv4Addr(strNameServerAddress.c_str(), &addr);
-            if (RT_FAILURE(rc))
+            RTNETADDRIPV4 addr;
+            vrc = RTNetStrToIPv4Addr(strNameServerAddress.c_str(), &addr);
+            if (RT_FAILURE(vrc))
             {
-                LogRel(("NATNetwork: Failed to parse IP address %s with %Rrc\n", strNameServerAddress.c_str(), rc));
+                LogRel(("NATNetwork: Failed to parse IP address %s with %Rrc\n", strNameServerAddress.c_str(), vrc));
                 continue;
             }
 
@@ -1091,11 +1074,8 @@ void NATNetwork::i_getPortForwardRulesFromMap(std::vector<com::Utf8Str> &aPortFo
 int NATNetwork::i_findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *poff)
 {
     RTNETADDRIPV4 network, netmask;
-
-    int rc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(),
-                             &network,
-                             &netmask);
-    AssertRCReturn(rc, rc);
+    int vrc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(), &network, &netmask);
+    AssertRCReturn(vrc, vrc);
 
     uint32_t off;
     for (off = 1; off < ~netmask.u; ++off)
@@ -1145,10 +1125,8 @@ int NATNetwork::i_findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t 
 int NATNetwork::i_recalculateIpv4AddressAssignments()
 {
     RTNETADDRIPV4 network, netmask;
-    int rc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(),
-                             &network,
-                             &netmask);
-    AssertRCReturn(rc, rc);
+    int vrc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(), &network, &netmask);
+    AssertRCReturn(vrc, vrc);
 
     i_findFirstAvailableOffset(ADDR_GATEWAY, &m->offGateway);
     if (m->s.fNeedDhcpServer)
@@ -1202,12 +1180,10 @@ int NATNetwork::i_recalculateIpv4AddressAssignments()
 
 int NATNetwork::i_recalculateIPv6Prefix()
 {
-    int rc;
-
     RTNETADDRIPV4 net, mask;
-    rc = RTCidrStrToIPv4(Utf8Str(m->s.strIPv4NetworkCidr).c_str(), &net, &mask);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = RTCidrStrToIPv4(Utf8Str(m->s.strIPv4NetworkCidr).c_str(), &net, &mask);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     net.u = RT_H2N_U32(net.u);  /* XXX: fix RTCidrStrToIPv4! */
 

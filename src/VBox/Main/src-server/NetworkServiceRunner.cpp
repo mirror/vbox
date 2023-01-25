@@ -169,10 +169,10 @@ int NetworkServiceRunner::addArgument(const char *pszArgument)
  */
 int NetworkServiceRunner::addArgPair(const char *pszOption, const char *pszValue)
 {
-    int rc = addArgument(pszOption);
-    if (RT_SUCCESS(rc))
-        rc = addArgument(pszValue);
-    return rc;
+    int vrc = addArgument(pszOption);
+    if (RT_SUCCESS(vrc))
+        vrc = addArgument(pszValue);
+    return vrc;
 }
 
 
@@ -220,15 +220,15 @@ int NetworkServiceRunner::start(bool aKillProcessOnStop)
     /*
      * Start the process:
      */
-    int rc = RTProcCreate(szExePath, m->papszArgs, RTENV_DEFAULT, 0, &m->Process);
-    if (RT_SUCCESS(rc))
+    vrc = RTProcCreate(szExePath, m->papszArgs, RTENV_DEFAULT, 0, &m->Process);
+    if (RT_SUCCESS(vrc))
         LogRel(("NetworkServiceRunning: started '%s', pid %RTproc\n", m->pszProcName, m->Process));
     else
         m->Process = NIL_RTPROCESS;
 
     m->fKillProcessOnStop = aKillProcessOnStop;
 
-    return rc;
+    return vrc;
 }
 
 
@@ -266,8 +266,8 @@ int NetworkServiceRunner::stop()
         LogRel(("NetworkServiceRunning: killing %s, pid %RTproc...\n", m->pszProcName, m->Process));
         RTProcTerminate(m->Process);
 
-        int rc = RTProcWait(m->Process, RTPROCWAIT_FLAGS_BLOCK, NULL);
-        NOREF(rc);
+        int vrc = RTProcWait(m->Process, RTPROCWAIT_FLAGS_BLOCK, NULL);
+        NOREF(vrc);
     }
 
     m->Process = NIL_RTPROCESS;
@@ -286,8 +286,8 @@ bool NetworkServiceRunner::isRunning()
     if (Process != NIL_RTPROCESS)
     {
         RTPROCSTATUS ExitStatus;
-        int rc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ExitStatus);
-        if (rc == VERR_PROCESS_RUNNING)
+        int vrc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ExitStatus);
+        if (vrc == VERR_PROCESS_RUNNING)
             return true;
         LogRel(("NetworkServiceRunning: %s (pid %RTproc) stopped: iStatus=%u enmReason=%d\n",
                 m->pszProcName, m->Process, ExitStatus.iStatus, ExitStatus.enmReason));

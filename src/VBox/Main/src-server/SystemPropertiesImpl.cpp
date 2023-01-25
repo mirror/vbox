@@ -128,7 +128,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     m->fExclusiveHwVirt = true;
 #endif
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /* Fetch info of all available hd backends. */
 
@@ -144,21 +144,21 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
         for (unsigned i = 0; i < cEntries; ++ i)
         {
             ComObjPtr<MediumFormat> hdf;
-            rc = hdf.createObject();
-            if (FAILED(rc)) break;
+            hrc = hdf.createObject();
+            if (FAILED(hrc)) break;
 
-            rc = hdf->init(&aVDInfo[i]);
-            if (FAILED(rc)) break;
+            hrc = hdf->init(&aVDInfo[i]);
+            if (FAILED(hrc)) break;
 
             m_llMediumFormats.push_back(hdf);
         }
     }
 
     /* Confirm a successful initialization */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
 
-    return rc;
+    return hrc;
 }
 
 /**
@@ -318,9 +318,7 @@ HRESULT SystemProperties::setExclusiveHwVirt(BOOL aExclusiveHwVirt)
 
     // VirtualBox::i_saveSettings() needs vbox write lock
     AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mParent->i_saveSettings();
-
-    return rc;
+    return mParent->i_saveSettings();
 }
 
 HRESULT SystemProperties::getMaxNetworkAdapters(ChipsetType_T aChipset, ULONG *aMaxNetworkAdapters)
@@ -920,16 +918,16 @@ HRESULT SystemProperties::getDefaultMachineFolder(com::Utf8Str &aDefaultMachineF
 HRESULT SystemProperties::setDefaultMachineFolder(const com::Utf8Str &aDefaultMachineFolder)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setDefaultMachineFolder(aDefaultMachineFolder);
+    HRESULT hrc = i_setDefaultMachineFolder(aDefaultMachineFolder);
     alock.release();
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getLoggingLevel(com::Utf8Str &aLoggingLevel)
@@ -948,18 +946,18 @@ HRESULT SystemProperties::getLoggingLevel(com::Utf8Str &aLoggingLevel)
 HRESULT SystemProperties::setLoggingLevel(const com::Utf8Str &aLoggingLevel)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setLoggingLevel(aLoggingLevel);
+    HRESULT hrc = i_setLoggingLevel(aLoggingLevel);
     alock.release();
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
     else
-        LogRel(("Cannot set passed logging level=%s, or the default one - Error=%Rhrc \n", aLoggingLevel.c_str(), rc));
+        LogRel(("Cannot set passed logging level=%s, or the default one - Error=%Rhrc \n", aLoggingLevel.c_str(), hrc));
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getMediumFormats(std::vector<ComPtr<IMediumFormat> > &aMediumFormats)
@@ -983,16 +981,16 @@ HRESULT SystemProperties::getDefaultHardDiskFormat(com::Utf8Str &aDefaultHardDis
 HRESULT SystemProperties::setDefaultHardDiskFormat(const com::Utf8Str &aDefaultHardDiskFormat)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setDefaultHardDiskFormat(aDefaultHardDiskFormat);
+    HRESULT hrc = i_setDefaultHardDiskFormat(aDefaultHardDiskFormat);
     alock.release();
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getFreeDiskSpaceWarning(LONG64 *aFreeSpace)
@@ -1051,16 +1049,16 @@ HRESULT SystemProperties::getVRDEAuthLibrary(com::Utf8Str &aVRDEAuthLibrary)
 HRESULT SystemProperties::setVRDEAuthLibrary(const com::Utf8Str &aVRDEAuthLibrary)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setVRDEAuthLibrary(aVRDEAuthLibrary);
+    HRESULT hrc = i_setVRDEAuthLibrary(aVRDEAuthLibrary);
     alock.release();
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getWebServiceAuthLibrary(com::Utf8Str &aWebServiceAuthLibrary)
@@ -1075,17 +1073,17 @@ HRESULT SystemProperties::getWebServiceAuthLibrary(com::Utf8Str &aWebServiceAuth
 HRESULT SystemProperties::setWebServiceAuthLibrary(const com::Utf8Str &aWebServiceAuthLibrary)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setWebServiceAuthLibrary(aWebServiceAuthLibrary);
+    HRESULT hrc = i_setWebServiceAuthLibrary(aWebServiceAuthLibrary);
     alock.release();
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getDefaultVRDEExtPack(com::Utf8Str &aExtPack)
@@ -1264,9 +1262,7 @@ HRESULT SystemProperties::setLogHistoryCount(ULONG count)
 
     // VirtualBox::i_saveSettings() needs vbox write lock
     AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mParent->i_saveSettings();
-
-    return rc;
+    return mParent->i_saveSettings();
 }
 
 HRESULT SystemProperties::getDefaultAudioDriver(AudioDriverType_T *aAudioDriver)
@@ -1290,17 +1286,17 @@ HRESULT SystemProperties::getAutostartDatabasePath(com::Utf8Str &aAutostartDbPat
 HRESULT SystemProperties::setAutostartDatabasePath(const com::Utf8Str &aAutostartDbPath)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setAutostartDatabasePath(aAutostartDbPath);
+    HRESULT hrc = i_setAutostartDatabasePath(aAutostartDbPath);
     alock.release();
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditionsISO)
@@ -1315,17 +1311,17 @@ HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdd
     ReturnComNotImplemented();
 #if 0 /* not implemented */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = i_setDefaultAdditionsISO(aDefaultAdditionsISO);
+    HRESULT hrc = i_setDefaultAdditionsISO(aDefaultAdditionsISO);
     alock.release();
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 #endif
 }
 
@@ -1341,17 +1337,17 @@ HRESULT SystemProperties::setDefaultFrontend(const com::Utf8Str &aDefaultFronten
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (m->strDefaultFrontend == aDefaultFrontend)
         return S_OK;
-    HRESULT rc = i_setDefaultFrontend(aDefaultFrontend);
+    HRESULT hrc = i_setDefaultFrontend(aDefaultFrontend);
     alock.release();
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         // VirtualBox::i_saveSettings() needs vbox write lock
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->i_saveSettings();
+        hrc = mParent->i_saveSettings();
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::getScreenShotFormats(std::vector<BitmapFormat_T> &aBitmapFormats)
@@ -1962,27 +1958,26 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = S_OK;
-    rc = i_setDefaultMachineFolder(data.strDefaultMachineFolder);
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = i_setDefaultMachineFolder(data.strDefaultMachineFolder);
+    if (FAILED(hrc)) return hrc;
 
-    rc = i_setLoggingLevel(data.strLoggingLevel);
-    if (FAILED(rc)) return rc;
+    hrc = i_setLoggingLevel(data.strLoggingLevel);
+    if (FAILED(hrc)) return hrc;
 
-    rc = i_setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
-    if (FAILED(rc)) return rc;
+    hrc = i_setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
+    if (FAILED(hrc)) return hrc;
 
-    rc = i_setVRDEAuthLibrary(data.strVRDEAuthLibrary);
-    if (FAILED(rc)) return rc;
+    hrc = i_setVRDEAuthLibrary(data.strVRDEAuthLibrary);
+    if (FAILED(hrc)) return hrc;
 
-    rc = i_setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
-    if (FAILED(rc)) return rc;
+    hrc = i_setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
+    if (FAILED(hrc)) return hrc;
 
-    rc = i_setDefaultVRDEExtPack(data.strDefaultVRDEExtPack);
-    if (FAILED(rc)) return rc;
+    hrc = i_setDefaultVRDEExtPack(data.strDefaultVRDEExtPack);
+    if (FAILED(hrc)) return hrc;
 
-    rc = i_setDefaultCryptoExtPack(data.strDefaultCryptoExtPack);
-    if (FAILED(rc)) return rc;
+    hrc = i_setDefaultCryptoExtPack(data.strDefaultCryptoExtPack);
+    if (FAILED(hrc)) return hrc;
 
     m->uLogHistoryCount  = data.uLogHistoryCount;
     m->fExclusiveHwVirt  = data.fExclusiveHwVirt;
@@ -1991,8 +1986,8 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
 
     m->strLanguageId     = data.strLanguageId;
 
-    rc = i_setAutostartDatabasePath(data.strAutostartDatabasePath);
-    if (FAILED(rc)) return rc;
+    hrc = i_setAutostartDatabasePath(data.strAutostartDatabasePath);
+    if (FAILED(hrc)) return hrc;
 
     {
         /* must ignore errors signalled here, because the guest additions
@@ -2001,8 +1996,8 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
         (void)i_setDefaultAdditionsISO(data.strDefaultAdditionsISO);
     }
 
-    rc = i_setDefaultFrontend(data.strDefaultFrontend);
-    if (FAILED(rc)) return rc;
+    hrc = i_setDefaultFrontend(data.strDefaultFrontend);
+    if (FAILED(hrc)) return hrc;
 
     return S_OK;
 }
@@ -2174,8 +2169,8 @@ HRESULT SystemProperties::i_setDefaultMachineFolder(const Utf8Str &strPath)
        )
     {
         // new default with VirtualBox 4.0: "$HOME/VirtualBox VMs"
-        HRESULT rc = i_getUserHomeDirectory(path);
-        if (FAILED(rc)) return rc;
+        HRESULT hrc = i_getUserHomeDirectory(path);
+        if (FAILED(hrc)) return hrc;
         path += RTPATH_SLASH_STR "VirtualBox VMs";
     }
 
@@ -2194,26 +2189,26 @@ HRESULT SystemProperties::i_setLoggingLevel(const com::Utf8Str &aLoggingLevel)
     Utf8Str useLoggingLevel(aLoggingLevel);
     if (useLoggingLevel.isEmpty())
         useLoggingLevel = VBOXSVC_LOG_DEFAULT;
-    int rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), useLoggingLevel.c_str());
+    int vrc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), useLoggingLevel.c_str());
     //  If failed and not the default logging level - try to use the default logging level.
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
         // If failed write message to the release log.
-        LogRel(("Cannot set passed logging level=%s Error=%Rrc \n", useLoggingLevel.c_str(), rc));
+        LogRel(("Cannot set passed logging level=%s Error=%Rrc \n", useLoggingLevel.c_str(), vrc));
         //  If attempted logging level not the default one then try the default one.
         if (!useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT))
         {
-            rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), VBOXSVC_LOG_DEFAULT);
+            vrc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), VBOXSVC_LOG_DEFAULT);
             // If failed report this to the release log.
-            if (RT_FAILURE(rc))
-                LogRel(("Cannot set default logging level Error=%Rrc \n", rc));
+            if (RT_FAILURE(vrc))
+                LogRel(("Cannot set default logging level Error=%Rrc \n", vrc));
         }
         // On any failure - set default level as the one to be stored.
         useLoggingLevel = VBOXSVC_LOG_DEFAULT;
     }
     //  Set to passed value or if default used/attempted (even if error condition) use empty string.
     m->strLoggingLevel = (useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT) ? "" : useLoggingLevel);
-    return RT_SUCCESS(rc) ? S_OK : E_FAIL;
+    return RT_SUCCESS(vrc) ? S_OK : E_FAIL;
 }
 
 HRESULT SystemProperties::i_setDefaultHardDiskFormat(const com::Utf8Str &aFormat)
@@ -2262,7 +2257,7 @@ HRESULT SystemProperties::i_setDefaultCryptoExtPack(const com::Utf8Str &aExtPack
 
 HRESULT SystemProperties::i_setAutostartDatabasePath(const com::Utf8Str &aPath)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     AutostartDb *autostartDb = this->mParent->i_getAutostartDb();
 
     if (!aPath.isEmpty())
@@ -2272,9 +2267,7 @@ HRESULT SystemProperties::i_setAutostartDatabasePath(const com::Utf8Str &aPath)
         if (RT_SUCCESS(vrc))
             m->strAutostartDatabasePath = aPath;
         else
-            rc = setErrorBoth(E_FAIL, vrc,
-                              tr("Cannot set the autostart database path (%Rrc)"),
-                              vrc);
+            hrc = setErrorBoth(E_FAIL, vrc, tr("Cannot set the autostart database path (%Rrc)"), vrc);
     }
     else
     {
@@ -2282,12 +2275,10 @@ HRESULT SystemProperties::i_setAutostartDatabasePath(const com::Utf8Str &aPath)
         if (RT_SUCCESS(vrc) || vrc == VERR_NOT_SUPPORTED)
             m->strAutostartDatabasePath = "";
         else
-            rc = setErrorBoth(E_FAIL, vrc,
-                              tr("Deleting the autostart database path failed (%Rrc)"),
-                              vrc);
+            hrc = setErrorBoth(E_FAIL, vrc, tr("Deleting the autostart database path failed (%Rrc)"), vrc);
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT SystemProperties::i_setDefaultAdditionsISO(const com::Utf8Str &aPath)

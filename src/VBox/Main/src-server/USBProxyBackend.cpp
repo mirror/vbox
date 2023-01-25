@@ -271,14 +271,14 @@ bool USBProxyBackend::i_isDevReEnumerationRequired()
  */
 int USBProxyBackend::start(void)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (mThread == NIL_RTTHREAD)
     {
         /*
          * Force update before starting the poller thread.
          */
-        rc = wait(0);
-        if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED || RT_SUCCESS(rc))
+        vrc = wait(0);
+        if (vrc == VERR_TIMEOUT || vrc == VERR_INTERRUPTED || RT_SUCCESS(vrc))
         {
             PUSBDEVICE pDevices = getDevices();
             updateDeviceList(pDevices);
@@ -287,10 +287,10 @@ int USBProxyBackend::start(void)
              * Create the poller thread which will look for changes.
              */
             mTerminate = false;
-            rc = RTThreadCreate(&mThread, USBProxyBackend::serviceThread, this,
-                                0, RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "USBPROXY");
-            AssertRC(rc);
-            if (RT_SUCCESS(rc))
+            vrc = RTThreadCreate(&mThread, USBProxyBackend::serviceThread, this,
+                                 0, RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "USBPROXY");
+            AssertRC(vrc);
+            if (RT_SUCCESS(vrc))
                 LogFlowThisFunc(("started mThread=%RTthrd\n", mThread));
             else
                 mThread = NIL_RTTHREAD;
@@ -298,7 +298,7 @@ int USBProxyBackend::start(void)
     }
     else
         LogFlowThisFunc(("already running, mThread=%RTthrd\n", mThread));
-    return rc;
+    return vrc;
 }
 
 
@@ -309,30 +309,30 @@ int USBProxyBackend::start(void)
  */
 int USBProxyBackend::stop(void)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (mThread != NIL_RTTHREAD)
     {
         /*
          * Mark the thread for termination and kick it.
          */
         ASMAtomicXchgSize(&mTerminate, true);
-        rc = interruptWait();
-        AssertRC(rc);
+        vrc = interruptWait();
+        AssertRC(vrc);
 
         /*
          * Wait for the thread to finish and then update the state.
          */
-        rc = RTThreadWait(mThread, 60000, NULL);
-        if (rc == VERR_INVALID_HANDLE)
-            rc = VINF_SUCCESS;
-        if (RT_SUCCESS(rc))
+        vrc = RTThreadWait(mThread, 60000, NULL);
+        if (vrc == VERR_INVALID_HANDLE)
+            vrc = VINF_SUCCESS;
+        if (RT_SUCCESS(vrc))
         {
             LogFlowThisFunc(("stopped mThread=%RTthrd\n", mThread));
             mThread = NIL_RTTHREAD;
             mTerminate = false;
         }
         else
-            AssertRC(rc);
+            AssertRC(vrc);
     }
     else
         LogFlowThisFunc(("not active\n"));
@@ -340,7 +340,7 @@ int USBProxyBackend::stop(void)
     /* Make sure there is no device from us in the list anymore. */
     updateDeviceList(NULL);
 
-    return rc;
+    return vrc;
 }
 
 
@@ -355,15 +355,15 @@ int USBProxyBackend::stop(void)
     USBProxyBackend *pThis = (USBProxyBackend *)pvUser;
     LogFlowFunc(("pThis=%p\n", pThis));
     pThis->serviceThreadInit();
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     /*
      * Processing loop.
      */
     for (;;)
     {
-        rc = pThis->wait(RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
+        vrc = pThis->wait(RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(vrc) && vrc != VERR_INTERRUPTED && vrc != VERR_TIMEOUT)
             break;
         if (pThis->mTerminate)
             break;
@@ -373,8 +373,8 @@ int USBProxyBackend::stop(void)
     }
 
     pThis->serviceThreadTerm();
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("returns %Rrc\n", vrc));
+    return vrc;
 }
 
 

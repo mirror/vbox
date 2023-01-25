@@ -58,51 +58,58 @@ USBProxyBackendOs2::USBProxyBackendOs2(USBProxyService *aUsbProxyService, const 
     /*
      * Try initialize the usbcalls stuff.
      */
-    int rc = DosCreateEventSem(NULL, &mhev, 0, FALSE);
-    rc = RTErrConvertFromOS2(rc);
-    if (RT_SUCCESS(rc))
+    APIRET orc = DosCreateEventSem(NULL, &mhev, 0, FALSE);
+    int vrc = RTErrConvertFromOS2(orc);
+    if (RT_SUCCESS(vrc))
     {
-        rc = DosLoadModule(NULL, 0, (PCSZ)"usbcalls", &mhmod);
-        rc = RTErrConvertFromOS2(rc);
-        if (RT_SUCCESS(rc))
+        orc = DosLoadModule(NULL, 0, (PCSZ)"usbcalls", &mhmod);
+        vrc = RTErrConvertFromOS2(orc);
+        if (RT_SUCCESS(vrc))
         {
-            if (    (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbQueryNumberDevices",         (PPFN)&mpfnUsbQueryNumberDevices))          == NO_ERROR
-                &&  (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbQueryDeviceReport",          (PPFN)&mpfnUsbQueryDeviceReport))           == NO_ERROR
-                &&  (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbRegisterChangeNotification", (PPFN)&mpfnUsbRegisterChangeNotification))  == NO_ERROR
-                &&  (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbDeregisterNotification",     (PPFN)&mpfnUsbDeregisterNotification))      == NO_ERROR
+            if (    (orc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbQueryNumberDevices",         (PPFN)&mpfnUsbQueryNumberDevices))          == NO_ERROR
+                &&  (orc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbQueryDeviceReport",          (PPFN)&mpfnUsbQueryDeviceReport))           == NO_ERROR
+                &&  (orc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbRegisterChangeNotification", (PPFN)&mpfnUsbRegisterChangeNotification))  == NO_ERROR
+                &&  (orc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbDeregisterNotification",     (PPFN)&mpfnUsbDeregisterNotification))      == NO_ERROR
                )
             {
-                rc = mpfnUsbRegisterChangeNotification(&mNotifyId, mhev, mhev);
-                if (!rc)
+                orc = mpfnUsbRegisterChangeNotification(&mNotifyId, mhev, mhev);
+                if (!orc)
                 {
                     /*
                      * Start the poller thread.
                      */
-                    rc = start();
-                    if (RT_SUCCESS(rc))
+                    vrc = start();
+                    if (RT_SUCCESS(vrc))
                     {
                         LogFlowThisFunc(("returns successfully - mNotifyId=%d\n", mNotifyId));
                         mLastError = VINF_SUCCESS;
                         return;
                     }
+                    LogRel(("USBProxyBackendOs2: failed to start poller thread, vrc=%Rrc\n", vrc));
                 }
-
-                LogRel(("USBProxyBackendOs2: failed to register change notification, rc=%d\n", rc));
+                else
+                {
+                    LogRel(("USBProxyBackendOs2: failed to register change notification, orc=%d\n", orc));
+                    vrc = RTErrConvertFromOS2(orc);
+                }
             }
             else
+            {
                 LogRel(("USBProxyBackendOs2: failed to load usbcalls\n"));
+                vrc = RTErrConvertFromOS2(orc);
+            }
 
             DosFreeModule(mhmod);
         }
         else
-            LogRel(("USBProxyBackendOs2: failed to load usbcalls, rc=%d\n", rc));
+            LogRel(("USBProxyBackendOs2: failed to load usbcalls, vrc=%d\n", vrc));
         mhmod = NULLHANDLE;
     }
     else
         mhev = NULLHANDLE;
 
-    mLastError = rc;
-    LogFlowThisFunc(("returns failure!!! (rc=%Rrc)\n", rc));
+    mLastError = vrc;
+    LogFlowThisFunc(("returns failure!!! (vrc=%Rrc)\n", vrc));
 }
 
 
@@ -190,17 +197,17 @@ bool USBProxyBackendOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aU
 
 int USBProxyBackendOs2::wait(RTMSINTERVAL aMillies)
 {
-    int rc = DosWaitEventSem(mhev, aMillies);
-    return RTErrConvertFromOS2(rc);
+    int orc = DosWaitEventSem(mhev, aMillies);
+    return RTErrConvertFromOS2(orc);
 }
 
 
 int USBProxyBackendOs2::interruptWait(void)
 {
-    int rc = DosPostEventSem(mhev);
-    return rc == NO_ERROR || rc == ERROR_ALREADY_POSTED
+    int orc = DosPostEventSem(mhev);
+    return orc == NO_ERROR || orc == ERROR_ALREADY_POSTED
          ? VINF_SUCCESS
-         : RTErrConvertFromOS2(rc);
+         : RTErrConvertFromOS2(orc);
 }
 
 #include <stdio.h>
@@ -211,8 +218,8 @@ PUSBDEVICE USBProxyBackendOs2::getDevices(void)
      * Count the devices.
      */
     ULONG cDevices = 0;
-    int rc = mpfnUsbQueryNumberDevices((PULONG)&cDevices); /* Thanks to com/xpcom, PULONG and ULONG * aren't the same. */
-    if (rc)
+    int orc = mpfnUsbQueryNumberDevices((PULONG)&cDevices); /* Thanks to com/xpcom, PULONG and ULONG * aren't the same. */
+    if (orc)
         return NULL;
 
     /*
@@ -227,8 +234,8 @@ PUSBDEVICE USBProxyBackendOs2::getDevices(void)
          */
         uint8_t abBuf[1024];
         ULONG cb = sizeof(abBuf);
-        rc = mpfnUsbQueryDeviceReport(i + 1, (PULONG)&cb, &abBuf[0]); /* see above (PULONG) */
-        if (rc)
+        orc = mpfnUsbQueryDeviceReport(i + 1, (PULONG)&cb, &abBuf[0]); /* see above (PULONG) */
+        if (orc)
             continue;
         PUSBDEVICEDESC pDevDesc = (PUSBDEVICEDESC)&abBuf[0];
         if (    cb < sizeof(*pDevDesc)

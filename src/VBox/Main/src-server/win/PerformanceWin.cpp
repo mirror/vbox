@@ -119,8 +119,8 @@ CollectorWin::CollectorWin() : CollectorHAL(), mpfnNtQuerySystemInformation(NULL
     }
 
     uint64_t cb;
-    int rc = RTSystemQueryTotalRam(&cb);
-    if (RT_FAILURE(rc))
+    int vrc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(vrc))
         totalRAM = 0;
     else
         totalRAM = (ULONG)(cb / 1024);
@@ -137,9 +137,9 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
     LogFlowThisFuncEnter();
 
     uint64_t user, kernel, idle, total;
-    int rc = getRawHostCpuLoad(&user, &kernel, &idle);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = getRawHostCpuLoad(&user, &kernel, &idle);
+    if (RT_FAILURE(vrc))
+        return vrc;
     total = user + kernel + idle;
 
     DWORD dwError;
@@ -148,17 +148,16 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
 
     mProcessStats.clear();
 
-    for (it = processes.begin(); it != processes.end() && RT_SUCCESS(rc); ++it)
+    for (it = processes.begin(); it != processes.end() && RT_SUCCESS(vrc); ++it)
     {
         RTPROCESS process = it->first;
-        HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                               FALSE, process);
+        HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process);
 
         if (!h)
         {
             dwError = GetLastError();
             Log (("OpenProcess() -> 0x%x\n", dwError));
-            rc = RTErrConvertFromWin32(dwError);
+            vrc = RTErrConvertFromWin32(dwError);
             break;
         }
 
@@ -171,7 +170,7 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
             {
                 dwError = GetLastError();
                 Log (("GetProcessTimes() -> 0x%x\n", dwError));
-                rc = RTErrConvertFromWin32(dwError);
+                vrc = RTErrConvertFromWin32(dwError);
             }
             else
             {
@@ -180,14 +179,14 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
                 vmStats.cpuTotal  = total;
             }
         }
-        if (RT_SUCCESS(rc) && (it->second & COLLECT_RAM_USAGE) != 0)
+        if (RT_SUCCESS(vrc) && (it->second & COLLECT_RAM_USAGE) != 0)
         {
             PROCESS_MEMORY_COUNTERS pmc;
             if (!GetProcessMemoryInfo(h, &pmc, sizeof(pmc)))
             {
                 dwError = GetLastError();
                 Log (("GetProcessMemoryInfo() -> 0x%x\n", dwError));
-                rc = RTErrConvertFromWin32(dwError);
+                vrc = RTErrConvertFromWin32(dwError);
             }
             else
                 vmStats.ramUsed = pmc.WorkingSetSize;
@@ -198,7 +197,7 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
 
     LogFlowThisFuncLeave();
 
-    return rc;
+    return vrc;
 }
 
 int CollectorWin::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
@@ -310,14 +309,14 @@ int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available
 {
     AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
     uint64_t cb;
-    int rc = RTSystemQueryAvailableRam(&cb);
-    if (RT_SUCCESS(rc))
+    int vrc = RTSystemQueryAvailableRam(&cb);
+    if (RT_SUCCESS(vrc))
     {
         *total = totalRAM;
         *available = (ULONG)(cb / 1024);
         *used = *total - *available;
     }
-    return rc;
+    return vrc;
 }
 
 int CollectorWin::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)

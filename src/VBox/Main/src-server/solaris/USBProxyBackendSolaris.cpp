@@ -90,18 +90,18 @@ int USBProxyBackendSolaris::init(USBProxyService *aUsbProxyService, const com::U
     /*
      * Create semaphore.
      */
-    int rc = RTSemEventCreate(&mNotifyEventSem);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = RTSemEventCreate(&mNotifyEventSem);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /*
      * Initialize the USB library.
      */
-    rc = USBLibInit();
-    if (RT_FAILURE(rc))
+    vrc = USBLibInit();
+    if (RT_FAILURE(vrc))
     {
         /* mNotifyEventSem will be destroyed in uninit */
-        return rc;
+        return vrc;
     }
 
     mUSBLibInitialized = true;
@@ -208,7 +208,7 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
      */
     int *pInt = NULL;
     char *pStr = NULL;
-    int rc = DI_WALK_CONTINUE;
+    int iRc = DI_WALK_CONTINUE;
     if (di_prop_lookup_ints(DDI_DEV_T_ANY, Node, "interface", &pInt) < 0)
     {
         /* It's a device node. */
@@ -336,14 +336,14 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
             else
                 pList->pTail = pList->pHead = pCur;
 
-            rc = DI_WALK_CONTINUE;
+            iRc = DI_WALK_CONTINUE;
         } while (0);
 
         di_devfs_path_free(pszDevicePath);
         if (!fValidDevice)
             solarisFreeUSBDevice(pCur);
     }
-    return rc;
+    return iRc;
 }
 
 
@@ -392,16 +392,16 @@ int USBProxyBackendSolaris::captureDevice(HostUSBDevice *aDevice)
     }
 
     PUSBDEVICE pDev = aDevice->i_getUsbData();
-    int rc = USBLibResetDevice(pDev->pszDevicePath, true);
-    if (RT_SUCCESS(rc))
+    int vrc = USBLibResetDevice(pDev->pszDevicePath, true);
+    if (RT_SUCCESS(vrc))
         aDevice->i_setBackendUserData(pvId);
     else
     {
         USBLibRemoveFilter(pvId);
         pvId = NULL;
     }
-    LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
-    return rc;
+    LogFlowThisFunc(("returns %Rrc pvId=%p\n", vrc, pvId));
+    return vrc;
 }
 
 
@@ -448,16 +448,16 @@ int USBProxyBackendSolaris::releaseDevice(HostUSBDevice *aDevice)
     }
 
     PUSBDEVICE pDev = aDevice->i_getUsbData();
-    int rc = USBLibResetDevice(pDev->pszDevicePath, true /* Re-attach */);
-    if (RT_SUCCESS(rc))
+    int vrc = USBLibResetDevice(pDev->pszDevicePath, true /* Re-attach */);
+    if (RT_SUCCESS(vrc))
         aDevice->i_setBackendUserData(pvId);
     else
     {
         USBLibRemoveFilter(pvId);
         pvId = NULL;
     }
-    LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
-    return rc;
+    LogFlowThisFunc(("returns %Rrc pvId=%p\n", vrc, pvId));
+    return vrc;
 }
 
 

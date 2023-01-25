@@ -167,14 +167,14 @@ void CExeModule::MonitorShutdown()
             if (pReleaseLogger)
             {
                 char szDest[1024];
-                int rc = RTLogQueryDestinations(pReleaseLogger, szDest, sizeof(szDest));
-                if (RT_SUCCESS(rc))
+                int vrc = RTLogQueryDestinations(pReleaseLogger, szDest, sizeof(szDest));
+                if (RT_SUCCESS(vrc))
                 {
-                    rc = RTStrCat(szDest, sizeof(szDest), " nohistory");
-                    if (RT_SUCCESS(rc))
+                    vrc = RTStrCat(szDest, sizeof(szDest), " nohistory");
+                    if (RT_SUCCESS(vrc))
                     {
-                        rc = RTLogDestinations(pReleaseLogger, szDest);
-                        AssertRC(rc);
+                        vrc = RTLogDestinations(pReleaseLogger, szDest);
+                        AssertRC(vrc);
                     }
                 }
             }
@@ -737,7 +737,7 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 
 static int CreateMainWindow()
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     Assert(g_hMainWindow == NULL);
 
     LogFlow(("CreateMainWindow\n"));
@@ -758,7 +758,7 @@ static int CreateMainWindow()
     if (atomWindowClass == 0)
     {
         LogRel(("Failed to register window class for session monitoring\n"));
-        rc = VERR_NOT_SUPPORTED;
+        vrc = VERR_NOT_SUPPORTED;
     }
     else
     {
@@ -768,10 +768,10 @@ static int CreateMainWindow()
         if (g_hMainWindow == NULL)
         {
             LogRel(("Failed to create window for session monitoring\n"));
-            rc = VERR_NOT_SUPPORTED;
+            vrc = VERR_NOT_SUPPORTED;
         }
     }
-    return rc;
+    return vrc;
 }
 
 
@@ -810,7 +810,7 @@ ConsoleCtrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
 {
     const char *signame;
     char namebuf[48];
-    // int rc;
+    // int vrc;
 
     if (dwCtrlType < RT_ELEMENTS(ctrl_event_names))
         signame = ctrl_event_names[dwCtrlType];
@@ -1064,7 +1064,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             if (RT_SUCCESS(vrc))
                 vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
             if (RT_FAILURE(vrc))
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to construct release log filename, rc=%Rrc", vrc);
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to construct release log filename, vrc=%Rrc", vrc);
             pszLogFile = szLogFile;
         }
 

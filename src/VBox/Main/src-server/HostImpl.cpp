@@ -589,9 +589,9 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
     AutoWriteLock treeLock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
-    HRESULT vrc = i_getDrives(DeviceType_DVD, true /* fRefresh */, pList, treeLock);
-    if (FAILED(vrc))
-        return vrc;
+    HRESULT hrc = i_getDrives(DeviceType_DVD, true /* fRefresh */, pList, treeLock);
+    if (FAILED(hrc))
+        return hrc;
 
     aDVDDrives.resize(pList->size());
     size_t i = 0;
@@ -612,9 +612,9 @@ HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
     AutoWriteLock treeLock(m->pParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
-    HRESULT vrc = i_getDrives(DeviceType_Floppy, true /* fRefresh */, pList, treeLock);
-    if (FAILED(vrc))
-        return vrc;
+    HRESULT hrc = i_getDrives(DeviceType_Floppy, true /* fRefresh */, pList, treeLock);
+    if (FAILED(hrc))
+        return hrc;
 
     aFloppyDrives.resize(pList->size());
     size_t i = 0;
@@ -829,18 +829,18 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 {
 #if defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
 # ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT vrc = i_updateNetIfList();
-    if (FAILED(vrc))
+    HRESULT hrc = i_updateNetIfList();
+    if (FAILED(hrc))
     {
-        Log(("Failed to update host network interface list with vrc=%Rhrc\n", vrc));
-        return vrc;
+        Log(("Failed to update host network interface list with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #if defined(RT_OS_WINDOWS)
-    vrc = i_updatePersistentConfigForHostOnlyAdapters();
-    if (FAILED(vrc))
+    hrc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(hrc))
     {
-        LogRel(("Failed to update persistent config for host-only adapters with vrc=%Rhrc\n", vrc));
-        return vrc;
+        LogRel(("Failed to update persistent config for host-only adapters with hrc=%Rhrc\n", hrc));
+        return hrc;
     }
 #endif /* defined(RT_OS_WINDOWS) */
 
@@ -1031,9 +1031,9 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult vrc = i_checkUSBProxyService();
-    if (FAILED(vrc) || SUCCEEDED_WARNING(vrc))
-        return vrc;
+    MultiResult mrc = i_checkUSBProxyService();
+    if (FAILED(mrc) || SUCCEEDED_WARNING(mrc))
+        return mrc;
 
     return m->pUSBProxyService->getDeviceCollection(aUSBDevices);
 #else
@@ -1080,16 +1080,16 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult vrc = i_checkUSBProxyService();
-    if (FAILED(vrc))
-        return vrc;
+    MultiResult mrc = i_checkUSBProxyService();
+    if (FAILED(mrc))
+        return mrc;
 
     aUSBDeviceFilters.resize(m->llUSBDeviceFilters.size());
     size_t i = 0;
     for (USBDeviceFilterList::iterator it = m->llUSBDeviceFilters.begin(); it != m->llUSBDeviceFilters.end(); ++it, ++i)
         (*it).queryInterfaceTo(aUSBDeviceFilters[i].asOutParam());
 
-    return vrc;
+    return mrc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -2908,8 +2908,8 @@ static int solarisWalkDeviceNodeForFixedDrive(di_node_t Node, void *pvArg) RT_NO
                             RTStrPurgeEncoding(pDrive->szDescription);
 
                             const char *pszDevPath = pszDisk ? pszDisk : pszPartition0 ? pszPartition0 : pszSlice0;
-                            int hrc = RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevPath);
-                            AssertRC(hrc);
+                            int vrc = RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevPath);
+                            AssertRC(vrc);
 
                             if (*ppDrives)
                                 pDrive->pNext = *ppDrives;
@@ -3765,8 +3765,8 @@ void Host::i_registerDiskMetrics(PerformanceCollector *aCollector)
 
     /* For now we are concerned with the root file system only. */
     pm::DiskList disksUsage, disksLoad;
-    int hrc = hal->getDiskListByFs("/", disksUsage, disksLoad);
-    if (RT_FAILURE(hrc))
+    int vrc = hal->getDiskListByFs("/", disksUsage, disksLoad);
+    if (RT_FAILURE(vrc))
         return;
     pm::DiskList::iterator it;
     for (it = disksLoad.begin(); it != disksLoad.end(); ++it)

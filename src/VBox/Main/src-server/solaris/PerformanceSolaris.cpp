@@ -180,8 +180,8 @@ CollectorSolaris::CollectorSolaris()
     /* Notice that mCpus member will be initialized by HostCpuLoadRaw::init() */
 
     uint64_t cb;
-    int rc = RTSystemQueryTotalRam(&cb);
-    if (RT_FAILURE(rc))
+    int vrc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(vrc))
         totalRAM = 0;
     else
         totalRAM = (ULONG)(cb / 1024);
@@ -200,7 +200,6 @@ CollectorSolaris::~CollectorSolaris()
 
 int CollectorSolaris::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
-    int rc = VINF_SUCCESS;
     kstat_t *ksp;
     uint64_t tmpUser, tmpKernel, tmpIdle;
     int cpus;
@@ -236,12 +235,12 @@ int CollectorSolaris::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64
     if (kernel) *kernel = tmpKernel;
     if (idle)   *idle   = tmpIdle;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     char *pszName;
     prusage_t prusage;
 
@@ -274,36 +273,36 @@ int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, ui
         else
         {
             Log(("read() -> %d\n", errno));
-            rc = VERR_FILE_IO_ERROR;
+            vrc = VERR_FILE_IO_ERROR;
         }
         close(h);
     }
     else
     {
         Log(("open() -> %d\n", errno));
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
     }
 
-    return rc;
+    return vrc;
 }
 
 int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
     uint64_t cb;
-    int rc = RTSystemQueryAvailableRam(&cb);
-    if (RT_SUCCESS(rc))
+    int vrc = RTSystemQueryAvailableRam(&cb);
+    if (RT_SUCCESS(vrc))
     {
         *total = totalRAM;
         *available = (ULONG)RT_MIN(cb / 1024, ~(ULONG)0);
         *used = *total - *available;
     }
-    return rc;
+    return vrc;
 }
 
 int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     char *pszName = NULL;
     psinfo_t psinfo;
 
@@ -326,17 +325,17 @@ int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
         else
         {
             Log(("read() -> %d\n", errno));
-            rc = VERR_FILE_IO_ERROR;
+            vrc = VERR_FILE_IO_ERROR;
         }
         close(h);
     }
     else
     {
         Log(("open() -> %d\n", errno));
-        rc = VERR_ACCESS_DENIED;
+        vrc = VERR_ACCESS_DENIED;
     }
 
-    return rc;
+    return vrc;
 }
 
 uint32_t CollectorSolaris::getInstance(const char *pszIfaceName, char *pszDevName)
@@ -470,7 +469,7 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
 
 int CollectorSolaris::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     AssertReturn(strlen(name) < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
     LogFlowThisFunc(("n=%s\n", name));
     kstat_t *ksDisk = kstat_lookup(mKC, NULL, -1, (char *)name);
@@ -479,7 +478,7 @@ int CollectorSolaris::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, ui
         if (kstat_read(mKC, ksDisk, 0) == -1)
         {
             LogRel(("kstat_read(%s) -> %d\n", name, errno));
-            rc = VERR_INTERNAL_ERROR;
+            vrc = VERR_INTERNAL_ERROR;
         }
         else
         {
@@ -495,10 +494,10 @@ int CollectorSolaris::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, ui
     else
     {
         LogRel(("kstat_lookup(%s) -> %d\n", name, errno));
-        rc = VERR_INTERNAL_ERROR;
+        vrc = VERR_INTERNAL_ERROR;
     }
 
-    return rc;
+    return vrc;
 }
 
 uint64_t CollectorSolaris::getZfsTotal(uint64_t cbTotal, const char *szFsType, const char *szFsName)
@@ -567,7 +566,7 @@ int CollectorSolaris::getHostFilesystemUsage(const char *path, ULONG *total, ULO
 
 int CollectorSolaris::getHostDiskSize(const char *name, uint64_t *size)
 {
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     AssertReturn(strlen(name) + 5 < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
     LogFlowThisFunc(("n=%s\n", name));
     char szName[KSTAT_STRLEN];
@@ -579,7 +578,7 @@ int CollectorSolaris::getHostDiskSize(const char *name, uint64_t *size)
         if (kstat_read(mKC, ksDisk, 0) == -1)
         {
             LogRel(("kstat_read(%s) -> %d\n", name, errno));
-            rc = VERR_INTERNAL_ERROR;
+            vrc = VERR_INTERNAL_ERROR;
         }
         else
         {
@@ -595,11 +594,11 @@ int CollectorSolaris::getHostDiskSize(const char *name, uint64_t *size)
     else
     {
         LogRel(("kstat_lookup(%s) -> %d\n", szName, errno));
-        rc = VERR_INTERNAL_ERROR;
+        vrc = VERR_INTERNAL_ERROR;
     }
 
 
-    return rc;
+    return vrc;
 }
 
 RTCString CollectorSolaris::physToInstName(const char *pcszPhysName)
@@ -730,13 +729,13 @@ void CollectorSolaris::updateFilesystemMap(void)
     if (fp)
     {
         struct mnttab Entry;
-        int rc = 0;
+        int iRc = 0;
         resetmnttab(fp);
-        while ((rc = getmntent(fp, &Entry)) == 0)
+        while ((iRc = getmntent(fp, &Entry)) == 0)
             mFsMap[Entry.mnt_mountp] = Entry.mnt_special;
         fclose(fp);
-        if (rc != -1)
-            LogRel(("Error while reading mnttab: %d\n", rc));
+        if (iRc != -1)
+            LogRel(("Error while reading mnttab: %d\n", iRc));
     }
 }
 

@@ -150,10 +150,10 @@ static bool floppyGetName(const char *pcszNode, unsigned Number, floppy_drive_na
     int vrc = RTFileOpen(&File, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
     if (RT_SUCCESS(vrc))
     {
-        int rcIoCtl;
-        vrc = RTFileIoCtl(File, FDGETDRVTYP, pszName, 0, &rcIoCtl);
+        int iRcIoCtl;
+        vrc = RTFileIoCtl(File, FDGETDRVTYP, pszName, 0, &iRcIoCtl);
         RTFileClose(File);
-        if (RT_SUCCESS(vrc) && rcIoCtl >= 0)
+        if (RT_SUCCESS(vrc) && iRcIoCtl >= 0)
             return true;
     }
     return false;
@@ -312,7 +312,7 @@ static int cdromDoInquiry(const char *pcszNode, uint8_t *pbType, char *pszVendor
     int vrc = RTFileOpen(&hFile, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
     if (RT_SUCCESS(vrc))
     {
-        int                             rcIoCtl          = 0;
+        int                             iRcIoCtl         = 0;
         unsigned char                   auchResponse[96] = { 0 };
         struct cdrom_generic_command    CdromCommandReq;
         RT_ZERO(CdromCommandReq);
@@ -322,8 +322,8 @@ static int cdromDoInquiry(const char *pcszNode, uint8_t *pbType, char *pszVendor
         CdromCommandReq.buflen         = sizeof(auchResponse);
         CdromCommandReq.data_direction = CGC_DATA_READ;
         CdromCommandReq.timeout        = 5000;  /* ms */
-        vrc = RTFileIoCtl(hFile, CDROM_SEND_PACKET, &CdromCommandReq, 0, &rcIoCtl);
-        if (RT_SUCCESS(vrc) && rcIoCtl < 0)
+        vrc = RTFileIoCtl(hFile, CDROM_SEND_PACKET, &CdromCommandReq, 0, &iRcIoCtl);
+        if (RT_SUCCESS(vrc) && iRcIoCtl < 0)
             vrc = RTErrConvertFromErrno(-CdromCommandReq.stat);
         RTFileClose(hFile);
 
@@ -434,10 +434,10 @@ static bool probeNVME(const char *pcszNode) RT_NOTHROW_DEF
     int vrc = RTFileOpen(&File, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
     if (RT_SUCCESS(vrc))
     {
-        int rcIoCtl;
-        vrc = RTFileIoCtl(File, NVME_IOCTL_ID, NULL, 0, &rcIoCtl);
+        int iRcIoCtl;
+        vrc = RTFileIoCtl(File, NVME_IOCTL_ID, NULL, 0, &iRcIoCtl);
         RTFileClose(File);
-        if (RT_SUCCESS(vrc) && rcIoCtl >= 0)
+        if (RT_SUCCESS(vrc) && iRcIoCtl >= 0)
             return true;
     }
     return false;

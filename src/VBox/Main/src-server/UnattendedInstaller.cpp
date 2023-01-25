@@ -1472,16 +1472,16 @@ HRESULT UnattendedRhel6Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &r
 */
 HRESULT UnattendedSuseInstaller::setUserData()
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     //here base class function must be called first
     //because user home directory is set after user name
-    rc = UnattendedInstaller::setUserData();
+    hrc = UnattendedInstaller::setUserData();
 
-    rc = mAlg->setField(USERHOMEDIR_ID, "");
-    if (FAILED(rc))
-        return rc;
+    hrc = mAlg->setField(USERHOMEDIR_ID, "");
+    if (FAILED(hrc))
+        return hrc;
 
-    return rc;
+    return hrc;
 }
 
 /*
@@ -1503,11 +1503,11 @@ HRESULT UnattendedSuseInstaller::iv_initialPhase()
 
 HRESULT UnattendedSuseInstaller::setupScriptOnAuxiliaryCD(const Utf8Str &path)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     GeneralTextScript isoSuseCfgScript(mpParent);
-    rc = isoSuseCfgScript.read(path);
-    rc = isoSuseCfgScript.parse();
+    hrc = isoSuseCfgScript.read(path);
+    hrc = isoSuseCfgScript.parse();
     //fix linux core bootable parameters: add path to the preseed script
 
     std::vector<size_t> listOfLines = isoSuseCfgScript.findTemplate("append");
@@ -1539,11 +1539,11 @@ HRESULT UnattendedSuseInstaller::setupScriptOnAuxiliaryCD(const Utf8Str &path)
         }
     }
 
-    rc = isoSuseCfgScript.save(path, true);
+    hrc = isoSuseCfgScript.save(path, true);
 
     LogRelFunc(("UnattendedSuseInstaller::setupScriptsOnAuxiliaryCD(): The file %s has been changed\n", path.c_str()));
 
-    return rc;
+    return hrc;
 }
 #endif
 

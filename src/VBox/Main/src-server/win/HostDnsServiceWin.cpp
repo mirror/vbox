@@ -190,7 +190,7 @@ int HostDnsServiceWin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 
     AssertPtr(m);
     SetEvent(m->haDataEvent[DATA_SHUTDOWN_EVENT]);
-    /** @todo r=andy Wait for thread? Check rc here. Timeouts? */
+    /** @todo r=andy Wait for thread? Check vrc here. Timeouts? */
 
     return VINF_SUCCESS;
 }
@@ -266,9 +266,6 @@ HRESULT HostDnsServiceWin::updateInfo(void)
 {
     HostDnsInformation info;
 
-    LONG lrc;
-    int rc;
-
     std::string strDomain;
     std::string strSearchList;  /* NB: comma separated, no spaces */
 
@@ -279,16 +276,18 @@ HRESULT HostDnsServiceWin::updateInfo(void)
      * that key.  Instead we call GetAdaptersAddresses() below (which
      * is what ipconfig.exe seems to do).
      */
-    for (DWORD regIndex = 0; /**/; ++regIndex) {
+    for (DWORD regIndex = 0; /**/; ++regIndex)
+    {
         char keyName[256];
         DWORD cbKeyName = sizeof(keyName);
         DWORD keyType = 0;
         char keyData[1024];
         DWORD cbKeyData = sizeof(keyData);
 
-        lrc = RegEnumValueA(m->hKeyTcpipParameters, regIndex,
-                            keyName, &cbKeyName, 0,
-                            &keyType, (LPBYTE)keyData, &cbKeyData);
+/** @todo use unicode API. This isn't UTF-8 clean!   */
+        LSTATUS lrc = RegEnumValueA(m->hKeyTcpipParameters, regIndex,
+                                    keyName, &cbKeyName, 0,
+                                    &keyType, (LPBYTE)keyData, &cbKeyData);
 
         if (lrc == ERROR_NO_MORE_ITEMS)
             break;
@@ -443,8 +442,7 @@ HRESULT HostDnsServiceWin::updateInfo(void)
         for (PIP_ADAPTER_ADDRESSES pAdp = pAddrBuf; pAdp != NULL; pAdp = pAdp->Next)
         {
             LogRel2(("HostDnsServiceWin: %ls (status %u) ...\n",
-                     pAdp->FriendlyName ? pAdp->FriendlyName : L"(null)",
-                     pAdp->OperStatus));
+                     pAdp->FriendlyName ? pAdp->FriendlyName : L"(null)", pAdp->OperStatus));
 
             if (pAdp->OperStatus != IfOperStatusUp)
                 continue;
@@ -453,13 +451,10 @@ HRESULT HostDnsServiceWin::updateInfo(void)
                 continue;
 
             char *pszDnsSuffix = NULL;
-            rc = RTUtf16ToUtf8Ex(pAdp->DnsSuffix, RTSTR_MAX,
-                                 &pszDnsSuffix, 0, /* allocate */
-                                 NULL);
-            if (RT_FAILURE(rc))
+            int vrc = RTUtf16ToUtf8Ex(pAdp->DnsSuffix, RTSTR_MAX, &pszDnsSuffix, 0, /* allocate */ NULL);
+            if (RT_FAILURE(vrc))
             {
-                LogRel2(("HostDnsServiceWin: failed to convert DNS suffix \"%ls\": %Rrc\n",
-                        pAdp->DnsSuffix, rc));
+                LogRel2(("HostDnsServiceWin: failed to convert DNS suffix \"%ls\": %Rrc\n", pAdp->DnsSuffix, vrc));
                 continue;
             }
 

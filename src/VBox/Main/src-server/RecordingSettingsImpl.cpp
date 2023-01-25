@@ -576,8 +576,8 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
     if (!pGraphicsAdapter.isNull())
         pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
 
-    int rc2 = i_syncToMachineDisplays(cMonitors);
-    AssertRC(rc2);
+    int vrc2 = i_syncToMachineDisplays(cMonitors);
+    AssertRC(vrc2);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

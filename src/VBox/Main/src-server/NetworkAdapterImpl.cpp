@@ -350,7 +350,7 @@ HRESULT NetworkAdapter::getMACAddress(com::Utf8Str &aMACAddress)
 
 HRESULT NetworkAdapter::i_updateMacAddress(Utf8Str aMACAddress)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     /*
      * Are we supposed to generate a MAC?
@@ -368,7 +368,7 @@ HRESULT NetworkAdapter::i_updateMacAddress(Utf8Str aMACAddress)
                  */
                 char *macAddressStr = aMACAddress.mutableRaw();
                 int i = 0;
-                while ((i < 13) && macAddressStr && *macAddressStr && (rc == S_OK))
+                while ((i < 13) && macAddressStr && *macAddressStr && hrc == S_OK)
                 {
                     char c = *macAddressStr;
                     /* canonicalize hex digits to capital letters */
@@ -380,26 +380,26 @@ HRESULT NetworkAdapter::i_updateMacAddress(Utf8Str aMACAddress)
                     /* we only accept capital letters */
                     if (   (c < '0' || c > '9')
                         && (c < 'A' || c > 'F'))
-                        rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                        hrc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
                     /* the second digit must have even value for unicast addresses */
                     if (   (i == 1)
                         && (!!(c & 1) == (c >= '0' && c <= '9')))
-                        rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                        hrc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
 
                     macAddressStr++;
                     i++;
                 }
                 /* we must have parsed exactly 12 characters */
                 if (i != 12)
-                    rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                    hrc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
             }
 
-            if (SUCCEEDED(rc))
+            if (SUCCEEDED(hrc))
                 mData->strMACAddress = aMACAddress;
         }
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT NetworkAdapter::setMACAddress(const com::Utf8Str &aMACAddress)
@@ -411,8 +411,8 @@ HRESULT NetworkAdapter::setMACAddress(const com::Utf8Str &aMACAddress)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     mData.backup();
 
-    HRESULT rc = i_updateMacAddress(aMACAddress);
-    if (SUCCEEDED(rc))
+    HRESULT hrc = i_updateMacAddress(aMACAddress);
+    if (SUCCEEDED(hrc))
     {
         // leave the lock before informing callbacks
         alock.release();
@@ -426,7 +426,7 @@ HRESULT NetworkAdapter::setMACAddress(const com::Utf8Str &aMACAddress)
         mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
-    return rc;
+    return hrc;
 }
 
 HRESULT NetworkAdapter::getAttachmentType(NetworkAttachmentType_T *aAttachmentType)
@@ -506,8 +506,8 @@ HRESULT NetworkAdapter::setBridgedInterface(const com::Utf8Str &aBridgedInterfac
 #ifdef RT_OS_DARWIN
     com::SafeIfaceArray<IHostNetworkInterface> hostNetworkInterfaces;
     ComPtr<IHost> host;
-    HRESULT rc = mParent->i_getVirtualBox()->COMGETTER(Host)(host.asOutParam());
-    if (SUCCEEDED(rc))
+    HRESULT hrc = mParent->i_getVirtualBox()->COMGETTER(Host)(host.asOutParam());
+    if (SUCCEEDED(hrc))
     {
         host->FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_Bridged,
                                               ComSafeArrayAsOutParam(hostNetworkInterfaces));
@@ -1211,19 +1211,17 @@ HRESULT NetworkAdapter::i_loadSettings(BandwidthControl *bwctl,
      * the same setting of an object loaded from the old settings file must
      * default to B. */
 
-    HRESULT rc = S_OK;
-
     /* MAC address (can be null) */
-    rc = i_updateMacAddress(data.strMACAddress);
-    if (FAILED(rc)) return rc;
+    HRESULT hrc = i_updateMacAddress(data.strMACAddress);
+    if (FAILED(hrc)) return hrc;
 
     mData.assignCopy(&data);
 
     if (mData->strBandwidthGroup.isNotEmpty())
     {
         ComObjPtr<BandwidthGroup> group;
-        rc = bwctl->i_getBandwidthGroupByName(data.strBandwidthGroup, group, true);
-        if (FAILED(rc)) return rc;
+        hrc = bwctl->i_getBandwidthGroupByName(data.strBandwidthGroup, group, true);
+        if (FAILED(hrc)) return hrc;
         group->i_reference();
     }
 
@@ -1233,8 +1231,8 @@ HRESULT NetworkAdapter::i_loadSettings(BandwidthControl *bwctl,
     // leave the lock before setting attachment type
     alock.release();
 
-    rc = COMSETTER(AttachmentType)(data.mode);
-    if (FAILED(rc)) return rc;
+    hrc = COMSETTER(AttachmentType)(data.mode);
+    if (FAILED(hrc)) return hrc;
 
     return S_OK;
 }
@@ -1416,9 +1414,8 @@ bool NetworkAdapter::i_hasDefaults()
     AssertComRCReturn(autoCaller.hrc(), true);
 
     ComObjPtr<GuestOSType> pGuestOSType;
-    HRESULT rc = mParent->i_getVirtualBox()->i_findGuestOSType(mParent->i_getOSTypeId(),
-                                                               pGuestOSType);
-    if (FAILED(rc))
+    HRESULT hrc = mParent->i_getVirtualBox()->i_findGuestOSType(mParent->i_getOSTypeId(), pGuestOSType);
+    if (FAILED(hrc))
         return false;
 
     NetworkAdapterType_T defaultType = pGuestOSType->i_networkAdapterType();

@@ -5232,8 +5232,8 @@ void Medium::i_saveSettingsOne(settings::Medium &data, const Utf8Str &strHardDis
     {
         /* Encrypt the plain secret. If that does not work (i.e. no or wrong settings key
          * specified), just use the encrypted secret (if there is any). */
-        int hrc = m->pVirtualBox->i_encryptSetting(itPln->second, &strCiphertext);
-        if (RT_SUCCESS(hrc))
+        int vrc = m->pVirtualBox->i_encryptSetting(itPln->second, &strCiphertext);
+        if (RT_SUCCESS(vrc))
             fHaveInitiatorSecretEncrypted = true;
     }
     for (settings::StringsMap::const_iterator it = m->mapProperties.begin();
@@ -9047,7 +9047,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
     /** @todo r=klaus The code below needs to be double checked with regard
      * to lock order violations, it probably causes lock order issues related
      * to the AutoCaller usage. */
-    HRESULT rcTmp = S_OK;
+    HRESULT hrcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
 
@@ -9173,13 +9173,13 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
             if (RT_SUCCESS(vrc))
                 variant = (MediumVariant_T)uImageFlags;
         }
-        catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+        catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+    catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
-    MultiResult mrc(rcTmp);
+    MultiResult mrc(hrcTmp);
 
     if (SUCCEEDED(mrc))
     {
@@ -9277,7 +9277,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
     /** @todo r=klaus The code below needs to be double checked with regard
      * to lock order violations, it probably causes lock order issues related
      * to the AutoCaller usage. */
-    HRESULT rcTmp = S_OK;
+    HRESULT hrcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
 
@@ -9494,22 +9494,22 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                 }
             }
         }
-        catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+        catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
         catch (int aVRC)
         {
-            rcTmp = setErrorBoth(VBOX_E_FILE_ERROR, aVRC,
-                                 tr("Could not merge the medium '%s' to '%s'%s"),
-                                 m->strLocationFull.c_str(),
-                                 pTarget->m->strLocationFull.c_str(),
-                                 i_vdError(aVRC).c_str());
+            hrcTmp = setErrorBoth(VBOX_E_FILE_ERROR, aVRC,
+                                  tr("Could not merge the medium '%s' to '%s'%s"),
+                                  m->strLocationFull.c_str(),
+                                  pTarget->m->strLocationFull.c_str(),
+                                  i_vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+    catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
     ErrorInfoKeeper eik;
-    MultiResult mrc(rcTmp);
+    MultiResult mrc(hrcTmp);
     HRESULT hrc2;
 
     std::set<ComObjPtr<Medium> > pMediumsForNotify;
@@ -9698,7 +9698,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
     /** @todo r=klaus The code below needs to be double checked with regard
      * to lock order violations, it probably causes lock order issues related
      * to the AutoCaller usage. */
-    HRESULT rcTmp = S_OK;
+    HRESULT hrcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
     const ComObjPtr<Medium> &pParent = task.mParent;
@@ -9894,18 +9894,18 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                 if (RT_SUCCESS(vrc))
                     variant = (MediumVariant_T)uImageFlags;
             }
-            catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+            catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
             VDDestroy(targetHdd);
         }
-        catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+        catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+    catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
     ErrorInfoKeeper eik;
-    MultiResult mrc(rcTmp);
+    MultiResult mrc(hrcTmp);
 
     /* Only do the parent changes for newly created media. */
     if (SUCCEEDED(mrc) && fCreatingTarget)
@@ -10656,7 +10656,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
     /** @todo r=klaus The code below needs to be double checked with regard
      * to lock order violations, it probably causes lock order issues related
      * to the AutoCaller usage. */
-    HRESULT rcTmp = S_OK;
+    HRESULT hrcTmp = S_OK;
 
     const ComObjPtr<Medium> &pParent = task.mParent;
 
@@ -10809,18 +10809,18 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                 if (RT_SUCCESS(vrc))
                     variant = (MediumVariant_T)uImageFlags;
             }
-            catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+            catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
             VDDestroy(targetHdd);
         }
-        catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+        catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT hrcXcpt) { rcTmp = hrcXcpt; }
+    catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
     ErrorInfoKeeper eik;
-    MultiResult mrc(rcTmp);
+    MultiResult mrc(hrcTmp);
 
     /* Only do the parent changes for newly created media. */
     if (SUCCEEDED(mrc) && fCreatingTarget)

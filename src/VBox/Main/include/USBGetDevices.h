@@ -96,7 +96,7 @@ extern bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNod
 #ifdef UNIT_TEST
 void TestUSBSetupInit(const char *pcszUsbfsRoot, bool fUsbfsAccessible,
                       const char *pcszDevicesRoot, bool fDevicesAccessible,
-                      int rcMethodInitResult);
+                      int vrcMethodInitResult);
 void TestUSBSetEnv(const char *pcszEnvUsb, const char *pcszEnvUsbRoot);
 #endif
 

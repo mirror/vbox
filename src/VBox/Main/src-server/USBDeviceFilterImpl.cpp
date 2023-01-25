@@ -243,43 +243,37 @@ HRESULT USBDeviceFilter::init(USBDeviceFilters *aParent,
     /* use setters for the attributes below to reuse parsing errors
      * handling */
 
-    HRESULT rc = S_OK;
-    do
-    {
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_VENDOR_ID, data.strVendorId);
-        if (FAILED(rc)) break;
+    HRESULT hrc = i_usbFilterFieldSetter(USBFILTERIDX_VENDOR_ID, data.strVendorId);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_ID, data.strProductId);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_ID, data.strProductId);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_DEVICE, data.strRevision);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_DEVICE, data.strRevision);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_MANUFACTURER_STR, data.strManufacturer);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_MANUFACTURER_STR, data.strManufacturer);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_STR, data.strProduct);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_STR, data.strProduct);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_SERIAL_NUMBER_STR, data.strSerialNumber);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_SERIAL_NUMBER_STR, data.strSerialNumber);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_PORT, data.strPort);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_PORT, data.strPort);
+    if (FAILED(hrc)) return hrc;
 
-        rc = COMSETTER(Remote)(Bstr(data.strRemote).raw());
-        if (FAILED(rc)) break;
+    hrc = COMSETTER(Remote)(Bstr(data.strRemote).raw());
+    if (FAILED(hrc)) return hrc;
 
-        rc = COMSETTER(MaskedInterfaces)(data.ulMaskedInterfaces);
-        if (FAILED(rc)) break;
-    }
-    while (0);
+    hrc = COMSETTER(MaskedInterfaces)(data.ulMaskedInterfaces);
+    if (FAILED(hrc)) return hrc;
 
-    /* Confirm successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
+    /* Confirm successful initialization */
+    autoInitSpan.setSucceeded();
 
-    return rc;
+    return S_OK;
 }
 
 /**
@@ -811,11 +805,11 @@ HRESULT USBDeviceFilter::i_usbFilterFieldSetter(USBFILTERIDX aIdx,
         bd.backup();
 
         com::Utf8Str errStr;
-        HRESULT rc = i_usbFilterFieldFromString(&bd->mUSBFilter, aIdx, strNew, errStr);
-        if (FAILED(rc))
+        HRESULT hrc = i_usbFilterFieldFromString(&bd->mUSBFilter, aIdx, strNew, errStr);
+        if (FAILED(hrc))
         {
             bd.rollback();
-            return setError(rc, "%s", errStr.c_str());
+            return setError(hrc, "%s", errStr.c_str());
         }
 
         // leave the lock before informing callbacks
@@ -897,40 +891,34 @@ HRESULT HostUSBDeviceFilter::init(Host *aParent,
     /* use setters for the attributes below to reuse parsing errors
      * handling */
 
-    HRESULT rc = S_OK;
-    do
-    {
-        rc = setAction(data.action);
-        if (FAILED(rc)) break;
+    HRESULT hrc = setAction(data.action);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_VENDOR_ID, data.strVendorId);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_VENDOR_ID, data.strVendorId);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_ID, data.strProductId);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_ID, data.strProductId);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_DEVICE, data.strRevision);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_DEVICE, data.strRevision);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_MANUFACTURER_STR, data.strManufacturer);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_MANUFACTURER_STR, data.strManufacturer);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_ID, data.strProduct);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_PRODUCT_ID, data.strProduct);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_SERIAL_NUMBER_STR, data.strSerialNumber);
-        if (FAILED(rc)) break;
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_SERIAL_NUMBER_STR, data.strSerialNumber);
+    if (FAILED(hrc)) return hrc;
 
-        rc = i_usbFilterFieldSetter(USBFILTERIDX_PORT, data.strPort);
-        if (FAILED(rc)) break;
-    }
-    while (0);
+    hrc = i_usbFilterFieldSetter(USBFILTERIDX_PORT, data.strPort);
+    if (FAILED(hrc)) return hrc;
 
-    /* Confirm successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
+    /* Confirm successful initialization */
+    autoInitSpan.setSucceeded();
 
-    return rc;
+    return S_OK;
 }
 
 /**
@@ -1268,11 +1256,11 @@ HRESULT HostUSBDeviceFilter::i_usbFilterFieldSetter(USBFILTERIDX aIdx, const com
     {
         //bd.backup();
         com::Utf8Str errStr;
-        HRESULT rc = USBDeviceFilter::i_usbFilterFieldFromString(&bd->mUSBFilter, aIdx, aStr, errStr);
-        if (FAILED(rc))
+        HRESULT hrc = USBDeviceFilter::i_usbFilterFieldFromString(&bd->mUSBFilter, aIdx, aStr, errStr);
+        if (FAILED(hrc))
         {
             //bd.rollback();
-            return setError(rc, "%s", errStr.c_str());
+            return setError(hrc, "%s", errStr.c_str());
         }
 
         /* leave the lock before informing callbacks */

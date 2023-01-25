@@ -256,8 +256,8 @@ HRESULT USBController::setName(const com::Utf8Str &aName)
     if (m->bd->strName != aName)
     {
         ComObjPtr<USBController> ctrl;
-        HRESULT rc = m->pParent->i_getUSBControllerByName(aName, ctrl, false /* aSetError */);
-        if (SUCCEEDED(rc))
+        HRESULT hrc = m->pParent->i_getUSBControllerByName(aName, ctrl, false /* aSetError */);
+        if (SUCCEEDED(hrc))
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("USB controller named '%s' already exists"),
                             aName.c_str());

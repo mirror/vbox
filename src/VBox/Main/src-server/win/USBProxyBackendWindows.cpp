@@ -79,14 +79,14 @@ int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::U
     /*
      * Initialize the USB lib and stuff.
      */
-    int rc = USBLibInit();
-    if (RT_SUCCESS(rc))
+    int vrc = USBLibInit();
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Start the poller thread.
          */
-        rc = start();
-        if (RT_SUCCESS(rc))
+        vrc = start();
+        if (RT_SUCCESS(vrc))
         {
             LogFlowThisFunc(("returns successfully\n"));
             return VINF_SUCCESS;
@@ -98,8 +98,8 @@ int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::U
     CloseHandle(mhEventInterrupt);
     mhEventInterrupt = INVALID_HANDLE_VALUE;
 
-    LogFlowThisFunc(("returns failure!!! (rc=%Rrc)\n", rc));
-    return rc;
+    LogFlowThisFunc(("returns failure!!! (vrc=%Rrc)\n", vrc));
+    return vrc;
 }
 
 
@@ -123,8 +123,8 @@ void USBProxyBackendWindows::uninit()
     /*
      * Terminate the library...
      */
-    int rc = USBLibTerm();
-    AssertRC(rc);
+    int vrc = USBLibTerm();
+    AssertRC(vrc);
     USBProxyBackend::uninit();
 }
 
@@ -183,12 +183,12 @@ int USBProxyBackendWindows::captureDevice(HostUSBDevice *aDevice)
         return VERR_GENERAL_FAILURE;
     }
 
-    int rc = USBLibRunFilters();
-    if (!RT_SUCCESS(rc))
+    int vrc = USBLibRunFilters();
+    if (!RT_SUCCESS(vrc))
     {
         AssertMsgFailed(("Run Filters failed\n"));
         USBLibRemoveFilter(pvId);
-        return rc;
+        return vrc;
     }
 
     return VINF_SUCCESS;
@@ -225,12 +225,12 @@ int USBProxyBackendWindows::releaseDevice(HostUSBDevice *aDevice)
         return VERR_GENERAL_FAILURE;
     }
 
-    int rc = USBLibRunFilters();
-    if (!RT_SUCCESS(rc))
+    int vrc = USBLibRunFilters();
+    if (!RT_SUCCESS(vrc))
     {
         AssertMsgFailed(("Run Filters failed\n"));
         USBLibRemoveFilter(pvId);
-        return rc;
+        return vrc;
     }
 
 

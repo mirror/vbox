@@ -424,14 +424,14 @@ CollectorGuestManager::CollectorGuestManager()
 CollectorGuestManager::~CollectorGuestManager()
 {
     Assert(mGuests.size() == 0);
-    int rcThread = 0;
     HRESULT hrc = enqueueRequest(new CGRQAbort());
     if (SUCCEEDED(hrc))
     {
         /* We wait only if we were able to put the abort request to a queue */
         Log7Func(("{%p}: Waiting for CGM request processing thread to stop...\n", this));
-        int vrc = RTThreadWait(mThread, 1000 /* 1 sec */, &rcThread);
-        Log7Func(("{%p}: RTThreadWait returned %Rrc (thread exit code: %Rrc)\n", this, vrc, rcThread));
+        int vrcThread = VINF_SUCCESS;
+        int vrc = RTThreadWait(mThread, 1000 /* 1 sec */, &vrcThread);
+        Log7Func(("{%p}: RTThreadWait returned %Rrc (thread exit code: %Rrc)\n", this, vrc, vrcThread));
         RT_NOREF(vrc);
     }
 }
@@ -558,7 +558,7 @@ DECLCALLBACK(int) CollectorGuestManager::requestProcessingThread(RTTHREAD /* aTh
     CollectorGuestRequest *pReq;
     CollectorGuestManager *mgr = static_cast<CollectorGuestManager*>(pvUser);
 
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
 
     Log7Func(("{%p}: Starting request processing loop...\n", mgr));
     while ((pReq = mgr->mQueue.pop()) != NULL)
@@ -567,15 +567,15 @@ DECLCALLBACK(int) CollectorGuestManager::requestProcessingThread(RTTHREAD /* aTh
         pReq->debugPrint(mgr, __PRETTY_FUNCTION__, "is being executed...");
 #endif /* DEBUG */
         mgr->mGuestBeingCalled = pReq->getGuest();
-        rc = pReq->execute();
+        hrc = pReq->execute();
         mgr->mGuestBeingCalled = NULL;
         delete pReq;
-        if (rc == E_ABORT)
+        if (hrc == E_ABORT)
             break;
-        if (FAILED(rc))
-            Log7Func(("{%p}: request::execute returned %u\n", mgr, rc));
+        if (FAILED(hrc))
+            Log7Func(("{%p}: request::execute returned %Rhrc\n", mgr, hrc));
     }
-    Log7Func(("{%p}: Exiting request processing loop... rc=%u\n", mgr, rc));
+    Log7Func(("{%p}: Exiting request processing loop... hrc=%Rhrc\n", mgr, hrc));
 
     return VINF_SUCCESS;
 }
@@ -959,12 +959,12 @@ HRESULT HostRamVmm::enable()
 
 HRESULT HostRamVmm::disable()
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     BaseMetric::disable();
     CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
     if (provider)
-        rc = provider->disable(VMSTATS_VMM_RAM);
-    return rc;
+        hrc = provider->disable(VMSTATS_VMM_RAM);
+    return hrc;
 }
 
 void HostRamVmm::preCollect(CollectorHints& hints, uint64_t /* iTick */)
@@ -1139,9 +1139,9 @@ void MachineNetRate::collect()
 
 HRESULT MachineNetRate::enable()
 {
-    HRESULT rc = mCGuest->enable(VMSTATS_NET_RATE);
+    HRESULT hrc = mCGuest->enable(VMSTATS_NET_RATE);
     BaseMetric::enable();
-    return rc;
+    return hrc;
 }
 
 HRESULT MachineNetRate::disable()
@@ -1183,9 +1183,9 @@ void GuestCpuLoad::collect()
 
 HRESULT GuestCpuLoad::enable()
 {
-    HRESULT rc = mCGuest->enable(VMSTATS_GUEST_CPULOAD);
+    HRESULT hrc = mCGuest->enable(VMSTATS_GUEST_CPULOAD);
     BaseMetric::enable();
-    return rc;
+    return hrc;
 }
 
 HRESULT GuestCpuLoad::disable()
@@ -1223,9 +1223,9 @@ void GuestRamUsage::collect()
 
 HRESULT GuestRamUsage::enable()
 {
-    HRESULT rc = mCGuest->enable(VMSTATS_GUEST_RAMUSAGE);
+    HRESULT hrc = mCGuest->enable(VMSTATS_GUEST_RAMUSAGE);
     BaseMetric::enable();
-    return rc;
+    return hrc;
 }
 
 HRESULT GuestRamUsage::disable()

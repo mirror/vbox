@@ -230,7 +230,7 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamOpen(void *pvUser, const char 
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
     AssertReturn((fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_WRITE, VERR_INVALID_PARAMETER);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     PSTREAMFILE pStreamFile = (PSTREAMFILE)RTMemAllocZ(sizeof(*pStreamFile));
     if (RT_LIKELY(pStreamFile))
     {
@@ -240,16 +240,16 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamOpen(void *pvUser, const char 
         *ppStorage = pStreamFile;
     }
     else
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
 
-    return rc;
+    return vrc;
 }
 
 DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamClose(void *pvUser, void *pStorage)
 {
     RT_NOREF(pvUser);
     PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     /* Fill up to the configured file size. */
     if (pStreamFile->uOffsetLast < pStreamFile->cbFile)
@@ -262,20 +262,20 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamClose(void *pvUser, void *pSto
             if (pStreamFile->cbFile - pStreamFile->uOffsetLast < sizeof(g_abRTZero64K))
                 cbThisWrite = (size_t)(pStreamFile->cbFile - pStreamFile->uOffsetLast);
 
-            rc = pStreamFile->pDataStream->i_write(&g_abRTZero64K[0], cbThisWrite, &cbWritten);
-            if (RT_SUCCESS(rc))
+            vrc = pStreamFile->pDataStream->i_write(&g_abRTZero64K[0], cbThisWrite, &cbWritten);
+            if (RT_SUCCESS(vrc))
                 pStreamFile->uOffsetLast += cbWritten;
 
-        } while (   RT_SUCCESS(rc)
+        } while (   RT_SUCCESS(vrc)
                  && pStreamFile->uOffsetLast < pStreamFile->cbFile);
     }
 
-    int rc2 = pStreamFile->pDataStream->i_close();
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    int vrc2 = pStreamFile->pDataStream->i_close();
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
     RTMemFree(pStreamFile);
-    return rc;
+    return vrc;
 }
 
 DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamDelete(void *pvUser, const char *pcszFilename)
@@ -327,13 +327,13 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamSetSize(void *pvUser, void *pS
     PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
 
     /* Reducing the size is not supported. */
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (pStreamFile->cbFile < cbSize)
         pStreamFile->cbFile = cbSize;
     else
-        rc = VERR_NOT_SUPPORTED;
+        vrc = VERR_NOT_SUPPORTED;
 
-    return rc;
+    return vrc;
 }
 
 DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
@@ -353,7 +353,7 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamWrite(void *pvUser, void *pSto
 {
     RT_NOREF(pvUser);
     PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     /* Fill up to the new offset if there is non consecutive access. */
     if (pStreamFile->uOffsetLast < uOffset)
@@ -366,28 +366,28 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamWrite(void *pvUser, void *pSto
             if (uOffset - pStreamFile->uOffsetLast < sizeof(g_abRTZero64K))
                 cbThisWrite = (size_t)(uOffset - pStreamFile->uOffsetLast);
 
-            rc = pStreamFile->pDataStream->i_write(&g_abRTZero64K[0], cbThisWrite, &cbWritten);
-            if (RT_SUCCESS(rc))
+            vrc = pStreamFile->pDataStream->i_write(&g_abRTZero64K[0], cbThisWrite, &cbWritten);
+            if (RT_SUCCESS(vrc))
                 pStreamFile->uOffsetLast += cbWritten;
 
-        } while (   RT_SUCCESS(rc)
+        } while (   RT_SUCCESS(vrc)
                  && pStreamFile->uOffsetLast < uOffset);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         if (pcbWritten)
-            rc = pStreamFile->pDataStream->i_write(pvBuffer, cbBuffer, pcbWritten);
+            vrc = pStreamFile->pDataStream->i_write(pvBuffer, cbBuffer, pcbWritten);
         else
         {
             const uint8_t *pbBuf = (const uint8_t *)pvBuffer;
             size_t cbLeft = cbBuffer;
             size_t cbWritten = 0;
             while (   cbLeft > 0
-                   && RT_SUCCESS(rc))
+                   && RT_SUCCESS(vrc))
             {
-                rc = pStreamFile->pDataStream->i_write(pbBuf, cbLeft, &cbWritten);
-                if (RT_SUCCESS(rc))
+                vrc = pStreamFile->pDataStream->i_write(pbBuf, cbLeft, &cbWritten);
+                if (RT_SUCCESS(vrc))
                 {
                     pbBuf  += cbWritten;
                     cbLeft -= cbWritten;
@@ -395,7 +395,7 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamWrite(void *pvUser, void *pSto
             }
         }
 
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             size_t cbWritten = pcbWritten ? *pcbWritten : cbBuffer;
 
@@ -407,7 +407,7 @@ DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamWrite(void *pvUser, void *pSto
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamFlush(void *pvUser, void *pStorage)
@@ -806,7 +806,7 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
                                   ComPtr<IDataStream> &aStream,
                                   ComPtr<IProgress> &aProgress)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrc = S_OK;
     ComObjPtr<Progress> pProgress;
     ComObjPtr<DataStream> pDataStream;
     MediumIO::StreamTask *pTask = NULL;
@@ -814,17 +814,17 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
     try
     {
         pDataStream.createObject();
-        rc = pDataStream->init(aBufferSize);
-        if (FAILED(rc))
-            throw rc;
+        hrc = pDataStream->init(aBufferSize);
+        if (FAILED(hrc))
+            throw hrc;
 
         pProgress.createObject();
-        rc = pProgress->init(m->ptrVirtualBox,
-                             static_cast<IMediumIO*>(this),
-                             BstrFmt(tr("Converting medium '%s' to data stream"), m->ptrMedium->i_getLocationFull().c_str()),
-                             TRUE /* aCancelable */);
-        if (FAILED(rc))
-            throw rc;
+        hrc = pProgress->init(m->ptrVirtualBox,
+                              static_cast<IMediumIO*>(this),
+                              BstrFmt(tr("Converting medium '%s' to data stream"), m->ptrMedium->i_getLocationFull().c_str()),
+                              TRUE /* aCancelable */);
+        if (FAILED(hrc))
+            throw hrc;
 
         ULONG mediumVariantFlags = 0;
 
@@ -837,18 +837,18 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
         /* setup task object to carry out the operation asynchronously */
         pTask = new MediumIO::StreamTask(this, pDataStream, pProgress,
                                          aFormat.c_str(), (MediumVariant_T)mediumVariantFlags);
-        rc = pTask->hrc();
-        AssertComRC(rc);
-        if (FAILED(rc))
-            throw rc;
+        hrc = pTask->hrc();
+        AssertComRC(hrc);
+        if (FAILED(hrc))
+            throw hrc;
     }
-    catch (HRESULT hrcXcpt) { rc = hrcXcpt; }
+    catch (HRESULT hrcXcpt) { hrc = hrcXcpt; }
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
-        rc = pTask->createThread();
+        hrc = pTask->createThread();
         pTask = NULL;
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hrc))
         {
             pDataStream.queryInterfaceTo(aStream.asOutParam());
             pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -857,7 +857,7 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
     else if (pTask != NULL)
         delete pTask;
 
-    return rc;
+    return hrc;
 }
 
 HRESULT MediumIO::close()

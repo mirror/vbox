@@ -143,17 +143,17 @@ static int ParseAlias(char *pszLine, size_t& id, std::string& desc)
     /* First there's a hexadeciman number. */
     uint32_t uVal;
     char *pszNext;
-    int rc = RTStrToUInt32Ex(pszLine, &pszNext, 16, &uVal);
-    if (   rc == VWRN_TRAILING_CHARS
-        || rc == VWRN_TRAILING_SPACES
-        || rc == VINF_SUCCESS)
+    int vrc = RTStrToUInt32Ex(pszLine, &pszNext, 16, &uVal);
+    if (   vrc == VWRN_TRAILING_CHARS
+        || vrc == VWRN_TRAILING_SPACES
+        || vrc == VINF_SUCCESS)
     {
         /* Skip the whipespace following it and at the end of the line. */
         pszNext = RTStrStripL(pszNext);
         if (*pszNext != '\0')
         {
-            rc = RTStrValidateEncoding(pszNext);
-            if (RT_SUCCESS(rc))
+            vrc = RTStrValidateEncoding(pszNext);
+            if (RT_SUCCESS(vrc))
             {
                 size_t cchDesc = strlen(pszNext);
                 if (cchDesc <= USB_ID_DATABASE_MAX_STRING)
@@ -166,13 +166,13 @@ static int ParseAlias(char *pszLine, size_t& id, std::string& desc)
                 RTMsgError("String to long: %zu", cchDesc);
             }
             else
-                RTMsgError("Invalid encoding: '%s' (rc=%Rrc)", pszNext, rc);
+                RTMsgError("Invalid encoding: '%s' (vrc=%Rrc)", pszNext, vrc);
         }
         else
             RTMsgError("Error parsing '%s'", pszLine);
     }
     else
-        RTMsgError("Error converting number at the start of '%s': %Rrc", pszLine, rc);
+        RTMsgError("Error converting number at the start of '%s': %Rrc", pszLine, vrc);
     return ERROR_IN_PARSE_LINE;
 }
 
@@ -202,8 +202,8 @@ static int ParseUsbIds(PRTSTREAM pInStrm, const char *pszFile)
     for (;;)
     {
         char szLine[_4K];
-        int rc = RTStrmGetLine(pInStrm, szLine, sizeof(szLine));
-        if (RT_SUCCESS(rc))
+        int vrc = RTStrmGetLine(pInStrm, szLine, sizeof(szLine));
+        if (RT_SUCCESS(vrc))
         {
             iLine++;
 
@@ -242,10 +242,10 @@ static int ParseUsbIds(PRTSTREAM pInStrm, const char *pszFile)
                      && *RTStrStripL(szLine) != '\0')
                 vendor.vendorID = 0;
         }
-        else if (rc == VERR_EOF)
+        else if (vrc == VERR_EOF)
             return RTEXITCODE_SUCCESS;
         else
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTStrmGetLine failed: %Rrc", rc);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTStrmGetLine failed: %Rrc", vrc);
     }
 }
 
@@ -335,9 +335,9 @@ int main(int argc, char *argv[])
     /*
      * Initialize IPRT and convert argv to UTF-8.
      */
-    int rc = RTR3InitExe(argc, &argv, 0);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
+    int vrc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 
     /*
      * Parse arguments and read input files.
@@ -367,17 +367,17 @@ int main(int argc, char *argv[])
         }
 
         PRTSTREAM pInStrm;
-        rc = RTStrmOpen(argv[i], "r", &pInStrm);
-        if (RT_FAILURE(rc))
+        vrc = RTStrmOpen(argv[i], "r", &pInStrm);
+        if (RT_FAILURE(vrc))
             return RTMsgErrorExit((RTEXITCODE)ERROR_OPEN_FILE,
-                                  "Failed to open file '%s' for reading: %Rrc", argv[i], rc);
+                                  "Failed to open file '%s' for reading: %Rrc", argv[i], vrc);
 
-        rc = ParseUsbIds(pInStrm, argv[i]);
+        vrc = ParseUsbIds(pInStrm, argv[i]);
         RTStrmClose(pInStrm);
-        if (rc != 0)
+        if (vrc != 0)
         {
             RTMsgError("Failed parsing USB devices file '%s'", argv[i]);
-            return rc;
+            return vrc;
         }
     }
 

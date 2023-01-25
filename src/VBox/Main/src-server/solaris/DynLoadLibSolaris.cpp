@@ -61,17 +61,17 @@ bool VBoxSolarisLibDlpiFound(void)
     if (g_fCheckedForLibDlpi)
         return g_hLibDlpi != NIL_RTLDRMOD;
     g_fCheckedForLibDlpi = true;
-    int rc = RTLdrLoad(LIB_DLPI, &hLibDlpi);
-    if (RT_SUCCESS(rc))
+    int vrc = RTLdrLoad(LIB_DLPI, &hLibDlpi);
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Unfortunately; we cannot make use of dlpi_get_physaddr because it requires us to
          * open the VNIC/link which requires root permissions :/
          */
-        rc  = RTLdrGetSymbol(hLibDlpi, "dlpi_walk", (void **)&g_pfnLibDlpiWalk);
-        rc |= RTLdrGetSymbol(hLibDlpi, "dlpi_close", (void **)&g_pfnLibDlpiClose);
-        rc |= RTLdrGetSymbol(hLibDlpi, "dlpi_open", (void **)&g_pfnLibDlpiOpen);
-        if (RT_SUCCESS(rc))
+        vrc  = RTLdrGetSymbol(hLibDlpi, "dlpi_walk", (void **)&g_pfnLibDlpiWalk);
+        vrc |= RTLdrGetSymbol(hLibDlpi, "dlpi_close", (void **)&g_pfnLibDlpiClose);
+        vrc |= RTLdrGetSymbol(hLibDlpi, "dlpi_open", (void **)&g_pfnLibDlpiOpen);
+        if (RT_SUCCESS(vrc))
         {
             g_hLibDlpi = hLibDlpi;
             return true;
