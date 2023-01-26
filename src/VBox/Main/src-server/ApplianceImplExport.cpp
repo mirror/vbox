@@ -34,6 +34,8 @@
 #include <iprt/stream.h>
 #include <iprt/zip.h>
 
+#include <iprt/formats/tar.h>
+
 #include <VBox/version.h>
 
 #include "ApplianceImpl.h"
@@ -415,7 +417,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                 if (FAILED(hrc)) throw hrc;
 
                 strTargetImageName = Utf8StrFmt("%s-disk%.3d.vmdk", strBasename.c_str(), ++pAppliance->m->cDisks);
-                if (strTargetImageName.length() > RTTAR_NAME_MAX)
+                if (strTargetImageName.length() > RTZIPTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                 tr("Cannot attach disk '%s' -- file name too long"), strTargetImageName.c_str());
 
@@ -506,7 +508,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                     continue;
 
                 strTargetImageName = Utf8StrFmt("%s-disk%.3d.iso", strBasename.c_str(), ++pAppliance->m->cDisks);
-                if (strTargetImageName.length() > RTTAR_NAME_MAX)
+                if (strTargetImageName.length() > RTZIPTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                 tr("Cannot attach image '%s' -- file name too long"), strTargetImageName.c_str());
 

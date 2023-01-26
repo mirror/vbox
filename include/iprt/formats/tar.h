@@ -67,6 +67,10 @@
 #define RTZIPTAR_TF_GNU_VOLDHR      'V'
 /** @} */
 
+/** Maximum length of a tar filename, excluding the terminating '\0'. More
+ * does not fit into a tar record. */
+#define RTZIPTAR_NAME_MAX           99
+
 
 /**
  * The ancient tar header.

@@ -746,7 +746,6 @@ RuntimeBaseR3_SOURCES      := \
 	common/vfs/vfsstdpipe.cpp \
 	common/vfs/vfsprintf.cpp \
 	common/zip/cpiovfs.cpp \
-	common/zip/tar.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/tarvfswriter.cpp \
@@ -2455,7 +2454,6 @@ RuntimeBldProg_SOURCES          = \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
 	common/zip/gzipvfs.cpp \
-	common/zip/tar.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/tarvfswriter.cpp \

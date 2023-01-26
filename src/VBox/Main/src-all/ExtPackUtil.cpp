@@ -41,7 +41,6 @@
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
-#include <iprt/tar.h>
 #include <iprt/zip.h>
 #include <iprt/cpp/xml.h>
 

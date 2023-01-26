@@ -33,7 +33,6 @@
 #include <iprt/file.h>
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
-#include <iprt/tar.h>
 #include <iprt/zip.h>
 #include <iprt/stream.h>
 #include <iprt/crypto/digest.h>
@@ -41,6 +40,8 @@
 #include <iprt/crypto/store.h>
 #include <iprt/crypto/x509.h>
 #include <iprt/rand.h>
+
+#include <iprt/formats/tar.h>
 
 #include <VBox/vd.h>
 #include <VBox/com/array.h>

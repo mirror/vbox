@@ -38,7 +38,6 @@
 
 /** @todo This file needs massive cleanup. Split IAppliance in a public and
  * private classes. */
-#include <iprt/tar.h>
 #include "ovfreader.h"
 #include <set>
 
