@@ -79,7 +79,7 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
 VBoxSDL_INCS += \
 	$(VBOX_XCURSOR_INCS)
 endif
-ifneq ($(filter-out win solaris,$(KBUILD_TARGET)),)
+ifneq ($(filter-out solaris,$(KBUILD_TARGET)),)
 
 VBoxSDL_LIBS = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
@@ -98,6 +98,7 @@ endif
 
 VBoxSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
+VBoxSDL_LDFLAGS.win = -SubSystem:Windows
 
 VBoxSDL_CLEAN = $(VBoxSDL_0_OUTDIR)/Ico64x01.h
 VBoxSDL_INTERMEDIATES = $(VBoxSDL_0_OUTDIR)/Ico64x01.h
@@ -136,7 +137,7 @@ endif
 
 tstSDL_LIBS = \
 	$(LIB_RUNTIME)
-ifneq ($(filter-out win solaris,$(KBUILD_TARGET)),)
+ifneq ($(filter-out solaris,$(KBUILD_TARGET)),)
 tstSDL_LIBS += \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
