@@ -51,7 +51,7 @@ class BugReportNetworkAdaptersWin : public BugReportStream
 public:
     BugReportNetworkAdaptersWin() : BugReportStream("NetworkAdapters") {};
     virtual ~BugReportNetworkAdaptersWin() {};
-    virtual PRTSTREAM getStream(void) { collect(); return BugReportStream::getStream(); };
+    virtual RTVFSIOSTREAM getStream(void) { collect(); return BugReportStream::getStream(); };
 private:
     struct CharacteristicsName
     {
