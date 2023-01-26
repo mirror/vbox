@@ -53,7 +53,6 @@ Include = msdv.inf
 ;amd64 CopyFiles = VBoxWDDM.Miniport, VBoxWDDM.Display, VBoxWDDM.Display_wow64
 AddReg = VBoxWDDM_SoftwareDeviceSettings
 ;todo: clear XPDM driver settings: DelReg = VBoxWDDM_RemoveDeviceSettings
-RegisterDlls = VBoxWDDM_RegisterDlls
 
 [VBoxWDDM.Miniport]
 VBoxWddm.sys
@@ -86,9 +85,6 @@ VBoxWddm.sys
 ;mesa3d         HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
 ;amd64 ;mesa3d  HKR,, OpenGLVersionWoW,    %REG_DWORD%,    0x00000001
 HKR,, VgaCompatible, %REG_DWORD%, 0
-
-[VBoxWDDM_RegisterDlls]
-
 
 [VBoxWDDM_Install.Services]
 AddService=VBoxWddm, 0x00000002, VBoxWDDM_Service_Inst, VBoxWDDM_EventLog_Inst
