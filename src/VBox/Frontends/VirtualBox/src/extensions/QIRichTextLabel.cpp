@@ -27,6 +27,9 @@
 
 /* Qt includes: */
 #include <QAccessibleWidget>
+#include <QAction>
+#include <QApplication>
+#include <QClipboard>
 #include <QtMath>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -100,8 +103,10 @@ QIRichTextLabel *UIAccessibilityInterfaceForQIRichTextLabel::label() const
 *********************************************************************************************************************************/
 
 QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pTextBrowser()
+    , m_pActionCopy(0)
+    , m_fCopyAvailable(false)
     , m_iMinimumTextWidth(0)
 {
     /* Install QIRichTextLabel accessibility interface factory: */
@@ -123,10 +128,11 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
         {
             /* Configure text-browser: */
             m_pTextBrowser->setReadOnly(true);
-            m_pTextBrowser->setFocusPolicy(Qt::NoFocus);
+            m_pTextBrowser->setFocusPolicy(Qt::ClickFocus);
             m_pTextBrowser->setFrameShape(QFrame::NoFrame);
             m_pTextBrowser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             m_pTextBrowser->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            m_pTextBrowser->setContextMenuPolicy(Qt::ActionsContextMenu);
             m_pTextBrowser->setOpenExternalLinks(true);
 
             /* Tune text-browser viewport palette: */
@@ -139,11 +145,25 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
 
             /* Setup connections finally: */
             connect(m_pTextBrowser, &QTextBrowser::anchorClicked, this, &QIRichTextLabel::sigLinkClicked);
+            connect(m_pTextBrowser, &QTextBrowser::copyAvailable, this, &QIRichTextLabel::sltHandleCopyAvailable);
+
+            /* Create context-menu copy action for text-browser: */
+            m_pActionCopy = new QAction(m_pTextBrowser);
+            if (m_pActionCopy)
+            {
+                m_pActionCopy->setShortcut(QKeySequence(QKeySequence::Copy));
+                m_pActionCopy->setShortcutContext(Qt::WidgetShortcut);
+                connect(m_pActionCopy, &QAction::triggered, this, &QIRichTextLabel::copy);
+                m_pTextBrowser->addAction(m_pActionCopy);
+            }
         }
 
         /* Add into layout: */
         pMainLayout->addWidget(m_pTextBrowser);
     }
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 QString QIRichTextLabel::text() const
@@ -244,4 +264,29 @@ void QIRichTextLabel::setText(const QString &strText)
 
     /* Set minimum text width to corresponding value: */
     setMinimumTextWidth(m_iMinimumTextWidth == 0 ? newSize.width() : m_iMinimumTextWidth);
+}
+
+void QIRichTextLabel::copy()
+{
+    // WORKAROUND:
+    // We should distinguish whether copy() is available or not.
+    //  If it is, we can use QTextBrowser::copy() directly to
+    //  copy selected part of text.  Otherwise we have to use
+    //  QTextBrowser::toPlainText() to get the whole desirable
+    //  text and put it to QClipboard ourselves.
+    if (m_fCopyAvailable)
+        m_pTextBrowser->copy();
+    else
+    {
+        /* Copy the current text to the global and selection clipboards: */
+        const QString strText = m_pTextBrowser->toPlainText();
+        QApplication::clipboard()->setText(strText, QClipboard::Clipboard);
+        QApplication::clipboard()->setText(strText, QClipboard::Selection);
+    }
+}
+
+void QIRichTextLabel::retranslateUi()
+{
+    if (m_pActionCopy)
+        m_pActionCopy->setText(tr("&Copy"));
 }

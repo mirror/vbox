@@ -35,11 +35,15 @@
 #include <QTextBrowser>
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
+
+/* Forward declarations: */
+class QAction;
 
 /** QLabel analog to reflect rich-text,
  ** based on private QTextBrowser functionality. */
-class SHARED_LIBRARY_STUFF QIRichTextLabel : public QWidget
+class SHARED_LIBRARY_STUFF QIRichTextLabel : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(QString text READ text WRITE setText);
@@ -87,10 +91,30 @@ public slots:
     /** Defines @a strText. */
     void setText(const QString &strText);
 
+    /** Copies text-browser text into clipboard. */
+    void copy();
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE;
+
+private slots:
+
+    /** Handles the fact of text-browser text copy available.
+      * @param  fYes  Brings whether some text is selected and can
+      *               be copied directly by QTextBrowser::copy() call. */
+    void sltHandleCopyAvailable(bool fYes) { m_fCopyAvailable = fYes; }
+
 private:
 
     /** Holds the text-browser instance. */
     QTextBrowser *m_pTextBrowser;
+
+    /** Holds the context-menu Copy action instance. */
+    QAction *m_pActionCopy;
+    /** Holds whether text-browser text copy is available. */
+    bool     m_fCopyAvailable;
 
     /** Holds the minimum text-width. */
     int m_iMinimumTextWidth;
