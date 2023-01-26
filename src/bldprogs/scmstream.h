@@ -128,6 +128,7 @@ unsigned    ScmStreamGetCh(PSCMSTREAM pStream);
 const char *ScmStreamGetCur(PSCMSTREAM pStream);
 unsigned    ScmStreamPeekCh(PSCMSTREAM pStream);
 int         ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead);
+bool        ScmStreamIsEndOfStream(PSCMSTREAM pStream);
 bool        ScmStreamIsWhiteLine(PSCMSTREAM pStream, size_t iLine);
 SCMEOL      ScmStreamGetEol(PSCMSTREAM pStream);
 SCMEOL      ScmStreamGetEolByLine(PSCMSTREAM pStream, size_t iLine);

@@ -377,6 +377,9 @@ typedef struct SCMSETTINGSBASE
     /** No rc declarations allowed, only hrc or vrc depending on the result type. */
     bool            fOnlyHrcVrcInsteadOfRc;
 
+    /** Whether to standarize kmk makefiles. */
+    bool            fStandarizeKmk;
+
     /** Update the copyright year. */
     bool            fUpdateCopyrightYear;
     /** Only external copyright holders. */
@@ -478,6 +481,7 @@ void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel);
 void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 bool ScmFixManually(PSCMRWSTATE pState, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+bool ScmFixManuallyV(PSCMRWSTATE pState, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 extern const char g_szTabSpaces[16+1];
 extern const char g_szAsterisks[255+1];

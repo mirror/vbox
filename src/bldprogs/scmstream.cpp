@@ -920,6 +920,20 @@ int ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead)
 
 
 /**
+ * Checks if we're at the end of the stream.
+ *
+ * @returns true if end of stream, false if not.
+ * @param   pStream             The stream.  Must be in read mode.
+ */
+bool ScmStreamIsEndOfStream(PSCMSTREAM pStream)
+{
+    AssertReturn(!pStream->fWriteOrRead, false);
+    return pStream->off >= pStream->cb
+        || RT_FAILURE(pStream->rc);
+}
+
+
+/**
  * Checks if the given line is empty or full of white space.
  *
  * @returns true if white space only, false if not (or if non-existant).
