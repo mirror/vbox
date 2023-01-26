@@ -269,20 +269,21 @@ void *BugReport::applyFilters(BugReportItem* item, void *pvSource, size_t *pcbIn
 
 BugReportStream::BugReportStream(const char *pszTitle) : BugReportItem(pszTitle)
 {
+    m_hVfsIos = NIL_RTVFSIOSTREAM;
     handleRtError(RTPathTemp(m_szFileName, RTPATH_MAX),
                   "Failed to obtain path to temporary folder");
     handleRtError(RTPathAppend(m_szFileName, RTPATH_MAX, "BugRepXXXXX.tmp"),
                   "Failed to append path");
     handleRtError(RTFileCreateTemp(m_szFileName, 0600),
                   "Failed to create temporary file '%s'", m_szFileName);
-    handleRtError(RTStrmOpen(m_szFileName, "w", &m_Strm),
+    handleRtError(RTVfsIoStrmOpenNormal(m_szFileName, RTFILE_O_OPEN | RTFILE_O_WRITE | RTFILE_O_DENY_NONE, &m_hVfsIos),
                   "Failed to open '%s'", m_szFileName);
 }
 
 BugReportStream::~BugReportStream()
 {
-    if (m_Strm)
-        RTStrmClose(m_Strm);
+    if (m_hVfsIos != NIL_RTVFSIOSTREAM)
+        RTVfsIoStrmRelease(m_hVfsIos);
     RTFileDelete(m_szFileName);
 }
 
@@ -290,22 +291,22 @@ int BugReportStream::printf(const char *pszFmt, ...)
 {
     va_list va;
     va_start(va, pszFmt);
-    int cb = RTStrmPrintfV(m_Strm, pszFmt, va);
+    int cb = RTVfsIoStrmPrintfV(m_hVfsIos, pszFmt, va);
     va_end(va);
     return cb;
 }
 
 int BugReportStream::putStr(const char *pszString)
 {
-    return RTStrmPutStr(m_Strm, pszString);
+    return RTVfsIoStrmPrintf(m_hVfsIos, "%s", pszString);
 }
 
-PRTSTREAM BugReportStream::getStream(void)
+RTVFSIOSTREAM BugReportStream::getStream(void)
 {
-    RTStrmClose(m_Strm);
-    handleRtError(RTStrmOpen(m_szFileName, "r", &m_Strm),
+    RTVfsIoStrmRelease(m_hVfsIos);
+    handleRtError(RTVfsIoStrmOpenNormal(m_szFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &m_hVfsIos),
                   "Failed to open '%s'", m_szFileName);
-    return m_Strm;
+    return m_hVfsIos;
 }
 
 
@@ -313,28 +314,28 @@ PRTSTREAM BugReportStream::getStream(void)
 
 BugReportFile::BugReportFile(const char *pszPath, const char *pszShortName) : BugReportItem(pszShortName)
 {
-    m_Strm = 0;
+    m_hVfsIos = NIL_RTVFSIOSTREAM;
     m_pszPath = RTStrDup(pszPath);
 }
 
 BugReportFile::~BugReportFile()
 {
-    if (m_Strm)
-        RTStrmClose(m_Strm);
+    if (m_hVfsIos != NIL_RTVFSIOSTREAM)
+        RTVfsIoStrmRelease(m_hVfsIos);
     if (m_pszPath)
         RTStrFree(m_pszPath);
 }
 
-PRTSTREAM BugReportFile::getStream(void)
+RTVFSIOSTREAM BugReportFile::getStream(void)
 {
-    handleRtError(RTStrmOpen(m_pszPath, "rb", &m_Strm),
+    handleRtError(RTVfsIoStrmOpenNormal(m_pszPath, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &m_hVfsIos),
                   "Failed to open '%s'", m_pszPath);
-    return m_Strm;
+    return m_hVfsIos;
 }
 
 
 BugReportCommand::BugReportCommand(const char *pszTitle, const char *pszExec, ...)
-    : BugReportItem(pszTitle), m_Strm(NULL)
+    : BugReportItem(pszTitle), m_hVfsIos(NIL_RTVFSIOSTREAM)
 {
     unsigned cArgs = 0;
     m_papszArgs[cArgs++] = RTStrDup(pszExec);
@@ -357,14 +358,14 @@ BugReportCommand::BugReportCommand(const char *pszTitle, const char *pszExec, ..
 
 BugReportCommand::~BugReportCommand()
 {
-    if (m_Strm)
-        RTStrmClose(m_Strm);
+    if (m_hVfsIos != NIL_RTVFSIOSTREAM)
+        RTVfsIoStrmRelease(m_hVfsIos);
     RTFileDelete(m_szFileName);
     for (size_t i = 0; i < RT_ELEMENTS(m_papszArgs) && m_papszArgs[i]; ++i)
         RTStrFree(m_papszArgs[i]);
 }
 
-PRTSTREAM BugReportCommand::getStream(void)
+RTVFSIOSTREAM BugReportCommand::getStream(void)
 {
     handleRtError(RTPathTemp(m_szFileName, RTPATH_MAX),
                   "Failed to obtain path to temporary folder");
@@ -390,14 +391,14 @@ PRTSTREAM BugReportCommand::getStream(void)
     //if (status.enmReason == RTPROCEXITREASON_NORMAL) {}
     RTFileClose(hStdOutErr.u.hFile);
 
-    handleRtError(RTStrmOpen(m_szFileName, "r", &m_Strm),
+    handleRtError(RTVfsIoStrmOpenNormal(m_szFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &m_hVfsIos),
                   "Failed to open '%s'", m_szFileName);
-    return m_Strm;
+    return m_hVfsIos;
 }
 
 
 BugReportCommandTemp::BugReportCommandTemp(const char *pszTitle, const char *pszExec, ...)
-    : BugReportItem(pszTitle), m_Strm(NULL)
+    : BugReportItem(pszTitle), m_hVfsIos(NIL_RTVFSIOSTREAM)
 {
     handleRtError(RTPathTemp(m_szFileName, RTPATH_MAX),
                   "Failed to obtain path to temporary folder");
@@ -429,15 +430,15 @@ BugReportCommandTemp::BugReportCommandTemp(const char *pszTitle, const char *psz
 
 BugReportCommandTemp::~BugReportCommandTemp()
 {
-    if (m_Strm)
-        RTStrmClose(m_Strm);
+    if (m_hVfsIos != NIL_RTVFSIOSTREAM)
+        RTVfsIoStrmRelease(m_hVfsIos);
     RTFileDelete(m_szErrFileName);
     RTFileDelete(m_szFileName);
     for (size_t i = 0; i < RT_ELEMENTS(m_papszArgs) && m_papszArgs[i]; ++i)
         RTStrFree(m_papszArgs[i]);
 }
 
-PRTSTREAM BugReportCommandTemp::getStream(void)
+RTVFSIOSTREAM BugReportCommandTemp::getStream(void)
 {
     handleRtError(RTPathTemp(m_szErrFileName, RTPATH_MAX),
                   "Failed to obtain path to temporary folder");
@@ -467,10 +468,12 @@ PRTSTREAM BugReportCommandTemp::getStream(void)
     RTFileClose(hStdOutErr.u.hFile);
 
     if (status.enmReason == RTPROCEXITREASON_NORMAL && status.iStatus == 0)
-        handleRtError(RTStrmOpen(m_szFileName, "r", &m_Strm), "Failed to open '%s'", m_szFileName);
+        handleRtError(RTVfsIoStrmOpenNormal(m_szFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &m_hVfsIos),
+                      "Failed to open '%s'", m_szFileName);
     else
-        handleRtError(RTStrmOpen(m_szErrFileName, "r", &m_Strm), "Failed to open '%s'", m_szErrFileName);
-    return m_Strm;
+        handleRtError(RTVfsIoStrmOpenNormal(m_szErrFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &m_hVfsIos),
+                      "Failed to open '%s'", m_szErrFileName);
+    return m_hVfsIos;
 }
 
 
@@ -492,25 +495,25 @@ void BugReportText::processItem(BugReportItem* item)
     if (!cb)
         throw RTCError(com::Utf8StrFmt("Write failure (cb=%d)\n", cb));
 
-    PRTSTREAM strmIn = NULL;
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
     try
     {
-        strmIn = item->getStream();
+        hVfsIos = item->getStream();
     }
     catch (RTCError &e)
     {
-        strmIn = NULL;
+        hVfsIos = NIL_RTVFSIOSTREAM;
         RTStrmPutStr(m_StrmTxt, e.what());
     }
 
     int rc = VINF_SUCCESS;
 
-    if (strmIn)
+    if (hVfsIos != NIL_RTVFSIOSTREAM)
     {
         char buf[64*1024];
         size_t cbRead, cbWritten;
         cbRead = cbWritten = 0;
-        while (RT_SUCCESS(rc = RTStrmReadEx(strmIn, buf, sizeof(buf), &cbRead)) && cbRead)
+        while (RT_SUCCESS(rc = RTVfsIoStrmRead(hVfsIos, buf, sizeof(buf), true /*fBlocking*/, &cbRead)) && cbRead)
         {
             rc = RTStrmWriteEx(m_StrmTxt, applyFilters(item, buf, &cbRead), cbRead, &cbWritten);
             if (RT_FAILURE(rc) || cbRead != cbWritten)
@@ -524,7 +527,7 @@ void BugReportText::processItem(BugReportItem* item)
 
 
 BugReportTarGzip::BugReportTarGzip(const char *pszFileName)
-    : BugReport(pszFileName), m_hTar(NIL_RTTAR), m_hTarFile(NIL_RTTARFILE)
+    : BugReport(pszFileName), m_hTarFss(NIL_RTVFSFSSTREAM)
 {
     VfsIoStreamHandle hVfsOut;
     handleRtError(RTVfsIoStrmOpenNormal(pszFileName, RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE,
@@ -533,25 +536,36 @@ BugReportTarGzip::BugReportTarGzip(const char *pszFileName)
     handleRtError(RTZipGzipCompressIoStream(hVfsOut.get(), 0, 6, m_hVfsGzip.getPtr()),
                   "Failed to create compressed stream for '%s'", pszFileName);
 
-    handleRtError(RTPathTemp(m_szTarName, RTPATH_MAX),
-                  "Failed to obtain path to temporary folder");
-    handleRtError(RTPathAppend(m_szTarName, RTPATH_MAX, "BugRepXXXXX.tar"),
-                  "Failed to append path");
-    handleRtError(RTFileCreateTemp(m_szTarName, 0600),
-                  "Failed to create temporary file '%s'", m_szTarName);
-    handleRtError(RTFileDelete(m_szTarName),
-                  "Failed to delete temporary file '%s'", m_szTarName);
-    handleRtError(RTTarOpen(&m_hTar, m_szTarName,  RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL),
-                  "Failed to create TAR file '%s'", m_szTarName);
-
+    int rc = RTZipTarFsStreamToIoStream(m_hVfsGzip.get(), RTZIPTARFORMAT_DEFAULT, RTZIPTAR_C_SPARSE, &m_hTarFss);
+    handleRtError(rc, "Failed to create TAR file '%s'", m_szTarName);
 }
 
 BugReportTarGzip::~BugReportTarGzip()
 {
-    if (m_hTarFile != NIL_RTTARFILE)
-        RTTarFileClose(m_hTarFile);
-    if (m_hTar != NIL_RTTAR)
-        RTTarClose(m_hTar);
+    if (m_hTarFss != NIL_RTVFSFSSTREAM)
+        RTVfsFsStrmRelease(m_hTarFss);
+}
+
+void BugReportTarGzip::dumpExceptionToArchive(RTCString &strTarFile, RTCError &e)
+{
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, _1K/*cbEstimate*/, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTVfsFileWrite(hVfsFile, e.what(), RTStrNLen(e.what(), 1024), NULL /*pcbWritten*/);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTVfsFileSeek(hVfsFile, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+            if (RT_SUCCESS(rc))
+            {
+                RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFile);
+                rc = RTVfsFsStrmAdd(m_hTarFss, strTarFile.c_str(), hVfsObj, 0 /*fFlags*/);
+                RTVfsObjRelease(hVfsObj);
+            }
+        }
+        RTVfsFileRelease(hVfsFile);
+    }
+    handleRtError(rc, "Failed to add exception text to TAR archive '%s'", m_szTarName);
 }
 
 void BugReportTarGzip::processItem(BugReportItem* item)
@@ -561,69 +575,33 @@ void BugReportTarGzip::processItem(BugReportItem* item)
      * We truncate the title to make sure it will fit into 100-character field of TAR header.
      */
     RTCString strTarFile = RTCString(item->getTitle()).substr(0, RTStrNLen(item->getTitle(), 99));
-    handleRtError(RTTarFileOpen(m_hTar, &m_hTarFile, strTarFile.c_str(),
-                                RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE),
-                  "Failed to open '%s' in TAR", strTarFile.c_str());
-
-    PRTSTREAM strmIn = NULL;
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
     try
     {
-        strmIn = item->getStream();
+        hVfsIos = item->getStream();
     }
     catch (RTCError &e)
     {
-        strmIn = NULL;
-        handleRtError(RTTarFileWriteAt(m_hTarFile, 0, e.what(), RTStrNLen(e.what(), 1024), NULL),
-                      "Failed to write %u bytes to TAR", RTStrNLen(e.what(), 1024));
+        hVfsIos = NIL_RTVFSIOSTREAM;
+        dumpExceptionToArchive(strTarFile, e);
     }
 
-    int rc = VINF_SUCCESS;
-
-    if (strmIn)
+    if (hVfsIos != NIL_RTVFSIOSTREAM)
     {
-        char buf[64*1024];
-        size_t cbRead = 0;
-        for (uint64_t offset = 0;
-             RT_SUCCESS(rc = RTStrmReadEx(strmIn, buf, sizeof(buf), &cbRead)) && cbRead;
-             offset += cbRead)
-        {
-            handleRtError(RTTarFileWriteAt(m_hTarFile, offset, applyFilters(item, buf, &cbRead), cbRead, NULL),
-                          "Failed to write %u bytes to TAR", cbRead);
-        }
-    }
-
-    if (m_hTarFile)
-    {
-        handleRtError(RTTarFileClose(m_hTarFile), "Failed to close '%s' in TAR", strTarFile.c_str());
-        m_hTarFile = NIL_RTTARFILE;
+        RTVFSOBJ hVfsObjIos = RTVfsObjFromIoStream(hVfsIos);
+        int rc = RTVfsFsStrmAdd(m_hTarFss, strTarFile.c_str(), hVfsObjIos, 0 /*fFlags*/);
+        RTVfsObjRelease(hVfsObjIos);
+        handleRtError(rc, "Failed to add file to TAR archive '%s'", m_szTarName);
     }
 }
 
 void BugReportTarGzip::complete(void)
 {
-    if (m_hTarFile != NIL_RTTARFILE)
+    if (m_hTarFss != NIL_RTVFSFSSTREAM)
     {
-        RTTarFileClose(m_hTarFile);
-        m_hTarFile = NIL_RTTARFILE;
+        RTVfsFsStrmRelease(m_hTarFss);
+        m_hTarFss = NIL_RTVFSFSSTREAM;
     }
-    if (m_hTar != NIL_RTTAR)
-    {
-        RTTarClose(m_hTar);
-        m_hTar = NIL_RTTAR;
-    }
-
-    VfsIoStreamHandle hVfsIn;
-    handleRtError(RTVfsIoStrmOpenNormal(m_szTarName, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                                        hVfsIn.getPtr()),
-                  "Failed to open TAR file '%s'", m_szTarName);
-
-    int rc;
-    char buf[_64K];
-    size_t cbRead = 0;
-    while (RT_SUCCESS(rc = RTVfsIoStrmRead(hVfsIn.get(), buf, sizeof(buf), true, &cbRead)) && cbRead)
-        handleRtError(RTVfsIoStrmWrite(m_hVfsGzip.get(), buf, cbRead, true, NULL),
-                      "Failed to write into compressed stream");
-    handleRtError(rc, "Failed to read from TAR stream");
     handleRtError(RTVfsIoStrmFlush(m_hVfsGzip.get()), "Failed to flush output stream");
     m_hVfsGzip.release();
 }

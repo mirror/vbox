@@ -45,8 +45,8 @@
 
 #include <iprt/path.h>
 #include <iprt/stream.h>
-#include <iprt/tar.h>
 #include <iprt/vfs.h>
+#include <iprt/zip.h>
 #include <iprt/cpp/list.h>
 
 #ifdef RT_OS_WINDOWS
@@ -129,7 +129,7 @@ public:
     BugReportItem(const char *pszTitle);
     virtual ~BugReportItem();
     virtual const char *getTitle(void);
-    virtual PRTSTREAM getStream(void) = 0;
+    virtual RTVFSIOSTREAM getStream(void) = 0;
     void addFilter(BugReportFilter *filter);
     void *applyFilter(void *pvSource, size_t *pcbInOut);
 private:
@@ -168,12 +168,12 @@ class BugReportStream : public BugReportItem
 public:
     BugReportStream(const char *pszTitle);
     virtual ~BugReportStream();
-    virtual PRTSTREAM getStream(void);
+    virtual RTVFSIOSTREAM getStream(void);
 protected:
     int printf(const char *pszFmt, ...);
     int putStr(const char *pszString);
 private:
-    PRTSTREAM m_Strm;
+    RTVFSIOSTREAM m_hVfsIos;
     char m_szFileName[RTPATH_MAX];
 };
 
@@ -205,6 +205,8 @@ public:
     virtual void processItem(BugReportItem* item);
     virtual void complete(void);
 private:
+    void dumpExceptionToArchive(RTCString &strTarFile, RTCError &e);
+
     /*
      * Helper class to release handles going out of scope.
      */
@@ -227,8 +229,7 @@ private:
 
     VfsIoStreamHandle m_hVfsGzip;
 
-    RTTAR m_hTar;
-    RTTARFILE m_hTarFile;
+    RTVFSFSSTREAM m_hTarFss;
     char m_szTarName[RTPATH_MAX];
 };
 
@@ -241,11 +242,11 @@ class BugReportFile : public BugReportItem
 public:
     BugReportFile(const char *pszPath, const char *pcszName);
     virtual ~BugReportFile();
-    virtual PRTSTREAM getStream(void);
+    virtual RTVFSIOSTREAM getStream(void);
 
 private:
     char *m_pszPath;
-    PRTSTREAM m_Strm;
+    RTVFSIOSTREAM m_hVfsIos;
 };
 
 /*
@@ -256,9 +257,9 @@ class BugReportCommand : public BugReportItem
 public:
     BugReportCommand(const char *pszTitle, const char *pszExec, ...);
     virtual ~BugReportCommand();
-    virtual PRTSTREAM getStream(void);
+    virtual RTVFSIOSTREAM getStream(void);
 private:
-    PRTSTREAM m_Strm;
+    RTVFSIOSTREAM m_hVfsIos;
     char m_szFileName[RTPATH_MAX];
     char *m_papszArgs[32];
 };
@@ -271,9 +272,9 @@ class BugReportCommandTemp : public BugReportItem
 public:
     BugReportCommandTemp(const char *pszTitle, const char *pszExec, ...);
     virtual ~BugReportCommandTemp();
-    virtual PRTSTREAM getStream(void);
+    virtual RTVFSIOSTREAM getStream(void);
 private:
-    PRTSTREAM m_Strm;
+    RTVFSIOSTREAM m_hVfsIos;
     char m_szFileName[RTPATH_MAX];
     char m_szErrFileName[RTPATH_MAX];
     char *m_papszArgs[32];

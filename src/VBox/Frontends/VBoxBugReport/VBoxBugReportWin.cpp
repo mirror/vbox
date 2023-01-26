@@ -267,7 +267,7 @@ class BugReportUsbTreeWin : public BugReportStream
 public:
     BugReportUsbTreeWin();
     virtual ~BugReportUsbTreeWin();
-    virtual PRTSTREAM getStream(void) { enumerate(); return BugReportStream::getStream(); }
+    virtual RTVFSIOSTREAM getStream(void) { enumerate(); return BugReportStream::getStream(); }
 private:
     class AutoHandle {
     public:
@@ -581,7 +581,7 @@ class BugReportDriversWin : public BugReportStream
 public:
     BugReportDriversWin();
     virtual ~BugReportDriversWin();
-    virtual PRTSTREAM getStream(void) { enumerateDrivers(); return BugReportStream::getStream(); }
+    virtual RTVFSIOSTREAM getStream(void) { enumerateDrivers(); return BugReportStream::getStream(); }
 private:
     void enumerateDrivers(void);
 
