@@ -17131,15 +17131,29 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpsd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst
  * ROUNDPS / ROUNDPD / ROUNDSS / ROUNDSD
  */
 
+#define X86_SSE_ROUNDXX_IMM_RC_MASK    UINT32_C(0x0003)
+#define X86_SSE_ROUNDXX_IMM_ROUND_SEL  UINT32_C(0x0004)
+#define X86_SSE_ROUNDXX_IMM_PRECISION  UINT32_C(0x0008)
+
+DECLINLINE(softfloat_state_t) iemSseRoundXXMxcsrAndImmToSoftState(uint32_t fMxcsr, uint8_t bImm)
+{
+    if (bImm & X86_SSE_ROUNDXX_IMM_ROUND_SEL)
+        return IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+
+    fMxcsr &= ~X86_MXCSR_RC_MASK;
+    fMxcsr |= (bImm & X86_SSE_ROUNDXX_IMM_RC_MASK) << X86_MXCSR_RC_SHIFT;
+    return IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+}
+
 static RTFLOAT32U iemAImpl_round_worker_r32(uint32_t *pfMxcsr, PCRTFLOAT32U pr32Src, uint8_t bImm)
 {
-    RT_NOREF(bImm);
     RTFLOAT32U r32Src, r32Dst;
     float32_t f32Src;
-    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
+    softfloat_state_t SoftState = iemSseRoundXXMxcsrAndImmToSoftState(*pfMxcsr, bImm);
+    bool fExact = !RT_BOOL(bImm & X86_SSE_ROUNDXX_IMM_PRECISION);
 
     iemSsePrepareValueR32(&r32Src, *pfMxcsr, pr32Src);
-    f32Src = f32_roundToInt(iemFpSoftF32FromIprt(&r32Src), SoftState.roundingMode, true/*exact*/, &SoftState);
+    f32Src = f32_roundToInt(iemFpSoftF32FromIprt(&r32Src), SoftState.roundingMode, fExact, &SoftState);
 
     iemFpSoftF32ToIprt(&r32Dst, f32Src);
     return r32Dst;
@@ -17147,13 +17161,13 @@ static RTFLOAT32U iemAImpl_round_worker_r32(uint32_t *pfMxcsr, PCRTFLOAT32U pr32
 
 static RTFLOAT64U iemAImpl_round_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src, uint8_t bImm)
 {
-    RT_NOREF(bImm);
     RTFLOAT64U r64Src, r64Dst;
     float64_t f64Src;
-    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
+    softfloat_state_t SoftState = iemSseRoundXXMxcsrAndImmToSoftState(*pfMxcsr, bImm);
+    bool fExact = !RT_BOOL(bImm & X86_SSE_ROUNDXX_IMM_PRECISION);
 
     iemSsePrepareValueR64(&r64Src, *pfMxcsr, pr64Src);
-    f64Src = f64_roundToInt(iemFpSoftF64FromIprt(&r64Src), SoftState.roundingMode, true/*exact*/, &SoftState);
+    f64Src = f64_roundToInt(iemFpSoftF64FromIprt(&r64Src), SoftState.roundingMode, fExact, &SoftState);
 
     iemFpSoftF64ToIprt(&r64Dst, f64Src);
     return r64Dst;
