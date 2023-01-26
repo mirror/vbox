@@ -671,6 +671,11 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                     {
                         uint32_t cbToWrite = RT_MIN(sizeof(abBuf), cbCanWrite);
                                  cbToWrite = RT_MIN(cbToWrite, cbToWriteTotal - cbWrittenTotal);
+
+                        if (g_uVerbosity >= 4)
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                                         "Test #%RU32: Playing back %RU32 bytes\n", idxTest, cbToWrite);
+
                         if (cbToWrite)
                         {
                             rc = AudioTestToneGenerate(&TstTone, abBuf, cbToWrite, &cbToWrite);
@@ -678,7 +683,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                             {
                                 if (pTstEnv)
                                 {
-                                    /* Write stuff to disk before trying to play it. Help analysis later. */
+                                    /* Write stuff to disk before trying to play it. Helps analysis later. */
                                     rc = AudioTestObjWrite(Obj, abBuf, cbToWrite);
                                 }
 
@@ -708,17 +713,22 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                             }
                         }
 
-                        const bool fComplete = cbWrittenTotal >= cbToWriteTotal;
-                        if (fComplete)
+                        if (RT_SUCCESS(rc))
                         {
-                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing back audio data ended\n", idxTest);
+                            const bool fComplete = cbWrittenTotal >= cbToWriteTotal;
+                            if (fComplete)
+                            {
+                                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing back audio data ended\n", idxTest);
 
-                            enmState = AUDIOTESTSTATE_POST;
+                                enmState = AUDIOTESTSTATE_POST;
 
-                            /* Re-use the beacon object, but this time it's the post beacon. */
-                            AudioTestBeaconInit(&Beacon, (uint8_t)idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
-                                                &pStream->Cfg.Props);
+                                /* Re-use the beacon object, but this time it's the post beacon. */
+                                AudioTestBeaconInit(&Beacon, (uint8_t)idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                                    &pStream->Cfg.Props);
+                            }
                         }
+                        else
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing back failed with %Rrc\n", idxTest, rc);
                         break;
                     }
 
