@@ -265,7 +265,7 @@ PCPDMDRVREG AudioTestFindBackendOpt(const char *pszBackend)
         if (   strcmp(pszBackend, g_aBackends[i].pszName) == 0
             || strcmp(pszBackend, g_aBackends[i].pDrvReg->szName) == 0)
             return g_aBackends[i].pDrvReg;
-    RTMsgError("Unknown backend: '%s'\n\n");
+    RTMsgError("Unknown backend: '%s'\n\n", pszBackend);
     RTPrintf("Supported backend values are: ");
     for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
     {
