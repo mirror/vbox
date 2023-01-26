@@ -78,11 +78,6 @@
 #include "CStateChangedEvent.h"
 #include "CStorageControllerChangedEvent.h"
 #include "CStorageDeviceChangedEvent.h"
-#include "CUpdateAgent.h"
-#include "CUpdateAgentAvailableEvent.h"
-#include "CUpdateAgentErrorEvent.h"
-#include "CUpdateAgentStateChangedEvent.h"
-#include "CUpdateAgentSettingsChangedEvent.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceStateChangedEvent.h"
 #include "CVBoxSVCAvailabilityChangedEvent.h"
@@ -230,10 +225,6 @@ UIMainEventListener::UIMainEventListener()
     qRegisterMetaType<CVirtualBoxErrorInfo>("CVirtualBoxErrorInfo");
     qRegisterMetaType<KGuestMonitorChangedEventType>("KGuestMonitorChangedEventType");
     qRegisterMetaType<CGuestSession>("CGuestSession");
-    qRegisterMetaType<CUpdateAgent>("CUpdateAgent");
-    qRegisterMetaType<KUpdateChannel>("KUpdateChannel");
-    qRegisterMetaType<KUpdateSeverity>("KUpdateSeverity");
-    qRegisterMetaType<KUpdateState>("KUpdateState");
 }
 
 void UIMainEventListener::registerSource(const CEventSource &comSource,
@@ -625,33 +616,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CDnDModeChangedEvent comEventSpecific(pEvent);
             emit sigDnDModeChange(comEventSpecific.GetDndMode());
-            break;
-        }
-        case KVBoxEventType_OnUpdateAgentAvailable:
-        {
-            CUpdateAgentAvailableEvent comEventSpecific(pEvent);
-            emit sigUpdateAgentAvailable(comEventSpecific.GetAgent(),
-                                         comEventSpecific.GetVersion(), comEventSpecific.GetChannel(),
-                                         comEventSpecific.GetSeverity(), comEventSpecific.GetDownloadURL(),
-                                         comEventSpecific.GetWebURL(), comEventSpecific.GetReleaseNotes());
-            break;
-        }
-        case KVBoxEventType_OnUpdateAgentError:
-        {
-            CUpdateAgentErrorEvent comEventSpecific(pEvent);
-            emit sigUpdateAgentError(comEventSpecific.GetAgent(), comEventSpecific.GetMsg(), comEventSpecific.GetRcError());
-            break;
-        }
-        case KVBoxEventType_OnUpdateAgentStateChanged:
-        {
-            CUpdateAgentStateChangedEvent comEventSpecific(pEvent);
-            emit sigUpdateAgentStateChanged(comEventSpecific.GetAgent(), comEventSpecific.GetState());
-            break;
-        }
-        case KVBoxEventType_OnUpdateAgentSettingsChanged:
-        {
-            CUpdateAgentSettingsChangedEvent comEventSpecific(pEvent);
-            emit sigUpdateAgentSettingsChanged(comEventSpecific.GetAgent(), comEventSpecific.GetAttributeHint());
             break;
         }
         default: break;

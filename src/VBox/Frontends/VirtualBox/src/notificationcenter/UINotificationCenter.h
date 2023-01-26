@@ -118,9 +118,6 @@ private slots:
     /** Handles order changes. */
     void sltHandleOrderChange();
 
-    /** @todo EXAMPLE -- REMOVE THIS */
-    void sltUpdateAgentAvailable(CUpdateAgent comAgent, QString, KUpdateChannel, KUpdateSeverity, QString, QString, QString);
-
     /** Issues request to make open button @a fToggled. */
     void sltHandleOpenButtonToggled(bool fToggled);
     /** Toggles notification-progresses keep approach. */
