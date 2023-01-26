@@ -51,7 +51,7 @@ else
  PROGRAMS += VBoxSDL
 endif
 VBoxSDL_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBoxMainClientDll,VBoxMainClientExe)
-VBoxSDL_SDKS       = LIBSDL
+VBoxSDL_SDKS       = LIBSDL2
 VBoxSDL_SOURCES    = \
 	VBoxSDL.cpp \
 	Framebuffer.cpp \
@@ -81,7 +81,7 @@ VBoxSDL_INCS += \
 endif
 ifn1of ($(KBUILD_TARGET), solaris) # Probably wrong with SDL2
 VBoxSDL_LIBS = \
-	$(LIB_SDK_LIBSDL_SDLMAIN)
+	$(LIB_SDK_LIBSDL2_SDLMAIN)
 endif
 ifeq ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 VBoxSDL_LIBS += \
@@ -121,7 +121,7 @@ endif
 if 0
 PROGRAMS += tstSDL
 tstSDL_TEMPLATE = VBoxR3TstExe
-tstSDL_SDKS = LIBSDL
+tstSDL_SDKS = LIBSDL2
 tstSDL_INST = $(INST_TESTCASE)
 tstSDL_SOURCES = \
 	VBoxSDLTest.cpp
@@ -138,7 +138,7 @@ tstSDL_LIBS = \
 	$(LIB_RUNTIME)
 ifn1of ($(KBUILD_TARGET), solaris)
 tstSDL_LIBS += \
-	$(LIB_SDK_LIBSDL_SDLMAIN)
+	$(LIB_SDK_LIBSDL2_SDLMAIN)
 endif
 
 ifdef VBOX_OPENGL
