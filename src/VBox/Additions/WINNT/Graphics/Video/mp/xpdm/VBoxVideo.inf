@@ -59,7 +59,7 @@ VBoxVideo.sys,,,0x100
 [VBoxVideo.Display]
 VBoxDisp.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-[VBoxVideo.Services]
+[VBoxVideo_Install.Services]
 AddService=VBoxVideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Inst
 
 [vboxvideo_Service_Inst]

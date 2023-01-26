@@ -90,7 +90,7 @@ HKR,, VgaCompatible, %REG_DWORD%, 0
 [VBoxWDDM_RegisterDlls]
 
 
-[VBoxWDDM.Services]
+[VBoxWDDM_Install.Services]
 AddService=VBoxWddm, 0x00000002, VBoxWDDM_Service_Inst, VBoxWDDM_EventLog_Inst
 
 [VBoxWDDM_Service_Inst]
