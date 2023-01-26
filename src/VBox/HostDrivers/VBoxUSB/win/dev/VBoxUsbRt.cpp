@@ -1436,7 +1436,9 @@ static NTSTATUS vboxUsbRtUrbSend(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp, PUSBSUP_URB
 
     if (pMdlBuf)
     {
-        MmUnlockPages(pMdlBuf);
+        if (pMdlBuf->MdlFlags & MDL_PAGES_LOCKED)
+            MmUnlockPages(pMdlBuf);
+
         IoFreeMdl(pMdlBuf);
     }
 
