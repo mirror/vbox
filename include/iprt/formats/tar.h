@@ -34,8 +34,8 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef IPRT_INCLUDED_SRC_common_zip_tar_h
-#define IPRT_INCLUDED_SRC_common_zip_tar_h
+#ifndef IPRT_INCLUDED_formats_tar_h
+#define IPRT_INCLUDED_formats_tar_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -294,106 +294,5 @@ AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, gname,     RTZIPTARHDRG
 AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, devmajor,  RTZIPTARHDRGNU, devmajor);
 AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, devminor,  RTZIPTARHDRGNU, devminor);
 
-
-
-/**
- * Tar header union.
- */
-typedef union RTZIPTARHDR
-{
-    /** Byte view. */
-    char                ab[512];
-    /** The standard header. */
-    RTZIPTARHDRANCIENT      Ancient;
-    /** The standard header. */
-    RTZIPTARHDRPOSIX        Posix;
-    /** The GNU header. */
-    RTZIPTARHDRGNU          Gnu;
-    /** The bits common to both GNU and the standard header. */
-    RTZIPTARHDRCOMMON       Common;
-    /** GNU sparse header. */
-    RTZIPTARHDRGNUSPARSE    GnuSparse;
-} RTZIPTARHDR;
-AssertCompileSize(RTZIPTARHDR, 512);
-/** Pointer to a tar file header. */
-typedef RTZIPTARHDR *PRTZIPTARHDR;
-/** Pointer to a const tar file header. */
-typedef RTZIPTARHDR const *PCRTZIPTARHDR;
-
-
-/**
- * Tar header type.
- */
-typedef enum RTZIPTARTYPE
-{
-    /** Invalid type value. */
-    RTZIPTARTYPE_INVALID = 0,
-    /** Posix header.  */
-    RTZIPTARTYPE_POSIX,
-    /** The old GNU header, has layout conflicting with posix. */
-    RTZIPTARTYPE_GNU,
-    /** Ancient tar header which does not use anything beyond the magic. */
-    RTZIPTARTYPE_ANCIENT,
-    /** End of the valid type values (this is not valid).  */
-    RTZIPTARTYPE_END,
-    /** The usual type blow up.  */
-    RTZIPTARTYPE_32BIT_HACK = 0x7fffffff
-} RTZIPTARTYPE;
-typedef RTZIPTARTYPE *PRTZIPTARTYPE;
-
-
-/**
- * Calculates the TAR header checksums and detects if it's all zeros.
- *
- * @returns true if all zeros, false if not.
- * @param   pHdr            The header to checksum.
- * @param   pi32Unsigned    Where to store the checksum calculated using
- *                          unsigned chars.   This is the one POSIX specifies.
- * @param   pi32Signed      Where to store the checksum calculated using
- *                          signed chars.
- *
- * @remarks The reason why we calculate the checksum as both signed and unsigned
- *          has to do with various the char C type being signed on some hosts
- *          and unsigned on others.
- */
-DECLINLINE(bool) rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_t *pi32Signed)
-{
-    int32_t i32Unsigned = 0;
-    int32_t i32Signed   = 0;
-
-    /*
-     * Sum up the entire header.
-     */
-    const char *pch    = (const char *)pHdr;
-    const char *pchEnd = pch + sizeof(*pHdr);
-    do
-    {
-        i32Unsigned += *(unsigned char *)pch;
-        i32Signed   += *(signed   char *)pch;
-    } while (++pch != pchEnd);
-
-    /*
-     * Check if it's all zeros and replace the chksum field with spaces.
-     */
-    bool const fZeroHdr = i32Unsigned == 0;
-
-    pch    = pHdr->Common.chksum;
-    pchEnd = pch + sizeof(pHdr->Common.chksum);
-    do
-    {
-        i32Unsigned -= *(unsigned char *)pch;
-        i32Signed   -= *(signed   char *)pch;
-    } while (++pch != pchEnd);
-
-    i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Common.chksum);
-    i32Signed   += (signed   char)' ' * sizeof(pHdr->Common.chksum);
-
-    *pi32Unsigned = i32Unsigned;
-    if (pi32Signed)
-        *pi32Signed = i32Signed;
-    return fZeroHdr;
-}
-
-
-#endif /* !IPRT_INCLUDED_SRC_common_zip_tar_h */
+#endif /* !IPRT_INCLUDED_formats_tar_h */
 

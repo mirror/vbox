@@ -40,7 +40,7 @@
 # pragma once
 #endif
 
-#include <iprt/formats/tar.h>
+#include "tar.h"
 
 
 /**

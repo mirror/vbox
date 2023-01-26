@@ -52,8 +52,6 @@
 #include <iprt/vfslowlevel.h>
 #include <iprt/zero.h>
 
-#include <iprt/formats/tar.h>
-
 #include "tarvfsreader.h"
 
 
