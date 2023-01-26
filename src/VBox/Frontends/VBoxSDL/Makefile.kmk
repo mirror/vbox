@@ -75,16 +75,15 @@ VBoxSDL_INCS = \
 	$(VBoxSDL_0_OUTDIR) \
 	$(VBOX_GRAPHICS_INCS) \
 	../Common
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 VBoxSDL_INCS += \
 	$(VBOX_XCURSOR_INCS)
 endif
-ifneq ($(filter-out solaris,$(KBUILD_TARGET)),)
-
+ifn1of ($(KBUILD_TARGET), solaris) # Probably wrong with SDL2
 VBoxSDL_LIBS = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
+ifeq ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 VBoxSDL_LIBS += \
 	$(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL) \
 	$(VBOX_XCURSOR_LIBS) \
@@ -137,7 +136,7 @@ endif
 
 tstSDL_LIBS = \
 	$(LIB_RUNTIME)
-ifneq ($(filter-out solaris,$(KBUILD_TARGET)),)
+ifn1of ($(KBUILD_TARGET), solaris)
 tstSDL_LIBS += \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
@@ -145,7 +144,7 @@ endif
 ifdef VBOX_OPENGL
 tstSDL_LIBS.linux += GL
 endif
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 tstSDL_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
 endif
