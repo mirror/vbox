@@ -36,43 +36,43 @@ DriverPackageType=PlugAndPlay
 
 [DestinationDirs]
 DefaultDestDir=11
-VBoxVideo.Miniport = 12 ; drivers
-VBoxVideo.Display  = 11 ; system32
-;amd64 VBoxVideo.Display_wow64  = 10,SysWow64 ; SysWow64
+VBoxWDDM.Miniport = 12 ; drivers
+VBoxWDDM.Display  = 11 ; system32
+;amd64 VBoxWDDM.Display_wow64  = 10,SysWow64 ; SysWow64
 
 [Manufacturer]
 %ORACLE%=VBoxWDDM@COMMA-NT-ARCH@.6.0
 
 [VBoxWDDM@DOT-NT-ARCH@.6.0]
-%VBoxVideo.SvcDesc% = VBoxVideo_Install, PCI\VEN_80EE&DEV_BEEF
+%VBoxWDDM.SvcDesc% = VBoxWDDM_Install, PCI\VEN_80EE&DEV_BEEF
 
-[VBoxVideo_Install]
+[VBoxWDDM_Install]
 FeatureScore = F8
 Include = msdv.inf
-;x86   CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
-;amd64 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display, VBoxVideo.Display_wow64
-AddReg = VBoxVideo_SoftwareDeviceSettings
-;todo: clear XPDM driver settings: DelReg = VBoxVideo_RemoveDeviceSettings
-RegisterDlls = VBoxVideo_RegisterDlls
+;x86   CopyFiles = VBoxWDDM.Miniport, VBoxWDDM.Display
+;amd64 CopyFiles = VBoxWDDM.Miniport, VBoxWDDM.Display, VBoxWDDM.Display_wow64
+AddReg = VBoxWDDM_SoftwareDeviceSettings
+;todo: clear XPDM driver settings: DelReg = VBoxWDDM_RemoveDeviceSettings
+RegisterDlls = VBoxWDDM_RegisterDlls
 
-[VBoxVideo.Miniport]
+[VBoxWDDM.Miniport]
 VBoxWddm.sys
 
-[VBoxVideo.Display]
+[VBoxWDDM.Display]
 ;dispd3d VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;dispdx VBoxDX.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxNine.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxSVGA.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxGL.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
-;amd64 [VBoxVideo.Display_wow64]
+;amd64 [VBoxWDDM.Display_wow64]
 ;amd64 ;dispd3d VBoxDispD3D-x86.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;dispdx VBoxDX-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxNine-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxSVGA-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxGL-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
-[VBoxVideo_SoftwareDeviceSettings]
+[VBoxWDDM_SoftwareDeviceSettings]
 ;dispd3d        HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
 ;dispd3d        HKR,, UserModeDriverName,      %REG_MULTI_SZ%, VBoxDispD3D.dll
 ;amd64 ;dispd3d HKR,, UserModeDriverNameWow,   %REG_MULTI_SZ%, VBoxDispD3D-x86.dll
@@ -87,28 +87,28 @@ VBoxWddm.sys
 ;amd64 ;mesa3d  HKR,, OpenGLVersionWoW,    %REG_DWORD%,    0x00000001
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
-[VBoxVideo_RegisterDlls]
+[VBoxWDDM_RegisterDlls]
 
 
-[VBoxVideo.Services]
-AddService=VBoxWddm, 0x00000002, VBoxVideo_Service_Inst, VBoxVideo_EventLog_Inst
+[VBoxWDDM.Services]
+AddService=VBoxWddm, 0x00000002, VBoxWDDM_Service_Inst, VBoxWDDM_EventLog_Inst
 
-[VBoxVideo_Service_Inst]
+[VBoxWDDM_Service_Inst]
 ServiceType=1                   ; SERVICE_KERNEL_DRIVER
 StartType=3                     ; SERVICE_DEMAND_START
 ErrorControl=0                  ; SERVICE_ERROR_IGNORE
 LoadOrderGroup=Video
 ServiceBinary=%12%\VBoxWddm.sys
 
-[VBoxVideo_EventLog_Inst]
-AddReg = VBoxVideo_EventLog_AddReg
+[VBoxWDDM_EventLog_Inst]
+AddReg = VBoxWDDM_EventLog_AddReg
 
-[VBoxVideo_EventLog_AddReg]
+[VBoxWDDM_EventLog_AddReg]
 HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\VBoxWddm.sys"
 HKR,,TypesSupported,0x00010001,7
 
 [SourceDisksNames]
-1 = %VBoxVideo.Disk%,,,""
+1 = %VBoxWDDM.Disk%,,,""
 
 [SourceDisksFiles]
 VBoxWddm.sys = 1
@@ -131,5 +131,5 @@ REG_BINARY = 0x00000001
 REG_DWORD = 0x00010001
 
 ORACLE = "Oracle Corporation"
-VBoxVideo.Disk = "VirtualBox Video Driver Disk"
-VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter (WDDM)"
+VBoxWDDM.Disk = "VirtualBox Video Driver Disk"
+VBoxWDDM.SvcDesc = "VirtualBox Graphics Adapter (WDDM)"
