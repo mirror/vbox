@@ -265,7 +265,15 @@ PCPDMDRVREG AudioTestFindBackendOpt(const char *pszBackend)
         if (   strcmp(pszBackend, g_aBackends[i].pszName) == 0
             || strcmp(pszBackend, g_aBackends[i].pDrvReg->szName) == 0)
             return g_aBackends[i].pDrvReg;
-    RTMsgError("Unknown backend: '%s'", pszBackend);
+    RTMsgError("Unknown backend: '%s'\n\n");
+    RTPrintf("Supported backend values are: ");
+    for (uintptr_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
+    {
+        if (i > 0)
+            RTPrintf(", ");
+        RTPrintf(g_aBackends[i].pszName);
+    }
+    RTPrintf("\n");
     return NULL;
 }
 
@@ -726,7 +734,10 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                        "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
         case VKAT_TEST_OPT_HOST_ATS_PORT:       return "Port of host ATS to connect to\n"
                                                        "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
-        case VKAT_TEST_OPT_MODE:                return "Test mode to use when running the tests";
+        case VKAT_TEST_OPT_MODE:                return "Test mode to use when running the tests\n"
+                                                        "    Available modes:\n"
+                                                        "        guest: Run as a guest-side ATS\n"
+                                                        "        host:  Run as a host-side ATS";
         case VKAT_TEST_OPT_NO_AUDIO_OK:         return "Enables running without any found audio hardware (e.g. servers)";
         case VKAT_TEST_OPT_NO_VERIFY:           return "Skips the verification step";
         case VKAT_TEST_OPT_OUTDIR:              return "Output directory to use";
