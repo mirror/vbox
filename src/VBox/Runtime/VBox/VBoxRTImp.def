@@ -1902,14 +1902,6 @@ EXPORTS
     RTSystemQueryDmiString
     RTSystemQueryOSInfo
     RTSystemQueryTotalRam
-    RTTarClose
-    RTTarFileClose
-    RTTarFileGetSize
-    RTTarFileOpen
-    RTTarFileReadAt
-    RTTarFileSetSize
-    RTTarFileWriteAt
-    RTTarOpen
     RTTcpClientClose
     RTTcpClientCloseEx
     RTTcpClientConnect
