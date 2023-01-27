@@ -28,7 +28,7 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_PATH_LIBCURL = $(PATH_ROOT)/src/libs/curl-7.83.1
+VBOX_PATH_LIBCURL = $(PATH_ROOT)/src/libs/curl-7.87.0
 
 LIBRARIES += VBox-libcurl
 VBox-libcurl_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
@@ -67,25 +67,26 @@ VBox-libcurl_SOURCES        = \
 	lib/connect.c \
 	lib/content_encoding.c \
 	lib/cookie.c \
+	lib/cfilters.c \
 	lib/curl_addrinfo.c \
-	lib/curl_ctype.c \
 	lib/curl_get_line.c \
 	lib/curl_fnmatch.c \
 	lib/curl_memrchr.c \
 	lib/curl_sasl.c \
 	lib/curl_range.c \
 	lib/doh.c \
-	lib/dotdot.c \
 	lib/dynbuf.c \
 	lib/easy.c \
 	lib/escape.c \
 	lib/fileinfo.c \
+	lib/fopen.c \
 	lib/formdata.c \
 	lib/ftp.c \
 	lib/ftplistparser.c \
 	lib/getenv.c \
 	lib/getinfo.c \
 	lib/hash.c \
+	lib/headers.c \
 	lib/hmac.c \
 	lib/hostip.c \
 	lib/hostip4.c \
@@ -97,6 +98,7 @@ VBox-libcurl_SOURCES        = \
 	lib/http_digest.c \
 	lib/http_proxy.c \
 	lib/if2ip.c \
+	lib/idn.c \
 	lib/inet_ntop.c \
 	lib/inet_pton.c \
 	lib/llist.c \
@@ -106,6 +108,7 @@ VBox-libcurl_SOURCES        = \
 	lib/multi.c \
 	lib/netrc.c \
 	lib/nonblock.c \
+	lib/noproxy.c \
 	lib/parsedate.c \
 	lib/pingpong.c \
 	lib/progress.c \
