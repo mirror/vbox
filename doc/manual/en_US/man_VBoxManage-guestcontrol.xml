@@ -1295,7 +1295,7 @@ $ VBoxManage --nologo guestcontrol "My Win VM" run \
 <screen>
 $ VBoxManage --nologo guestcontrol "My Win VM" start \
 --exe "c:\\windows\\system32\\ipconfig.exe" \
---username user1 --passwordfile pw.txt --wait-stdout
+--username user1 --passwordfile pw.txt
 </screen>
   </refsect1>
 </refentry>
