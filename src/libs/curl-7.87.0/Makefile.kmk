@@ -53,6 +53,7 @@ VBox-libcurl_DEFS           = \
 VBox-libcurl_CFLAGS.win    += -wd4826 # formdata.c(390) : warning C4826: Conversion from 'char *' to 'curl_off_t' is sign-extended. This may cause unexpected runtime behavior.
 VBox-libcurl_CFLAGS.win    += -wd4310 # warnless.c(189) : warning C4310: cast truncates constant value
 VBox-libcurl_CFLAGS.win    += -wd4090 # openssl/lhash.h(198) : warning C4090: 'function' : different 'const' qualifiers
+VBox-libcurl_CFLAGS.win    += -wd4060 # curl-7.87.0/lib/connect.c(1588): warning C4060: switch statement contains no 'case' or 'default' labels
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  VBox-libcurl_CFLAGS.win   += -wd4774 # mprintf.c(949): warning C4774: 'sprintf' : format string expected in argument 2 is not a string literal
 endif
