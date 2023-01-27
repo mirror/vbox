@@ -936,6 +936,7 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
 {
     RT_NOREF(pStreamCC);
     uint32_t fSrBcis = 0;
+    uint32_t cbTotal = 0; /* Counts the total length (in bytes) of the buffer descriptor list (BDL). */
 
     /*
      * Loop for skipping zero length entries.
@@ -953,6 +954,8 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
         pStream->Regs.bd.addr    = RT_H2LE_U32(Bdle.addr) & ~3;
         pStream->Regs.bd.ctl_len = RT_H2LE_U32(Bdle.ctl_len);
         pStream->Regs.picb       = pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK;
+
+        cbTotal += pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK;
 
         LogFlowFunc(("BDLE%02u: %#RX32 L %#x / LB %#x, ctl=%#06x%s%s\n",
                      pStream->Regs.civ, pStream->Regs.bd.addr, pStream->Regs.bd.ctl_len & AC97_BD_LEN_MASK,
@@ -987,9 +990,15 @@ static uint32_t ichac97R3StreamFetchNextBdle(PPDMDEVINS pDevIns, PAC97STREAM pSt
     ASSERT_GUEST_MSG(!(pStream->Regs.picb & 1),
                      ("Odd lengths buffers are not allowed: %#x (%d) samples\n",  pStream->Regs.picb, pStream->Regs.picb));
 
-    /* 1.2.4.2 PCM Buffer Restrictions (in 302349-003) - #2  */
-    ASSERT_GUEST_MSG(pStream->Regs.picb > 0, ("Zero length buffers not allowed to terminate list (LVI=%u CIV=%u)\n",
-                                              pStream->Regs.lvi, pStream->Regs.civ));
+    /* 1.2.4.2 PCM Buffer Restrictions (in 302349-003) - #2
+     *
+     * Note: Some guests (like older NetBSDs) first seem to set up the BDL a tad later so that cbTotal is 0.
+     *       This means that the BDL is not set up at all.
+     *       In such cases pStream->Regs.picb also will be 0 here and (debug) asserts here, which is annoying for debug builds.
+     *       So first check if we have *any* BDLE set up before checking if PICB is > 0.
+     */
+    ASSERT_GUEST_MSG(cbTotal == 0 || pStream->Regs.picb > 0, ("Zero length buffers not allowed to terminate list (LVI=%u CIV=%u, cbTotal=%zu)\n",
+                                                              pStream->Regs.lvi, pStream->Regs.civ, cbTotal));
 
     return fSrBcis;
 }
