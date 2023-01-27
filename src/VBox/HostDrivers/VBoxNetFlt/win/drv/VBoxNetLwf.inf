@@ -39,22 +39,16 @@ Signature   = "$Windows NT$"
 ;cat  CatalogFile = VBoxNetLwf.cat
 Class       = NetService
 ClassGUID   = {4D36E974-E325-11CE-BFC1-08002BE10318}
-Provider    = %Provider%
+Provider    = %ORACLE%
 ;edit-DriverVer=10/23/2014,1.0.1.0
 
 
 [Manufacturer]
-%Provider% = VBox,NTx86,NTamd64
+%ORACLE% = VBoxNetLwf@COMMA-NT-ARCH@
 
 [ControlFlags]
 
-[VBox]
-%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, oracle_VBoxNetLwf
-
-[VBox.NTx86]
-%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, oracle_VBoxNetLwf
-
-[VBox.NTamd64]
+[VBoxNetLwf@DOT-NT-ARCH@]
 %VBoxNetLwf_Desc% = VBoxNetLwf.ndi, oracle_VBoxNetLwf
 
 [VBoxNetLwf.ndi]
@@ -119,7 +113,7 @@ HKR, Ndi\Interfaces, FilterMediaTypes,    , ethernet
 ;HKR, Parameters, Param1, 0, 4
 
 [Strings]
-Provider = "Oracle Corporation"
+ORACLE = "Oracle Corporation"
 DiskDescription = "VirtualBox NDIS6 Bridged Networking Driver"
 VBoxNetLwf_Desc = "VirtualBox NDIS6 Bridged Networking Driver"
 VBoxNetLwf_HELP = "VirtualBox NDIS6 Bridged Networking Driver"

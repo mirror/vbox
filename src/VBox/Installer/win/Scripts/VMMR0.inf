@@ -42,18 +42,20 @@ VBoxDDR0.r0=1
 
 [DestinationDirs]
 DefaultDestDir = 12
-VBoxVMMInstall.Files = 12
+VBoxVMM_Install.Files = 12
 
 [Manufacturer]
 %ORACLE%=VBoxVMM@COMMA-NT-ARCH@
 
 [VBoxVMM@DOT-NT-ARCH@]
-%VBoxVMM.DrvDesc% = VBoxVMMInstall, root\VBoxVMM
+%VBoxVMM.DrvDesc% = VBoxVMM_Install, root\VBoxVMM
 
-[VBoxVMMInstall]
-CopyFiles = VBoxVMMInstall.Files
+[VBoxVMM_Install]
+CopyFiles = VBoxVMM_CopyFiles
 
-[VBoxVMMInstall.Files]
+[VBoxVMM_Install.Services]
+
+[VBoxVMM_CopyFiles]
 VMMR0.r0,,,2
 VBoxDDR0.r0,,,2
 

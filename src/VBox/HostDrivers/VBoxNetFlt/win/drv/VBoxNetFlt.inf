@@ -39,24 +39,18 @@ Signature  = "$Windows NT$"
 ;cat   CatalogFile = VBoxNetFlt.cat
 Class      = NetService
 ClassGUID  = {4D36E974-E325-11CE-BFC1-08002BE10318}
-Provider   = %Provider%
+Provider   = %ORACLE%
 ;DriverPackageType=Network
 ;DriverPackageDisplayName=%VBoxNetFlt_Desc%
 ;edit-DriverVer=08/13/2008,1.1.0.1
 
 
 [Manufacturer]
-%Provider% = VBox,NTx86,NTamd64
+%ORACLE% = VBoxNetFlt@COMMA-NT-ARCH@
 
 [ControlFlags]
 
-[VBox]
-%VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
-
-[VBox.NTx86]
-%VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
-
-[VBox.NTamd64]
+[VBoxNetFlt@DOT-NT-ARCH@]
 %VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
 
 [VBoxNetFlt.ndi]
@@ -116,7 +110,7 @@ HKR, Ndi\Interfaces, FilterMediaTypes,    , "ethernet, nolower"
 HKR, Parameters, Param1, 0, 4
 
 [Strings]
-Provider = "Oracle Corporation"
+ORACLE = "Oracle Corporation"
 DiskDescription = "VirtualBox Bridged Networking Driver"
 VBoxNetFlt_Desc = "VirtualBox Bridged Networking Driver"
 VBoxNetFlt_HELP = "VirtualBox Bridged Networking Driver"

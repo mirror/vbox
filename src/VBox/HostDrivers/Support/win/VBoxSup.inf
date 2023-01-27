@@ -58,20 +58,20 @@ DefFiles=VBoxSup_CopyFiles
 [DefaultUninstall@DOT-NT-ARCH@.Services]
 DelService=VBoxSup,0x00000200
 
-;; This doesn't actually work either (see VBoxUSBMon), though it triggers in the
+;; This does not actually work either (see VBoxUSBMon), though it triggers in the
 ;; installer rather at manual installation on my test system (could be polluted & confused).
 ;; This may apparently also causes unloading trouble due to 'root\VBoxSup' or something related to that.
 ;; [Manufacturer]
-;; %ORACLE%=Oracle@COMMA-NT-ARCH@
+;; %ORACLE%=VBoxSup@COMMA-NT-ARCH@
 ;;
 ;; ; Models section (referenced by [Manufacturer]).
-;; [Oracle@DOT-NT-ARCH@]
-;; %VBoxSup.DRVDESC%=VBoxSupInstall,root\VBoxSup
+;; [VBoxSup@DOT-NT-ARCH@]
+;; %VBoxSup.DRVDESC%=VBoxSup_Install,root\VBoxSup
 ;;
-;; [VBoxSupInstall@DOT-NT-ARCH@]
+;; [VBoxSup_Install@DOT-NT-ARCH@]
 ;; CopyFiles=VBoxSup_CopyFiles
 ;;
-;; [VBoxSupInstall@DOT-NT-ARCH@.Services]
+;; [VBoxSup_Install@DOT-NT-ARCH@.Services]
 ;; AddService=VBoxSup,0x00000002,VBoxSup_Service
 
 [SourceDisksFiles]

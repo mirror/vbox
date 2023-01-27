@@ -49,11 +49,9 @@ provider=%ORACLE%
 VBoxUSB.sys = 1
 
 [Manufacturer]
-;x86   %MfgName%=ORACLE
-;amd64 %MfgName%=ORACLE, NTamd64
+%ORACLE%=VBoxUSB@COMMA-NT-ARCH@
 
-;x86   [ORACLE]
-;amd64 [ORACLE.NTamd64]
+[VBoxUSB@DOT-NT-ARCH@]
 %USB\VID_80EE&PID_CAFE.DeviceDesc%=VBoxUSB.Dev, USB\VID_80EE&PID_CAFE
 
 [DestinationDirs]
@@ -85,7 +83,6 @@ VBoxUSB.sys
 
 [Strings]
 ORACLE="Oracle Corporation"
-MfgName="Oracle Corporation"
 Disk_Description="VBoxUSB Installation Disk"
 USB\VID_80EE&PID_CAFE.DeviceDesc="VirtualBox USB"
 VBoxUSB.SvcDesc="VirtualBox USB"

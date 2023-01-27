@@ -43,20 +43,20 @@ VBoxNvmeR0.r0=1
 
 [DestinationDirs]
 DefaultDestDir = 12
-VBoxExtPackPuelInstall.Files = 12
+VBoxExtPackPuel_Install.Files = 12
 
 [Manufacturer]
-;x86 %ORACLE%=VBoxExtPackPuel
-;amd64 %ORACLE%=VBoxExtPackPuel, NTamd64
+%ORACLE%=VBoxExtPackPuel@COMMA-NT-ARCH@
 
-;x86 [VBoxExtPackPuel]
-;amd64 [VBoxExtPackPuel.NTamd64]
-%VBoxExtPackPuel.DrvDesc% = VBoxExtPackPuelInstall, root\VBoxExtPackPuel
+[VBoxExtPackPuel@DOT-NT-ARCH@]
+%VBoxExtPackPuel.DrvDesc% = VBoxExtPackPuel_Install, root\VBoxExtPackPuel
 
-[VBoxExtPackPuelInstall]
-CopyFiles = VBoxExtPackPuelInstall.Files
+[VBoxExtPackPuel_Install]
+CopyFiles = VBoxExtPackPuel_CopyFiles
 
-[VBoxExtPackPuelInstall.Files]
+[VBoxExtPackPuel_Install.Services]
+
+[VBoxExtPackPuel_CopyFiles]
 ;VBoxEhciR0.r0,,,2
 VBoxNvmeR0.r0,,,2
 ;VBoxPciRawR0.r0,,,2

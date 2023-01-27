@@ -39,7 +39,7 @@ signature  = "$Windows NT$"
 ;cat   CatalogFile = VBoxNetFlt.cat
 Class      = Net
 ClassGUID  = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider   = %Provider%
+Provider   = %ORACLE%
 ;DriverPackageType=NdisImMiniport
 ;DriverPackageDisplayName=%VBoxNetFltMP_Desc%
 ;edit-DriverVer=08/13/2008,1.1.0.1
@@ -52,15 +52,9 @@ DefaultDestDir=12
 ; No files to copy
 
 [Manufacturer]
-%Provider% = VBox,NTx86,NTamd64
+%ORACLE% = VBoxNetFltMP@COMMA-NT-ARCH@
 
-[VBox]
-%VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
-
-[VBox.NTx86]
-%VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
-
-[VBox.NTamd64]
+[VBoxNetFltMP@DOT-NT-ARCH@]
 %VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
 
 [VBoxNetFltMP.ndi]
@@ -79,7 +73,7 @@ ServiceBinary  = %12%\VBoxNetFlt.sys
 [VBoxNetFltMP.AddService.AddReg]
 
 [Strings]
-Provider = "Oracle Corporation"
+ORACLE = "Oracle Corporation"
 VBoxNetFltMP_Desc = "VirtualBox Bridged Networking Driver Miniport"
 
 [SourceDisksNames]

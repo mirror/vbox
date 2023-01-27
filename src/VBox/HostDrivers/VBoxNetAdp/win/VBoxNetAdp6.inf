@@ -41,22 +41,16 @@ Signature   = "$Windows NT$"
 ;cat  CatalogFile = VBoxNetAdp6.cat
 Class       = Net
 ClassGUID   = {4D36E972-E325-11CE-BFC1-08002BE10318}
-Provider    = %Provider%
+Provider    = %ORACLE%
 ;edit-DriverVer=10/23/2014,1.0.1.0
 
 
 [Manufacturer]
-%Provider% = VBox,NTx86,NTamd64
+%ORACLE% = VBoxNetAdp6@COMMA-NT-ARCH@
 
 [ControlFlags]
 
-[VBox]
-%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp
-
-[VBox.NTx86]
-%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp
-
-[VBox.NTamd64]
+[VBoxNetAdp6@DOT-NT-ARCH@]
 %VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp
 
 [VBoxNetAdp6.ndi]
@@ -100,7 +94,7 @@ HKR, Ndi\Interfaces, UpperRange, 0, ndis5
 HKR, Ndi\Interfaces, LowerRange, 0, ethernet
 
 [Strings]
-Provider = "Oracle Corporation"
+ORACLE = "Oracle Corporation"
 DiskDescription = "VirtualBox NDIS 6.0 Miniport Driver"
 VBoxNetAdp6_Desc = "VirtualBox Host-Only Ethernet Adapter"
 VBoxNetAdp6_HELP = "VirtualBox NDIS 6.0 Miniport Driver"

@@ -39,7 +39,7 @@ signature  = "$Windows NT$"
 ;cat   CatalogFile = VBoxNetAdp.cat
 Class      = Net
 ClassGUID  = {4d36e972-e325-11ce-bfc1-08002be10318}
-Provider   = %Provider%
+Provider   = %ORACLE%
 ; DriverPackageType=Network
 ; DriverPackageDisplayName=%VBoxNetAdp_Desc%
 ;edit-DriverVer=08/13/2008,1.1.0.1
@@ -58,18 +58,9 @@ DefaultDestDir = 12
 VBoxNetAdp.Files.Sys   = 12   ; %windir%\System32\drivers
 
 [Manufacturer]
-%Provider% = VBox,NTx86,NTia64,NTamd64
+%ORACLE% = VBoxNetAdp@COMMA-NT-ARCH@
 
-[VBox]
-%VBoxNetAdp_Desc% = VBoxNetAdp.ndi, sun_VBoxNetAdp
-
-[VBox.NTx86]
-%VBoxNetAdp_Desc% = VBoxNetAdp.ndi, sun_VBoxNetAdp
-
-[VBox.NTia64]
-%VBoxNetAdp_Desc% = VBoxNetAdp.ndi, sun_VBoxNetAdp
-
-[VBox.NTamd64]
+[VBoxNetAdp@DOT-NT-ARCH@]
 %VBoxNetAdp_Desc% = VBoxNetAdp.ndi, sun_VBoxNetAdp
 
 [VBoxNetAdp.ndi]
@@ -98,7 +89,7 @@ HKR, Ndi\Interfaces,              UpperRange,          0, "ndis5"
 HKR, Ndi\Interfaces,              LowerRange,          0, "ethernet"
 
 [Strings]
-Provider = "Oracle Corporation"
+ORACLE = "Oracle Corporation"
 VBoxNetAdp_Desc = "VirtualBox Host-Only Ethernet Adapter"
 DiskDescription = "VirtualBox Host-Only Ethernet Adapter"
 

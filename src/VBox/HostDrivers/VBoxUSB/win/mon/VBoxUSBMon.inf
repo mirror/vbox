@@ -54,16 +54,16 @@ AddService=VBoxUSBMon,0x00000002,VBoxUSBMon_Service,VBoxUSBMon_AddEventLog
 
 ;; Cannot get this to work (same works fine for VBoxDrv):
 ;; [Manufacturer]
-;; %ORACLE%=Oracle@COMMA-NT-ARCH@
+;; %ORACLE%=VBoxUSBMon@COMMA-NT-ARCH@
 ;;
 ;; ; Models section (referenced by [Manufacturer]).
-;; [Oracle@DOT-NT-ARCH@]
-;; %VBoxUSBMon.DRVDESC%=VBoxUSBMonInstall,root\VBoxUSBMon
+;; [VBoxUSBMon@DOT-NT-ARCH@]
+;; %VBoxUSBMon.DRVDESC%=VBoxUSBMon_Install,root\VBoxUSBMon
 ;;
-;; [VBoxUSBMonInstall@DOT-NT-ARCH@]
+;; [VBoxUSBMon_Install@DOT-NT-ARCH@]
 ;; CopyFiles=VBoxUSBMon_CopyFiles
 ;;
-;; [VBoxUSBMonInstall@DOT-NT-ARCH@.Services]
+;; [VBoxUSBMon_Install@DOT-NT-ARCH@.Services]
 ;; AddService=VBoxUSBMon,0x00000002,VBoxUSBMon_Service,VBoxUSBMon_AddEventLog
 
 [SourceDisksFiles]
