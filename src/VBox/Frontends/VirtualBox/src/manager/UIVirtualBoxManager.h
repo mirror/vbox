@@ -397,7 +397,7 @@ private:
         /** Opens new machine dialog specifying initial name with @a strFileName. */
         void openNewMachineWizard(const QString &strISOFilePath = QString());
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
-        static void launchMachine(CMachine &comMachine, UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default);
+        static void launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode = UILaunchMode_Default);
         /** Launches certain @a comMachine. */
         static void launchMachine(CCloudMachine &comMachine);
 
@@ -405,7 +405,7 @@ private:
         void startUnattendedInstall(CUnattended &comUnattendedInstaller, bool fStartHeadless, const QString &strMachineId);
 
         /** Launches or shows virtual machines represented by passed @a items in corresponding @a enmLaunchMode (for launch). */
-        void performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode);
+        void performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UILaunchMode enmLaunchMode);
 
 #ifndef VBOX_WS_WIN
         /** Parses serialized @a strArguments string according to shell rules. */

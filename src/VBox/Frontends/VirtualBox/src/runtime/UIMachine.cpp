@@ -90,7 +90,7 @@ bool UIMachine::startMachine(const QUuid &uID)
         AssertMsgReturn(!machine.isNull(), ("UICommon::managedVMUuid() should have filter that case before!\n"), false);
 
         /* Try to launch corresponding machine: */
-        if (!UICommon::launchMachine(machine, UICommon::LaunchMode_Separate))
+        if (!UICommon::launchMachine(machine, UILaunchMode_Separate))
             return false;
     }
 

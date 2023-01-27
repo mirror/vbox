@@ -117,6 +117,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElem
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIColorThemeType>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UILaunchMode>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIToolType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIVisualStateType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<DetailsElementType>();
@@ -241,6 +242,7 @@ template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeDes
 template<> SHARED_LIBRARY_STUFF QString toString(const UIColorThemeType &colorThemeType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIColorThemeType &colorThemeType);
 template<> SHARED_LIBRARY_STUFF UIColorThemeType fromInternalString<UIColorThemeType>(const QString &strColorThemeType);
+template<> SHARED_LIBRARY_STUFF UILaunchMode fromInternalString<UILaunchMode>(const QString &strDefaultFrontendType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIToolType &enmToolType);
 template<> SHARED_LIBRARY_STUFF UIToolType fromInternalString<UIToolType>(const QString &strToolType);
 template<> SHARED_LIBRARY_STUFF QString toString(const UIVisualStateType &visualStateType);

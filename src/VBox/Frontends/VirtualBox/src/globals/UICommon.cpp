@@ -1264,7 +1264,7 @@ bool UICommon::switchToMachine(CMachine &comMachine)
 }
 
 /* static */
-bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* = LaunchMode_Default */)
+bool UICommon::launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode /* = UILaunchMode_Default */)
 {
     /* Switch to machine window(s) if possible: */
     if (   comMachine.GetSessionState() == KSessionState_Locked /* precondition for CanShowConsoleWindow() */
@@ -1290,7 +1290,7 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     }
 
     /* Not for separate UI (which can connect to machine in any state): */
-    if (enmLaunchMode != LaunchMode_Separate)
+    if (enmLaunchMode != UILaunchMode_Separate)
     {
         /* Make sure machine-state is one of required: */
         const KMachineState enmState = comMachine.GetState(); NOREF(enmState);
@@ -1330,9 +1330,9 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     QString strType;
     switch (enmLaunchMode)
     {
-        case LaunchMode_Default:  strType = ""; break;
-        case LaunchMode_Separate: strType = uiCommon().isSeparateProcess() ? "headless" : "separate"; break;
-        case LaunchMode_Headless: strType = "headless"; break;
+        case UILaunchMode_Default:  strType = ""; break;
+        case UILaunchMode_Separate: strType = uiCommon().isSeparateProcess() ? "headless" : "separate"; break;
+        case UILaunchMode_Headless: strType = "headless"; break;
         default: AssertFailedReturn(false);
     }
 
@@ -1341,7 +1341,7 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     if (!comMachine.isOk())
     {
         /* If the VM is started separately and the VM process is already running, then it is OK. */
-        if (enmLaunchMode == LaunchMode_Separate)
+        if (enmLaunchMode == UILaunchMode_Separate)
         {
             const KMachineState enmState = comMachine.GetState();
             if (   enmState >= KMachineState_FirstOnline

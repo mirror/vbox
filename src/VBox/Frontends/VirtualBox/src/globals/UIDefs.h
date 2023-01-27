@@ -126,6 +126,16 @@ enum SizeSuffix
 };
 
 
+/** VM launch modes. */
+enum UILaunchMode
+{
+    UILaunchMode_Invalid,
+    UILaunchMode_Default,
+    UILaunchMode_Headless,
+    UILaunchMode_Separate
+};
+
+
 /** Storage-slot struct. */
 struct StorageSlot
 {

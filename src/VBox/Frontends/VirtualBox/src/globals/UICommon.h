@@ -143,15 +143,6 @@ public:
         UIType_RuntimeUI
     };
 
-    /** VM launch modes. */
-    enum LaunchMode
-    {
-        LaunchMode_Invalid,
-        LaunchMode_Default,
-        LaunchMode_Headless,
-        LaunchMode_Separate
-    };
-
     /** VM launch running options. */
     enum LaunchRunning
     {
@@ -348,7 +339,7 @@ public:
         /** Switches to certain @a comMachine. */
         static bool switchToMachine(CMachine &comMachine);
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
-        static bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
+        static bool launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode = UILaunchMode_Default);
 
         /** Opens session of certain @a enmLockType for VM with certain @a uId. */
         CSession openSession(const QUuid &uId, KLockType enmLockType = KLockType_Write);

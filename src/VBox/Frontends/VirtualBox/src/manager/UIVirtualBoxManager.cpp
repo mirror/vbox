@@ -1232,7 +1232,7 @@ void UIVirtualBoxManager::sltPerformStartOrShowMachine()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Invalid);
+    performStartOrShowVirtualMachines(items, UILaunchMode_Invalid);
 }
 
 void UIVirtualBoxManager::sltPerformStartMachineNormal()
@@ -1240,7 +1240,7 @@ void UIVirtualBoxManager::sltPerformStartMachineNormal()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Default);
+    performStartOrShowVirtualMachines(items, UILaunchMode_Default);
 }
 
 void UIVirtualBoxManager::sltPerformStartMachineHeadless()
@@ -1248,7 +1248,7 @@ void UIVirtualBoxManager::sltPerformStartMachineHeadless()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Headless);
+    performStartOrShowVirtualMachines(items, UILaunchMode_Headless);
 }
 
 void UIVirtualBoxManager::sltPerformStartMachineDetachable()
@@ -1256,7 +1256,7 @@ void UIVirtualBoxManager::sltPerformStartMachineDetachable()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Separate);
+    performStartOrShowVirtualMachines(items, UILaunchMode_Separate);
 }
 
 void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup()
@@ -2656,7 +2656,7 @@ void UIVirtualBoxManager::openNewMachineWizard(const QString &strISOFilePath /* 
 
 /* static */
 void UIVirtualBoxManager::launchMachine(CMachine &comMachine,
-                                        UICommon::LaunchMode enmLaunchMode /* = UICommon::LaunchMode_Default */)
+                                        UILaunchMode enmLaunchMode /* = UILaunchMode_Default */)
 {
     /* Switch to machine window(s) if possible: */
     if (   comMachine.GetSessionState() == KSessionState_Locked // precondition for CanShowConsoleWindow()
@@ -2667,7 +2667,7 @@ void UIVirtualBoxManager::launchMachine(CMachine &comMachine,
     }
 
     /* Not for separate UI (which can connect to machine in any state): */
-    if (enmLaunchMode != UICommon::LaunchMode_Separate)
+    if (enmLaunchMode != UILaunchMode_Separate)
     {
         /* Make sure machine-state is one of required: */
         const KMachineState enmState = comMachine.GetState(); Q_UNUSED(enmState);
@@ -2709,10 +2709,10 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     comUnattendedInstaller.ReconfigureVM();
     AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
 
-    launchMachine(comMachine, fStartHeadless ? UICommon::LaunchMode_Headless : UICommon::LaunchMode_Default);
+    launchMachine(comMachine, fStartHeadless ? UILaunchMode_Headless : UILaunchMode_Default);
 }
 
-void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)
+void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UILaunchMode enmLaunchMode)
 {
     /* Do nothing while group saving is in progress: */
     if (isGroupSavingInProgress())
@@ -2748,13 +2748,13 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             if (pItem->itemType() == UIVirtualMachineItemType_Local)
             {
                 /* Fetch item launch mode: */
-                UICommon::LaunchMode enmItemLaunchMode = enmLaunchMode;
-                if (enmItemLaunchMode == UICommon::LaunchMode_Invalid)
+                UILaunchMode enmItemLaunchMode = enmLaunchMode;
+                if (enmItemLaunchMode == UILaunchMode_Invalid)
                     enmItemLaunchMode = pItem->isItemRunningHeadless()
-                                      ? UICommon::LaunchMode_Separate
+                                      ? UILaunchMode_Separate
                                       : qApp->keyboardModifiers() == Qt::ShiftModifier
-                                      ? UICommon::LaunchMode_Headless
-                                      : UICommon::LaunchMode_Default;
+                                      ? UILaunchMode_Headless
+                                      : UILaunchMode_Default;
                 /* Acquire local machine: */
                 CMachine machine = pItem->toLocal()->machine();
                 /* Launch current VM: */
