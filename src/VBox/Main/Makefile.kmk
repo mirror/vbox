@@ -613,10 +613,10 @@ VBoxSVC_SOURCES = \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
 	src-all/NvramStoreImpl.cpp \
-  src-all/MachineSharedFolderImpl.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SecretKeyStore.cpp \
+  src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
 	src-all/ThreadTask.cpp \
 	src-all/VirtualBoxBase.cpp \

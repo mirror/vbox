@@ -120,5 +120,5 @@ private:
     Data *m;
 };
 
-#endif /* !MAIN_INCLUDED_SharedFolderImpl_h */
+#endif /* !MAIN_INCLUDED_ConsoleSharedFolderImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

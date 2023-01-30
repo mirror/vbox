@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2022 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -27,10 +27,8 @@
 
 #define LOG_GROUP LOG_GROUP_MAIN_SHAREDFOLDER
 #include "SharedFolderImpl.h"
-#if !defined(VBOX_COM_INPROC)
-# include "VirtualBoxImpl.h"
-# include "MachineImpl.h"
-#endif
+#include "VirtualBoxImpl.h"
+#include "MachineImpl.h"
 #include "ConsoleImpl.h"
 
 #include "AutoCaller.h"
@@ -63,12 +61,8 @@ struct SharedFolder::Data
 
 SharedFolder::SharedFolder()
     : mParent(NULL),
-#if !defined(VBOX_COM_INPROC)
       mMachine(NULL),
       mVirtualBox(NULL)
-#else
-      mConsole(NULL)
-#endif
 {
     m = new Data;
 }
@@ -93,7 +87,6 @@ void SharedFolder::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-#if !defined(VBOX_COM_INPROC)
 /**
  *  Initializes the shared folder object.
  *
@@ -188,7 +181,7 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
                            const Utf8Str &aHostPath,
                            bool aWritable,
                            bool aAutoMount,
-                           const Utf8Str &aAutoMountPoint
+                           const Utf8Str &aAutoMountPoint,
                            bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -207,46 +200,6 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
 }
 
 # endif
-
-#else
-
-/**
- *  Initializes the shared folder object.
- *
- *  This variant initializes an instance that lives in the console address space.
- *
- *  @param aConsole     Console parent object
- *  @param aName        logical name of the shared folder
- *  @param aHostPath    full path to the shared folder on the host
- *  @param aWritable    writable if true, readonly otherwise
- *  @param aAutoMountPoint Where the guest should try auto mount it.
- *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
- *
- *  @return          COM result indicator
- */
-HRESULT SharedFolder::init(Console *aConsole,
-                           const Utf8Str &aName,
-                           const Utf8Str &aHostPath,
-                           bool aWritable,
-                           bool aAutoMount,
-                           const Utf8Str &aAutoMountPoint,
-                           bool fFailOnError)
-{
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
-    unconst(mConsole) = aConsole;
-
-    HRESULT hrc = i_protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
-
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(hrc))
-        autoInitSpan.setSucceeded();
-
-    return hrc;
-}
-#endif
 
 /**
  *  Shared initialization code. Called from the other constructors.
@@ -335,13 +288,8 @@ void SharedFolder::uninit()
         return;
 
     unconst(mParent) = NULL;
-
-#if !defined(VBOX_COM_INPROC)
     unconst(mMachine) = NULL;
     unconst(mVirtualBox) = NULL;
-#else
-    unconst(mConsole) = NULL;
-#endif
 }
 
 // wrapped ISharedFolder properties
