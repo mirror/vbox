@@ -2399,6 +2399,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
 
+            case SDL_MOUSEWHEEL:
+            {
+                VBoxSDLFB *fb;
+                fb = getFbFromWinId(event.button.windowID);
+                AssertPtrBreak(fb);
+                SendMouseEvent(fb, -1 * event.wheel.y, 0, 0);
+                break;
+            }
             /*
              * A mouse button has been clicked or released.
              */
@@ -2417,7 +2425,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
                 else if (gfGrabbed || UseAbsoluteMouse())
                 {
-                    int dz = 0; /** @todo Implement mouse wheel support with SDL2 (event SDL_MOUSEWHEEL). */
                     /* end host key combination (CTRL+MouseButton) */
                     switch (enmHKeyState)
                     {
@@ -2445,7 +2452,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     VBoxSDLFB *fb;
                     fb = getFbFromWinId(event.button.windowID);
                     AssertPtrBreak(fb);
-                    SendMouseEvent(fb, dz, event.type == SDL_MOUSEBUTTONDOWN, bev->button);
+                    SendMouseEvent(fb, 0 /*wheel vertical movement*/, event.type == SDL_MOUSEBUTTONDOWN, bev->button);
                 }
                 break;
             }
