@@ -5381,10 +5381,10 @@ public:
     DeleteConfigTask(Machine *m,
                      Progress *p,
                      const Utf8Str &t,
-                     const RTCList<ComPtr<IMedium> > &llMediums,
+                     const RTCList<ComPtr<IMedium> > &llMedia,
                      const StringsList &llFilesToDelete)
         : Task(m, p, t),
-          m_llMediums(llMediums),
+          m_llMedia(llMedia),
           m_llFilesToDelete(llFilesToDelete)
     {}
 
@@ -5401,7 +5401,7 @@ private:
         }
     }
 
-    RTCList<ComPtr<IMedium> >   m_llMediums;
+    RTCList<ComPtr<IMedium> >   m_llMedia;
     StringsList                 m_llFilesToDelete;
 
     friend void Machine::i_deleteConfigHandler(DeleteConfigTask &task);
@@ -5451,9 +5451,9 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
         MachineState_T oldState = mData->mMachineState;
         i_setMachineState(MachineState_SettingUp);
         alock.release();
-        for (size_t i = 0; i < task.m_llMediums.size(); ++i)
+        for (size_t i = 0; i < task.m_llMedia.size(); ++i)
         {
-            ComObjPtr<Medium> pMedium = (Medium*)(IMedium*)(task.m_llMediums.at(i));
+            ComObjPtr<Medium> pMedium = (Medium*)(IMedium*)(task.m_llMedia.at(i));
             {
                 AutoCaller mac(pMedium);
                 if (FAILED(mac.hrc())) throw mac.hrc();
@@ -5600,7 +5600,7 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
     if (RTFileExists(strTmp.c_str()))
         llFilesToDelete.push_back(strTmp);
 
-    RTCList<ComPtr<IMedium> > llMediums;
+    RTCList<ComPtr<IMedium> > llMedia;
     for (size_t i = 0; i < aMedia.size(); ++i)
     {
         IMedium *pIMedium(aMedia[i]);
@@ -5614,7 +5614,7 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
          * anymore. If it has it is attached to another VM and *must* not
          * deleted. */
         if (ids.size() < 1)
-            llMediums.append(pMedium);
+            llMedia.append(pMedium);
     }
 
     ComObjPtr<Progress> pProgress;
@@ -5623,14 +5623,14 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
                           static_cast<IMachine*>(this) /* aInitiator */,
                           tr("Deleting files"),
                           true /* fCancellable */,
-                          (ULONG)(1 + llMediums.size() + llFilesToDelete.size() + 1),    // cOperations
+                          (ULONG)(1 + llMedia.size() + llFilesToDelete.size() + 1),    // cOperations
                           tr("Collecting file inventory"));
     if (FAILED(hrc))
         return hrc;
 
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
-    DeleteConfigTask *pTask = new DeleteConfigTask(this, pProgress, "DeleteVM", llMediums, llFilesToDelete);
+    DeleteConfigTask *pTask = new DeleteConfigTask(this, pProgress, "DeleteVM", llMedia, llFilesToDelete);
     hrc = pTask->createThread();
     pTask = NULL;
     if (FAILED(hrc))

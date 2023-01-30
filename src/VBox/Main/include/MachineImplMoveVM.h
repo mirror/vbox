@@ -76,10 +76,10 @@ struct fileList_t;
 class MachineMoveVM : public ThreadTask
 {
     std::vector<ComObjPtr<Machine> >        machineList;
-    RTCList<MEDIUMTASKCHAINMOVE>            m_llMedias;
+    RTCList<MEDIUMTASKCHAINMOVE>            m_llMedia;
     RTCList<SNAPFILETASKMOVE>               m_llSaveStateFiles;
     RTCList<SNAPFILETASKMOVE>               m_llNVRAMFiles;
-    std::map<Utf8Str, MEDIUMTASKMOVE>       m_finalMediumsMap;
+    std::map<Utf8Str, MEDIUMTASKMOVE>       m_finalMediaMap;
     std::map<Utf8Str, SNAPFILETASKMOVE>     m_finalSaveStateFilesMap;
     std::map<Utf8Str, SNAPFILETASKMOVE>     m_finalNVRAMFilesMap;
     std::map<VBoxFolder_t, Utf8Str>         m_vmFolders;
@@ -126,7 +126,7 @@ public:
 private:
     HRESULT createMachineList(const ComPtr<ISnapshot> &pSnapshot);
     inline HRESULT queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const;
-    HRESULT queryMediasForAllStates();
+    HRESULT queryMediaForAllStates();
     void updateProgressStats(MEDIUMTASKCHAINMOVE &mtc, ULONG &uCount, ULONG &uTotalWeight) const;
     HRESULT addSaveState(const ComObjPtr<Machine> &machine);
     HRESULT addNVRAM(const ComObjPtr<Machine> &machine);

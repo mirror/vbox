@@ -120,12 +120,12 @@ struct MachineCloneVMPrivate
     inline HRESULT addSaveState(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight);
     inline HRESULT addNVRAM(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight);
     inline HRESULT queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const;
-    HRESULT queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
-                                       bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
-    HRESULT queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
-                                                bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
-    HRESULT queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount,
-                                    ULONG &uTotalWeight);
+    HRESULT queryMediaForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
+                                      bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
+    HRESULT queryMediaForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
+                                               bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
+    HRESULT queryMediaForAllStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount,
+                                   ULONG &uTotalWeight);
 
     /* MachineCloneVM::run helper: */
     bool findSnapshot(const settings::SnapshotsList &snl, const Guid &id, settings::Snapshot &sn) const;
@@ -153,7 +153,7 @@ struct MachineCloneVMPrivate
     Guid                        snapshotId;
     CloneMode_T                 mode;
     RTCList<CloneOptions_T>     options;
-    RTCList<MEDIUMTASKCHAIN>    llMedias;
+    RTCList<MEDIUMTASKCHAIN>    llMedia;
     RTCList<FILECOPYTASK>       llSaveStateFiles; /* Snapshot UUID -> File path */
     RTCList<FILECOPYTASK>       llNVRAMFiles; /* Snapshot UUID -> File path */
 };
@@ -298,8 +298,8 @@ HRESULT MachineCloneVMPrivate::queryBaseName(const ComPtr<IMedium> &pMedium, Utf
     return hrc;
 }
 
-HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
-                                                          bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::queryMediaForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                         bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* This mode is pretty straightforward. We didn't need to know about any
      * parent/children relationship and therefore simply adding all directly
@@ -370,7 +370,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
             /* Update the progress info. */
             updateProgressStats(mtc, fAttachLinked, uCount, uTotalWeight);
             /* Append the list of images which have  to be cloned. */
-            llMedias.append(mtc);
+            llMedia.append(mtc);
         }
         /* Add the save state file of this machine if there is one. */
         hrc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
@@ -383,8 +383,8 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
     return hrc;
 }
 
-HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
-                                                                   bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::queryMediaForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                                  bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* This is basically a three step approach. First select all media
      * directly or indirectly involved in the clone. Second create a histogram
@@ -479,7 +479,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
                 if (FAILED(hrc)) return hrc;
             }
 
-            llMedias.append(mtc);
+            llMedia.append(mtc);
         }
         /* Add the save state file of this machine if there is one. */
         hrc = addSaveState(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
@@ -500,10 +500,10 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
     /* Build up the index list of the image chain. Unfortunately we can't do
      * that in the previous loop, cause there we go from child -> parent and
      * didn't know how many are between. */
-    for (size_t i = 0; i < llMedias.size(); ++i)
+    for (size_t i = 0; i < llMedia.size(); ++i)
     {
         uint32_t uIdx = 0;
-        MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+        MEDIUMTASKCHAIN &mtc = llMedia.at(i);
         for (size_t a = mtc.chain.size(); a > 0; --a)
             mtc.chain[a - 1].uIdx = uIdx++;
     }
@@ -523,9 +523,9 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
      * replicated. Also we have to make sure that any direct or indirect
      * children knows of the new parent (which doesn't necessarily mean it
      * is a direct children in the source chain). */
-    for (size_t i = 0; i < llMedias.size(); ++i)
+    for (size_t i = 0; i < llMedia.size(); ++i)
     {
-        MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+        MEDIUMTASKCHAIN &mtc = llMedia.at(i);
         RTCList<MEDIUMTASK> newChain;
         uint32_t used = 0;
         for (size_t a = 0; a < mtc.chain.size(); ++a)
@@ -561,8 +561,8 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
     return hrc;
 }
 
-HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList,
-                                                       bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::queryMediaForAllStates(const RTCList<ComObjPtr<Machine> > &machineList,
+                                                      bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* In this case we create a exact copy of the original VM. This means just
      * adding all directly and indirectly attached disk images to the worker
@@ -632,7 +632,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
             /* Update the progress info. */
             updateProgressStats(mtc, fAttachLinked, uCount, uTotalWeight);
             /* Append the list of images which have  to be cloned. */
-            llMedias.append(mtc);
+            llMedia.append(mtc);
         }
         /* Add the save state file of this machine if there is one. */
         hrc = addSaveState(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
@@ -653,10 +653,10 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
     /* Build up the index list of the image chain. Unfortunately we can't do
      * that in the previous loop, cause there we go from child -> parent and
      * didn't know how many are between. */
-    for (size_t i = 0; i < llMedias.size(); ++i)
+    for (size_t i = 0; i < llMedia.size(); ++i)
     {
         uint32_t uIdx = 0;
-        MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+        MEDIUMTASKCHAIN &mtc = llMedia.at(i);
         for (size_t a = mtc.chain.size(); a > 0; --a)
             mtc.chain[a - 1].uIdx = uIdx++;
     }
@@ -1026,13 +1026,13 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         switch (d->mode)
         {
             case CloneMode_MachineState:
-                d->queryMediasForMachineState(machineList, fAttachLinked, uCount, uTotalWeight);
+                d->queryMediaForMachineState(machineList, fAttachLinked, uCount, uTotalWeight);
                 break;
             case CloneMode_MachineAndChildStates:
-                d->queryMediasForMachineAndChildStates(machineList, fAttachLinked, uCount, uTotalWeight);
+                d->queryMediaForMachineAndChildStates(machineList, fAttachLinked, uCount, uTotalWeight);
                 break;
             case CloneMode_AllStates:
-                d->queryMediasForAllStates(machineList, fAttachLinked, uCount, uTotalWeight);
+                d->queryMediaForAllStates(machineList, fAttachLinked, uCount, uTotalWeight);
                 break;
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
             case CloneMode_32BitHack: /* (compiler warnings) */
@@ -1094,7 +1094,7 @@ HRESULT MachineCloneVM::run()
 
     RTCList<ComObjPtr<Medium> > newMedia;   /* All created images */
     RTCList<Utf8Str> newFiles;              /* All extra created files (save states, ...) */
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
+    std::set<ComObjPtr<Medium> > pMediaForNotify;
     std::map<Guid, DeviceType_T> uIdsForNotify;
     try
     {
@@ -1189,9 +1189,9 @@ HRESULT MachineCloneVM::run()
         typedef std::pair<Utf8Str, ComObjPtr<Medium> > TStrMediumPair;
         TStrMediumMap map;
         size_t cDisks = 0;
-        for (size_t i = 0; i < d->llMedias.size(); ++i)
+        for (size_t i = 0; i < d->llMedia.size(); ++i)
         {
-            const MEDIUMTASKCHAIN &mtc = d->llMedias.at(i);
+            const MEDIUMTASKCHAIN &mtc = d->llMedia.at(i);
             ComObjPtr<Medium> pNewParent;
             uint32_t uSrcParentIdx = UINT32_MAX;
             uint32_t uTrgParentIdx = UINT32_MAX;
@@ -1232,7 +1232,7 @@ HRESULT MachineCloneVM::run()
                         map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pDiff));
                         /* diff image has to be used... */
                         pNewParent = pDiff;
-                        pMediumsForNotify.insert(pDiff->i_getParent());
+                        pMediaForNotify.insert(pDiff->i_getParent());
                         uIdsForNotify[pDiff->i_getId()] = pDiff->i_getDeviceType();
                     }
                     else
@@ -1434,7 +1434,7 @@ HRESULT MachineCloneVM::run()
                     if (FAILED(hrc)) throw hrc;
                     /* diff image has to be used... */
                     pNewParent = pDiff;
-                    pMediumsForNotify.insert(pDiff->i_getParent());
+                    pMediaForNotify.insert(pDiff->i_getParent());
                     uIdsForNotify[pDiff->i_getId()] = pDiff->i_getDeviceType();
                 }
                 else
@@ -1672,8 +1672,8 @@ HRESULT MachineCloneVM::run()
         {
             p->mParent->i_onMediumRegistered(it->first, it->second, TRUE);
         }
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
+        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediaForNotify.begin();
+             it != pMediaForNotify.end();
              ++it)
         {
             if (it->isNotNull())

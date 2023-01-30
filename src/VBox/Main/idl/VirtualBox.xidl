@@ -3217,7 +3217,7 @@
     </method>
 
     <method name="createMedium">
-      <rest name="create" request="post" path="/mediums/"/>
+      <rest name="create" request="post" path="/media/"/>
       <desc>
         Creates a new base medium object that will use the given storage
         format and location for medium data.
@@ -8230,7 +8230,7 @@
     </method>
 
     <method name="unmountMedium">
-      <rest name="unmount" request="post" path="/vms/{vmid}/mediums/{mediumid}/actions/"/>
+      <rest name="unmount" request="post" path="/vms/{vmid}/media/{mediumid}/actions/"/>
       <desc>
         Unmounts any currently mounted medium (<link to="IMedium" />,
         identified by the given UUID @a id) to the given storage controller
@@ -8283,7 +8283,7 @@
     </method>
 
     <method name="mountMedium">
-      <rest name="mount" request="post" path="/vms/{vmid}/mediums/{mediumid}/actions/"/>
+      <rest name="mount" request="post" path="/vms/{vmid}/media/{mediumid}/actions/"/>
       <desc>
         Mounts a medium (<link to="IMedium" />, identified
         by the given UUID @a id) to the given storage controller
@@ -8338,7 +8338,7 @@
     </method>
 
     <method name="getMedium" const="yes">
-      <rest name="find" request="get" path="/vms/{vmid}/mediums/{mediumid}/"/>
+      <rest name="find" request="get" path="/vms/{vmid}/media/{mediumid}/"/>
       <desc>
         Returns the virtual medium attached to a device slot of the specified
         bus.
@@ -18599,7 +18599,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <method name="setIds" wrap-hint-server="passcaller">
-      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="post" path="/media/{mediumid}/configuration/"/>
       <desc>
         Changes the UUID and parent UUID for a hard disk medium.
       </desc>
@@ -18636,7 +18636,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="refreshState" wrap-hint-server="passcaller">
-      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="post" path="/media/{mediumid}/configuration/"/>
       <desc>
         If the current medium state (see <link to="MediumState"/>) is one of
         "Created", "Inaccessible" or "LockedRead", then this performs an
@@ -18673,7 +18673,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getSnapshotIds">
-      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="get" path="/media/{mediumid}/configuration/"/>
       <desc>
         Returns an array of UUIDs of all snapshots of the given machine where
         this medium is attached to.
@@ -18703,7 +18703,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="lockRead">
-      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="post" path="/media/{mediumid}/configuration/"/>
       <desc>
         Locks this medium for reading.
 
@@ -18765,7 +18765,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="lockWrite">
-      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="post" path="/media/{mediumid}/configuration/"/>
       <desc>
         Locks this medium for writing.
 
@@ -18819,7 +18819,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="close" wrap-hint-server="passcaller">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Closes this medium.
 
@@ -18858,7 +18858,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- property methods -->
 
     <method name="getProperty" const="yes">
-      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="get" path="/media/{mediumid}/configuration/"/>
       <desc>
         Returns the value of the custom medium property with the given name.
 
@@ -18882,7 +18882,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="setProperty">
-      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="post" path="/media/{mediumid}/configuration/"/>
       <desc>
         Sets the value of the custom medium property with the given name.
 
@@ -18908,7 +18908,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getProperties" const="yes">
-      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="get" path="/media/{mediumid}/configuration/"/>
       <desc>
         Returns values for a group of properties in one call.
 
@@ -18945,7 +18945,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="setProperties">
-      <rest request="post" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="post" path="/media/{mediumid}/configuration/"/>
       <desc>
         Sets values for a group of properties in one call.
 
@@ -18980,7 +18980,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- storage methods -->
 
     <method name="createBaseStorage">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts creating a hard disk storage unit (fixed/dynamic, according
         to the variant flags) in the background. The previous storage unit
@@ -19015,7 +19015,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="deleteStorage">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts deleting the storage unit of this medium.
 
@@ -19062,7 +19062,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- diff methods -->
 
     <method name="createDiffStorage" wrap-hint-server="passcaller">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts creating an empty differencing storage unit based on this
         medium in the format and at the location defined by the @a target
@@ -19100,7 +19100,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="mergeTo">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts merging the contents of this medium and all intermediate
         differencing media in the chain to the given target medium.
@@ -19183,7 +19183,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- clone method -->
 
     <method name="cloneTo">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts creating a clone of this medium in the format and at the
         location defined by the @a target argument.
@@ -19233,7 +19233,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="cloneToBase">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
     <desc>
     Starts creating a clone of this medium in the format and at the
     location defined by the @a target argument.
@@ -19281,7 +19281,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <!-- other methods -->
 
     <method name="moveTo" wrap-hint-server="passcaller">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Changes the location of this medium. Some medium types may support
         changing the storage unit location by simply changing the value of the
@@ -19318,7 +19318,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="compact">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts compacting of this medium. This means that the medium is
         transformed into a possibly more compact storage representation.
@@ -19345,7 +19345,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="resize">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts resizing this medium. This means that the nominal size of the
         medium is set to the new value. Both increasing and decreasing the
@@ -19377,7 +19377,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="reset" wrap-hint-server="passcaller">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts erasing the contents of this differencing medium.
 
@@ -19404,7 +19404,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="changeEncryption">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
       <desc>
         Starts encryption of this medium. This means that the stored data in the
         medium is encrypted.
@@ -19448,7 +19448,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getEncryptionSettings" const="yes" wrap-hint-server="passcaller">
-      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="get" path="/media/{mediumid}/configuration/"/>
       <desc>
         Returns the encryption settings for this medium.
 
@@ -19465,7 +19465,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="checkEncryptionPassword" const="yes">
-      <rest request="get" path="/mediums/{mediumid}/configuration/"/>
+      <rest request="get" path="/media/{mediumid}/configuration/"/>
       <desc>
         Checks whether the supplied password is correct for the medium.
 
@@ -19498,7 +19498,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="resizeAndCloneTo">
-      <rest request="post" path="/mediums/{mediumid}/actions/"/>
+      <rest request="post" path="/media/{mediumid}/actions/"/>
 
       <desc>
         This is a helper function that combines the functionality of

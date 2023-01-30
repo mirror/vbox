@@ -320,18 +320,18 @@ HRESULT MachineMoveVM::init()
     ULONG uCount       = 1;//looks like it should be initialized by 1. See assertion in the Progress::setNextOperation()
     ULONG uTotalWeight = 1;
 
-    /* The lists m_llMedias, m_llSaveStateFiles and m_llNVRAMFiles are filled in the queryMediasForAllStates() */
-    hrc = queryMediasForAllStates();
+    /* The lists m_llMedia, m_llSaveStateFiles and m_llNVRAMFiles are filled in the queryMediaForAllStates() */
+    hrc = queryMediaForAllStates();
     if (FAILED(hrc))
         return hrc;
 
-    /* Calculate the total size of images. Fill m_finalMediumsMap */
+    /* Calculate the total size of images. Fill m_finalMediaMap */
     { /** The scope here for better reading, apart from that the variables have limited scope too */
-        uint64_t totalMediumsSize = 0;
+        uint64_t totalMediaSize = 0;
 
-        for (size_t i = 0; i < m_llMedias.size(); ++i)
+        for (size_t i = 0; i < m_llMedia.size(); ++i)
         {
-            MEDIUMTASKCHAINMOVE &mtc = m_llMedias.at(i);
+            MEDIUMTASKCHAINMOVE &mtc = m_llMedia.at(i);
             for (size_t a = mtc.chain.size(); a > 0; --a)
             {
                 Bstr bstrLocation;
@@ -352,21 +352,21 @@ HRESULT MachineMoveVM::init()
                         return hrc;
 
                     std::pair<std::map<Utf8Str, MEDIUMTASKMOVE>::iterator,bool> ret;
-                    ret = m_finalMediumsMap.insert(std::make_pair(name, mtc.chain[a - 1]));
+                    ret = m_finalMediaMap.insert(std::make_pair(name, mtc.chain[a - 1]));
                     if (ret.second == true)
                     {
                         /* Calculate progress data */
                         ++uCount;
                         uTotalWeight += mtc.chain[a - 1].uWeight;
-                        totalMediumsSize += (uint64_t)cbSize;
+                        totalMediaSize += (uint64_t)cbSize;
                         Log2(("Image %s was added into the moved list\n", name.c_str()));
                     }
                 }
             }
         }
 
-        Log2(("Total Size of images is %lld bytes\n", totalMediumsSize));
-        neededFreeSpace += totalMediumsSize;
+        Log2(("Total Size of images is %lld bytes\n", totalMediaSize));
+        neededFreeSpace += totalMediaSize;
     }
 
     /* Prepare data for moving ".sav" files */
@@ -665,7 +665,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
     try
     {
         /* Move all disks */
-        hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediumsMap, strTargetFolder);
+        hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediaMap, strTargetFolder);
         if (FAILED(hrc))
             throw hrc;
 
@@ -1007,7 +1007,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
             for (ULONG i = operation + 1; i < operationCount - operation; ++i)
                 taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(tr("Skip the empty operation %d..."), i + 1).raw(), 1);
 
-            hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediumsMap);
+            hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediaMap);
             if (FAILED(hrc))
                 throw hrc;
 
@@ -1097,7 +1097,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
          * the success result. As result, the last number of progress operation can be not equal the number of operations
          * because we doubled the number of operations for rollback case.
          * But if we want to update the progress object corectly it's needed to add all medium moved by standard
-         * "move medium" logic (for us it's taskMoveVM->m_finalMediumsMap) to the current number of operation.
+         * "move medium" logic (for us it's taskMoveVM->m_finalMediaMap) to the current number of operation.
          */
 
         ULONG operationCount = 0;
@@ -1105,7 +1105,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
         ULONG operation = 0;
         hrc = taskMoveVM->m_pProgress->COMGETTER(Operation)(&operation);
 
-        for (ULONG i = operation; i < operation + taskMoveVM->m_finalMediumsMap.size() - 1; ++i)
+        for (ULONG i = operation; i < operation + taskMoveVM->m_finalMediaMap.size() - 1; ++i)
             taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(tr("Skip the empty operation %d..."), i).raw(), 1);
 
         hrc = taskMoveVM->deleteFiles(originalFiles);
@@ -1435,7 +1435,7 @@ HRESULT MachineMoveVM::createMachineList(const ComPtr<ISnapshot> &pSnapshot)
     return hrc;
 }
 
-HRESULT MachineMoveVM::queryMediasForAllStates()
+HRESULT MachineMoveVM::queryMediaForAllStates()
 {
     /* In this case we create a exact copy of the original VM. This means just
      * adding all directly and indirectly attached disk images to the worker
@@ -1524,7 +1524,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
                 if (FAILED(hrc)) return hrc;
             }
 
-            m_llMedias.append(mtc);
+            m_llMedia.append(mtc);
         }
 
         /* Add the save state files of this machine if there is one. */
@@ -1539,10 +1539,10 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
     /* Build up the index list of the image chain. Unfortunately we can't do
      * that in the previous loop, cause there we go from child -> parent and
      * didn't know how many are between. */
-    for (size_t i = 0; i < m_llMedias.size(); ++i)
+    for (size_t i = 0; i < m_llMedia.size(); ++i)
     {
         uint32_t uIdx = 0;
-        MEDIUMTASKCHAINMOVE &mtc = m_llMedias.at(i);
+        MEDIUMTASKCHAINMOVE &mtc = m_llMedia.at(i);
         for (size_t a = mtc.chain.size(); a > 0; --a)
             mtc.chain[a - 1].uIdx = uIdx++;
     }

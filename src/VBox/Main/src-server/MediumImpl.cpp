@@ -9511,7 +9511,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
     MultiResult mrc(hrcTmp);
     HRESULT hrc2;
 
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
+    std::set<ComObjPtr<Medium> > pMediaForNotify;
     std::map<Guid, DeviceType_T> uIdsForNotify;
 
     if (SUCCEEDED(mrc))
@@ -9536,7 +9536,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
             {
                 i_deparent();
                 if (task.NotifyAboutChanges())
-                    pMediumsForNotify.insert(task.mParentForTarget);
+                    pMediaForNotify.insert(task.mParentForTarget);
             }
 
             /* then, register again */
@@ -9573,10 +9573,10 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                     pMedium->i_setParent(pTarget);
 
                     if (task.NotifyAboutChanges())
-                        pMediumsForNotify.insert(pMedium);
+                        pMediaForNotify.insert(pMedium);
                 }
             }
-            pMediumsForNotify.insert(pTarget);
+            pMediaForNotify.insert(pTarget);
         }
 
         /* unregister and uninitialize all media removed by the merge */
@@ -9665,8 +9665,8 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
     }
     else if (task.NotifyAboutChanges())
     {
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
+        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediaForNotify.begin();
+             it != pMediaForNotify.end();
              ++it)
         {
             if (it->isNotNull())

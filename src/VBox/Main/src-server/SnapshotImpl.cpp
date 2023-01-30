@@ -1762,7 +1762,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
     bool fBeganTakingSnapshot = false;
     BOOL fSuspendedBySave     = FALSE;
 
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
+    std::set<ComObjPtr<Medium> > pMediaForNotify;
     std::map<Guid, DeviceType_T> uIdsForNotify;
 
     try
@@ -1948,7 +1948,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 }
                 if (!fFound)
                 {
-                    pMediumsForNotify.insert(pMedium->i_getParent());
+                    pMediaForNotify.insert(pMedium->i_getParent());
                     uIdsForNotify[pMedium->i_getId()] = pMedium->i_getDeviceType();
                 }
             }
@@ -2064,8 +2064,8 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
             mParent->i_onMediumRegistered(it->first, it->second, TRUE);
         }
 
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
+        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediaForNotify.begin();
+             it != pMediaForNotify.end();
              ++it)
         {
             if (it->isNotNull())
@@ -2328,7 +2328,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
 
     HRESULT hrc = S_OK;
     Guid snapshotId;
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
+    std::set<ComObjPtr<Medium> > pMediaForNotify;
     std::map<Guid, std::pair<DeviceType_T, BOOL> > uIdsForNotify;
 
     try
@@ -2460,7 +2460,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
                 }
                 if (!fFound)
                 {
-                    pMediumsForNotify.insert(pMedium->i_getParent());
+                    pMediaForNotify.insert(pMedium->i_getParent());
                     uIdsForNotify[pMedium->i_getId()] = std::pair<DeviceType_T, BOOL>(pMedium->i_getDeviceType(), TRUE);
                 }
             }
@@ -2570,7 +2570,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
             // ignore errors here because we cannot roll back after i_saveSettings() above
             if (SUCCEEDED(hrc2))
             {
-                pMediumsForNotify.insert(pParent);
+                pMediaForNotify.insert(pParent);
                 uIdsForNotify[id] = std::pair<DeviceType_T, BOOL>(pMedium->i_getDeviceType(), FALSE);
                 pMedium->uninit();
             }
@@ -2608,8 +2608,8 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
         {
             mParent->i_onMediumRegistered(it->first, it->second.first, it->second.second);
         }
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
+        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediaForNotify.begin();
+             it != pMediaForNotify.end();
              ++it)
         {
             if (it->isNotNull())
@@ -2971,7 +2971,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
 
     MediumDeleteRecList toDelete;
     Guid snapshotId;
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
+    std::set<ComObjPtr<Medium> > pMediaForNotify;
     std::map<Guid,DeviceType_T> uIdsForNotify;
 
     try
@@ -3344,7 +3344,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     if (FAILED(hrc))
                         throw hrc;
 
-                    pMediumsForNotify.insert(pParent);
+                    pMediaForNotify.insert(pParent);
                     uIdsForNotify[uMedium] = uMediumType;
 
                     // need to uninit the deleted medium
@@ -3355,9 +3355,9 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
             {
                 {
                     //store ids before merging for notify
-                    pMediumsForNotify.insert(it->mpTarget);
+                    pMediaForNotify.insert(it->mpTarget);
                     if (it->mfMergeForward)
-                        pMediumsForNotify.insert(it->mpSource->i_getParent());
+                        pMediaForNotify.insert(it->mpSource->i_getParent());
                     else
                     {
                         //children which will be reparented to target
@@ -3365,7 +3365,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                              iit != it->mpSource->i_getChildren().end();
                              ++iit)
                         {
-                            pMediumsForNotify.insert(*iit);
+                            pMediaForNotify.insert(*iit);
                         }
                     }
                     if (it->mfMergeForward)
@@ -3604,8 +3604,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
         {
             mParent->i_onMediumRegistered(it->first, it->second, FALSE);
         }
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
+        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediaForNotify.begin();
+             it != pMediaForNotify.end();
              ++it)
         {
             if (it->isNotNull())
