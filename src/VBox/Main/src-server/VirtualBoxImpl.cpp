@@ -2727,7 +2727,7 @@ int VirtualBox::i_decryptMediumSettings(Medium *pMedium)
  * Decrypt all encrypted settings.
  *
  * So far we only have encrypted iSCSI initiator secrets so we just go through
- * all hard disk mediums and determine the plain 'InitiatorSecret' from
+ * all hard disk media and determine the plain 'InitiatorSecret' from
  * 'InitiatorSecretEncrypted. The latter is stored as Base64 because medium
  * properties need to be null-terminated strings.
  */

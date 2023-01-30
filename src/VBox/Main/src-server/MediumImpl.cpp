@@ -1063,7 +1063,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                                                | MediumFormatCapabilities_File))
        )
     {
-        /* Storage for mediums of this format can neither be explicitly
+        /* Storage for media of this format can neither be explicitly
          * created by VirtualBox nor deleted, so we place the medium to
          * Inaccessible state here and also add it to the registry. The
          * state means that one has to use RefreshState() to update the
@@ -5445,7 +5445,7 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
  *                          operation completion.
  * @param aWait             @c true if this method should block instead of
  *                          creating an asynchronous thread.
- * @param aNotify           Notify about mediums which metadatÐ° are changed
+ * @param aNotify           Notify about media for which metadata is changed
  *                          during execution of the function.
  *
  * @note Locks this object and @a aTarget for writing.
@@ -5729,7 +5729,7 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param aNotify       Notify about mediums which metadatÐ° are changed
+ * @param aNotify       Notify about media for which metadata is changed
  *                      during execution of the function.
  *
  * @note Locks mVirtualBox and this object for writing. Locks medium tree for
@@ -6548,7 +6548,7 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param aNotify       Notify about mediums which metadatÐ° are changed
+ * @param aNotify       Notify about media for which metadata is changed
  *                      during execution of the function.
  *
  * @note Locks the tree lock for writing. Locks the media from the chain
@@ -6729,7 +6729,7 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param aNotify       Notify about mediums which metadatÐ° are changed
+ * @param aNotify       Notify about media for which metadata is changed
  *                      during execution of the function.
  *
  * @note Locks the media from the chain for writing.
@@ -7082,7 +7082,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
  * @param aVfsIosSrc            Handle to the source I/O stream.
  * @param aParent               Parent medium. May be NULL.
  * @param aProgress             Progress object to use.
- * @param aNotify               Notify about mediums which metadatÐ° are changed
+ * @param aNotify               Notify about media for which metadata is changed
  *                              during execution of the function.
  * @return
  * @note The destination format is defined by the Medium instance.
@@ -7196,7 +7196,7 @@ HRESULT Medium::i_importFile(const char *aFilename,
  * @param idxDstImageSame    The last image in the destination chain which has the
  *                           same content as the given image in the source chain.
  *                           Use UINT32_MAX to disable this optimization.
- * @param aNotify            Notify about mediums which metadatÐ° are changed
+ * @param aNotify            Notify about media for which metadata is changed
  *                           during execution of the function.
  * @return
  */
@@ -9316,13 +9316,12 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
         {
             if (i_isMediumFormatFile())
             {
-                // Have to make own lock list, because "resize" method resizes only last image
-                // in the lock chain. The lock chain already in the task.mpMediumLockList, so
-                // just make new lock list based on it. In fact the own lock list neither makes
-                // double locking of mediums nor unlocks them during delete, because medium
-                // already locked by task.mpMediumLockList and own list is used just to specify
-                // what "resize" method should resize.
-
+                /// @todo r=klaus Can this use the standard code for creating a medium lock list?
+                // Have to make own lock list, because "resize" method resizes the last image
+                // in the lock chain only. The lock chain is already in the task.mpMediumLockList,
+                // so just make new lock list based on it, with the right last medium. The own
+                // lock list skips double locking and therefore does not affect the general lock
+                // state after the "resize" method.
                 MediumLockList* pMediumLockListForResize = new MediumLockList();
 
                 for (MediumLockList::Base::iterator it = task.mpMediumLockList->GetBegin();
@@ -9336,7 +9335,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                 }
 
                 // just to switch internal state of the lock list to avoid errors during list deletion,
-                // because all meduims in the list already locked by task.mpMediumLockList
+                // because all media in the list already locked by task.mpMediumLockList
                 HRESULT hrc = pMediumLockListForResize->Lock(true /* fSkipOverLockedMedia */);
                 if (FAILED(hrc))
                 {

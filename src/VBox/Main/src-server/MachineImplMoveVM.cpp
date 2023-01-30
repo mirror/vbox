@@ -958,7 +958,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
     {
         Machine::Data *machineData = machine->mData.data();
 
-        /* Restoring the original mediums */
+        /* Restoring the original media */
         try
         {
             /*
@@ -1080,11 +1080,11 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
         catch(HRESULT aRc)
         {
             hrc = aRc;
-            Log2(("Rollback scenario: restoration the original mediums were failed. Machine can be corrupted.\n"));
+            Log2(("Rollback scenario: restoration the original media failed. Machine can be corrupted.\n"));
         }
         catch (...)
         {
-            Log2(("Rollback scenario: restoration the original mediums were failed. Machine can be corrupted.\n"));
+            Log2(("Rollback scenario: restoration the original media failed. Machine can be corrupted.\n"));
             hrc = VirtualBoxBase::handleUnexpectedExceptions(machine, RT_SRC_POS);
         }
         /* In case of failure the progress object on the other side (user side) get notification about operation

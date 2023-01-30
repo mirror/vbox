@@ -6538,7 +6538,9 @@
       <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
     </const>
     <const name="DetachAllReturnHardDisksAndVMRemovable"  value="5">
-      <desc>Delete all snapshots, detach all media and return hard disks and removable locating in the folder of the machine to be deleted and referenced only to this machine, for closing.</desc>
+      <desc>Delete all snapshots, detach all media and return hard disks and removable
+        media located in the folder of the machine to be deleted and referenced only
+        by this machine, for closing.</desc>
     </const>
   </enum>
 

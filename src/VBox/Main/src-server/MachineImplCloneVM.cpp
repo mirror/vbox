@@ -386,9 +386,9 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
 HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList<ComObjPtr<Machine> > &machineList,
                                                                    bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
-    /* This is basically a three step approach. First select all medias
+    /* This is basically a three step approach. First select all media
      * directly or indirectly involved in the clone. Second create a histogram
-     * of the usage of all that medias. Third select the medias which are
+     * of the usage of all that media. Third select the media which are
      * directly attached or have more than one directly/indirectly used child
      * in the new clone. Step one and two are done in the first loop.
      *
@@ -418,7 +418,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
 
     Assert(!fAttachLinked);
     HRESULT hrc = S_OK;
-    std::map<ComPtr<IMedium>, uint32_t> mediaHist; /* Our usage histogram for the medias */
+    std::map<ComPtr<IMedium>, uint32_t> mediaHist; /* Our usage histogram for the media */
     for (size_t i = 0; i < machineList.size(); ++i)
     {
         const ComObjPtr<Machine> &machine = machineList.at(i);
@@ -457,7 +457,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
 
             while (!pSrcMedium.isNull())
             {
-                /* Build a histogram of used medias and the parent chain. */
+                /* Build a histogram of used media and the parent chain. */
                 ++mediaHist[pSrcMedium];
 
                 /* Refresh the state so that the file size get read. */
@@ -999,7 +999,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
             }
         }
 
-        /* We have different approaches for getting the medias which needs to
+        /* We have different approaches for getting the media which needs to
          * be replicated based on the clone mode the user requested (this is
          * mostly about the full clone mode).
          * MachineState:
@@ -1181,7 +1181,7 @@ HRESULT MachineCloneVM::run()
         /* Should we rename the disk names. */
         bool fKeepDiskNames = d->options.contains(CloneOptions_KeepDiskNames);
 
-        /* We need to create a map with the already created medias. This is
+        /* We need to create a map with the already created media. This is
          * necessary, cause different snapshots could have the same
          * parents/parent chain. If a medium is in this map already, it isn't
          * cloned a second time, but simply used. */
@@ -1645,7 +1645,7 @@ HRESULT MachineCloneVM::run()
                 mrc = p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                       tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
         }
-        /* Delete all already created medias. (Reverse, cause there could be
+        /* Delete all already created media. (Reverse, cause there could be
          * parent->child relations.) */
         for (size_t i = newMedia.size(); i > 0; --i)
         {

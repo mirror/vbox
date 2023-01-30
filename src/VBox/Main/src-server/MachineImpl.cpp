@@ -1145,7 +1145,7 @@ void Machine::uninit()
     /* XXX This will fail with
      *   "cannot be closed because it is still attached to 1 virtual machines"
      * because at this point we did not call uninitDataAndChildObjects() yet
-     * and therefore also removeBackReference() for all these mediums was not called! */
+     * and therefore also removeBackReference() for all these media was not called! */
 
     if (uuidMachine.isValid() && !uuidMachine.isZero())     // can be empty if we're called from a failure of Machine::init
         mParent->i_unregisterMachineMedia(uuidMachine);
@@ -11837,8 +11837,8 @@ HRESULT Machine::i_detachDevice(MediumAttachment *pAttach,
  * If cleanupMode is CleanupMode_DetachAllReturnHardDisksOnly, this only
  * adds hard disks to the list. If it is CleanupMode_Full, this adds all
  * media to the list.
- * CleanupMode_DetachAllReturnHardDisksAndVMRemovable adds hard disk and
- * also removable medias if they are located in the VM folder and referenced
+ * CleanupMode_DetachAllReturnHardDisksAndVMRemovable adds hard disks and
+ * also removable media if they are located in the VM folder and referenced
  * only by this VM (media prepared by unattended installer).
  *
  * This gets called from Machine::Unregister, both for the actual Machine and
@@ -11906,8 +11906,8 @@ HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,
                  * medium lock, and the lock order is parent to child. */
                 lock.release();
                 /*
-                 * Search for medias which are not attached to any machine, but
-                 * in the chain to an attached disk. Mediums are only consided
+                 * Search for media which are not attached to any machine, but
+                 * in the chain to an attached disk. Media are only consided
                  * if they are:
                  * - have only one child
                  * - no references to any machines
@@ -16587,7 +16587,7 @@ void Machine::i_changeEncryptionHandler(ChangeEncryptionTask &task)
         Bstr bstrCipher(getCipherString(task.mstrCipher.c_str(), CipherModeXts));
         Bstr bstrNewPassword(task.mstrNewPassword);
         Bstr bstrNewPasswordId(task.mstrNewPasswordId);
-        /* encrypt mediums */
+        /* encrypt media */
         alock.release();
         for (MediaList::iterator it = task.mllMedia.begin();
              it != task.mllMedia.end();
@@ -16694,7 +16694,7 @@ HRESULT Machine::changeEncryption(const com::Utf8Str &aCurrentPassword,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* define mediums to be change encryption */
+    /* define media to be change encryption */
 
     MediaList llMedia;
     for (MediumAttachmentList::iterator
