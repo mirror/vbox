@@ -613,10 +613,10 @@ VBoxSVC_SOURCES = \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
 	src-all/NvramStoreImpl.cpp \
+  src-all/MachineSharedFolderImpl.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SecretKeyStore.cpp \
-	src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
 	src-all/ThreadTask.cpp \
 	src-all/VirtualBoxBase.cpp \
@@ -1107,6 +1107,7 @@ VBoxC_INTERMEDIATES = \
 VBoxC_SOURCES += \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	src-all/CryptoUtils.cpp \
+  src-all/ConsoleSharedFolderImpl.cpp \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
 	src-all/EventImpl.cpp \
@@ -1118,7 +1119,6 @@ VBoxC_SOURCES += \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SecretKeyStore.cpp \
-	src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
 	src-all/ThreadTask.cpp \
 	src-all/VirtualBoxBase.cpp \

@@ -51,7 +51,7 @@ class MachineDebugger;
 class TeleporterStateSrc;
 class OUSBDevice;
 class RemoteUSBDevice;
-class SharedFolder;
+class ConsoleSharedFolder;
 class VRDEServerInfo;
 class EmulatedUSB;
 class AudioVRDE;
@@ -653,7 +653,7 @@ public:
         LONG     iPort;
     };
 
-    typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
+    typedef std::map<Utf8Str, ComObjPtr<ConsoleSharedFolder> > SharedFolderMap;
     typedef std::map<Utf8Str, SharedFolderData> SharedFolderDataMap;
     typedef std::map<Utf8Str, ComPtr<IMediumAttachment> > MediumAttachmentMap;
     typedef std::list<USBStorageDevice> USBStorageDeviceList;
@@ -691,7 +691,7 @@ private:
     }
 
     HRESULT i_findSharedFolder(const Utf8Str &strName,
-                               ComObjPtr<SharedFolder> &aSharedFolder,
+                               ComObjPtr<ConsoleSharedFolder> &aSharedFolder,
                                bool aSetError = false);
 
     HRESULT i_fetchSharedFolders(BOOL aGlobal);

@@ -48,7 +48,7 @@
 #include "USBControllerImpl.h"
 #include "USBDeviceFiltersImpl.h"
 #include "HostImpl.h"
-#include "SharedFolderImpl.h"
+#include "MachineSharedFolderImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
 #include "StorageControllerImpl.h"

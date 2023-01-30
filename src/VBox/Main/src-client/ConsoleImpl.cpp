@@ -67,7 +67,7 @@
 #include "MachineDebuggerImpl.h"
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"
-#include "SharedFolderImpl.h"
+#include "ConsoleSharedFolderImpl.h"
 #ifdef VBOX_WITH_AUDIO_VRDE
 # include "DrvAudioVRDE.h"
 #endif
@@ -1736,7 +1736,7 @@ Console::i_saveStateFileExec(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser)
          it != pThat->m_mapSharedFolders.end();
          ++it)
     {
-        SharedFolder *pSF = (*it).second;
+        ConsoleSharedFolder *pSF = (*it).second;
         AutoCaller sfCaller(pSF);
         AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
 
@@ -1861,7 +1861,7 @@ int Console::i_loadStateFileExecInternal(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, ui
             strAutoMountPoint.jolt();
         }
 
-        ComObjPtr<SharedFolder> pSharedFolder;
+        ComObjPtr<ConsoleSharedFolder> pSharedFolder;
         pSharedFolder.createObject();
         HRESULT hrc = pSharedFolder->init(this,
                                           strName,
@@ -3139,7 +3139,7 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
                         tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %s)"),
                         Global::stringifyMachineState(mMachineState));
 
-    ComObjPtr<SharedFolder> pSharedFolder;
+    ComObjPtr<ConsoleSharedFolder> pSharedFolder;
     HRESULT hrc = i_findSharedFolder(aName, pSharedFolder, false /* aSetError */);
     if (SUCCEEDED(hrc))
         return setError(VBOX_E_FILE_ERROR, tr("Shared folder named '%s' already exists"), aName.c_str());
@@ -3210,7 +3210,7 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
             tr("Cannot remove a transient shared folder from the machine while it is changing the state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
-    ComObjPtr<SharedFolder> pSharedFolder;
+    ComObjPtr<ConsoleSharedFolder> pSharedFolder;
     HRESULT hrc = i_findSharedFolder(aName, pSharedFolder, true /* aSetError */);
     if (FAILED(hrc))
         return hrc;
@@ -8395,7 +8395,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                  it != m_mapSharedFolders.end();
                  ++it)
             {
-                SharedFolder *pSF = it->second;
+                ConsoleSharedFolder *pSF = it->second;
                 AutoCaller sfCaller(pSF);
                 AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
                 sharedFolders[it->first] = SharedFolderData(pSF->i_getHostPath(),
@@ -9092,7 +9092,7 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState, bool aUpdateSer
  *
  * @note The caller must lock this object for writing.
  */
-HRESULT Console::i_findSharedFolder(const Utf8Str &strName, ComObjPtr<SharedFolder> &aSharedFolder, bool aSetError /* = false */)
+HRESULT Console::i_findSharedFolder(const Utf8Str &strName, ComObjPtr<ConsoleSharedFolder> &aSharedFolder, bool aSetError /* = false */)
 {
     /* sanity check */
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
