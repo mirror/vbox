@@ -3341,7 +3341,9 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
     size_t offLine = offAssignOp;
     switch (enmType)
     {
-        default: AssertReleaseFailed();
+        default:
+            AssertReleaseFailed();
+            RT_FALL_THRU();
         case kKmkAssignType_Recursive:
             *pszDst++ = '=';
             Assert(pchLine[offLine] == '=');
