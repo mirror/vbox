@@ -202,7 +202,9 @@ static BOOL gfGuestNumLockPressed = FALSE;
 static BOOL gfGuestCapsLockPressed = FALSE;
 static BOOL gfGuestScrollLockPressed = FALSE;
 static BOOL gfACPITerm = FALSE;
-static BOOL gfXCursorEnabled = FALSE;
+#if defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
+ static BOOL gfXCursorEnabled = FALSE;
+#endif
 static int  gcGuestNumLockAdaptions = 2;
 static int  gcGuestCapsLockAdaptions = 2;
 static uint32_t gmGuestNormalXRes;
@@ -3543,13 +3545,6 @@ static void SetPointerShape(const PointerShapeChangeData *data)
     {
         bool ok = false;
 
-        uint32_t andMaskSize = (data->width + 7) / 8 * data->height;
-        uint32_t srcShapePtrScan = data->width * 4;
-
-        const uint8_t* shape = data->shape.raw();
-        const uint8_t *srcAndMaskPtr = shape;
-        const uint8_t *srcShapePtr = shape + ((andMaskSize + 3) & ~3);
-
 #if 0
         /* pointer debugging code */
         // vbox_show_shape(data->width, data->height, 0, data->shape);
@@ -3569,7 +3564,11 @@ static void SetPointerShape(const PointerShapeChangeData *data)
 #endif
 
 #if defined(RT_OS_WINDOWS)
-
+        uint32_t srcShapePtrScan = data->width * 4;
+        const uint8_t *srcAndMaskPtr = shape;
+        const uint8_t *srcShapePtr = shape + ((andMaskSize + 3) & ~3);
+        uint32_t andMaskSize = (data->width + 7) / 8 * data->height;
+        const uint8_t* shape = data->shape.raw();
         BITMAPV5HEADER bi;
         HBITMAP hBitmap;
         void *lpBits;

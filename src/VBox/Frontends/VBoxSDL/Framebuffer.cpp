@@ -335,7 +335,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(WinId)(LONG64 *winId)
     if (!winId)
         return E_POINTER;
 #ifdef RT_OS_DARWIN
-    if (mWinId == NULL) /* (In case it failed the first time.) */
+    if (mWinId == 0) /* (In case it failed the first time.) */
         mWinId = (intptr_t)VBoxSDLGetDarwinWindowId();
 #endif
     *winId = mWinId;
