@@ -2582,7 +2582,7 @@ static size_t scmKmkWordLength(const char *pchLine, size_t cchLine, size_t offSt
             /*
              * This is rather straight forward.
              */
-            if (enmCtx == kKmkWordCtx_DepFileOrAssignment && enmCtx == kKmkWordCtx_DepFile)
+            if (enmCtx == kKmkWordCtx_DepFileOrAssignment || enmCtx == kKmkWordCtx_DepFile)
             {
                 if (off == offStart)
                     return 1;
