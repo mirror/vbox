@@ -121,6 +121,7 @@ int         ScmStreamSeekAbsolute(PSCMSTREAM pStream, size_t offAbsolute);
 int         ScmStreamSeekRelative(PSCMSTREAM pStream, ssize_t offRelative);
 int         ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine);
 bool        ScmStreamIsAtStartOfLine(PSCMSTREAM pStream);
+bool        ScmStreamAreIdentical(PCSCMSTREAM pStream1, PCSCMSTREAM pStream2);
 
 const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchLine, PSCMEOL penmEol);
 const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol);

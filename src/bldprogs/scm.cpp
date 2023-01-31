@@ -2197,13 +2197,13 @@ void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...)
 /**
  * Prints an error message.
  *
- * @returns false
+ * @returns kScmUnmodified
  * @param   pState              The rewrite state.  Optional.
  * @param   rc                  The error code.
  * @param   pszFormat           The message format string.
  * @param   ...                 Format arguments.
  */
-bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...)
+SCMREWRITERRES ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...)
 {
     if (RT_SUCCESS(pState->rc))
         pState->rc = rc;
@@ -2218,7 +2218,7 @@ bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...)
     RTPrintf("%s: error: %s: %N", g_szProgName, pState->pszFilename, pszFormat, &va);
     va_end(va);
 
-    return false;
+    return kScmUnmodified;
 }
 
 
@@ -2429,10 +2429,12 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                     for (size_t iRw = 0; iRw < pCfg->cRewriters; iRw++)
                     {
                         pState->rc = VINF_SUCCESS;
-                        bool fRc = pCfg->paRewriters[iRw]->pfnRewriter(pState, pIn, pOut, pBaseSettings);
+                        SCMREWRITERRES enmRes = pCfg->paRewriters[iRw]->pfnRewriter(pState, pIn, pOut, pBaseSettings);
                         if (RT_FAILURE(pState->rc))
                             break;
-                        if (fRc)
+                        if (enmRes == kScmMaybeModified)
+                            enmRes = ScmStreamAreIdentical(pIn, pOut) ? kScmUnmodified : kScmModified;
+                        if (enmRes == kScmModified)
                         {
                             PSCMSTREAM pTmp = pOut;
                             pOut = pIn == &Stream1 ? &Stream3 : pIn;

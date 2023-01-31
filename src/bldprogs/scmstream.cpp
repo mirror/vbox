@@ -693,6 +693,23 @@ bool ScmStreamIsAtStartOfLine(PSCMSTREAM pStream)
 }
 
 /**
+ * Compares the two streams from the start to end, binary fashion.
+ *
+ * The stream position does not change nor does it matter whether they are
+ * writable or readable.
+ *
+ * @returns true if identical, false if not.
+ * @param   pStream1            The first stream.
+ * @param   pStream2            The second stream.
+ */
+bool ScmStreamAreIdentical(PCSCMSTREAM pStream1, PCSCMSTREAM pStream2)
+{
+    return pStream1->cb == pStream2->cb
+        && memcmp(pStream1->pch, pStream2->pch, pStream1->cb) == 0;
+}
+
+
+/**
  * Worker for ScmStreamGetLineByNo and ScmStreamGetLine.
  *
  * Works on a fully lineated stream.

@@ -236,18 +236,21 @@ typedef struct SCMRWSTATE
     int32_t             rc;
 } SCMRWSTATE;
 
+/** Rewriter result. */
+typedef enum { kScmUnmodified = 0, kScmModified, kScmMaybeModified } SCMREWRITERRES;
+
 /**
  * A rewriter.
  *
  * This works like a stream editor, reading @a pIn, modifying it and writing it
  * to @a pOut.
  *
- * @returns true if any changes were made, false if not.
+ * @returns kScmUnmodified, kScmModified or kScmMaybeModified.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
  * @param   pSettings           The settings.
  */
-typedef bool FNSCMREWRITER(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+typedef SCMREWRITERRES FNSCMREWRITER(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 /** Pointer to a rewriter method. */
 typedef FNSCMREWRITER *PFNSCMREWRITER;
 
@@ -479,7 +482,7 @@ typedef SCMSETTINGS const *PCSCMSETTINGS;
 
 void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel);
 void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
-bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+SCMREWRITERRES ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 bool ScmFixManually(PSCMRWSTATE pState, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 bool ScmFixManuallyV(PSCMRWSTATE pState, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
