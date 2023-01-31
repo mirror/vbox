@@ -3561,11 +3561,15 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
     /*
      * Now we send the event. Apply extended and release prefixes.
      */
+#ifdef RT_OS_WINDOWS
+    gpKeyboard->PutUsageCode(SDL_GetScancodeFromKey(ev->keysym.sym), 0x07, ev->type == SDL_KEYUP ? TRUE : FALSE);
+#else
     if (keycode & 0x100)
         gpKeyboard->PutScancode(0xe0);
 
     gpKeyboard->PutScancode(ev->type == SDL_KEYUP ? (keycode & 0x7f) | 0x80
                                                  : (keycode & 0x7f));
+#endif /* RT_OS_WINDOWS */
 }
 
 #ifdef RT_OS_DARWIN
