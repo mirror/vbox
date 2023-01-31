@@ -1473,6 +1473,28 @@ $ VBoxClient --seamless</screen>
 
     </sect2>
 
+    <sect2 id="ts_solaris-no-e1000-bm">
+
+      <title>Older Solaris Releases Do Not Work with E1000 Ethernet</title>
+
+      <para>
+        Solaris releases before Solaris 10 1/06, including Solaris 9, Solaris
+        10 1/05 (GA), and Solaris 10 3/05 (HW2), are unable to communicate
+        through the Intel E1000 card. The Solaris e1000g driver does not enable
+        PCI bus mastering for the network adapter and is therefore unable to send
+        and receive data. This problem appears to be specific to the e1000g
+        driver and does not reflect general Solaris driver behavior.
+      </para>
+
+      <para>
+        The AMD PCnet emulation (using the Solaris pcn driver) can be used
+        instead of Intel E1000. Solaris 10 1/06 (U1) and later releases do not
+        have this problem and work with the emulated E1000 ethernet
+        controller.
+      </para>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="ts_win-hosts">
