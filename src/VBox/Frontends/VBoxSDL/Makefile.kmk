@@ -83,7 +83,7 @@ ifn1of ($(KBUILD_TARGET), solaris) # Probably wrong with SDL2
 VBoxSDL_LIBS = \
 	$(LIB_SDK_LIBSDL2_SDLMAIN)
 endif
-ifeq ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 VBoxSDL_LIBS += \
 	$(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL) \
 	$(VBOX_XCURSOR_LIBS) \
