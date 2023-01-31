@@ -688,6 +688,87 @@ void signal_handler_SIGINT(int sig)
 }
 #endif /* VBOXSDL_WITH_X11 */
 
+/**
+ * Returns a stringified version of a keyboard modifier.
+ *
+ * @returns Stringified version of the keyboard modifier.
+ * @param   mod                 Modifier code to return a stringified version for.
+ */
+static const char *keyModToStr(unsigned mod)
+{
+    switch (mod)
+    {
+        RT_CASE_RET_STR(KMOD_NONE);
+        RT_CASE_RET_STR(KMOD_LSHIFT);
+        RT_CASE_RET_STR(KMOD_RSHIFT);
+        RT_CASE_RET_STR(KMOD_LCTRL);
+        RT_CASE_RET_STR(KMOD_RCTRL);
+        RT_CASE_RET_STR(KMOD_LALT);
+        RT_CASE_RET_STR(KMOD_RALT);
+        RT_CASE_RET_STR(KMOD_LGUI);
+        RT_CASE_RET_STR(KMOD_RGUI);
+        RT_CASE_RET_STR(KMOD_NUM);
+        RT_CASE_RET_STR(KMOD_CAPS);
+        RT_CASE_RET_STR(KMOD_MODE);
+        RT_CASE_RET_STR(KMOD_SCROLL);
+        default:
+            break;
+    }
+
+    return "<Unknown>";
+}
+
+/**
+ * Handles detecting a host key by printing its values to stdout.
+ *
+ * @returns RTEXITCODE
+ */
+static RTEXITCODE handleDetectHostKey(void)
+{
+    RTEXITCODE rcExit  = RTEXITCODE_SUCCESS;
+
+    int rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER);
+    if (rc == 0)
+    {
+        /* We need a window, otherwise we won't get any keypress events. */
+        SDL_Window *pWnd = SDL_CreateWindow("VBoxSDL",
+                                            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
+        RTPrintf("Please hit one or two function key(s) to get the --hostkey value. ..\n");
+        RTPrintf("Press CTRL+C to quit.\n");
+        SDL_Event e1;
+        while (SDL_WaitEvent(&e1))
+        {
+            if (    e1.key.keysym.sym == SDLK_c
+                && (e1.key.keysym.mod & KMOD_CTRL) != 0)
+                break;
+            if (e1.type == SDL_QUIT)
+                break;
+            if (e1.type == SDL_KEYDOWN)
+            {
+                unsigned const mod = SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED);
+                RTPrintf("--hostkey %d", e1.key.keysym.sym);
+                if (mod)
+                    RTPrintf(" %d\n", mod);
+                else
+                    RTPrintf("\n");
+
+                if (mod)
+                    RTPrintf("Host key is '%s' + '%s'\n", keyModToStr(mod), SDL_GetKeyName(e1.key.keysym.sym));
+                else
+                    RTPrintf("Host key is '%s'\n", SDL_GetKeyName(e1.key.keysym.sym));
+            }
+        }
+        SDL_DestroyWindow(pWnd);
+        SDL_Quit();
+    }
+    else
+    {
+        RTPrintf("Error: SDL_InitSubSystem failed with message '%s'\n", SDL_GetError());
+        rcExit = RTEXITCODE_FAILURE;
+    }
+
+    return rcExit;
+}
 
 /** entry point */
 extern "C"
@@ -695,8 +776,41 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     RT_NOREF(envp);
 #ifdef RT_OS_WINDOWS
+    /* As we run with the WINDOWS subsystem, we need to either attach to or create an own console
+     * to get any stdout / stderr output. */
+    bool fAllocConsole = IsDebuggerPresent();
+    if (!fAllocConsole)
+    {
+        if (!AttachConsole(ATTACH_PARENT_PROCESS))
+            fAllocConsole = true;
+    }
+
+    if (fAllocConsole)
+    {
+        if (!AllocConsole())
+            MessageBox(GetDesktopWindow(), L"Unable to attach to or allocate a console!", L"VBoxSDL", MB_OK | MB_ICONERROR);
+        /* Continue running. */
+    }
+
+    RTFILE hStdIn;
+    RTFileFromNative(&hStdIn,  (RTHCINTPTR)GetStdHandle(STD_INPUT_HANDLE));
+    /** @todo Closing of standard handles not support via IPRT (yet). */
+    RTStrmOpenFileHandle(hStdIn, "r", 0, &g_pStdIn);
+
+    RTFILE hStdOut;
+    RTFileFromNative(&hStdOut,  (RTHCINTPTR)GetStdHandle(STD_OUTPUT_HANDLE));
+    /** @todo Closing of standard handles not support via IPRT (yet). */
+    RTStrmOpenFileHandle(hStdOut, "wt", 0, &g_pStdOut);
+
+    RTFILE hStdErr;
+    RTFileFromNative(&hStdErr,  (RTHCINTPTR)GetStdHandle(STD_ERROR_HANDLE));
+    RTStrmOpenFileHandle(hStdErr, "wt", 0, &g_pStdErr);
+
+    if (!fAllocConsole) /* When attaching to the parent console, make sure we start on a fresh line. */
+        RTPrintf("\n");
+
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
-#endif
+#endif /* RT_OS_WINDOWS */
 
 #ifdef Q_WS_X11
     if (!XInitThreads())
@@ -730,6 +844,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 #endif
 
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+
     /*
      * the hostkey detection mode is unrelated to VM processing, so handle it before
      * we initialize anything COM related
@@ -737,47 +853,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (argc == 2 && (   !strcmp(argv[1], "-detecthostkey")
                       || !strcmp(argv[1], "--detecthostkey")))
     {
-        Uint32 fInitSubSystem = SDL_INIT_VIDEO | SDL_INIT_TIMER;
-        int rc = SDL_InitSubSystem(fInitSubSystem);
-        if (rc != 0)
-        {
-            RTPrintf("Error: SDL_InitSubSystem failed with message '%s'\n", SDL_GetError());
-            return 1;
-        }
-        RTPrintf("Please hit one or two function key(s) to get the --hostkey value...\n");
-        SDL_Event event1;
-        while (SDL_WaitEvent(&event1))
-        {
-            if (event1.type == SDL_KEYDOWN)
-            {
-                SDL_Event event2;
-                unsigned  mod = SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED);
-                while (SDL_WaitEvent(&event2))
-                {
-                    if (event2.type == SDL_KEYDOWN || event2.type == SDL_KEYUP)
-                    {
-                        /* pressed additional host key */
-                        RTPrintf("--hostkey %d", event1.key.keysym.sym);
-                        if (event2.type == SDL_KEYDOWN)
-                        {
-                            RTPrintf(" %d", event2.key.keysym.sym);
-                            RTPrintf(" %d\n", SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED));
-                        }
-                        else
-                        {
-                            RTPrintf(" %d\n", mod);
-                        }
-                        /* we're done */
-                        break;
-                    }
-                }
-                /* we're down */
-                break;
-            }
-        }
-        SDL_Quit();
-        return 1;
+        rcExit = handleDetectHostKey();
+#ifdef RT_OS_WINDOWS
+        FreeConsole(); /* Detach or destroy (from) console. */
+#endif
+        return rcExit;
     }
+
+    /** @todo r=andy This function is waaaaaay to long, uses goto's and leaks stuff. Use RTGetOpt handling. */
 
     HRESULT hrc;
     int vrc;
@@ -1294,7 +1377,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
     else if (pcszSettingsPwFile)
     {
-        int rcExit = settingsPasswordFile(pVirtualBox, pcszSettingsPwFile);
+        rcExit = settingsPasswordFile(pVirtualBox, pcszSettingsPwFile);
         if (rcExit != RTEXITCODE_SUCCESS)
             goto leave;
     }
@@ -2781,6 +2864,11 @@ leave:
 
     LogFlow(("Returning from main()!\n"));
     RTLogFlush(NULL);
+
+#ifdef RT_OS_WINDOWS
+    FreeConsole(); /* Detach or destroy (from) console. */
+#endif
+
     return FAILED(hrc) ? 1 : 0;
 }
 
@@ -2801,43 +2889,7 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
-#ifdef RT_OS_WINDOWS
-    /* As we run with the WINDOWS subsystem, we need to either attach to or create an own console
-     * to get any stdout / stderr output. */
-    bool fAllocConsole = ::IsDebuggerPresent();
-    if (!fAllocConsole)
-    {
-        if (!AttachConsole(ATTACH_PARENT_PROCESS))
-            fAllocConsole = true;
-    }
-
-    if (fAllocConsole)
-    {
-        if (!AllocConsole())
-            MessageBox(GetDesktopWindow(), L"Unable to attach to or allocate a console!", L"VBoxSDL", MB_OK | MB_ICONERROR);
-        /* Continue running. */
-    }
-
-    RTFILE hStdOut;
-    RTFileFromNative(&hStdOut,  (RTHCINTPTR)GetStdHandle(STD_OUTPUT_HANDLE));
-    /** @todo Closing of standard handles not support via IPRT (yet). */
-    RTStrmOpenFileHandle(hStdOut, "wt", 0, &g_pStdOut);
-
-    RTFILE hStdErr;
-    RTFileFromNative(&hStdErr,  (RTHCINTPTR)GetStdHandle(STD_ERROR_HANDLE));
-    RTStrmOpenFileHandle(hStdErr, "wt", 0, &g_pStdErr);
-
-    if (!fAllocConsole) /* When attaching to the parent console, make sure we start on a fresh line. */
-        RTPrintf("\n");
-#endif /* RT_OS_WINDOWS */
-
-    int rcExit = TrustedMain(argc, argv, NULL);
-
-#ifdef RT_OS_WINDOWS
-    FreeConsole(); /* Detach or destroy (from) console. */
-#endif
-
-    return rcExit;
+    return TrustedMain(argc, argv, NULL);
 }
 #endif /* !VBOX_WITH_HARDENING */
 
