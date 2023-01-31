@@ -54,9 +54,11 @@ AddService=VBoxSup,0x00000002,VBoxSup_Service
 
 [DefaultUninstall@DOT-NT-ARCH@]
 DefFiles=VBoxSup_CopyFiles
+LegacyUninstall=1
 
 [DefaultUninstall@DOT-NT-ARCH@.Services]
 DelService=VBoxSup,0x00000200
+LegacyUninstall=1
 
 ;; This does not actually work either (see VBoxUSBMon), though it triggers in the
 ;; installer rather at manual installation on my test system (could be polluted & confused).
