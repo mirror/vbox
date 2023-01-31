@@ -3115,30 +3115,6 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         AssertLogRelRCReturn(rc, rc);
 
         /*
-         * Finally, initialize guest VMX MSRs.
-         *
-         * This needs to be done -after- exploding guest features and sanitizing CPUID leaves
-         * as constructing VMX capabilities MSRs rely on CPU feature bits like long mode,
-         * unrestricted-guest execution, CR4 feature bits and possibly more in the future.
-         */
-        /** @todo r=bird: given that long mode never used to be enabled before the
-         *        VMINITCOMPLETED_RING0 state, and we're a lot earlier here in ring-3
-         *        init, the above comment cannot be entirely accurate. */
-        if (pVM->cpum.s.GuestFeatures.fVmx)
-        {
-            Assert(Config.fNestedHWVirt);
-            cpumR3InitVmxGuestFeaturesAndMsrs(pVM, pCpumCfg, &pHostMsrs->hwvirt.vmx, &GuestMsrs.hwvirt.vmx);
-
-            /* Copy MSRs to all VCPUs */
-            PCVMXMSRS pVmxMsrs = &GuestMsrs.hwvirt.vmx;
-            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-            {
-                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-                memcpy(&pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs, pVmxMsrs, sizeof(*pVmxMsrs));
-            }
-        }
-
-        /*
          * Some more configuration that we're applying at the end of everything
          * via the CPUMR3SetGuestCpuIdFeature API.
          */
@@ -3216,6 +3192,30 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
                     pLeaf->uEbx |= X86_CPUID_AMD_EFEID_EBX_NO_SSBD_REQUIRED;
                     LogRel(("CPUM: Set SSBD not required flag for AMD to work around some buggy Linux kernels!\n"));
                 }
+            }
+        }
+
+        /*
+         * Finally, initialize guest VMX MSRs.
+         *
+         * This needs to be done -after- exploding guest features and sanitizing CPUID leaves
+         * as constructing VMX capabilities MSRs rely on CPU feature bits like long mode,
+         * unrestricted-guest execution, CR4 feature bits and possibly more in the future.
+         */
+        /** @todo r=bird: given that long mode never used to be enabled before the
+         *        VMINITCOMPLETED_RING0 state, and we're a lot earlier here in ring-3
+         *        init, the above comment cannot be entirely accurate. */
+        if (pVM->cpum.s.GuestFeatures.fVmx)
+        {
+            Assert(Config.fNestedHWVirt);
+            cpumR3InitVmxGuestFeaturesAndMsrs(pVM, pCpumCfg, &pHostMsrs->hwvirt.vmx, &GuestMsrs.hwvirt.vmx);
+
+            /* Copy MSRs to all VCPUs */
+            PCVMXMSRS pVmxMsrs = &GuestMsrs.hwvirt.vmx;
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            {
+                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+                memcpy(&pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs, pVmxMsrs, sizeof(*pVmxMsrs));
             }
         }
 
