@@ -41,7 +41,7 @@ TEMPLATE_VBoxTestFloat_DEFS    = $(TEMPLATE_VBoxR3DllNonPedantic_DEFS) \
 	FLOAT128 \
 	FLOAT_ROUND_ODD
 ifn1of ($(KBUILD_TARGET), win)
-TEMPLATE_VBoxTestFloat_DEFS.amd64 = $(TEMPLATE_VBoxR3DllNonPedantic_DEFS.amd64) LONG_DOUBLE_IS_EXTFLOAT80
+ TEMPLATE_VBoxTestFloat_DEFS.amd64 = $(TEMPLATE_VBoxR3DllNonPedantic_DEFS.amd64) LONG_DOUBLE_IS_EXTFLOAT80
 endif
 if1of ($(KBUILD_TARGET), win)
  TEMPLATE_VBoxTestFloat_INCS.amd64 = ../build/Win-amd64-VCC $(TEMPLATE_VBoxR3DllNonPedantic_INCS.amd64)
@@ -119,7 +119,7 @@ VBox-TestFloat_SOURCES     := \
 	source/writeCase_z_extF80M.c \
 	source/writeCase_z_f128M.c \
 	source/testLoops_common.c \
-       \
+	\
 	source/test_a_ui32_z_f16.c \
 	source/test_a_ui32_z_f32.c \
 	source/test_a_ui32_z_f64.c \
@@ -224,7 +224,7 @@ VBox-TestFloat_SOURCES     := \
 	source/test_abz_f128.c \
 	source/test_abcz_f128.c \
 	source/test_ab_f128_z_bool.c \
-       \
+	\
 	source/genCases_ui32.c \
 	source/genCases_ui64.c \
 	source/genCases_i32.c \
@@ -253,7 +253,7 @@ PROGRAMS += tstTestFloatGen
 tstTestFloatGen_TEMPLATE = VBoxTestFloatExe
 tstTestFloatGen_SOURCES  = \
 	source/testfloat_gen.c \
-       source/genLoops.c
+	source/genLoops.c
 
 PROGRAMS += tstTestFloatTime
 tstTestFloatTime_TEMPLATE = VBoxTestFloatExe

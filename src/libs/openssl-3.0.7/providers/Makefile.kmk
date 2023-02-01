@@ -86,9 +86,9 @@ endif
 
 
 ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
-#
-# The build program libproviders version.
-#
+ #
+ # The build program libproviders version.
+ #
  LIBRARIES += VBoxBldProg-libproviders
  VBoxBldProg-libproviders         = For bldRTSignTool
  VBoxBldProg-libproviders_EXTENDS = VBox-libproviders
@@ -104,7 +104,7 @@ ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
   VBoxBldProg-$(sublib)_EXTENDS_BY = appending
   VBoxBldProg-$(sublib)_TEMPLATE  = VBoxSubLibCryptoBldProg
   VBoxBldProg-$(sublib)_DEFPATH   = $($(sublib)_DEFPATH)
- ## @todo kBuild: DEFPATH isn't inherited! FIXME!
+  ## @todo kBuild: DEFPATH isn't inherited! FIXME!
  endef
  $(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(eval $(def_VBoxBldProg_libproviders_inherit)))
 

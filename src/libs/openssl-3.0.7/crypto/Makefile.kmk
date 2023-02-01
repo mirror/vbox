@@ -138,9 +138,9 @@ endif
 
 
 if defined(VBOX_NEED_EXTPACK_OPENSSL) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not needed for Validation Kit.
-#
-# The extension pack libcrypto.
-#
+ #
+ # The extension pack libcrypto.
+ #
  LIBRARIES += VBoxExtPack-libcrypto
  VBoxExtPack-libcrypto         = For the Oracle Extension Pack
  VBoxExtPack-libcrypto_EXTENDS = VBox-libcrypto
@@ -155,7 +155,7 @@ if defined(VBOX_NEED_EXTPACK_OPENSSL) && !defined(VBOX_ONLY_VALIDATIONKIT) # Not
   VBoxExtPack-$(sublib)_EXTENDS_BY = appending
   VBoxExtPack-$(sublib)_DEFS = VBOX_IN_EXTPACK
   VBoxExtPack-$(sublib)_DEFPATH = $($(sublib)_DEFPATH)
- ## @todo kBuild: DEFPATH isn't inherited! FIXME!
+  ## @todo kBuild: DEFPATH isn't inherited! FIXME!
  endef
  $(foreach sublib,$(VBOX_CRYPTO_SUBLIBS), $(eval $(def_VBoxExtPack_libcrypto_inherit)))
 
@@ -163,9 +163,9 @@ endif # VBOX_NEED_EXTPACK_OPENSSL
 
 
 ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
-#
-# The build program libcrypto version.
-#
+ #
+ # The build program libcrypto version.
+ #
  LIBRARIES += VBoxBldProg-libcrypto
  VBoxBldProg-libcrypto         = For bldRTSignTool
  VBoxBldProg-libcrypto_EXTENDS = VBox-libcrypto
@@ -182,7 +182,7 @@ ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
   VBoxBldProg-$(sublib)_EXTENDS_BY = appending
   VBoxBldProg-$(sublib)_TEMPLATE  = VBoxSubLibCryptoBldProg
   VBoxBldProg-$(sublib)_DEFPATH   = $($(sublib)_DEFPATH)
- ## @todo kBuild: DEFPATH isn't inherited! FIXME!
+  ## @todo kBuild: DEFPATH isn't inherited! FIXME!
  endef
  $(foreach sublib,$(VBOX_CRYPTO_SUBLIBS), $(eval $(def_VBoxBldProg_libcrypto_inherit)))
 

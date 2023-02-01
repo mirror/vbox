@@ -35,7 +35,7 @@ VBox-libxml2_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
 VBox-libxml2_SDKS           = VBoxZlib
 VBox-libxml2_DEFS           = _REENTRANT # the latter triggers thread support, see xmlversion-default.h and win32xmlversion.h.
 VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE \
-                              LIBXML_STATIC LIBXML_STATIC_FOR_DLL HAVE_WIN32_THREADS HAVE_COMPILER_TLS HAVE_ZLIB_H
+	LIBXML_STATIC LIBXML_STATIC_FOR_DLL HAVE_WIN32_THREADS HAVE_COMPILER_TLS HAVE_ZLIB_H
 VBox-libxml2_CFLAGS.win.amd64 = -wd4267
 VBox-libxml2_CFLAGS.win    += -wd4701 # potentially uninitialized local variable 'l' used
 VBox-libxml2_CFLAGS.win    += -wd4232 # nonstandard extension used : 'xmlFree' : address of dllimport 'free' is not static, identity not guaranteed

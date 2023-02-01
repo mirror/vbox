@@ -29,7 +29,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-zlib
-if1of ($(KBUILD_TARGET),os2 win)
+if1of ($(KBUILD_TARGET), os2 win)
  # only required for vbox-img
  LIBRARIES += VBox-zlib-static
 endif
@@ -58,7 +58,7 @@ VBox-zlib_SOURCES = \
 VBox-zlib-static_TEMPLATE = VBoxR3StaticNonPedantic
 VBox-zlib-static_DEFS = $(VBox-zlib_DEFS)
 ifdef VBOX_WITH_NOCRT_STATIC
-VBox-zlib-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
+ VBox-zlib-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
 endif
 VBox-zlib-static_SOURCES = $(VBox-zlib_SOURCES)
 

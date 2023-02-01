@@ -35,7 +35,7 @@ VBox-libcurl_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
 VBox-libcurl_SDKS           = VBoxZlib VBoxOpenSslStatic
 VBox-libcurl_DEFS           = \
 	CURL_STATICLIB \
-        OPENSSL_NO_ENGINE \
+	OPENSSL_NO_ENGINE \
 	BUILDING_LIBCURL \
 	HAVE_CONFIG_H \
 	CURL_DISABLE_ALTSVC \

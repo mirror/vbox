@@ -189,9 +189,9 @@ crypto-headers_SOURCES  := \
 	include/openssl/whrlpool.h=>whrlpool.h \
 	include/openssl/x509err.h=>x509err.h \
 	include/openssl/x509v3err.h=>x509v3err.h \
-	 \
+	\
 	openssl-mangling.h=>openssl-mangling.h \
-	 \
+	\
 	gen-includes/openssl/asn1.h=>asn1.h \
 	gen-includes/openssl/asn1t.h=>asn1t.h \
 	gen-includes/openssl/bio.h=>bio.h \
@@ -299,7 +299,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_LibCrypto_DEFS += \
  	OPENSSL_SYSNAME_WIN32 \
  	OPENSSL_RAND_SEED_OS
-# Exclude WinCrypt.h, causes trouble all over the place
+ # Exclude WinCrypt.h, causes trouble all over the place
  TEMPLATE_LibCrypto_DEFS += \
  	NOCRYPT
 endif
@@ -376,9 +376,9 @@ TEMPLATE_LibCryptoTstExe_LIBS    = $(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_L
 
 
 ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
-#
-# Build program versions of LibCrypto and SubLibCrypto for bldRTSignTool.
-#
+ #
+ # Build program versions of LibCrypto and SubLibCrypto for bldRTSignTool.
+ #
  TEMPLATE_VBoxLibCryptoBldProg = Build program template the OpenSSL crypto library.
  TEMPLATE_VBoxLibCryptoBldProg_EXTENDS      := VBoxAdvBldProg
  TEMPLATE_VBoxLibCryptoBldProg_DEFS          = $(TEMPLATE_VBoxAdvBldProg_DEFS) $(TEMPLATE_LibCrypto_DEFS)

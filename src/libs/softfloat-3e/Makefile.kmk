@@ -374,33 +374,33 @@ VBox-SoftFloatR0_DEFS       = $(NO_SUCH_VARIABLE)
 # -wd4245: f128_sqrt.c(184): warning C4245: '=': conversion from 'int' to 'uint_fast64_t', signed/unsigned mismatch
 # -wd4389: f64_to_i64_r_minMag.c(93): warning C4389: '!=': signed/unsigned mismatch
 VBox-SoftFloatR0_CFLAGS.win := $(VBox-SoftFloat_CFLAGS.win) -wd4245 -wd4389
-ifn1of ($(KBUILD_TARGET),win)
-VBox-SoftFloatR0_CFLAGS     := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
+ifn1of ($(KBUILD_TARGET), win)
+ VBox-SoftFloatR0_CFLAGS    := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
 endif
 
 
 ifdef VBOX_WITH_NOCRT_STATIC
-#
-# Static No-CRT version of the above for use with VBoxGL.dll in the GAs.
-#
-LIBRARIES.win += VBox-SoftFloatGuestR3Shared
-VBox-SoftFloatGuestR3Shared_TEMPLATE    := NewerVccVBoxGuestR3Dll
-VBox-SoftFloatGuestR3Shared_EXTENDS     := VBox-SoftFloat
-VBox-SoftFloatGuestR3Shared_INST         = $(INST_ADDITIONS_LIB)
+ #
+ # Static No-CRT version of the above for use with VBoxGL.dll in the GAs.
+ #
+ LIBRARIES.win += VBox-SoftFloatGuestR3Shared
+ VBox-SoftFloatGuestR3Shared_TEMPLATE   := NewerVccVBoxGuestR3Dll
+ VBox-SoftFloatGuestR3Shared_EXTENDS    := VBox-SoftFloat
+ VBox-SoftFloatGuestR3Shared_INST        = $(INST_ADDITIONS_LIB)
 
-# -wd4389: f64_to_i64_r_minMag.c(93): warning C4389: '!=': signed/unsigned mismatch
-VBox-SoftFloatGuestR3Shared_CFLAGS.win  := $(VBox-SoftFloat_CFLAGS.win) -wd4245 -wd4389
- ifn1of ($(KBUILD_TARGET),win)
-VBox-SoftFloatGuestR3Shared_CFLAGS      := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
+ # -wd4389: f64_to_i64_r_minMag.c(93): warning C4389: '!=': signed/unsigned mismatch
+ VBox-SoftFloatGuestR3Shared_CFLAGS.win := $(VBox-SoftFloat_CFLAGS.win) -wd4245 -wd4389
+ ifn1of ($(KBUILD_TARGET), win)
+  VBox-SoftFloatGuestR3Shared_CFLAGS    := $(VBox-SoftFloat_CFLAGS) -Wno-sign-compare
  endif
 
-#
-# And a x86 version of that again for amd64 targets.
-#
-LIBRARIES.win.amd64 += VBox-SoftFloatGuestR3Shared-x86
-VBox-SoftFloatGuestR3Shared-x86_TEMPLATE     := NewerVccVBoxGuestR3Dll
-VBox-SoftFloatGuestR3Shared-x86_EXTENDS      := VBox-SoftFloatGuestR3Shared
-VBox-SoftFloatGuestR3Shared-x86_BLD_TRG_ARCH := x86
+ #
+ # And a x86 version of that again for amd64 targets.
+ #
+ LIBRARIES.win.amd64 += VBox-SoftFloatGuestR3Shared-x86
+ VBox-SoftFloatGuestR3Shared-x86_TEMPLATE    := NewerVccVBoxGuestR3Dll
+ VBox-SoftFloatGuestR3Shared-x86_EXTENDS     := VBox-SoftFloatGuestR3Shared
+ VBox-SoftFloatGuestR3Shared-x86_BLD_TRG_ARCH := x86
 endif # VBOX_WITH_NOCRT_STATIC
 
 

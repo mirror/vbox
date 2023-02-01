@@ -54,7 +54,7 @@ endif
 ## Internal.
 ## @param 1 full path to shader source.
 define def_VBoxDxVkCompileShader
-$(1)/shaders/$(basename $(notdir $(2))).h: $(2) | $$$$(dir $$$$@)
+ $(1)/shaders/$(basename $(notdir $(2))).h: $(2) | $$$$(dir $$$$@)
 	$(VBOX_GLSLANGVALIDATOR) -V --vn "$(basename $(notdir $(2)))" "$$<" -o "$$@"
 endef
 
@@ -62,10 +62,10 @@ endef
 ## @param 1 target name
 define def_VBoxDxVkCompilerShaders
 $$(call KB_FN_DO_PASS0_ON_TARGET,$(1))
-$(1)_INCS          += $$($(1)_0_OUTDIR)/shaders
-$(1)_BLDDIRS       += $$($(1)_0_OUTDIR)/shaders
-$(1)_INTERMEDIATES := $$(foreach shader,$$($(1)_VBOX_SHADERS) \
-	,$$($(1)_0_OUTDIR)/shaders/$$(basename $$(notdir $$(shader))).h)
+ $(1)_INCS         += $$($(1)_0_OUTDIR)/shaders
+ $(1)_BLDDIRS      += $$($(1)_0_OUTDIR)/shaders
+ $(1)_INTERMEDIATES := $$(foreach shader,$$($(1)_VBOX_SHADERS) \
+ 	,$$($(1)_0_OUTDIR)/shaders/$$(basename $$(notdir $$(shader))).h)
 $$(foreach shader,$$($(1)_VBOX_SHADERS),$$(evalcall2 def_VBoxDxVkCompileShader,$$($(1)_0_OUTDIR),$$(shader)))
 endef
 
@@ -230,54 +230,54 @@ VBox-DxVkNativeDxVk_SOURCES        = \
 	src/dxvk/hud/dxvk_hud_renderer.cpp \
 	src/dxvk/platform/dxvk_headless_exts.cpp
 VBox-DxVkNativeDxVk_VBOX_SHADERS := \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_blit_frag_1d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_blit_frag_2d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_blit_frag_3d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_buffer_f.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_buffer_u.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1d_f.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1d_u.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1darr_f.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1darr_u.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2d_f.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2d_u.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2darr_f.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2darr_u.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image3d_f.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image3d_u.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_buffer_image.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_color_1d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_color_2d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_color_ms.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_1d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_2d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_ms.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_stencil_1d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_stencil_2d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_stencil_ms.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_geom.geom \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_layer_vert.vert \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_vert.vert \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_pack_d24s8.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_pack_d32s8.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag_blit.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag_ms.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag_ms_amd.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_vert.vert \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_d.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_ds.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_f.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_f_amd.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_i.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_u.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_unpack_d24s8.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_unpack_d24s8_as_d32s8.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_unpack_d32s8.comp \
-       $(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_line_frag.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_line_vert.vert \
-       $(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_text_frag.frag \
-       $(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_text_vert.vert
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_blit_frag_1d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_blit_frag_2d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_blit_frag_3d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_buffer_f.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_buffer_u.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1d_f.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1d_u.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1darr_f.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image1darr_u.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2d_f.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2d_u.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2darr_f.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image2darr_u.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image3d_f.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image3d_u.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_buffer_image.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_color_1d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_color_2d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_color_ms.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_1d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_2d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_ms.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_stencil_1d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_stencil_2d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_copy_depth_stencil_ms.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_geom.geom \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_layer_vert.vert \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_vert.vert \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_pack_d24s8.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_pack_d32s8.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag_blit.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag_ms.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_frag_ms_amd.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_vert.vert \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_d.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_ds.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_f.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_f_amd.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_i.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_resolve_frag_u.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_unpack_d24s8.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_unpack_d24s8_as_d32s8.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_unpack_d32s8.comp \
+	$(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_line_frag.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_line_vert.vert \
+	$(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_text_frag.frag \
+	$(PATH_SUB_CURRENT)/src/dxvk/hud/shaders/hud_text_vert.vert
 $(evalcall2 def_VBoxDxVkCompilerShaders,VBox-DxVkNativeDxVk)
 
 
@@ -355,8 +355,8 @@ VBox-DxVkNativeD3D11_SOURCES        = \
 	src/d3d10/d3d10_view_rtv.cpp \
 	src/d3d10/d3d10_view_srv.cpp
 VBox-DxVkNativeD3D11_VBOX_SHADERS := \
-       $(PATH_SUB_CURRENT)/src/d3d11/shaders/d3d11_video_blit_frag.frag \
-       $(PATH_SUB_CURRENT)/src/d3d11/shaders/d3d11_video_blit_vert.vert
+	$(PATH_SUB_CURRENT)/src/d3d11/shaders/d3d11_video_blit_frag.frag \
+	$(PATH_SUB_CURRENT)/src/d3d11/shaders/d3d11_video_blit_vert.vert
 $(evalcall2 def_VBoxDxVkCompilerShaders,VBox-DxVkNativeD3D11)
 
 #

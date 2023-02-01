@@ -30,7 +30,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-liblzf
-if1of ($(KBUILD_TARGET),os2 win)
+if1of ($(KBUILD_TARGET), os2 win)
  # only required for vbox-img
  LIBRARIES += VBox-liblzf-static
 endif
