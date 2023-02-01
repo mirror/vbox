@@ -1452,7 +1452,7 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
     {
         /* If HID LEDs sync is disabled or not supported, check if the guest has the
          * same view on the modifier keys (NumLock, CapsLock, ScrollLock) as the host. */
-        if (!machineLogic()->isHidLedsSyncEnabled())
+        if (!uimachine()->isHidLedsSyncEnabled())
             if (fFlags & KeyPressed)
                 fixModifierState(pCodes, puCodesCount);
 

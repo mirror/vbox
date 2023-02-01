@@ -178,7 +178,7 @@ bool UISession::initialize()
 /* Log whether HID LEDs sync is enabled: */
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     LogRel(("GUI: HID LEDs sync is %s\n",
-            uimachine()->machineLogic()->isHidLedsSyncEnabled()
+            uimachine()->isHidLedsSyncEnabled()
             ? "enabled" : "disabled"));
 #else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
     LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));

@@ -608,11 +608,6 @@ void UIMachineLogic::sltMouseCapabilityChanged()
         pAction->setChecked(true);
 }
 
-void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
-{
-    m_fIsHidLedsSyncEnabled = fEnabled;
-}
-
 void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 {
 #if defined(VBOX_WS_X11)
@@ -632,7 +627,7 @@ void UIMachineLogic::sltKeyboardLedsChanged()
     /* Here we have to update host LED lock states using values provided by UISession:
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
 
-    if (!isHidLedsSyncEnabled())
+    if (!uimachine()->isHidLedsSyncEnabled())
         return;
 
     /* Check if we accidentally trying to manipulate LEDs when host LEDs state was deallocated. */
@@ -784,7 +779,6 @@ UIMachineLogic::UIMachineLogic(UIMachine *pMachine, UISession *pSession)
     , m_pDockSettingMenuAction(0)
 #endif /* VBOX_WS_MAC */
     , m_pHostLedsState(NULL)
-    , m_fIsHidLedsSyncEnabled(false)
     , m_pLogViewerDialog(0)
     , m_pFileManagerDialog(0)
     , m_pProcessControlDialog(0)
@@ -1380,15 +1374,9 @@ void UIMachineLogic::prepareDebugger()
 
 void UIMachineLogic::loadSettings()
 {
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-    /* Read cached extra-data value: */
-    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(uiCommon().managedVMUuid());
-    /* Subscribe to extra-data changes to be able to enable/disable feature dynamically: */
-    connect(gEDataManager, &UIExtraDataManager::sigHidLedsSyncStateChange, this, &UIMachineLogic::sltHidLedsSyncStateChanged);
-#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
     /* HID LEDs sync initialization: */
     sltSwitchKeyboardLedsToGuestLeds();
-    /* */
+
 #if defined(VBOX_WS_X11) || defined(VBOX_WS_WIN)
     connect(gEDataManager, &UIExtraDataManager::sigDisableHostScreenSaverStateChange,
             this, &UIMachineLogic::sltDisableHostScreenSaverStateChanged);
@@ -1478,7 +1466,7 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * is enabled. Otherwise, keyboardHandler()->winSkipKeyboardEvents(false)
                      * won't be called in sltSwitchKeyboardLedsToGuestLeds() and guest
                      * will loose keyboard input forever. */
-                    if (isHidLedsSyncEnabled())
+                    if (uimachine()->isHidLedsSyncEnabled())
                     {
                         keyboardHandler()->winSkipKeyboardEvents(true);
                         QTimer::singleShot(100, this, SLOT(sltSwitchKeyboardLedsToGuestLeds()));
@@ -2675,7 +2663,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
     /* Here we have to update host LED lock states using values provided by UISession registry.
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
 
-    if (!isHidLedsSyncEnabled())
+    if (!uimachine()->isHidLedsSyncEnabled())
         return;
 
 #if defined(VBOX_WS_MAC)
@@ -2702,7 +2690,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 //           strDt.toUtf8().constData(),
 //           machineName().toUtf8().constData());
 
-    if (!isHidLedsSyncEnabled())
+    if (!uimachine()->isHidLedsSyncEnabled())
         return;
 
     /* Here we have to restore host LED lock states. */

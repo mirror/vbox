@@ -244,6 +244,9 @@ public:
         /** Defines the CAPS lock adaption @a uCount. */
         void setCapsLockAdaptionCnt(uint uCount) { m_uCapsLockAdaptionCnt = uCount; }
 
+        /** Returns whether VM should perform HID LEDs synchronization. */
+        bool isHidLedsSyncEnabled() const { return m_fIsHidLedsSyncEnabled; }
+
         /** Returns the keyboard-state. */
         int keyboardState() const { return m_iKeyboardState; }
     /** @} */
@@ -370,6 +373,10 @@ private slots:
           * @param  fCapsLock    Brings CAPS lock status.
           * @param  fScrollLock  Brings SCROLL lock status. */
         void sltHandleKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
+
+        /** Handles signal about keyboard LEDs sync state change.
+          * @param  fEnabled  Brings sync status. */
+        void sltHidLedsSyncStateChanged(bool fEnabled) { m_fIsHidLedsSyncEnabled = fEnabled; }
     /** @} */
 
     /** @name Mouse cursor stuff.
@@ -412,6 +419,8 @@ private:
     void prepareBranding();
     /** Prepare routine: Actions stuff. */
     void prepareActions();
+    /** Prepare routine: Keyboard stuff. */
+    void prepareKeyboard();
     /** Prepare routine: Machine-logic stuff. */
     void prepareMachineLogic();
 
@@ -553,6 +562,9 @@ private:
         uint  m_uNumLockAdaptionCnt;
         /** Holds the CAPS lock adaption count. */
         uint  m_uCapsLockAdaptionCnt;
+
+        /** Holds whether VM should perform HID LEDs synchronization. */
+        bool m_fIsHidLedsSyncEnabled;
 
         /** Holds the keyboard-state. */
         int  m_iKeyboardState;

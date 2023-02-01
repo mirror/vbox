@@ -160,8 +160,6 @@ public:
     virtual void updateDock();
 #endif /* VBOX_WS_MAC */
 
-    /** Returns whether VM should perform HID LEDs synchronization. */
-    bool isHidLedsSyncEnabled() const { return m_fIsHidLedsSyncEnabled; }
     /** An public interface to sltTypeHostKeyComboPressRelease. */
     void typeHostKeyComboPressRelease(bool fToggleSequence);
 
@@ -361,7 +359,6 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Handlers: Keyboard LEDs sync logic: */
-    void sltHidLedsSyncStateChanged(bool fEnabled);
     void sltSwitchKeyboardLedsToGuestLeds();
     void sltSwitchKeyboardLedsToPreviousLeds();
 
@@ -455,9 +452,6 @@ private:
 #endif /* VBOX_WS_MAC */
 
     void *m_pHostLedsState;
-
-    /** Holds whether VM should perform HID LEDs synchronization. */
-    bool m_fIsHidLedsSyncEnabled;
 
     /** Holds the map of settings dialogs. */
     QMap<UISettingsDialog::DialogType, UISettingsDialog*>  m_settings;

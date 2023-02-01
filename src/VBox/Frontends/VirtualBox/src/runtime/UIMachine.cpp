@@ -697,6 +697,7 @@ UIMachine::UIMachine()
     , m_fScrollLock(false)
     , m_uNumLockAdaptionCnt(2)
     , m_uCapsLockAdaptionCnt(2)
+    , m_fIsHidLedsSyncEnabled(false)
     , m_iKeyboardState(0)
     , m_fIsHidingHostPointer(true)
     , m_fIsValidPointerShapePresent(false)
@@ -734,6 +735,7 @@ bool UIMachine::prepare()
     prepareActions();
     prepareScreens();
     prepareBranding();
+    prepareKeyboard();
     prepareMachineLogic();
 
     /* Try to initialize session UI: */
@@ -986,6 +988,17 @@ void UIMachine::prepareActions()
             actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(false);
         }
     }
+}
+
+void UIMachine::prepareKeyboard()
+{
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    /* Load extra-data value: */
+    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(uiCommon().managedVMUuid());
+    /* Connect to extra-data changes to be able to enable/disable feature dynamically: */
+    connect(gEDataManager, &UIExtraDataManager::sigHidLedsSyncStateChange,
+            this, &UIMachine::sltHidLedsSyncStateChanged);
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 }
 
 void UIMachine::prepareMachineLogic()
