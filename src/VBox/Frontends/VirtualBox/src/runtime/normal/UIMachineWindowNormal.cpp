@@ -617,7 +617,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
 void UIMachineWindowNormal::showInNecessaryMode()
 {
     /* Make sure this window should be shown at all: */
-    if (!uisession()->isScreenVisible(m_uScreenId))
+    if (!uimachine()->isScreenVisible(m_uScreenId))
         return hide();
 
     /* Make sure this window is not minimized: */

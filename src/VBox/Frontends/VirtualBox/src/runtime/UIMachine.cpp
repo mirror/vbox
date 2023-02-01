@@ -29,9 +29,13 @@
 #ifdef VBOX_WS_WIN
 # include <QBitmap>
 #endif
+#ifdef VBOX_WS_MAC
+# include <QTimer>
+#endif
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMachine.h"
@@ -40,13 +44,56 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
+#ifdef VBOX_WS_MAC
+# include "UICocoaApplication.h"
+# include "VBoxUtils-darwin.h"
+#endif
 
 /* COM includes: */
-#include "CMachine.h"
-#include "CSession.h"
 #include "CConsole.h"
-#include "CSnapshot.h"
+#include "CGraphicsAdapter.h"
+#include "CMachine.h"
 #include "CProgress.h"
+#include "CSession.h"
+#include "CSnapshot.h"
+
+
+#ifdef VBOX_WS_MAC
+/**
+ * MacOS X: Application Services: Core Graphics: Display reconfiguration callback.
+ *
+ * Notifies UIMachine about @a display configuration change.
+ * Corresponding change described by Core Graphics @a flags.
+ * Uses UIMachine @a pHandler to process this change.
+ *
+ * @note Last argument (@a pHandler) must always be valid pointer to UIMachine object.
+ * @note Calls for UIMachine::sltHandleHostDisplayAboutToChange() slot if display configuration changed.
+ */
+void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChangeSummaryFlags flags, void *pHandler)
+{
+    /* Which flags we are handling? */
+    int iHandledFlags = kCGDisplayAddFlag     /* display added */
+                        | kCGDisplayRemoveFlag  /* display removed */
+                        | kCGDisplaySetModeFlag /* display mode changed */;
+
+    /* Handle 'display-add' case: */
+    if (flags & kCGDisplayAddFlag)
+        LogRelFlow(("GUI: UIMachine::cgDisplayReconfigurationCallback: Display added.\n"));
+    /* Handle 'display-remove' case: */
+    else if (flags & kCGDisplayRemoveFlag)
+        LogRelFlow(("GUI: UIMachine::cgDisplayReconfigurationCallback: Display removed.\n"));
+    /* Handle 'mode-set' case: */
+    else if (flags & kCGDisplaySetModeFlag)
+        LogRelFlow(("GUI: UIMachine::cgDisplayReconfigurationCallback: Display mode changed.\n"));
+
+    /* Ask handler to process our callback: */
+    if (flags & iHandledFlags)
+        QTimer::singleShot(0, static_cast<UIMachine*>(pHandler),
+                           SLOT(sltHandleHostDisplayAboutToChange()));
+
+    Q_UNUSED(display);
+}
+#endif /* VBOX_WS_MAC */
 
 
 /* static */
@@ -168,6 +215,89 @@ UIVisualStateType UIMachine::requestedVisualState() const
     return m_enmRequestedVisualState;
 }
 
+bool UIMachine::isScreenVisibleHostDesires(ulong uScreenId) const
+{
+    /* Make sure index feats the bounds: */
+    AssertReturn(uScreenId < (ulong)m_monitorVisibilityVectorHostDesires.size(), false);
+
+    /* Return 'actual' (host-desire) visibility status: */
+    return m_monitorVisibilityVectorHostDesires.value((int)uScreenId);
+}
+
+void UIMachine::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisible)
+{
+    /* Make sure index feats the bounds: */
+    AssertReturnVoid(uScreenId < (ulong)m_monitorVisibilityVectorHostDesires.size());
+
+    /* Remember 'actual' (host-desire) visibility status: */
+    m_monitorVisibilityVectorHostDesires[(int)uScreenId] = fIsMonitorVisible;
+
+    /* And remember the request in extra data for guests with VMSVGA: */
+    /* This should be done before the actual hint is sent in case the guest overrides it. */
+    gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, uiCommon().managedVMUuid());
+}
+
+bool UIMachine::isScreenVisible(ulong uScreenId) const
+{
+    /* Make sure index feats the bounds: */
+    AssertReturn(uScreenId < (ulong)m_monitorVisibilityVector.size(), false);
+
+    /* Return 'actual' visibility status: */
+    return m_monitorVisibilityVector.value((int)uScreenId);
+}
+
+void UIMachine::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
+{
+    /* Make sure index feats the bounds: */
+    AssertReturnVoid(uScreenId < (ulong)m_monitorVisibilityVector.size());
+
+    /* Remember 'actual' visibility status: */
+    m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
+    /* Remember 'desired' visibility status: */
+    // See note in UIMachineView::sltHandleNotifyChange() regarding the graphics controller check. */
+    if (uisession()->machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA)
+        gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, uiCommon().managedVMUuid());
+
+    /* Make sure action-pool knows guest-screen visibility status: */
+    uisession()->actionPool()->toRuntime()->setGuestScreenVisible(uScreenId, fIsMonitorVisible);
+}
+
+int UIMachine::countOfVisibleWindows()
+{
+    int cCountOfVisibleWindows = 0;
+    for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
+        if (m_monitorVisibilityVector[i])
+            ++cCountOfVisibleWindows;
+    return cCountOfVisibleWindows;
+}
+
+QList<int> UIMachine::listOfVisibleWindows() const
+{
+    QList<int> visibleWindows;
+    for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
+        if (m_monitorVisibilityVector.at(i))
+            visibleWindows.push_back(i);
+    return visibleWindows;
+}
+
+QSize UIMachine::lastFullScreenSize(ulong uScreenId) const
+{
+    /* Make sure index fits the bounds: */
+    AssertReturn(uScreenId < (ulong)m_monitorLastFullScreenSizeVector.size(), QSize(-1, -1));
+
+    /* Return last full-screen size: */
+    return m_monitorLastFullScreenSizeVector.value((int)uScreenId);
+}
+
+void UIMachine::setLastFullScreenSize(ulong uScreenId, QSize size)
+{
+    /* Make sure index fits the bounds: */
+    AssertReturnVoid(uScreenId < (ulong)m_monitorLastFullScreenSizeVector.size());
+
+    /* Remember last full-screen size: */
+    m_monitorLastFullScreenSizeVector[(int)uScreenId] = size;
+}
+
 void UIMachine::closeRuntimeUI()
 {
     /* Quit application: */
@@ -216,6 +346,113 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
         /* Enter initial visual state again: */
         enterInitialVisualState();
     }
+}
+
+void UIMachine::sltHandleHostScreenCountChange()
+{
+    LogRelFlow(("GUI: UIMachine: Host-screen count changed.\n"));
+
+    /* Recache display data: */
+    updateHostScreenData();
+
+    /* Notify current machine-logic: */
+    emit sigHostScreenCountChange();
+}
+
+void UIMachine::sltHandleHostScreenGeometryChange()
+{
+    LogRelFlow(("GUI: UIMachine: Host-screen geometry changed.\n"));
+
+    /* Recache display data: */
+    updateHostScreenData();
+
+    /* Notify current machine-logic: */
+    emit sigHostScreenGeometryChange();
+}
+
+void UIMachine::sltHandleHostScreenAvailableAreaChange()
+{
+    LogRelFlow(("GUI: UIMachine: Host-screen available-area changed.\n"));
+
+    /* Notify current machine-logic: */
+    emit sigHostScreenAvailableAreaChange();
+}
+
+#ifdef VBOX_WS_MAC
+void UIMachine::sltHandleHostDisplayAboutToChange()
+{
+    LogRelFlow(("GUI: UIMachine::sltHandleHostDisplayAboutToChange()\n"));
+
+    if (m_pWatchdogDisplayChange->isActive())
+        m_pWatchdogDisplayChange->stop();
+    m_pWatchdogDisplayChange->setProperty("tryNumber", 1);
+    m_pWatchdogDisplayChange->start();
+}
+
+void UIMachine::sltCheckIfHostDisplayChanged()
+{
+    LogRelFlow(("GUI: UIMachine::sltCheckIfHostDisplayChanged()\n"));
+
+    /* Check if display count changed: */
+    if (UIDesktopWidgetWatchdog::screenCount() != m_hostScreens.size())
+    {
+        /* Reset watchdog: */
+        m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
+        /* Notify listeners about screen-count changed: */
+        return sltHandleHostScreenCountChange();
+    }
+    else
+    {
+        /* Check if at least one display geometry changed: */
+        for (int iScreenIndex = 0; iScreenIndex < UIDesktopWidgetWatchdog::screenCount(); ++iScreenIndex)
+        {
+            if (gpDesktop->screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
+            {
+                /* Reset watchdog: */
+                m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
+                /* Notify listeners about screen-geometry changed: */
+                return sltHandleHostScreenGeometryChange();
+            }
+        }
+    }
+
+    /* Check if watchdog expired, restart if not: */
+    int cTryNumber = m_pWatchdogDisplayChange->property("tryNumber").toInt();
+    if (cTryNumber > 0 && cTryNumber < 40)
+    {
+        /* Restart watchdog again: */
+        m_pWatchdogDisplayChange->setProperty("tryNumber", ++cTryNumber);
+        m_pWatchdogDisplayChange->start();
+    }
+    else
+    {
+        /* Reset watchdog: */
+        m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
+    }
+}
+#endif /* VBOX_WS_MAC */
+
+void UIMachine::sltHandleGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
+{
+    /* Ignore KGuestMonitorChangedEventType_NewOrigin change event: */
+    if (changeType == KGuestMonitorChangedEventType_NewOrigin)
+        return;
+    /* Ignore KGuestMonitorChangedEventType_Disabled event for primary screen: */
+    AssertMsg(countOfVisibleWindows() > 0, ("All machine windows are hidden!"));
+    if (changeType == KGuestMonitorChangedEventType_Disabled && uScreenId == 0)
+        return;
+
+    /* Process KGuestMonitorChangedEventType_Enabled change event: */
+    if (   !isScreenVisible(uScreenId)
+        && changeType == KGuestMonitorChangedEventType_Enabled)
+        setScreenVisible(uScreenId, true);
+    /* Process KGuestMonitorChangedEventType_Disabled change event: */
+    else if (   isScreenVisible(uScreenId)
+             && changeType == KGuestMonitorChangedEventType_Disabled)
+        setScreenVisible(uScreenId, false);
+
+    /* Notify listeners about the change: */
+    emit sigGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
 void UIMachine::sltHandleKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
@@ -343,6 +580,9 @@ UIMachine::UIMachine()
     , m_enmRequestedVisualState(UIVisualStateType_Invalid)
     , m_pMachineLogic(0)
     , m_pMachineWindowIcon(0)
+#ifdef VBOX_WS_MAC
+    , m_pWatchdogDisplayChange(0)
+#endif
     , m_fNumLock(false)
     , m_fCapsLock(false)
     , m_fScrollLock(false)
@@ -384,6 +624,7 @@ bool UIMachine::prepare()
 
     /* Prepare stuff: */
     prepareSessionConnections();
+    prepareScreens();
     prepareMachineWindowIcon();
     prepareMachineLogic();
 
@@ -417,7 +658,7 @@ void UIMachine::prepareSessionConnections()
     connect(uisession(), &UISession::sigDnDModeChange,
             this, &UIMachine::sigDnDModeChange);
     connect(uisession(), &UISession::sigGuestMonitorChange,
-            this, &UIMachine::sigGuestMonitorChange);
+            this, &UIMachine::sltHandleGuestMonitorChange);
     connect(uisession(), &UISession::sigMachineStateChange,
             this, &UIMachine::sigMachineStateChange);
     connect(uisession(), &UISession::sigMediumChange,
@@ -454,6 +695,95 @@ void UIMachine::prepareSessionConnections()
             this, &UIMachine::sltMouseCapabilityChange);
     connect(uisession(), &UISession::sigCursorPositionChange,
             this, &UIMachine::sltCursorPositionChange);
+}
+
+void UIMachine::prepareScreens()
+{
+    /* Recache display data: */
+    updateHostScreenData();
+
+#ifdef VBOX_WS_MAC
+    /* Prepare display-change watchdog: */
+    m_pWatchdogDisplayChange = new QTimer(this);
+    {
+        m_pWatchdogDisplayChange->setInterval(500);
+        m_pWatchdogDisplayChange->setSingleShot(true);
+        connect(m_pWatchdogDisplayChange, &QTimer::timeout,
+                this, &UIMachine::sltCheckIfHostDisplayChanged);
+    }
+#endif /* VBOX_WS_MAC */
+
+#ifdef VBOX_WS_MAC
+    /* Install native display reconfiguration callback: */
+    CGDisplayRegisterReconfigurationCallback(cgDisplayReconfigurationCallback, this);
+#else /* !VBOX_WS_MAC */
+    /* Install Qt display reconfiguration callbacks: */
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenCountChanged,
+            this, &UIMachine::sltHandleHostScreenCountChange);
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
+            this, &UIMachine::sltHandleHostScreenGeometryChange);
+# if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaRecalculated,
+            this, &UIMachine::sltHandleHostScreenAvailableAreaChange);
+# else /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaResized,
+            this, &UIMachine::sltHandleHostScreenAvailableAreaChange);
+# endif /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+#endif /* !VBOX_WS_MAC */
+
+    /* Prepare initial screen visibility status: */
+    m_monitorVisibilityVector.resize(uisession()->machine().GetGraphicsAdapter().GetMonitorCount());
+    m_monitorVisibilityVector.fill(false);
+    m_monitorVisibilityVector[0] = true;
+
+    /* Prepare empty last full-screen size vector: */
+    m_monitorLastFullScreenSizeVector.resize(uisession()->machine().GetGraphicsAdapter().GetMonitorCount());
+    m_monitorLastFullScreenSizeVector.fill(QSize(-1, -1));
+
+    /* If machine is in 'saved' state: */
+    if (uisession()->isSaved())
+    {
+        /* Update screen visibility status from saved-state: */
+        for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        {
+            BOOL fEnabled = true;
+            ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
+            uisession()->machine().QuerySavedGuestScreenInfo(iScreenIndex,
+                                                             uGuestOriginX, uGuestOriginY,
+                                                             uGuestWidth, uGuestHeight, fEnabled);
+            m_monitorVisibilityVector[iScreenIndex] = fEnabled;
+        }
+        /* And make sure at least one of them is visible (primary if others are hidden): */
+        if (countOfVisibleWindows() < 1)
+            m_monitorVisibilityVector[0] = true;
+    }
+    else if (uiCommon().isSeparateProcess())
+    {
+        /* Update screen visibility status from display directly: */
+        for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        {
+            KGuestMonitorStatus enmStatus = KGuestMonitorStatus_Disabled;
+            ULONG uGuestWidth = 0, uGuestHeight = 0, uBpp = 0;
+            LONG iGuestOriginX = 0, iGuestOriginY = 0;
+            uisession()->display().GetScreenResolution(iScreenIndex,
+                                                       uGuestWidth, uGuestHeight, uBpp,
+                                                       iGuestOriginX, iGuestOriginY, enmStatus);
+            m_monitorVisibilityVector[iScreenIndex] = (   enmStatus == KGuestMonitorStatus_Enabled
+                                                       || enmStatus == KGuestMonitorStatus_Blank);
+        }
+        /* And make sure at least one of them is visible (primary if others are hidden): */
+        if (countOfVisibleWindows() < 1)
+            m_monitorVisibilityVector[0] = true;
+    }
+
+    /* Prepare initial screen visibility status of host-desires (same as facts): */
+    m_monitorVisibilityVectorHostDesires.resize(uisession()->machine().GetGraphicsAdapter().GetMonitorCount());
+    for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        m_monitorVisibilityVectorHostDesires[iScreenIndex] = m_monitorVisibilityVector[iScreenIndex];
+
+    /* Make sure action-pool knows guest-screen visibility status: */
+    for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        uisession()->actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
 }
 
 void UIMachine::prepareMachineWindowIcon()
@@ -534,6 +864,14 @@ void UIMachine::cleanupMachineWindowIcon()
     m_pMachineWindowIcon = 0;
 }
 
+void UIMachine::cleanupScreens()
+{
+#ifdef VBOX_WS_MAC
+    /* Remove display reconfiguration callback: */
+    CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
+#endif /* VBOX_WS_MAC */
+}
+
 void UIMachine::cleanupSession()
 {
     /* Destroy session UI if exists: */
@@ -549,6 +887,7 @@ void UIMachine::cleanup()
     /* Cleanup stuff: */
     cleanupMachineLogic();
     cleanupMachineWindowIcon();
+    cleanupScreens();
 
     /* Cleanup session UI: */
     cleanupSession();
@@ -557,6 +896,17 @@ void UIMachine::cleanup()
 void UIMachine::enterInitialVisualState()
 {
     sltChangeVisualState(m_initialVisualState);
+}
+
+void UIMachine::updateHostScreenData()
+{
+    /* Rebuild host-screen data vector: */
+    m_hostScreens.clear();
+    for (int iScreenIndex = 0; iScreenIndex < UIDesktopWidgetWatchdog::screenCount(); ++iScreenIndex)
+        m_hostScreens << gpDesktop->screenGeometry(iScreenIndex);
+
+    /* Make sure action-pool knows host-screen count: */
+    uisession()->actionPool()->toRuntime()->setHostScreenCount(m_hostScreens.size());
 }
 
 void UIMachine::updateMousePointerShape()

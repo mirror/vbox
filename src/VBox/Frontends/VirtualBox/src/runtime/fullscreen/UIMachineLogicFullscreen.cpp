@@ -746,7 +746,7 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             /* If that window
              * 1. should really be shown and
              * 2. is mapped to some host-screen: */
-            if (   uisession()->isScreenVisible(uScreenID)
+            if (   uimachine()->isScreenVisible(uScreenID)
                 && hasHostScreenForGuestScreen(uScreenID))
             {
                 LogRel(("GUI: UIMachineLogicFullscreen::revalidateNativeFullScreen: "
@@ -782,7 +782,7 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
              * 1. shouldn't really be shown or
              * 2. isn't mapped to some host-screen or
              * 3. should be located on another host-screen than currently. */
-            if (   !uisession()->isScreenVisible(uScreenID)
+            if (   !uimachine()->isScreenVisible(uScreenID)
                 || !hasHostScreenForGuestScreen(uScreenID)
                 || iWantedHostScreenIndex != iCurrentHostScreenIndex)
             {

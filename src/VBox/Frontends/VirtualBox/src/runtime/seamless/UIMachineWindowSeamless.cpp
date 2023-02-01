@@ -31,14 +31,15 @@
 #include <QTimer>
 
 /* GUI includes: */
+#include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
+#include "UIMachine.h"
 #include "UIMachineLogicSeamless.h"
-#include "UIMachineWindowSeamless.h"
 #include "UIMachineView.h"
+#include "UIMachineWindowSeamless.h"
+#include "UISession.h"
 #if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
@@ -249,7 +250,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     AssertPtrReturnVoid(pSeamlessLogic);
 
     /* If window shouldn't be shown or mapped to some host-screen: */
-    if (!uisession()->isScreenVisible(m_uScreenId) ||
+    if (!uimachine()->isScreenVisible(m_uScreenId) ||
         !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
         /* Remember whether the window was minimized: */

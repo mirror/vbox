@@ -33,15 +33,16 @@
 #endif
 
 /* GUI includes: */
+#include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
+#include "UIMachine.h"
+#include "UIMachineView.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
-#include "UIMachineView.h"
 #include "UINotificationCenter.h"
+#include "UISession.h"
 #if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
@@ -182,7 +183,7 @@ void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachi
     AssertPtrReturnVoid(pFullscreenLogic);
 
     /* Make sure this window should be shown and mapped to host-screen: */
-    if (!uisession()->isScreenVisible(m_uScreenId) ||
+    if (!uimachine()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
         return;
 
@@ -431,7 +432,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 #if defined(VBOX_WS_MAC)
 
     /* If window shouldn't be shown or mapped to some host-screen: */
-    if (!uisession()->isScreenVisible(m_uScreenId) ||
+    if (!uimachine()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
         /* Hide window: */
@@ -459,7 +460,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 #elif defined(VBOX_WS_WIN)
 
     /* If window shouldn't be shown or mapped to some host-screen: */
-    if (!uisession()->isScreenVisible(m_uScreenId) ||
+    if (!uimachine()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
         /* Remember whether the window was minimized: */
@@ -502,7 +503,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 #elif defined(VBOX_WS_X11)
 
     /* If window shouldn't be shown or mapped to some host-screen: */
-    if (!uisession()->isScreenVisible(m_uScreenId) ||
+    if (!uimachine()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
         /* Remember whether the window was minimized: */

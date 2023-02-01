@@ -172,7 +172,7 @@ void UIMachineViewNormal::resendSizeHint()
      * the guest (aNotify == false), because there is technically no change (same
      * hardware as before shutdown), and notifying would interfere with the Windows
      * guest driver which saves the video mode to the registry on shutdown. */
-    uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
+    uimachine()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
     display().SetVideoModeHint(screenId(),
                                guestScreenVisibilityStatus(),
                                false, 0, 0, effectiveSizeHint.width(), effectiveSizeHint.height(), 0, false);

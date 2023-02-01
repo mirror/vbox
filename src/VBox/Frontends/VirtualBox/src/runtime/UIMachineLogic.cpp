@@ -897,9 +897,9 @@ void UIMachineLogic::prepareSessionConnections()
     connect(uimachine(), &UIMachine::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
     /* We should watch for host-screen-change events: */
-    connect(uisession(), &UISession::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
-    connect(uisession(), &UISession::sigHostScreenGeometryChange, this, &UIMachineLogic::sltHostScreenGeometryChange);
-    connect(uisession(), &UISession::sigHostScreenAvailableAreaChange, this, &UIMachineLogic::sltHostScreenAvailableAreaChange);
+    connect(uimachine(), &UIMachine::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
+    connect(uimachine(), &UIMachine::sigHostScreenGeometryChange, this, &UIMachineLogic::sltHostScreenGeometryChange);
+    connect(uimachine(), &UIMachine::sigHostScreenAvailableAreaChange, this, &UIMachineLogic::sltHostScreenAvailableAreaChange);
 
     /* We should notify about frame-buffer events: */
     connect(this, &UIMachineLogic::sigFrameBufferResize, uisession(), &UISession::sigFrameBufferResize);
@@ -1209,7 +1209,7 @@ void UIMachineLogic::prepareDock()
     pDockSettingsMenu->addAction(pDockIconDisableOverlay);
 
     /* If we have more than one visible window: */
-    const QList<int> visibleWindowsList = uisession()->listOfVisibleWindows();
+    const QList<int> visibleWindowsList = uimachine()->listOfVisibleWindows();
     const int cVisibleGuestScreens = visibleWindowsList.size();
     if (cVisibleGuestScreens > 1)
     {
@@ -1321,7 +1321,7 @@ void UIMachineLogic::updateDock()
             delete pAction;
         }
     }
-    const QList<int> visibleWindowsList = uisession()->listOfVisibleWindows();
+    const QList<int> visibleWindowsList = uimachine()->listOfVisibleWindows();
     const int cVisibleGuestScreens = visibleWindowsList.size();
     if (cVisibleGuestScreens > 1)
     {
@@ -1447,9 +1447,9 @@ void UIMachineLogic::cleanupSessionConnections()
     disconnect(uimachine(), &UIMachine::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
     /* We should stop watching for host-screen-change events: */
-    disconnect(uisession(), &UISession::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
-    disconnect(uisession(), &UISession::sigHostScreenGeometryChange, this, &UIMachineLogic::sltHostScreenGeometryChange);
-    disconnect(uisession(), &UISession::sigHostScreenAvailableAreaChange, this, &UIMachineLogic::sltHostScreenAvailableAreaChange);
+    disconnect(uimachine(), &UIMachine::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
+    disconnect(uimachine(), &UIMachine::sigHostScreenGeometryChange, this, &UIMachineLogic::sltHostScreenGeometryChange);
+    disconnect(uimachine(), &UIMachine::sigHostScreenAvailableAreaChange, this, &UIMachineLogic::sltHostScreenAvailableAreaChange);
 
     /* We should stop notify about frame-buffer events: */
     disconnect(this, &UIMachineLogic::sigFrameBufferResize, uisession(), &UISession::sigFrameBufferResize);

@@ -50,6 +50,9 @@
 class QWidget;
 class UISession;
 class UIMachineLogic;
+#ifdef VBOX_WS_MAC
+ class QTimer;
+#endif
 
 /** Singleton QObject extension
   * used as virtual machine (VM) singleton instance. */
@@ -128,6 +131,16 @@ signals:
         void sigMouseStateChange(int iState);
     /** @} */
 
+    /** @name Host-screen stuff.
+     ** @{ */
+        /** Notifies about host-screen count change. */
+        void sigHostScreenCountChange();
+        /** Notifies about host-screen geometry change. */
+        void sigHostScreenGeometryChange();
+        /** Notifies about host-screen available-area change. */
+        void sigHostScreenAvailableAreaChange();
+    /** @} */
+
 public:
 
     /** Static factory to start machine with passed @a uID.
@@ -166,6 +179,35 @@ public:
         /** Returns redefined machine-window name postfix. */
         QString machineWindowNamePostfix() const { return m_strMachineWindowNamePostfix; }
 #endif
+    /** @} */
+
+    /** @name Host-screen stuff.
+     ** @{ */
+        /** Returns the list of host-screen geometries we currently have. */
+        QList<QRect> hostScreens() const { return m_hostScreens; }
+    /** @} */
+
+    /** @name Guest-screen stuff.
+     ** @{ */
+        /** Returns whether guest-screen with @a uScreenId specified is expected to be visible. */
+        bool isScreenVisibleHostDesires(ulong uScreenId) const;
+        /** Defines whether guest-screen with @a uScreenId specified is expected to be @a fVisible. */
+        void setScreenVisibleHostDesires(ulong uScreenId, bool fVisible);
+
+        /** Returns whether guest-screen with @a uScreenId specified is actually visible. */
+        bool isScreenVisible(ulong uScreenId) const;
+        /** Defines whether guest-screen with @a uScreenId specified is actually @a fVisible. */
+        void setScreenVisible(ulong uScreenId, bool fIsMonitorVisible);
+
+        /** Returns a number of visible guest-windows. */
+        int countOfVisibleWindows();
+        /** Returns the list of visible guest-windows. */
+        QList<int> listOfVisibleWindows() const;
+
+        /** Returns last full-screen size for guest-screen with index @a uScreenId. */
+        QSize lastFullScreenSize(ulong uScreenId) const;
+        /** Defines last full-screen @a size for guest-screen with index @a uScreenId. */
+        void setLastFullScreenSize(ulong uScreenId, QSize size);
     /** @} */
 
     /** @name Keyboard stuff.
@@ -257,6 +299,33 @@ private slots:
     /** Visual state-change handler. */
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
+    /** @name Host-screen stuff.
+     * @{ */
+        /** Handles host-screen count change. */
+        void sltHandleHostScreenCountChange();
+        /** Handles host-screen geometry change. */
+        void sltHandleHostScreenGeometryChange();
+        /** Handles host-screen available-area change. */
+        void sltHandleHostScreenAvailableAreaChange();
+
+#ifdef VBOX_WS_MAC
+        /** MacOS X: Restarts display-reconfiguration watchdog timer from the beginning.
+          * @note Watchdog is trying to determine display reconfiguration in
+          *       UISession::sltCheckIfHostDisplayChanged() slot every 500ms for 40 tries. */
+        void sltHandleHostDisplayAboutToChange();
+        /** MacOS X: Determines display reconfiguration.
+          * @note Calls for UISession::sltHandleHostScreenCountChange() if screen count changed.
+          * @note Calls for UISession::sltHandleHostScreenGeometryChange() if screen geometry changed. */
+        void sltCheckIfHostDisplayChanged();
+#endif /* VBOX_WS_MAC */
+    /** @} */
+
+    /** @name Guest-screen stuff.
+     * @{ */
+        /** Handles guest-monitor state change. */
+        void sltHandleGuestMonitorChange(KGuestMonitorChangedEventType enmChangeType, ulong uScreenId, QRect screenGeo);
+    /** @} */
+
     /** @name Keyboard stuff.
      ** @{ */
         /** Handles signal about keyboard LEDs change.
@@ -300,6 +369,8 @@ private:
     bool prepare();
     /** Prepare routine: Session connection stuff. */
     void prepareSessionConnections();
+    /** Prepare routine: Screens stuff. */
+    void prepareScreens();
     /** Prepare routine: Machine-window icon. */
     void prepareMachineWindowIcon();
     /** Prepare routine: Machine-logic stuff. */
@@ -312,6 +383,8 @@ private:
     void cleanupMachineLogic();
     /** Cleanup routine: Machine-window icon. */
     void cleanupMachineWindowIcon();
+    /** Cleanup routine: Screens stuff. */
+    void cleanupScreens();
     /** Cleanup routine: Session stuff. */
     void cleanupSession();
     /** Cleanup routine. */
@@ -319,6 +392,12 @@ private:
 
     /** Moves VM to initial state. */
     void enterInitialVisualState();
+
+    /** @name Host-screen stuff.
+     * @{ */
+        /** Update host-screen data. */
+        void updateHostScreenData();
+    /** @} */
 
     /** @name Mouse cursor stuff.
      ** @{ */
@@ -377,6 +456,28 @@ private:
         /** Holds redefined machine-window name postfix. */
         QString m_strMachineWindowNamePostfix;
 #endif
+    /** @} */
+
+    /** @name Host-screen stuff.
+     * @{ */
+        /** Holds the list of host-screen geometries we currently have. */
+        QList<QRect>  m_hostScreens;
+
+#ifdef VBOX_WS_MAC
+        /** Mac OS X: Watchdog timer looking for display reconfiguration. */
+        QTimer *m_pWatchdogDisplayChange;
+#endif
+    /** @} */
+
+    /** @name Guest-screen stuff.
+     * @{ */
+        /** Holds the list of desired guest-screen visibility flags. */
+        QVector<bool>  m_monitorVisibilityVectorHostDesires;
+        /** Holds the list of actual guest-screen visibility flags. */
+        QVector<bool>  m_monitorVisibilityVector;
+
+        /** Holds the list of guest-screen full-screen sizes. */
+        QVector<QSize>  m_monitorLastFullScreenSizeVector;
     /** @} */
 
     /** @name Keyboard stuff.

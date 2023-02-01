@@ -148,7 +148,7 @@ void UIMachineViewSeamless::cleanupSeamless()
 void UIMachineViewSeamless::adjustGuestScreenSize()
 {
     /* Step 1: Is guest-screen visible? */
-    if (!uisession()->isScreenVisible(screenId()))
+    if (!uimachine()->isScreenVisible(screenId()))
     {
         LogRel(("GUI: UIMachineViewSeamless::adjustGuestScreenSize: "
                 "Guest-screen #%d is not visible, adjustment is not required.\n",
@@ -176,7 +176,7 @@ void UIMachineViewSeamless::adjustGuestScreenSize()
             desiredSizeHint.width(), desiredSizeHint.height(), screenId()));
     sltPerformGuestResize(sizeToApply);
     /* And remember the size to know what we are resizing out of when we exit: */
-    uisession()->setLastFullScreenSize(screenId(), scaledForward(desiredSizeHint));
+    uimachine()->setLastFullScreenSize(screenId(), scaledForward(desiredSizeHint));
 }
 
 QRect UIMachineViewSeamless::workingArea() const

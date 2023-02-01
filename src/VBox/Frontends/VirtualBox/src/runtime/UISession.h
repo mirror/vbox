@@ -133,13 +133,6 @@ signals:
     /** Notifies listeners about cursor position change. */
     void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
 
-    /** Notifies about host-screen count change. */
-    void sigHostScreenCountChange();
-    /** Notifies about host-screen geometry change. */
-    void sigHostScreenGeometryChange();
-    /** Notifies about host-screen available-area change. */
-    void sigHostScreenAvailableAreaChange();
-
     /** Notifies about frame-buffer resize. */
     void sigFrameBufferResize();
 
@@ -190,12 +183,6 @@ public:
     QWidget* mainMachineWindow() const;
     WId mainMachineWindowId() const;
     UIMachineWindow *activeMachineWindow() const;
-
-    /** @name Host-screen configuration variables.
-     ** @{ */
-    /** Returns the list of host-screen geometries we currently have. */
-    QList<QRect> hostScreens() const { return m_hostScreens; }
-    /** @} */
 
     /** @name Application Close configuration stuff.
      * @{ */
@@ -261,18 +248,6 @@ public:
     void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled) { m_fIsAutoCaptureDisabled = fIsAutoCaptureDisabled; }
     void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
 
-    /* Screen visibility status for host-desires: */
-    bool isScreenVisibleHostDesires(ulong uScreenId) const;
-    void setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisible);
-
-    /* Screen visibility status: */
-    bool isScreenVisible(ulong uScreenId) const;
-    void setScreenVisible(ulong uScreenId, bool fIsMonitorVisible);
-
-    /* Last screen full-screen size: */
-    QSize lastFullScreenSize(ulong uScreenId) const;
-    void setLastFullScreenSize(ulong uScreenId, QSize size);
-
     /** Returns whether guest-screen is undrawable.
      *  @todo: extend this method to all the states when guest-screen is undrawable. */
     bool isGuestScreenUnDrawable() const { return machineState() == KMachineState_Stopping ||
@@ -309,9 +284,6 @@ public:
     /** Returns VM's effective paravirtualization provider. */
     KParavirtProvider paraVirtProvider() const { return m_paraVirtProvider; }
 
-    /** Returns the list of visible guest windows. */
-    QList<int> listOfVisibleWindows() const;
-
     /** Returns a vector of media attached to the machine. */
     CMediumVector machineMedia() const;
 
@@ -342,24 +314,10 @@ private slots:
     void sltAdditionsChange();
     void sltVRDEChange();
     void sltRecordingChange();
-    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     /** Handles storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
     void sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
     /** Handles audio adapter change. */
     void sltAudioAdapterChange();
-
-    /* Handlers: Display reconfiguration stuff: */
-#ifdef RT_OS_DARWIN
-    void sltHandleHostDisplayAboutToChange();
-    void sltCheckIfHostDisplayChanged();
-#endif /* RT_OS_DARWIN */
-
-    /** Handles host-screen count change. */
-    void sltHandleHostScreenCountChange();
-    /** Handles host-screen geometry change. */
-    void sltHandleHostScreenGeometryChange();
-    /** Handles host-screen available-area change. */
-    void sltHandleHostScreenAvailableAreaChange();
 
     /** Handles signal about machine state saved.
       * @param  fSuccess  Brings whether state was saved successfully. */
@@ -390,16 +348,15 @@ private:
     void prepareFramebuffers();
     void prepareActions();
     void prepareConnections();
-    void prepareScreens();
     void prepareSignalHandling();
 
     /* Settings stuff: */
     void loadSessionSettings();
 
     /* Cleanup helpers: */
-    //void cleanupSignalHandling();
+    //void cleanupSignalHandling() {}
     //void cleanupScreens() {}
-    void cleanupConnections();
+    //void cleanupConnections() {}
     void cleanupActions();
     void cleanupFramebuffers();
     void cleanupConsoleEventHandlers();
@@ -416,12 +373,8 @@ private:
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
     bool postprocessInitialization();
-    int countOfVisibleWindows();
     /** Loads VM settings. */
     void loadVMSettings();
-
-    /** Update host-screen data. */
-    void updateHostScreenData();
 
     /** Updates action restrictions. */
     void updateActionRestrictions();
@@ -460,31 +413,12 @@ private:
     QMenuBar *m_pMenuBar;
 #endif /* VBOX_WS_MAC */
 
-    /* Screen visibility vector: */
-    QVector<bool> m_monitorVisibilityVector;
-
-    /* Screen visibility vector for host-desires: */
-    QVector<bool> m_monitorVisibilityVectorHostDesires;
-
-    /* Screen last full-screen size vector: */
-    QVector<QSize> m_monitorLastFullScreenSizeVector;
-
     /* Frame-buffers vector: */
     QVector<UIFrameBuffer*> m_frameBufferVector;
 
     /* Common variables: */
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
-
-    /** @name Host-screen configuration variables.
-     * @{ */
-    /** Holds the list of host-screen geometries we currently have. */
-    QList<QRect> m_hostScreens;
-#ifdef VBOX_WS_MAC
-    /** Mac OS X: Watchdog timer looking for display reconfiguration. */
-    QTimer *m_pWatchdogDisplayChange;
-#endif /* VBOX_WS_MAC */
-    /** @} */
 
     /** @name Application Close configuration variables.
      * @{ */

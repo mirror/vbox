@@ -629,7 +629,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         frameBuffer()->setScaledSize(scaledSize);
 
         /* Forget the last full-screen size: */
-        uisession()->setLastFullScreenSize(screenId(), QSize(-1, -1));
+        uimachine()->setLastFullScreenSize(screenId(), QSize(-1, -1));
     }
     /* For other than 'scale' mode: */
     else
@@ -640,7 +640,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         /* Disable the resize hint override hack and forget the last full-screen size: */
         m_sizeHintOverride = QSize(-1, -1);
         if (visualStateType() == UIVisualStateType_Normal)
-            uisession()->setLastFullScreenSize(screenId(), QSize(-1, -1));
+            uimachine()->setLastFullScreenSize(screenId(), QSize(-1, -1));
 
         /* Force machine-window update own layout: */
         QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
@@ -781,14 +781,14 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         && uisession()->isGuestSupportsGraphics()
         && (   (int)frameBuffer()->width() != size.width()
             || (int)frameBuffer()->height() != size.height()
-            || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
+            || uimachine()->isScreenVisible(screenId()) != uimachine()->isScreenVisibleHostDesires(screenId())))
         setStoredGuestScreenSizeHint(size);
 
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
     if (gEDataManager->autoMountGuestScreensEnabled(uiCommon().managedVMUuid()))
     {
         /* If host and guest have same opinion about guest-screen visibility: */
-        if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
+        if (uimachine()->isScreenVisible(screenId()) == uimachine()->isScreenVisibleHostDesires(screenId()))
         {
             /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
             if ((int)frameBuffer()->width() != size.width() || (int)frameBuffer()->height() != size.height())
@@ -796,7 +796,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
                 LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot resizing screen %d as %dx%d\n",
                         (int)screenId(), size.width(), size.height()));
                 display().SetVideoModeHint(screenId(),
-                                           uisession()->isScreenVisible(screenId()),
+                                           uimachine()->isScreenVisible(screenId()),
                                            false /* change origin? */,
                                            0 /* origin x */,
                                            0 /* origin y */,
@@ -809,7 +809,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         else
         {
             /* If host desires to have guest-screen enabled and guest-screen is disabled, retrying: */
-            if (uisession()->isScreenVisibleHostDesires(screenId()))
+            if (uimachine()->isScreenVisibleHostDesires(screenId()))
             {
                 /* Send enabling size-hint to the guest: */
                 LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot enabling guest-screen %d\n", (int)screenId()));
@@ -864,7 +864,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             LogRel(("GUI: UIMachineView::sltPerformGuestResize: Sending guest size-hint to screen %d as %dx%d\n",
                     (int)screenId(), size.width(), size.height()));
             display().SetVideoModeHint(screenId(),
-                                       uisession()->isScreenVisible(screenId()),
+                                       uimachine()->isScreenVisible(screenId()),
                                        false /* change origin? */,
                                        0 /* origin x */,
                                        0 /* origin y */,
@@ -895,7 +895,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
     }
 
     /* Update desirable screen status: */
-    uisession()->setScreenVisibleHostDesires(screenId(), fEnabled);
+    uimachine()->setScreenVisibleHostDesires(screenId(), fEnabled);
 
     /* Send enabling size-hint: */
     if (fEnabled)
@@ -916,7 +916,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
             && uisession()->isGuestSupportsGraphics()
             && (   frameBuffer()->width() != uWidth
                 || frameBuffer()->height() != uHeight
-                || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
+                || uimachine()->isScreenVisible(screenId()) != uimachine()->isScreenVisibleHostDesires(screenId())))
             setStoredGuestScreenSizeHint(QSize(uWidth, uHeight));
 
         /* Send enabling size-hint to the guest: */
@@ -967,7 +967,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
         && uisession()->isGuestSupportsGraphics()
         && (   (int)frameBuffer()->width() != size.width()
             || (int)frameBuffer()->height() != size.height()
-            || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
+            || uimachine()->isScreenVisible(screenId()) != uimachine()->isScreenVisibleHostDesires(screenId())))
         setStoredGuestScreenSizeHint(size);
 
     /* Send enabling size-hint to the guest: */
@@ -1478,7 +1478,7 @@ QSize UIMachineView::sizeHint() const
     /* Take the scale-factor(s) into account: */
     frameBufferSize = scaledForward(frameBufferSize);
     /* Check against the last full-screen size. */
-    if (frameBufferSize == uisession()->lastFullScreenSize(screenId()) && m_sizeHintOverride.isValid())
+    if (frameBufferSize == uimachine()->lastFullScreenSize(screenId()) && m_sizeHintOverride.isValid())
         return m_sizeHintOverride;
 
     /* Get frame-buffer size-hint: */
@@ -1561,7 +1561,7 @@ void UIMachineView::handleScaleChange()
             (unsigned long)m_uScreenId));
 
     /* If machine-window is visible: */
-    if (uisession()->isScreenVisible(m_uScreenId))
+    if (uimachine()->isScreenVisible(m_uScreenId))
     {
         /* For 'scale' mode: */
         if (visualStateType() == UIVisualStateType_Scale)

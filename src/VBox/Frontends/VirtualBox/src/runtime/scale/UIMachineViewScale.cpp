@@ -31,13 +31,14 @@
 
 /* GUI includes */
 #include "UICommon.h"
-#include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewScale.h"
-#include "UIFrameBuffer.h"
-#include "UIExtraDataManager.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachine.h"
+#include "UIMachineLogic.h"
+#include "UIMachineViewScale.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -174,7 +175,7 @@ void UIMachineViewScale::resendSizeHint()
     setMaximumGuestSize(sizeHint);
 
     /* Send saved size-hint to the guest: */
-    uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
+    uimachine()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
     display().SetVideoModeHint(screenId(),
                                guestScreenVisibilityStatus(),
                                false, 0, 0, sizeHint.width(), sizeHint.height(), 0, true);

@@ -36,6 +36,7 @@
 #include "UIMachineLogic.h"
 #include "UIFrameBuffer.h"
 #include "UISession.h"
+#include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UIExtraDataManager.h"
 #include "UIDesktopWidgetWatchdog.h"
@@ -138,7 +139,7 @@ void UIMultiScreenLayout::update()
         {
             /* Then we have to disable excessive guest-screen: */
             LogRel(("GUI: UIMultiScreenLayout::update: Disabling excessive guest-screen %d\n", iGuestScreen));
-            m_pMachineLogic->uisession()->setScreenVisibleHostDesires(iGuestScreen, false);
+            m_pMachineLogic->uimachine()->setScreenVisibleHostDesires(iGuestScreen, false);
             m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0, true);
         }
     }
@@ -171,7 +172,7 @@ void UIMultiScreenLayout::update()
             /* Re-enable guest-screen with proper resolution: */
             LogRel(("GUI: UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d\n",
                     iGuestScreen, uWidth, uHeight));
-            m_pMachineLogic->uisession()->setScreenVisibleHostDesires(iGuestScreen, true);
+            m_pMachineLogic->uimachine()->setScreenVisibleHostDesires(iGuestScreen, true);
             m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32, true);
         }
     }
@@ -276,7 +277,7 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
     m_guestScreens.clear();
     m_disabledGuestScreens.clear();
     for (uint iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
-        if (m_pMachineLogic->uisession()->isScreenVisible(iGuestScreen))
+        if (m_pMachineLogic->uimachine()->isScreenVisible(iGuestScreen))
             m_guestScreens << iGuestScreen;
         else
             m_disabledGuestScreens << iGuestScreen;
