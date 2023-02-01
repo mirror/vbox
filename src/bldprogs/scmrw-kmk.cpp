@@ -1452,10 +1452,12 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
                 *pszDst++ = ' ';
             else
             {
+                unsigned iEol = 0;
                 cPendingEols = RT_MIN(2, cPendingEols); /* reduce to two, i.e. only one empty separator line */
                 do
                 {
-                    *pszDst++ = ' ';
+                    if (iEol++ == 0)  /* skip this for the 2nd empty line. */
+                        *pszDst++ = ' ';
                     *pszDst++ = '\\';
                     *pszDst = '\0';
                     ScmStreamPutLine(pParser->pOut, pParser->szBuf, pszDst - pParser->szBuf, pParser->enmEol);
@@ -1730,12 +1732,8 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
         offLine += cchWord;
 
         /* Skip whitespace (if any). */
-        size_t cchSpaces = 0;
         while (offLine < cchLine && RT_C_IS_SPACE(pchLine[offLine]))
-        {
-            cchSpaces++;
             offLine++;
-        }
 
         /* Deal with new line and emit indentation. */
         if (iSubLine + 1 < cLines && offLine + 1 == cchLine && pchLine[offLine] == '\\')
@@ -1902,8 +1900,11 @@ static bool scmKmkHandleAssignmentOrRule(KMKPARSER *pParser, size_t offWord)
                 else if (ch == '<')
                     enmType = kKmkAssignType_Prepending;
                 else
+                {
                     Assert(ch != ':');
-                return scmKmkHandleAssignment2(pParser, offWord, offLine - 1, enmType, offLine - 1, 0);
+                    return scmKmkHandleAssignment2(pParser, offWord, offLine - 1, enmType, offLine - 1, 0);
+                }
+                return scmKmkHandleAssignment2(pParser, offWord, offLine - 2, enmType, offLine - 2, 0);
             }
         }
         /*
@@ -2122,6 +2123,7 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                         break;
 
                     case kKmkToken_Comment:
+                        AssertFailed(); /* not possible */
                         break;
 
                     /*
@@ -2153,7 +2155,18 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                     scmKmkHandleAssignmentOrRule(&Parser, offLine);
                     continue;
                 }
-                /** @todo process comments. */
+
+                /*
+                 * Indent comment lines, unless the comment is too far into the line and such.
+                 */
+                size_t const offEffLine = ScmCalcSpacesForSrcSpan(pchLine, 0, offLine, pSettings);
+                if (offEffLine <= Parser.iActualDepth + 7)
+                {
+                    ScmStreamWrite(pOut, g_szSpaces, Parser.iActualDepth);
+                    ScmStreamWrite(pOut, &pchLine[offLine], cchLine - offLine);
+                    ScmStreamPutEol(pOut, Parser.enmEol);
+                    continue;
+                }
             }
         }
 
