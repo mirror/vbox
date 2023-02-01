@@ -35,15 +35,16 @@
 #include "UICursor.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIKeyboardHandler.h"
+#include "UIMachine.h"
+#include "UIMachineLogic.h"
+#include "UIMachineView.h"
+#include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
+#include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
 #include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
-#include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
-#include "UIFrameBuffer.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 # include "CocoaEventHelper.h"
@@ -547,16 +548,14 @@ UIMouseHandler::~UIMouseHandler()
 {
 }
 
-/* Machine-logic getter: */
-UIMachineLogic* UIMouseHandler::machineLogic() const
-{
-    return m_pMachineLogic;
-}
-
-/* UI Session getter: */
-UISession* UIMouseHandler::uisession() const
+UISession *UIMouseHandler::uisession() const
 {
     return machineLogic()->uisession();
+}
+
+UIMachine *UIMouseHandler::uimachine() const
+{
+    return machineLogic()->uimachine();
 }
 
 CDisplay& UIMouseHandler::display() const

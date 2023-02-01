@@ -60,10 +60,11 @@
 
 /* Forward declarations: */
 class UIActionPool;
-class UISession;
+class UIMachine;
 class UIMachineLogic;
 class UIMachineWindow;
 class UINativeEventFilter;
+class UISession;
 class CConsole;
 class CDisplay;
 class CGuest;
@@ -111,6 +112,8 @@ public:
     /** Returns screen ID for this view. */
     ulong screenId() const { return m_uScreenId; }
 
+    /** Returns the machine UI reference. */
+    UIMachine *uimachine() const;
     /** Returns the session UI reference. */
     UISession *uisession() const;
     /** Returns the machine-logic reference. */

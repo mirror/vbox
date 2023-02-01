@@ -38,6 +38,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
@@ -258,6 +259,11 @@ void UIMachineView::applyMachineViewScaleFactor()
 
     /* Update console's display viewport and 3D overlay: */
     updateViewport();
+}
+
+UIMachine *UIMachineView::uimachine() const
+{
+    return machineWindow()->uimachine();
 }
 
 UISession *UIMachineView::uisession() const

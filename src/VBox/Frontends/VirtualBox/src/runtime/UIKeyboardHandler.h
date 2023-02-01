@@ -50,10 +50,11 @@
 /* Forward declarations: */
 class QWidget;
 class UIActionPool;
-class UISession;
+class UIMachine;
 class UIMachineLogic;
-class UIMachineWindow;
 class UIMachineView;
+class UIMachineWindow;
+class UISession;
 class CKeyboard;
 #ifdef VBOX_WS_WIN
 class WinAltGrMonitor;
@@ -144,9 +145,10 @@ protected:
     virtual void cleanupCommon();
 
     /* Common getters: */
-    UIMachineLogic* machineLogic() const;
-    UIActionPool* actionPool() const;
-    UISession* uisession() const;
+    UIMachineLogic *machineLogic() const { return m_pMachineLogic; }
+    UIActionPool *actionPool() const;
+    UISession *uisession() const;
+    UIMachine *uimachine() const;
 
     /** Returns the console's keyboard reference. */
     CKeyboard& keyboard() const;

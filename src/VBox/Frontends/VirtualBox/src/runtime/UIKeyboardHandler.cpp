@@ -45,21 +45,22 @@
 #include <QTimer>
 
 /* GUI includes: */
+#include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
-#include "UIMessageCenter.h"
-#include "UIActionPool.h"
-#include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
 #include "UIHostComboEditor.h"
-#include "UIKeyboardHandlerNormal.h"
 #include "UIKeyboardHandlerFullscreen.h"
-#include "UIKeyboardHandlerSeamless.h"
+#include "UIKeyboardHandlerNormal.h"
 #include "UIKeyboardHandlerScale.h"
+#include "UIKeyboardHandlerSeamless.h"
+#include "UIMachine.h"
+#include "UIMachineLogic.h"
+#include "UIMachineView.h"
+#include "UIMachineWindow.h"
+#include "UIMessageCenter.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
+#include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "VBoxUtils-darwin.h"
@@ -1078,22 +1079,19 @@ void UIKeyboardHandler::cleanupCommon()
     m_iKeyboardHookViewIndex = -1;
 }
 
-/* Machine-logic getter: */
-UIMachineLogic* UIKeyboardHandler::machineLogic() const
-{
-    return m_pMachineLogic;
-}
-
-/* Action-pool getter: */
-UIActionPool* UIKeyboardHandler::actionPool() const
+UIActionPool *UIKeyboardHandler::actionPool() const
 {
     return machineLogic()->actionPool();
 }
 
-/* UI Session getter: */
-UISession* UIKeyboardHandler::uisession() const
+UISession *UIKeyboardHandler::uisession() const
 {
     return machineLogic()->uisession();
+}
+
+UIMachine *UIKeyboardHandler::uimachine() const
+{
+    return machineLogic()->uimachine();
 }
 
 CKeyboard& UIKeyboardHandler::keyboard() const

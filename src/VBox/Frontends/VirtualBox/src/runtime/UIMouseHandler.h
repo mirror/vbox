@@ -44,10 +44,11 @@
 /* Forward declarations: */
 class QTouchEvent;
 class QWidget;
-class UISession;
+class UIMachine;
 class UIMachineLogic;
-class UIMachineWindow;
 class UIMachineView;
+class UIMachineWindow;
+class UISession;
 class CDisplay;
 class CMouse;
 
@@ -106,8 +107,9 @@ protected:
     virtual ~UIMouseHandler();
 
     /* Getters: */
-    UIMachineLogic* machineLogic() const;
-    UISession* uisession() const;
+    UIMachineLogic *machineLogic() const { return m_pMachineLogic; }
+    UISession *uisession() const;
+    UIMachine *uimachine() const;
 
     /** Returns the console's display reference. */
     CDisplay& display() const;

@@ -233,36 +233,26 @@ UIMachine::~UIMachine()
 
 bool UIMachine::prepare()
 {
-    /* Try to prepare session UI: */
-    if (!prepareSession())
+    /* Try to create session UI: */
+    if (!UISession::create(m_pSession, this))
         return false;
+
+    /* Make sure session UI created: */
+    AssertReturn(m_pSession, false);
 
     /* Cache media data early if necessary: */
     if (uiCommon().agressiveCaching())
-    {
-        AssertReturn(m_pSession, false);
         uiCommon().enumerateMedia(m_pSession->machineMedia());
-    }
 
     /* Prepare stuff: */
     prepareMachineWindowIcon();
     prepareMachineLogic();
 
     /* Load settings: */
-    loadSessionSettings();
+    loadSettings();
 
     /* Try to initialize session UI: */
     if (!uisession()->initialize())
-        return false;
-
-    /* True by default: */
-    return true;
-}
-
-bool UIMachine::prepareSession()
-{
-    /* Try to create session UI: */
-    if (!UISession::create(m_pSession, this))
         return false;
 
     /* True by default: */
@@ -325,7 +315,7 @@ void UIMachine::cleanupMachineLogic()
     }
 }
 
-void UIMachine::loadSessionSettings()
+void UIMachine::loadSettings()
 {
     /* Load extra-data settings: */
     {
