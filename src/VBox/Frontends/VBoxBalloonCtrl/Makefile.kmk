@@ -38,7 +38,7 @@ else
 endif
 VBoxBalloonCtrl_DEFS.win   = _WIN32_WINNT=0x0500
 VBoxBalloonCtrl_SOURCES    = \
-	VBoxWatchdog.cpp      \
+	VBoxWatchdog.cpp \
 	VBoxWatchdogUtils.cpp \
 	VBoxModAPIMonitor.cpp \
 	VBoxModBallooning.cpp

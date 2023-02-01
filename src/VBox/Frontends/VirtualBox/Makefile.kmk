@@ -67,13 +67,13 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 # Hardened VirtualBoxVM.
 #
 ifdef VBOX_WITH_HARDENING
-VirtualBoxHardenedVM_TEMPLATE = VBoxR3HardenedExe
-VirtualBoxHardenedVM_INST.darwin = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
-VirtualBoxHardenedVM_NAME = VirtualBoxVM
-VirtualBoxHardenedVM_DEFS += $(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
-VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
-VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
-$(call VBOX_SET_VER_INFO_EXE,VirtualBoxHardenedVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
+ VirtualBoxHardenedVM_TEMPLATE = VBoxR3HardenedExe
+ VirtualBoxHardenedVM_INST.darwin = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
+ VirtualBoxHardenedVM_NAME = VirtualBoxVM
+ VirtualBoxHardenedVM_DEFS += $(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
+ VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
+ VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
+ $(call VBOX_SET_VER_INFO_EXE,VirtualBoxHardenedVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
 endif
 
 
@@ -98,7 +98,7 @@ IMAGES         :=
 # If this setting is disabled the user can still check using the menu.
 #
 ifndef VBOX_OSE
-VBOX_WITH_UPDATE_REQUEST := 1
+ VBOX_WITH_UPDATE_REQUEST := 1
 endif
 
 
@@ -153,7 +153,7 @@ ifdef VBOX_WITH_LIBCURL
  VirtualBox_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
 endif
-if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
+if "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
  VirtualBox_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 endif
 ifndef VBOX_WITHOUT_LESS_VIRTUALBOX_INCLUDING
@@ -167,7 +167,7 @@ endif
 VirtualBoxVM_TEMPLATE       := $(if $(VBOX_WITH_HARDENING),VBoxQtGuiDll,VBoxQtGuiExe)
 VirtualBoxVM_NAME           = VirtualBoxVM
 ifndef VBOX_WITH_HARDENING
-VirtualBoxVM_INST.darwin    = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
+ VirtualBoxVM_INST.darwin   = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
 endif
 VirtualBoxVM_DEPS           = $(UICommon_0_OUTDIR)/include/COMWrappers
 VirtualBoxVM_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
@@ -221,7 +221,7 @@ ifdef VBOX_WITH_LIBCURL
  VirtualBoxVM_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
 endif
-if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
+if "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
  VirtualBoxVM_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 endif
 ifndef VBOX_WITHOUT_LESS_VIRTUALBOX_INCLUDING
@@ -275,7 +275,7 @@ ifdef VBOX_WITH_LIBCURL
  UICommon_DEFS        += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
 endif
-if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
+if "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
  UICommon_DEFS        += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 endif
 ifndef VBOX_WITHOUT_LESS_VIRTUALBOX_INCLUDING
@@ -344,8 +344,8 @@ VBOX_GUI_INC_DIRS += \
 	./src/activity/vmactivity
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-VBOX_GUI_INC_DIRS += \
-	./src/networking
+ VBOX_GUI_INC_DIRS += \
+ 	./src/networking
 endif
 
 #
@@ -380,7 +380,7 @@ UICommon_INCS = \
 # Compiling/linking flags.
 #
 ifneq ($(KBUILD_TARGET),win)
-VirtualBox_CXXFLAGS += -Wno-switch
+ VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
 VirtualBox_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
@@ -429,11 +429,11 @@ else
 endif
 
 VirtualBoxVM_LDFLAGS.darwin = \
-	$(if $(VBOX_WITH_HARDENING)\
+	$(if $(VBOX_WITH_HARDENING) \
 	,-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib \
 	,-rpath @executable_path/../../../../MacOS \
 	-rpath @executable_path/../../../../Frameworks) \
-	-framework AppKit -framework Carbon -framework IOKit \
+	-framework AppKit -framework Carbon -framework IOKit
 
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_LDFLAGS.darwin += -framework OpenGL
@@ -785,10 +785,10 @@ VirtualBoxVM_QT_MOCHDRS = \
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_QT_MOCHDRS += \
-	src/runtime/UIDnDHandler.h
+ 	src/runtime/UIDnDHandler.h
  ifdef VBOX_WITH_DRAG_AND_DROP_GH
   VirtualBoxVM_QT_MOCHDRS += \
-	src/runtime/UIDnDMIMEData.h
+  	src/runtime/UIDnDMIMEData.h
  endif
 endif
 
@@ -1005,25 +1005,25 @@ UICommon_QT_MOCHDRS = \
 
 ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MOCHDRS += \
-	src/helpbrowser/UIHelpViewer.h \
-	src/helpbrowser/UIHelpBrowserWidget.h
+ 	src/helpbrowser/UIHelpViewer.h \
+ 	src/helpbrowser/UIHelpBrowserWidget.h
 endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCHDRS += \
-	src/networking/UIDownloader.h \
-	src/networking/UIDownloaderExtensionPack.h \
-	src/networking/UIDownloaderGuestAdditions.h \
-	src/networking/UIDownloaderUserManual.h \
-	src/networking/UINetworkCustomer.h \
-	src/networking/UINetworkRequestManager.h \
-	src/networking/UINetworkRequest.h \
-	src/networking/UINetworkReply.h \
-	src/networking/UINewVersionChecker.h \
-	src/networking/UIUpdateManager.h \
-	src/settings/editors/UIUpdateSettingsEditor.h \
-	src/settings/global/UIGlobalSettingsProxy.h \
-	src/settings/global/UIGlobalSettingsUpdate.h
+ 	src/networking/UIDownloader.h \
+ 	src/networking/UIDownloaderExtensionPack.h \
+ 	src/networking/UIDownloaderGuestAdditions.h \
+ 	src/networking/UIDownloaderUserManual.h \
+ 	src/networking/UINetworkCustomer.h \
+ 	src/networking/UINetworkRequestManager.h \
+ 	src/networking/UINetworkRequest.h \
+ 	src/networking/UINetworkReply.h \
+ 	src/networking/UINewVersionChecker.h \
+ 	src/networking/UIUpdateManager.h \
+ 	src/settings/editors/UIUpdateSettingsEditor.h \
+ 	src/settings/global/UIGlobalSettingsProxy.h \
+ 	src/settings/global/UIGlobalSettingsUpdate.h
 endif
 
 UICommon_QT_MOCHDRS.darwin += \
@@ -1118,19 +1118,19 @@ UICommon_QT_MOCSRCS = \
 
 ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MOCSRCS += \
-	src/helpbrowser/UIHelpViewer.cpp \
-	src/helpbrowser/UIHelpBrowserWidget.cpp
+ 	src/helpbrowser/UIHelpViewer.cpp \
+ 	src/helpbrowser/UIHelpBrowserWidget.cpp
 endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCSRCS += \
-	src/networking/UINetworkReply.cpp \
-	src/networking/UIUpdateManager.cpp
+ 	src/networking/UINetworkReply.cpp \
+ 	src/networking/UIUpdateManager.cpp
 endif
 
 ifdef VBOX_WITH_XPCOM
  UICommon_QT_MOCSRCS += \
-	src/globals/COMDefs.cpp
+ 	src/globals/COMDefs.cpp
 endif
 
 UICommon_QT_MOCSRCS.darwin += \
@@ -1138,11 +1138,11 @@ UICommon_QT_MOCSRCS.darwin += \
 
 ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
  UICommon_QT_MOCSRCS.linux += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
+ 	src/globals/UIDesktopWidgetWatchdog.cpp
  UICommon_QT_MOCSRCS.solaris += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
+ 	src/globals/UIDesktopWidgetWatchdog.cpp
  UICommon_QT_MOCSRCS.freebsd += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
+ 	src/globals/UIDesktopWidgetWatchdog.cpp
 endif
 
 
@@ -1335,14 +1335,14 @@ VirtualBoxVM_SOURCES = \
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_SOURCES += \
-	src/runtime/UIDnDHandler.cpp
+ 	src/runtime/UIDnDHandler.cpp
  ifdef VBOX_WITH_DRAG_AND_DROP_GH
   VirtualBoxVM_SOURCES += \
-	src/runtime/UIDnDMIMEData.cpp
+  	src/runtime/UIDnDMIMEData.cpp
   VirtualBoxVM_SOURCES.win += \
-	src/runtime/UIDnDDropSource_win.cpp \
-	src/runtime/UIDnDDataObject_win.cpp \
-	src/runtime/UIDnDEnumFormat_win.cpp
+  	src/runtime/UIDnDDropSource_win.cpp \
+  	src/runtime/UIDnDDataObject_win.cpp \
+  	src/runtime/UIDnDEnumFormat_win.cpp
  endif
 endif
 
@@ -1351,9 +1351,9 @@ VirtualBoxVM_SOURCES.darwin += \
 	src/platform/darwin/UICocoaDockIconPreview.mm
 
 ifdef VBOX_WITH_HARDENING
-$(call VBOX_SET_VER_INFO_DLL,VirtualBoxVM,VirtualBox Virtual Machine (dll),$(VBOX_WINDOWS_ICON_FILE))
+ $(call VBOX_SET_VER_INFO_DLL,VirtualBoxVM,VirtualBox Virtual Machine (dll),$(VBOX_WINDOWS_ICON_FILE))
 else
-$(call VBOX_SET_VER_INFO_EXE,VirtualBoxVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
+ $(call VBOX_SET_VER_INFO_EXE,VirtualBoxVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
 endif
 
 
@@ -1589,32 +1589,32 @@ UICommon_SOURCES = \
 
 ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_SOURCES += \
-	src/helpbrowser/UIHelpViewer.cpp \
-	src/helpbrowser/UIHelpBrowserWidget.cpp
+ 	src/helpbrowser/UIHelpViewer.cpp \
+ 	src/helpbrowser/UIHelpBrowserWidget.cpp
 endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_SOURCES += \
-	src/networking/UIDownloader.cpp \
-	src/networking/UIDownloaderExtensionPack.cpp \
-	src/networking/UIDownloaderGuestAdditions.cpp \
-	src/networking/UIDownloaderUserManual.cpp \
-	src/networking/UINetworkCustomer.cpp \
-	src/networking/UINetworkRequestManager.cpp \
-	src/networking/UINetworkRequest.cpp \
-	src/networking/UINetworkReply.cpp \
-	src/networking/UIUpdateDefs.cpp \
-	src/networking/UINewVersionChecker.cpp \
-	src/networking/UIUpdateManager.cpp \
-	src/settings/editors/UIUpdateSettingsEditor.cpp \
-	src/settings/global/UIGlobalSettingsProxy.cpp \
-	src/settings/global/UIGlobalSettingsUpdate.cpp
+ 	src/networking/UIDownloader.cpp \
+ 	src/networking/UIDownloaderExtensionPack.cpp \
+ 	src/networking/UIDownloaderGuestAdditions.cpp \
+ 	src/networking/UIDownloaderUserManual.cpp \
+ 	src/networking/UINetworkCustomer.cpp \
+ 	src/networking/UINetworkRequestManager.cpp \
+ 	src/networking/UINetworkRequest.cpp \
+ 	src/networking/UINetworkReply.cpp \
+ 	src/networking/UIUpdateDefs.cpp \
+ 	src/networking/UINewVersionChecker.cpp \
+ 	src/networking/UIUpdateManager.cpp \
+ 	src/settings/editors/UIUpdateSettingsEditor.cpp \
+ 	src/settings/global/UIGlobalSettingsProxy.cpp \
+ 	src/settings/global/UIGlobalSettingsUpdate.cpp
 endif
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  UICommon_SOURCES += \
-	src/platform/x11/VBoxUtils-x11.cpp \
-	src/platform/x11/XKeyboard-new.cpp
+ 	src/platform/x11/VBoxUtils-x11.cpp \
+ 	src/platform/x11/XKeyboard-new.cpp
 endif
 
 UICommon_SOURCES.win += \
@@ -1642,7 +1642,7 @@ if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
  VirtualBox.qt.conf_MODE = 644
  VirtualBox.qt.conf_SOURCES = $(VirtualBox_0_OUTDIR)/qt.conf=>qt.conf
 
-$$(VirtualBox_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
+ $$(VirtualBox_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(APPEND) $@ "[Paths]"
 	$(QUIET)$(APPEND) $@ "Plugins =" $(PATH_OUT)/$(INST_BIN)/plugins
@@ -1794,7 +1794,7 @@ $$(UICommon_0_OUTDIR)/include/COMWrappers \
 +| $(if-expr defined(UICommon_VBOX_COMWRAPPERS) \
 , $(UICommon_VBOX_COMWRAPPERS) \
 , $$(UICommon_0_OUTDIR)/include/COMEnums.h \
-  $$(UICommon_0_OUTDIR)/include/COMWrappers.cpp \
+$$(UICommon_0_OUTDIR)/include/COMWrappers.cpp \
 ): \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl \
@@ -1851,7 +1851,7 @@ $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc: \
 #      linux.amd64 with:    time: real 0m42.650s   user 14m46.332s  sys 1m28.463s
 #
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
- if1of ($(KBUILD_TARGET),win)
+ if1of ($(KBUILD_TARGET), win)
   VirtualBox_USES      += vccprecomp
   VirtualBox_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
 
@@ -1883,18 +1883,18 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
 endif
 
 ifeq ($(KBUILD_TARGET),win)
-#
-# On Windows we'll have to generate/edit part of the resource file.
-# The IDI_ICON1 name is Qt specific.
-#
-src/platform/win/VirtualBox.rc_INCS  = $(VirtualBox_0_OUTDIR)
-src/platform/win/VirtualBox.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
-src/platform/win/VirtualBox.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
-src/platform/win/VirtualBoxVM.rc_INCS  = $(VirtualBox_0_OUTDIR)
-src/platform/win/VirtualBoxVM.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
-src/platform/win/VirtualBoxVM.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+ #
+ # On Windows we'll have to generate/edit part of the resource file.
+ # The IDI_ICON1 name is Qt specific.
+ #
+ src/platform/win/VirtualBox.rc_INCS = $(VirtualBox_0_OUTDIR)
+ src/platform/win/VirtualBox.rc_DEPS = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+ src/platform/win/VirtualBox.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+ src/platform/win/VirtualBoxVM.rc_INCS = $(VirtualBox_0_OUTDIR)
+ src/platform/win/VirtualBoxVM.rc_DEPS = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+ src/platform/win/VirtualBoxVM.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
 
-$$(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+ $$(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(APPEND) -t $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 endif # win
@@ -1909,50 +1909,50 @@ TRANSLATIONS :=
 
 
 ifeq ($(KBUILD_TARGET),win)
-#
-# Install the visual manifest and associated PNGs.
-#
-INSTALLS.win += VirtualBoxManifest
-VirtualBoxManifest_INST = $(INST_VIRTUALBOX)
-VirtualBoxManifest_DEFPATH = $(PATH_ROOT)/src/VBox/Artwork/$(if-expr defined(VBOX_OSE),OSE,NonOSE)/
-VirtualBoxManifest_SOURCES := \
-	virtualbox-70px.png=>VirtualBox_70px.png \
-	virtualbox-150px.png=>VirtualBox_150px.png \
-       $(PATH_SUB_CURRENT)/src/platform/win/VirtualBox.VisualElementsManifest.xml
+ #
+ # Install the visual manifest and associated PNGs.
+ #
+ INSTALLS.win += VirtualBoxManifest
+ VirtualBoxManifest_INST = $(INST_VIRTUALBOX)
+ VirtualBoxManifest_DEFPATH = $(PATH_ROOT)/src/VBox/Artwork/$(if-expr defined(VBOX_OSE),OSE,NonOSE)/
+ VirtualBoxManifest_SOURCES := \
+ 	virtualbox-70px.png=>VirtualBox_70px.png \
+ 	virtualbox-150px.png=>VirtualBox_150px.png \
+ 	$(PATH_SUB_CURRENT)/src/platform/win/VirtualBox.VisualElementsManifest.xml
 
 endif
 
 
 ifeq ($(KBUILD_TARGET),darwin)
-#
-# Create directories for each approved language or the application
-# menu won't be translated.
-#
-INSTALLS += VirtualBox.lproj
-VirtualBox.lproj_INST = $(INST_VIRTUALBOX)Contents/Resources/
-VirtualBox.lproj_MODE = 755
-VirtualBox.lproj_DIRS := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
+ #
+ # Create directories for each approved language or the application
+ # menu won't be translated.
+ #
+ INSTALLS += VirtualBox.lproj
+ VirtualBox.lproj_INST = $(INST_VIRTUALBOX)Contents/Resources/
+ VirtualBox.lproj_MODE = 755
+ VirtualBox.lproj_DIRS := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 
-#
-# On OS X (darwin) we need to install icon resources and compulsory bundle contents.
-# The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
-#
-INSTALLS += VirtualBox.app
-VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
-VirtualBox.app_MODE = 644
-VirtualBox.app_SOURCES = \
-	src/platform/darwin/PkgInfo \
-	$(VirtualBox.app_0_OUTDIR)/Info.plist \
-	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
-	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox-extpack.icns=>Resources/virtualbox-vbox-extpack.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vdi.icns=>Resources/virtualbox-vdi.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vmdk.icns=>Resources/virtualbox-vmdk.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
-	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
+ #
+ # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
+ # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
+ #
+ INSTALLS += VirtualBox.app
+ VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
+ VirtualBox.app_MODE = 644
+ VirtualBox.app_SOURCES = \
+ 	src/platform/darwin/PkgInfo \
+ 	$(VirtualBox.app_0_OUTDIR)/Info.plist \
+ 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
+ 	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox-extpack.icns=>Resources/virtualbox-vbox-extpack.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vdi.icns=>Resources/virtualbox-vdi.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vmdk.icns=>Resources/virtualbox-vmdk.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
+ 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
 
  # Qt5 requires qt.conf on Mac OS X:
  VirtualBox.app_SOURCES += \
@@ -1985,10 +1985,10 @@ VirtualBox.app_SOURCES = \
  	src/platform/darwin/VM-PkgInfo=>PkgInfo \
  	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
  	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
-ifdef VBOX_WITH_INTNET_SERVICE_IN_R3
- VirtualBoxVM.app_SYMLINKS = \
- 	XPCServices=>../../../XPCServices
-endif
+ ifdef VBOX_WITH_INTNET_SERVICE_IN_R3
+  VirtualBoxVM.app_SYMLINKS = \
+  	XPCServices=>../../../XPCServices
+ endif
 
  $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
@@ -2018,7 +2018,7 @@ endif
  	$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist=>Info.plist \
  	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
  vmstarter.app_SYMLINKS = \
- 	MacOS=>../../../MacOS \
+ 	MacOS=>../../../MacOS
 
  $$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,vmstarter.app,$<,$@)
@@ -2067,55 +2067,55 @@ OTHER_CLEAN += \
 
 QTGUI_DOXYFILE_INPUT_DIRS := \
 	$(addprefix $(PATH_SUB_CURRENT)/src/, \
-		converter \
-		extensions \
-		extensions/graphics \
-		extradata \
-		globals \
-		manager \
-		manager/chooser \
-		manager/details \
-		manager/tools \
-		manager \
-		manager \
-		medium \
-		net \
-		objects \
-		platform \
-		platform/darwin \
-		platform/os2 \
-		platform/win \
-		platform/x11 \
-		runtime \
-		runtime/fullscreen \
-		runtime/information \
-		runtime/guestctrl \
-		runtime/normal \
-		runtime/scale \
-		runtime/seamless \
-		selector \
-		selector/graphics \
-		selector/graphics/chooser \
-		selector/graphics/details \
-		settings \
-		settings/global \
-		settings/machine \
-		widgets \
-		widgets/graphics \
-		wizards \
-		wizards/addcloudvm \
-		wizards/clonevd \
-		wizards/clonevm \
-		wizards/exportappliance \
-		wizards/importappliance \
-		wizards/newcloudvm \
-		wizards/newvd \
-		wizards/newvm)
+	converter \
+	extensions \
+	extensions/graphics \
+	extradata \
+	globals \
+	manager \
+	manager/chooser \
+	manager/details \
+	manager/tools \
+	manager \
+	manager \
+	medium \
+	net \
+	objects \
+	platform \
+	platform/darwin \
+	platform/os2 \
+	platform/win \
+	platform/x11 \
+	runtime \
+	runtime/fullscreen \
+	runtime/information \
+	runtime/guestctrl \
+	runtime/normal \
+	runtime/scale \
+	runtime/seamless \
+	selector \
+	selector/graphics \
+	selector/graphics/chooser \
+	selector/graphics/details \
+	settings \
+	settings/global \
+	settings/machine \
+	widgets \
+	widgets/graphics \
+	wizards \
+	wizards/addcloudvm \
+	wizards/clonevd \
+	wizards/clonevm \
+	wizards/exportappliance \
+	wizards/importappliance \
+	wizards/newcloudvm \
+	wizards/newvd \
+	wizards/newvm)
 
 QTGUI_DOXYFILE_INPUT := \
 	$(foreach dir, $(QTGUI_DOXYFILE_INPUT_DIRS), \
-		$(sort $(wildcard $(dir)/*.h)) \
-		$(sort $(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm)))
+	$(sort $(wildcard $(dir)/*.h)) \
+	$(sort $(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm)))
 
 includedep $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep
 
@@ -2152,7 +2152,7 @@ $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(
 # aliases
 docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
-docs: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+ docs: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 endif
 
 

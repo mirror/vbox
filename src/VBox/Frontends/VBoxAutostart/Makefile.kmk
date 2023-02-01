@@ -33,22 +33,22 @@ ifeq ($(KBUILD_TARGET),win)
  VBoxAutostartSvc_TEMPLATE   = VBoxMainClientExe
  VBoxAutostartSvc_INCS       = ../Common
  VBoxAutostartSvc_SOURCES    = \
-	VBoxAutostartCfg.cpp \
-	VBoxAutostartStart.cpp \
-	VBoxAutostartStop.cpp \
-	VBoxAutostartUtils.cpp \
-	VBoxAutostart-win.cpp \
-	../Common/PasswordInput.cpp
+ 	VBoxAutostartCfg.cpp \
+ 	VBoxAutostartStart.cpp \
+ 	VBoxAutostartStop.cpp \
+ 	VBoxAutostartUtils.cpp \
+ 	VBoxAutostart-win.cpp \
+ 	../Common/PasswordInput.cpp
  VBoxAutostartSvc_LIBS.win += Secur32.lib
 else
  PROGRAMS += VBoxAutostart
  VBoxAutostart_TEMPLATE   = VBoxMainClientExe
  VBoxAutostart_SOURCES    = \
-	VBoxAutostartCfg.cpp \
-	VBoxAutostartStart.cpp \
-	VBoxAutostartStop.cpp \
-	VBoxAutostartUtils.cpp \
-	VBoxAutostart-posix.cpp
+ 	VBoxAutostartCfg.cpp \
+ 	VBoxAutostartStart.cpp \
+ 	VBoxAutostartStop.cpp \
+ 	VBoxAutostartUtils.cpp \
+ 	VBoxAutostart-posix.cpp
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
