@@ -403,6 +403,46 @@ bool UIMachine::prepare()
 
 void UIMachine::prepareSessionConnections()
 {
+    /* Console events stuff: */
+    connect(uisession(), &UISession::sigAudioAdapterChange,
+            this, &UIMachine::sigAudioAdapterChange);
+    connect(uisession(), &UISession::sigAdditionsStateChange,
+            this, &UIMachine::sigAdditionsStateChange);
+    connect(uisession(), &UISession::sigAdditionsStateActualChange,
+            this, &UIMachine::sigAdditionsStateActualChange);
+    connect(uisession(), &UISession::sigClipboardModeChange,
+            this, &UIMachine::sigClipboardModeChange);
+    connect(uisession(), &UISession::sigCPUExecutionCapChange,
+            this, &UIMachine::sigCPUExecutionCapChange);
+    connect(uisession(), &UISession::sigDnDModeChange,
+            this, &UIMachine::sigDnDModeChange);
+    connect(uisession(), &UISession::sigGuestMonitorChange,
+            this, &UIMachine::sigGuestMonitorChange);
+    connect(uisession(), &UISession::sigMachineStateChange,
+            this, &UIMachine::sigMachineStateChange);
+    connect(uisession(), &UISession::sigMediumChange,
+            this, &UIMachine::sigMediumChange);
+    connect(uisession(), &UISession::sigNetworkAdapterChange,
+            this, &UIMachine::sigNetworkAdapterChange);
+    connect(uisession(), &UISession::sigRecordingChange,
+            this, &UIMachine::sigRecordingChange);
+    connect(uisession(), &UISession::sigSharedFolderChange,
+            this, &UIMachine::sigSharedFolderChange);
+    connect(uisession(), &UISession::sigStorageDeviceChange,
+            this, &UIMachine::sigStorageDeviceChange);
+    connect(uisession(), &UISession::sigUSBControllerChange,
+            this, &UIMachine::sigUSBControllerChange);
+    connect(uisession(), &UISession::sigUSBDeviceStateChange,
+            this, &UIMachine::sigUSBDeviceStateChange);
+    connect(uisession(), &UISession::sigVRDEChange,
+            this, &UIMachine::sigVRDEChange);
+    connect(uisession(), &UISession::sigRuntimeError,
+            this, &UIMachine::sigRuntimeError);
+#ifdef VBOX_WS_MAC
+    connect(uisession(), &UISession::sigShowWindows,
+            this, &UIMachine::sigShowWindows);
+#endif
+
     /* Keyboard stuff: */
     connect(uisession(), &UISession::sigKeyboardLedsChange,
             this, &UIMachine::sltHandleKeyboardLedsChange);

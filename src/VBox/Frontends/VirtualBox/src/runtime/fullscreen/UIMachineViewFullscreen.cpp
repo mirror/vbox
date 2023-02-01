@@ -34,14 +34,15 @@
 #endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
-#include "UISession.h"
 #include "UIActionPoolRuntime.h"
-#include "UIMachineLogicFullscreen.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewFullscreen.h"
-#include "UIFrameBuffer.h"
-#include "UIExtraDataManager.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachine.h"
+#include "UIMachineLogicFullscreen.h"
+#include "UIMachineViewFullscreen.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
 
 /* Other VBox includes: */
 #include "VBox/log.h"
@@ -117,7 +118,7 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineViewFullscreen::sltAdditionsStateChanged);
+    connect(uimachine(), &UIMachine::sigAdditionsStateActualChange, this, &UIMachineViewFullscreen::sltAdditionsStateChanged);
 }
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)

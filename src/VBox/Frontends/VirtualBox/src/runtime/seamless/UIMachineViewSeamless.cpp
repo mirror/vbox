@@ -34,13 +34,14 @@
 #endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
-#include "UISession.h"
-#include "UIMachineLogicSeamless.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewSeamless.h"
-#include "UIFrameBuffer.h"
-#include "UIExtraDataManager.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachine.h"
+#include "UIMachineLogicSeamless.h"
+#include "UIMachineViewSeamless.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -128,7 +129,7 @@ void UIMachineViewSeamless::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineViewSeamless::sltAdditionsStateChanged);
+    connect(uimachine(), &UIMachine::sigAdditionsStateActualChange, this, &UIMachineViewSeamless::sltAdditionsStateChanged);
 }
 
 void UIMachineViewSeamless::prepareSeamless()

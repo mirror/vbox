@@ -1019,7 +1019,7 @@ void UIKeyboardHandler::prepareCommon()
 #endif /* VBOX_WS_WIN */
 
     /* Machine state-change updater: */
-    connect(uisession(), &UISession::sigMachineStateChange, this, &UIKeyboardHandler::sltMachineStateChanged);
+    connect(uimachine(), &UIMachine::sigMachineStateChange, this, &UIKeyboardHandler::sltMachineStateChanged);
 
     /* Pressed keys: */
     ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));

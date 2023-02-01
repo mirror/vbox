@@ -558,7 +558,7 @@ void UIMachineWindow::prepareSelf()
 void UIMachineWindow::prepareSessionConnections()
 {
     /* We should watch for console events: */
-    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineWindow::sltMachineStateChanged);
+    connect(uimachine(), &UIMachine::sigMachineStateChange, this, &UIMachineWindow::sltMachineStateChanged);
 }
 
 void UIMachineWindow::prepareMainLayout()
@@ -640,7 +640,7 @@ void UIMachineWindow::cleanupMachineView()
 void UIMachineWindow::cleanupSessionConnections()
 {
     /* We should stop watching for console events: */
-    disconnect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineWindow::sltMachineStateChanged);
+    disconnect(uimachine(), &UIMachine::sigMachineStateChange, this, &UIMachineWindow::sltMachineStateChanged);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

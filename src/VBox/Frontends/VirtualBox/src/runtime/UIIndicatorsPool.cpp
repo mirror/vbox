@@ -497,7 +497,7 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/nw_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/nw_disabled_16px.png"));
         /* Configure machine state-change listener: */
-        connect(m_pSession, &UISession::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorNetwork::sltHandleMachineStateChange);
         /* Fetch maximum network adapters count: */
         const CVirtualBox vbox = uiCommon().virtualBox();
@@ -1022,7 +1022,7 @@ public:
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
 
         /* Configure machine state-change listener: */
-        connect(m_pSession, &UISession::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorFeatures::sltHandleMachineStateChange);
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)

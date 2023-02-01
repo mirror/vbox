@@ -33,14 +33,15 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "UISession.h"
 #include "UIActionPoolRuntime.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewNormal.h"
-#include "UIFrameBuffer.h"
-#include "UIExtraDataManager.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachine.h"
+#include "UIMachineLogic.h"
+#include "UIMachineViewNormal.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
 
 /* Other VBox includes: */
 #include "VBox/log.h"
@@ -131,7 +132,7 @@ void UIMachineViewNormal::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineViewNormal::sltAdditionsStateChanged);
+    connect(uimachine(), &UIMachine::sigAdditionsStateActualChange, this, &UIMachineViewNormal::sltAdditionsStateChanged);
 }
 
 void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)

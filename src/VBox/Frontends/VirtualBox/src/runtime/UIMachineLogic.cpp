@@ -882,19 +882,19 @@ void UIMachineLogic::prepareSessionConnections()
 
     /* We should watch for requested modes: */
     connect(uisession(), &UISession::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType, Qt::QueuedConnection);
-    connect(uisession(), &UISession::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
+    connect(uimachine(), &UIMachine::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
 
     /* We should watch for console events: */
-    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
-    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
+    connect(uimachine(), &UIMachine::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
+    connect(uimachine(), &UIMachine::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
     connect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
     connect(uimachine(), &UIMachine::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
-    connect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
-    connect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
+    connect(uimachine(), &UIMachine::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
+    connect(uimachine(), &UIMachine::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
-    connect(uisession(), &UISession::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
-#endif /* VBOX_WS_MAC */
-    connect(uisession(), &UISession::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
+    connect(uimachine(), &UIMachine::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
+#endif
+    connect(uimachine(), &UIMachine::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
     /* We should watch for host-screen-change events: */
     connect(uisession(), &UISession::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
@@ -1432,19 +1432,19 @@ void UIMachineLogic::cleanupSessionConnections()
 
     /* We should stop watching for requested modes: */
     disconnect(uisession(), &UISession::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
-    disconnect(uisession(), &UISession::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
+    disconnect(uimachine(), &UIMachine::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
 
     /* We should stop watching for console events: */
-    disconnect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
-    disconnect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
+    disconnect(uimachine(), &UIMachine::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
+    disconnect(uimachine(), &UIMachine::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
     disconnect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
     disconnect(uimachine(), &UIMachine::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
-    disconnect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
-    disconnect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
+    disconnect(uimachine(), &UIMachine::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
+    disconnect(uimachine(), &UIMachine::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
     disconnect(uisession(), &UISession::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
-#endif /* VBOX_WS_MAC */
-    disconnect(uisession(), &UISession::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
+#endif
+    disconnect(uimachine(), &UIMachine::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
     /* We should stop watching for host-screen-change events: */
     disconnect(uisession(), &UISession::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);

@@ -526,7 +526,7 @@ UIMouseHandler::UIMouseHandler(UIMachineLogic *pMachineLogic)
 #endif
 {
     /* Machine state-change updater: */
-    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMouseHandler::sltMachineStateChanged);
+    connect(uimachine(), &UIMachine::sigMachineStateChange, this, &UIMouseHandler::sltMachineStateChanged);
 
     /* Mouse capability state-change updater: */
     connect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMouseHandler::sltMouseCapabilityChanged);

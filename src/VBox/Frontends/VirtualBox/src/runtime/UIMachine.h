@@ -42,6 +42,9 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CUSBDevice.h"
 
 /* Forward declarations: */
 class QWidget;
@@ -58,6 +61,50 @@ signals:
 
     /** Requests async visual-state change. */
     void sigRequestAsyncVisualStateChange(UIVisualStateType visualStateType);
+
+    /** @name COM events stuff.
+     ** @{ */
+        /** Notifies about additions state change. */
+        void sigAdditionsStateChange();
+        /** Notifies about additions state actually change. */
+        void sigAdditionsStateActualChange();
+        /** Notifies about audio adapter change. */
+        void sigAudioAdapterChange();
+        /** Notifies about clipboard mode change. */
+        void sigClipboardModeChange(KClipboardMode enmMode);
+        /** Notifies about CPU execution cap change. */
+        void sigCPUExecutionCapChange();
+        /** Notifies about DnD mode change. */
+        void sigDnDModeChange(KDnDMode enmMode);
+        /** Notifies about guest monitor change. */
+        void sigGuestMonitorChange(KGuestMonitorChangedEventType emnChangeType, ulong uScreenId, QRect screenGeo);
+        /** Notifies about machine change. */
+        void sigMachineStateChange();
+        /** Notifies about medium change. */
+        void sigMediumChange(const CMediumAttachment &comMediumAttachment);
+        /** Notifies about network adapter change. */
+        void sigNetworkAdapterChange(const CNetworkAdapter &comNetworkAdapter);
+        /** Notifies about recording change. */
+        void sigRecordingChange();
+        /** Notifies about shared folder change. */
+        void sigSharedFolderChange();
+        /** Handles storage device change signal. */
+        void sigStorageDeviceChange(const CMediumAttachment &comAttachment, bool fRemoved, bool fSilent);
+        /** Handles USB controller change signal. */
+        void sigUSBControllerChange();
+        /** Handles USB device state change signal. */
+        void sigUSBDeviceStateChange(const CUSBDevice &comDevice, bool fAttached, const CVirtualBoxErrorInfo &comError);
+        /** Notifies about VRDE change. */
+        void sigVRDEChange();
+
+        /** Notifies about runtime error happened. */
+        void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+
+#ifdef VBOX_WS_MAC
+        /** Notifies about VM window should be shown. */
+        void sigShowWindows();
+#endif
+    /** @} */
 
     /** @name Keyboard stuff.
      ** @{ */

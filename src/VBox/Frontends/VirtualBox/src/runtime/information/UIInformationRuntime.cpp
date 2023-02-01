@@ -40,11 +40,13 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIInformationRuntime.h"
-#include "UISession.h"
+#include "UIMachine.h"
 
 /* COM includes: */
+#include "CDisplay.h"
 #include "CGraphicsAdapter.h"
 #include "CGuest.h"
+#include "CMachineDebugger.h"
 #include "CVRDEServerInfo.h"
 
 enum InfoRow
@@ -496,7 +498,7 @@ void UIRuntimeInfoWidget::computeMinimumWidth()
 *   UIInformationRuntime implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession)
+UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UIMachine *pMachine)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_machine(machine)
     , m_console(console)
@@ -506,11 +508,11 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
 {
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
-    connect(pSession, &UISession::sigAdditionsStateChange, this, &UIInformationRuntime::sltGuestAdditionsStateChange);
-    connect(pSession, &UISession::sigGuestMonitorChange, this, &UIInformationRuntime::sltGuestMonitorChange);
-    connect(pSession, &UISession::sigVRDEChange, this, &UIInformationRuntime::sltVRDEChange);
-    connect(pSession, &UISession::sigClipboardModeChange, this, &UIInformationRuntime::sltClipboardChange);
-    connect(pSession, &UISession::sigDnDModeChange, this, &UIInformationRuntime::sltDnDModeChange);
+    connect(pMachine, &UIMachine::sigAdditionsStateChange, this, &UIInformationRuntime::sltGuestAdditionsStateChange);
+    connect(pMachine, &UIMachine::sigGuestMonitorChange, this, &UIInformationRuntime::sltGuestMonitorChange);
+    connect(pMachine, &UIMachine::sigVRDEChange, this, &UIInformationRuntime::sltVRDEChange);
+    connect(pMachine, &UIMachine::sigClipboardModeChange, this, &UIInformationRuntime::sltClipboardChange);
+    connect(pMachine, &UIMachine::sigDnDModeChange, this, &UIInformationRuntime::sltDnDModeChange);
 
     prepareObjects();
     retranslateUi();

@@ -613,16 +613,6 @@ void UISession::sltAudioAdapterChange()
 
 }
 
-void UISession::sltClipboardModeChange(KClipboardMode enmMode)
-{
-    emit sigClipboardModeChange(enmMode);
-}
-
-void UISession::sltDnDModeChange(KDnDMode enmMode)
-{
-    emit sigDnDModeChange(enmMode);
-}
-
 #ifdef RT_OS_DARWIN
 /**
  * MacOS X: Restarts display-reconfiguration watchdog timer from the beginning.
@@ -919,51 +909,56 @@ void UISession::prepareConsoleEventHandlers()
     /* Create console event-handler: */
     m_pConsoleEventhandler = new UIConsoleEventHandler(this);
 
-    /* Add console event connections: */
+    /* Console event connections: */
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAdditionsChange,
+            this, &UISession::sltAdditionsChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAudioAdapterChange,
+            this, &UISession::sltAudioAdapterChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardModeChange,
+            this, &UISession::sigClipboardModeChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCPUExecutionCapChange,
+            this, &UISession::sigCPUExecutionCapChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigDnDModeChange,
+            this, &UISession::sigDnDModeChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigGuestMonitorChange,
+            this, &UISession::sltGuestMonitorChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMediumChange,
+            this, &UISession::sigMediumChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigNetworkAdapterChange,
+            this, &UISession::sigNetworkAdapterChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigRecordingChange,
+            this, &UISession::sltRecordingChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigSharedFolderChange,
+            this, &UISession::sigSharedFolderChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStateChange,
+            this, &UISession::sltStateChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStorageDeviceChange,
+            this, &UISession::sltHandleStorageDeviceChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigUSBControllerChange,
+            this, &UISession::sigUSBControllerChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigUSBDeviceStateChange,
+            this, &UISession::sigUSBDeviceStateChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigVRDEChange,
+            this, &UISession::sltVRDEChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigRuntimeError,
+            this, &UISession::sigRuntimeError);
+
+#ifdef VBOX_WS_MAC
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigShowWindow,
+            this, &UISession::sigShowWindows, Qt::QueuedConnection);
+#endif
+
+    /* Console keyboard connections: */
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigKeyboardLedsChange,
+            this, &UISession::sigKeyboardLedsChange);
+
+    /* Console mouse connections: */
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMousePointerShapeChange,
             this, &UISession::sigMousePointerShapeChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMouseCapabilityChange,
             this, &UISession::sigMouseCapabilityChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCursorPositionChange,
             this, &UISession::sigCursorPositionChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigKeyboardLedsChange,
-            this, &UISession::sigKeyboardLedsChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStateChange,
-            this, &UISession::sltStateChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAdditionsChange,
-            this, &UISession::sltAdditionsChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigVRDEChange,
-            this, &UISession::sltVRDEChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigRecordingChange,
-            this, &UISession::sltRecordingChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigNetworkAdapterChange,
-            this, &UISession::sigNetworkAdapterChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStorageDeviceChange,
-            this, &UISession::sltHandleStorageDeviceChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMediumChange,
-            this, &UISession::sigMediumChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigUSBControllerChange,
-            this, &UISession::sigUSBControllerChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigUSBDeviceStateChange,
-            this, &UISession::sigUSBDeviceStateChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigSharedFolderChange,
-            this, &UISession::sigSharedFolderChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigRuntimeError,
-            this, &UISession::sigRuntimeError);
-#ifdef VBOX_WS_MAC
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigShowWindow,
-            this, &UISession::sigShowWindows, Qt::QueuedConnection);
-#endif /* VBOX_WS_MAC */
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCPUExecutionCapChange,
-            this, &UISession::sigCPUExecutionCapChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigGuestMonitorChange,
-            this, &UISession::sltGuestMonitorChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAudioAdapterChange,
-            this, &UISession::sltAudioAdapterChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardModeChange,
-            this, &UISession::sltClipboardModeChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigDnDModeChange,
-            this, &UISession::sltDnDModeChange);
 }
 
 void UISession::prepareFramebuffers()

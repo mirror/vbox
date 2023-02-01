@@ -46,7 +46,7 @@
 /* Forward declarations: */
 class QAction;
 class QVBoxLayout;
-class UISession;
+class UIMachine;
 class UIRuntimeInfoWidget;
 
 /** UIInformationRuntime class displays a table including some
@@ -60,7 +60,7 @@ public:
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference.
       * @param console is machine console reference. */
-    UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
+    UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UIMachine *pMachine);
 
 protected:
 
