@@ -1909,7 +1909,7 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     unlock();
 
     /* Make sure action-pool knows frame-buffer size: */
-    m_pMachineView->uisession()->actionPool()->toRuntime()->setGuestScreenSize(m_pMachineView->screenId(),
+    m_pMachineView->uimachine()->actionPool()->toRuntime()->setGuestScreenSize(m_pMachineView->screenId(),
                                                                                QSize(m_iWidth, m_iHeight));
 }
 

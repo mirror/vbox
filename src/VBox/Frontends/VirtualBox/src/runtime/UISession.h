@@ -178,7 +178,6 @@ public:
 
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     KMachineState machineState() const { return m_machineState; }
-    UIActionPool *actionPool() const { return m_pActionPool; }
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
     WId mainMachineWindowId() const;
@@ -262,15 +261,6 @@ public:
     /** Returns existing frame-buffer vector. */
     const QVector<UIFrameBuffer*>& frameBuffers() const { return m_frameBufferVector; }
 
-    /** Updates VRDE Server action state. */
-    void updateStatusVRDE() { sltVRDEChange(); }
-    /** Updates Recording action state. */
-    void updateStatusRecording() { sltRecordingChange(); }
-    /** Updates Audio output action state. */
-    void updateAudioOutput() { sltAudioAdapterChange(); }
-    /** Updates Audio input action state. */
-    void updateAudioInput() { sltAudioAdapterChange(); }
-
     /** @name CPU hardware virtualization features for VM.
      ** @{ */
     /** Returns whether CPU hardware virtualization extension is enabled. */
@@ -304,20 +294,9 @@ private slots:
     /** Detaches COM. */
     void sltDetachCOM();
 
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Handles menu-bar configuration-change. */
-    void sltHandleMenuBarConfigurationChange(const QUuid &uMachineID);
-#endif /* RT_OS_DARWIN */
-
     /* Console events slots */
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
-    void sltVRDEChange();
-    void sltRecordingChange();
-    /** Handles storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
-    void sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
-    /** Handles audio adapter change. */
-    void sltAudioAdapterChange();
 
     /** Handles signal about machine state saved.
       * @param  fSuccess  Brings whether state was saved successfully. */
@@ -346,7 +325,6 @@ private:
     void prepareNotificationCenter();
     void prepareConsoleEventHandlers();
     void prepareFramebuffers();
-    void prepareActions();
     void prepareConnections();
     void prepareSignalHandling();
 
@@ -354,20 +332,10 @@ private:
     void loadSessionSettings();
 
     /* Cleanup helpers: */
-    //void cleanupSignalHandling() {}
-    //void cleanupScreens() {}
-    //void cleanupConnections() {}
-    void cleanupActions();
     void cleanupFramebuffers();
     void cleanupConsoleEventHandlers();
     void cleanupNotificationCenter();
     void cleanupSession();
-    void cleanup();
-
-#ifdef VBOX_WS_MAC
-    /** Mac OS X: Updates menu-bar content. */
-    void updateMenu();
-#endif /* VBOX_WS_MAC */
 
     /* Common helpers: */
     bool preprocessInitialization();
@@ -375,9 +343,6 @@ private:
     bool postprocessInitialization();
     /** Loads VM settings. */
     void loadVMSettings();
-
-    /** Updates action restrictions. */
-    void updateActionRestrictions();
 
     /* Private variables: */
     UIMachine *m_pMachine;
@@ -404,14 +369,6 @@ private:
 
     /** Holds the machine name. */
     QString m_strMachineName;
-
-    /** Holds the action-pool instance. */
-    UIActionPool *m_pActionPool;
-
-#ifdef VBOX_WS_MAC
-    /** Holds the menu-bar instance. */
-    QMenuBar *m_pMenuBar;
-#endif /* VBOX_WS_MAC */
 
     /* Frame-buffers vector: */
     QVector<UIFrameBuffer*> m_frameBufferVector;

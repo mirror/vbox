@@ -277,7 +277,7 @@ void UIMachineLogic::initializePostPowerUp()
 
 UIActionPool *UIMachineLogic::actionPool() const
 {
-    return uisession()->actionPool();
+    return uimachine()->actionPool();
 }
 
 CSession& UIMachineLogic::session() const
@@ -2000,7 +2000,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
     if (!comRecordingSettings.isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusRecording();
+        uimachine()->updateStateRecordingAction();
         /* Notify about the error: */
         return UINotificationMessage::cannotToggleRecording(comRecordingSettings, machine().GetName(), fEnabled);
     }
@@ -2010,7 +2010,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
     if (!machine().isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusRecording();
+        uimachine()->updateStateRecordingAction();
         /* Notify about the error: */
         return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
@@ -2036,7 +2036,7 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
     if (!server.isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusVRDE();
+        uimachine()->updateStateVRDEServerAction();
         /* Notify about the error: */
         return UINotificationMessage::cannotToggleVRDEServer(server, machineName(), fEnabled);
     }
@@ -2046,7 +2046,7 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
     if (!machine().isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusVRDE();
+        uimachine()->updateStateVRDEServerAction();
         /* Notify about the error: */
         return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
@@ -2245,7 +2245,7 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
     if (!comAdapter.isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateAudioOutput();
+        uimachine()->updateStateAudioActions();
         /* Notify about the error: */
         return UINotificationMessage::cannotToggleAudioOutput(comAdapter, machineName(), fEnabled);
     }
@@ -2255,7 +2255,7 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
     if (!machine().isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateAudioOutput();
+        uimachine()->updateStateAudioActions();
         /* Notify about the error: */
         return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
@@ -2282,7 +2282,7 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
     if (!comAdapter.isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateAudioInput();
+        uimachine()->updateStateAudioActions();
         /* Notify about the error: */
         return UINotificationMessage::cannotToggleAudioInput(comAdapter, machineName(), fEnabled);
     }
@@ -2292,7 +2292,7 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
     if (!machine().isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateAudioInput();
+        uimachine()->updateStateAudioActions();
         /* Notify about the error: */
         return UINotificationMessage::cannotSaveMachineSettings(machine());
     }

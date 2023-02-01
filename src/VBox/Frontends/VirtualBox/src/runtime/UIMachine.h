@@ -46,9 +46,11 @@
 
 /* Forward declarations: */
 class QWidget;
+class UIActionPool;
 class UISession;
 class UIMachineLogic;
 #ifdef VBOX_WS_MAC
+ class QMenuBar;
  class QTimer;
 #endif
 
@@ -179,6 +181,21 @@ public:
 #endif
     /** @} */
 
+    /** @name Actions stuff.
+     ** @{ */
+        /** Returns the action-pool instance. */
+        UIActionPool *actionPool() const { return m_pActionPool; }
+
+        /** Updates additions actions state. */
+        void updateStateAdditionsActions();
+        /** Updates Audio action state. */
+        void updateStateAudioActions();
+        /** Updates Recording action state. */
+        void updateStateRecordingAction();
+        /** Updates VRDE server action state. */
+        void updateStateVRDEServerAction();
+    /** @} */
+
     /** @name Host-screen stuff.
      ** @{ */
         /** Returns the list of host-screen geometries we currently have. */
@@ -297,6 +314,28 @@ private slots:
     /** Visual state-change handler. */
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
+    /** @name COM events stuff.
+     ** @{ */
+        /** Handles additions state actual change signal. */
+        void sltHandleAdditionsActualChange();
+        /** Handles audio adapter change signal. */
+        void sltHandleAudioAdapterChange();
+        /** Handles recording change signal. */
+        void sltHandleRecordingChange();
+        /** Handles storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
+        void sltHandleStorageDeviceChange(const CMediumAttachment &comAttachment, bool fRemoved, bool fSilent);
+        /** Handles VRDE change signal. */
+        void sltHandleVRDEChange();
+    /** @} */
+
+    /** @name Actions stuff.
+     ** @{ */
+#ifdef VBOX_WS_MAC
+        /** Mac OS X: Handles menu-bar configuration-change. */
+        void sltHandleMenuBarConfigurationChange(const QUuid &uMachineID);
+#endif
+    /** @} */
+
     /** @name Host-screen stuff.
      * @{ */
         /** Handles host-screen count change. */
@@ -371,11 +410,15 @@ private:
     void prepareScreens();
     /** Prepare routine: Branding. */
     void prepareBranding();
+    /** Prepare routine: Actions stuff. */
+    void prepareActions();
     /** Prepare routine: Machine-logic stuff. */
     void prepareMachineLogic();
 
     /** Cleanup routine: Machine-logic stuff. */
     void cleanupMachineLogic();
+    /** Cleanup routine: Actions stuff. */
+    void cleanupActions();
     /** Cleanup routine: Branding. */
     void cleanupBranding();
     /** Cleanup routine: Screens stuff. */
@@ -387,6 +430,17 @@ private:
 
     /** Moves VM to initial state. */
     void enterInitialVisualState();
+
+    /** @name Actions stuff.
+     ** @{ */
+        /** Updates action restrictions. */
+        void updateActionRestrictions();
+
+#ifdef VBOX_WS_MAC
+        /** Mac OS X: Updates menu-bar content. */
+        void updateMenu();
+#endif
+    /** @} */
 
     /** @name Host-screen stuff.
      * @{ */
@@ -450,6 +504,17 @@ private:
 #ifndef VBOX_WS_MAC
         /** Holds redefined machine-window name postfix. */
         QString m_strMachineWindowNamePostfix;
+#endif
+    /** @} */
+
+    /** @name Actions stuff.
+     ** @{ */
+        /** Holds the action-pool instance. */
+        UIActionPool *m_pActionPool;
+
+#ifdef VBOX_WS_MAC
+        /** Mac OS X: Holds the menu-bar instance. */
+        QMenuBar *m_pMenuBar;
 #endif
     /** @} */
 

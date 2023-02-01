@@ -30,6 +30,7 @@
 # include <QBitmap>
 #endif
 #ifdef VBOX_WS_MAC
+# include <QMenuBar>
 # include <QTimer>
 #endif
 
@@ -50,12 +51,21 @@
 #endif
 
 /* COM includes: */
+#include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CConsole.h"
 #include "CGraphicsAdapter.h"
+#include "CHostVideoInputDevice.h"
 #include "CMachine.h"
+#include "CNetworkAdapter.h"
 #include "CProgress.h"
+#include "CRecordingSettings.h"
 #include "CSession.h"
 #include "CSnapshot.h"
+#include "CSystemProperties.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
+#include "CVRDEServer.h"
 
 
 #ifdef VBOX_WS_MAC
@@ -215,6 +225,59 @@ UIVisualStateType UIMachine::requestedVisualState() const
     return m_enmRequestedVisualState;
 }
 
+void UIMachine::updateStateAdditionsActions()
+{
+    /* Make sure action-pool knows whether GA supports graphics: */
+    actionPool()->toRuntime()->setGuestSupportsGraphics(uisession()->isGuestSupportsGraphics());
+    /* Enable/Disable Upgrade Additions action depending on feature status: */
+    actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(uisession()->guestAdditionsUpgradable());
+}
+
+void UIMachine::updateStateAudioActions()
+{
+    /* Make sure Audio adapter is present: */
+    const CAudioSettings comAudioSettings = uisession()->machine().GetAudioSettings();
+    AssertMsgReturnVoid(uisession()->machine().isOk() && comAudioSettings.isNotNull(),
+                        ("Audio audio settings should NOT be null!\n"));
+    const CAudioAdapter comAdapter = comAudioSettings.GetAdapter();
+    AssertMsgReturnVoid(comAudioSettings.isOk() && comAdapter.isNotNull(),
+                        ("Audio audio adapter should NOT be null!\n"));
+
+    /* Check/Uncheck Audio adapter output/input actions depending on features status: */
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(comAdapter.GetEnabledOut());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(comAdapter.GetEnabledIn());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
+}
+
+void UIMachine::updateStateRecordingAction()
+{
+    /* Make sure recording settingss present: */
+    const CRecordingSettings comRecordingSettings = uisession()->machine().GetRecordingSettings();
+    AssertMsgReturnVoid(uisession()->machine().isOk() && comRecordingSettings.isNotNull(),
+                        ("Recording settings can't be null!\n"));
+
+    /* Check/Uncheck Capture action depending on feature status: */
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->setChecked(comRecordingSettings.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(false);
+}
+
+void UIMachine::updateStateVRDEServerAction()
+{
+    /* Make sure VRDE server present: */
+    const CVRDEServer comServer = uisession()->machine().GetVRDEServer();
+    AssertMsgReturnVoid(uisession()->machine().isOk() && comServer.isNotNull(),
+                        ("VRDE server can't be null!\n"));
+
+    /* Check/Uncheck VRDE Server action depending on feature status: */
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->setChecked(comServer.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(false);
+}
+
 bool UIMachine::isScreenVisibleHostDesires(ulong uScreenId) const
 {
     /* Make sure index feats the bounds: */
@@ -259,7 +322,7 @@ void UIMachine::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
         gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, uiCommon().managedVMUuid());
 
     /* Make sure action-pool knows guest-screen visibility status: */
-    uisession()->actionPool()->toRuntime()->setGuestScreenVisible(uScreenId, fIsMonitorVisible);
+    actionPool()->toRuntime()->setGuestScreenVisible(uScreenId, fIsMonitorVisible);
 }
 
 int UIMachine::countOfVisibleWindows()
@@ -347,6 +410,48 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
         enterInitialVisualState();
     }
 }
+
+void UIMachine::sltHandleAdditionsActualChange()
+{
+    updateStateAdditionsActions();
+    emit sigAdditionsStateChange();
+}
+
+void UIMachine::sltHandleAudioAdapterChange()
+{
+    updateStateAudioActions();
+    emit sigAudioAdapterChange();
+}
+
+void UIMachine::sltHandleRecordingChange()
+{
+    updateStateRecordingAction();
+    emit sigRecordingChange();
+}
+
+void UIMachine::sltHandleStorageDeviceChange(const CMediumAttachment &comAttachment, bool fRemoved, bool fSilent)
+{
+    updateActionRestrictions();
+    emit sigStorageDeviceChange(comAttachment, fRemoved, fSilent);
+}
+
+void UIMachine::sltHandleVRDEChange()
+{
+    updateStateVRDEServerAction();
+    emit sigVRDEChange();
+}
+
+#ifdef VBOX_WS_MAC
+void UIMachine::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
+{
+    /* Skip unrelated machine IDs: */
+    if (uiCommon().managedVMUuid() != uMachineID)
+        return;
+
+    /* Update Mac OS X menu-bar: */
+    updateMenu();
+}
+#endif /* VBOX_WS_MAC */
 
 void UIMachine::sltHandleHostScreenCountChange()
 {
@@ -580,6 +685,10 @@ UIMachine::UIMachine()
     , m_enmRequestedVisualState(UIVisualStateType_Invalid)
     , m_pMachineLogic(0)
     , m_pMachineWindowIcon(0)
+    , m_pActionPool(0)
+#ifdef VBOX_WS_MAC
+    , m_pMenuBar(0)
+#endif
 #ifdef VBOX_WS_MAC
     , m_pWatchdogDisplayChange(0)
 #endif
@@ -622,6 +731,7 @@ bool UIMachine::prepare()
 
     /* Prepare stuff: */
     prepareSessionConnections();
+    prepareActions();
     prepareScreens();
     prepareBranding();
     prepareMachineLogic();
@@ -630,7 +740,8 @@ bool UIMachine::prepare()
     if (!uisession()->initialize())
         return false;
 
-    /* Update stuff: */
+    /* Update stuff which doesn't send events on init: */
+    updateStateAudioActions();
     updateMouseState();
 
     /* True by default: */
@@ -641,11 +752,11 @@ void UIMachine::prepareSessionConnections()
 {
     /* Console events stuff: */
     connect(uisession(), &UISession::sigAudioAdapterChange,
-            this, &UIMachine::sigAudioAdapterChange);
+            this, &UIMachine::sltHandleAudioAdapterChange);
     connect(uisession(), &UISession::sigAdditionsStateChange,
             this, &UIMachine::sigAdditionsStateChange);
     connect(uisession(), &UISession::sigAdditionsStateActualChange,
-            this, &UIMachine::sigAdditionsStateActualChange);
+            this, &UIMachine::sltHandleAdditionsActualChange);
     connect(uisession(), &UISession::sigClipboardModeChange,
             this, &UIMachine::sigClipboardModeChange);
     connect(uisession(), &UISession::sigCPUExecutionCapChange,
@@ -661,17 +772,17 @@ void UIMachine::prepareSessionConnections()
     connect(uisession(), &UISession::sigNetworkAdapterChange,
             this, &UIMachine::sigNetworkAdapterChange);
     connect(uisession(), &UISession::sigRecordingChange,
-            this, &UIMachine::sigRecordingChange);
+            this, &UIMachine::sltHandleRecordingChange);
     connect(uisession(), &UISession::sigSharedFolderChange,
             this, &UIMachine::sigSharedFolderChange);
     connect(uisession(), &UISession::sigStorageDeviceChange,
-            this, &UIMachine::sigStorageDeviceChange);
+            this, &UIMachine::sltHandleStorageDeviceChange);
     connect(uisession(), &UISession::sigUSBControllerChange,
             this, &UIMachine::sigUSBControllerChange);
     connect(uisession(), &UISession::sigUSBDeviceStateChange,
             this, &UIMachine::sigUSBDeviceStateChange);
     connect(uisession(), &UISession::sigVRDEChange,
-            this, &UIMachine::sigVRDEChange);
+            this, &UIMachine::sltHandleVRDEChange);
     connect(uisession(), &UISession::sigRuntimeError,
             this, &UIMachine::sigRuntimeError);
 #ifdef VBOX_WS_MAC
@@ -778,7 +889,7 @@ void UIMachine::prepareScreens()
 
     /* Make sure action-pool knows guest-screen visibility status: */
     for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
-        uisession()->actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
+        actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
 }
 
 void UIMachine::prepareBranding()
@@ -799,6 +910,82 @@ void UIMachine::prepareBranding()
     const QUuid uMachineID = uiCommon().managedVMUuid();
     m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
 #endif /* !VBOX_WS_MAC */
+}
+
+void UIMachine::prepareActions()
+{
+    /* Create action-pool: */
+    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+    if (actionPool())
+    {
+        /* Make sure action-pool knows guest-screen count: */
+        actionPool()->toRuntime()->setGuestScreenCount(uisession()->frameBuffers().size());
+        /* Update action restrictions: */
+        updateActionRestrictions();
+
+#ifdef VBOX_WS_MAC
+        /* Create Mac OS X menu-bar: */
+        m_pMenuBar = new QMenuBar;
+        if (m_pMenuBar)
+        {
+            /* Configure Mac OS X menu-bar: */
+            connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
+                    this, &UIMachine::sltHandleMenuBarConfigurationChange);
+            /* Update Mac OS X menu-bar: */
+            updateMenu();
+        }
+#endif /* VBOX_WS_MAC */
+
+        /* Get machine ID: */
+        const QUuid uMachineID = uiCommon().managedVMUuid();
+        Q_UNUSED(uMachineID);
+
+#ifdef VBOX_WS_MAC
+        /* User-element (Menu-bar and Dock) options: */
+        {
+            const bool fDisabled = gEDataManager->guiFeatureEnabled(GUIFeatureType_NoUserElements);
+            if (fDisabled)
+                UICocoaApplication::instance()->hideUserElements();
+        }
+#else /* !VBOX_WS_MAC */
+        /* Menu-bar options: */
+        {
+            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoMenuBar);
+            const bool fEnabledForMachine = gEDataManager->menuBarEnabled(uMachineID);
+            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->blockSignals(true);
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setChecked(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->blockSignals(false);
+        }
+#endif /* !VBOX_WS_MAC */
+
+        /* View options: */
+        const bool fGuestScreenAutoresize = gEDataManager->guestScreenAutoResizeEnabled(uMachineID);
+        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->blockSignals(true);
+        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setChecked(fGuestScreenAutoresize);
+        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->blockSignals(false);
+
+        /* Input options: */
+        const bool fMouseIntegrated = isMouseIntegrated(); // no e-data for now ..
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->blockSignals(true);
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->setChecked(fMouseIntegrated);
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->blockSignals(false);
+
+        /* Device options: */
+        actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(false);
+
+        /* Status-bar options: */
+        {
+            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoStatusBar);
+            const bool fEnabledForMachine = gEDataManager->statusBarEnabled(uMachineID);
+            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(true);
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setChecked(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(false);
+        }
+    }
 }
 
 void UIMachine::prepareMachineLogic()
@@ -843,6 +1030,19 @@ void UIMachine::cleanupMachineLogic()
     }
 }
 
+void UIMachine::cleanupActions()
+{
+#ifdef VBOX_WS_MAC
+    /* Destroy Mac OS X menu-bar: */
+    delete m_pMenuBar;
+    m_pMenuBar = 0;
+#endif /* VBOX_WS_MAC */
+
+    /* Destroy action-pool if necessary: */
+    if (actionPool())
+        UIActionPool::destroy(actionPool());
+}
+
 void UIMachine::cleanupBranding()
 {
     /* Cleanup machine-window icon: */
@@ -874,6 +1074,7 @@ void UIMachine::cleanup()
     cleanupMachineLogic();
     cleanupBranding();
     cleanupScreens();
+    cleanupActions();
 
     /* Cleanup session UI: */
     cleanupSession();
@@ -884,6 +1085,136 @@ void UIMachine::enterInitialVisualState()
     sltChangeVisualState(m_initialVisualState);
 }
 
+void UIMachine::updateActionRestrictions()
+{
+    /* Get host and prepare restrictions: */
+    const CHost comHost = uiCommon().host();
+    UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictionForMachine =
+        UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionForView =
+        UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionForDevices =
+        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
+
+    /* Separate process stuff: */
+    {
+        /* Initialize 'Machine' menu: */
+        if (!uiCommon().isSeparateProcess())
+            restrictionForMachine = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
+                                    (restrictionForMachine | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach);
+    }
+
+    /* VRDE server stuff: */
+    {
+        /* Initialize 'View' menu: */
+        const CVRDEServer comServer = uisession()->machine().GetVRDEServer();
+        if (comServer.isNull())
+            restrictionForView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+                                 (restrictionForView | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
+    }
+
+    /* Storage stuff: */
+    {
+        /* Initialize CD/FD menus: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        foreach (const CMediumAttachment &comAttachment, uisession()->machine().GetMediumAttachments())
+        {
+            if (comAttachment.GetType() == KDeviceType_DVD)
+                ++iDevicesCountCD;
+            if (comAttachment.GetType() == KDeviceType_Floppy)
+                ++iDevicesCountFD;
+        }
+        QAction *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
+        QAction *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
+        pOpticalDevicesMenu->setData(iDevicesCountCD);
+        pFloppyDevicesMenu->setData(iDevicesCountFD);
+        if (!iDevicesCountCD)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+                                    (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
+        if (!iDevicesCountFD)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+                                    (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
+    }
+
+    /* Audio stuff: */
+    {
+        /* Check whether audio controller is enabled. */
+        const CAudioSettings comAudioSettings = uisession()->machine().GetAudioSettings();
+        const CAudioAdapter comAudioAdapter = comAudioSettings.GetAdapter();
+        if (comAudioAdapter.isNull() || !comAudioAdapter.GetEnabled())
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+                                    (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
+    }
+
+    /* Network stuff: */
+    {
+        /* Initialize Network menu: */
+        bool fAtLeastOneAdapterActive = false;
+        const KChipsetType enmChipsetType = uisession()->machine().GetChipsetType();
+        ULONG uSlots = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(enmChipsetType);
+        for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
+        {
+            const CNetworkAdapter &comNetworkAdapter = uisession()->machine().GetNetworkAdapter(uSlot);
+            if (comNetworkAdapter.GetEnabled())
+            {
+                fAtLeastOneAdapterActive = true;
+                break;
+            }
+        }
+        if (!fAtLeastOneAdapterActive)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+                                    (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
+    }
+
+    /* USB stuff: */
+    {
+        /* Check whether there is at least one USB controller with an available proxy. */
+        const bool fUSBEnabled =    !uisession()->machine().GetUSBDeviceFilters().isNull()
+                                 && !uisession()->machine().GetUSBControllers().isEmpty()
+                                 && uisession()->machine().GetUSBProxyAvailable();
+        if (!fUSBEnabled)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+                                    (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
+    }
+
+    /* WebCams stuff: */
+    {
+        /* Check whether there is an accessible video input devices pool: */
+        comHost.GetVideoInputDevices();
+        const bool fWebCamsEnabled = comHost.isOk() && !uisession()->machine().GetUSBControllers().isEmpty();
+        if (!fWebCamsEnabled)
+            restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+                                    (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
+    }
+
+    /* Apply cumulative restriction for 'Machine' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuMachine(UIActionRestrictionLevel_Session, restrictionForMachine);
+    /* Apply cumulative restriction for 'View' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Session, restrictionForView);
+    /* Apply cumulative restriction for 'Devices' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restrictionForDevices);
+}
+
+#ifdef VBOX_WS_MAC
+void UIMachine::updateMenu()
+{
+    /* Rebuild Mac OS X menu-bar: */
+    m_pMenuBar->clear();
+    foreach (QMenu *pMenu, actionPool()->menus())
+    {
+        UIMenu *pMenuUI = qobject_cast<UIMenu*>(pMenu);
+        if (!pMenuUI->isConsumable() || !pMenuUI->isConsumed())
+            m_pMenuBar->addMenu(pMenuUI);
+        if (pMenuUI->isConsumable() && !pMenuUI->isConsumed())
+            pMenuUI->setConsumed(true);
+    }
+    /* Update the dock menu as well: */
+    if (machineLogic())
+        machineLogic()->updateDock();
+}
+#endif /* VBOX_WS_MAC */
+
 void UIMachine::updateHostScreenData()
 {
     /* Rebuild host-screen data vector: */
@@ -892,7 +1223,7 @@ void UIMachine::updateHostScreenData()
         m_hostScreens << gpDesktop->screenGeometry(iScreenIndex);
 
     /* Make sure action-pool knows host-screen count: */
-    uisession()->actionPool()->toRuntime()->setHostScreenCount(m_hostScreens.size());
+    actionPool()->toRuntime()->setHostScreenCount(m_hostScreens.size());
 }
 
 void UIMachine::updateMousePointerShape()
