@@ -36,7 +36,6 @@
 #include <QCursor>
 #include <QEvent>
 #include <QMap>
-#include <QPixmap>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
@@ -84,14 +83,14 @@ signals:
     /* Console callback signals: */
     /** Notifies listeners about keyboard state-change. */
     void sigKeyboardStateChange(int iState);
-    /** Notifies listeners about mouse state-change. */
-    void sigMouseStateChange(int iState);
     /** Notifies listeners about mouse pointer shape change. */
-    void sigMousePointerShapeChange();
+    void sigMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
     /** Notifies listeners about mouse capability change. */
-    void sigMouseCapabilityChange();
+    void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
+                                  bool fSupportsTouchScreen, bool fSupportsTouchPad,
+                                  bool fNeedsHostCursor);
     /** Notifies listeners about cursor position change. */
-    void sigCursorPositionChange();
+    void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
     void sigKeyboardLedsChange();
     void sigMachineStateChange();
     void sigAdditionsStateChange();
@@ -173,17 +172,6 @@ public:
     WId mainMachineWindowId() const;
     UIMachineWindow *activeMachineWindow() const;
 
-    /** Returns currently cached mouse cursor shape pixmap. */
-    QPixmap cursorShapePixmap() const { return m_cursorShapePixmap; }
-    /** Returns currently cached mouse cursor mask pixmap. */
-    QPixmap cursorMaskPixmap() const { return m_cursorMaskPixmap; }
-    /** Returns currently cached mouse cursor size. */
-    QSize cursorSize() const { return m_cursorSize; }
-    /** Returns currently cached mouse cursor hotspot. */
-    QPoint cursorHotspot() const { return m_cursorHotspot; }
-    /** Returns currently cached mouse cursor position. */
-    QPoint cursorPosition() const { return m_cursorPosition; }
-
     /** @name Host-screen configuration variables.
      ** @{ */
     /** Returns the list of host-screen geometries we currently have. */
@@ -253,21 +241,6 @@ public:
     uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
     uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
 
-    /* Mouse getters: */
-    /** Returns mouse-state. */
-    int mouseState() const { return m_iMouseState; }
-    bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
-    bool isMouseSupportsRelative() const { return m_fIsMouseSupportsRelative; }
-    bool isMouseSupportsTouchScreen() const { return m_fIsMouseSupportsTouchScreen; }
-    bool isMouseSupportsTouchPad() const { return m_fIsMouseSupportsTouchPad; }
-    bool isMouseHostCursorNeeded() const { return m_fIsMouseHostCursorNeeded; }
-    bool isMouseCaptured() const { return m_fIsMouseCaptured; }
-    bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
-    bool isValidPointerShapePresent() const { return m_fIsValidPointerShapePresent; }
-    bool isHidingHostPointer() const { return m_fIsHidingHostPointer; }
-    /** Returns whether the @a cursorPosition() is valid and could be used by the GUI now. */
-    bool isValidCursorPositionPresent() const { return m_fIsValidCursorPositionPresent; }
-
     /* Common setters: */
     bool pause() { return setPause(true); }
     bool unpause() { return setPause(false); }
@@ -279,10 +252,6 @@ public:
     /* Keyboard setters: */
     void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
     void setCapsLockAdaptionCnt(uint uCapsLockAdaptionCnt) { m_uCapsLockAdaptionCnt = uCapsLockAdaptionCnt; }
-
-    /* Mouse setters: */
-    void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; }
-    void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
     /* Screen visibility status for host-desires: */
     bool isScreenVisibleHostDesires(ulong uScreenId) const;
@@ -350,9 +319,6 @@ public slots:
     /** Defines @a iKeyboardState. */
     void setKeyboardState(int iKeyboardState) { m_iKeyboardState = iKeyboardState; emit sigKeyboardStateChange(m_iKeyboardState); }
 
-    /** Defines @a iMouseState. */
-    void setMouseState(int iMouseState) { m_iMouseState = iMouseState; emit sigMouseStateChange(m_iMouseState); }
-
     /** Closes Runtime UI. */
     void closeRuntimeUI();
 
@@ -367,16 +333,6 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Console events slots */
-    /** Handles signal about mouse pointer @a shapeData change. */
-    void sltMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
-    /** Handles signal about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative,
-      * @a fSupportsTouchScreen, @a fSupportsTouchPad and @a fNeedsHostCursor. */
-    void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
-                                  bool fSupportsTouchScreen, bool fSupportsTouchPad,
-                                  bool fNeedsHostCursor);
-    /** Handles signal about guest request to change the cursor position to @a uX * @a uY.
-      * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
-    void sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
     void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
@@ -456,9 +412,6 @@ private:
     void updateMenu();
 #endif /* VBOX_WS_MAC */
 
-    /** Updates mouse pointer shape. */
-    void updateMousePointerShape();
-
     /* Common helpers: */
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
@@ -526,17 +479,6 @@ private:
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
 
-    /** Holds cached mouse cursor shape pixmap. */
-    QPixmap  m_cursorShapePixmap;
-    /** Holds cached mouse cursor mask pixmap. */
-    QPixmap  m_cursorMaskPixmap;
-    /** Holds cached mouse cursor size. */
-    QSize    m_cursorSize;
-    /** Holds cached mouse cursor hotspot. */
-    QPoint   m_cursorHotspot;
-    /** Holds cached mouse cursor position. */
-    QPoint   m_cursorPosition;
-
     /** @name Host-screen configuration variables.
      * @{ */
     /** Holds the list of host-screen geometries we currently have. */
@@ -579,23 +521,6 @@ private:
     bool m_fScrollLock : 1;
     uint m_uNumLockAdaptionCnt;
     uint m_uCapsLockAdaptionCnt;
-
-    /* Mouse flags: */
-    /** Holds the mouse-state. */
-    int m_iMouseState;
-    bool m_fIsMouseSupportsAbsolute : 1;
-    bool m_fIsMouseSupportsRelative : 1;
-    bool m_fIsMouseSupportsTouchScreen: 1;
-    bool m_fIsMouseSupportsTouchPad: 1;
-    bool m_fIsMouseHostCursorNeeded : 1;
-    bool m_fIsMouseCaptured : 1;
-    bool m_fIsMouseIntegrated : 1;
-    bool m_fIsValidPointerShapePresent : 1;
-    bool m_fIsHidingHostPointer : 1;
-    /** Holds whether the @a m_cursorPosition is valid and could be used by the GUI now. */
-    bool m_fIsValidCursorPositionPresent : 1;
-    /** Holds the mouse pointer shape data. */
-    UIMousePointerShapeData  m_shapeData;
 
     /** Copy of IMachineDebugger::ExecutionEngine */
     KVMExecutionEngine m_enmVMExecutionEngine;

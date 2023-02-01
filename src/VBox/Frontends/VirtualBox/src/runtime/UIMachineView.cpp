@@ -1117,9 +1117,9 @@ void UIMachineView::sltMachineStateChanged()
 void UIMachineView::sltMousePointerShapeChange()
 {
     /* Fetch the shape and the mask: */
-    QPixmap pixmapShape = uisession()->cursorShapePixmap();
-    QPixmap pixmapMask = uisession()->cursorMaskPixmap();
-    const QPoint hotspot = uisession()->cursorHotspot();
+    QPixmap pixmapShape = uimachine()->cursorShapePixmap();
+    QPixmap pixmapMask = uimachine()->cursorMaskPixmap();
+    const QPoint hotspot = uimachine()->cursorHotspot();
     uint uXHot = hotspot.x();
     uint uYHot = hotspot.y();
 
@@ -1386,7 +1386,7 @@ void UIMachineView::prepareConsoleConnections()
     /* Machine state-change updater: */
     connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineView::sltMachineStateChanged);
     /* Mouse pointer shape updater: */
-    connect(uisession(), &UISession::sigMousePointerShapeChange, this, &UIMachineView::sltMousePointerShapeChange);
+    connect(uimachine(), &UIMachine::sigMousePointerShapeChange, this, &UIMachineView::sltMousePointerShapeChange);
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP

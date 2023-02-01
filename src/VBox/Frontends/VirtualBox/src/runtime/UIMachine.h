@@ -33,10 +33,12 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QPixmap>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 #include "UIMachineDefs.h"
+#include "UIMousePointerShapeData.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -56,6 +58,19 @@ signals:
 
     /** Requests async visual-state change. */
     void sigRequestAsyncVisualStateChange(UIVisualStateType visualStateType);
+
+    /** @name Mouse cursor stuff.
+     ** @{ */
+        /** Notifies listeners about mouse pointer shape change. */
+        void sigMousePointerShapeChange();
+        /** Notifies listeners about mouse capability change. */
+        void sigMouseCapabilityChange();
+        /** Notifies listeners about cursor position change. */
+        void sigCursorPositionChange();
+
+        /** Notifies listeners about mouse state-change. */
+        void sigMouseStateChange(int iState);
+    /** @} */
 
 public:
 
@@ -97,7 +112,57 @@ public:
 #endif
     /** @} */
 
+    /** @name Mouse cursor stuff.
+     ** @{ */
+        /** Returns whether we should hide host mouse pointer. */
+        bool isHidingHostPointer() const { return m_fIsHidingHostPointer; }
+        /** Returns whether there is valid mouse pointer shape present. */
+        bool isValidPointerShapePresent() const { return m_fIsValidPointerShapePresent; }
+        /** Returns whether the @a cursorPosition() is valid and could be used by the GUI now. */
+        bool isValidCursorPositionPresent() const { return m_fIsValidCursorPositionPresent; }
+
+        /** Returns whether mouse supports absolute coordinates. */
+        bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
+        /** Returns whether mouse supports relative coordinates. */
+        bool isMouseSupportsRelative() const { return m_fIsMouseSupportsRelative; }
+        /** Returns whether touch screen is supported. */
+        bool isMouseSupportsTouchScreen() const { return m_fIsMouseSupportsTouchScreen; }
+        /** Returns whether touch pad is supported. */
+        bool isMouseSupportsTouchPad() const { return m_fIsMouseSupportsTouchPad; }
+        /** Returns whether guest requires host cursor to be shown. */
+        bool isMouseHostCursorNeeded() const { return m_fIsMouseHostCursorNeeded; }
+
+        /** Returns whether mouse is captured. */
+        bool isMouseCaptured() const { return m_fIsMouseCaptured; }
+        /** Returns whether mouse is integrated. */
+        bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
+        /** Defines whether mouse is @a fCaptured. */
+        void setMouseCaptured(bool fCaptured) { m_fIsMouseCaptured = fCaptured; }
+        /** Defines whether mouse is @a fIntegrated. */
+        void setMouseIntegrated(bool fIntegrated) { m_fIsMouseIntegrated = fIntegrated; }
+
+        /** Returns currently cached mouse cursor shape pixmap. */
+        QPixmap cursorShapePixmap() const { return m_cursorShapePixmap; }
+        /** Returns currently cached mouse cursor mask pixmap. */
+        QPixmap cursorMaskPixmap() const { return m_cursorMaskPixmap; }
+        /** Returns currently cached mouse cursor size. */
+        QSize cursorSize() const { return m_cursorSize; }
+        /** Returns currently cached mouse cursor hotspot. */
+        QPoint cursorHotspot() const { return m_cursorHotspot; }
+        /** Returns currently cached mouse cursor position. */
+        QPoint cursorPosition() const { return m_cursorPosition; }
+
+        /** Returns mouse-state. */
+        int mouseState() const { return m_iMouseState; }
+    /** @} */
+
 public slots:
+
+    /** @name Mouse cursor stuff.
+     ** @{ */
+        /** Defines @a iMouseState. */
+        void setMouseState(int iMouseState) { m_iMouseState = iMouseState; emit sigMouseStateChange(m_iMouseState); }
+    /** @} */
 
     /** Closes Runtime UI. */
     void closeRuntimeUI();
@@ -106,6 +171,29 @@ private slots:
 
     /** Visual state-change handler. */
     void sltChangeVisualState(UIVisualStateType visualStateType);
+
+    /** @name Mouse cursor stuff.
+     ** @{ */
+        /** Handles signal about mouse pointer shape data change.
+          * @param  shapeData  Brings complex struct describing mouse pointer shape aspects. */
+        void sltMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
+        /** Handles signal about mouse capability change.
+          * @param  fSupportsAbsolute     Brings whether mouse supports absolute coordinates.
+          * @param  fSupportsRelative     Brings whether mouse supports relative coordinates.
+          * @param  fSupportsTouchScreen  Brings whether touch screen is supported.
+          * @param  fSupportsTouchPad     Brings whether touch pad is supported.
+          * @param  fNeedsHostCursor      Brings whether guest requires host cursor to be shown. */
+        void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
+                                      bool fSupportsTouchScreen, bool fSupportsTouchPad,
+                                      bool fNeedsHostCursor);
+        /** Handles signal about guest request to change the cursor position to @a uX * @a uY.
+          * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now.
+          * @param  uX             Brings cursor position X origin.
+          * @param  uY             Brings cursor position Y origin. */
+        void sltCursorPositionChange(bool fContainsData,
+                                     unsigned long uX,
+                                     unsigned long uY);
+    /** @} */
 
 private:
 
@@ -116,6 +204,8 @@ private:
 
     /** Prepare routine. */
     bool prepare();
+    /** Prepare routine: Session connection stuff. */
+    void prepareSessionConnections();
     /** Prepare routine: Machine-window icon. */
     void prepareMachineWindowIcon();
     /** Prepare routine: Machine-logic stuff. */
@@ -135,6 +225,37 @@ private:
 
     /** Moves VM to initial state. */
     void enterInitialVisualState();
+
+    /** @name Mouse cursor stuff.
+     ** @{ */
+        /** Updates mouse pointer shape. */
+        void updateMousePointerShape();
+
+        /** Updates mouse states. */
+        void updateMouseState();
+
+#if defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
+        /** Generate a BGRA bitmap which approximates a XOR/AND mouse pointer.
+          *
+          * Pixels which has 1 in the AND mask and not 0 in the XOR mask are replaced by
+          * the inverted pixel and 8 surrounding pixels with the original color.
+          * Fort example a white pixel (W) is replaced with a black (B) pixel:
+          *         WWW
+          *  W   -> WBW
+          *         WWW
+          * The surrounding pixels are written only if the corresponding source pixel
+          * does not affect the screen, i.e. AND bit is 1 and XOR value is 0. */
+        static void renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AND,
+                                       uint32_t u32Width, uint32_t u32Height,
+                                       uint32_t *pu32Pixels, uint32_t cbPixels);
+#endif /* VBOX_WS_X11 || VBOX_WS_MAC */
+
+#ifdef VBOX_WS_WIN
+        static bool isPointer1bpp(const uint8_t *pu8XorMask,
+                                  uint uWidth,
+                                  uint uHeight);
+#endif /* VBOX_WS_WIN */
+    /** @} */
 
     /** Static instance. */
     static UIMachine* m_spInstance;
@@ -162,6 +283,49 @@ private:
         /** Holds redefined machine-window name postfix. */
         QString m_strMachineWindowNamePostfix;
 #endif
+    /** @} */
+
+    /** @name Mouse cursor stuff.
+     ** @{ */
+        /** Holds whether we should hide host mouse pointer. */
+        bool  m_fIsHidingHostPointer;
+        /** Holds whether there is valid mouse pointer shape present. */
+        bool  m_fIsValidPointerShapePresent;
+        /** Holds whether the @a m_cursorPosition is valid and could be used by the GUI now. */
+        bool  m_fIsValidCursorPositionPresent;
+
+        /** Holds whether mouse supports absolute coordinates. */
+        bool  m_fIsMouseSupportsAbsolute;
+        /** Holds whether mouse supports relative coordinates. */
+        bool  m_fIsMouseSupportsRelative;
+        /** Holds whether touch screen is supported. */
+        bool  m_fIsMouseSupportsTouchScreen;
+        /** Holds whether touch pad is supported. */
+        bool  m_fIsMouseSupportsTouchPad;
+        /** Holds whether guest requires host cursor to be shown. */
+        bool  m_fIsMouseHostCursorNeeded;
+
+        /** Holds whether mouse is captured. */
+        bool  m_fIsMouseCaptured;
+        /** Holds whether mouse is integrated. */
+        bool  m_fIsMouseIntegrated;
+
+        /** Holds the mouse pointer shape data. */
+        UIMousePointerShapeData  m_shapeData;
+
+        /** Holds cached mouse cursor shape pixmap. */
+        QPixmap  m_cursorShapePixmap;
+        /** Holds cached mouse cursor mask pixmap. */
+        QPixmap  m_cursorMaskPixmap;
+        /** Holds cached mouse cursor size. */
+        QSize    m_cursorSize;
+        /** Holds cached mouse cursor hotspot. */
+        QPoint   m_cursorHotspot;
+        /** Holds cached mouse cursor position. */
+        QPoint   m_cursorPosition;
+
+        /** Holds the mouse-state. */
+        int  m_iMouseState;
     /** @} */
 };
 

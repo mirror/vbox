@@ -36,6 +36,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UIFrameBuffer.h"
 #include "UISession.h"
+#include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
@@ -1943,14 +1944,14 @@ void UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange()
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
     if (   m_pMachineView
-        && !m_pMachineView->uisession()->isHidingHostPointer()
-        && m_pMachineView->uisession()->isValidPointerShapePresent()
-        && m_pMachineView->uisession()->isValidCursorPositionPresent()
-        && (   !m_pMachineView->uisession()->isMouseIntegrated()
-            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
+        && !m_pMachineView->uimachine()->isHidingHostPointer()
+        && m_pMachineView->uimachine()->isValidPointerShapePresent()
+        && m_pMachineView->uimachine()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uimachine()->isMouseIntegrated()
+            || !m_pMachineView->uimachine()->isMouseSupportsAbsolute()))
     {
         /* Acquire cursor hotspot: */
-        QPoint cursorHotspot = m_pMachineView->uisession()->cursorHotspot();
+        QPoint cursorHotspot = m_pMachineView->uimachine()->cursorHotspot();
         /* Apply the scale-factor if necessary: */
         cursorHotspot /= scaleFactor();
         /* Take the device-pixel-ratio into account: */
@@ -1958,8 +1959,8 @@ void UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange()
             cursorHotspot /= devicePixelRatioActual();
 
         /* Acquire cursor position and size: */
-        QPoint cursorPosition = m_pMachineView->uisession()->cursorPosition() - cursorHotspot;
-        QSize cursorSize = m_pMachineView->uisession()->cursorSize();
+        QPoint cursorPosition = m_pMachineView->uimachine()->cursorPosition() - cursorHotspot;
+        QSize cursorSize = m_pMachineView->uimachine()->cursorSize();
         /* Apply the scale-factor if necessary: */
         cursorPosition *= scaleFactor();
         cursorSize *= scaleFactor();
@@ -2003,9 +2004,9 @@ void UIFrameBufferPrivate::prepareConnections()
             Qt::QueuedConnection);
 
     /* Attach GUI connections: */
-    connect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
+    connect(m_pMachineView->uimachine(), &UIMachine::sigMousePointerShapeChange,
             this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
-    connect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
+    connect(m_pMachineView->uimachine(), &UIMachine::sigCursorPositionChange,
             this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
 }
 
@@ -2020,9 +2021,9 @@ void UIFrameBufferPrivate::cleanupConnections()
                m_pMachineView, &UIMachineView::sltHandleSetVisibleRegion);
 
     /* Detach GUI connections: */
-    disconnect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
+    disconnect(m_pMachineView->uimachine(), &UIMachine::sigMousePointerShapeChange,
                this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
-    disconnect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
+    disconnect(m_pMachineView->uimachine(), &UIMachine::sigCursorPositionChange,
                this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
 }
 
@@ -2142,14 +2143,14 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
     if (   !m_cursorRectangle.isNull()
-        && !m_pMachineView->uisession()->isHidingHostPointer()
-        && m_pMachineView->uisession()->isValidPointerShapePresent()
-        && m_pMachineView->uisession()->isValidCursorPositionPresent()
-        && (   !m_pMachineView->uisession()->isMouseIntegrated()
-            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
+        && !m_pMachineView->uimachine()->isHidingHostPointer()
+        && m_pMachineView->uimachine()->isValidPointerShapePresent()
+        && m_pMachineView->uimachine()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uimachine()->isMouseIntegrated()
+            || !m_pMachineView->uimachine()->isMouseSupportsAbsolute()))
     {
         /* Acquire session cursor shape pixmap: */
-        QPixmap cursorPixmap = m_pMachineView->uisession()->cursorShapePixmap();
+        QPixmap cursorPixmap = m_pMachineView->uimachine()->cursorShapePixmap();
 
         /* Take the device-pixel-ratio into account: */
         cursorPixmap.setDevicePixelRatio(devicePixelRatio());
@@ -2252,14 +2253,14 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
     if (   !m_cursorRectangle.isNull()
-        && !m_pMachineView->uisession()->isHidingHostPointer()
-        && m_pMachineView->uisession()->isValidPointerShapePresent()
-        && m_pMachineView->uisession()->isValidCursorPositionPresent()
-        && (   !m_pMachineView->uisession()->isMouseIntegrated()
-            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
+        && !m_pMachineView->uimachine()->isHidingHostPointer()
+        && m_pMachineView->uimachine()->isValidPointerShapePresent()
+        && m_pMachineView->uimachine()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uimachine()->isMouseIntegrated()
+            || !m_pMachineView->uimachine()->isMouseSupportsAbsolute()))
     {
         /* Acquire session cursor shape pixmap: */
-        QPixmap cursorPixmap = m_pMachineView->uisession()->cursorShapePixmap();
+        QPixmap cursorPixmap = m_pMachineView->uimachine()->cursorShapePixmap();
 
         /* Take the device-pixel-ratio into account: */
         cursorPixmap.setDevicePixelRatio(devicePixelRatio());

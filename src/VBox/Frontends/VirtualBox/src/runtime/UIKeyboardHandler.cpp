@@ -1429,7 +1429,7 @@ bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
         if (isSessionRunning() && m_fIsKeyboardCaptured)
         {
             releaseKeyboard();
-            if (!uisession()->isMouseSupportsAbsolute() || !uisession()->isMouseIntegrated())
+            if (!uimachine()->isMouseSupportsAbsolute() || !uimachine()->isMouseIntegrated())
                 machineLogic()->mouseHandler()->releaseMouse();
         }
         return true;
@@ -1562,8 +1562,8 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                 if (ok)
                 {
                     /* Determine whether the mouse can be captured: */
-                    bool fCaptureMouse =    !uisession()->isMouseSupportsAbsolute()
-                                         || !uisession()->isMouseIntegrated();
+                    bool fCaptureMouse =    !uimachine()->isMouseSupportsAbsolute()
+                                         || !uimachine()->isMouseIntegrated();
 
                     if (m_fIsKeyboardCaptured)
                     {

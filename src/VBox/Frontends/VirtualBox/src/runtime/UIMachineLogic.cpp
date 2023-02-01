@@ -591,11 +591,11 @@ void UIMachineLogic::sltAdditionsStateChanged()
 void UIMachineLogic::sltMouseCapabilityChanged()
 {
     /* Variable falgs: */
-    bool fIsMouseSupportsAbsolute = uisession()->isMouseSupportsAbsolute();
-    bool fIsMouseSupportsRelative = uisession()->isMouseSupportsRelative();
-    bool fIsMouseSupportsTouchScreen = uisession()->isMouseSupportsTouchScreen();
-    bool fIsMouseSupportsTouchPad = uisession()->isMouseSupportsTouchPad();
-    bool fIsMouseHostCursorNeeded = uisession()->isMouseHostCursorNeeded();
+    bool fIsMouseSupportsAbsolute = uimachine()->isMouseSupportsAbsolute();
+    bool fIsMouseSupportsRelative = uimachine()->isMouseSupportsRelative();
+    bool fIsMouseSupportsTouchScreen = uimachine()->isMouseSupportsTouchScreen();
+    bool fIsMouseSupportsTouchPad = uimachine()->isMouseSupportsTouchPad();
+    bool fIsMouseHostCursorNeeded = uimachine()->isMouseHostCursorNeeded();
 
     /* For now MT stuff is not important for MI action: */
     Q_UNUSED(fIsMouseSupportsTouchScreen);
@@ -821,7 +821,7 @@ void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
     m_pMouseHandler = pMouseHandler;
     /* Connect to session: */
     connect(m_pMouseHandler, &UIMouseHandler::sigStateChange,
-            uisession(), &UISession::setMouseState);
+            uimachine(), &UIMachine::setMouseState);
 }
 
 void UIMachineLogic::retranslateUi()
@@ -887,7 +887,7 @@ void UIMachineLogic::prepareSessionConnections()
     /* We should watch for console events: */
     connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
     connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
-    connect(uisession(), &UISession::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
+    connect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
     connect(uisession(), &UISession::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
     connect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
     connect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
@@ -1148,7 +1148,7 @@ void UIMachineLogic::prepareHandlers()
     setMouseHandler(UIMouseHandler::create(this, visualStateType()));
     /* Update UI session values with current: */
     uisession()->setKeyboardState(keyboardHandler()->state());
-    uisession()->setMouseState(mouseHandler()->state());
+    uimachine()->setMouseState(mouseHandler()->state());
 }
 
 #ifdef VBOX_WS_MAC
@@ -1437,7 +1437,7 @@ void UIMachineLogic::cleanupSessionConnections()
     /* We should stop watching for console events: */
     disconnect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
     disconnect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
-    disconnect(uisession(), &UISession::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
+    disconnect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
     disconnect(uisession(), &UISession::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
     disconnect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
     disconnect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
