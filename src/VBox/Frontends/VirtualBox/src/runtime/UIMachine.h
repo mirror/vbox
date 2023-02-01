@@ -43,8 +43,6 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMediumAttachment.h"
-#include "CNetworkAdapter.h"
-#include "CUSBDevice.h"
 
 /* Forward declarations: */
 class QWidget;
@@ -371,18 +369,15 @@ private:
     void prepareSessionConnections();
     /** Prepare routine: Screens stuff. */
     void prepareScreens();
-    /** Prepare routine: Machine-window icon. */
-    void prepareMachineWindowIcon();
+    /** Prepare routine: Branding. */
+    void prepareBranding();
     /** Prepare routine: Machine-logic stuff. */
     void prepareMachineLogic();
 
-    /** Performs settings loading. */
-    void loadSettings();
-
     /** Cleanup routine: Machine-logic stuff. */
     void cleanupMachineLogic();
-    /** Cleanup routine: Machine-window icon. */
-    void cleanupMachineWindowIcon();
+    /** Cleanup routine: Branding. */
+    void cleanupBranding();
     /** Cleanup routine: Screens stuff. */
     void cleanupScreens();
     /** Cleanup routine: Session stuff. */

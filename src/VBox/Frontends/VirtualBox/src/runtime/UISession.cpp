@@ -88,11 +88,13 @@ static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
 /* static */
 bool UISession::create(UISession *&pSession, UIMachine *pMachine)
 {
-    /* Make sure null pointer passed: */
-    AssertReturn(pSession == 0, false);
+    /* Make sure NULL pointer passed: */
+    AssertReturn(!pSession, false);
 
     /* Create session UI: */
     pSession = new UISession(pMachine);
+    AssertPtrReturn(pSession, false);
+
     /* Make sure it's prepared: */
     if (!pSession->prepare())
     {
@@ -101,6 +103,7 @@ bool UISession::create(UISession *&pSession, UIMachine *pMachine)
         /* False in that case: */
         return false;
     }
+
     /* True by default: */
     return true;
 }
@@ -109,11 +112,9 @@ bool UISession::create(UISession *&pSession, UIMachine *pMachine)
 void UISession::destroy(UISession *&pSession)
 {
     /* Make sure valid pointer passed: */
-    AssertReturnVoid(pSession != 0);
+    AssertPtrReturnVoid(pSession);
 
-    /* Cleanup session UI: */
-    pSession->cleanup();
-    /* Destroy session: */
+    /* Delete session: */
     delete pSession;
     pSession = 0;
 }

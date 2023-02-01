@@ -614,9 +614,7 @@ bool UIMachine::prepare()
     /* Try to create session UI: */
     if (!UISession::create(m_pSession, this))
         return false;
-
-    /* Make sure session UI created: */
-    AssertReturn(m_pSession, false);
+    AssertPtrReturn(m_pSession, false);
 
     /* Cache media data early if necessary: */
     if (uiCommon().agressiveCaching())
@@ -625,11 +623,8 @@ bool UIMachine::prepare()
     /* Prepare stuff: */
     prepareSessionConnections();
     prepareScreens();
-    prepareMachineWindowIcon();
+    prepareBranding();
     prepareMachineLogic();
-
-    /* Load settings: */
-    loadSettings();
 
     /* Try to initialize session UI: */
     if (!uisession()->initialize())
@@ -786,7 +781,7 @@ void UIMachine::prepareScreens()
         uisession()->actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
 }
 
-void UIMachine::prepareMachineWindowIcon()
+void UIMachine::prepareBranding()
 {
     /* Acquire user machine-window icon: */
     QIcon icon = generalIconPool().userMachineIcon(uisession()->machine());
@@ -798,6 +793,12 @@ void UIMachine::prepareMachineWindowIcon()
         icon = QIcon(":/VirtualBox_48px.png");
     /* Store the icon dynamically: */
     m_pMachineWindowIcon = new QIcon(icon);
+
+#ifndef VBOX_WS_MAC
+    /* Load user's machine-window name postfix: */
+    const QUuid uMachineID = uiCommon().managedVMUuid();
+    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIMachine::prepareMachineLogic()
@@ -842,22 +843,7 @@ void UIMachine::cleanupMachineLogic()
     }
 }
 
-void UIMachine::loadSettings()
-{
-    /* Load extra-data settings: */
-    {
-        /* Get machine ID: */
-        const QUuid uMachineID = uiCommon().managedVMUuid();
-        Q_UNUSED(uMachineID);
-
-#ifndef VBOX_WS_MAC
-        /* Load user's machine-window name postfix: */
-        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
-#endif
-    }
-}
-
-void UIMachine::cleanupMachineWindowIcon()
+void UIMachine::cleanupBranding()
 {
     /* Cleanup machine-window icon: */
     delete m_pMachineWindowIcon;
@@ -886,7 +872,7 @@ void UIMachine::cleanup()
 
     /* Cleanup stuff: */
     cleanupMachineLogic();
-    cleanupMachineWindowIcon();
+    cleanupBranding();
     cleanupScreens();
 
     /* Cleanup session UI: */
