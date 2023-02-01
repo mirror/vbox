@@ -628,7 +628,7 @@ VBOXWDDM_WITH_VBVA = 1
 ifdef VBOX_WITH_WDDM
  VBOX_WITH_VDMA = 1
 else ifdef VBOX_WITH_VDMA
-  undef VBOX_WITH_VDMA
+  undefine VBOX_WITH_VDMA
 endif
 # Gallium based WDDM driver
 if1of ($(KBUILD_TARGET), win)
@@ -830,7 +830,7 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
  # Enable Java<->XPCOM bridge + glue code
  VBOX_WITH_JXPCOM ?= 1
 endif
-if1of ($(KBUILD_TARGET), )
+if1of ($(KBUILD_TARGET), ) # scm:ignore-empty-if1of-set
  # Enable Java<->MSCOM glue, bridge is provided by an external lib (Jacob)
  VBOX_WITH_JMSCOM ?= 1
 endif
