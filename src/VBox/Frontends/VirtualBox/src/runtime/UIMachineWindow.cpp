@@ -38,6 +38,7 @@
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
 #include "UIExtraDataManager.h"
+#include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
@@ -103,6 +104,9 @@ void UIMachineWindow::destroy(UIMachineWindow *pWhichWindow)
 
 void UIMachineWindow::prepare()
 {
+    /* Prepare dialog itself: */
+    prepareSelf();
+
     /* Prepare session-connections: */
     prepareSessionConnections();
 
@@ -200,22 +204,21 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     , m_pLeftSpacer(0)
     , m_pRightSpacer(0)
 {
-#ifndef VBOX_WS_MAC
-    /* Set machine-window icon if any: */
-    // On macOS window icon is referenced in info.plist.
-    if (uisession() && uisession()->machineWindowIcon())
-        setWindowIcon(*uisession()->machineWindowIcon());
-#endif /* !VBOX_WS_MAC */
 }
 
-UIActionPool* UIMachineWindow::actionPool() const
+UIMachine *UIMachineWindow::uimachine() const
 {
-    return machineLogic()->actionPool();
+    return machineLogic()->uimachine();
 }
 
-UISession* UIMachineWindow::uisession() const
+UISession *UIMachineWindow::uisession() const
 {
     return machineLogic()->uisession();
+}
+
+UIActionPool *UIMachineWindow::actionPool() const
+{
+    return machineLogic()->actionPool();
 }
 
 CSession& UIMachineWindow::session() const
@@ -290,7 +293,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
 
 #ifndef VBOX_WS_MAC
         /* Append user product name (besides macOS): */
-        const QString strUserProductName = uisession()->machineWindowNamePostfix();
+        const QString strUserProductName = uimachine()->machineWindowNamePostfix();
         strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
 #endif /* !VBOX_WS_MAC */
 
@@ -435,8 +438,8 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
                                                                   console().GetGuestEnteredACPIMode(),
                                                                   restrictedCloseActions);
         /* Configure close-dialog: */
-        if (uisession() && uisession()->machineWindowIcon())
-            pCloseDlg->setIcon(*uisession()->machineWindowIcon());
+        if (uimachine()->machineWindowIcon())
+            pCloseDlg->setIcon(*uimachine()->machineWindowIcon());
 
         /* Make sure close-dialog is valid: */
         if (pCloseDlg->isValid())
@@ -540,6 +543,16 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         default:
             break;
     }
+}
+
+void UIMachineWindow::prepareSelf()
+{
+#ifndef VBOX_WS_MAC
+    /* Set machine-window icon if any: */
+    // On macOS window icon is referenced in info.plist.
+    if (uimachine()->machineWindowIcon())
+        setWindowIcon(*uimachine()->machineWindowIcon());
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIMachineWindow::prepareSessionConnections()

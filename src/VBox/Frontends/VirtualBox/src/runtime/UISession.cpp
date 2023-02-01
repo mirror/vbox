@@ -42,7 +42,6 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
-#include "UIIconPool.h"
 #include "UISession.h"
 #include "UIMachine.h"
 #include "UIMedium.h"
@@ -891,7 +890,6 @@ UISession::UISession(UIMachine *pMachine)
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
-    , m_pMachineWindowIcon(0)
 #ifdef VBOX_WS_MAC
     , m_pWatchdogDisplayChange(0)
 #endif /* VBOX_WS_MAC */
@@ -949,7 +947,6 @@ bool UISession::prepare()
     /* Prepare GUI stuff: */
     prepareActions();
     prepareConnections();
-    prepareMachineWindowIcon();
     prepareScreens();
     prepareSignalHandling();
 
@@ -1131,20 +1128,6 @@ void UISession::prepareConnections()
 #endif /* !VBOX_WS_MAC */
 }
 
-void UISession::prepareMachineWindowIcon()
-{
-    /* Acquire user machine-window icon: */
-    QIcon icon = generalIconPool().userMachineIcon(machine());
-    /* Use the OS type icon if user one was not set: */
-    if (icon.isNull())
-        icon = generalIconPool().guestOSTypeIcon(machine().GetOSTypeId());
-    /* Use the default icon if nothing else works: */
-    if (icon.isNull())
-        icon = QIcon(":/VirtualBox_48px.png");
-    /* Store the icon dynamically: */
-    m_pMachineWindowIcon = new QIcon(icon);
-}
-
 void UISession::prepareScreens()
 {
     /* Recache display data: */
@@ -1234,11 +1217,6 @@ void UISession::loadSessionSettings()
         /* Get machine ID: */
         const QUuid uMachineID = uiCommon().managedVMUuid();
 
-#ifndef VBOX_WS_MAC
-        /* Load user's machine-window name postfix: */
-        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
-#endif
-
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(uMachineID));
@@ -1301,13 +1279,6 @@ void UISession::loadSessionSettings()
                                      && (m_restrictedCloseActions & MachineCloseAction_Shutdown)
                                      && (m_restrictedCloseActions & MachineCloseAction_PowerOff);
     }
-}
-
-void UISession::cleanupMachineWindowIcon()
-{
-    /* Cleanup machine-window icon: */
-    delete m_pMachineWindowIcon;
-    m_pMachineWindowIcon = 0;
 }
 
 void UISession::cleanupConnections()
@@ -1409,7 +1380,6 @@ void UISession::cleanup()
     /* Cleanup GUI stuff: */
     //cleanupSignalHandling();
     //cleanupScreens();
-    cleanupMachineWindowIcon();
     cleanupConnections();
     cleanupActions();
 }

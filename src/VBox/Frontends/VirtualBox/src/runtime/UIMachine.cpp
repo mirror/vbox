@@ -28,6 +28,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIMachine.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
@@ -220,6 +221,7 @@ UIMachine::UIMachine()
     , m_visualState(UIVisualStateType_Invalid)
     , m_enmRequestedVisualState(UIVisualStateType_Invalid)
     , m_pMachineLogic(0)
+    , m_pMachineWindowIcon(0)
 {
     m_spInstance = this;
 }
@@ -242,8 +244,12 @@ bool UIMachine::prepare()
         uiCommon().enumerateMedia(m_pSession->machineMedia());
     }
 
-    /* Prepare machine-logic: */
+    /* Prepare stuff: */
+    prepareMachineWindowIcon();
     prepareMachineLogic();
+
+    /* Load settings: */
+    loadSessionSettings();
 
     /* Try to initialize session UI: */
     if (!uisession()->initialize())
@@ -261,6 +267,20 @@ bool UIMachine::prepareSession()
 
     /* True by default: */
     return true;
+}
+
+void UIMachine::prepareMachineWindowIcon()
+{
+    /* Acquire user machine-window icon: */
+    QIcon icon = generalIconPool().userMachineIcon(uisession()->machine());
+    /* Use the OS type icon if user one was not set: */
+    if (icon.isNull())
+        icon = generalIconPool().guestOSTypeIcon(uisession()->machine().GetOSTypeId());
+    /* Use the default icon if nothing else works: */
+    if (icon.isNull())
+        icon = QIcon(":/VirtualBox_48px.png");
+    /* Store the icon dynamically: */
+    m_pMachineWindowIcon = new QIcon(icon);
 }
 
 void UIMachine::prepareMachineLogic()
@@ -305,6 +325,28 @@ void UIMachine::cleanupMachineLogic()
     }
 }
 
+void UIMachine::loadSessionSettings()
+{
+    /* Load extra-data settings: */
+    {
+        /* Get machine ID: */
+        const QUuid uMachineID = uiCommon().managedVMUuid();
+        Q_UNUSED(uMachineID);
+
+#ifndef VBOX_WS_MAC
+        /* Load user's machine-window name postfix: */
+        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
+#endif
+    }
+}
+
+void UIMachine::cleanupMachineWindowIcon()
+{
+    /* Cleanup machine-window icon: */
+    delete m_pMachineWindowIcon;
+    m_pMachineWindowIcon = 0;
+}
+
 void UIMachine::cleanupSession()
 {
     /* Destroy session UI if exists: */
@@ -317,8 +359,9 @@ void UIMachine::cleanup()
     /* Preprocess all the meta-events: */
     QApplication::sendPostedEvents(0, QEvent::MetaCall);
 
-    /* Cleanup machine-logic: */
+    /* Cleanup stuff: */
     cleanupMachineLogic();
+    cleanupMachineWindowIcon();
 
     /* Cleanup session UI: */
     cleanupSession();

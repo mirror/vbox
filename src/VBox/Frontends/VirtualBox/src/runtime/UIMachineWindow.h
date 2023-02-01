@@ -53,6 +53,7 @@ class QGridLayout;
 class QShowEvent;
 class QSpacerItem;
 class UIActionPool;
+class UIMachine;
 class UISession;
 class UIMachineLogic;
 class UIMachineView;
@@ -83,8 +84,14 @@ public:
     ulong screenId() const { return m_uScreenId; }
     UIMachineView* machineView() const { return m_pMachineView; }
     UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
-    UIActionPool* actionPool() const;
-    UISession* uisession() const;
+
+    /** Returns machine UI reference. */
+    UIMachine *uimachine() const;
+    /** Returns session UI reference. */
+    UISession *uisession() const;
+
+    /** Returns action-pool reference. */
+    UIActionPool *actionPool() const;
 
     /** Returns the session reference. */
     CSession& session() const;
@@ -171,6 +178,7 @@ protected:
 #endif /* VBOX_WS_MAC */
 
     /* Prepare helpers: */
+    virtual void prepareSelf();
     virtual void prepareSessionConnections();
     virtual void prepareMainLayout();
     virtual void prepareMenu() {}
@@ -191,6 +199,7 @@ protected:
     virtual void cleanupMenu() {}
     virtual void cleanupMainLayout() {}
     virtual void cleanupSessionConnections();
+    virtual void cleanupSelf() {}
 
     /* Update stuff: */
 #ifdef VBOX_WITH_DEBUGGER_GUI

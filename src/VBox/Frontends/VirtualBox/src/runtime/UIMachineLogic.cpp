@@ -158,6 +158,9 @@ UIMachineLogic *UIMachineLogic::create(UIMachine *pMachine,
                                        UISession *pSession,
                                        UIVisualStateType enmVisualStateType)
 {
+    AssertPtrReturn(pMachine, 0);
+    AssertPtrReturn(pSession, 0);
+
     UIMachineLogic *pLogic = 0;
     switch (enmVisualStateType)
     {
@@ -1618,8 +1621,8 @@ void UIMachineLogic::sltTakeSnapshot()
     windowManager().registerNewParent(pDlg, pDlgParent);
 
     /* Assign corresponding icon: */
-    if (uisession() && uisession()->machineWindowIcon())
-        pDlg->setIcon(*uisession()->machineWindowIcon());
+    if (uimachine()->machineWindowIcon())
+        pDlg->setIcon(*uimachine()->machineWindowIcon());
 
     /* Search for the max available filter index: */
     const QString strNameTemplate = UITakeSnapshotDialog::tr("Snapshot %1");

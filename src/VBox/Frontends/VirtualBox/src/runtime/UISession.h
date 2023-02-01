@@ -134,16 +134,6 @@ public:
     /** Returns currently cached mouse cursor position. */
     QPoint cursorPosition() const { return m_cursorPosition; }
 
-    /** @name Branding stuff.
-     ** @{ */
-    /** Returns the cached machine-window icon. */
-    QIcon *machineWindowIcon() const { return m_pMachineWindowIcon; }
-#ifndef VBOX_WS_MAC
-    /** Returns redefined machine-window name postfix. */
-    QString machineWindowNamePostfix() const { return m_strMachineWindowNamePostfix; }
-#endif
-    /** @} */
-
     /** @name Host-screen configuration variables.
      ** @{ */
     /** Returns the list of host-screen geometries we currently have. */
@@ -443,7 +433,6 @@ private:
     void prepareFramebuffers();
     void prepareActions();
     void prepareConnections();
-    void prepareMachineWindowIcon();
     void prepareScreens();
     void prepareSignalHandling();
 
@@ -453,7 +442,6 @@ private:
     /* Cleanup helpers: */
     //void cleanupSignalHandling();
     //void cleanupScreens() {}
-    void cleanupMachineWindowIcon();
     void cleanupConnections();
     void cleanupActions();
     void cleanupFramebuffers();
@@ -543,16 +531,6 @@ private:
     QPoint   m_cursorHotspot;
     /** Holds cached mouse cursor position. */
     QPoint   m_cursorPosition;
-
-    /** @name Branding variables.
-     ** @{ */
-    /** Holds the cached machine-window icon. */
-    QIcon *m_pMachineWindowIcon;
-#ifndef VBOX_WS_MAC
-    /** Holds redefined machine-window name postfix. */
-    QString m_strMachineWindowNamePostfix;
-#endif
-    /** @} */
 
     /** @name Host-screen configuration variables.
      * @{ */
