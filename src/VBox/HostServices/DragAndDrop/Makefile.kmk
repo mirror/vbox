@@ -49,8 +49,8 @@ VBoxDragAndDropSvc_SOURCES = \
 	dndmanager.cpp
 
 VBoxDragAndDropSvc_SOURCES += \
-    ../common/client.cpp \
-    ../common/message.cpp
+	../common/client.cpp \
+	../common/message.cpp
 
 VBoxDragAndDropSvc_SOURCES.win = \
 	VBoxDragAndDropSvc.rc

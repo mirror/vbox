@@ -57,27 +57,27 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
  if1of ($(KBUILD_TARGET), linux)
   VBoxSharedClipboard_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
   VBoxSharedClipboard_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
  endif
  VBoxSharedClipboard_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_HOST
  VBoxSharedClipboard_SOURCES += \
-	VBoxSharedClipboardSvc-transfers.cpp \
-	VBoxSharedClipboardSvc-utils.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp
+ 	VBoxSharedClipboardSvc-transfers.cpp \
+ 	VBoxSharedClipboardSvc-utils.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp
  VBoxSharedClipboard_SOURCES.win += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardStreamImpl-win.cpp
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardStreamImpl-win.cpp
 endif
 if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo X11
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
-	VBoxSharedClipboardSvc-x11.cpp
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
+  	VBoxSharedClipboardSvc-x11.cpp
  else
   VBoxSharedClipboard_SOURCES += \
-	VBoxSharedClipboardSvc-x11-stubs.cpp
+  	VBoxSharedClipboardSvc-x11-stubs.cpp
  endif
 endif
 
@@ -86,10 +86,10 @@ VBoxSharedClipboard_LIBS = \
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_LIBPATH = \
-	$(VBOX_LIBPATH_X11)
+  	$(VBOX_LIBPATH_X11)
   VBoxSharedClipboard_LIBS += \
-	Xt \
-	X11
+  	Xt \
+  	X11
  endif
 endif
 
@@ -98,20 +98,20 @@ VBoxSharedClipboard_LDFLAGS.darwin = \
 
 if 0 ## Disabled for now; needs to be adapted to the new protocol first.
  if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
- if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
- #
- # Set this in LocalConfig.kmk if you are working on the X11 clipboard service
- # to automatically run the unit test at build time.
- #       OTHERS += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
- PROGRAMS += tstClipboardX11-2
- TESTING += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
- tstClipboardX11-2_TEMPLATE = VBoxR3TstExe
- tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
- tstClipboardX11-2_SOURCES  = VBoxSharedClipboardSvc-x11.cpp
- tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
- tstClipboardX11-2_CLEAN    = $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
+  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+   #
+   # Set this in LocalConfig.kmk if you are working on the X11 clipboard service
+   # to automatically run the unit test at build time.
+   #       OTHERS += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
+   PROGRAMS += tstClipboardX11-2
+   TESTING += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
+   tstClipboardX11-2_TEMPLATE = VBoxR3TstExe
+   tstClipboardX11-2_DEFS   = VBOX_WITH_HGCM TESTCASE
+   tstClipboardX11-2_SOURCES = VBoxSharedClipboardSvc-x11.cpp
+   tstClipboardX11-2_LIBS   = $(LIB_RUNTIME)
+   tstClipboardX11-2_CLEAN  = $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
 
-$$(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run: $$(tstClipboardX11-2_1_STAGE_TARGET)
+   $$(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run: $$(tstClipboardX11-2_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstClipboardX11-2_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
   endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)

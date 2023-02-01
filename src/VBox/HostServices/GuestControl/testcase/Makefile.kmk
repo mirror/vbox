@@ -42,11 +42,11 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  # without waiting for any thread synchronisation.
  tstGuestControlSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_CONTROL_TEST_NOTHREAD
  tstGuestControlSvc_SOURCES  = \
-	../VBoxGuestControlSvc.cpp \
-	tstGuestControlSvc.cpp
+ 	../VBoxGuestControlSvc.cpp \
+ 	tstGuestControlSvc.cpp
  tstGuestControlSvc_LIBS     = $(LIB_RUNTIME)
 
-$$(tstGuestControlSvc_0_OUTDIR)/tstGuestControlSvc.run: $$(tstGuestControlSvc_1_STAGE_TARGET)
+ $$(tstGuestControlSvc_0_OUTDIR)/tstGuestControlSvc.run: $$(tstGuestControlSvc_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstGuestControlSvc_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 

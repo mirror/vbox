@@ -36,7 +36,7 @@ TESTING  += $(tstShflSizes_0_OUTDIR)/tstShflSizes.run
 ifndef VBOX_ONLY_SDK
  ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
   if1of ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH), x86.x86 amd64.amd64 x86.amd64)
-    OTHERS += $(tstShflSizes_0_OUTDIR)/tstShflSizes.run
+   OTHERS  += $(tstShflSizes_0_OUTDIR)/tstShflSizes.run
   endif
  endif
 endif
@@ -51,51 +51,51 @@ $$(tstShflSizes_0_OUTDIR)/tstShflSizes.run: $$(tstShflSizes_1_STAGE_TARGET)
 
 
 ifdef VBOX_WITH_TESTCASES
-#
-# Case conversion testcase.
-#
-PROGRAMS += tstShflCase
-tstShflCase_TEMPLATE = VBoxR3TstExe
-tstShflCase_DEFS     = VBOX_WITH_HGCM
-tstShflCase_SOURCES  = tstShflCase.cpp
-tstShflCase_LIBS     = $(LIB_RUNTIME)
+ #
+ # Case conversion testcase.
+ #
+ PROGRAMS += tstShflCase
+ tstShflCase_TEMPLATE = VBoxR3TstExe
+ tstShflCase_DEFS    = VBOX_WITH_HGCM
+ tstShflCase_SOURCES = tstShflCase.cpp
+ tstShflCase_LIBS    = $(LIB_RUNTIME)
 
-#
-# HGCM service testcase.
-#
+ #
+ # HGCM service testcase.
+ #
 
-PROGRAMS += tstSharedFolderService
-tstSharedFolderService_TEMPLATE = VBoxR3TstExe
-tstSharedFolderService_DEFS     = VBOX_WITH_HGCM UNITTEST
-tstSharedFolderService_INCS     = ..
-tstSharedFolderService_SOURCES  = \
-    tstSharedFolderService.cpp \
-    ../mappings.cpp \
-    ../VBoxSharedFoldersSvc.cpp \
-    ../shflhandle.cpp \
-    ../vbsfpathabs.cpp \
-    ../vbsfpath.cpp \
-    ../vbsf.cpp
-tstSharedFolderService_LDFLAGS.darwin = \
-	-framework Carbon
-tstSharedFolderService_LIBS     = $(LIB_RUNTIME)
+ PROGRAMS += tstSharedFolderService
+ tstSharedFolderService_TEMPLATE = VBoxR3TstExe
+ tstSharedFolderService_DEFS    = VBOX_WITH_HGCM UNITTEST
+ tstSharedFolderService_INCS    = ..
+ tstSharedFolderService_SOURCES = \
+ 	tstSharedFolderService.cpp \
+ 	../mappings.cpp \
+ 	../VBoxSharedFoldersSvc.cpp \
+ 	../shflhandle.cpp \
+ 	../vbsfpathabs.cpp \
+ 	../vbsfpath.cpp \
+ 	../vbsf.cpp
+ tstSharedFolderService_LDFLAGS.darwin = \
+ 	-framework Carbon
+ tstSharedFolderService_LIBS    = $(LIB_RUNTIME)
 
-if 0 # Cannot define two RT_OS_XXX macros!
-# As there are differences between the Windows build of the service and others,
-# we do an additional build with RT_OS_WINDOWS defined on non-Windows targets.
-PROGRAMS += \
-    tstSharedFolderService \
-    $(if $(eq $(KBUILD_TARGET),win),,tstSharedFolderService-win)
-tstSharedFolderService-win_TEMPLATE = $(tstSharedFolderService_TEMPLATE)
-tstSharedFolderService-win_DEFS     = \
-    $(tstSharedFolderService_DEFS) \
-    RT_OS_WINDOWS
-tstSharedFolderService-win_INCS     = $(tstSharedFolderService_INCS)
-tstSharedFolderService-win_SOURCES  = $(tstSharedFolderService_SOURCES)
-tstSharedFolderService-win_LDFLAGS.darwin = \
-    $(tstSharedFolderService_LDFLAGS.darwin)
-tstSharedFolderService-win_LIBS     = $(tstSharedFolderService_LIBS)
-endif
+ if 0 # Cannot define two RT_OS_XXX macros!
+  # As there are differences between the Windows build of the service and others,
+  # we do an additional build with RT_OS_WINDOWS defined on non-Windows targets.
+  PROGRAMS += \
+  	tstSharedFolderService \
+  	$(if $(eq $(KBUILD_TARGET),win),,tstSharedFolderService-win)
+  tstSharedFolderService-win_TEMPLATE = $(tstSharedFolderService_TEMPLATE)
+  tstSharedFolderService-win_DEFS   = \
+  	$(tstSharedFolderService_DEFS) \
+  	RT_OS_WINDOWS
+  tstSharedFolderService-win_INCS   = $(tstSharedFolderService_INCS)
+  tstSharedFolderService-win_SOURCES = $(tstSharedFolderService_SOURCES)
+  tstSharedFolderService-win_LDFLAGS.darwin = \
+  	$(tstSharedFolderService_LDFLAGS.darwin)
+  tstSharedFolderService-win_LIBS   = $(tstSharedFolderService_LIBS)
+ endif
 
 endif # VBOX_WITH_TESTCASES
 
