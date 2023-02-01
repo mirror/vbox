@@ -93,6 +93,7 @@ ifdef HHC
  $(error HHC was renamed to VBOX_HHC!)
 endif
 
+VBOX_DITA_CONVERTER_PATH = $(PATH_ROOT)/src/libs/dbdita/db2dita/
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \
 	UserManual.qhc
@@ -839,6 +840,27 @@ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
+
+##########################################################################################
+#
+#  Docbook to Dita conversion of our refentry files
+#
+##########################################################################################
+define def_vbox_refentry_to_dita
+$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(addsuffix .dita,$(basename $(2))): \
+		$$(VBOX_DITA_CONVERTER_PATH)/docbook2dita.xsl \
+		$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
+		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
+		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP)| $$$$(dir $$$$@)
+	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
+	$$(QUIET)$$(RM) -f "$$@"
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/docbook2dita.xsl $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)
+endef
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
+, $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
+
+to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+			,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/$(file).dita))
 
 #
 # ChangeLog.html
