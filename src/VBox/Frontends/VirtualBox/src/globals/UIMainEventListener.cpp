@@ -449,9 +449,9 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         case KVBoxEventType_OnKeyboardLedsChanged:
         {
             CKeyboardLedsChangedEvent comEventSpecific(pEvent);
-            emit sigKeyboardLedsChangeEvent(comEventSpecific.GetNumLock(),
-                                            comEventSpecific.GetCapsLock(),
-                                            comEventSpecific.GetScrollLock());
+            emit sigKeyboardLedsChange(comEventSpecific.GetNumLock(),
+                                       comEventSpecific.GetCapsLock(),
+                                       comEventSpecific.GetScrollLock());
             break;
         }
         case KVBoxEventType_OnStateChanged:

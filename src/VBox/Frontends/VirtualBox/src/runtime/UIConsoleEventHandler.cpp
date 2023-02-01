@@ -62,7 +62,7 @@ signals:
       * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
     void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
     /** Notifies about keyboard LEDs change for @a fNumLock, @a fCapsLock and @a fScrollLock. */
-    void sigKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    void sigKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
     /** Notifies about machine @a state change. */
     void sigStateChange(KMachineState state);
     /** Notifies about guest additions state change. */
@@ -250,8 +250,8 @@ void UIConsoleEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigCursorPositionChange,
            this, &UIConsoleEventHandlerProxy::sigCursorPositionChange,
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigKeyboardLedsChangeEvent,
-            this, &UIConsoleEventHandlerProxy::sigKeyboardLedsChangeEvent,
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigKeyboardLedsChange,
+            this, &UIConsoleEventHandlerProxy::sigKeyboardLedsChange,
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigStateChange,
             this, &UIConsoleEventHandlerProxy::sigStateChange,
@@ -358,8 +358,8 @@ void UIConsoleEventHandler::prepare()
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigCursorPositionChange,
             this, &UIConsoleEventHandler::sigCursorPositionChange,
             Qt::QueuedConnection);
-    connect(m_pProxy, &UIConsoleEventHandlerProxy::sigKeyboardLedsChangeEvent,
-            this, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
+    connect(m_pProxy, &UIConsoleEventHandlerProxy::sigKeyboardLedsChange,
+            this, &UIConsoleEventHandler::sigKeyboardLedsChange,
             Qt::QueuedConnection);
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigStateChange,
             this, &UIConsoleEventHandler::sigStateChange,

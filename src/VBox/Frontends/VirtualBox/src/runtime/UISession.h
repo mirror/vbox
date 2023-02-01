@@ -164,9 +164,9 @@ public:
     /** Returns the machine name. */
     const QString& machineName() const { return m_strMachineName; }
 
-    UIActionPool* actionPool() const { return m_pActionPool; }
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     KMachineState machineState() const { return m_machineState; }
+    UIActionPool *actionPool() const { return m_pActionPool; }
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
     WId mainMachineWindowId() const;
@@ -231,6 +231,8 @@ public:
     /* The double check below is correct, even though it is an implementation
      * detail of the Additions which the GUI should not ideally have to know. */
     bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
+    /** Returns whether GA can be upgraded. */
+    bool guestAdditionsUpgradable();
 
     /* Keyboard getters: */
     /** Returns keyboard-state. */
@@ -333,7 +335,7 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Console events slots */
-    void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    void sltKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
     void sltVRDEChange();
@@ -425,9 +427,6 @@ private:
 
     /** Updates action restrictions. */
     void updateActionRestrictions();
-
-    /* Check if GA can be upgraded. */
-    bool guestAdditionsUpgradable();
 
     /* Private variables: */
     UIMachine *m_pMachine;

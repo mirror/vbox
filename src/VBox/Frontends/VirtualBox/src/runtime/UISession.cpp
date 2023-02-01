@@ -67,20 +67,20 @@
 #include "CAudioAdapter.h"
 #include "CAudioSettings.h"
 #include "CGraphicsAdapter.h"
+#include "CHostNetworkInterface.h"
 #include "CHostUSBDevice.h"
-#include "CRecordingSettings.h"
-#include "CSystemProperties.h"
-#include "CStorageController.h"
+#include "CHostVideoInputDevice.h"
+#include "CMedium.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
-#include "CHostNetworkInterface.h"
-#include "CVRDEServer.h"
+#include "CSnapshot.h"
+#include "CRecordingSettings.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
-#include "CHostVideoInputDevice.h"
-#include "CSnapshot.h"
-#include "CMedium.h"
+#include "CVRDEServer.h"
 
 /* External includes: */
 #ifdef VBOX_WS_X11
@@ -407,6 +407,29 @@ UIVisualStateType UISession::requestedVisualState() const
     return m_pMachine->requestedVisualState();
 }
 
+bool UISession::guestAdditionsUpgradable()
+{
+    if (!machine().isOk())
+        return false;
+
+    /* Auto GA update is currently for Windows and Linux guests only */
+    const CGuestOSType osType = uiCommon().vmGuestOSType(machine().GetOSTypeId());
+    if (!osType.isOk())
+        return false;
+
+    const QString strGuestFamily = osType.GetFamilyId();
+    bool fIsWindowOrLinux = strGuestFamily.contains("windows", Qt::CaseInsensitive) || strGuestFamily.contains("linux", Qt::CaseInsensitive);
+
+    if (!fIsWindowOrLinux)
+        return false;
+
+    /* Also check whether we have something to update automatically: */
+    if (m_ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
+        return false;
+
+    return true;
+}
+
 bool UISession::setPause(bool fOn)
 {
     if (fOn)
@@ -494,7 +517,7 @@ void UISession::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
 }
 #endif /* RT_OS_DARWIN */
 
-void UISession::sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock)
+void UISession::sltKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
 {
     /* Check if something had changed: */
     if (   m_fNumLock != fNumLock
@@ -766,17 +789,18 @@ void UISession::sltHandleSnapshotRestored(bool)
 
 void UISession::sltAdditionsChange()
 {
-    /* Variable flags: */
-    ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
+    /* Acquire actual states: */
+    const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
     LONG64 lLastUpdatedIgnored;
-    bool fIsGuestSupportsGraphics = guest().GetFacilityStatus(KAdditionsFacilityType_Graphics, lLastUpdatedIgnored)
-                                    == KAdditionsFacilityStatus_Active;
-    bool fIsGuestSupportsSeamless = guest().GetFacilityStatus(KAdditionsFacilityType_Seamless, lLastUpdatedIgnored)
-                                    == KAdditionsFacilityStatus_Active;
+    const bool fIsGuestSupportsGraphics = guest().GetFacilityStatus(KAdditionsFacilityType_Graphics, lLastUpdatedIgnored)
+                                        == KAdditionsFacilityStatus_Active;
+    const bool fIsGuestSupportsSeamless = guest().GetFacilityStatus(KAdditionsFacilityType_Seamless, lLastUpdatedIgnored)
+                                        == KAdditionsFacilityStatus_Active;
+
     /* Check if something had changed: */
-    if (m_ulGuestAdditionsRunLevel != ulGuestAdditionsRunLevel ||
-        m_fIsGuestSupportsGraphics != fIsGuestSupportsGraphics ||
-        m_fIsGuestSupportsSeamless != fIsGuestSupportsSeamless)
+    if (   m_ulGuestAdditionsRunLevel != ulGuestAdditionsRunLevel
+        || m_fIsGuestSupportsGraphics != fIsGuestSupportsGraphics
+        || m_fIsGuestSupportsSeamless != fIsGuestSupportsSeamless)
     {
         /* Store new data: */
         m_ulGuestAdditionsRunLevel = ulGuestAdditionsRunLevel;
@@ -790,12 +814,13 @@ void UISession::sltAdditionsChange()
             actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(guestAdditionsUpgradable());
 
         /* Notify listeners about GA state really changed: */
-        LogRel(("GUI: UISession::sltAdditionsChange: GA state really changed, notifying listeners\n"));
+        LogRel(("GUI: UISession::sltAdditionsChange: GA state really changed, notifying listeners.\n"));
         emit sigAdditionsStateActualChange();
     }
+    else
+        LogRel(("GUI: UISession::sltAdditionsChange: GA state doesn't really changed, still notifying listeners.\n"));
 
     /* Notify listeners about GA state change event came: */
-    LogRel(("GUI: UISession::sltAdditionsChange: GA state change event came, notifying listeners\n"));
     emit sigAdditionsStateChange();
 }
 
@@ -939,8 +964,8 @@ void UISession::prepareConsoleEventHandlers()
             this, &UISession::sigMouseCapabilityChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCursorPositionChange,
             this, &UISession::sigCursorPositionChange);
-    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
-            this, &UISession::sltKeyboardLedsChangeEvent);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigKeyboardLedsChange,
+            this, &UISession::sltKeyboardLedsChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStateChange,
             this, &UISession::sltStateChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAdditionsChange,
@@ -1740,30 +1765,6 @@ void UISession::updateActionRestrictions()
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Session, restrictionForView);
     /* Apply cumulative restriction for 'Devices' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restrictionForDevices);
-}
-
-bool UISession::guestAdditionsUpgradable()
-{
-    if (!machine().isOk())
-        return false;
-
-    /* Auto GA update is currently for Windows and Linux guests only */
-    const CGuestOSType osType = uiCommon().vmGuestOSType(machine().GetOSTypeId());
-    if (!osType.isOk())
-        return false;
-
-    const QString strGuestFamily = osType.GetFamilyId();
-    bool fIsWindowOrLinux = strGuestFamily.contains("windows", Qt::CaseInsensitive) || strGuestFamily.contains("linux", Qt::CaseInsensitive);
-
-    if (!fIsWindowOrLinux)
-        return false;
-
-    /* Also check whether we have something to update automatically: */
-    const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
-    if (ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
-        return false;
-
-    return true;
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
