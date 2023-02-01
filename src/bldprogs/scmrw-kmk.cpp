@@ -1438,6 +1438,8 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
             Assert(iSubLine + 1 == cLines);
             *pszDst = '\0';
             ScmStreamPutLine(pParser->pOut, pParser->szBuf, pszDst - pParser->szBuf, pParser->enmEol);
+            if (cPendingEols > 0)
+                ScmStreamPutEol(pParser->pOut, pParser->enmEol);
             return false; /* dummy */
         }
 
