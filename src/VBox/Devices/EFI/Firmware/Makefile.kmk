@@ -75,10 +75,10 @@ INSTALLS += VBoxEfiBldPythonWrappers
 VBoxEfiBldPythonWrappers_TEMPLATE = VBoxEfiBldProg
 if1of ($(KBUILD_HOST), win os2)
  VBoxEfiBldPythonWrappers_EXEC_SOURCES = \
-	$(foreach PyWrap,$(VBOX_EFI_PYTHON_WRAPPERS),$(VBoxEfiBldPythonWrappers_0_OUTDIR)/$(PyWrap).cmd)
+ 	$(foreach PyWrap,$(VBOX_EFI_PYTHON_WRAPPERS),$(VBoxEfiBldPythonWrappers_0_OUTDIR)/$(PyWrap).cmd)
 else
  VBoxEfiBldPythonWrappers_EXEC_SOURCES = \
-	$(addprefix $(VBoxEfiBldPythonWrappers_0_OUTDIR)/,$(VBOX_EFI_PYTHON_WRAPPERS))
+ 	$(addprefix $(VBoxEfiBldPythonWrappers_0_OUTDIR)/,$(VBOX_EFI_PYTHON_WRAPPERS))
 endif
 VBoxEfiBldPythonWrappers_CLEAN = $(VBoxEfiBldPythonWrappers_EXEC_SOURCES)
 
@@ -183,11 +183,11 @@ include $(FILE_KBUILD_SUB_FOOTER)
 #
 VBOX_EFI_DEPENDENCIES = \
 	$(VBOX_PATH_EFI_FIRMWARE)/../DevEFI.h \
-       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.c \
-       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf \
-       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/VBoxPkg.dec \
-       \
-       $(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkg.dec \
+	$(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf \
+	$(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/VBoxPkg.dec \
+	\
+	$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkg.dec
 
 #
 # The common build.py invocation part.
@@ -195,18 +195,18 @@ VBOX_EFI_DEPENDENCIES = \
 # Note! MAKEFLAGS must be zapped on Windows so nmake don't get confused.
 #
 if1of ($(KBUILD_HOST), win)
- VBOX_EFI_REDIRECT_E_EQUAL:=$(EQUAL)
+ VBOX_EFI_REDIRECT_E_EQUAL := $(EQUAL)
  VBOX_EFI_BUILD_CMD = $(REDIRECT) \
-	-E 'PATH=$(VBOX_PATH_STAGE_EFI_BLDPROGS)$(VBOX_SEP)$(PATH);' \
-	-E 'INCLUDE=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(VBOX_SEP)$(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)$(INCLUDE);' \
-	-E 'COMSPEC=$(firstword $(windir) $(SystemRoot) C:\windows)\system32\cmd.exe' \
-	-E 'MAKEFLAGS='
+ 	-E 'PATH=$(VBOX_PATH_STAGE_EFI_BLDPROGS)$(VBOX_SEP)$(PATH);' \
+ 	-E 'INCLUDE=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(VBOX_SEP)$(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)$(INCLUDE);' \
+ 	-E 'COMSPEC=$(firstword $(windir) $(SystemRoot) C:\windows)\system32\cmd.exe' \
+ 	-E 'MAKEFLAGS='
 else
- VBOX_EFI_REDIRECT_E_EQUAL:=
-VBOX_EFI_BUILD_CMD = $(REDIRECT) \
-	-E "PATH=$(VBOX_PATH_STAGE_EFI_BLDPROGS)$(VBOX_SEP)$(PATH)" \
-	-E     "C_INCLUDE_PATH=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(C_INCLUDE_PATH)" \
-	-E "CPLUS_INCLUDE_PATH=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(C_INCLUDE_PATH)"
+ VBOX_EFI_REDIRECT_E_EQUAL :=
+ VBOX_EFI_BUILD_CMD = $(REDIRECT) \
+ 	-E "PATH=$(VBOX_PATH_STAGE_EFI_BLDPROGS)$(VBOX_SEP)$(PATH)" \
+ 	-E     "C_INCLUDE_PATH=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(C_INCLUDE_PATH)" \
+ 	-E "CPLUS_INCLUDE_PATH=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(C_INCLUDE_PATH)"
 endif
 VBOX_EFI_BUILD_CMD += \
 	-E 'PYTHONPATH=$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python' \
@@ -265,7 +265,7 @@ ifeq ($(KBUILD_HOST),win)
 endif
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
-               $(VBOX_PATH_EFI_FIRMWARE)/vbox-tools_def.txt \
+		$(VBOX_PATH_EFI_FIRMWARE)/vbox-tools_def.txt \
 		$(MAKEFILE) | $$(dir $$@)
 	$(RM) -f -- "$@"
 	$(SED) \
@@ -290,7 +290,7 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
 
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/build_rule.txt \
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt: \
-               $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template \
+		$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template \
 		$(MAKEFILE) | $$(dir $$@)
 	$(RM) -f -- "$@"
 	$(CP) -f -- "$<" "$@"
@@ -361,6 +361,6 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 #
 # Some aliases.
 #
-build-efi-x86:   $$(filter %VBoxEFI32.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
+build-efi-x86: $$(filter %VBoxEFI32.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
 build-efi-amd64: $$(filter %VBoxEFI64.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
 

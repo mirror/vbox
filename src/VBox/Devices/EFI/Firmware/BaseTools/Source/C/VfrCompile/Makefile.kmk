@@ -45,7 +45,7 @@ VfrCompile_DEFS = PCCTS_USE_NAMESPACE_STD __USE_PROTOS
 # when parsing Tcg2Config.vfr, no time to investigate that deeper right now...
 #
 if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" == "release"
-	VfrCompile_CXXFLAGS += -noover -Od
+ VfrCompile_CXXFLAGS        += -noover -Od
 endif
 VfrCompile_INCS = \
 	. \
@@ -53,10 +53,10 @@ VfrCompile_INCS = \
 	$(VfrCompile_0_OUTDIR)
 VfrCompile_SOURCES = \
 	VfrCompiler.cpp \
-       VfrFormPkg.cpp \
+	VfrFormPkg.cpp \
 	VfrError.cpp \
 	VfrUtilityLib.cpp \
-       Pccts/h/AParser.cpp \
+	Pccts/h/AParser.cpp \
 	Pccts/h/DLexerBase.cpp \
 	Pccts/h/ATokenBuffer.cpp \
 	$(VfrCompile_0_OUTDIR)/VfrSyntax.cpp \
@@ -86,7 +86,7 @@ $$(VfrCompile_0_OUTDIR)/VfrSyntax.cpp \
 
 $$(VfrCompile_0_OUTDIR)/VfrLexer.cpp \
 + $$(VfrCompile_0_OUTDIR)/VfrLexer.h: \
-       	$$(dlg_1_TARGET) \
+		$$(dlg_1_TARGET) \
 		$$(VfrCompile_0_OUTDIR)/VfrParser.dlg
 	$(dlg_1_TARGET) -C2 -i -CC -cl VfrLexer \
 		-o $(dir $@) \

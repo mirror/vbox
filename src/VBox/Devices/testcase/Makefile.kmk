@@ -69,7 +69,7 @@ VBOX_DEVICES_TESTS_FEATURES = \
 ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS += \
-	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
+  	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
  endif
 endif
 
@@ -126,7 +126,7 @@ tstDeviceStructSize_CLEAN    = \
 ifdef VBOX_WITH_RAW_MODE
  tstDeviceStructSize.cpp_DEPS = $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h
 endif
- tstDeviceStructSize_INCS     += $(VBOX_PATH_VMM_DEVICES_SRC)
+tstDeviceStructSize_INCS      += $(VBOX_PATH_VMM_DEVICES_SRC)
 
 #
 # Run rule for tstDeviceStructSize.
@@ -137,8 +137,8 @@ endif
 ## future
 
 ifdef VBOX_WITH_RAW_MODE
-# 1&2. Manually dump selected structures and members.
-$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h: $$(tstDeviceStructSizeRC_1_STAGE_TARGET) | $$(dir $$@)
+ # 1&2. Manually dump selected structures and members.
+ $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h: $$(tstDeviceStructSizeRC_1_STAGE_TARGET) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $^
 endif

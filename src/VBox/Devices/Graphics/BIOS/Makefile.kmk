@@ -48,12 +48,12 @@ ifdef VBOX_WITH_OPEN_WATCOM
  VBoxVgaBios386_LDFLAGS = \
  	output raw offset=0xC0000 \
  	order \
- 	 clname CODE  \
-	  segment VGAROM segaddr=0xC000 \
- 	  segment _TEXT  segaddr=0xC000 offset=0x9F0 \
- 	  segment VBE32  segaddr=0xC000 offset=0x4640 \
- 	 clname DATA \
- 	  segment _DATA  segaddr=0xC000 offset=0x4780 \
+ 	clname CODE \
+ 	segment VGAROM segaddr=0xC000 \
+ 	segment _TEXT  segaddr=0xC000 offset=0x9F0 \
+ 	segment VBE32  segaddr=0xC000 offset=0x4640 \
+ 	clname DATA \
+ 	segment _DATA  segaddr=0xC000 offset=0x4780
 
  MISCBINS += VBoxVgaBios286
  VBoxVgaBios286_EXTENDS = VBoxVgaBios386
@@ -72,7 +72,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
   $$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).asm +| $$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum: \
   		$$$$(VBoxVgaBios$(1)_1_TARGET) \
   		$$(VBOX_MAKE_ALTERNATIVE_SOURCE) \
- 		$$(VBOX_VBOXCMP)
+  		$$(VBOX_VBOXCMP)
   if1of ($$(KBUILD_TYPE), release)
 	$$(VBOX_MAKE_ALTERNATIVE_SOURCE) \
 		--bios-image $$< \
@@ -104,9 +104,9 @@ ifdef VBOX_WITH_OPEN_WATCOM
  $(evalcall2 def_VBoxVgaBiosUpdateAltSource,8086)
 
  update-vgabios-source: \
- 	$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative386.asm \
- 	$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative286.asm \
- 	$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative8086.asm
+ 		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative386.asm \
+ 		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative286.asm \
+ 		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative8086.asm
 
 endif # VBOX_WITH_OPEN_WATCOM
 
@@ -132,9 +132,9 @@ define def_VBoxVgaBiosBin
   VgaBiosBin_CLEAN  += $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom
 
   $$$$(VgaBiosBin_0_OUTDIR)/VgaBiosBin$(1).c + $$$$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom: \
- 		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).asm \
- 		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum \
- 		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
+  		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).asm \
+  		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum \
+  		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,bin2c,VgaBiosBin,$$<,$$@)
 	$$(QUIET)$$(TOOL_YASM_AS) -f bin -o $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$<
 	$$(QUIET)$$(REDIRECT) -C $$(VgaBiosBin_0_OUTDIR) -- \
@@ -171,8 +171,8 @@ VgaDefBiosLogo_INCS      = $(VBOX_PATH_DEVICES_SRC)
 VgaDefBiosLogo_SOURCES   = $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c
 VgaDefBiosLogo_CLEAN     = $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c
 ifndef VBOX_OSE
-VgaDefBiosLogo_SOURCES  += $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogoNY.c
-VgaDefBiosLogo_CLEAN    += $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogoNY.c
+ VgaDefBiosLogo_SOURCES += $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogoNY.c
+ VgaDefBiosLogo_CLEAN   += $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogoNY.c
 endif
 
 # Rule for making the bios logo.

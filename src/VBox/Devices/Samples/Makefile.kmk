@@ -68,16 +68,16 @@ ifdef VBOX_WITH_XPCOM
   VBoxPlaygroundDevice_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  endif
  VBoxPlaygroundDevice_INCS += \
-	$(VBOX_XPCOM_INCS)
+ 	$(VBOX_XPCOM_INCS)
  VBoxPlaygroundDevice_INTERMEDIATES += \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
  VBoxPlaygroundDevice_LIBS += \
-	$(LIB_XPCOM)
+ 	$(LIB_XPCOM)
 else  # COM
  VBoxPlaygroundDevice_INCS += \
-	$(VBOX_PATH_SDK)/bindings/mscom/include
+ 	$(VBOX_PATH_SDK)/bindings/mscom/include
  VBoxPlaygroundDevice_INTERMEDIATES += \
-	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+ 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 endif # COM
 
 

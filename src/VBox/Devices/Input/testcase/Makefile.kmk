@@ -34,11 +34,11 @@ endif
 tstUsbMouse_TEMPLATE = VBoxR3TstExe
 tstUsbMouse_DEFS     = VBOX_WITH_VUSB
 tstUsbMouse_INCS     = \
-        ../../build
+	../../build
 tstUsbMouse_LIBS     = $(LIB_VMM) $(LIB_REM)
 tstUsbMouse_SOURCES  = \
-        tstUsbMouse.cpp \
-        ../UsbMouse.cpp
+	tstUsbMouse.cpp \
+	../UsbMouse.cpp
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

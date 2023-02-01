@@ -37,9 +37,9 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstAudioMixBuffer_DEFS = TESTCASE VBOX_AUDIO_MIX_BUFFER_TESTCASE
  tstAudioMixBuffer_DEFS.debug  = VBOX_WITH_EF_WRAPS
  tstAudioMixBuffer_SOURCES = \
-	tstAudioMixBuffer.cpp \
-	../AudioMixBuffer.cpp \
-	../AudioHlp.cpp
+ 	tstAudioMixBuffer.cpp \
+ 	../AudioMixBuffer.cpp \
+ 	../AudioHlp.cpp
  tstAudioMixBuffer_LIBS = $(LIB_RUNTIME)
 
  $$(tstAudioMixBuffer_0_OUTDIR)/tstAudioMixBuffer.run: $$(tstAudioMixBuffer_1_STAGE_TARGET)
@@ -53,8 +53,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   tstAudioClient3_SOURCES = tstAudioClient3.cpp
   tstAudioClient3_LIBS = $(LIB_RUNTIME)
   tstAudioClient3_INCS = \
-	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/Include/10.0.17134.0/um \
-	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
+  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/Include/10.0.17134.0/um \
+  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
 
   # Requires manual execution / verification.
   PROGRAMS += tstAudioClient3
@@ -67,11 +67,11 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstAudioTestService_DEFS = TESTCASE
  tstAudioTestService_DEFS.debug  = VBOX_WITH_EF_WRAPS
  tstAudioTestService_SOURCES = \
-	tstAudioTestService.cpp \
-	../AudioTestService.cpp \
-	../AudioTestServiceProtocol.cpp \
-	../AudioTestServiceTcp.cpp \
-	../AudioTestServiceClient.cpp
+ 	tstAudioTestService.cpp \
+ 	../AudioTestService.cpp \
+ 	../AudioTestServiceProtocol.cpp \
+ 	../AudioTestServiceTcp.cpp \
+ 	../AudioTestServiceClient.cpp
  tstAudioTestService_LIBS = $(LIB_RUNTIME)
 
  $$(tstAudioTestService_0_OUTDIR)/tstAudioTestService.run: $$(tstAudioTestService_1_STAGE_TARGET)

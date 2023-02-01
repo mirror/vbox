@@ -44,17 +44,17 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	VBOX_WITH_SCSI \
  	VBOX_WITH_AHCI \
  	VBOX_WITH_VIRTIO_SCSI \
-	VBOX_BIOS_CPU=80386
+ 	VBOX_BIOS_CPU=80386
  #VBoxPcBios386_DEFS.debug = DEBUG_ATA DEBUG_POST DEBUG_INT13
  VBoxPcBios386_LDFLAGS = \
  	output raw offset=0xF0000 \
  	order \
- 	 clname DATA segaddr=0xF000 \
- 	  segment _DATA \
- 	 clname CODE \
- 	  segment _TEXT   segaddr=0xF000 offset=0x1600 \
- 	  segment BIOS32  segaddr=0xF000 offset=0xDA00 \
- 	  segment BIOSSEG segaddr=0xF000 offset=0xE000
+ 	clname DATA segaddr=0xF000 \
+ 	segment _DATA \
+ 	clname CODE \
+ 	segment _TEXT   segaddr=0xF000 offset=0x1600 \
+ 	segment BIOS32  segaddr=0xF000 offset=0xDA00 \
+ 	segment BIOSSEG segaddr=0xF000 offset=0xE000
  VBoxPcBios386_SOURCES = \
  	post.c \
  	bios.c \
@@ -99,7 +99,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  LIBRARIES += VBoxPcBios32
  VBoxPcBios32_TEMPLATE = VBoxBios32Lib
  VBoxPcBios32_SOURCES = \
-       pci32.c
+ 	pci32.c
 
  ../../BiosCommonCode/DoUInt32Div.c_CFLAGS = -mc # asm.h and uint32.h both require far data pointers by default.
 
@@ -109,7 +109,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  VBoxPcBios286_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=80286
  VBoxPcBios286_SOURCES = $(VBoxPcBios386_SOURCES) \
  	../../BiosCommonCode/DoUInt32Div.c \
-       ../../BiosCommonCode/ASMBitLastSetU16.asm
+ 	../../BiosCommonCode/ASMBitLastSetU16.asm
 
  MISCBINS += VBoxPcBios8086
  VBoxPcBios8086_EXTENDS = VBoxPcBios386
@@ -117,7 +117,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  VBoxPcBios8086_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=8086
  VBoxPcBios8086_SOURCES = $(VBoxPcBios386_SOURCES) \
  	../../BiosCommonCode/DoUInt32Div.c \
-       ../../BiosCommonCode/ASMBitLastSetU16.asm
+ 	../../BiosCommonCode/ASMBitLastSetU16.asm
 
 
  #
@@ -155,9 +155,9 @@ ifdef VBOX_WITH_OPEN_WATCOM
  $(evalcall2 def_VBoxPcBiosUpdateAltSource,8086)
 
  update-pcbios-source: \
- 	$(PATH_SUB_CURRENT)/VBoxBiosAlternative386.asm \
- 	$(PATH_SUB_CURRENT)/VBoxBiosAlternative286.asm \
- 	$(PATH_SUB_CURRENT)/VBoxBiosAlternative8086.asm
+ 		$(PATH_SUB_CURRENT)/VBoxBiosAlternative386.asm \
+ 		$(PATH_SUB_CURRENT)/VBoxBiosAlternative286.asm \
+ 		$(PATH_SUB_CURRENT)/VBoxBiosAlternative8086.asm
 
 endif # VBOX_WITH_OPEN_WATCOM
 
@@ -181,9 +181,9 @@ define def_VBoxPcBiosBin
   PcBiosBin_CLEAN    += $$(PcBiosBin_0_OUTDIR)/VBoxPcBios$(1).rom
 
   $$$$(PcBiosBin_0_OUTDIR)/PcBiosBin$(1).c + $$$$(PcBiosBin_0_OUTDIR)/VBoxPcBios$(1).rom: \
-		$$(PATH_SUB_CURRENT)/VBoxBiosAlternative$(1).asm \
-		$$(PATH_SUB_CURRENT)/VBoxBiosAlternative$(1).md5sum \
-		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
+  		$$(PATH_SUB_CURRENT)/VBoxBiosAlternative$(1).asm \
+  		$$(PATH_SUB_CURRENT)/VBoxBiosAlternative$(1).md5sum \
+  		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,bin2c,PcBiosBin,$$<,$$@)
 	$$(QUIET)$$(TOOL_YASM_AS) -f bin -o $$(PcBiosBin_0_OUTDIR)/VBoxPcBios$(1).rom $$<
 	$$(QUIET)$$(REDIRECT) -C $$(PcBiosBin_0_OUTDIR) -- \
