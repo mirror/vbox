@@ -147,14 +147,6 @@ public:
     bool initialize();
     /** Powers VM up. */
     bool powerUp();
-    /** Detaches and closes Runtime UI. */
-    void detachUi();
-    /** Saves VM state, then closes Runtime UI. */
-    void saveState();
-    /** Calls for guest shutdown to close Runtime UI. */
-    void shutdown();
-    /** Powers VM off, then closes Runtime UI. */
-    void powerOff(bool fIncludingDiscard);
 
     /** Returns the session instance. */
     CSession& session() { return m_session; }
@@ -210,13 +202,6 @@ public:
     bool isInitialized() const { return m_fInitialized; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
-
-    /** Returns whether VM is in 'manual-override' mode.
-      * @note S.a. #m_fIsManualOverride description for more information. */
-    bool isManualOverrideMode() const { return m_fIsManualOverride; }
-    /** Defines whether VM is in 'manual-override' mode.
-      * @note S.a. #m_fIsManualOverride description for more information. */
-    void setManualOverrideMode(bool fIsManualOverride) { m_fIsManualOverride = fIsManualOverride; }
 
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > KAdditionsRunLevelType_None); }
@@ -279,9 +264,6 @@ public slots:
       * @param  strSource  Brings the source of image being mounted. */
     void sltMountDVDAdHoc(const QString &strSource);
 
-    /** Closes Runtime UI. */
-    void closeRuntimeUI();
-
 private slots:
 
     /** Detaches COM. */
@@ -290,17 +272,6 @@ private slots:
     /* Console events slots */
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
-
-    /** Handles signal about machine state saved.
-      * @param  fSuccess  Brings whether state was saved successfully. */
-    void sltHandleMachineStateSaved(bool fSuccess);
-    /** Handles signal about machine powered off.
-      * @param  fSuccess           Brings whether machine was powered off successfully.
-      * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
-    void sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard);
-    /** Handles signal about snapshot restored.
-      * @param  fSuccess  Brings whether machine was powered off successfully. */
-    void sltHandleSnapshotRestored(bool fSuccess);
 
 private:
 
@@ -371,10 +342,6 @@ private:
     bool m_fInitialized : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;
-    /** Holds whether VM is in 'manual-override' mode
-      * which means there will be no automatic UI shutdowns,
-      * visual representation mode changes and other stuff. */
-    bool m_fIsManualOverride : 1;
 
     /* Guest additions flags: */
     ULONG m_ulGuestAdditionsRunLevel;

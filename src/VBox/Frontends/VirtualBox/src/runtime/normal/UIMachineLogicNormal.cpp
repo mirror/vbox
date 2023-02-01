@@ -31,22 +31,23 @@
 #endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
+#include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
-#include "UIMessageCenter.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachine.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
 #include "UIMenuBarEditorWindow.h"
+#include "UIMessageCenter.h"
+#include "UISession.h"
 #include "UIStatusBarEditorWindow.h"
-#include "UIExtraDataManager.h"
-#include "UIFrameBuffer.h"
 #ifndef VBOX_WS_MAC
 # include "QIMenu.h"
-#else  /* VBOX_WS_MAC */
+#else
 # include "VBoxUtils.h"
-#endif /* VBOX_WS_MAC */
+#endif
 
 /* COM includes: */
 #include "CConsole.h"
@@ -78,7 +79,7 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
         return;
 
     /* Do not try to change visual-state type in 'manual override' mode: */
-    if (uisession()->isManualOverrideMode())
+    if (uimachine()->isManualOverrideMode())
         return;
 
     /* Check requested visual-state types: */

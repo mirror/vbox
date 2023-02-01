@@ -416,7 +416,7 @@ void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 
     /* Power VM off: */
     LogRel(("GUI: Request to power VM off due to VBoxSVC is unavailable.\n"));
-    uisession()->powerOff(false /* do NOT restore current snapshot */);
+    uimachine()->powerOff(false /* do NOT restore current snapshot */);
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
@@ -472,7 +472,7 @@ void UIMachineLogic::sltMachineStateChanged()
                     if (msgCenter().warnAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
                     {
                         LogRel(("GUI: User requested to power VM off on Guru Meditation.\n"));
-                        uisession()->powerOff(false /* do NOT restore current snapshot */);
+                        uimachine()->powerOff(false /* do NOT restore current snapshot */);
                     }
                     break;
                 }
@@ -480,7 +480,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 case GuruMeditationHandlerType_PowerOff:
                 {
                     LogRel(("GUI: Automatic request to power VM off on Guru Meditation.\n"));
-                    uisession()->powerOff(false /* do NOT restore current snapshot */);
+                    uimachine()->powerOff(false /* do NOT restore current snapshot */);
                     break;
                 }
                 /* Just ignore it: */
@@ -524,7 +524,7 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_AbortedSaved:
         {
             /* If not in 'manual-override' mode: */
-            if (!uisession()->isManualOverrideMode())
+            if (!uimachine()->isManualOverrideMode())
             {
                 /* VM has been powered off, saved, teleported or aborted.
                  * We must close Runtime UI: */
@@ -548,7 +548,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 }
 
                 LogRel(("GUI: Request to close Runtime UI because VM is powered off already.\n"));
-                uisession()->closeRuntimeUI();
+                uimachine()->closeRuntimeUI();
                 return;
             }
             break;
@@ -996,9 +996,9 @@ void UIMachineLogic::prepareActionConnections()
 {
     /* 'Application' actions connection: */
     connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), &UIAction::triggered,
-            this, &UIMachineLogic::sltOpenPreferencesDialogDefault, Qt::UniqueConnection);
+            this, &UIMachineLogic::sltOpenPreferencesDialogDefault);
     connect(actionPool()->action(UIActionIndex_M_Application_S_Close), &UIAction::triggered,
-            this, &UIMachineLogic::sltClose, Qt::QueuedConnection);
+            this, &UIMachineLogic::sltClose);
 
     /* 'Machine' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings), &UIAction::triggered,
@@ -1534,7 +1534,7 @@ void UIMachineLogic::sltClose()
     if (!isMachineWindowsCreated())
         return;
     /* Do not close machine-window in 'manual-override' mode: */
-    if (uisession()->isManualOverrideMode())
+    if (uimachine()->isManualOverrideMode())
         return;
 
     /* Try to close active machine-window: */
@@ -1754,7 +1754,7 @@ void UIMachineLogic::sltDetach()
     }
 
     LogRel(("GUI: User requested to detach GUI.\n"));
-    uisession()->detachUi();
+    uimachine()->detachUi();
 }
 
 void UIMachineLogic::sltSaveState()
@@ -1767,7 +1767,7 @@ void UIMachineLogic::sltSaveState()
     }
 
     LogRel(("GUI: User requested to save VM state.\n"));
-    uisession()->saveState();
+    uimachine()->saveState();
 }
 
 void UIMachineLogic::sltShutdown()
@@ -1780,7 +1780,7 @@ void UIMachineLogic::sltShutdown()
     }
 
     LogRel(("GUI: User requested to shutdown VM.\n"));
-    uisession()->shutdown();
+    uimachine()->shutdown();
 }
 
 void UIMachineLogic::sltPowerOff()
@@ -1794,7 +1794,7 @@ void UIMachineLogic::sltPowerOff()
 
     LogRel(("GUI: User requested to power VM off.\n"));
     const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
-    uisession()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
+    uimachine()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
 }
 
 void UIMachineLogic::sltMinimizeActiveMachineWindow()

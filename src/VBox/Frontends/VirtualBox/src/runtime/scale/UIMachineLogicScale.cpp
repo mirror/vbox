@@ -31,13 +31,14 @@
 #endif
 
 /* GUI includes: */
+#include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
-#include "UIMessageCenter.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
+#include "UIMachine.h"
 #include "UIMachineLogicScale.h"
 #include "UIMachineWindow.h"
+#include "UIMessageCenter.h"
+#include "UISession.h"
 #include "UIShortcutPool.h"
 #ifndef VBOX_WS_MAC
 # include "QIMenu.h"

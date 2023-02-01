@@ -515,21 +515,21 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         {
             /* Detach GUI: */
             LogRel(("GUI: Request for close-action to detach GUI.\n"));
-            uisession()->detachUi();
+            uimachine()->detachUi();
             break;
         }
         case MachineCloseAction_SaveState:
         {
             /* Save VM state: */
             LogRel(("GUI: Request for close-action to save VM state.\n"));
-            uisession()->saveState();
+            uimachine()->saveState();
             break;
         }
         case MachineCloseAction_Shutdown:
         {
             /* Shutdown VM: */
             LogRel(("GUI: Request for close-action to shutdown VM.\n"));
-            uisession()->shutdown();
+            uimachine()->shutdown();
             break;
         }
         case MachineCloseAction_PowerOff:
@@ -537,7 +537,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
             /* Power VM off: */
             LogRel(("GUI: Request for close-action to power VM off.\n"));
             const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
-            uisession()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
+            uimachine()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
             break;
         }
         default:

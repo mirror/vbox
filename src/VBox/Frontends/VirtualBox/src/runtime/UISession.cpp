@@ -210,7 +210,7 @@ bool UISession::powerUp()
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing
      * and visual representation mode changes: */
-    setManualOverrideMode(true);
+    uimachine()->setManualOverrideMode(true);
 
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
@@ -240,67 +240,10 @@ bool UISession::powerUp()
     }
 
     /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
+    uimachine()->setManualOverrideMode(false);
 
     /* True by default: */
     return true;
-}
-
-void UISession::detachUi()
-{
-    /* Manually close Runtime UI: */
-    LogRel(("GUI: Detaching UI..\n"));
-    closeRuntimeUI();
-}
-
-void UISession::saveState()
-{
-    /* Prepare VM to be saved: */
-    if (!prepareToBeSaved())
-        return;
-
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
-
-    /* Now, do the magic: */
-    LogRel(("GUI: Saving VM state..\n"));
-    UINotificationProgressMachineSaveState *pNotification =
-        new UINotificationProgressMachineSaveState(machine());
-    connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
-            this, &UISession::sltHandleMachineStateSaved);
-    gpNotificationCenter->append(pNotification);
-}
-
-void UISession::shutdown()
-{
-    /* Prepare VM to be shutdowned: */
-    if (!prepareToBeShutdowned())
-        return;
-
-    /* Now, do the magic: */
-    LogRel(("GUI: Sending ACPI shutdown signal..\n"));
-    CConsole comConsole = console();
-    comConsole.PowerButton();
-    if (!comConsole.isOk())
-        UINotificationMessage::cannotACPIShutdownMachine(console());
-}
-
-void UISession::powerOff(bool fIncludingDiscard)
-{
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
-
-    /* Now, do the magic: */
-    LogRel(("GUI: Powering VM off..\n"));
-    UINotificationProgressMachinePowerOff *pNotification =
-        new UINotificationProgressMachinePowerOff(machine(),
-                                                  console(),
-                                                  fIncludingDiscard);
-    connect(pNotification, &UINotificationProgressMachinePowerOff::sigMachinePoweredOff,
-            this, &UISession::sltHandleMachinePoweredOff);
-    gpNotificationCenter->append(pNotification);
 }
 
 UIMachineLogic* UISession::machineLogic() const
@@ -403,35 +346,6 @@ void UISession::sltMountDVDAdHoc(const QString &strSource)
     mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, strSource);
 }
 
-void UISession::closeRuntimeUI()
-{
-    /* First, we have to hide any opened modal/popup widgets.
-     * They then should unlock their event-loops asynchronously.
-     * If all such loops are unlocked, we can close Runtime UI. */
-    QWidget *pWidget = QApplication::activeModalWidget()
-                     ? QApplication::activeModalWidget()
-                     : QApplication::activePopupWidget()
-                     ? QApplication::activePopupWidget()
-                     : 0;
-    if (pWidget)
-    {
-        /* First we should try to close this widget: */
-        pWidget->close();
-        /* If widget rejected the 'close-event' we can
-         * still hide it and hope it will behave correctly
-         * and unlock his event-loop if any: */
-        if (!pWidget->isHidden())
-            pWidget->hide();
-        /* Asynchronously restart this slot: */
-        QMetaObject::invokeMethod(this, "closeRuntimeUI", Qt::QueuedConnection);
-        return;
-    }
-
-    /* Asynchronously ask UIMachine to close Runtime UI: */
-    LogRel(("GUI: Passing request to close Runtime UI from UI session to UI machine.\n"));
-    QMetaObject::invokeMethod(uimachine(), "closeRuntimeUI", Qt::QueuedConnection);
-}
-
 void UISession::sltDetachCOM()
 {
     /* Cleanup everything COM related: */
@@ -453,44 +367,6 @@ void UISession::sltStateChange(KMachineState state)
         /* Notify listeners about machine state changed: */
         emit sigMachineStateChange();
     }
-}
-
-void UISession::sltHandleMachineStateSaved(bool fSuccess)
-{
-    /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
-
-    /* Close Runtime UI if state was saved: */
-    if (fSuccess)
-        closeRuntimeUI();
-}
-
-void UISession::sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard)
-{
-    /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
-
-    /* Do we have other tasks? */
-    if (fSuccess)
-    {
-        if (!fIncludingDiscard)
-            closeRuntimeUI();
-        else
-        {
-            /* Now, do more magic! */
-            UINotificationProgressSnapshotRestore *pNotification =
-                new UINotificationProgressSnapshotRestore(uiCommon().managedVMUuid());
-            connect(pNotification, &UINotificationProgressSnapshotRestore::sigSnapshotRestored,
-                    this, &UISession::sltHandleSnapshotRestored);
-            gpNotificationCenter->append(pNotification);
-        }
-    }
-}
-
-void UISession::sltHandleSnapshotRestored(bool)
-{
-    /* Close Runtime UI independent of snapshot restoring state: */
-    closeRuntimeUI();
 }
 
 void UISession::sltAdditionsChange()
@@ -536,7 +412,6 @@ UISession::UISession(UIMachine *pMachine)
     , m_fInitialized(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
-    , m_fIsManualOverride(false)
     /* Guest additions flags: */
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
