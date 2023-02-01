@@ -106,142 +106,142 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  # The ring-3 VBoxDTrace command implementation (library).
  #
  ifneq ($(KBUILD_TARGET),solaris) # Temporarily disabled on Solaris (not really needed)...
- DLLS += VBoxDTraceCmd
- VBoxDTraceCmd_TEMPLATE = VBoxR3ExtPackDTrace
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
- VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME="$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)"
- else
- VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME=\"$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)\"
- endif
- #VBoxDTraceCmd_DEFS += YYDEBUG
- VBoxDTraceCmd_DEFS.linux = _XOPEN_SOURCE=700 _LARGEFILE64_SOURCE
- VBoxDTraceCmd_DEFS.win = YY_USE_PROTOS=1 YYENABLE_NLS=0 YYLTYPE_IS_TRIVIAL=0
- VBoxDTraceCmd_SDKS = VBoxZlib
- ifn1of ($(KBUILD_TARGET), win)
-  VBoxDTraceCmd_CFLAGS = -Wno-format $(VBOX_GCC_Wno-overlength-strings) -Wno-sign-compare -Wno-strict-prototypes -Wno-missing-prototypes -Wno-missing-declarations -Wno-shadow
- endif
- VBoxDTraceCmd_INCS = \
- 	include \
- 	$(VBOXDT_PATH_UTS)/common \
- 	$(VBOXDT_PATH_LIBCTF)/common \
- 	$(VBOXDT_PATH_LIBDTRACE)/common \
- 	$(VBOXDT_PATH_CMN_CTF)
- VBoxDTraceCmd_SOURCES = \
- 	$(VBOXDT_PATH_CMD)/dtrace/dtrace.c \
- 	\
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_as.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_aggregate.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_buf.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cc.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cg.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_consume.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_decl.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dis.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dof.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_error.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_handle.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_ident.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_inttab.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_list.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_map.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_module.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_program.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_open.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_options.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_parser.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pcb.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pragma.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_printf.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_proc.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_provider.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_regset.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_string.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_strtab.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_subr.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c \
- 	\
- 	$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c \
- 	$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c \
- 	\
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_create.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_error.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_decl.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_hash.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_labels.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_lookup.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_open.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_types.c \
- 	$(VBOXDT_PATH_CMN_CTF)/ctf_util.c \
- 	\
- 	$(VBOXDT_PATH_LIBCTF)/common/ctf_subr.c \
- 	$(VBOXDT_PATH_LIBCTF)/common/ctf_lib.c
+  DLLS += VBoxDTraceCmd
+  VBoxDTraceCmd_TEMPLATE = VBoxR3ExtPackDTrace
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+   VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME="$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)"
+  else
+   VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME=\"$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)\"
+  endif
+  #VBoxDTraceCmd_DEFS += YYDEBUG
+  VBoxDTraceCmd_DEFS.linux = _XOPEN_SOURCE=700 _LARGEFILE64_SOURCE
+  VBoxDTraceCmd_DEFS.win = YY_USE_PROTOS=1 YYENABLE_NLS=0 YYLTYPE_IS_TRIVIAL=0
+  VBoxDTraceCmd_SDKS = VBoxZlib
+  ifn1of ($(KBUILD_TARGET), win)
+   VBoxDTraceCmd_CFLAGS = -Wno-format $(VBOX_GCC_Wno-overlength-strings) -Wno-sign-compare -Wno-strict-prototypes -Wno-missing-prototypes -Wno-missing-declarations -Wno-shadow
+  endif
+  VBoxDTraceCmd_INCS = \
+  	include \
+  	$(VBOXDT_PATH_UTS)/common \
+  	$(VBOXDT_PATH_LIBCTF)/common \
+  	$(VBOXDT_PATH_LIBDTRACE)/common \
+  	$(VBOXDT_PATH_CMN_CTF)
+  VBoxDTraceCmd_SOURCES = \
+  	$(VBOXDT_PATH_CMD)/dtrace/dtrace.c \
+  	\
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_as.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_aggregate.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_buf.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cc.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cg.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_consume.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_decl.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dis.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dof.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_error.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_handle.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_ident.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_inttab.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_list.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_map.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_module.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_program.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_open.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_options.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_parser.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pcb.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pragma.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_printf.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_proc.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_provider.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_regset.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_string.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_strtab.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_subr.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
+  	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c \
+  	\
+  	$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c \
+  	$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c \
+  	\
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_create.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_error.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_decl.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_hash.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_labels.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_lookup.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_open.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_types.c \
+  	$(VBOXDT_PATH_CMN_CTF)/ctf_util.c \
+  	\
+  	$(VBOXDT_PATH_LIBCTF)/common/ctf_subr.c \
+  	$(VBOXDT_PATH_LIBCTF)/common/ctf_lib.c
 
- # Source not used or wanted:
- #	$(VBOXDT_PATH_LIBDTRACE)/common/dt_link.c
- #	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c
+  # Source not used or wanted:
+  #	$(VBOXDT_PATH_LIBDTRACE)/common/dt_link.c
+  #	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c
 
- # Generate sources
- VBoxDTraceCmd_CLEAN = \
- 	$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c \
- 	$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c
+  # Generate sources
+  VBoxDTraceCmd_CLEAN = \
+  	$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c \
+  	$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c
 
- $$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c: \
- 		$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.h \
- 		$(VBOXDT_PATH_LIBDTRACE)/common/mkerrtags.sed \
- 		| $$(dir $$@)
+  $$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c: \
+  		$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.h \
+  		$(VBOXDT_PATH_LIBDTRACE)/common/mkerrtags.sed \
+  		| $$(dir $$@)
 	$(MSG_GENERATE,VBoxDTraceCmd,$@,$<)
 	$(SED) -n -f $(VBOXDT_PATH_LIBDTRACE)/common/mkerrtags.sed --output $@ $<
 
- $$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c: \
- 		$(VBOXDT_PATH_UTS)/common/sys/dtrace.h \
- 		$(VBOXDT_PATH_LIBDTRACE)/common/mknames.sed \
- 		| $$(dir $$@)
+  $$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c: \
+  		$(VBOXDT_PATH_UTS)/common/sys/dtrace.h \
+  		$(VBOXDT_PATH_LIBDTRACE)/common/mknames.sed \
+  		| $$(dir $$@)
 	$(MSG_GENERATE,VBoxDTraceCmd,$@,$<)
 	$(SED) -n -f $(VBOXDT_PATH_LIBDTRACE)/common/mknames.sed --output $@ $<
 
- ifdef VBOX_HAVE_BISON
-  USES                   += yacc
-  VBoxDTraceCmd_USES     += yacc
-  VBoxDTraceCmd_YACCTOOL  = BISON
-  VBoxDTraceCmd_YACCFLAGS = -d -y
-  VBoxDTraceCmd_SOURCES  += \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_grammar.y
-  VBoxDTraceCmd_INCS     += $(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common
- else
-  VBoxDTraceCmd_SOURCES  += \
- 	$(VBOXDT_PATH)/generated/dt_grammar.c
-  VBoxDTraceCmd_INCS     += \
- 	$(VBOXDT_PATH)/generated/
- endif
-
- ifdef VBOX_HAVE_FLEX
-  USES                   += lex
-  VBoxDTraceCmd_USES     += lex
-  VBoxDTraceCmd_LEXTOOL   = FLEX
-  VBoxDTraceCmd_LEXFLAGS  = -l -B #-d -T
-  VBoxDTraceCmd_SOURCES  += \
- 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_lex.l
- else
-  VBoxDTraceCmd_SOURCES  += \
- 	$(VBOXDT_PATH)/generated/dt_lex.c
- endif
- ifeq ($(KBUILD_HOST),linux)
-  if $(VBOX_GCC_VERSION_CXX) >= 70000
-   VBoxDTraceCmd_CFLAGS += -Wno-implicit-fallthrough
+  ifdef VBOX_HAVE_BISON
+   USES                  += yacc
+   VBoxDTraceCmd_USES    += yacc
+   VBoxDTraceCmd_YACCTOOL = BISON
+   VBoxDTraceCmd_YACCFLAGS = -d -y
+   VBoxDTraceCmd_SOURCES += \
+   	$(VBOXDT_PATH_LIBDTRACE)/common/dt_grammar.y
+   VBoxDTraceCmd_INCS    += $(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common
+  else
+   VBoxDTraceCmd_SOURCES += \
+   	$(VBOXDT_PATH)/generated/dt_grammar.c
+   VBoxDTraceCmd_INCS    += \
+   	$(VBOXDT_PATH)/generated/
   endif
- endif
- VBoxDTraceCmd_DEFS      += USING_FLEX
- $(call VBOX_SET_VER_INFO_DLL,VBoxDTraceCmd,VBoxDTrace Command Implementation)
 
- #
- # Updates the sources generated by flex and biosn.
- # The SED processing removes the paths the from #line statements.
- #
- vboxdtrace-update-generated-sources: \
- 		$$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/dt_grammar.c \
- 		$$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/dt_grammar.h \
- 		$$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/dt_lex.c
+  ifdef VBOX_HAVE_FLEX
+   USES                  += lex
+   VBoxDTraceCmd_USES    += lex
+   VBoxDTraceCmd_LEXTOOL  = FLEX
+   VBoxDTraceCmd_LEXFLAGS = -l -B #-d -T
+   VBoxDTraceCmd_SOURCES += \
+   	$(VBOXDT_PATH_LIBDTRACE)/common/dt_lex.l
+  else
+   VBoxDTraceCmd_SOURCES += \
+   	$(VBOXDT_PATH)/generated/dt_lex.c
+  endif
+  ifeq ($(KBUILD_HOST),linux)
+   if $(VBOX_GCC_VERSION_CXX) >= 70000
+    VBoxDTraceCmd_CFLAGS += -Wno-implicit-fallthrough
+   endif
+  endif
+  VBoxDTraceCmd_DEFS     += USING_FLEX
+  $(call VBOX_SET_VER_INFO_DLL,VBoxDTraceCmd,VBoxDTrace Command Implementation)
+
+  #
+  # Updates the sources generated by flex and biosn.
+  # The SED processing removes the paths the from #line statements.
+  #
+  vboxdtrace-update-generated-sources: \
+  		$$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/dt_grammar.c \
+  		$$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/dt_grammar.h \
+  		$$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/dt_lex.c
 	$(foreach file,dt_grammar.c dt_grammar.h dt_lex.c \
 		,$(NLTAB)$(SED)  -e 's,$(VBOXDT_PATH_LIBDTRACE)/common/,,g'\
  		-e 's,$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/,,g' \
@@ -269,7 +269,7 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  	$(VBOXDT_PATH_UTS)/common/dtrace/dtrace.c
  VBoxDTraceR0_LIBS = \
  	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
-	$(VBOX_LIB_SUPR0)
+ 	$(VBOX_LIB_SUPR0)
  $(call VBOX_SET_VER_INFO_R0,VBoxDTraceR0,VBoxDTrace Core (ring-0))
 
 
@@ -289,10 +289,10 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  # Build the file list.  The macro takes 1=darwin.x86, 2=dist/VirtualBox.app/Contents/MacOS, 3=dylib
  VBOX_VBOXDTRACE_FILES_MACRO = \
  	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceMain.$(3)=>$(1)/VBoxDTraceMain.$(3) \
-       $(if $(intersects $1, solaris.x86 solaris.amd64),, \
- 	 $(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceCmd.$(3)=>$(1)/VBoxDTraceCmd.$(3) \
- 	 $(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceR0.r0=>$(1)/VBoxDTraceR0.r0 \
-       )
+ 	$(if $(intersects $1, solaris.x86 solaris.amd64),, \
+ 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceCmd.$(3)=>$(1)/VBoxDTraceCmd.$(3) \
+ 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceR0.r0=>$(1)/VBoxDTraceR0.r0 \
+ 	)
 
  VBOX_VBOXDTRACE_FILES := \
  	$(VBOX_PATH_EXTPACK_VBOXDTRACE)/ExtPack.xml=>ExtPack.xml \
