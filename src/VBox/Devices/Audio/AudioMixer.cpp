@@ -2052,7 +2052,7 @@ int AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpda
  *
  * @returns VBox status code.
  * @param   pSink       The mixer sink which AIO thread needs waiting on.
- * @þaram   msTimeout   Timeout (in ms) to use for waiting on draining to be finished.
+ * @param   msTimeout   Timeout (in ms) to use for waiting on draining to be finished.
  *
  * @note    Caller holds the sink's lock.
  */
@@ -2085,7 +2085,7 @@ static int audioMixerSinkWaitForDrainedLocked(PAUDMIXSINK pSink, RTMSINTERVAL ms
  *
  * @returns VBox status code.
  * @param   pSink       The mixer sink which AIO thread needs waiting on.
- * @þaram   msTimeout   Timeout (in ms) to use for waiting on draining to be finished.
+ * @param   msTimeout   Timeout (in ms) to use for waiting on draining to be finished.
  */
 int AudioMixerSinkWaitForDrained(PAUDMIXSINK pSink, RTMSINTERVAL msTimeout)
 {
