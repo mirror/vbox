@@ -33,11 +33,11 @@ endif
 # Figure out openssl perl asm style for the target
 VBOX_CRYPTO_ASM_SCHEME := portme
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
-  VBOX_CRYPTO_ASM_SCHEME := elf
-else ifeq ($(KBUILD_TARGET), darwin)
-  VBOX_CRYPTO_ASM_SCHEME := macosx
-else ifeq ($(KBUILD_TARGET), win)
-  VBOX_CRYPTO_ASM_SCHEME := nasm
+ VBOX_CRYPTO_ASM_SCHEME  := elf
+else ifeq ($(KBUILD_TARGET),darwin)
+ VBOX_CRYPTO_ASM_SCHEME  := macosx
+else ifeq ($(KBUILD_TARGET),win)
+ VBOX_CRYPTO_ASM_SCHEME  := nasm
 endif
 
 # Can't use relative paths when dealing with sub-makefiles.
@@ -62,7 +62,7 @@ VBOX_PATH_CRYPTO_PROVIDERS  := $(VBOX_PATH_OPENSSL)/providers
 # Enable asm implementation of crypto.
 if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
  ifneq ($(VBOX_CRYPTO_ASM_SCHEME),portme)
-  ifn1of ($(KBUILD_TARGET), ) # Selective exclusion for testing.
+  ifn1of ($(KBUILD_TARGET), ) # Selective exclusion for testing.  scm:ignore-empty-if1of-set
    VBOX_WITH_CRYPTO_ASM = 1
   endif
  endif
@@ -189,9 +189,9 @@ crypto-headers_SOURCES  := \
 	include/openssl/whrlpool.h=>whrlpool.h \
 	include/openssl/x509err.h=>x509err.h \
 	include/openssl/x509v3err.h=>x509v3err.h \
-       \
+	 \
 	openssl-mangling.h=>openssl-mangling.h \
-       \
+	 \
 	gen-includes/openssl/asn1.h=>asn1.h \
 	gen-includes/openssl/asn1t.h=>asn1t.h \
 	gen-includes/openssl/bio.h=>bio.h \
@@ -240,7 +240,7 @@ endif
 #
 TEMPLATE_LibCrypto = Template for the OpenSSL crypto library.
 TEMPLATE_LibCrypto_EXTENDS = VBoxR3RuntimeDllNonPedantic
-ifneq ($(KBUILD_TARGET), win)
+ifneq ($(KBUILD_TARGET),win)
  TEMPLATE_LibCrypto_ASTOOL          = $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_TOOL)
  TEMPLATE_LibCrypto_ASFLAGS         = -include $(VBOX_PATH_OPENSSL)/openssl-mangling.h
  TEMPLATE_LibCrypto_ASFLAGS.x86     = -m32
@@ -261,58 +261,58 @@ TEMPLATE_LibCrypto_DEFS = \
 	OPENSSL_IA32_SSE2 \
 	OPENSSL_BUILDING_OPENSSL
 ifdef VBOX_WITH_CRYPTO_ASM
-TEMPLATE_LibCrypto_DEFS += \
-	OPENSSL_BN_ASM_MONT \
-	OPENSSL_BN_ASM_GF2m \
-	SHA1_ASM \
-	SHA256_ASM \
-	SHA512_ASM \
-	RC4_ASM \
-	MD5_ASM \
-	AES_ASM \
-	VPAES_ASM \
-	ECP_NISTZ256_ASM \
-	PADLOCK_ASM \
-	POLY1305_ASM
-TEMPLATE_LibCrypto_DEFS.amd64 = \
-	BSAES_ASM \
-	GHASH_ASM \
-	KECCAK1600_ASM \
-	OPENSSL_BN_ASM_MONT5 \
-	X25519_ASM
+ TEMPLATE_LibCrypto_DEFS += \
+ 	OPENSSL_BN_ASM_MONT \
+ 	OPENSSL_BN_ASM_GF2m \
+ 	SHA1_ASM \
+ 	SHA256_ASM \
+ 	SHA512_ASM \
+ 	RC4_ASM \
+ 	MD5_ASM \
+ 	AES_ASM \
+ 	VPAES_ASM \
+ 	ECP_NISTZ256_ASM \
+ 	PADLOCK_ASM \
+ 	POLY1305_ASM
+ TEMPLATE_LibCrypto_DEFS.amd64 = \
+ 	BSAES_ASM \
+ 	GHASH_ASM \
+ 	KECCAK1600_ASM \
+ 	OPENSSL_BN_ASM_MONT5 \
+ 	X25519_ASM
 else
-TEMPLATE_LibCrypto_DEFS += \
-	OPENSSL_NO_ASM
+ TEMPLATE_LibCrypto_DEFS += \
+ 	OPENSSL_NO_ASM
 endif
 if1of ($(KBUILD_TARGET), linux solaris)
-TEMPLATE_LibCrypto_DEFS += \
-	_REENTRANT \
-	_GNU_SOURCE
+ TEMPLATE_LibCrypto_DEFS += \
+ 	_REENTRANT \
+ 	_GNU_SOURCE
 endif
 ifeq ($(sort $(filter -fPIC,$(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS))),-fPIC)
-TEMPLATE_LibCrypto_DEFS += \
-	OPENSSL_PIC
+ TEMPLATE_LibCrypto_DEFS += \
+ 	OPENSSL_PIC
 endif
 TEMPLATE_LibCrypto_DEFS.amd64 += \
 	MD32_REG_T=int
 ifeq ($(KBUILD_TARGET),win)
-TEMPLATE_LibCrypto_DEFS += \
-	OPENSSL_SYSNAME_WIN32 \
-	OPENSSL_RAND_SEED_OS
+ TEMPLATE_LibCrypto_DEFS += \
+ 	OPENSSL_SYSNAME_WIN32 \
+ 	OPENSSL_RAND_SEED_OS
 # Exclude WinCrypt.h, causes trouble all over the place
-TEMPLATE_LibCrypto_DEFS += \
-	NOCRYPT
+ TEMPLATE_LibCrypto_DEFS += \
+ 	NOCRYPT
 endif
 if1of ($(KBUILD_TARGET_ARCH), x86 amd64 arm64)
-TEMPLATE_LibCrypto_DEFS += \
-        L_ENDIAN
+ TEMPLATE_LibCrypto_DEFS += \
+ 	L_ENDIAN
 else
-TEMPLATE_LibCrypto_DEFS += \
-        B_ENDIAN
+ TEMPLATE_LibCrypto_DEFS += \
+ 	B_ENDIAN
 endif
 ifeq ($(KBUILD_TARGET),os2)
-TEMPLATE_LibCrypto_DEFS += \
-	OPENSSL_NO_SECURE_MEMORY
+ TEMPLATE_LibCrypto_DEFS += \
+ 	OPENSSL_NO_SECURE_MEMORY
 endif
 if defined(VBOX_WITH_PARFAIT) #&& VBOX_GCC_VERSION_CC == 50301
  TEMPLATE_LibCrypto_DEFS += __STDC_NO_ATOMICS__
@@ -368,9 +368,9 @@ TEMPLATE_LibCryptoTstExe_EXTENDS = VBoxR3TstExe
 TEMPLATE_LibCryptoTstExe_DEFS    = $(TEMPLATE_VBoxR3TstExe_DEFS) $(filter-out $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_DEFS) IN_RT_R3,$(TEMPLATE_LibCrypto_DEFS))
 TEMPLATE_LibCryptoTstExe_INCS    = $(TEMPLATE_LibCrypto_INCS) $(TEMPLATE_VBoxR3TstExe_INCS)
 ifeq ($(KBUILD_TARGET),win)
-TEMPLATE_LibCryptoTstExe_CFLAGS  = $(filter-out $(VBOX_VCC_WERR), $(TEMPLATE_VBoxR3TstExe_CXXFLAGS)) $(VBOX_VCC_NON_PEDANTIC)
+ TEMPLATE_LibCryptoTstExe_CFLAGS = $(filter-out $(VBOX_VCC_WERR), $(TEMPLATE_VBoxR3TstExe_CXXFLAGS)) $(VBOX_VCC_NON_PEDANTIC)
 else
-TEMPLATE_LibCryptoTstExe_CFLAGS  = $(filter-out $(VBOX_GCC_PEDANTIC_C), $(TEMPLATE_VBoxR3TstExe_CFLAGS)) $(VBOX_GCC_NON_PEDANTIC_C)
+ TEMPLATE_LibCryptoTstExe_CFLAGS = $(filter-out $(VBOX_GCC_PEDANTIC_C), $(TEMPLATE_VBoxR3TstExe_CFLAGS)) $(VBOX_GCC_NON_PEDANTIC_C)
 endif
 TEMPLATE_LibCryptoTstExe_LIBS    = $(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) $(TEMPLATE_VBoxR3TstExe_LIBS)
 
@@ -379,27 +379,27 @@ ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
 #
 # Build program versions of LibCrypto and SubLibCrypto for bldRTSignTool.
 #
-TEMPLATE_VBoxLibCryptoBldProg = Build program template the OpenSSL crypto library.
-TEMPLATE_VBoxLibCryptoBldProg_EXTENDS       := VBoxAdvBldProg
-TEMPLATE_VBoxLibCryptoBldProg_DEFS           = $(TEMPLATE_VBoxAdvBldProg_DEFS) $(TEMPLATE_LibCrypto_DEFS)
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win     = $(TEMPLATE_VBoxAdvBldProg_CFLAGS.win) $(subst $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS.win),, $(TEMPLATE_LibCrypto_CFLAGS.win))
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4057 # refcount.h(137): warning C4057: 'function': 'volatile long *' differs in indirection to slightly different base types from 'volatile int *'
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4100 # refcount.h(135): warning C4100: 'lock': unreferenced formal parameter
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4132 # curve25519.c(5497): warning C4132: 'allzeroes': const object should be initialized
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4189 # eng_list.c(373): warning C4189: 'load_dir': local variable is initialized but not referenced
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4245 # bn_div.c(353): warning C4245: '=': conversion from '__int64' to 'unsigned __int64', signed/unsigned mismatch
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4255 # ctype.c(314): warning C4255: 'ossl_c_locale': no function prototype given: converting '()' to '(void)'
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4267 # p12_utl.c(23): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4389 # encoder_pkey.c(110): warning C4389: '!=': signed/unsigned mismatch
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4668 # limits.h(70): warning C4668: '__STDC_WANT_SECURE_LIB__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    += -wd4702 # ctrl_params_translate.c(681) : warning C4702: unreachable code
-TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.freebsd = $(TEMPLATE_VBoxAdvBldProg_CFLAGS.freebsd) $(subst $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS.freebsd),, $(TEMPLATE_LibCrypto_CFLAGS.freebsd))
-TEMPLATE_VBoxLibCryptoBldProg_INCS           = $(TEMPLATE_LibCrypto_INCS) $(TEMPLATE_VBoxAdvBldProg_INCS)
-TEMPLATE_VBoxLibCryptoBldProg_INTERMEDIATES  = $(TEMPLATE_VBoxAdvBldProg_INTERMEDIATES) $(TEMPLATE_LibCrypto_INTERMEDIATES)
+ TEMPLATE_VBoxLibCryptoBldProg = Build program template the OpenSSL crypto library.
+ TEMPLATE_VBoxLibCryptoBldProg_EXTENDS      := VBoxAdvBldProg
+ TEMPLATE_VBoxLibCryptoBldProg_DEFS          = $(TEMPLATE_VBoxAdvBldProg_DEFS) $(TEMPLATE_LibCrypto_DEFS)
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win    = $(TEMPLATE_VBoxAdvBldProg_CFLAGS.win) $(subst $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS.win),, $(TEMPLATE_LibCrypto_CFLAGS.win))
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4057 # refcount.h(137): warning C4057: 'function': 'volatile long *' differs in indirection to slightly different base types from 'volatile int *'
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4100 # refcount.h(135): warning C4100: 'lock': unreferenced formal parameter
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4132 # curve25519.c(5497): warning C4132: 'allzeroes': const object should be initialized
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4189 # eng_list.c(373): warning C4189: 'load_dir': local variable is initialized but not referenced
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4245 # bn_div.c(353): warning C4245: '=': conversion from '__int64' to 'unsigned __int64', signed/unsigned mismatch
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4255 # ctype.c(314): warning C4255: 'ossl_c_locale': no function prototype given: converting '()' to '(void)'
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4267 # p12_utl.c(23): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4389 # encoder_pkey.c(110): warning C4389: '!=': signed/unsigned mismatch
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4668 # limits.h(70): warning C4668: '__STDC_WANT_SECURE_LIB__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.win   += -wd4702 # ctrl_params_translate.c(681) : warning C4702: unreachable code
+ TEMPLATE_VBoxLibCryptoBldProg_CFLAGS.freebsd = $(TEMPLATE_VBoxAdvBldProg_CFLAGS.freebsd) $(subst $(TEMPLATE_VBoxR3RuntimeDllNonPedantic_CFLAGS.freebsd),, $(TEMPLATE_LibCrypto_CFLAGS.freebsd))
+ TEMPLATE_VBoxLibCryptoBldProg_INCS          = $(TEMPLATE_LibCrypto_INCS) $(TEMPLATE_VBoxAdvBldProg_INCS)
+ TEMPLATE_VBoxLibCryptoBldProg_INTERMEDIATES = $(TEMPLATE_VBoxAdvBldProg_INTERMEDIATES) $(TEMPLATE_LibCrypto_INTERMEDIATES)
 
-TEMPLATE_VBoxSubLibCryptoBldProg = Build program template a OpenSSL crypto sub-library.
-TEMPLATE_VBoxSubLibCryptoBldProg_EXTENDS    := VBoxLibCryptoBldProg
-TEMPLATE_VBoxSubLibCryptoBldProg_INSTTYPE    = none
+ TEMPLATE_VBoxSubLibCryptoBldProg = Build program template a OpenSSL crypto sub-library.
+ TEMPLATE_VBoxSubLibCryptoBldProg_EXTENDS   := VBoxLibCryptoBldProg
+ TEMPLATE_VBoxSubLibCryptoBldProg_INSTTYPE   = none
 endif # VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
 
 
