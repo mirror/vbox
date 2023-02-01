@@ -48,25 +48,25 @@ PROGRAMS += \
 	SUPLoggerCtl
 ifdef VBOX_WITH_TESTCASES
  if defined(VBOX_WITH_HARDENING)
-PROGRAMS += \
-	tstSupVerify
+  PROGRAMS += \
+  	tstSupVerify
  endif
  if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "win"
-PROGRAMS += \
-	tstPage \
-	tstContiguous \
-	tstInit \
-	tstInt \
-	tstLow \
-	tstPin \
-	tstGetPagingMode \
-	tstSupLoadModule \
-	tstSupSem \
-	tstSupSem-Zombie \
-	tstSupTscDelta
+  PROGRAMS += \
+  	tstPage \
+  	tstContiguous \
+  	tstInit \
+  	tstInt \
+  	tstLow \
+  	tstPin \
+  	tstGetPagingMode \
+  	tstSupLoadModule \
+  	tstSupSem \
+  	tstSupSem-Zombie \
+  	tstSupTscDelta
  endif
-PROGRAMS.win += \
-	tstNtQueryStuff
+ PROGRAMS.win += \
+ 	tstNtQueryStuff
 endif # VBOX_WITH_TESTCASES
 
 SUPInstall_TEMPLATE   = VBoxR3Exe
@@ -86,7 +86,7 @@ tstInt_DEFS           = $(VMM_COMMON_DEFS)
 tstInt_SOURCES        = tstInt.cpp
 tstInt_LIBS           = $(LIB_RUNTIME)
 
-tstContiguous_TEMPLATE= VBoxR3TstExe
+tstContiguous_TEMPLATE = VBoxR3TstExe
 tstContiguous_SOURCES = tstContiguous.cpp
 
 tstInit_TEMPLATE      = VBoxR3TstExe
@@ -127,9 +127,9 @@ tstGIP-2Hardened_SOURCES = ../SUPR3HardenedMainTemplateTestcase.cpp
 tstGIP-2Hardened_NAME = tstGIP-2
 
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-  tstGIP-2_TEMPLATE := VBoxR3HardenedTstDll
+ tstGIP-2_TEMPLATE  := VBoxR3HardenedTstDll
 else
-  tstGIP-2_TEMPLATE := VBoxR3TstExe
+ tstGIP-2_TEMPLATE  := VBoxR3TstExe
 endif
 tstGIP-2_SOURCES = tstGIP-2.cpp
 

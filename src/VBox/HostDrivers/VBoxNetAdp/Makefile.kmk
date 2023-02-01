@@ -46,7 +46,7 @@ if1of ($(KBUILD_TARGET), solaris darwin freebsd)
   SYSMODS += VBoxNetAdp
   VBoxNetAdp_TEMPLATE         = VBoxR0Drv
   VBoxNetAdp_INST             = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
-  VBoxNetAdp_DEBUG_INST.darwin= $(patsubst %/,%,$(INST_VBOXNETADP))
+  VBoxNetAdp_DEBUG_INST.darwin = $(patsubst %/,%,$(INST_VBOXNETADP))
   VBoxNetAdp_NAME.solaris     = vboxnet
   VBoxNetAdp_NAME.freebsd     = vboxnetadp
   VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
@@ -81,7 +81,7 @@ if "$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_VBOXDRV)
  VBoxNetAdp.kext_CLEAN    = $(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist
  VBoxNetAdp.kext_BLDDIRS  = $(VBoxNetAdp.kext_0_OUTDIR)/Contents/
 
-$$(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+ $$(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetAdp,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -139,22 +139,22 @@ ifeq ($(KBUILD_TARGET),win)
  VBoxNetAdp6-inf_CLEAN = $(VBoxNetAdp6-inf_SOURCES)
  VBoxNetAdp6-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetAdp6Cat.dir
 
-$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf: $(PATH_SUB_CURRENT)/win/VBoxNetAdp6.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf: $(PATH_SUB_CURRENT)/win/VBoxNetAdp6.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetAdp6-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
  ifdef VBOX_SIGNING_MODE
-VBoxNetAdp6-inf_SOURCES += \
-	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
-	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat \
-	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat=>VBoxNetAdp6-PreW10.cat
+  VBoxNetAdp6-inf_SOURCES += \
+  	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
+  	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat \
+  	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat=>VBoxNetAdp6-PreW10.cat
 
-$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys: $$(VBoxNetAdp6_1_TARGET) | $$(dir $$@)
+  $(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys: $$(VBoxNetAdp6_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat: \
-		$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
-		$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf
+  $(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat: \
+  		$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
+  		$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf
 	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
@@ -171,18 +171,18 @@ ifeq ($(KBUILD_TARGET),linux)
  include $(PATH_SUB_CURRENT)/linux/files_vboxnetadp
  VBoxNetAdp-src_INST    = bin/src/vboxnetadp/
  VBoxNetAdp-src_SOURCES = \
-	$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)) \
-	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
+ 	$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)) \
+ 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
  VBoxNetAdp-src_CLEAN = \
-	$(VBoxNetAdp-src_0_OUTDIR)/Makefile \
-	$(PATH_TARGET)/VBoxNetAdp-src-1.dep \
+ 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile \
+ 	$(PATH_TARGET)/VBoxNetAdp-src-1.dep
 
  # Scripts needed for building the kernel modules
  includedep $(PATH_TARGET)/VBoxNetAdp-src-1.dep
-$$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
-		$(PATH_SUB_CURRENT)/linux/Makefile \
-		$$(if $$(eq $$(VBoxNetAdp/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
-		| $$(dir $$@)
+ $$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
+ 		$(PATH_SUB_CURRENT)/linux/Makefile \
+ 		$$(if $$(eq $$(VBoxNetAdp/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+ 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;VBOX_WITH_HARDENING;;g" --output $@ $<
@@ -206,15 +206,15 @@ ifeq ($(KBUILD_TARGET),freebsd)
  include $(PATH_SUB_CURRENT)/freebsd/files_vboxnetadp
  VBoxNetAdp-src_INST = bin/src/vboxnetadp/
  VBoxNetAdp-src_SOURCES = \
-	$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)) \
-	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
+ 	$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)) \
+ 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
  VBoxNetAdp-src_CLEAN = \
-	$(VBoxNetAdp-src_0_OUTDIR)/Makefile	\
+ 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
 
-$$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
-		$(PATH_SUB_CURRENT)/freebsd/Makefile \
-		$$(if $$(eq $$(VBoxNetAdp/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
-		| $$(dir $$@)
+ $$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
+ 		$(PATH_SUB_CURRENT)/freebsd/Makefile \
+ 		$$(if $$(eq $$(VBoxNetAdp/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+ 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;VBOX_WITH_HARDENING;;g" --output $@ $<

@@ -100,8 +100,8 @@ ifdef VBOX_USBMON_WITH_FILTER_AUTOAPPLY
  VBoxUSBMon_DEFS      += VBOX_USBMON_WITH_FILTER_AUTOAPPLY
 endif
 VBoxUSBMon_SOURCES     = \
-	mon/VBoxUsbMon.cpp  \
-	mon/VBoxUsbFlt.cpp  \
+	mon/VBoxUsbMon.cpp \
+	mon/VBoxUsbFlt.cpp \
 	mon/VBoxUsbHook.cpp \
 	cmn/VBoxUsbTool.cpp \
 	cmn/VBoxDrvTool.cpp \
@@ -114,7 +114,7 @@ VBoxUSBMon_LIBS        = \
 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(usbd_1_TARGET)
 if1of ($(KBUILD_TYPE), debug)
-VBoxUSBMon_DEFS      += LOG_ENABLED VBOX_USB_WITH_VERBOSE_LOGGING
+ VBoxUSBMon_DEFS     += LOG_ENABLED VBOX_USB_WITH_VERBOSE_LOGGING
 endif
 
 #
@@ -127,7 +127,7 @@ TEMPLATE_VBoxUsbR3_CXXFLAGS = $(TEMPLATE_VBoxR3Exe_CXXFLAGS) -Gz
 TEMPLATE_VBoxUsbR3_CFLAGS   = $(TEMPLATE_VBoxR3Exe_CFLAGS) -Gz
 TEMPLATE_VBoxUsbR3_LIBS     = $(TEMPLATE_VBoxR3Exe_LIBS) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfgExe$(VBOX_SUFF_LIB) \
-       $(LIB_RUNTIME)
+	$(LIB_RUNTIME)
 
 #
 # USBInstall
@@ -171,29 +171,29 @@ $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/mon/VBoxUSB
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
 ifdef VBOX_SIGNING_MODE
-install-infs_SOURCES += \
-	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat \
-	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat=>VBoxUSB-PreW10.cat \
-	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys \
-	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat \
-	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat=>VBoxUSBMon-PreW10.cat \
-	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
+ install-infs_SOURCES += \
+ 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat \
+ 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat=>VBoxUSB-PreW10.cat \
+ 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys \
+ 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat \
+ 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat=>VBoxUSBMon-PreW10.cat \
+ 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
 
-$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(VBoxUSB_1_TARGET) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(VBoxUSB_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat: \
-		$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf \
-		$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys
+ $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat: \
+ 		$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf \
+ 		$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys
 	$(call MSG_TOOL,Inf2Cat,VBoxUSB-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
-$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys: $$(VBoxUSBMon_1_TARGET) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys: $$(VBoxUSBMon_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat: \
-		$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf \
-		$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
+ $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat: \
+ 		$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf \
+ 		$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
 	$(call MSG_TOOL,Inf2Cat,VBoxUSBMon-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 

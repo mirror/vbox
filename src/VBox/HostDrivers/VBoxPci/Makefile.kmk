@@ -48,11 +48,11 @@ if1of ($(KBUILD_TARGET), linux)
   VBoxPci_NAME.linux     = vboxpci
   VBoxPci_DEFS           = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
   VBoxPci_INCS           = \
- 	.
+  	.
   VBoxPci_SOURCES        = \
- 	VBoxPci.c
+  	VBoxPci.c
   VBoxPci_LIBS          += \
- 	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
  endif
 
  #
@@ -62,19 +62,19 @@ if1of ($(KBUILD_TARGET), linux)
  INSTALLS += VBoxPci-src
  VBoxPci-src_INST       = bin/src/vboxpci/
  VBoxPci-src_SOURCES    = \
-	$(subst $(DQUOTE),,$(VBOX_VBOXPCI_SOURCES)) \
+ 	$(subst $(DQUOTE),,$(VBOX_VBOXPCI_SOURCES)) \
  	$(VBoxPci-src_0_OUTDIR)/Makefile
  VBoxPci-src_CLEAN      = \
  	$(VBoxPci-src_0_OUTDIR)/Makefile \
- 	$(PATH_TARGET)/VBoxPciSrc-src-1.dep \
+ 	$(PATH_TARGET)/VBoxPciSrc-src-1.dep
 
  # Generate the scripts needed for building the kernel module.
 
  includedep $(PATH_TARGET)/VBoxPci-src-1.dep
-$$(VBoxPci-src_0_OUTDIR)/Makefile: \
-		$(PATH_SUB_CURRENT)/linux/Makefile \
-		$$(if $$(eq $$(VBoxPci/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
-		| $$(dir $$@)
+ $$(VBoxPci-src_0_OUTDIR)/Makefile: \
+ 		$(PATH_SUB_CURRENT)/linux/Makefile \
+ 		$$(if $$(eq $$(VBoxPci/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+ 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;VBOX_WITH_HARDENING;;g" --output $@ $<
