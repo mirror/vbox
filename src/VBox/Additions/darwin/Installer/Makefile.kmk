@@ -127,7 +127,7 @@ $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditions.pkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsToolsAndServices.pkg \
 		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/* \
-		            $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/*.lproj/*) \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf \
@@ -226,11 +226,11 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsKEXTs.pkg: \
 		$(foreach kext,$(VBOX_ADD_DI_KEXTS_UNIVERSAL), $(call VBOX_DI_FN_DEP_BOTH,$(kext).kext/Contents/MacOS/$(kext))) \
 		$(foreach kext,$(VBOX_ADD_DI_KEXTS), $(VBOX_PATH_DIST)/additions/$(kext).kext/Contents/Info.plist) \
 		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/* \
-		            $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/*.lproj/*) \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_DESCRIPTION_PLIST) \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML) \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)) \
+		$(VBOX_BRAND_$(f)_VBOXKEXTS_DESCRIPTION_PLIST) \
+		$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML) \
+		$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)) \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/postflight \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/PkgBuildComponent.plist \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
@@ -310,11 +310,11 @@ endif
 # The VirtualBox Guest Additions Tools & Services.
 #
 
-VBOX_GA_PKG=VBoxGuestAdditionsToolsAndServices.pkg
-VBOX_DI_VB_GA_BINARIES=VBoxClient VBoxControl VBoxService
+VBOX_GA_PKG = VBoxGuestAdditionsToolsAndServices.pkg
+VBOX_DI_VB_GA_BINARIES = VBoxClient VBoxControl VBoxService
 $(VBOX_PATH_PACK_TMP)/Packages/$(VBOX_GA_PKG): \
-		$(foreach f, $(VBOX_DI_VB_GA_BINARIES)\
-			,$(call VBOX_DI_FN_DEP_BOTH,$(f)) ) \
+		$(foreach f, $(VBOX_DI_VB_GA_BINARIES) \
+		,$(call VBOX_DI_FN_DEP_BOTH,$(f)) ) \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxclient.plist \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxservice.plist \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/VBoxServiceWrapper \

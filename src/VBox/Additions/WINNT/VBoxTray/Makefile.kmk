@@ -63,40 +63,40 @@ VBoxTray_VBOX_IMPORT_CHECKER.win.x86 = nt4 #nt350
 VBoxTray_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxTray_DEFS     += \
-	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBOX_WITH_SHARED_CLIPBOARD,) \
-	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS,)
+ 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBOX_WITH_SHARED_CLIPBOARD,) \
+ 	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS,)
  VBoxTray_SOURCES  += \
-	VBoxClipboard.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
+ 	VBoxClipboard.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxTray_DEFS     += VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxTray_SOURCES  += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardStreamImpl-win.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardStreamImpl-win.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp
  endif
 endif
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxTray_DEFS     += \
-	VBOX_WITH_DRAG_AND_DROP \
-	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
+ 	VBOX_WITH_DRAG_AND_DROP \
+ 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
  VBoxTray_SOURCES  += \
-	VBoxDnD.cpp \
-	VBoxDnDDataObject.cpp \
-	VBoxDnDEnumFormat.cpp \
-	VBoxDnDDropSource.cpp \
-	VBoxDnDDropTarget.cpp
+ 	VBoxDnD.cpp \
+ 	VBoxDnDDataObject.cpp \
+ 	VBoxDnDEnumFormat.cpp \
+ 	VBoxDnDDropSource.cpp \
+ 	VBoxDnDDropTarget.cpp
  VBoxTray_LIBS     += \
-	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxTray_DEFS     += _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS
  VBoxTray_SOURCES  += \
-	VBoxHostVersion.cpp \
-	VBoxLA.cpp
+ 	VBoxHostVersion.cpp \
+ 	VBoxLA.cpp
 endif
 ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS    += VBOX_WITH_WDDM

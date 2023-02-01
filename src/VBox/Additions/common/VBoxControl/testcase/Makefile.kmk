@@ -30,16 +30,16 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS)
 
-#
-# Dummy CLI testcase.
-#
-PROGRAMS += tstVBoxControl
-tstVBoxControl_TEMPLATE = VBoxR3TstExe
-tstVBoxControl_DEFS     = VBOX_CONTROL_TEST
-tstVBoxControl_SOURCES  = tstVBoxControl.cpp ../VBoxControl.cpp
-tstVBoxControl_LIBS     = $(LIB_RUNTIME)
-tstVBoxControl_DEFS    += \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS VBOX_WITH_HGCM,)
+ #
+ # Dummy CLI testcase.
+ #
+ PROGRAMS += tstVBoxControl
+ tstVBoxControl_TEMPLATE = VBoxR3TstExe
+ tstVBoxControl_DEFS    = VBOX_CONTROL_TEST
+ tstVBoxControl_SOURCES = tstVBoxControl.cpp ../VBoxControl.cpp
+ tstVBoxControl_LIBS    = $(LIB_RUNTIME)
+ tstVBoxControl_DEFS   += \
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS VBOX_WITH_HGCM,)
 
 endif # VBOX_WITH_TESTCASES
 

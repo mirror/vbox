@@ -83,9 +83,9 @@ $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf: $(PATH_SUB_CURRENT)/VBoxMouse.inf
 
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  VBoxMouse-inf_SOURCES += \
-  	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.sys \
-  	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat \
-  	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat=>VBoxMouse-PreW10.cat
+ 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.sys \
+ 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat \
+ 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat=>VBoxMouse-PreW10.cat
 
  $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.sys: $$(VBoxMouse_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 -- "$<" "$(@D)"

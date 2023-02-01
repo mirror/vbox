@@ -99,8 +99,8 @@ ifndef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE
  VBOX_LNX_ADD_ARCHIVES := $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions-$(KBUILD_TARGET_ARCH).tar.bz2
 else
  VBOX_LNX_ADD_ARCHIVES := \
-	$(VBOX_LNX_ADD_ARCHIVE.x86) \
-	$(VBOX_LNX_ADD_ARCHIVE.amd64)
+ 	$(VBOX_LNX_ADD_ARCHIVE.x86) \
+ 	$(VBOX_LNX_ADD_ARCHIVE.amd64)
 endif
 BLDDIRS     += \
 	$(VBOX_LNX_ADD_ARCH_INST_DIRS) \
@@ -128,7 +128,7 @@ VBOX_LNX_ADD_STRIP_BIN += \
 	VBoxClient
 ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
  VBOX_LNX_ADD_STRIP_BIN += \
-	VBoxAudioTest
+ 	VBoxAudioTest
 endif
 
 VBOX_LNX_ADD_STRIP_SBIN += \
@@ -179,8 +179,8 @@ VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_MOD))
 
 ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
-VBOX_LNX_ADD_INST_FILES += \
-	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter)
+ VBOX_LNX_ADD_INST_FILES += \
+ 	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter)
 endif
 
 # Cleanup of the installer directory files
@@ -217,8 +217,8 @@ $(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)): \
 	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_DBG_BIN_DIR),$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_SBIN files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),\
-		$(filter-out vbox-greeter,$(VBOX_LNX_ADD_STRIP_SBIN))): \
+$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR), \
+$(filter-out vbox-greeter,$(VBOX_LNX_ADD_STRIP_SBIN))): \
 		$(VBOX_LNX_ADD_INST_SBIN_DIR)% : $(PATH_STAGE_BIN)/additions/% \
 		$(VBOX_LNX_ADD_DBG_SBIN_DIR)% \
 		| $$(dir $$@)
@@ -264,11 +264,11 @@ else # strip to temp file because of umask.
 endif
 
 include $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/linux/files_vboxguest
-VBOX_LNX_ADD_INST_FILES_VBOXGUEST=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxguest/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXGUEST_NOBIN)))))
+VBOX_LNX_ADD_INST_FILES_VBOXGUEST = $(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxguest/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXGUEST_NOBIN)))))
 include $(PATH_ROOT)/src/VBox/Additions/linux/sharedfolders/files_vboxsf
-VBOX_LNX_ADD_INST_FILES_VBOXSF=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxsf/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXSF_NOBIN)))))
+VBOX_LNX_ADD_INST_FILES_VBOXSF = $(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxsf/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXSF_NOBIN)))))
 include $(PATH_ROOT)/src/VBox/Additions/linux/drm/files_vboxvideo_drv
-VBOX_LNX_ADD_INST_FILES_VBOXVIDEO=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxvideo/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN)))))
+VBOX_LNX_ADD_INST_FILES_VBOXVIDEO = $(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxvideo/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN)))))
 
 # special rule for the kernel modules
 $(VBOX_LNX_ADD_INST_KMOD_DIR_BASE): \
@@ -326,7 +326,7 @@ LnxAdd-scripts_EXEC_SOURCES  = \
 
 ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
  LnxAdd-scripts_EXEC_SOURCES += \
-	$(VBOX_REL_LNX_ADD_INST)module-autologon.sh=>installer/module-autologon
+ 	$(VBOX_REL_LNX_ADD_INST)module-autologon.sh=>installer/module-autologon
 endif
 
 
@@ -439,8 +439,8 @@ $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh \
 		$$(LnxAdd-scripts_2_STAGE_TARGETS) \
 		$(VBOX_VERSION_STAMP)
-    # Remove any archives left over from previous builds so that they don't
-    # end up in our installer as well.
+# Remove any archives left over from previous builds so that they don't
+# end up in our installer as well.
 	$(QUIET)$(RM) -f $(foreach file, $(wildcard $(VBOX_LNX_ADD_INST_STAGE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME)-*.tar.bz2), $(file))
 	$(QUIET)$(foreach file, $(VBOX_LNX_ADD_ARCHIVES), \
 		$(CP) -f $(file) $(VBOX_LNX_ADD_INST_STAGE_DIR)$(subst -r$(VBOX_SVN_REV),,$(notdir $(file)))$(NLTAB) )

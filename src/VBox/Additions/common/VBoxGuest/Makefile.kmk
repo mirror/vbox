@@ -71,7 +71,7 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
  endif
  #VBoxGuest_DEFS.win     += LOG_ENABLED LOG_TO_BACKDOOR
  VBoxGuest_DEFS.win += \
-	$(if $(VBOX_WITH_DPC_LATENCY_CHECKER),VBOX_WITH_DPC_LATENCY_CHECKER,)
+ 	$(if $(VBOX_WITH_DPC_LATENCY_CHECKER),VBOX_WITH_DPC_LATENCY_CHECKER,)
  VBoxGuest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
  VBoxGuest_DEPS.haiku   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)
@@ -127,10 +127,10 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
   VBoxGuest_SOURCES.win += \
   	win/VBoxGuest.rc
   VBoxGuest_SOURCES.win.x86 += \
-       ../../../Runtime/common/string/strcmp.asm \
-       ../../../Runtime/common/string/strchr.asm \
-       ../../../Runtime/r0drv/nt/nt3fakes-r0drv-nt.cpp \
-       ../../../Runtime/r0drv/nt/nt3fakesA-r0drv-nt.asm
+  	../../../Runtime/common/string/strcmp.asm \
+  	../../../Runtime/common/string/strchr.asm \
+  	../../../Runtime/r0drv/nt/nt3fakes-r0drv-nt.cpp \
+  	../../../Runtime/r0drv/nt/nt3fakesA-r0drv-nt.asm
   VBoxGuest_LIBS        += \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
@@ -151,39 +151,39 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
  else # OS/2:
   # The library order is crucial, so a bit of trickery is necessary.
   # A library is used to make sure that VBoxGuestA-os2.asm is first in the link. (temporary hack?)
-VBoxGuest_SOURCES        = \
+  VBoxGuest_SOURCES      = \
   	VBoxGuestA-os2.asm
   ifdef VBOX_USE_WATCOM_FOR_OS2
-VBoxGuest_LIBS           = \
-	$(VBoxGuestLibOs2Hack_1_TARGET) \
-	$(VBOX_LIB_VBGL_R0BASE) \
-	$(VBOX_LIB_IPRT_GUEST_R0) \
-	$(PATH_IGCC)/lib/libend.lib
+   VBoxGuest_LIBS        = \
+   	$(VBoxGuestLibOs2Hack_1_TARGET) \
+   	$(VBOX_LIB_VBGL_R0BASE) \
+   	$(VBOX_LIB_IPRT_GUEST_R0) \
+   	$(PATH_IGCC)/lib/libend.lib
   else
-VBoxGuest_SOURCES       += \
-	VBoxGuest-os2.def
-#VBoxGuest_LDFLAGS        = -s -t -v
-VBoxGuest_LIBS           = \
-	$(VBoxGuestLibOs2Hack_1_TARGET) \
-	$(VBOX_LIB_VBGL_R0BASE) \
-	$(VBOX_LIB_IPRT_GUEST_R0) \
-	$(VBOX_GCC_LIBGCC) \
-	end
+   VBoxGuest_SOURCES    += \
+   	VBoxGuest-os2.def
+   #VBoxGuest_LDFLAGS        = -s -t -v
+   VBoxGuest_LIBS        = \
+   	$(VBoxGuestLibOs2Hack_1_TARGET) \
+   	$(VBOX_LIB_VBGL_R0BASE) \
+   	$(VBOX_LIB_IPRT_GUEST_R0) \
+   	$(VBOX_GCC_LIBGCC) \
+   	end
   endif
-## When debugging init with kDrvTest:
-#VBoxGuest_NAME          = VBoxGst
+  ## When debugging init with kDrvTest:
+  #VBoxGuest_NAME          = VBoxGst
 
-# See above.
-LIBRARIES += VBoxGuestLibOs2Hack
-VBoxGuestLibOs2Hack_TEMPLATE = VBoxGuestR0DrvLib
-VBoxGuestLibOs2Hack_INSTTYPE = none
-VBoxGuestLibOs2Hack_DEFS = $(VBoxGuest_DEFS)
-VBoxGuestLibOs2Hack_INCS = \
-	. \
-	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
-VBoxGuestLibOs2Hack_SOURCES = \
-	VBoxGuest-os2.cpp \
-	VBoxGuest.cpp
+  # See above.
+  LIBRARIES += VBoxGuestLibOs2Hack
+  VBoxGuestLibOs2Hack_TEMPLATE = VBoxGuestR0DrvLib
+  VBoxGuestLibOs2Hack_INSTTYPE = none
+  VBoxGuestLibOs2Hack_DEFS = $(VBoxGuest_DEFS)
+  VBoxGuestLibOs2Hack_INCS = \
+  	. \
+  	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
+  VBoxGuestLibOs2Hack_SOURCES = \
+  	VBoxGuest-os2.cpp \
+  	VBoxGuest.cpp
  endif # OS/2
 
  VBoxGuest.cpp_DEFS     = VBOX_SVN_REV=$(VBOX_SVN_REV)
@@ -198,9 +198,9 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(KBUILD_TARGET)" == "darwin"
  VBoxGuest.kext_CLEAN    = $(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist
  VBoxGuest.kext_BLDDIRS  = $(VBoxGuest.kext_0_OUTDIR)/Contents/
 
-$$(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist: \
-		$(PATH_SUB_CURRENT)/darwin/Info.plist \
-		$(VBOX_VERSION_MK) | $$(dir $$@)
+ $$(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist: \
+ 		$(PATH_SUB_CURRENT)/darwin/Info.plist \
+ 		$(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxGuest,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -214,7 +214,7 @@ $$(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist: \
 		--output $@ \
 		$<
 
-$(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxGuest)
+ $(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxGuest)
 endif # darwin
 
 
@@ -243,7 +243,7 @@ ifeq ($(KBUILD_TARGET),linux)
  #
  # Build test for the Guest Additions kernel module (kmk check).
  #
-$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxguest-src,,save_symvers)
+ $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxguest-src,,save_symvers)
 endif # Linux
 
 ifeq ($(KBUILD_TARGET),freebsd)

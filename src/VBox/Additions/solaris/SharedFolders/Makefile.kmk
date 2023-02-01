@@ -62,34 +62,34 @@ else
  vboxfs_SOURCES           += deps.asm
  vboxfs_deps.asm_ASFLAGS   = -f bin -g null
 endif
-if  ($(VBOX_SOLARIS_11_UPDATE_VERSION) > 1 \
- || ($(VBOX_SOLARIS_11_UPDATE_VERSION) == 1 && $(VBOX_SOLARIS_11_BUILD_VERSION) >= 10))
-vboxfs_DEFS         += VBOX_VFS_EXTENDED_POLICY
+if   ($(VBOX_SOLARIS_11_UPDATE_VERSION) > 1 \
+  || ($(VBOX_SOLARIS_11_UPDATE_VERSION) == 1 && $(VBOX_SOLARIS_11_BUILD_VERSION) >= 10))
+ vboxfs_DEFS        += VBOX_VFS_EXTENDED_POLICY
 endif
 
 
 ifndef VBOX_OSE
-#
-# vboxfs_s10 - The Shared Folder Driver for Solaris 10
-#
-SYSMODS.solaris      += vboxfs_s10
-vboxfs_s10_TEMPLATE      = VBoxGuestR0Drv
-vboxfs_s10_DEFS          = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6 VBOX_SVN_REV=$(VBOX_SVN_REV)
-vboxfs_s10_DEPS         += $(VBOX_SVN_REV_KMK)
-vboxfs_s10_INCS         := solaris10/
-vboxfs_s10_SOURCES       = \
-	vboxfs_vfs.c \
-	vboxfs_vnode.c \
-	vboxfs_prov.c
-vboxfs_s10_LIBS          = \
-	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0)
-ifeq ($(KBUILD_HOST),solaris)
- vboxfs_s10_LDFLAGS         += -N drv/vboxguest -N misc/ctf
-else
- vboxfs_s10_SOURCES         += deps.asm
- vboxfs_s10_deps.asm_ASFLAGS = -f bin -g null
-endif
+ #
+ # vboxfs_s10 - The Shared Folder Driver for Solaris 10
+ #
+ SYSMODS.solaris     += vboxfs_s10
+ vboxfs_s10_TEMPLATE     = VBoxGuestR0Drv
+ vboxfs_s10_DEFS         = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6 VBOX_SVN_REV=$(VBOX_SVN_REV)
+ vboxfs_s10_DEPS        += $(VBOX_SVN_REV_KMK)
+ vboxfs_s10_INCS        := solaris10/
+ vboxfs_s10_SOURCES      = \
+ 	vboxfs_vfs.c \
+ 	vboxfs_vnode.c \
+ 	vboxfs_prov.c
+ vboxfs_s10_LIBS         = \
+ 	$(VBOX_LIB_VBGL_R0) \
+ 	$(VBOX_LIB_IPRT_GUEST_R0)
+ ifeq ($(KBUILD_HOST),solaris)
+  vboxfs_s10_LDFLAGS        += -N drv/vboxguest -N misc/ctf
+ else
+  vboxfs_s10_SOURCES        += deps.asm
+  vboxfs_s10_deps.asm_ASFLAGS = -f bin -g null
+ endif
 endif # VBOX_OSE
 
 

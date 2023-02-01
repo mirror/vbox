@@ -50,7 +50,7 @@ vboxvideo_TEMPLATE      = VBoxGuestR0Drv
 vboxvideo_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxvideo_DEPS         += $(VBOX_SVN_REV_KMK)
 if ($(VBOX_SOLARIS_11_UPDATE_VERSION) > 3)
-vboxvideo_DEFS         += VBOX_WITH_SYSTEM_QUEUE_H
+ vboxvideo_DEFS        += VBOX_WITH_SYSTEM_QUEUE_H
 endif
 vboxvideo_INCS         := \
 	include/

@@ -35,7 +35,7 @@ ifdef VBOX_WITH_ADDITION_DRIVERS
  SYSMODS  += vboxvideo_drm
 endif
 ifneq ($(KBUILD_HOST),freebsd)
-$(error "The FreeBSD guest additions can only be built on FreeBSD!")
+ $(error "The FreeBSD guest additions can only be built on FreeBSD!")
 endif
 
 #

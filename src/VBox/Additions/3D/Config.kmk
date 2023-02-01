@@ -47,10 +47,10 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_INST     = $(INST_ADDITIONS)
 TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
 	VBOX_WITH_MESA3D
 ifdef VBOX_WITH_VMSVGA
-TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS    += \
-	VBOX_WITH_VMSVGA
-# treat as error: warning C4013: 'close' undefined; assuming extern returning int
-TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS   = $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS) -we4013
+ TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS   += \
+ 	VBOX_WITH_VMSVGA
+ # treat as error: warning C4013: 'close' undefined; assuming extern returning int
+ TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS  = $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS) -we4013
 endif
 TEMPLATE_VBoxMesa3DGuestR3Dll_SDKS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SDKS) \
 	$(VBOX_WINDDK_GST_W8)
@@ -86,10 +86,10 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS    += \
 	VBOX_WITH_MESA3D_SVGA_HALFZ \
 	VBOX_WITH_MESA3D_SVGA_INSTANCING
 ifdef VBOX_WITH_NOCRT_STATIC
-TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS    += \
-	IPRT_NO_CRT_FOR_3RD_PARTY \
-	RT_WITHOUT_NOCRT_WRAPPERS \
-	RT_WITHOUT_NOCRT_WRAPPER_ALIASES
+ TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS   += \
+ 	IPRT_NO_CRT_FOR_3RD_PARTY \
+ 	RT_WITHOUT_NOCRT_WRAPPERS \
+ 	RT_WITHOUT_NOCRT_WRAPPER_ALIASES
 endif
 TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS.win) \
 	_USE_MATH_DEFINES \
@@ -104,25 +104,25 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_INCS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS)
 	$(VBOX_PATH_MESA)/src/gallium/include \
 	$(VBOX_PATH_3D)/win/VBoxWddmUmHlp
 ifdef VBOX_WITH_NOCRT_STATIC # Only the softfloat libs are added here as mesa includes a softfloat.h and we wish for no conflicts.
-TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86) \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
-	$(SDK_VBoxSoftFloatGuestR3Shared_LIBS.x86)
-TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.$(KBUILD_TARGET_ARCH) += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.$(KBUILD_TARGET)) \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(SDK_VBoxSoftFloatGuestR3Shared_LIBS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win)
-# The -Oi- disable optimizations of math functions like sqrt(), that takes all
-# parameters on the stack, into calls to __CIsqrt that takes parameters in FPU
-# registers.  While we could implement the __CIxxxx functions too, they would
-# be difficult to test properly given that they're not directly callable from
-# C.  Also, there could be other aspects to these functions that we don't know
-# about, given that they aren't documented all that well.  See:
-#   https://docs.microsoft.com/en-us/cpp/preprocessor/intrinsic?view=msvc-160#intrinsic-floating-point-functions
-#   https://docs.microsoft.com/en-us/cpp/build/reference/oi-generate-intrinsic-functions?view=msvc-160
-# Unforutnately, this does mean that we will miss out on a little bit of
-# performance in 32-bit binaries.
-TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS.win.x86   += $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS.win.x86) -Oi-
-TEMPLATE_VBoxMesa3DGuestR3Dll_CXXFLAGS.win.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS.win.x86) -Oi-
+ TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86) \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
+ 	$(SDK_VBoxSoftFloatGuestR3Shared_LIBS.x86)
+ TEMPLATE_VBoxMesa3DGuestR3Dll_LIBS.$(KBUILD_TARGET_ARCH) += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.$(KBUILD_TARGET)) \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+ 	$(SDK_VBoxSoftFloatGuestR3Shared_LIBS.$(KBUILD_TARGET_ARCH))
+ TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win += $(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win)
+ # The -Oi- disable optimizations of math functions like sqrt(), that takes all
+ # parameters on the stack, into calls to __CIsqrt that takes parameters in FPU
+ # registers.  While we could implement the __CIxxxx functions too, they would
+ # be difficult to test properly given that they're not directly callable from
+ # C.  Also, there could be other aspects to these functions that we don't know
+ # about, given that they aren't documented all that well.  See:
+ #   https://docs.microsoft.com/en-us/cpp/preprocessor/intrinsic?view=msvc-160#intrinsic-floating-point-functions
+ #   https://docs.microsoft.com/en-us/cpp/build/reference/oi-generate-intrinsic-functions?view=msvc-160
+ # Unforutnately, this does mean that we will miss out on a little bit of
+ # performance in 32-bit binaries.
+ TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS.win.x86  += $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS.win.x86) -Oi-
+ TEMPLATE_VBoxMesa3DGuestR3Dll_CXXFLAGS.win.x86 += $(TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS.win.x86) -Oi-
 endif
 
 #
@@ -133,9 +133,9 @@ TEMPLATE_VBoxMesa3DGuestR3DllMinVista_EXTENDS             = VBoxMesa3DGuestR3Dll
 TEMPLATE_VBoxMesa3DGuestR3DllMinVista_VBOX_IMPORT_CHECKER.win.x86   := vista
 TEMPLATE_VBoxMesa3DGuestR3DllMinVista_VBOX_IMPORT_CHECKER.win.amd64 := vista
 ifeq ($(KBUILD_TARGET),win)
-TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LDFLAGS.win.x86     = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win.x86))
-TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.x86   = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.x86))
-TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.amd64))
-TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxMesa3DGuestR3Dll_LNK_DEPS.win.amd64)
+ TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LDFLAGS.win.x86    = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win.x86))
+ TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.x86  = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.x86))
+ TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.amd64))
+ TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LNK_DEPS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxMesa3DGuestR3Dll_LNK_DEPS.win.amd64)
 endif
 

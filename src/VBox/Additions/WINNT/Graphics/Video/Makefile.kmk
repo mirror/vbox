@@ -56,10 +56,10 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 
-$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(VBoxVideo_1_TARGET) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(VBoxVideo_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll: $$(VBoxDisp_1_TARGET) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll: $$(VBoxDisp_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
  $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
@@ -92,7 +92,7 @@ ifdef VBOX_WITH_WDDM
  VBOXWDDM_EDIT_INF_MESA3D_FN_ARG = $(if $(VBOX_WITH_MESA3D),-e 's/^;mesa3d  *//', -e '/^;mesa3d /d')
 
  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf: \
-		$(PATH_SUB_CURRENT)/mp/wddm/VBoxWddm.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+ 		$(PATH_SUB_CURRENT)/mp/wddm/VBoxWddm.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxWddm-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDM_EDIT_INF_DISPDX_FN_ARG) $(VBOXWDDM_EDIT_INF_MESA3D_FN_ARG))
 
@@ -111,9 +111,9 @@ ifdef VBOX_WITH_WDDM
 
   ifdef VBOX_WITH_WDDM_DX
    VBoxWddm-inf_SOURCES += \
-       $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX.dll
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX.dll
    VBoxWddm-inf_SOURCES.amd64 += \
-       $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX-x86.dll
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX-x86.dll
   endif
 
   ifdef VBOX_WITH_MESA3D
@@ -173,20 +173,20 @@ ifdef VBOX_WITH_WDDM
   endif
 
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.cat: \
-		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf \
-		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys \
-		$(if $(VBOXWDDM_WITH_DISPD3D), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D.dll, ) \
-		$(if $(VBOXWDDM_WITH_DISPD3D), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D-x86.dll, ), ) \
-		$(if $(VBOX_WITH_WDDM_DX), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX.dll, ) \
-		$(if $(VBOX_WITH_WDDM_DX), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX-x86.dll, ), ) \
-		$(if $(VBOX_WITH_MESA3D), \
-			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
-			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
-			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll \
-			$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
-				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
-				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
-				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), )
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys \
+  		$(if $(VBOXWDDM_WITH_DISPD3D), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D.dll, ) \
+  		$(if $(VBOXWDDM_WITH_DISPD3D), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D-x86.dll, ), ) \
+  		$(if $(VBOX_WITH_WDDM_DX), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX.dll, ) \
+  		$(if $(VBOX_WITH_WDDM_DX), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX-x86.dll, ), ) \
+  		$(if $(VBOX_WITH_MESA3D), \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll \
+  		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
+  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), )
 	$(call MSG_TOOL,Inf2Cat,VBoxWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing

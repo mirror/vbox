@@ -38,7 +38,7 @@ endif
 #
 ifndef VBOX_OSE
  include $(PATH_SUB_CURRENT)/VBoxGradd/Makefile.kmk
-# include $(PATH_SUB_CURRENT)/VBoxGrext/Makefile.kmk
+ # include $(PATH_SUB_CURRENT)/VBoxGrext/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBoxMouse/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Bin/Makefile.kmk
 endif
@@ -73,8 +73,8 @@ VBoxOs2AdditionsInstall_INCS             = \
 	$(PATH_TOOL_OPENWATCOM)/h/os2
 VBoxOs2AdditionsInstall_SOURCES          = \
 	VBoxOs2AdditionsInstall.cpp \
- 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathStripFilename.cpp \
- 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathEnsureTrailingSeparator.cpp
+	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathStripFilename.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathEnsureTrailingSeparator.cpp
 if 1
  VBOX_PATH_RUNTIME_SRC ?= $(PATH_ROOT)/src/VBox/Runtime
  VBoxOs2AdditionsInstall_LDTOOL          = OPENWATCOM-WL
@@ -89,7 +89,7 @@ if 1
  VBoxOs2AdditionsInstall_DEFS           += IPRT_NO_CRT RT_WITH_NOCRT_ALIASES
  VBoxOs2AdditionsInstall_INCS           <= \
  	$(PATH_ROOT)/include/iprt/nocrt \
-	$(VBOX_PATH_RUNTIME_SRC)/include
+ 	$(VBOX_PATH_RUNTIME_SRC)/include
  VBoxOs2AdditionsInstall_SOURCES        += \
  	VBoxOs2AdditionsInstallA.asm \
  	$(VBOX_PATH_RUNTIME_SRC)/common/string/strcpy.cpp \

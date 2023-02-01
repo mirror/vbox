@@ -33,7 +33,7 @@ VBoxGINA_TEMPLATE = VBoxGuestR3Dll
 VBoxGINA_DEFS     = UNICODE VBGL_VBOXGUEST VBOX_WITH_HGCM
 VBoxGINA_SOURCES  = \
 	VBoxGINA.cpp \
-	Helper.cpp  \
+	Helper.cpp \
 	Dialog.cpp \
 	VBoxGINA.def \
 	VBoxGINA.rc

@@ -52,10 +52,10 @@ LIBRARIES += \
 	VBoxGuestR3LibShared
 ifndef VBOX_ONLY_VALIDATIONKIT
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
- ifndef VBOX_USE_SYSTEM_XORG_HEADERS
-  LIBRARIES += \
-  	VBoxGuestR3LibXFree86
- endif
+  ifndef VBOX_USE_SYSTEM_XORG_HEADERS
+   LIBRARIES += \
+   	VBoxGuestR3LibXFree86
+  endif
  endif
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
   LIBRARIES += \
@@ -81,7 +81,7 @@ VBoxGuestR0Lib_SOURCES      = \
 	VBoxGuestR0LibVMMDev.cpp \
 	VBoxGuestR0LibHGCM.cpp \
 	VbglR0CanUsePhysPageList.cpp \
-       \
+	\
 	VBoxGuestR0LibIdc.cpp \
 	VBoxGuestR0LibSharedFolders.c \
 	VBoxGuestR0LibCrOgl.cpp \
@@ -139,12 +139,12 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibStat.cpp \
 	VBoxGuestR3LibTime.cpp \
- 	VBoxGuestR3LibModule.cpp \
- 	VBoxGuestR3LibPidFile.cpp \
- 	VBoxGuestR3LibVrdp.cpp \
- 	VBoxGuestR3LibMouse.cpp \
- 	VBoxGuestR3LibSeamless.cpp \
- 	VBoxGuestR3LibVideo.cpp
+	VBoxGuestR3LibModule.cpp \
+	VBoxGuestR3LibPidFile.cpp \
+	VBoxGuestR3LibVrdp.cpp \
+	VBoxGuestR3LibMouse.cpp \
+	VBoxGuestR3LibSeamless.cpp \
+	VBoxGuestR3LibVideo.cpp
 ifneq ($(KBUILD_TARGET),win)
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibDaemonize.cpp
@@ -157,10 +157,10 @@ endif
 ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxGuestR3Lib_DEFS      += VBOX_WITH_SHARED_CLIPBOARD_GUEST
  VBoxGuestR3Lib_SOURCES   += \
-	VBoxGuestR3LibClipboard.cpp
+ 	VBoxGuestR3LibClipboard.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
- VBoxGuestR3Lib_SOURCES   += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMIME.cpp
+  VBoxGuestR3Lib_SOURCES  += \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMIME.cpp
  endif
 endif
 ifdef VBOX_WITH_SHARED_FOLDERS
@@ -173,8 +173,8 @@ ifdef VBOX_WITH_GUEST_CONTROL
 endif
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxGuestR3Lib_DEFS      += \
-    VBOX_WITH_DRAG_AND_DROP \
-    $(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
+ 	VBOX_WITH_DRAG_AND_DROP \
+ 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibDragAndDrop.cpp
 endif
@@ -228,9 +228,9 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3LibVideo.cpp \
 	VBoxGuestR3LibRuntimeXF86.cpp
 VBoxGuestR3LibXFree86_INCS     = \
-        $(VBOX_PATH_X11_ROOT)/XFree86-4.3/Xserver \
-        $(VBOX_PATH_X11_ROOT)/XFree86-4.3 \
-        $(VBOX_PATH_X11_ROOT)/XFree86-4.3/X11
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3/Xserver \
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3 \
+	$(VBOX_PATH_X11_ROOT)/XFree86-4.3/X11
 
 #
 # VBoxGuestR3LibXOrg - a reduced version of the guest library which uses

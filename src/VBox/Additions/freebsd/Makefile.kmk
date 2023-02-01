@@ -29,7 +29,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),freebsd)
-$(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
+ $(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
 endif
 
 # Include sub-makefiles.
@@ -41,8 +41,8 @@ include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 #
 VBOX_FBSD_ADD_INS_OUT_DIR          := $(PATH_TARGET)/Additions/Installer/freebsd
 BLDDIRS                            += \
-		$(VBOX_FBSD_ADD_INS_OUT_DIR) \
-		$(VBOX_FBSD_ADD_INS_OUT_DIR)/module
+	$(VBOX_FBSD_ADD_INS_OUT_DIR) \
+	$(VBOX_FBSD_ADD_INS_OUT_DIR)/module
 VBOX_PATH_FREEBSD_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
 VBOX_PATH_X11_ADDITION_INSTALLER     := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
 
@@ -133,11 +133,11 @@ INSTALLS += $(if $(VBOX_OSE),, fbsd_add_inst-nobin)
 fbsd_add_inst-nobin_INST = obj/Additions/Installer/freebsd
 fbsd_add_inst-nobin_MODE = a+r,u+w
 fbsd_add_inst-nobin_SOURCES = \
-		../x11/Installer/98vboxadd-xclient \
-		../x11/Installer/vboxclient.desktop \
-		../x11/Installer/vboxvideo.ids \
-		../x11/Installer/x11config.pl \
-		../x11/Installer/x11config15.pl
+	../x11/Installer/98vboxadd-xclient \
+	../x11/Installer/vboxclient.desktop \
+	../x11/Installer/vboxvideo.ids \
+	../x11/Installer/x11config.pl \
+	../x11/Installer/x11config15.pl
 
 
 INSTALLS += GuestDrivers-src
@@ -147,7 +147,7 @@ GuestDrivers-src_SOURCES = Makefile
 
 # this file needs editing before it can be included in the generic installer.
 $(VBOX_FBSD_ADD_INS_OUT_DIR)/install.sh: \
-	$(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/install.sh | $$(dir $$@)
+		$(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/install.sh | $$(dir $$@)
 	$(QUIET)$(SED) \
 	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 	    -e "s;_BUILD_;$(shell date);g" \

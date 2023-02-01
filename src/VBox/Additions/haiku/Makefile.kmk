@@ -58,7 +58,7 @@ SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),haiku)
-$(error "The Haiku guest additions installer can only be built on Haiku!")
+ $(error "The Haiku guest additions installer can only be built on Haiku!")
 endif
 
 #

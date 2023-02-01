@@ -120,10 +120,10 @@ vboxvideo_drv_SOURCES = \
 	vboxvideo.c \
 	vbva.c \
 	$(vboxvideo_drv_lib_SOURCES)
- # Any global symbols in the driver object files will be added to XFree86's
- # symbol table, which can cause problems if we e.g. define a symbol in two
- # modules.
- vboxvideo_drv_POST_CMDS = \
+# Any global symbols in the driver object files will be added to XFree86's
+# symbol table, which can cause problems if we e.g. define a symbol in two
+# modules.
+vboxvideo_drv_POST_CMDS  = \
 	objcopy --keep-global-symbol vboxvideoModuleData $(out) $(out)-objcopy$$(NLTAB) \
 	$(MV) -f $(out)-objcopy $(out)
 
@@ -220,7 +220,7 @@ vboxvideo_drv_16_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10600000
 vboxvideo_drv_16_INCS = \
 	$(vboxvideo_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.5 \
-vboxvideo_drv_16_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
+	vboxvideo_drv_16_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_16_SOURCES := $(vboxvideo_drv_15_SOURCES)
 vboxvideo_drv_16_LIBS += $(vboxvideo_drv_70_LIBS)
 
@@ -410,13 +410,13 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  SYSMODS := $(filter-out vboxvideo_drv%,$(SYSMODS))
  vboxvideo_drv_system_TEMPLATE = VBoxGuestR3XOrgMod
  vboxvideo_drv_system_CFLAGS := \
-        $(vboxvideo_drv_70_CFLAGS) -include xorg-server.h
+ 	$(vboxvideo_drv_70_CFLAGS) -include xorg-server.h
  vboxvideo_drv_system_DEFS := $(filter-out _XORG_SERVER_H_ _DIX_CONFIG_H_, $(vboxvideo_15_DEFS))
  vboxvideo_drv_system_INCS += \
-        $(PATH_ROOT)/src/VBox/Runtime/include \
-        $(VBOX_GRAPHICS_INCS) \
-        /usr/include/xorg \
-        /usr/include/pixman-1
+ 	$(PATH_ROOT)/src/VBox/Runtime/include \
+ 	$(VBOX_GRAPHICS_INCS) \
+ 	/usr/include/xorg \
+ 	/usr/include/pixman-1
  vboxvideo_drv_system_SOURCES := $(vboxvideo_drv_17_SOURCES)
 endif
 
@@ -425,9 +425,9 @@ endif
 # symbols.  Not very elegant, but it will catch problems early.
 
 ifdef VBOX_WITH_TESTCASES
-# ifndef VBOX_ONLY_ADDITIONS
+ # ifndef VBOX_ONLY_ADDITIONS
  ifndef VBOX_USE_SYSTEM_XORG_HEADERS
-  if1of ($(KBUILD_TARGET),linux solaris)
+  if1of ($(KBUILD_TARGET), linux solaris)
    ifeq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
     ifndef VBOX_ONLY_SDK
      VBOXVIDEO_SRC_PATH := $(PATH_SUB_CURRENT)
@@ -435,16 +435,16 @@ ifdef VBOX_WITH_TESTCASES
      ifeq ($(KBUILD_TARGET),linux)
       TESTING += $(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run
       OTHERS += $(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run
-$$(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run: $$(vboxvideo_drv_1_STAGE_TARGET)
+      $$(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run: $$(vboxvideo_drv_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)$(ASH) $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
 	    $(vboxvideo_drv_1_STAGE_TARGET) --static $(VBOXVIDEO_SRC_PATH)/../undefined_xfree86 $(VBOXVIDEO_SRC_PATH)/../undefined_xfree86_modules
 	$(QUIET)$(APPEND) -t "$@" "done"
      endif
 
-##
-# Using the extra expansion to replace $(ver) before eval, thus everything
-# else needs escaped dollars.
+     ##
+     # Using the extra expansion to replace $(ver) before eval, thus everything
+     # else needs escaped dollars.
      define def_vboxvideo_test
       TESTING += $$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run
       OTHERS  += $$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run
@@ -453,15 +453,15 @@ $$(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run: $$(vboxvideo_drv_1_STAGE_TARGET)
 	$$(QUIET)$$(ASH) $$(PATH_ROOT)/src/bldprogs/checkUndefined.sh $$(KBUILD_HOST)  \
 	        $$(vboxvideo_drv$(ver)_1_STAGE_TARGET) $$(VBOXVIDEO_SRC_PATH)/../undefined_xfree86 $(VBOXVIDEO_SRC_PATH)/../undefined_xfree86_modules $$(VBOXVIDEO_SRC_PATH)/../undefined_xorg
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
-    endef
+     endef
 
-    $(foreach ver, _70 _71 _13 _14 _15 _16 _17 _18 _19 _110 _111 _112 _113 _114 _115 _116 _117 _118, $(eval $(def_vboxvideo_test)))
+     $(foreach ver, _70 _71 _13 _14 _15 _16 _17 _18 _19 _110 _111 _112 _113 _114 _115 _116 _117 _118, $(eval $(def_vboxvideo_test)))
 
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
   endif # 1of ($(KBUILD_TARGET),linux solaris)
  endif # ! VBOX_USE_SYSTEM_XORG_HEADERS
-# endif # ! VBOX_ONLY_ADDITIONS
+ # endif # ! VBOX_ONLY_ADDITIONS
 endif # VBOX_WITH_TESTCASES
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -32,7 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Make sure our Config.kmk is included.
 #
 ifndef VBOX_MESA3D_CONFIG_KMK_INCLUDED
-include $(PATH_SUB_CURRENT)/../Config.kmk
+ include $(PATH_SUB_CURRENT)/../Config.kmk
 endif
 
 PYTHON_CMD = $(VBOX_BLD_PYTHON) -B
@@ -62,77 +62,77 @@ TEMPLATE_VBoxMesa3DGuestR3Lib               = VBox Mesa 3D Guest User Mode Libra
 TEMPLATE_VBoxMesa3DGuestR3Lib_EXTENDS       = VBoxMesa3DGuestR3Dll
 TEMPLATE_VBoxMesa3DGuestR3Lib_INST          = $(INST_ADDITIONS_LIB)
 ifeq ($(KBUILD_TARGET),win)
-# Do not treat warnings as errors, because Mesa code produces too many warnings with MSC.
-TEMPLATE_VBoxMesa3DGuestR3Lib_CFLAGS        = $(filter-out -WX,$(TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS))
-TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS      = $(filter-out -WX,$(TEMPLATE_VBoxMesa3DGuestR3Dll_CXXFLAGS))
-#  -wd4005: vcc120: '__useHeader' : macro redefinition
-#  -wd4018: signed/unsigned mismatch
-#  -wd4054: 'type cast' : from function pointer to data pointer 'void *'
-#  -wd4057: 'function' : 'int *' differs in indirection to slightly different base types from 'uint32_t *'
-#  -wd4090: 'function' : different 'const' qualifiers
-#  -wd4098: 'void' function returning a value
-#  -wd4099: 'st_src_reg' : type name first seen using 'class' now seen using 'struct'
-#  -wd4100: unreferenced formal parameter
-#  -wd4101: unreferenced local variable
-#  -wd4130: '==' : logical operation on address of string constant
-#  -wd4132: 'color' : const object should be initialized
-#  -wd4146: unary minus operator applied to unsigned type, result still unsigned
-#  -wd4152: nonstandard extension, function/data pointer conversion in expression
-#  -wd4189: 'signo' : local variable is initialized but not referenced
-#  -wd4200: nonstandard extension used : zero-sized array in struct/union
-#  -wd4204: nonstandard extension used : non-constant aggregate initializer
-#  -wd4206: nonstandard extension used : translation unit is empty
-#  -wd4211: nonstandard extension used : redefined extern to static
-#  -wd4221: nonstandard extension used : 'tokens' : cannot be initialized using address of automatic variable 'tokens'
-#  -wd4245: '=' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
-#  -wd4255: no function prototype given
-#  -wd4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
-#  -wd4265: 'ir_variable_refcount_visitor' : class has virtual functions, but destructor is not virtual
-#  -wd4267: '=' : conversion from 'size_t' to 'unsigned int', possible loss of data
-#  -wd4266: 'void ir_visitor::visit(ir_rvalue *)' : no override available for virtual member function from base 'ir_visitor'; function is hidden
-#  -wd4287: unsigned/negative constant mismatch
-#  -wd4291: 'void *exec_node::operator new(size_t,void *)' : no matching operator delete found; memory will not be freed if initialization throws an exception
-#  -wd4305: truncation from 'double' to 'const float'
-#  -wd4306: 'type cast' : conversion from 'int' to 'void *' of greater size
-#  -wd4310: cast truncates constant value
-#  -wd4311: 'type cast' : pointer truncation from 'void *' to 'unsigned long'
-#  -wd4351: new behavior: elements of array '_mesa_glsl_parse_state::cs_input_local_size' will be default initialized
-#  -wd4355: 'this' : used in base member initializer list
-#  -wd4388: '==' : signed/unsigned mismatch
-#  -wd4389: '==' : signed/unsigned mismatch
-#  -wd4640: 'ts' : construction of local static object is not thread-safe
-#  -wd4668: '__STDC_VERSION__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-#  -wd4700: uninitialized local variable 'tmp' used
-#  -wd4701: potentially uninitialized local variable 'query' used
-#  -wd4702: unreachable code
-#  -wd4703: vcc120: potentially uninitialized local pointer variable 'gen_func' used
-#  -wd4756: overflow in constant arithmetic
-#  -wd4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
-#  -wd4805: '|=' : unsafe mix of type 'GLboolean' and type 'bool' in operation
-#  -wd4918: 'y' : invalid character in pragma optimization list
-VBOX_MESA3D_VCC_DISABLED_WARNINGS          := \
-	-wd4005 -wd4018 -wd4054 -wd4057 -wd4090 -wd4098 -wd4099 -wd4100 -wd4101 -wd4130 -wd4132 -wd4146 \
-	-wd4152 -wd4189 -wd4200 -wd4204 -wd4206 -wd4211 -wd4221 -wd4245 -wd4255 -wd4258 -wd4265 -wd4267 -wd4266 \
-	-wd4287 -wd4291 -wd4305 -wd4306 -wd4310 -wd4311 -wd4351 -wd4355 -wd4388 -wd4389 -wd4640 -wd4668 -wd4700 \
-	-wd4701 -wd4702 -wd4703 -wd4756 -wd4800 -wd4805 -wd4918
-# -wd4458: declaration of 'array' hides class member
-# -wd4477: 'fprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'LONGLONG'
-# -wd4774: 'printf' : format string expected in argument 1 is not a string literal
-# -wd4456: declaration of 'pos_dst' hides previous local declaration
-# -wd4777: '_snprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'const DWORD'
-# -wd4459: declaration of 'stw_dev' hides global declaration
-# -wd4457: declaration of 'usage' hides function parameter
-VBOX_MESA3D_VCC_DISABLED_WARNINGS          += \
-	-wd4458 -wd4477 -wd4774 -wd4456 -wd4777 -wd4459 -wd4457
-# -wd4254: '=': conversion from 'unsigned int':'3' to 'unsigned int':'2', possible loss of data
-# -wd5039: pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception
-# -wd5204: class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly
-# -wd5219: implicit conversion from 'int' to 'float', possible loss of data
-VBOX_MESA3D_VCC_DISABLED_WARNINGS          += \
-	-wd4254 -wd5039 -wd5204 -wd5219
+ # Do not treat warnings as errors, because Mesa code produces too many warnings with MSC.
+ TEMPLATE_VBoxMesa3DGuestR3Lib_CFLAGS       = $(filter-out -WX,$(TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS))
+ TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS     = $(filter-out -WX,$(TEMPLATE_VBoxMesa3DGuestR3Dll_CXXFLAGS))
+ #  -wd4005: vcc120: '__useHeader' : macro redefinition
+ #  -wd4018: signed/unsigned mismatch
+ #  -wd4054: 'type cast' : from function pointer to data pointer 'void *'
+ #  -wd4057: 'function' : 'int *' differs in indirection to slightly different base types from 'uint32_t *'
+ #  -wd4090: 'function' : different 'const' qualifiers
+ #  -wd4098: 'void' function returning a value
+ #  -wd4099: 'st_src_reg' : type name first seen using 'class' now seen using 'struct'
+ #  -wd4100: unreferenced formal parameter
+ #  -wd4101: unreferenced local variable
+ #  -wd4130: '==' : logical operation on address of string constant
+ #  -wd4132: 'color' : const object should be initialized
+ #  -wd4146: unary minus operator applied to unsigned type, result still unsigned
+ #  -wd4152: nonstandard extension, function/data pointer conversion in expression
+ #  -wd4189: 'signo' : local variable is initialized but not referenced
+ #  -wd4200: nonstandard extension used : zero-sized array in struct/union
+ #  -wd4204: nonstandard extension used : non-constant aggregate initializer
+ #  -wd4206: nonstandard extension used : translation unit is empty
+ #  -wd4211: nonstandard extension used : redefined extern to static
+ #  -wd4221: nonstandard extension used : 'tokens' : cannot be initialized using address of automatic variable 'tokens'
+ #  -wd4245: '=' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
+ #  -wd4255: no function prototype given
+ #  -wd4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+ #  -wd4265: 'ir_variable_refcount_visitor' : class has virtual functions, but destructor is not virtual
+ #  -wd4267: '=' : conversion from 'size_t' to 'unsigned int', possible loss of data
+ #  -wd4266: 'void ir_visitor::visit(ir_rvalue *)' : no override available for virtual member function from base 'ir_visitor'; function is hidden
+ #  -wd4287: unsigned/negative constant mismatch
+ #  -wd4291: 'void *exec_node::operator new(size_t,void *)' : no matching operator delete found; memory will not be freed if initialization throws an exception
+ #  -wd4305: truncation from 'double' to 'const float'
+ #  -wd4306: 'type cast' : conversion from 'int' to 'void *' of greater size
+ #  -wd4310: cast truncates constant value
+ #  -wd4311: 'type cast' : pointer truncation from 'void *' to 'unsigned long'
+ #  -wd4351: new behavior: elements of array '_mesa_glsl_parse_state::cs_input_local_size' will be default initialized
+ #  -wd4355: 'this' : used in base member initializer list
+ #  -wd4388: '==' : signed/unsigned mismatch
+ #  -wd4389: '==' : signed/unsigned mismatch
+ #  -wd4640: 'ts' : construction of local static object is not thread-safe
+ #  -wd4668: '__STDC_VERSION__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+ #  -wd4700: uninitialized local variable 'tmp' used
+ #  -wd4701: potentially uninitialized local variable 'query' used
+ #  -wd4702: unreachable code
+ #  -wd4703: vcc120: potentially uninitialized local pointer variable 'gen_func' used
+ #  -wd4756: overflow in constant arithmetic
+ #  -wd4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+ #  -wd4805: '|=' : unsafe mix of type 'GLboolean' and type 'bool' in operation
+ #  -wd4918: 'y' : invalid character in pragma optimization list
+ VBOX_MESA3D_VCC_DISABLED_WARNINGS         := \
+ 	-wd4005 -wd4018 -wd4054 -wd4057 -wd4090 -wd4098 -wd4099 -wd4100 -wd4101 -wd4130 -wd4132 -wd4146 \
+ 	-wd4152 -wd4189 -wd4200 -wd4204 -wd4206 -wd4211 -wd4221 -wd4245 -wd4255 -wd4258 -wd4265 -wd4267 -wd4266 \
+ 	-wd4287 -wd4291 -wd4305 -wd4306 -wd4310 -wd4311 -wd4351 -wd4355 -wd4388 -wd4389 -wd4640 -wd4668 -wd4700 \
+ 	-wd4701 -wd4702 -wd4703 -wd4756 -wd4800 -wd4805 -wd4918
+ # -wd4458: declaration of 'array' hides class member
+ # -wd4477: 'fprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'LONGLONG'
+ # -wd4774: 'printf' : format string expected in argument 1 is not a string literal
+ # -wd4456: declaration of 'pos_dst' hides previous local declaration
+ # -wd4777: '_snprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'const DWORD'
+ # -wd4459: declaration of 'stw_dev' hides global declaration
+ # -wd4457: declaration of 'usage' hides function parameter
+ VBOX_MESA3D_VCC_DISABLED_WARNINGS         += \
+ 	-wd4458 -wd4477 -wd4774 -wd4456 -wd4777 -wd4459 -wd4457
+ # -wd4254: '=': conversion from 'unsigned int':'3' to 'unsigned int':'2', possible loss of data
+ # -wd5039: pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception
+ # -wd5204: class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly
+ # -wd5219: implicit conversion from 'int' to 'float', possible loss of data
+ VBOX_MESA3D_VCC_DISABLED_WARNINGS         += \
+ 	-wd4254 -wd5039 -wd5204 -wd5219
 
-TEMPLATE_VBoxMesa3DGuestR3Lib_CFLAGS.win   += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
-TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS.win += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
+ TEMPLATE_VBoxMesa3DGuestR3Lib_CFLAGS.win  += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
+ TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS.win += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
 endif
 TEMPLATE_VBoxMesa3DGuestR3Lib_INCS          = \
 	include \
@@ -149,19 +149,19 @@ TEMPLATE_VBoxMesa3DGuestR3Lib_INCS          = \
 	$(VBOX_MESA)/src/gallium/auxiliary \
 	$(VBOX_MESA)/src/gallium/state_trackers/wgl
 ifdef VBOX_WITH_NOCRT_STATIC
-TEMPLATE_VBoxMesa3DGuestR3Lib_INCS         += \
-	$(TEMPLATE_VBoxMesa3DGuestR3Dll_INCS)
+ TEMPLATE_VBoxMesa3DGuestR3Lib_INCS        += \
+ 	$(TEMPLATE_VBoxMesa3DGuestR3Dll_INCS)
 endif
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS          = \
-	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
-	PACKAGE_VERSION="$(VBOX_MESA)" \
-	PACKAGE_BUGREPORT="$(VBOX_MESA)"
+ TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS         = \
+ 	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
+ 	PACKAGE_VERSION="$(VBOX_MESA)" \
+ 	PACKAGE_BUGREPORT="$(VBOX_MESA)"
 else
-TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS          = \
-	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
-	PACKAGE_VERSION=\"$(VBOX_MESA)\" \
-	PACKAGE_BUGREPORT=\"$(VBOX_MESA)\"
+ TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS         = \
+ 	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
+ 	PACKAGE_VERSION=\"$(VBOX_MESA)\" \
+ 	PACKAGE_BUGREPORT=\"$(VBOX_MESA)\"
 endif
 # For wgl, glapi and mesa
 TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS         += \

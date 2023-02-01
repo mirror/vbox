@@ -37,8 +37,8 @@ VBoxICD_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
 # -wd4005: '__useHeader' : redefinition
 VBoxICD_CFLAGS  := -wd4005
 if "$(VBOX_NEWER_VCC_TOOL_STEM)" >= "VCC141"
-# -wd4255: 'PFND3DKMT_CHECKEXCLUSIVEOWNERSHIP': no function prototype given: converting '()' to '(void)'
-VBoxICD_CFLAGS  += -wd4255
+ # -wd4255: 'PFND3DKMT_CHECKEXCLUSIVEOWNERSHIP': no function prototype given: converting '()' to '(void)'
+ VBoxICD_CFLAGS += -wd4255
 endif
 
 VBoxICD_INCS     = \
@@ -68,8 +68,8 @@ $$(VBoxICD_0_OUTDIR)/pfns.c: \
 	$(QUIET)$(VBOX_BLD_PYTHON) $< $(VBOX_GL_ICD_DEF_FILE) $@
 
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
-VBoxICD_INSTTYPE       = none
-VBoxICD_DEBUG_INSTTYPE = both
+ VBoxICD_INSTTYPE      = none
+ VBoxICD_DEBUG_INSTTYPE = both
 endif
 
 #

@@ -29,14 +29,14 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
-#
-# As the testcases use the DLL directly and plugins for NSIS *always* are 32-bit,
-# we also have to use a 32-bit testcase here.
-#
-PROGRAMS.x86 += tstWinAdditionsInstallHelper
-tstWinAdditionsInstallHelper_TEMPLATE = VBoxGuestR3Exe
-tstWinAdditionsInstallHelper_SOURCES  = tstWinAdditionsInstallHelper.cpp
-tstWinAdditionsInstallHelper_DEFS     = _WIN32_WINNT=0x0400 WIN32_LEAN_AND_MEAN=1 UNICODE _UNICODE
+ #
+ # As the testcases use the DLL directly and plugins for NSIS *always* are 32-bit,
+ # we also have to use a 32-bit testcase here.
+ #
+ PROGRAMS.x86 += tstWinAdditionsInstallHelper
+ tstWinAdditionsInstallHelper_TEMPLATE = VBoxGuestR3Exe
+ tstWinAdditionsInstallHelper_SOURCES = tstWinAdditionsInstallHelper.cpp
+ tstWinAdditionsInstallHelper_DEFS    = _WIN32_WINNT=0x0400 WIN32_LEAN_AND_MEAN=1 UNICODE _UNICODE
 
 endif # VBOX_WITH_TESTCASES
 

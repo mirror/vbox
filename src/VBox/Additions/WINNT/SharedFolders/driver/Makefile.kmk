@@ -50,7 +50,7 @@ VBoxSF_SOURCES     = \
 	info.cpp \
 	path.cpp \
 	vbsfhlp.cpp \
- 	VBoxSF.rc
+	VBoxSF.rc
 VBoxSF_SOURCES.x86 = \
 	Win2kWorkarounds.c \
 	Win2kWorkaroundsA.asm
@@ -63,11 +63,11 @@ VBoxSF_LIBS = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ksecdd.lib
 ifneq ($(VBOX_VCC_CC_GUARD_CF),)
  VBoxSF_LIBS += \
-	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowK.lib
 else
  VBoxSF_LIBS += \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowK.lib
 endif
 VBoxSF_LIBS += \
@@ -96,17 +96,17 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/copysup.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/hal.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ksecdd.lib \
-	\
-	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0) \
+ 	\
+ 	$(VBOX_LIB_VBGL_R0) \
+ 	$(VBOX_LIB_IPRT_GUEST_R0) \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB)/int64.lib
  ifneq ($(VBOX_VCC_CC_GUARD_CF),)
   VBoxSFW2K_LIBS += \
- 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/ntoskrnl.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/BufferOverflowK.lib
  else
   VBoxSFW2K_LIBS += \
- 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ntoskrnl.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/BufferOverflowK.lib
  endif
  VBoxSFW2K_CLEAN = \
@@ -120,7 +120,7 @@ include $(FILE_KBUILD_SUB_FOOTER)
 $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSF_0_OUTDIR)/rdbsslib.lib)
 
 ifeq ($(KBUILD_TARGET_ARCH),x86)
-$(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
+ $(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_EDIT_COFF_LIB) --input "$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib" --output "$@" \
 		--select "write.obj" \
@@ -129,8 +129,8 @@ $(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD
 		--select "read.obj" \
                --redefine-sym "__imp__CcFlushCache@16=_g_pfnRdFlushCache"
 
-$(call KB_FN_AUTO_CMD_DEPS,$(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib)
-$(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib)
+ $(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_EDIT_COFF_LIB) --input "$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib" --output "$@" \
 		--select "write.obj" \
@@ -139,7 +139,7 @@ $(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KB
 		--select "read.obj" \
                --redefine-sym "__imp__CcFlushCache@16=_g_pfnRdFlushCache"
 else
-$(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
+ $(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_EDIT_COFF_LIB) --input "$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib" --output "$@" \
 		--select "write.obj" \

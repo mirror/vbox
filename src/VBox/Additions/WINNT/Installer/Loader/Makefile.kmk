@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # This has to be 32-bit.
 PROGRAMS += VBoxWindowsAdditions
-VBoxWindowsAdditions_TEMPLATE= VBoxGuestR3Exe
+VBoxWindowsAdditions_TEMPLATE = VBoxGuestR3Exe
 VBoxWindowsAdditions_BLD_TRG_ARCH = x86
 VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400
 VBoxWindowsAdditions_INCS    = ../../include
@@ -38,16 +38,16 @@ VBoxWindowsAdditions_SOURCES = \
 	VBoxWindowsAdditions.cpp \
 	VBoxWindowsAdditions.rc
 ifdef VBOX_WITH_NOCRT_STATIC
-VBoxWindowsAdditions_LDFLAGS  = /SubSystem:Windows
+ VBoxWindowsAdditions_LDFLAGS = /SubSystem:Windows
 else
-VBoxWindowsAdditions_LDFLAGS  = \
-	/DISALLOWLIB:msvcrt.lib \
-	/DISALLOWLIB:msvcprt.lib \
-	/DISALLOWLIB:libcmt.lib
-VBoxWindowsAdditions_LIBS     = \
-	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcmt.lib \
-	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcpmt.lib
+ VBoxWindowsAdditions_LDFLAGS = \
+ 	/DISALLOWLIB:msvcrt.lib \
+ 	/DISALLOWLIB:msvcprt.lib \
+ 	/DISALLOWLIB:libcmt.lib
+ VBoxWindowsAdditions_LIBS    = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/oldnames.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcmt.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcpmt.lib
 endif
 VBoxWindowsAdditions_VBOX_IMPORT_CHECKER.win.x86 := nt4
 

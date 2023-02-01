@@ -32,7 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Make sure our Config.kmk is included.
 #
 ifndef VBOX_MESA3D_CONFIG_KMK_INCLUDED
-include $(PATH_SUB_CURRENT)/Config.kmk
+ include $(PATH_SUB_CURRENT)/Config.kmk
 endif
 
 #
@@ -40,7 +40,7 @@ endif
 #
 include $(PATH_SUB_CURRENT)/mesa/Makefile.kmk
 if1of ($(KBUILD_TARGET), win)
-include $(PATH_SUB_CURRENT)/win/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/win/Makefile.kmk
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -74,7 +74,7 @@ vboxvideo_TEMPLATE        = VBoxGuestR0Drv
 vboxvideo_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
 	KBUILD_MODNAME=KBUILD_STR\(VBoxVideo\) \
-        KBUILD_BASENAME=KBUILD_STR\(VBoxVideo\)
+	KBUILD_BASENAME=KBUILD_STR\(VBoxVideo\)
 vboxvideo_INCS            = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest \

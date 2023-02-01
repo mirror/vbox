@@ -72,7 +72,7 @@ VBoxTray_SOURCES  = \
 	VBoxGuestDeskbarView.cpp
 
 VBoxTray_SOURCES += \
-  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp
 
 VBoxTray_LIBS     = \
 	be translation \

@@ -74,7 +74,7 @@ vboxsf_TEMPLATE        = VBoxGuestR0Drv
 vboxsf_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
 	KBUILD_MODNAME=KBUILD_STR\(vboxsf\) \
-        KBUILD_BASENAME=KBUILD_STR\(vboxsf\)
+	KBUILD_BASENAME=KBUILD_STR\(vboxsf\)
 vboxsf_INCS            = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/haiku

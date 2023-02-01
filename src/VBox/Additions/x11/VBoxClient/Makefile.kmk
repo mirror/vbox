@@ -30,10 +30,10 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Use header files from our tree for randr and xinerama. and don't link but rather dlopen libXrand
 # This is mostly because the GA build boxes can have a very old xrandr lib, so instead of linking we dlopen.
-VBOX_WITH_DISTRO_XRAND_XINERAMA=
+VBOX_WITH_DISTRO_XRAND_XINERAMA =
 
 # We don't yet have a seamless mode compilation flag, so define it here unconditionally.
-VBOX_WITH_SEAMLESS:=1
+VBOX_WITH_SEAMLESS := 1
 
 #
 # VBoxClient - clipboard and seamless.
@@ -72,9 +72,9 @@ else
  VBoxDRMClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 endif
 VBoxDRMClient_SOURCES = \
-    display-drm.cpp \
-    display-ipc.cpp \
-    logging.cpp
+	display-drm.cpp \
+	display-ipc.cpp \
+	logging.cpp
 
 
 VBoxClient_SOURCES.linux = \
@@ -104,7 +104,7 @@ ifdef VBOX_WITH_DRAG_AND_DROP
  ifdef VBOX_DND_WITH_XTEST
   VBoxClient_DEFS += VBOX_DND_WITH_XTEST
   VBoxClient_LIBS += \
-	Xtst
+  	Xtst
  endif
 endif
 
@@ -113,32 +113,32 @@ endif
 # how else to do that without recompiling or implementing our own memcpy.
 ifeq ($(KBUILD_TARGET),linux)
  VBoxClient_LDFLAGS.amd64 += \
-	-Wl,--wrap=memcpy
+ 	-Wl,--wrap=memcpy
 endif
 
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxClient_DEFS    += VBOX_WITH_GUEST_PROPS
  VBoxClient_SOURCES += \
-	hostversion.cpp
+ 	hostversion.cpp
  VBoxDRMClient_DEFS += VBOX_WITH_GUEST_PROPS
 endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxClient_DEFS     += \
-	VBOX_WITH_DRAG_AND_DROP \
-	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
+ 	VBOX_WITH_DRAG_AND_DROP \
+ 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
  VBoxClient_SOURCES  += \
-	draganddrop.cpp
+ 	draganddrop.cpp
  VBoxClient_LIBS     += \
-	$(VBOX_LIB_VBGL_R3) \
-	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
+ 	$(VBOX_LIB_VBGL_R3) \
+ 	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_SEAMLESS
  VBoxClient_DEFS    += VBOX_WITH_SEAMLESS
  VBoxClient_SOURCES += \
-	seamless.cpp \
-	seamless-x11.cpp
+ 	seamless.cpp \
+ 	seamless-x11.cpp
 endif
 
 ifdef VBOX_WITH_VMSVGA
@@ -153,34 +153,34 @@ ifdef VBOX_WITH_VMSVGA
  	display-helper-gnome3.cpp \
  	display-helper-generic.cpp
 
-### include $(PATH_SUB_CURRENT)/helpers/Makefile.kmk
+ ### include $(PATH_SUB_CURRENT)/helpers/Makefile.kmk
 endif
 
 ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_DEFS     += VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_SOURCES  += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
-	clipboard.cpp
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
+ 	clipboard.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxClient_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
   ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
    VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
    VBoxClient_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
+   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
   endif
   ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
    VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_FUSE
    # @todo Make this dynamic loading more generic.
    VBoxClient_SOURCES += \
-	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount/fuse.cpp \
-	clipboard-fuse.cpp
+   	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount/fuse.cpp \
+   	clipboard-fuse.cpp
    # @todo Ditto.
    VBoxClient_INCS    += \
-	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
+   	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
   endif
  endif
 endif
@@ -188,22 +188,22 @@ endif
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 
-# Set this in LocalConfig.kmk if you are working on the X11 clipboard service
-# to automatically run the unit test at build time.
-#       OTHERS += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run
+  # Set this in LocalConfig.kmk if you are working on the X11 clipboard service
+  # to automatically run the unit test at build time.
+  #       OTHERS += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run
 
   PROGRAMS += tstSeamlessX11-auto
   tstSeamlessX11-auto_TEMPLATE = VBoxR3TstExe
   tstSeamlessX11-auto_SOURCES = \
-          testcase/tstSeamlessX11-auto.cpp \
-          seamless-x11.cpp
+  	testcase/tstSeamlessX11-auto.cpp \
+  	seamless-x11.cpp
   tstSeamlessX11-auto_DEFS = TESTCASE
   tstSeamlessX11-auto_LIBS = \
-          $(LIB_RUNTIME)
+  	$(LIB_RUNTIME)
 
   TESTING  += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto
-$$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
-       $$(tstSeamlessX11-auto_1_STAGE_TARGET)
+  $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
+  		$$(tstSeamlessX11-auto_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstSeamlessX11-auto_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
@@ -215,21 +215,21 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
   PROGRAMS += tstSeamlessX11
   tstSeamlessX11_TEMPLATE = VBoxR3TstExe
   tstSeamlessX11_SOURCES = \
-          testcase/tstSeamlessX11.cpp \
-          seamless.cpp \
-          seamless-x11.cpp
+  	testcase/tstSeamlessX11.cpp \
+  	seamless.cpp \
+  	seamless-x11.cpp
   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
    tstSeamlessX11_DEFS  += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
   else
    tstSeamlessX11_DEFS  += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
   endif
   tstSeamlessX11_LIBPATH = \
-          $(VBOX_LIBPATH_X11)
+  	$(VBOX_LIBPATH_X11)
   tstSeamlessX11_LIBS = \
-          $(LIB_RUNTIME) \
-          Xext \
-          Xmu \
-          X11
+  	$(LIB_RUNTIME) \
+  	Xext \
+  	Xmu \
+  	X11
  endif
 endif
 
