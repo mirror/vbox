@@ -3545,6 +3545,16 @@ static void SetPointerShape(const PointerShapeChangeData *data)
     {
         bool ok = false;
 
+#if defined(RT_OS_WINDOWS) || (defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR))
+        AssertReturnVoid(data->height); /* Prevent division by zero. */
+        uint32_t const  andMaskSize = (data->width + 7) / 8 * data->height;
+        uint32_t const  srcShapePtrScan = data->width * 4;
+
+        uint8_t  const *shape = data->shape.raw();
+        uint8_t  const *srcAndMaskPtr = shape;
+        uint8_t  const *srcShapePtr = shape + ((andMaskSize + 3) & ~3);
+#endif
+
 #if 0
         /* pointer debugging code */
         // vbox_show_shape(data->width, data->height, 0, data->shape);
