@@ -206,6 +206,7 @@ DECLINLINE(bool) ScmIsCIdentifierChar(char ch)
         || ch == '_';
 }
 
+size_t ScmCalcSpacesForSrcSpan(const char *pchLine, size_t offStart, size_t offEnd, PCSCMSETTINGSBASE pSettings);
 
 /** @} */
 

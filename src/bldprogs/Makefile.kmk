@@ -55,6 +55,7 @@ ifndef VBOX_ONLY_BUILD
  	scm.cpp \
  	scmdiff.cpp \
  	scmrw.cpp \
+ 	scmrw-kmk.cpp \
        scmparser.cpp \
  	scmstream.cpp \
  	scmsubversion.cpp
