@@ -265,6 +265,11 @@ public:
     /** Returns a vector of media attached to the machine. */
     CMediumVector machineMedia() const;
 
+    /** Prepares VM to be saved. */
+    bool prepareToBeSaved();
+    /** Returns whether VM can be shutdowned. */
+    bool prepareToBeShutdowned();
+
 public slots:
 
     /** Handles request to install guest additions image.

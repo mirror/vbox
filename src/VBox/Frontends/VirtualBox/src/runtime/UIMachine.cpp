@@ -107,13 +107,13 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
 
 
 /* static */
-UIMachine *UIMachine::m_spInstance = 0;
+UIMachine *UIMachine::s_pInstance = 0;
 
 /* static */
 bool UIMachine::startMachine(const QUuid &uID)
 {
     /* Make sure machine is not created: */
-    AssertReturn(!m_spInstance, false);
+    AssertReturn(!s_pInstance, false);
 
     /* Restore current snapshot if requested: */
     if (uiCommon().shouldRestoreCurrentSnapshot())
@@ -165,12 +165,12 @@ bool UIMachine::startMachine(const QUuid &uID)
 bool UIMachine::create()
 {
     /* Make sure machine is not created: */
-    AssertReturn(!m_spInstance, false);
+    AssertReturn(!s_pInstance, false);
 
     /* Create machine UI: */
     new UIMachine;
     /* Make sure it's prepared: */
-    if (!m_spInstance->prepare())
+    if (!s_pInstance->prepare())
     {
         /* Destroy machine UI otherwise: */
         destroy();
@@ -185,12 +185,12 @@ bool UIMachine::create()
 void UIMachine::destroy()
 {
     /* Make sure machine is created: */
-    if (!m_spInstance)
+    if (!s_pInstance)
         return;
 
     /* Protect versus recursive call: */
-    UIMachine *pInstance = m_spInstance;
-    m_spInstance = 0;
+    UIMachine *pInstance = s_pInstance;
+    s_pInstance = 0;
     /* Cleanup machine UI: */
     pInstance->cleanup();
     /* Destroy machine UI: */
@@ -370,7 +370,7 @@ void UIMachine::closeRuntimeUI()
 void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
 {
     /* Create new machine-logic: */
-    UIMachineLogic *pMachineLogic = UIMachineLogic::create(this, m_pSession, visualState);
+    UIMachineLogic *pMachineLogic = UIMachineLogic::create(this, uisession(), visualState);
 
     /* First we have to check if the selected machine-logic is available at all.
      * Only then we delete the old machine-logic and switch to the new one. */
@@ -713,12 +713,12 @@ UIMachine::UIMachine()
     , m_defaultCloseAction(MachineCloseAction_Invalid)
     , m_restrictedCloseActions(MachineCloseAction_Invalid)
 {
-    m_spInstance = this;
+    s_pInstance = this;
 }
 
 UIMachine::~UIMachine()
 {
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 bool UIMachine::prepare()
@@ -726,11 +726,11 @@ bool UIMachine::prepare()
     /* Try to create session UI: */
     if (!UISession::create(m_pSession, this))
         return false;
-    AssertPtrReturn(m_pSession, false);
+    AssertPtrReturn(uisession(), false);
 
     /* Cache media data early if necessary: */
     if (uiCommon().agressiveCaching())
-        uiCommon().enumerateMedia(m_pSession->machineMedia());
+        uiCommon().enumerateMedia(uisession()->machineMedia());
 
     /* Prepare stuff: */
     prepareSessionConnections();

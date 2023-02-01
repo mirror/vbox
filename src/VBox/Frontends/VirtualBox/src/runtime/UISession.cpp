@@ -248,10 +248,6 @@ bool UISession::powerUp()
 
 void UISession::detachUi()
 {
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
-
     /* Manually close Runtime UI: */
     LogRel(("GUI: Detaching UI..\n"));
     closeRuntimeUI();
@@ -259,39 +255,34 @@ void UISession::detachUi()
 
 void UISession::saveState()
 {
-    /* Saving state? */
-    bool fSaveState = true;
+    /* Prepare VM to be saved: */
+    if (!prepareToBeSaved())
+        return;
 
-    /* If VM is not paused, we should pause it first: */
-    if (!isPaused())
-        fSaveState = pause();
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    setManualOverrideMode(true);
 
-    /* Save state: */
-    if (fSaveState)
-    {
-        /* Enable 'manual-override',
-         * preventing automatic Runtime UI closing: */
-        setManualOverrideMode(true);
-
-        /* Now, do the magic: */
-        LogRel(("GUI: Saving VM state..\n"));
-        UINotificationProgressMachineSaveState *pNotification = new UINotificationProgressMachineSaveState(machine());
-        connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
-                this, &UISession::sltHandleMachineStateSaved);
-        gpNotificationCenter->append(pNotification);
-    }
+    /* Now, do the magic: */
+    LogRel(("GUI: Saving VM state..\n"));
+    UINotificationProgressMachineSaveState *pNotification =
+        new UINotificationProgressMachineSaveState(machine());
+    connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
+            this, &UISession::sltHandleMachineStateSaved);
+    gpNotificationCenter->append(pNotification);
 }
 
 void UISession::shutdown()
 {
-    /* Warn the user about ACPI is not available if so: */
-    if (!console().GetGuestEnteredACPIMode())
-        return UINotificationMessage::cannotSendACPIToMachine();
+    /* Prepare VM to be shutdowned: */
+    if (!prepareToBeShutdowned())
+        return;
 
-    /* Send ACPI shutdown signal if possible: */
+    /* Now, do the magic: */
     LogRel(("GUI: Sending ACPI shutdown signal..\n"));
-    console().PowerButton();
-    if (!console().isOk())
+    CConsole comConsole = console();
+    comConsole.PowerButton();
+    if (!comConsole.isOk())
         UINotificationMessage::cannotACPIShutdownMachine(console());
 }
 
@@ -304,7 +295,9 @@ void UISession::powerOff(bool fIncludingDiscard)
     /* Now, do the magic: */
     LogRel(("GUI: Powering VM off..\n"));
     UINotificationProgressMachinePowerOff *pNotification =
-        new UINotificationProgressMachinePowerOff(machine(), console(), fIncludingDiscard);
+        new UINotificationProgressMachinePowerOff(machine(),
+                                                  console(),
+                                                  fIncludingDiscard);
     connect(pNotification, &UINotificationProgressMachinePowerOff::sigMachinePoweredOff,
             this, &UISession::sltHandleMachinePoweredOff);
     gpNotificationCenter->append(pNotification);
@@ -332,22 +325,22 @@ UIMachineWindow *UISession::activeMachineWindow() const
 
 bool UISession::isVisualStateAllowed(UIVisualStateType state) const
 {
-    return m_pMachine->isVisualStateAllowed(state);
+    return uimachine()->isVisualStateAllowed(state);
 }
 
 void UISession::changeVisualState(UIVisualStateType visualStateType)
 {
-    m_pMachine->asyncChangeVisualState(visualStateType);
+    uimachine()->asyncChangeVisualState(visualStateType);
 }
 
 void UISession::setRequestedVisualState(UIVisualStateType visualStateType)
 {
-    m_pMachine->setRequestedVisualState(visualStateType);
+    uimachine()->setRequestedVisualState(visualStateType);
 }
 
 UIVisualStateType UISession::requestedVisualState() const
 {
-    return m_pMachine->requestedVisualState();
+    return uimachine()->requestedVisualState();
 }
 
 bool UISession::guestAdditionsUpgradable()
@@ -995,6 +988,20 @@ CMediumVector UISession::machineMedia() const
         }
     }
     return comMedia;
+}
+
+bool UISession::prepareToBeSaved()
+{
+    return    isPaused()
+           || (isRunning() && pause());
+}
+
+bool UISession::prepareToBeShutdowned()
+{
+    const bool fValidMode = console().GetGuestEnteredACPIMode();
+    if (!fValidMode)
+        UINotificationMessage::cannotSendACPIToMachine();
+    return fValidMode;
 }
 
 void UISession::loadVMSettings()

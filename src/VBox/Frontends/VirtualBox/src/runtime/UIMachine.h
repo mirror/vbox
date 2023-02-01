@@ -151,7 +151,7 @@ public:
     /** Static destructor. */
     static void destroy();
     /** Static instance. */
-    static UIMachine* instance() { return m_spInstance; }
+    static UIMachine *instance() { return s_pInstance; }
 
     /** Returns session UI instance. */
     UISession *uisession() const { return m_pSession; }
@@ -295,7 +295,7 @@ public:
         int mouseState() const { return m_iMouseState; }
     /** @} */
 
-    /** @name Close configuration stuff.
+    /** @name Close stuff.
      * @{ */
         /** Returns default close action. */
         MachineCloseAction defaultCloseAction() const { return m_defaultCloseAction; }
@@ -317,8 +317,11 @@ public slots:
         void setMouseState(int iMouseState) { m_iMouseState = iMouseState; emit sigMouseStateChange(m_iMouseState); }
     /** @} */
 
-    /** Closes Runtime UI. */
-    void closeRuntimeUI();
+    /** @name Close stuff.
+     * @{ */
+        /** Closes Runtime UI. */
+        void closeRuntimeUI();
+    /** @} */
 
 private slots:
 
@@ -498,8 +501,8 @@ private:
 #endif /* VBOX_WS_WIN */
     /** @} */
 
-    /** Static instance. */
-    static UIMachine* m_spInstance;
+    /** Holds the static instance. */
+    static UIMachine *s_pInstance;
 
     /** Holds the session UI instance. */
     UISession *m_pSession;
@@ -623,7 +626,7 @@ private:
         int  m_iMouseState;
     /** @} */
 
-    /** @name Close configuration stuff.
+    /** @name Close stuff.
      * @{ */
         /** Default close action. */
         MachineCloseAction  m_defaultCloseAction;
