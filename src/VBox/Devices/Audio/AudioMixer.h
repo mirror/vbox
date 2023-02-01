@@ -243,6 +243,8 @@ typedef struct AUDMIXSINK
         RTTHREAD                hThread;
         /** Event for letting the thread know there is some data to process. */
         RTSEMEVENT              hEvent;
+        /** Event for letting the waiters know that draining the sink is done. */
+        RTSEMEVENT              hEventDrained;
         /** The device instance (same for all update jobs). */
         PPDMDEVINS              pDevIns;
         /** Started indicator. */
@@ -308,6 +310,7 @@ int         AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUD
 /** @name Audio mixer sink methods
  * @{ */
 int         AudioMixerSinkStart(PAUDMIXSINK pSink);
+int         AudioMixerSinkDrainAndStopEx(PAUDMIXSINK pSink, uint32_t cbComming, RTMSINTERVAL msTimeout);
 int         AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming);
 void        AudioMixerSinkDestroy(PAUDMIXSINK pSink, PPDMDEVINS pDevIns);
 uint32_t    AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
@@ -323,6 +326,7 @@ int         AudioMixerSinkUpdate(PAUDMIXSINK pSink, uint32_t cbDmaUsed, uint32_t
 int         AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser, uint32_t cMsTypicalInterval);
 int         AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate, void *pvUser);
 int         AudioMixerSinkSignalUpdateJob(PAUDMIXSINK pSink);
+int         AudioMixerSinkWaitForDrained(PAUDMIXSINK pSink, RTMSINTERVAL msTimeout);
 uint64_t    AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,
                                               uint32_t idStream, PAUDIOHLPFILE pDbgFile);
 uint64_t    AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,

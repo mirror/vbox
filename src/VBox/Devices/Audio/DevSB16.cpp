@@ -2011,7 +2011,8 @@ static int sb16StreamEnable(PSB16STATE pThis, PSB16STREAM pStream, bool fEnable,
     }
     else
     {
-        rc = AudioMixerSinkDrainAndStop(pSink, pStream->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStream->State.pCircBuf) : 0);
+        rc = AudioMixerSinkDrainAndStopEx(pSink, pStream->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStream->State.pCircBuf) : 0,
+                                          RT_MS_5SEC);
         AssertRCReturn(rc, rc);
     }
 
