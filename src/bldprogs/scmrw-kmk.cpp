@@ -314,6 +314,40 @@ static size_t scmKmkLineContinuationPeek(KMKPARSER *pParser, uint32_t *pcLines, 
 }
 
 
+/**
+ * Checks if the given line contains a comment with the @a pszMarker word in it.
+ *
+ * This can be used to disable warnings.
+ *
+ * @returns true if this is the case, false if not
+ * @param   pchLine     The line.
+ * @param   cchLine     The line length.
+ * @param   offLine     The current line position, 0 if uncertain.
+ * @param   pszMarker   The marker to check for.
+ * @param   cchMarker   The length of the marker string.
+ */
+static bool scmKmkHasCommentMarker(const char *pchLine, size_t cchLine, size_t offLine, const char *pszMarker, size_t cchMarker)
+{
+    const char *pchCur = (const char *)memchr(&pchLine[offLine], '#', cchLine - RT_MIN(offLine, cchLine));
+    if (pchCur)
+    {
+        pchCur++;
+        size_t cchLeft = (size_t)(&pchLine[cchLine] - pchCur);
+        while (cchLeft >= cchMarker)
+        {
+            const char *pchHit = (char *)memchr(pchCur, *pszMarker, cchLeft - cchMarker + 1);
+            if (!pchHit)
+                break;
+            if (memcmp(pchHit, pszMarker, cchMarker) == 0)
+                return true;
+            pchCur  = pchHit + 1;
+            cchLeft = (size_t)(&pchLine[cchLine] - pchCur);
+        }
+    }
+    return false;
+}
+
+
 static bool scmKmkPushNesting(KMKPARSER *pParser, KMKTOKEN enmToken)
 {
     uint32_t iDepth = pParser->iDepth;
@@ -716,7 +750,8 @@ static bool scmKmkHandleIfParentheses(KMKPARSER *pParser, size_t offToken, KMKTO
         pszDst = (char *)mempcpy(pszDst, &pchLine[offSrcStart], cchCopy);
     }
     /* 'if1of(stuff, )' does not make sense in committed code: */
-    else if (enmToken == kKmkToken_if1of || enmToken == kKmkToken_ifn1of)
+    else if (   (enmToken == kKmkToken_if1of || enmToken == kKmkToken_ifn1of)
+             && !scmKmkHasCommentMarker(pchLine, cchLine, offSrc, RT_STR_TUPLE("scm:ignore-empty-if1of-set")))
         return scmKmkGiveUp(pParser, "Right set cannot be empty for '%.*s'", cchToken, &pchLine[offToken]);
     offSrc++;
     *pszDst++ = ')';
