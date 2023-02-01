@@ -43,7 +43,7 @@
 #include "CEventSource.h"
 
 
-/** Private QObject extension
+/** Private QObject subclass
   * providing UIConsoleEventHandler with the CConsole event-source. */
 class UIConsoleEventHandlerProxy : public QObject
 {
@@ -89,10 +89,10 @@ signals:
     void sigGuestMonitorChange(KGuestMonitorChangedEventType type, ulong uScreenId, QRect screenGeo);
     /** Notifies about Runtime error with @a strErrorId which is @a fFatal and have @a strMessage. */
     void sigRuntimeError(bool fFatal, QString strErrorId, QString strMessage);
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /** Notifies about VM window should be shown. */
     void sigShowWindow();
-#endif /* RT_OS_DARWIN */
+#endif /* VBOX_WS_MAC */
     /** Notifies about audio adapter state change. */
     void sigAudioAdapterChange();
     /** Notifies clipboard mode change. */
@@ -124,7 +124,7 @@ private:
     void prepareConnections();
 
     /** Cleanups connections. */
-    void cleanupConnections();
+    void cleanupConnections() {}
     /** Cleanups listener. */
     void cleanupListener();
     /** Cleanups all. */
@@ -254,7 +254,7 @@ void UIConsoleEventHandlerProxy::prepareConnections()
             this, &UIConsoleEventHandlerProxy::sigKeyboardLedsChangeEvent,
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigStateChange,
-        this, &UIConsoleEventHandlerProxy::sigStateChange,
+            this, &UIConsoleEventHandlerProxy::sigStateChange,
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigAdditionsChange,
             this, &UIConsoleEventHandlerProxy::sigAdditionsChange,
@@ -301,17 +301,12 @@ void UIConsoleEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigAudioAdapterChange,
             this, &UIConsoleEventHandlerProxy::sigAudioAdapterChange,
             Qt::DirectConnection);
-   connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigClipboardModeChange,
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigClipboardModeChange,
             this, &UIConsoleEventHandlerProxy::sigClipboardModeChange,
             Qt::DirectConnection);
-   connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigDnDModeChange,
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigDnDModeChange,
             this, &UIConsoleEventHandlerProxy::sigDnDModeChange,
             Qt::DirectConnection);
-}
-
-void UIConsoleEventHandlerProxy::cleanupConnections()
-{
-    /* Nothing for now. */
 }
 
 void UIConsoleEventHandlerProxy::cleanupListener()
@@ -345,26 +340,6 @@ void UIConsoleEventHandlerProxy::cleanup()
 *   Class UIConsoleEventHandler implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-/* static */
-UIConsoleEventHandler *UIConsoleEventHandler::s_pInstance = 0;
-
-/* static */
-void UIConsoleEventHandler::create(UISession *pSession)
-{
-    if (!s_pInstance)
-        s_pInstance = new UIConsoleEventHandler(pSession);
-}
-
-/* static */
-void UIConsoleEventHandler::destroy()
-{
-    if (s_pInstance)
-    {
-        delete s_pInstance;
-        s_pInstance = 0;
-    }
-}
-
 UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     : m_pProxy(new UIConsoleEventHandlerProxy(this, pSession))
 {
@@ -372,11 +347,6 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
 }
 
 void UIConsoleEventHandler::prepare()
-{
-    prepareConnections();
-}
-
-void UIConsoleEventHandler::prepareConnections()
 {
     /* Create queued (async) connections for signals of event proxy object: */
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigMousePointerShapeChange,
@@ -430,11 +400,11 @@ void UIConsoleEventHandler::prepareConnections()
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigRuntimeError,
             this, &UIConsoleEventHandler::sigRuntimeError,
             Qt::QueuedConnection);
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigShowWindow,
             this, &UIConsoleEventHandler::sigShowWindow,
             Qt::QueuedConnection);
-#endif /* RT_OS_DARWIN */
+#endif /* VBOX_WS_MAC */
     connect(m_pProxy, &UIConsoleEventHandlerProxy::sigAudioAdapterChange,
             this, &UIConsoleEventHandler::sigAudioAdapterChange,
             Qt::QueuedConnection);

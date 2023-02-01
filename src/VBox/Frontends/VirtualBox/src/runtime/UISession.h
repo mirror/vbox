@@ -57,6 +57,7 @@
 
 /* Forward declarations: */
 class QMenu;
+class UIConsoleEventHandler;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
@@ -74,6 +75,55 @@ class QIcon;
 class UISession : public QObject
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies about frame-buffer resize. */
+    void sigFrameBufferResize();
+
+    /* Console callback signals: */
+    /** Notifies listeners about keyboard state-change. */
+    void sigKeyboardStateChange(int iState);
+    /** Notifies listeners about mouse state-change. */
+    void sigMouseStateChange(int iState);
+    /** Notifies listeners about mouse pointer shape change. */
+    void sigMousePointerShapeChange();
+    /** Notifies listeners about mouse capability change. */
+    void sigMouseCapabilityChange();
+    /** Notifies listeners about cursor position change. */
+    void sigCursorPositionChange();
+    void sigKeyboardLedsChange();
+    void sigMachineStateChange();
+    void sigAdditionsStateChange();
+    void sigAdditionsStateActualChange();
+    void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
+    /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
+    void sigStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
+    void sigMediumChange(const CMediumAttachment &mediumAttachment);
+    void sigVRDEChange();
+    void sigRecordingChange();
+    void sigUSBControllerChange();
+    void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
+    void sigSharedFolderChange();
+    void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+#ifdef RT_OS_DARWIN
+    void sigShowWindows();
+#endif /* RT_OS_DARWIN */
+    void sigCPUExecutionCapChange();
+    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    void sigAudioAdapterChange();
+    void sigClipboardModeChange(KClipboardMode enmMode);
+    void sigDnDModeChange(KDnDMode enmMode);
+
+    /** Notifies about host-screen count change. */
+    void sigHostScreenCountChange();
+    /** Notifies about host-screen geometry change. */
+    void sigHostScreenGeometryChange();
+    /** Notifies about host-screen available-area change. */
+    void sigHostScreenAvailableAreaChange();
+
+    /* Session signals: */
+    void sigInitialized();
 
 public:
 
@@ -288,55 +338,6 @@ public:
     /** Returns a vector of media attached to the machine. */
     CMediumVector machineMedia() const;
 
-signals:
-
-    /** Notifies about frame-buffer resize. */
-    void sigFrameBufferResize();
-
-    /* Console callback signals: */
-    /** Notifies listeners about keyboard state-change. */
-    void sigKeyboardStateChange(int iState);
-    /** Notifies listeners about mouse state-change. */
-    void sigMouseStateChange(int iState);
-    /** Notifies listeners about mouse pointer shape change. */
-    void sigMousePointerShapeChange();
-    /** Notifies listeners about mouse capability change. */
-    void sigMouseCapabilityChange();
-    /** Notifies listeners about cursor position change. */
-    void sigCursorPositionChange();
-    void sigKeyboardLedsChange();
-    void sigMachineStateChange();
-    void sigAdditionsStateChange();
-    void sigAdditionsStateActualChange();
-    void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
-    /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
-    void sigStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
-    void sigMediumChange(const CMediumAttachment &mediumAttachment);
-    void sigVRDEChange();
-    void sigRecordingChange();
-    void sigUSBControllerChange();
-    void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
-    void sigSharedFolderChange();
-    void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
-#ifdef RT_OS_DARWIN
-    void sigShowWindows();
-#endif /* RT_OS_DARWIN */
-    void sigCPUExecutionCapChange();
-    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    void sigAudioAdapterChange();
-    void sigClipboardModeChange(KClipboardMode enmMode);
-    void sigDnDModeChange(KDnDMode enmMode);
-
-    /** Notifies about host-screen count change. */
-    void sigHostScreenCountChange();
-    /** Notifies about host-screen geometry change. */
-    void sigHostScreenGeometryChange();
-    /** Notifies about host-screen available-area change. */
-    void sigHostScreenAvailableAreaChange();
-
-    /* Session signals: */
-    void sigInitialized();
-
 public slots:
 
     /** Handles request to install guest additions image.
@@ -474,8 +475,12 @@ private:
 
     /* Check if GA can be upgraded. */
     bool guestAdditionsUpgradable();
+
     /* Private variables: */
     UIMachine *m_pMachine;
+
+    /** Holds the CConsole event handler instance. */
+    UIConsoleEventHandler *m_pConsoleEventhandler;
 
     /** Holds the session instance. */
     CSession m_session;

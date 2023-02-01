@@ -883,6 +883,7 @@ UISession::UISession(UIMachine *pMachine)
     : QObject(pMachine)
     /* Base variables: */
     , m_pMachine(pMachine)
+    , m_pConsoleEventhandler(0)
     , m_pActionPool(0)
 #ifdef VBOX_WS_MAC
     , m_pMenuBar(0)
@@ -1020,52 +1021,52 @@ void UISession::prepareNotificationCenter()
 void UISession::prepareConsoleEventHandlers()
 {
     /* Create console event-handler: */
-    UIConsoleEventHandler::create(this);
+    m_pConsoleEventhandler = new UIConsoleEventHandler(this);
 
     /* Add console event connections: */
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigMousePointerShapeChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMousePointerShapeChange,
             this, &UISession::sltMousePointerShapeChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigMouseCapabilityChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMouseCapabilityChange,
             this, &UISession::sltMouseCapabilityChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCursorPositionChange,
             this, &UISession::sltCursorPositionChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
             this, &UISession::sltKeyboardLedsChangeEvent);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigStateChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStateChange,
             this, &UISession::sltStateChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigAdditionsChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAdditionsChange,
             this, &UISession::sltAdditionsChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigVRDEChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigVRDEChange,
             this, &UISession::sltVRDEChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigRecordingChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigRecordingChange,
             this, &UISession::sltRecordingChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigNetworkAdapterChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigNetworkAdapterChange,
             this, &UISession::sigNetworkAdapterChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigStorageDeviceChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStorageDeviceChange,
             this, &UISession::sltHandleStorageDeviceChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigMediumChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigMediumChange,
             this, &UISession::sigMediumChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBControllerChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigUSBControllerChange,
             this, &UISession::sigUSBControllerChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBDeviceStateChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigUSBDeviceStateChange,
             this, &UISession::sigUSBDeviceStateChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigSharedFolderChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigSharedFolderChange,
             this, &UISession::sigSharedFolderChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigRuntimeError,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigRuntimeError,
             this, &UISession::sigRuntimeError);
 #ifdef VBOX_WS_MAC
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigShowWindow,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigShowWindow,
             this, &UISession::sigShowWindows, Qt::QueuedConnection);
 #endif /* VBOX_WS_MAC */
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigCPUExecutionCapChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCPUExecutionCapChange,
             this, &UISession::sigCPUExecutionCapChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigGuestMonitorChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigGuestMonitorChange,
             this, &UISession::sltGuestMonitorChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigAudioAdapterChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAudioAdapterChange,
             this, &UISession::sltAudioAdapterChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigClipboardModeChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardModeChange,
             this, &UISession::sltClipboardModeChange);
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigDnDModeChange,
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigDnDModeChange,
             this, &UISession::sltDnDModeChange);
 }
 
@@ -1327,9 +1328,9 @@ void UISession::cleanupFramebuffers()
 
 void UISession::cleanupConsoleEventHandlers()
 {
-    /* Destroy console event-handler if necessary: */
-    if (gConsoleEvents)
-        UIConsoleEventHandler::destroy();
+    /* Destroy console event-handler: */
+    delete m_pConsoleEventhandler;
+    m_pConsoleEventhandler = 0;
 }
 
 void UISession::cleanupNotificationCenter()

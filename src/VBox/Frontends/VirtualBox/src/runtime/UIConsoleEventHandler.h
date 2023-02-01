@@ -48,7 +48,7 @@ class UIMousePointerShapeData;
 class UISession;
 
 
-/** Singleton QObject extension
+/** QObject subclass
   * providing GUI with the CConsole event-source. */
 class UIConsoleEventHandler : public QObject
 {
@@ -59,7 +59,7 @@ signals:
     /** Notifies about mouse pointer @a shapeData change. */
     void sigMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
     /** Notifies about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative,
-     * @a fSupportsTouchScreen, @a fSupportsTouchPad and @a fNeedsHostCursor. */
+      * @a fSupportsTouchScreen, @a fSupportsTouchPad and @a fNeedsHostCursor. */
     void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
                                   bool fSupportsTouchScreen, bool fSupportsTouchPad,
                                   bool fNeedsHostCursor);
@@ -94,10 +94,10 @@ signals:
     void sigGuestMonitorChange(KGuestMonitorChangedEventType type, ulong uScreenId, QRect screenGeo);
     /** Notifies about Runtime error with @a strErrorId which is @a fFatal and have @a strMessage. */
     void sigRuntimeError(bool fFatal, QString strErrorId, QString strMessage);
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /** Notifies about VM window should be shown. */
     void sigShowWindow();
-#endif /* RT_OS_DARWIN */
+#endif /* VBOX_WS_MAC */
     /** Notifies about audio adapter state change. */
     void sigAudioAdapterChange();
     /** Notifies clipboard mode change. */
@@ -107,33 +107,16 @@ signals:
 
 public:
 
-    /** Returns singleton instance created by the factory. */
-    static UIConsoleEventHandler *instance() { return s_pInstance; }
-    /** Creates singleton instance created by the factory. */
-    static void create(UISession *pSession);
-    /** Destroys singleton instance created by the factory. */
-    static void destroy();
-
-protected:
-
     /** Constructs console event handler for passed @a pSession. */
     UIConsoleEventHandler(UISession *pSession);
 
-    /** Prepares all. */
-    void prepare();
-    /** Prepares connections. */
-    void prepareConnections();
-
 private:
 
-    /** Holds the singleton static console event handler instance. */
-    static UIConsoleEventHandler *s_pInstance;
+    /** Prepares all. */
+    void prepare();
 
     /** Holds the console event proxy instance. */
     UIConsoleEventHandlerProxy *m_pProxy;
 };
-
-/** Defines the globally known name for the console event handler instance. */
-#define gConsoleEvents UIConsoleEventHandler::instance()
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIConsoleEventHandler_h */
