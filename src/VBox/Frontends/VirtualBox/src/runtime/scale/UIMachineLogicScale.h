@@ -41,9 +41,13 @@ class UIMachineLogicScale : public UIMachineLogic
 
 public:
 
-    /** Constructs scaled logic passing @a pParent to the base-class.
-      * @param  pSession  Brings the session UI reference. */
-    UIMachineLogicScale(QObject *pParent, UISession *pSession);
+    /** Constructs a logic passing @a pMachine and @a pSession to the base-class.
+      * @param  pMachine  Brings the machine this logic belongs to.
+      * @param  pSession  Brings the session this logic is created for. */
+    UIMachineLogicScale(UIMachine *pMachine, UISession *pSession);
+
+    /** Returns visual state type. */
+    virtual UIVisualStateType visualStateType() const { return UIVisualStateType_Scale; }
 
 protected:
 

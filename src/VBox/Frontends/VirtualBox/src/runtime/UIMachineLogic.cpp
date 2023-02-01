@@ -54,6 +54,7 @@
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
 #include "UIKeyboardHandler.h"
+#include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineLogicNormal.h"
@@ -153,35 +154,36 @@ struct WebCamTarget
 Q_DECLARE_METATYPE(WebCamTarget);
 
 /* static */
-UIMachineLogic* UIMachineLogic::create(QObject *pParent,
+UIMachineLogic *UIMachineLogic::create(UIMachine *pMachine,
                                        UISession *pSession,
-                                       UIVisualStateType visualStateType)
+                                       UIVisualStateType enmVisualStateType)
 {
     UIMachineLogic *pLogic = 0;
-    switch (visualStateType)
+    switch (enmVisualStateType)
     {
         case UIVisualStateType_Normal:
-            pLogic = new UIMachineLogicNormal(pParent, pSession);
+            pLogic = new UIMachineLogicNormal(pMachine, pSession);
             break;
         case UIVisualStateType_Fullscreen:
-            pLogic = new UIMachineLogicFullscreen(pParent, pSession);
+            pLogic = new UIMachineLogicFullscreen(pMachine, pSession);
             break;
         case UIVisualStateType_Seamless:
-            pLogic = new UIMachineLogicSeamless(pParent, pSession);
+            pLogic = new UIMachineLogicSeamless(pMachine, pSession);
             break;
         case UIVisualStateType_Scale:
-            pLogic = new UIMachineLogicScale(pParent, pSession);
+            pLogic = new UIMachineLogicScale(pMachine, pSession);
             break;
-
-        case UIVisualStateType_Invalid: case UIVisualStateType_All: break; /* Shut up, MSC! */
+        case UIVisualStateType_Invalid:
+        case UIVisualStateType_All:
+            break;
     }
     return pLogic;
 }
 
 /* static */
-void UIMachineLogic::destroy(UIMachineLogic *pWhichLogic)
+void UIMachineLogic::destroy(UIMachineLogic *pLogic)
 {
-    delete pWhichLogic;
+    delete pLogic;
 }
 
 void UIMachineLogic::prepare()
@@ -270,7 +272,7 @@ void UIMachineLogic::initializePostPowerUp()
     sltMouseCapabilityChanged();
 }
 
-UIActionPool* UIMachineLogic::actionPool() const
+UIActionPool *UIMachineLogic::actionPool() const
 {
     return uisession()->actionPool();
 }
@@ -754,10 +756,10 @@ void UIMachineLogic::sltHostScreenAvailableAreaChange()
 #endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
-UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType)
-    : QIWithRetranslateUI3<QObject>(pParent)
+UIMachineLogic::UIMachineLogic(UIMachine *pMachine, UISession *pSession)
+    : QIWithRetranslateUI3<QObject>(pMachine)
+    , m_pMachine(pMachine)
     , m_pSession(pSession)
-    , m_visualStateType(visualStateType)
     , m_pKeyboardHandler(0)
     , m_pMouseHandler(0)
     , m_pRunningActions(0)

@@ -44,11 +44,15 @@ class UIMachineLogicSeamless : public UIMachineLogic
 
 public:
 
-    /** Constructs seamless logic passing @a pParent to the base-class.
-      * @param  pSession  Brings the session UI reference. */
-    UIMachineLogicSeamless(QObject *pParent, UISession *pSession);
-    /** Destructs seamless logic. */
+    /** Constructs a logic passing @a pMachine and @a pSession to the base-class.
+      * @param  pMachine  Brings the machine this logic belongs to.
+      * @param  pSession  Brings the session this logic is created for. */
+    UIMachineLogicSeamless(UIMachine *pMachine, UISession *pSession);
+    /** Destructs the logic. */
     virtual ~UIMachineLogicSeamless() RT_OVERRIDE;
+
+    /** Returns visual state type. */
+    virtual UIVisualStateType visualStateType() const { return UIVisualStateType_Seamless; }
 
     /** Returns an index of host-screen for guest-screen with @a iScreenId specified. */
     int hostScreenForGuestScreen(int iScreenId) const;

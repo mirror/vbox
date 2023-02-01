@@ -49,8 +49,8 @@
 #include "CGraphicsAdapter.h"
 
 
-UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession)
-    : UIMachineLogic(pParent, pSession, UIVisualStateType_Seamless)
+UIMachineLogicSeamless::UIMachineLogicSeamless(UIMachine *pMachine, UISession *pSession)
+    : UIMachineLogic(pMachine, pSession)
 #ifndef VBOX_WS_MAC
     , m_pPopupMenu(0)
 #endif /* !VBOX_WS_MAC */

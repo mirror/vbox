@@ -54,8 +54,8 @@
 #include "CGraphicsAdapter.h"
 
 
-UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession)
-    : UIMachineLogic(pParent, pSession, UIVisualStateType_Normal)
+UIMachineLogicNormal::UIMachineLogicNormal(UIMachine *pMachine, UISession *pSession)
+    : UIMachineLogic(pMachine, pSession)
 #ifndef VBOX_WS_MAC
     , m_pPopupMenu(0)
 #endif /* !VBOX_WS_MAC */

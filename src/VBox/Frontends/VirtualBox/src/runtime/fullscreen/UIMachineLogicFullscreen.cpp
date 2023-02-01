@@ -52,8 +52,8 @@
 #include "CGraphicsAdapter.h"
 
 
-UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
-    : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
+UIMachineLogicFullscreen::UIMachineLogicFullscreen(UIMachine *pMachine, UISession *pSession)
+    : UIMachineLogic(pMachine, pSession)
     , m_pPopupMenu(0)
 #ifdef VBOX_WS_MAC
     , m_fScreensHaveSeparateSpaces(darwinScreensHaveSeparateSpaces())

@@ -43,6 +43,7 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
+class UIMachine;
 class UISession;
 class CSession;
 class QIStatusBarIndicator;
@@ -65,8 +66,9 @@ signals:
 public:
 
     /** Constructor, passes @a pParent to the QWidget constructor.
-      * @param pSession is used to retrieve appearance information. */
-    UIIndicatorsPool(UISession *pSession, QWidget *pParent = 0);
+      * @param  pMachine  Brings the machine UI reference.
+      * @param  pSession  Brings the session UI reference. */
+    UIIndicatorsPool(UIMachine *pMachine, UISession *pSession, QWidget *pParent = 0);
     /** Destructor. */
     ~UIIndicatorsPool();
 
@@ -120,7 +122,9 @@ private:
     /** Updates passed @a pIndicator with current @a state value. */
     void updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceActivity state);
 
-    /** Holds the UI session reference. */
+    /** Holds the machine UI reference. */
+    UIMachine *m_pMachine;
+    /** Holds the session UI reference. */
     UISession *m_pSession;
     /** Holds whether status-bar is enabled. */
     bool m_fEnabled;

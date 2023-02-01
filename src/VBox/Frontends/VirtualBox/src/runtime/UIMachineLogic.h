@@ -46,9 +46,10 @@ class QIManagerDialog;
 class UISession;
 class UIActionPool;
 class UIKeyboardHandler;
-class UIMouseHandler;
+class UIMachine;
 class UIMachineWindow;
 class UIMachineView;
+class UIMouseHandler;
 class UIDockIconPreview;
 class UISoftKeyboard;
 class UIVMInformationDialog;
@@ -87,9 +88,16 @@ signals:
 
 public:
 
-    /* Factory functions to create/destroy required logic sub-child: */
-    static UIMachineLogic* create(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType);
-    static void destroy(UIMachineLogic *pWhichLogic);
+    /** Factory function to create a logic of required type.
+      * @param  pMachine            Brings the machine this logic belongs to.
+      * @param  pSession            Brings the session this logic is created for.
+      * @param  enmVisualStateType  Brings the visual state type of logic to be created. */
+    static UIMachineLogic *create(UIMachine *pMachine, UISession *pSession, UIVisualStateType enmVisualStateType);
+    /** Factory function to destroy passed @a pLogic. */
+    static void destroy(UIMachineLogic *pLogic);
+
+    /** Returns visual state type. */
+    virtual UIVisualStateType visualStateType() const = 0;
 
     /* Check if this logic is available: */
     virtual bool checkAvailability() = 0;
@@ -103,9 +111,13 @@ public:
 
     void initializePostPowerUp();
 
-    /* Main getters/setters: */
-    UISession* uisession() const { return m_pSession; }
-    UIActionPool* actionPool() const;
+    /** Returns machine UI reference.  */
+    UIMachine *uimachine() const { return m_pMachine; }
+    /** Returns session UI reference.  */
+    UISession *uisession() const { return m_pSession; }
+
+    /** Returns action-pool reference.  */
+    UIActionPool *actionPool() const;
 
     /** Returns the session reference. */
     CSession& session() const;
@@ -126,8 +138,6 @@ public:
 
     /** Returns the machine name. */
     const QString& machineName() const;
-
-    UIVisualStateType visualStateType() const { return m_visualStateType; }
     const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }
     UIKeyboardHandler* keyboardHandler() const { return m_pKeyboardHandler; }
     UIMouseHandler* mouseHandler() const { return m_pMouseHandler; }
@@ -199,10 +209,12 @@ protected slots:
 
 protected:
 
-    /* Constructor: */
-    UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType);
-    /* Destructor: */
-    ~UIMachineLogic();
+    /** Constructs a logic passing @a pMachine and @a pSession to the base class.
+      * @param  pMachine  Brings the machine this logic belongs to.
+      * @param  pSession  Brings the session this logic is created for. */
+    UIMachineLogic(UIMachine *pMachine, UISession *pSession);
+    /* Destructs the logic. */
+    virtual ~UIMachineLogic() RT_OVERRIDE;
 
     /* Protected getters/setters: */
     bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }
@@ -404,8 +416,8 @@ private:
     void reset(bool fShowConfirmation);
 
     /* Private variables: */
+    UIMachine *m_pMachine;
     UISession *m_pSession;
-    UIVisualStateType m_visualStateType;
     UIKeyboardHandler *m_pKeyboardHandler;
     UIMouseHandler *m_pMouseHandler;
     QList<UIMachineWindow*> m_machineWindowsList;
