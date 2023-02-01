@@ -133,9 +133,9 @@ else
 endif
 TEMPLATE_XPComDll_LDFLAGS             = $(TEMPLATE_VBoxR3DllNonPedantic_LDFLAGS)
 ifdef VBOX_WITH_RUNPATH
-TEMPLATE_XPComDll_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+ TEMPLATE_XPComDll_LDFLAGS           += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
 else ifdef VBOX_WITH_RELATIVE_RUNPATH
-TEMPLATE_XPComDll_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
+ TEMPLATE_XPComDll_LDFLAGS           += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
 endif
 TEMPLATE_XPComDll_LDFLAGS.x86         = -m32
 TEMPLATE_XPComDll_LDFLAGS.amd64       = -m64
@@ -157,26 +157,26 @@ ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_XPComDll_DEFS              += MOZ_PRESERVE_PIC
 endif
 TEMPLATE_XPComDll_INCS                = $(VBOX_PATH_XPCOM_SRC)/xpcom/build \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/ds \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/io \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/base \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/components \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/threads \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/proxy/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptcall/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/client/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/shared/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/lock/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/transmngr/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/dconnect/src \
-                                     $(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/transmngr/common \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
-                                     .
-ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4 10.5 10.6 10.7) # FlatCarbon is gone starting 10.8 (or Xcode 5.0).
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/ds \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/io \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/base \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/components \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/threads \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/proxy/src \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptcall/src \
+	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/client/src \
+	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/shared/src \
+	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/lock/src \
+	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/transmngr/src \
+	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/dconnect/src \
+	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/transmngr/common \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
+	.
+ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7) # FlatCarbon is gone starting 10.8 (or Xcode 5.0).
  TEMPLATE_XPComDll_DEFS.darwin       += VBOX_WITH_NEWER_OSX_SDK
  TEMPLATE_XPComDll_INCS.darwin        = \
  	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreFoundation.framework/Versions/A/Headers/ \
@@ -187,7 +187,7 @@ else
 endif
 TEMPLATE_XPComDll_LIBS.solaris        = sendfile
 TEMPLATE_XPComDll_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET)) \
-                                     $(PATH_TARGET)/VBox-xpcom-idl-timestamp
+	$(PATH_TARGET)/VBox-xpcom-idl-timestamp
 ifeq ($(KBUILD_TARGET),os2)
  ifndef USE_OS2_TOOLKIT_HEADERS
   TEMPLATE_XPComDll_DEFS.os2         += OS2EMX_PLAIN_CHAR
@@ -223,12 +223,12 @@ TEMPLATE_XPComExe                 := XPCOM executable files
 TEMPLATE_XPComExe_EXTENDS         := XPComDll
 ## @todo undo -fPIC.
 TEMPLATE_XPComExe_INCS             = ipc/ipcd/shared/src \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
-                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
-                                     .
+	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
+	.
 TEMPLATE_XPComExe_LIBS             = \
 	$(VBox-xpcom-ipcshared_1_TARGET) \
 	$(VBoxXPCOM_1_TARGET) \
