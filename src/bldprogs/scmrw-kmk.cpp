@@ -2120,7 +2120,7 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                     case kKmkToken_unexport:
                     case kKmkToken_undefine:
                         scmKmkHandleSimple(&Parser, offLine);
-                        break;
+                        continue;
 
                     case kKmkToken_Comment:
                         AssertFailed(); /* not possible */
