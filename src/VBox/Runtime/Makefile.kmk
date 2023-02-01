@@ -187,17 +187,17 @@ common/misc/buildconfig.cpp_DEFS = \
 	IPRT_BLDCFG_VERSION_MINOR=$(VBOX_VERSION_MINOR) \
 	IPRT_BLDCFG_VERSION_BUILD=$(VBOX_VERSION_BUILD)
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-common/misc/buildconfig.cpp_DEFS += \
-	IPRT_BLDCFG_VERSION_STRING="$(VBOX_VERSION_STRING)" \
-	IPRT_BLDCFG_TARGET="$(KBUILD_TARGET)" \
-	IPRT_BLDCFG_TARGET_ARCH="$(KBUILD_TARGET_ARCH)" \
-	IPRT_BLDCFG_TYPE="$(KBUILD_TYPE)"
+ common/misc/buildconfig.cpp_DEFS += \
+ 	IPRT_BLDCFG_VERSION_STRING="$(VBOX_VERSION_STRING)" \
+ 	IPRT_BLDCFG_TARGET="$(KBUILD_TARGET)" \
+ 	IPRT_BLDCFG_TARGET_ARCH="$(KBUILD_TARGET_ARCH)" \
+ 	IPRT_BLDCFG_TYPE="$(KBUILD_TYPE)"
 else
-common/misc/buildconfig.cpp_DEFS += \
-	IPRT_BLDCFG_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
-	IPRT_BLDCFG_TARGET=\"$(KBUILD_TARGET)\" \
-	IPRT_BLDCFG_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\" \
-	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
+ common/misc/buildconfig.cpp_DEFS += \
+ 	IPRT_BLDCFG_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
+ 	IPRT_BLDCFG_TARGET=\"$(KBUILD_TARGET)\" \
+ 	IPRT_BLDCFG_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\" \
+ 	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
 endif
 
 #
@@ -213,8 +213,8 @@ OTHER_CLEAN += $(IPRT_OUT_DIR)/oiddb.h $(IPRT_OUT_DIR)/oiddb.h.ts
 
 $(IPRT_OUT_DIR)/oiddb.h.ts +| $(IPRT_OUT_DIR)/oiddb.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/asn1/oiddb.cfg \
-               $(VBOX_EXTRA_OID_CFG_FILES) \
-               $$(oiddb2c_1_TARGET) \
+		$(VBOX_EXTRA_OID_CFG_FILES) \
+		$$(oiddb2c_1_TARGET) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
 	$(QUIET)$(oiddb2c_1_TARGET) "$@" $(filter %.cfg,$^)
@@ -275,7 +275,7 @@ RuntimeWin64ASM_SOURCES = \
 	common/asm/ASMSetFSBase.asm \
 	common/asm/ASMGetGSBase.asm \
 	common/asm/ASMSetGSBase.asm \
-	common/asm/ASMGetTR.asm \
+	common/asm/ASMGetTR.asm
 
 #
 # Win32 assembly sources.
@@ -294,20 +294,20 @@ RuntimeWin32ASM_SOURCES = \
 # NoCRT sources (minus math stuff).
 #
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
-RuntimeNoCrt_SOURCES = \
-	common/misc/setjmp.asm \
-	common/string/bzero.asm \
-	common/string/memchr.asm \
-	common/string/memcmp.asm \
-	common/string/memcpy.asm \
-	common/string/mempcpy.asm \
-	common/string/memmove.asm \
-	common/string/memset.asm \
-	common/string/strchr.asm \
-	common/string/strcpy.asm \
-	common/string/strncpy.asm \
-	common/string/strcmp.asm \
-	common/string/strlen.asm
+ RuntimeNoCrt_SOURCES = \
+ 	common/misc/setjmp.asm \
+ 	common/string/bzero.asm \
+ 	common/string/memchr.asm \
+ 	common/string/memcmp.asm \
+ 	common/string/memcpy.asm \
+ 	common/string/mempcpy.asm \
+ 	common/string/memmove.asm \
+ 	common/string/memset.asm \
+ 	common/string/strchr.asm \
+ 	common/string/strcpy.asm \
+ 	common/string/strncpy.asm \
+ 	common/string/strcmp.asm \
+ 	common/string/strlen.asm
 endif
 
 
@@ -531,9 +531,9 @@ RuntimeBaseR3_SOURCES      := \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
 	common/log/log.cpp \
- 	common/log/log-weak.cpp \
- 	common/log/log-weak-assert.cpp \
- 	common/log/log-weak-rel.cpp \
+	common/log/log-weak.cpp \
+	common/log/log-weak-assert.cpp \
+	common/log/log-weak-rel.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
 	common/log/logrelellipsis.cpp \
@@ -687,7 +687,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/string/strcache.cpp \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
-  	common/string/strtofloat.cpp \
+	common/string/strtofloat.cpp \
 	common/string/strtonum.cpp \
 	common/string/strversion.cpp \
 	common/string/uni.cpp \
@@ -759,7 +759,7 @@ RuntimeBaseR3_SOURCES      := \
 	generic/critsect-generic.cpp \
 	generic/critsectrw-generic.cpp \
 	generic/env-generic.cpp \
- 	generic/http.cpp \
+	generic/http.cpp \
 	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
@@ -817,7 +817,7 @@ RuntimeBaseR3_SOURCES      := \
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeBaseR3_SOURCES += common/time/timesupA.asm
 #else
- RuntimeBaseR3_SOURCES += common/time/timesupref.cpp
+RuntimeBaseR3_SOURCES  += common/time/timesupref.cpp
 #endif
 
 RuntimeBaseR3_SOURCES.x86 += \
@@ -914,7 +914,7 @@ RuntimeBaseR3_SOURCES.x86 += \
 	common/dbg/dbgstackdumpself.cpp \
 	common/dbg/dbgstackdumpself-amd64-x86.asm \
 	common/math/bignum-amd64-x86.asm \
-       common/string/RTStrEnd.asm
+	common/string/RTStrEnd.asm
 RuntimeBaseR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
@@ -941,14 +941,14 @@ RuntimeBaseR3_SOURCES.amd64 += \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm \
 	common/math/RTUInt128MulByU64Ex.asm \
-       common/string/RTStrEnd.asm
+	common/string/RTStrEnd.asm
 
 # Some versions of GCC might require this.
 RuntimeBaseR3_SOURCES.x86 += \
 	common/asm/ASMAtomicXchgU64.asm \
 	common/asm/ASMAtomicCmpXchgU64.asm \
 	common/asm/ASMAtomicCmpXchgExU64.asm \
-	common/asm/ASMAtomicReadU64.asm	\
+	common/asm/ASMAtomicReadU64.asm \
 	common/asm/ASMAtomicUoReadU64.asm
 
 # Some non-assembly for non-AMD64 / non-x86 targets:
@@ -970,12 +970,12 @@ RuntimeBaseR3_SOURCES += \
 	VBox/RTAssertShouldPanic-vbox.cpp \
 	VBox/log-vbox.cpp
 ifneq ($(KBUILD_TARGET),win)
-RuntimeBaseR3_SOURCES += \
-	common/err/errmsgxpcom.cpp
+ RuntimeBaseR3_SOURCES += \
+ 	common/err/errmsgxpcom.cpp
 endif
-if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
-RuntimeBaseR3_SOURCES += \
-	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+ RuntimeBaseR3_SOURCES += \
+ 	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
 endif
 
 VBOX_WITH_NT_DIRENUM = 1
@@ -1095,8 +1095,8 @@ RuntimeBaseR3_SOURCES.linux = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
@@ -1184,10 +1184,10 @@ else
  	r3/linux/semeventmulti-linux.cpp
  ifdef RT_NEW_LINUX_MUTEX_CODE
   RuntimeBaseR3_SOURCES.linux.amd64 += \
- 	r3/linux/semmutex-linux.cpp
+  	r3/linux/semmutex-linux.cpp
  else
   RuntimeBaseR3_SOURCES.linux.amd64 += \
- 	r3/posix/semmutex-posix.cpp
+  	r3/posix/semmutex-posix.cpp
  endif
 endif
 
@@ -1306,7 +1306,7 @@ RuntimeBaseR3_SOURCES.darwin = \
 	generic/RTSystemShutdown-generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
-	generic/uuid-generic.cpp\
+	generic/uuid-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	generic/RTSystemFirmware-generic.cpp \
@@ -1682,7 +1682,7 @@ RuntimeBaseR3_SOURCES.haiku = \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
-	generic/uuid-generic.cpp\
+	generic/uuid-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
@@ -1752,18 +1752,18 @@ PROPS_LIBRARIES_ACCUMULATE_L += VBOX_NOCRT_ALIASES
 PROPS_ALL                    += VBOX_NOCRT_ALIASES
 
 define def_unit_VBoxNoCrtAliases_double_expansion
-$$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
-		$$(abspathex \
-			$$($(target)_SOURCES)\
-			$$($(target)_SOURCES.$(bld_trg))\
-			$$($(target)_SOURCES.$(bld_trg).$(bld_type))\
-			$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch))\
-			$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch).$(bld_type))\
-			$$($(target)_SOURCES.$(bld_trg_arch))\
-			$$($(target)_SOURCES.$(bld_trg_cpu))\
-			$$($(target)_SOURCES.$(bld_type)) \
-			, $(firstfile $(defpath) $(PATH_SUB_CURRENT))) \
-               $$(VBOX_PATH_RUNTIME_SRC)//nocrt-aliases.sed
+ $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
+ 		$$(abspathex \
+ 		$$($(target)_SOURCES) \
+ 		$$($(target)_SOURCES.$(bld_trg)) \
+ 		$$($(target)_SOURCES.$(bld_trg).$(bld_type)) \
+ 		$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch)) \
+ 		$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
+ 		$$($(target)_SOURCES.$(bld_trg_arch)) \
+ 		$$($(target)_SOURCES.$(bld_trg_cpu)) \
+ 		$$($(target)_SOURCES.$(bld_type)) \
+ 		, $(firstfile $(defpath) $(PATH_SUB_CURRENT))) \
+ 		$$(VBOX_PATH_RUNTIME_SRC)//nocrt-aliases.sed
 	$$(call MSG_GENERATE,$(target),$$@,)
 	$$(QUIET)$$(MKDIR) -p -- "$$(dir $$@)"
 	$$(QUIET)$$(APPEND) -tn "$$@" "$(target)_2_VBOX_NOCRT_ALIASES := \\"
@@ -1771,7 +1771,7 @@ $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_
 	$$(QUIET)$$(APPEND) -n "$$@" "" ""
 	$$(QUIET)$$(CP) --changed -f -- "$$@" "$$(patsubst %.ts,%,$$@)"
 
-$$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FILES): | $$(VBOX_GENALIAS)
+ $$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FILES): | $$(VBOX_GENALIAS)
 	$$(call MSG_GENERATE,$(target),$$@,)
 	$$(QUIET)$$(MKDIR) -p -- "$$($(target)_0_OUTDIR)/genalias/"
 	$$(QUIET)$$(VBOX_GENALIAS) -f $$(if-expr "$(bld_trg)" == "win",coff.$(bld_trg_arch),$$(if-expr "$(bld_trg)" == "darwin",macho,omf)) \
@@ -1786,8 +1786,8 @@ $$($(target)_0_OUTDIR)/genalias/genalias.ts + $$($(target)_2_VBOX_NOCRT_ALIAS_FI
 		$$($(target)_VBOX_NOCRT_ALIASES.$(bld_type))
 	$$(QUIET)$$(APPEND) -tn "$$($(target)_0_OUTDIR)/genalias/genalias.ts" "$$($(target)_2_VBOX_NOCRT_ALIASES))"
 
-$(target)_2_OBJS += $$($(target)_2_VBOX_NOCRT_ALIAS_FILES)
-OTHER_CLEAN += $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE) $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts
+ $(target)_2_OBJS += $$($(target)_2_VBOX_NOCRT_ALIAS_FILES)
+ OTHER_CLEAN += $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE) $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts
 endef
 
 define def_unit_VBoxNoCrtAliases_target_pre
@@ -1795,15 +1795,15 @@ define def_unit_VBoxNoCrtAliases_target_pre
   $(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE := $(PATH_OUT)/nocrt-aliases-$(target).kmk
   include $($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE)
   $(target)_2_VBOX_NOCRT_ALIAS_FILES := $(foreach alias,$($(target)_2_VBOX_NOCRT_ALIASES) \
-	$($(target)_VBOX_NOCRT_ALIASES) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_type)) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch)) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_arch)) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_cpu)) \
-	$($(target)_VBOX_NOCRT_ALIASES.$(bld_type)) \
-	, $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
+  	$($(target)_VBOX_NOCRT_ALIASES) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_type)) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch)) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_arch)) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_cpu)) \
+  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_type)) \
+  	, $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
   $(eval $(def_unit_VBoxNoCrtAliases_double_expansion))
  endif
 endef
@@ -1825,7 +1825,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   RuntimeR3_USES   = $(RuntimeBaseR3_USES) VBoxNoCrtAliases
   RuntimeR3_DEFS   = $(filter-out RT_WITHOUT_NOCRT_WRAPPERS,$(RuntimeBaseR3_DEFS)) \
   	RT_FORCE_NOCRT_WRAPPERS \
-	RT_WITH_NOCRT_ALIASES RT_WITH_NOCRT_UNDERSCORE_ALIASES RT_WITH_GENALIAS_NOCRT_ALIASES
+  	RT_WITH_NOCRT_ALIASES RT_WITH_NOCRT_UNDERSCORE_ALIASES RT_WITH_GENALIAS_NOCRT_ALIASES
 
   RuntimeR3_SOURCES = $(filter-out \
   	r3/alloc.cpp \
@@ -1836,7 +1836,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	generic/RTLogWriteStdErr-generic.cpp \
   	generic/RTLogWriteStdOut-generic.cpp \
   	,$(RuntimeBaseR3_SOURCES)) \
-       \
+  	\
   	common/err/nocrt-strerror.cpp \
   	common/file/nocrt-open.cpp \
   	common/file/nocrt-close.cpp \
@@ -1934,22 +1934,22 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/nocrt-clearerr.cpp \
   	r3/nocrt-ferror.cpp \
   	r3/nocrt-cerr.cpp \
-  	r3/nocrt-cout.cpp \
+  	r3/nocrt-cout.cpp
 
   RuntimeR3_SOURCES.x86 = $(RuntimeBaseR3_SOURCES.x86) \
-  	common/math/atan.asm  \
-  	common/math/atanf.asm  \
-  	common/math/atan2.asm  \
-  	common/math/atan2f.asm  \
-  	common/math/cos.asm  \
-  	common/math/cosf.asm  \
-  	common/math/ceil.asm  \
-  	common/math/ceilf.asm  \
-  	common/math/exp.asm  \
-  	common/math/expf.asm  \
-  	common/math/exp2.asm  \
-  	common/math/exp2f.asm  \
-  	common/math/fabs.asm  \
+  	common/math/atan.asm \
+  	common/math/atanf.asm \
+  	common/math/atan2.asm \
+  	common/math/atan2f.asm \
+  	common/math/cos.asm \
+  	common/math/cosf.asm \
+  	common/math/ceil.asm \
+  	common/math/ceilf.asm \
+  	common/math/exp.asm \
+  	common/math/expf.asm \
+  	common/math/exp2.asm \
+  	common/math/exp2f.asm \
+  	common/math/fabs.asm \
   	common/math/fabsf.asm \
   	common/math/rtNoCrtHasSse.asm \
   	common/math/fegetenv.asm \
@@ -2009,28 +2009,28 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/string/strncmp.asm \
   	common/string/strcpy.asm \
   	common/string/strncpy.asm \
-   	common/string/strcat.cpp \
-   	common/string/strncat.cpp \
-   	common/string/strrchr.cpp \
-   	common/string/strstr.cpp \
-   	common/string/strcspn.cpp \
-   	common/string/strpbrk.cpp \
-   	common/string/wcslen.asm
+  	common/string/strcat.cpp \
+  	common/string/strncat.cpp \
+  	common/string/strrchr.cpp \
+  	common/string/strstr.cpp \
+  	common/string/strcspn.cpp \
+  	common/string/strpbrk.cpp \
+  	common/string/wcslen.asm
 
   RuntimeR3_SOURCES.amd64 = $(RuntimeBaseR3_SOURCES.amd64) \
-  	common/math/atan.asm  \
-  	common/math/atanf.asm  \
-  	common/math/atan2.asm  \
-  	common/math/atan2f.asm  \
-  	common/math/cos.asm  \
-  	common/math/cosf.asm  \
-  	common/math/ceil.asm  \
-  	common/math/ceilf.asm  \
-  	common/math/exp.asm  \
-  	common/math/expf.asm  \
-  	common/math/exp2.asm  \
-  	common/math/exp2f.asm  \
-  	common/math/fabs.asm  \
+  	common/math/atan.asm \
+  	common/math/atanf.asm \
+  	common/math/atan2.asm \
+  	common/math/atan2f.asm \
+  	common/math/cos.asm \
+  	common/math/cosf.asm \
+  	common/math/ceil.asm \
+  	common/math/ceilf.asm \
+  	common/math/exp.asm \
+  	common/math/expf.asm \
+  	common/math/exp2.asm \
+  	common/math/exp2f.asm \
+  	common/math/fabs.asm \
   	common/math/fabsf.asm \
   	common/math/fegetenv.asm \
   	common/math/fesetenv.asm \
@@ -2089,18 +2089,18 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/string/strncmp.asm \
   	common/string/strcpy.asm \
   	common/string/strncpy.asm \
-   	common/string/strcat.cpp \
-   	common/string/strncat.cpp \
-   	common/string/strrchr.cpp \
-   	common/string/strstr.cpp \
-   	common/string/strcspn.cpp \
-   	common/string/strpbrk.cpp \
-   	common/string/wcslen.asm
+  	common/string/strcat.cpp \
+  	common/string/strncat.cpp \
+  	common/string/strrchr.cpp \
+  	common/string/strstr.cpp \
+  	common/string/strcspn.cpp \
+  	common/string/strpbrk.cpp \
+  	common/string/wcslen.asm
 
   RuntimeR3_SOURCES.win = $(filter-out \
   	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
   	,$(RuntimeBaseR3_SOURCES.win)) \
-        \
+  	\
   	common/compiler/vcc/atexit-vcc.cpp \
   	common/compiler/vcc/loadcfg-vcc.c \
   	common/compiler/vcc/tlsdir-vcc.c \
@@ -2139,8 +2139,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/compiler/vcc/except-x86-vcc-asm.asm
   RuntimeR3_VBOX_NOCRT_ALIASES.win := \
   	strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
-       $(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
-		,$(fn)l=nocrt_$(fn) _$(fn)l=nocrt_$(fn))
+  	$(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
+  	,$(fn)l=nocrt_$(fn) _$(fn)l=nocrt_$(fn))
  endif
 endif
 
@@ -2322,9 +2322,9 @@ RuntimeBldProg_SOURCES          = \
 	common/ldr/ldrPE.cpp \
 	common/ldr/ldrVfsFile.cpp \
 	common/log/log.cpp \
- 	common/log/log-weak.cpp \
- 	common/log/log-weak-assert.cpp \
- 	common/log/log-weak-rel.cpp \
+	common/log/log-weak.cpp \
+	common/log/log-weak-assert.cpp \
+	common/log/log-weak-rel.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logformat.cpp \
 	common/log/logrel.cpp \
@@ -2403,7 +2403,7 @@ RuntimeBldProg_SOURCES          = \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
-       common/string/RTStrICmpAscii.cpp \
+	common/string/RTStrICmpAscii.cpp \
 	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNICmpAscii.cpp \
@@ -2536,7 +2536,7 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
-       , $(RuntimeBaseR3_SOURCES.darwin))
+	, $(RuntimeBaseR3_SOURCES.darwin))
 
 RuntimeBldProg_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
@@ -2608,11 +2608,11 @@ RuntimeBldProg_SOURCES.win = \
 
 RuntimeBldProg_SOURCES.amd64 = $(filter-out \
 	VBox/RTLogWriteVmm-amd64-x86.asm \
-       , $(RuntimeBaseR3_SOURCES.amd64))
+	, $(RuntimeBaseR3_SOURCES.amd64))
 
 RuntimeBldProg_SOURCES.x86 = $(filter-out \
 	VBox/RTLogWriteVmm-amd64-x86.asm \
-       , $(RuntimeBaseR3_SOURCES.x86))
+	, $(RuntimeBaseR3_SOURCES.x86))
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
@@ -2701,8 +2701,8 @@ RuntimeGuestR3_SOURCES                   = $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
- 	common/zip/xarvfs.cpp \
- 	r3/xml.cpp \
+	common/zip/xarvfs.cpp \
+	r3/xml.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	, $(RuntimeR3_SOURCES)) \
 	\
@@ -2743,7 +2743,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/math/fma.cpp \
   	common/math/fma-asm.asm \
   	common/math/fmaf.cpp \
-  	common/math/fmaf-asm.asm \
+  	common/math/fmaf-asm.asm
 
  endif
 endif
@@ -2765,13 +2765,13 @@ ifdef VBOX_WITH_LIBCURL
 endif
 VBoxRT_SDKS                   += VBoxOpenSslStatic
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
-VBoxRT_SDKS                   += VBoxSoftFloatR3Shared
+ VBoxRT_SDKS                  += VBoxSoftFloatR3Shared
 endif
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBoxNtDll
 if1of ($(KBUILD_TARGET), win)
-VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE) $(VBOX_INST_TOOLS)
+ VBoxRT_INST                   = $(INST_DLL) $(INST_TESTCASE) $(VBOX_INST_TOOLS)
 else if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDENING))
-VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
+ VBoxRT_INST                   = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeBaseR3_DEFS)) \
 	IPRT_WITH_OPENSSL \
@@ -2799,8 +2799,8 @@ VBoxRT_DEFS.$(KBUILD_TARGET)  := $(RuntimeBaseR3_DEFS.$(KBUILD_TARGET))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, \
-		$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeBaseR3_SOURCES), \
-		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeBaseR3_SOURCES)) ) ) \
+	$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeBaseR3_SOURCES), \
+	$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeBaseR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/dbg/dbgmodghidra.cpp \
 	common/fuzz/fuzz.cpp \
@@ -2810,7 +2810,7 @@ VBoxRT_SOURCES                := \
 	common/fuzz/fuzzmastercmd.cpp \
 	common/fuzz/fuzzclientcmd.cpp
 ifneq ($(KBUILD_TARGET),win)
-VBox/VBoxRTDeps.cpp_CXXFLAGS = -Wno-deprecated-declarations
+ VBox/VBoxRTDeps.cpp_CXXFLAGS = -Wno-deprecated-declarations
 endif
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += \
@@ -2843,7 +2843,7 @@ VBoxRT_SOURCES.x86            := $(RuntimeBaseR3_SOURCES.x86)
 VBoxRT_SOURCES.amd64          := $(RuntimeBaseR3_SOURCES.amd64)
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
-	 $(VBoxRT_0_OUTDIR)/VBoxRT.def
+	$(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_CLEAN.win              += \
 	$(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_INCS                   := $(RuntimeBaseR3_INCS)
@@ -2854,21 +2854,21 @@ VBoxRT_LIBS                    = \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
 ifndef SDK_VBoxLibXml2_LIBS
  VBoxRT_LIBS                  += \
-	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
 VBoxRT_LIBS                   += \
 	$(SDK_VBoxZlib_LIBS)
 ifndef SDK_VBoxOpenSslStatic_LIBS
  VBoxRT_LIBS                  += \
-	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
 endif
 ifdef IPRT_WITH_LZO
  VBoxRT_LIBS                  += lzo2
 endif
 ifdef RTALLOC_REPLACE_MALLOC
-VBoxRT_LIBS                   += \
-	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+ VBoxRT_LIBS                  += \
+ 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 endif
 VBoxRT_LIBS.darwin             = \
 	iconv
@@ -2902,7 +2902,7 @@ VBoxRT_LDFLAGS.win             = /MANIFEST \
 	/delayload:oleaut32.dll \
 	/delayload:advapi32.dll
 
-if1of (VBoxRT,$(DLLS))
+if1of (VBoxRT, $(DLLS))
  $(call VBOX_SET_VER_INFO_DLL,VBoxRT,VirtualBox Runtime)
 endif
 
@@ -2948,23 +2948,23 @@ endif
 ifeq ($(KBUILD_TARGET),linux)
  if1of (VBoxRT, $(DLLS))
   ifneq ($(wildcard /usr/bin/chcon),)
-VBoxRT_INSTTYPE = none
-VBoxRT_DEBUG_INSTTYPE = both
+   VBoxRT_INSTTYPE = none
+   VBoxRT_DEBUG_INSTTYPE = both
 
-VBoxRT-x86_INSTTYPE = $(NO_SUCH_VARIABLE)
+   VBoxRT-x86_INSTTYPE = $(NO_SUCH_VARIABLE)
 
-DLLS += VBoxRTDummy
-VBoxRTDummy_TEMPLATE = VBoxR3Dll
-VBoxRTDummy_INSTTYPE = none
-VBoxRTDummy_LIBS  = $(PATH_STAGE_BIN)/VBoxRT.so
-VBoxRTDummy_CLEAN = $(PATH_STAGE_BIN)/VBoxRT.so
-BLDDIRS += $(PATH_STAGE_BIN)
+   DLLS += VBoxRTDummy
+   VBoxRTDummy_TEMPLATE = VBoxR3Dll
+   VBoxRTDummy_INSTTYPE = none
+   VBoxRTDummy_LIBS = $(PATH_STAGE_BIN)/VBoxRT.so
+   VBoxRTDummy_CLEAN = $(PATH_STAGE_BIN)/VBoxRT.so
+   BLDDIRS += $(PATH_STAGE_BIN)
 
-$(PATH_STAGE_BIN)/VBoxRT.so: $$(VBoxRT_1_TARGET) | $$(dir $$@)
+   $(PATH_STAGE_BIN)/VBoxRT.so: $$(VBoxRT_1_TARGET) | $$(dir $$@)
 	$(INSTALL) $< $@
 	chcon -t texrel_shlib_t $@ || true
 
-VBoxRT:: VBoxRTDummy
+   VBoxRT:: VBoxRTDummy
   endif # chcon present.
  endif # building VBoxRT
 endif # linux
@@ -2973,11 +2973,11 @@ if1of ($(DLLS), VBoxRT)
  # .def file for windows.
  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRT)
  $(VBoxRT_0_OUTDIR)/VBoxRT.def: \
-		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
-		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-3.0.def \
-		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES)\
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
-		| $$(dir $$@) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
+ 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
+ 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-3.0.def \
+ 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) \
+ 		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
+ 		| $$(dir $$@) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
 	$(RM) -f -- $@
 	$(SED)  --output "$@" \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86"  ,-e "/not-x86/d",  -e "/only-x86/d") \
@@ -3006,19 +3006,19 @@ VBoxRT-x86_SDKS  += VBoxOpenSslStatic-x86
 VBoxRT-x86_LIBS = \
 	$(SDK_VBoxLzf_LIBS-x86)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
-VBoxRT-x86_LIBS += \
-	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
+ VBoxRT-x86_LIBS += \
+ 	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBoxLibXml2_LIBS
  VBoxRT-x86_LIBS                 += \
-	$(PATH_STAGE_LIB)/VBox-libxml2-x86$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBox-libxml2-x86$(VBOX_SUFF_LIB)
 endif
 VBoxRT-x86_LIBS                  += \
 	$(SDK_VBoxZlib_LIBS-x86)
 ifndef SDK_VBoxOpenSslStatic_LIBS
  VBoxRT-x86_LIBS                 += \
-	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB)
 endif
 ifdef IPRT_WITH_LZO
  VBoxRT-x86_LIBS                  += lzo2
@@ -3046,7 +3046,7 @@ VBoxRT-x86_SOURCES.win = $(filter-out %.def %.rc,$(VBoxRT_SOURCES.win)) \
 	$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def
 VBoxRT-x86_CLEAN += $(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def
 
-if1of (VBoxRT-x86,$(DLLS))
+if1of (VBoxRT-x86, $(DLLS))
  $(call VBOX_SET_VER_INFO_DLL,VBoxRT-x86,VirtualBox 32-bit Runtime)
 endif
 
@@ -3054,8 +3054,8 @@ if1of ($(DLLS), VBoxRT-x86)
  # .def file for windows.
  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRT-x86)
  $(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def: \
-		$(VBOX_PATH_RUNTIME_SRC)/r3/win/VBoxRT-win32.def \
-		| $$(dir $$@) # Hopefully no need to export openssl here.
+ 		$(VBOX_PATH_RUNTIME_SRC)/r3/win/VBoxRT-win32.def \
+ 		| $$(dir $$@) # Hopefully no need to export openssl here.
 	$(RM) -f -- $@
 	$(SED)  --output "$@" \
 		-e "/not-x86/d" \
@@ -3072,50 +3072,50 @@ endif
 # VBoxRTImp - Import library/hack.
 #
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
-$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-vcc64.def r3/win/VBoxRT-win64.def)
+ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-vcc64.def r3/win/VBoxRT-win64.def)
 else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
-$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-vcc32.def r3/win/VBoxRT-win32.def)
+ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-vcc32.def r3/win/VBoxRT-win32.def)
 else
-$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-gcc.def)
+ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-gcc.def)
 endif
 
 
-if1of ($(KBUILD_TARGET),win linux darwin) # remove later
-if1of ($(KBUILD_TARGET_ARCH),x86 amd64) ## @todo bugref:9898
-if1of (VBoxRT,$(DLLS))
- #
- # VBoxRTImpCheck - Import library check.
- #
- PROGRAMS += VBoxRTStableCheck
- VBoxRTStableCheck_TEMPLATE = VBoxR3TstExe
- VBoxRTStableCheck_SOURCES  = \
- 	VBox/VBoxRTStableCheck.cpp \
- 	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
- VBoxRTStableCheck_LIBS = \
- 	$(LIB_RUNTIME)
- VBoxRTStableCheck_CLEAN = \
- 	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
- $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRTStableCheck)
+if1of ($(KBUILD_TARGET), win linux darwin) # remove later
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64) ## @todo bugref:9898
+  if1of (VBoxRT, $(DLLS))
+   #
+   # VBoxRTImpCheck - Import library check.
+   #
+   PROGRAMS += VBoxRTStableCheck
+   VBoxRTStableCheck_TEMPLATE = VBoxR3TstExe
+   VBoxRTStableCheck_SOURCES = \
+   	VBox/VBoxRTStableCheck.cpp \
+   	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
+   VBoxRTStableCheck_LIBS = \
+   	$(LIB_RUNTIME)
+   VBoxRTStableCheck_CLEAN = \
+   	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
+   $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRTStableCheck)
 
- ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
- $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
- 		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
- 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
- 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
- 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
- 		| $$(dir $$@)
- else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
- $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
- 		$(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
- 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
- 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
- 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
- else
- $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
- 		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
- 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
- 		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
- endif
+   ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+    $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+    		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
+    		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
+    		| $$(dir $$@)
+   else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
+    $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+    		$(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
+    		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
+   else
+    $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+    		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
+   endif
 	$(APPEND) -tn "$@" '%include "iprt/asmdefs.mac"' ''
 	$(SED) --append "$@" \
        	-e "/not-$(KBUILD_TARGET)/d" \
@@ -3130,10 +3130,10 @@ if1of (VBoxRT,$(DLLS))
 		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
 		-f "$<" $(filter %.def, $^)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
- $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm)
+   $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm)
 
-endif
-endif ## @todo bugref:9898
+  endif
+ endif ## @todo bugref:9898
 endif # remove later
 
 
@@ -3147,8 +3147,8 @@ RuntimeR3NoCrt_DEFS     := \
 	RT_NO_STRICT \
 	IPRT_NO_ALLOCA_TROUBLE \
 	IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES \
-       IPRT_MINIMAL_STREAM \
-       IPRT_NO_FLOAT_FORMATTING
+	IPRT_MINIMAL_STREAM \
+	IPRT_NO_FLOAT_FORMATTING
 RuntimeR3NoCrt_SOURCES  := \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
@@ -3177,7 +3177,7 @@ RuntimeR3NoCrt_SOURCES  := \
 	common/misc/getoptargv.cpp \
 	common/misc/message.cpp \
 	common/err/errmsg.cpp \
-       r3/init-data.cpp \
+	r3/init-data.cpp \
 	r3/process-data.cpp \
 	generic/uuid-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp
@@ -3201,12 +3201,12 @@ RuntimeR3NoCrt_SOURCES.amd64 := \
 	common/string/strlen.asm \
 	common/string/strchr.asm \
 	common/string/strcmp.asm \
-	common/string/strncmp.asm \
+	common/string/strncmp.asm
 
 RuntimeR3NoCrt_SOURCES.win := \
 	r3/win/nocrt-startup-exe-win.cpp \
 	r3/win/nocrt-startup-common-win.cpp \
-  	r3/win/nocrt-fatal-write-win.cpp \
+	r3/win/nocrt-fatal-write-win.cpp \
 	r3/win/nocrt-alloc-win.cpp \
 	r3/win/nocrt-streams-win.cpp \
 	\
@@ -3251,10 +3251,10 @@ RuntimeR0_SOURCES      := \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
- 	common/path/RTPathFilename.cpp \
- 	common/rand/rand.cpp \
- 	common/rand/randadv.cpp \
- 	common/rand/randparkmiller.cpp \
+	common/path/RTPathFilename.cpp \
+	common/rand/rand.cpp \
+	common/rand/randadv.cpp \
+	common/rand/randparkmiller.cpp \
 	common/string/strprintf-ellipsis.cpp \
 	common/string/strprintf2-ellipsis.cpp \
 	common/string/strhash1.cpp \
@@ -3297,28 +3297,28 @@ RuntimeR0_SOURCES      := \
 	$(RuntimeNoCrt_SOURCES)
 
 if1of ($(KBUILD_TARGET), darwin solaris freebsd os2)
-RuntimeR0_SOURCES += \
-	common/math/gcc/adddi3.c \
-	common/math/gcc/anddi3.c \
-	common/math/gcc/ashldi3.c \
-	common/math/gcc/ashrdi3.c \
-	common/math/gcc/cmpdi2.c \
-	common/math/gcc/divdi3.c \
-	common/math/gcc/divmoddi4.c \
-	common/math/gcc/iordi3.c \
-	common/math/gcc/lshldi3.c \
-	common/math/gcc/lshrdi3.c \
-	common/math/gcc/moddi3.c \
-	common/math/gcc/muldi3.c \
-	common/math/gcc/negdi2.c \
-	common/math/gcc/notdi2.c \
-	common/math/gcc/qdivrem.c \
-	common/math/gcc/subdi3.c \
-	common/math/gcc/ucmpdi2.c \
-	common/math/gcc/udivdi3.c \
-	common/math/gcc/udivmoddi4.c \
-	common/math/gcc/umoddi3.c \
-	common/math/gcc/xordi3.c
+ RuntimeR0_SOURCES += \
+ 	common/math/gcc/adddi3.c \
+ 	common/math/gcc/anddi3.c \
+ 	common/math/gcc/ashldi3.c \
+ 	common/math/gcc/ashrdi3.c \
+ 	common/math/gcc/cmpdi2.c \
+ 	common/math/gcc/divdi3.c \
+ 	common/math/gcc/divmoddi4.c \
+ 	common/math/gcc/iordi3.c \
+ 	common/math/gcc/lshldi3.c \
+ 	common/math/gcc/lshrdi3.c \
+ 	common/math/gcc/moddi3.c \
+ 	common/math/gcc/muldi3.c \
+ 	common/math/gcc/negdi2.c \
+ 	common/math/gcc/notdi2.c \
+ 	common/math/gcc/qdivrem.c \
+ 	common/math/gcc/subdi3.c \
+ 	common/math/gcc/ucmpdi2.c \
+ 	common/math/gcc/udivdi3.c \
+ 	common/math/gcc/udivmoddi4.c \
+ 	common/math/gcc/umoddi3.c \
+ 	common/math/gcc/xordi3.c
 endif
 
 RuntimeR0_SOURCES.x86 += \
@@ -3374,7 +3374,7 @@ RuntimeR0_SOURCES.sparc64 += \
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR0_SOURCES += common/time/timesupA.asm
 #else
- RuntimeR0_SOURCES += common/time/timesupref.cpp
+RuntimeR0_SOURCES  += common/time/timesupref.cpp
 #endif
 
 RuntimeR0_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
@@ -3403,10 +3403,10 @@ RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
 RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK_INCS)
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL NOFILEID
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0 LDR_ONLY_PE IPRT_WITHOUT_DIGEST_MD4
-RuntimeR0Drv_DEFS.darwin= IN_SUP_R0 LDR_ONLY_MACHO IPRT_WITHOUT_DIGEST_MD4 IN_RING0_DRV_ON_DARWIN
-if  ($(VBOX_SOLARIS_11_UPDATE_VERSION) > 2 \
- || ($(VBOX_SOLARIS_11_UPDATE_VERSION) == 2 && $(VBOX_SOLARIS_11_BUILD_VERSION) >= 22))
-RuntimeR0Drv_DEFS.solaris += VBOX_NEW_CRASH_DUMP_FORMAT
+RuntimeR0Drv_DEFS.darwin = IN_SUP_R0 LDR_ONLY_MACHO IPRT_WITHOUT_DIGEST_MD4 IN_RING0_DRV_ON_DARWIN
+if   ($(VBOX_SOLARIS_11_UPDATE_VERSION) > 2 \
+  || ($(VBOX_SOLARIS_11_UPDATE_VERSION) == 2 && $(VBOX_SOLARIS_11_BUILD_VERSION) >= 22))
+ RuntimeR0Drv_DEFS.solaris += VBOX_NEW_CRASH_DUMP_FORMAT
 endif
 
 RuntimeR0Drv_INCS      := $(PATH_SUB_CURRENT) include
@@ -3429,9 +3429,9 @@ RuntimeR0Drv_SOURCES    = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/errinfo.cpp \
 	common/log/log.cpp \
- 	common/log/log-weak.cpp \
- 	common/log/log-weak-assert.cpp \
- 	common/log/log-weak-rel.cpp \
+	common/log/log-weak.cpp \
+	common/log/log-weak-assert.cpp \
+	common/log/log-weak-rel.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
 	common/log/logrelellipsis.cpp \
@@ -3534,7 +3534,7 @@ RuntimeR0Drv_SOURCES    = \
 	r0drv/initterm-r0drv.cpp \
 	r0drv/generic/semspinmutex-r0drv-generic.c \
 	r0drv/RTR0DbgKrnlInfoGetSymbol.cpp \
-	VBox/log-vbox.cpp \
+	VBox/log-vbox.cpp
 
 RuntimeR0Drv_SOURCES.amd64 = \
 	common/asm/ASMCpuIdExSlow.asm \
@@ -3958,7 +3958,7 @@ ifndef VBOX_USE_WATCOM_FOR_OS2
  	common/math/gcc/ashrdi3.c \
  	common/math/gcc/cmpdi2.c \
  	common/math/gcc/divdi3.c \
-	common/math/gcc/divmoddi4.c \
+ 	common/math/gcc/divmoddi4.c \
  	common/math/gcc/iordi3.c \
  	common/math/gcc/lshldi3.c \
  	common/math/gcc/lshrdi3.c \
@@ -3981,20 +3981,20 @@ else
  	common/math/watcom/U8LS-x86-32.asm \
  	common/math/watcom/U8RS-x86-32.asm \
  	common/math/watcom/U8M-I8M-x86-32.asm \
-	common/string/watcom/bzero.asm \
-	common/string/watcom/memchr.asm \
-	common/string/watcom/memcmp.asm \
-	common/string/watcom/memcpy.asm \
-	common/string/watcom/memmove.asm \
-	common/string/watcom/mempcpy.asm \
-	common/string/watcom/memrchr.asm \
-	common/string/watcom/memset.asm \
-	common/string/watcom/strchr.asm \
-	common/string/watcom/strcmp.asm \
-	common/string/watcom/strcpy.asm \
-	common/string/watcom/strlen.asm \
-	common/string/watcom/strncmp.asm \
-	common/string/watcom/strncpy.asm
+ 	common/string/watcom/bzero.asm \
+ 	common/string/watcom/memchr.asm \
+ 	common/string/watcom/memcmp.asm \
+ 	common/string/watcom/memcpy.asm \
+ 	common/string/watcom/memmove.asm \
+ 	common/string/watcom/mempcpy.asm \
+ 	common/string/watcom/memrchr.asm \
+ 	common/string/watcom/memset.asm \
+ 	common/string/watcom/strchr.asm \
+ 	common/string/watcom/strcmp.asm \
+ 	common/string/watcom/strcpy.asm \
+ 	common/string/watcom/strlen.asm \
+ 	common/string/watcom/strncmp.asm \
+ 	common/string/watcom/strncpy.asm
 endif
 
 RuntimeR0Drv_SOURCES.freebsd = \
@@ -4188,7 +4188,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/log/logformat.cpp \
  	common/log/tracebuf.cpp \
  	common/log/tracedefault.cpp \
-	common/log/RTLogCreateEx.cpp \
+ 	common/log/RTLogCreateEx.cpp \
  	common/misc/RTAssertMsg1Weak.cpp \
  	common/misc/RTAssertMsg2.cpp \
  	common/misc/RTAssertMsg2Add.cpp \
@@ -4240,7 +4240,7 @@ ifdef VBOX_WITH_RAW_MODE
  #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
  # RuntimeRC_SOURCES += common/time/timesupA.asm
  #else
-  RuntimeRC_SOURCES += common/time/timesupref.cpp
+ RuntimeRC_SOURCES  += common/time/timesupref.cpp
  #endif
 
  RuntimeRC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
@@ -4257,7 +4257,7 @@ ifdef VBOX_WITH_RAW_MODE
   	common/math/gcc/ashrdi3.c \
   	common/math/gcc/cmpdi2.c \
   	common/math/gcc/divdi3.c \
-	common/math/gcc/divmoddi4.c \
+  	common/math/gcc/divmoddi4.c \
   	common/math/gcc/iordi3.c \
   	common/math/gcc/lshldi3.c \
   	common/math/gcc/lshrdi3.c \
@@ -4311,23 +4311,23 @@ RuntimeEFCPP_SOURCES   := r3/alloc-ef-cpp.cpp
 #           later WINDDK ntdll.lib have and thus we may easily end up with
 #           images that does not load on older windows versions.
 #
-if1of (win,$(KBUILD_TARGET) $(KBUILD_HOST))
-RuntimeR3NtDll-amd64_TEMPLATE     = VBoxR3Dll
-RuntimeR3NtDll-amd64_BLD_TRG_ARCH = amd64
-RuntimeR3NtDll-amd64_ARFLAGS      = /NODEFAULTLIB /MACHINE:amd64
-RuntimeR3NtDll-amd64_SOURCES      = \
-	r3/win/ntdll-mini-implib.def
+if1of (win, $(KBUILD_TARGET) $(KBUILD_HOST))
+ RuntimeR3NtDll-amd64_TEMPLATE    = VBoxR3Dll
+ RuntimeR3NtDll-amd64_BLD_TRG_ARCH = amd64
+ RuntimeR3NtDll-amd64_ARFLAGS     = /NODEFAULTLIB /MACHINE:amd64
+ RuntimeR3NtDll-amd64_SOURCES     = \
+ 	r3/win/ntdll-mini-implib.def
 
-RuntimeR3NtDll-x86_TEMPLATE       = VBoxR3Dll
-RuntimeR3NtDll-x86_BLD_TRG_ARCH   = x86
-RuntimeR3NtDll-x86_ARFLAGS        = /NODEFAULTLIB /MACHINE:x86
-RuntimeR3NtDll-x86_SOURCES        = \
-	r3/win/ntdll-mini-implib.def \
-	$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm
-RuntimeR3NtDll-x86_CLEAN          = \
-	$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm
+ RuntimeR3NtDll-x86_TEMPLATE      = VBoxR3Dll
+ RuntimeR3NtDll-x86_BLD_TRG_ARCH  = x86
+ RuntimeR3NtDll-x86_ARFLAGS       = /NODEFAULTLIB /MACHINE:x86
+ RuntimeR3NtDll-x86_SOURCES       = \
+ 	r3/win/ntdll-mini-implib.def \
+ 	$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm
+ RuntimeR3NtDll-x86_CLEAN         = \
+ 	$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm
 
-$$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm: $(PATH_SUB_CURRENT)/r3/win/ntdll-mini-implib.def | $$(dir $$@)
+ $$(RuntimeR3NtDll-x86_0_OUTDIR)/ntdll-mini-implib.asm: $(PATH_SUB_CURRENT)/r3/win/ntdll-mini-implib.def | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(APPEND) -nt "$@" \
 		';Autogenerated, do not edit' \
@@ -4360,23 +4360,23 @@ ifndef VBOX_WITH_NOCRT_STATIC
 endif
 
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
-LIBRARIES += RuntimeR3VccTricks2
-RuntimeR3VccTricks2_TEMPLATE = VBoxR3Dll
-RuntimeR3VccTricks2_DEFS    += $(RuntimeR3VccTricks_DEFS)
-RuntimeR3VccTricks2_SOURCES  = $(RuntimeR3VccTricks_SOURCES)
-RuntimeR3VccTricks2_SOURCES += $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
-RuntimeR3VccTricks2_CLEAN    = $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
-RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED =
+ LIBRARIES += RuntimeR3VccTricks2
+ RuntimeR3VccTricks2_TEMPLATE = VBoxR3Dll
+ RuntimeR3VccTricks2_DEFS   += $(RuntimeR3VccTricks_DEFS)
+ RuntimeR3VccTricks2_SOURCES = $(RuntimeR3VccTricks_SOURCES)
+ RuntimeR3VccTricks2_SOURCES += $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
+ RuntimeR3VccTricks2_CLEAN   = $(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib
+ RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED =
 
-$$(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib: \
-		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
-		$$(LIB_RUNTIME) \
-		$(MAKEFILE) | $$(dir $$@)
+ $$(RuntimeR3VccTricks2_0_OUTDIR)/dynobjs.lib: \
+ 		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+ 		$$(PATH_TOOL_$$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+ 		$$(LIB_RUNTIME) \
+ 		$(MAKEFILE) | $$(dir $$@)
 	$(RM) -f -- "$@"
-#	$(REDIRECT) -C $(dir $@) -- $(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib \
-#               $(PATH_TOOL_$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
-#               $(foreach file, $(RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED), *$(file))
+ #	$(REDIRECT) -C $(dir $@) -- $(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib \
+ #               $(PATH_TOOL_$(TEMPLATE_VBoxR3Dll_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+ #               $(foreach file, $(RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED), *$(file))
 	$(KBUILD_DEVTOOLS)/common/openwatcom/v1.9-r2/binnt/wlib -o=$@.tmp.lib $< \
 		-MSVCR100.dll \
 		$(addprefix $(RuntimeR3VccTricks2_0_OUTDIR)/, $(RuntimeR3VccTricks2_VBOX_LIBCMT_NEEDED)) \
@@ -4483,39 +4483,39 @@ bldRTErrMsgWinSorter_SOURCES  = win/errmsgwin-sorter.cpp
 
 
 if "$(KBUILD_TARGET)" == "freebsd"
-#
-# FreeBSDGeneratedKernelHeaders - Generate some kernel interface headers.
-#
-# These are used by:
-#      - The RTMp* API in IPRT.
-#      - VBoxGuest
-#
-# Note! We cannot give a output path to the awk program, it will always
-# generate the header next to the source. So, we'll have to temporarily copy
-# the source file to the destination directory to work.
-#
-VBOX_AWK := /usr/bin/awk
-INSTALLS += FreeBSDGeneratedKernelHeaders
-FreeBSDGeneratedKernelHeaders_INST = gen-sys-hdrs/
-FreeBSDGeneratedKernelHeaders_SOURCES = \
-	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h \
-	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/device_if.h \
-	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/pci_if.h
-FreeBSDGeneratedKernelHeaders_CLEAN = $(FreeBSDGeneratedKernelHeaders_SOURCES)
+ #
+ # FreeBSDGeneratedKernelHeaders - Generate some kernel interface headers.
+ #
+ # These are used by:
+ #      - The RTMp* API in IPRT.
+ #      - VBoxGuest
+ #
+ # Note! We cannot give a output path to the awk program, it will always
+ # generate the header next to the source. So, we'll have to temporarily copy
+ # the source file to the destination directory to work.
+ #
+ VBOX_AWK := /usr/bin/awk
+ INSTALLS += FreeBSDGeneratedKernelHeaders
+ FreeBSDGeneratedKernelHeaders_INST = gen-sys-hdrs/
+ FreeBSDGeneratedKernelHeaders_SOURCES = \
+ 	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h \
+ 	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/device_if.h \
+ 	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/pci_if.h
+ FreeBSDGeneratedKernelHeaders_CLEAN = $(FreeBSDGeneratedKernelHeaders_SOURCES)
 
-$$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m | $$(dir $$@)
+ $$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m | $$(dir $$@)
 	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
 	$(QUIET)$(CP) -f $< $(@D)/bus_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/bus_if.m -h -p
 	$(QUIET)$(RM) $(@D)/bus_if.m
 
-$$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m | $$(dir $$@)
+ $$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m | $$(dir $$@)
 	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
 	$(QUIET)$(CP) -f $< $(@D)/device_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/device_if.m -h -p
 	$(QUIET)$(RM) $(@D)/device_if.m
 
-$$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m | $$(dir $$@)
+ $$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m | $$(dir $$@)
 	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
 	$(QUIET)$(CP) -f $< $(@D)/pci_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/pci_if.m -h -p
@@ -4560,28 +4560,28 @@ IPRT_DOXYFILE_INPUT_DIRS = \
 	$(VBOX_PATH_RUNTIME_SRC)/common/table \
 	$(VBOX_PATH_RUNTIME_SRC)/common/time \
 	$(VBOX_PATH_RUNTIME_SRC)/VBox \
-	$(foreach dir, $(VBOX_PATH_RUNTIME_SRC) $(VBOX_PATH_RUNTIME_SRC)/r3 $(VBOX_PATH_RUNTIME_SRC)/r0drv,\
-		$(dir) \
-		$(dir)/darwin \
-		$(dir)/haiku \
-		$(dir)/linux \
-		$(dir)/nt \
-		$(dir)/os2 \
-		$(dir)/solaris \
-		$(dir)/win \
-		$(dir)/win32 \
-		$(dir)/win64 \
-		$(dir)/generic \
-		)
+	$(foreach dir, $(VBOX_PATH_RUNTIME_SRC) $(VBOX_PATH_RUNTIME_SRC)/r3 $(VBOX_PATH_RUNTIME_SRC)/r0drv, \
+	$(dir) \
+	$(dir)/darwin \
+	$(dir)/haiku \
+	$(dir)/linux \
+	$(dir)/nt \
+	$(dir)/os2 \
+	$(dir)/solaris \
+	$(dir)/win \
+	$(dir)/win32 \
+	$(dir)/win64 \
+	$(dir)/generic \
+	)
 
 # These must come first in order to make things look nice.
-IPRT_DOXYFILE_INPUT_FIRST =\
+IPRT_DOXYFILE_INPUT_FIRST = \
 	$(PATH_ROOT)/include/iprt/cdefs.h \
 	$(PATH_ROOT)/include/iprt/types.h \
 	$(PATH_ROOT)/include/iprt/runtime.h \
 	$(PATH_ROOT)/include/iprt/param.h \
 	$(PATH_ROOT)/include/iprt/assert.h \
-	$(PATH_ROOT)/include/iprt/asm.h \
+	$(PATH_ROOT)/include/iprt/asm.h
 
 IPRT_DOXYFILE_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(IPRT_DOXYFILE_INPUT_DIRS)))) ) \
@@ -4643,7 +4643,7 @@ $(IPRT_DOXYFILE_OUTPUT)/docs.iprt: $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt $$(IPRT
 # aliases
 docs.iprt: $(IPRT_DOXYFILE_OUTPUT)/docs.iprt
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
-docs: $(IPRT_DOXYFILE_OUTPUT)/docs.iprt
+ docs: $(IPRT_DOXYFILE_OUTPUT)/docs.iprt
 endif
 
 test-doxygen::
@@ -4656,19 +4656,19 @@ test-doxygen::
 #
 # Test mangling.
 #
-if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
+if1of ($(LIBRARIES), RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
  test-mangling:: $(IPRT_OUT_DIR)/mangling.run
  OTHERS      += $(IPRT_OUT_DIR)/mangling.run
  OTHER_CLEAN += $(IPRT_OUT_DIR)/mangling.run
  $(IPRT_OUT_DIR)/mangling.run: \
-		$$(RuntimeR3_1_TARGET) \
-		$$(RuntimeR0_1_TARGET) \
-		$$(RuntimeR0Drv_1_TARGET) \
-		$$(RuntimeRC_1_TARGET)
+ 		$$(RuntimeR3_1_TARGET) \
+ 		$$(RuntimeR0_1_TARGET) \
+ 		$$(RuntimeR0Drv_1_TARGET) \
+ 		$$(RuntimeRC_1_TARGET)
  if1of ($(KBUILD_TARGET), win os2)
 	$(call MSG_L1,IPRT: skipped mangling test.)
  else
-# Generate a SED script from mangling.h that checks for known symbols.
+  # Generate a SED script from mangling.h that checks for known symbols.
 	$(QUIET)$(SED) \
 		-e '/^# *define.*RT_MANGLER/!d' \
 		-e 's/^.*RT_MANGLER(\([^)][^)]*\)).*$(DOLLAR)/\/^\1$(DOLLAR)\/b ok/' \
@@ -4685,7 +4685,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 		'' \
 		':ok' \
 		'd'
-# Find the best way to generate a symbol list and subject it to mangling.h.
+  # Find the best way to generate a symbol list and subject it to mangling.h.
   if $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
 	$(call MSG_L1,IPRT: Testing mangling and visiblity for newer gcc...)
 	$(QUIET)readelf -Ws $^ \
@@ -4797,13 +4797,13 @@ endif
 	$(QUIET)$(APPEND) -t $@
 
 if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_ONLY_DOCS)
-#
-# Windows build tool.
-#
-BLDPROGS.win += ntBldSymDb
-ntBldSymDb_TEMPLATE = VBoxAdvBldProg
-ntBldSymDb_INCS = .
-ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
+ #
+ # Windows build tool.
+ #
+ BLDPROGS.win += ntBldSymDb
+ ntBldSymDb_TEMPLATE = VBoxAdvBldProg
+ ntBldSymDb_INCS = .
+ ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
 endif
 
 

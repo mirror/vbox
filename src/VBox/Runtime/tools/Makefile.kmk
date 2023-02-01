@@ -40,7 +40,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_DOCS)
  # RTIsoMaker - ISO image maker - build version.
- ifeq ($(KBUILD_TARGET), win) # Needed for repacking guest additions.
+ ifeq ($(KBUILD_TARGET),win)  # Needed for repacking guest additions.
   PROGRAMS += bldRTIsoMaker
   bldRTIsoMaker_INSTTYPE = stage
  else
@@ -49,7 +49,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_DOCS)
  bldRTIsoMaker_TEMPLATE = VBoxAdvBldProg
  bldRTIsoMaker_SOURCES = \
  	RTIsoMaker.cpp \
-        ../common/misc/buildconfig.cpp
+ 	../common/misc/buildconfig.cpp
  bldRTIsoMaker_DEFS = \
  	IPRT_BLDCFG_SCM_REV=$(if $(VBOX_SVN_REV_FALLBACK),$(VBOX_SVN_REV_FALLBACK),$(VBOX_SVN_REV)) \
  	IPRT_BLDCFG_VERSION_MAJOR=$(VBOX_VERSION_MAJOR) \
@@ -57,16 +57,16 @@ if !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_DOCS)
  	IPRT_BLDCFG_VERSION_BUILD=$(VBOX_VERSION_BUILD)
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
   bldRTIsoMaker_DEFS += \
- 	IPRT_BLDCFG_VERSION_STRING="$(VBOX_VERSION_STRING)" \
- 	IPRT_BLDCFG_TARGET="$(KBUILD_TARGET)" \
- 	IPRT_BLDCFG_TARGET_ARCH="$(KBUILD_TARGET_ARCH)" \
- 	IPRT_BLDCFG_TYPE="$(KBUILD_TYPE)"
+  	IPRT_BLDCFG_VERSION_STRING="$(VBOX_VERSION_STRING)" \
+  	IPRT_BLDCFG_TARGET="$(KBUILD_TARGET)" \
+  	IPRT_BLDCFG_TARGET_ARCH="$(KBUILD_TARGET_ARCH)" \
+  	IPRT_BLDCFG_TYPE="$(KBUILD_TYPE)"
  else
   bldRTIsoMaker_DEFS += \
- 	IPRT_BLDCFG_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
- 	IPRT_BLDCFG_TARGET=\"$(KBUILD_TARGET)\" \
- 	IPRT_BLDCFG_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\" \
- 	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
+  	IPRT_BLDCFG_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
+  	IPRT_BLDCFG_TARGET=\"$(KBUILD_TARGET)\" \
+  	IPRT_BLDCFG_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\" \
+  	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
  endif
  bldRTIsoMaker_INCS = ../include
 endif
@@ -88,8 +88,8 @@ if !defined(VBOX_ONLY_DOCS)
   bldRTSignTool_SOURCES   := RTSignTool.cpp
   bldRTSignTool_DEFS      := IPRT_IN_BUILD_TOOL
   bldRTSignTool_LDFLAGS.darwin := \
-	-framework CoreFoundation \
-	-framework Security
+  	-framework CoreFoundation \
+  	-framework Security
   bldRTSignTool_LIBS.win  := Crypt32.lib NCrypt.lib
   ifndef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
    bldRTSignTool_DEFS     += IPRT_SIGNTOOL_NO_SIGNING
@@ -97,15 +97,15 @@ if !defined(VBOX_ONLY_DOCS)
    bldRTSignTool_SDKS     += VBoxOpenSslBldProg
    bldRTSignTool_DEFS     += IPRT_WITH_OPENSSL
    bldRTSignTool_SOURCES  += \
-       ../common/crypto/pkix-signature-builtin.cpp \
-       ../common/crypto/store.cpp \
-       ../common/crypto/digest-builtin.cpp \
-	../common/crypto/iprt-openssl.cpp\
-       ../common/crypto/key.cpp \
-       ../common/crypto/key-file.cpp \
-	../common/crypto/key-openssl.cpp \
-	../common/crypto/pkcs7-sign.cpp \
-	../common/crypto/RTCrRandBytes-openssl.cpp
+   	../common/crypto/pkix-signature-builtin.cpp \
+   	../common/crypto/store.cpp \
+   	../common/crypto/digest-builtin.cpp \
+   	../common/crypto/iprt-openssl.cpp \
+   	../common/crypto/key.cpp \
+   	../common/crypto/key-file.cpp \
+   	../common/crypto/key-openssl.cpp \
+   	../common/crypto/pkcs7-sign.cpp \
+   	../common/crypto/RTCrRandBytes-openssl.cpp
    if1of ($(KBUILD_HOST), darwin win)
     bldRTSignTool_SOURCES += ../r3/$(KBUILD_HOST)/RTCrStoreCreateSnapshotById-$(KBUILD_HOST).cpp
    else
