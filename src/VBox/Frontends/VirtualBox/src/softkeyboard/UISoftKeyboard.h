@@ -47,6 +47,7 @@ class QHBoxLayout;
 class QToolButton;
 class UIKeyboardLayoutEditor;
 class UILayoutSelector;
+class UIMachine;
 class UISession;
 class UISoftKeyboardKey;
 class UISoftKeyboardSettingsWidget;
@@ -70,8 +71,8 @@ signals:
 
 public:
 
-    UISoftKeyboard(QWidget *pParent, UISession *pSession, QWidget *pCenterWidget,
-                   QString strMachineName = QString());
+    UISoftKeyboard(QWidget *pParent, UIMachine *pMachine, UISession *pSession,
+                   QWidget *pCenterWidget, QString strMachineName = QString());
     ~UISoftKeyboard();
 
 protected:
@@ -130,6 +131,7 @@ private:
     void updateLayoutSelectorList();
     CKeyboard& keyboard() const;
 
+    UIMachine     *m_pMachine;
     UISession     *m_pSession;
     QWidget       *m_pCenterWidget;
     QHBoxLayout   *m_pMainLayout;

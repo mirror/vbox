@@ -517,38 +517,6 @@ void UISession::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
 }
 #endif /* RT_OS_DARWIN */
 
-void UISession::sltKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
-{
-    /* Check if something had changed: */
-    if (   m_fNumLock != fNumLock
-        || m_fCapsLock != fCapsLock
-        || m_fScrollLock != fScrollLock)
-    {
-        /* Store new num lock data: */
-        if (m_fNumLock != fNumLock)
-        {
-            m_fNumLock = fNumLock;
-            m_uNumLockAdaptionCnt = 2;
-        }
-
-        /* Store new caps lock data: */
-        if (m_fCapsLock != fCapsLock)
-        {
-            m_fCapsLock = fCapsLock;
-            m_uCapsLockAdaptionCnt = 2;
-        }
-
-        /* Store new scroll lock data: */
-        if (m_fScrollLock != fScrollLock)
-        {
-            m_fScrollLock = fScrollLock;
-        }
-
-        /* Notify listeners about mouse capability changed: */
-        emit sigKeyboardLedsChange();
-    }
-}
-
 void UISession::sltStateChange(KMachineState state)
 {
     /* Check if something had changed: */
@@ -851,12 +819,6 @@ UISession::UISession(UIMachine *pMachine)
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
     , m_fIsGuestSupportsSeamless(false)
-    /* Mouse flags: */
-    , m_fNumLock(false)
-    , m_fCapsLock(false)
-    , m_fScrollLock(false)
-    , m_uNumLockAdaptionCnt(2)
-    , m_uCapsLockAdaptionCnt(2)
     /* CPU hardware virtualization features for VM: */
     , m_enmVMExecutionEngine(KVMExecutionEngine_NotSet)
     , m_fIsHWVirtExNestedPagingEnabled(false)
@@ -965,7 +927,7 @@ void UISession::prepareConsoleEventHandlers()
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCursorPositionChange,
             this, &UISession::sigCursorPositionChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigKeyboardLedsChange,
-            this, &UISession::sltKeyboardLedsChange);
+            this, &UISession::sigKeyboardLedsChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigStateChange,
             this, &UISession::sltStateChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigAdditionsChange,

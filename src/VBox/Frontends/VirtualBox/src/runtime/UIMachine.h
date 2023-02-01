@@ -59,6 +59,15 @@ signals:
     /** Requests async visual-state change. */
     void sigRequestAsyncVisualStateChange(UIVisualStateType visualStateType);
 
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Notifies about keyboard LEDs change. */
+        void sigKeyboardLedsChange();
+
+        /** Notifies listeners about keyboard state-change. */
+        void sigKeyboardStateChange(int iState);
+    /** @} */
+
     /** @name Mouse cursor stuff.
      ** @{ */
         /** Notifies listeners about mouse pointer shape change. */
@@ -112,6 +121,29 @@ public:
 #endif
     /** @} */
 
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Returns the NUM lock status. */
+        bool isNumLock() const { return m_fNumLock; }
+        /** Returns the CAPS lock status. */
+        bool isCapsLock() const { return m_fCapsLock; }
+        /** Returns the SCROLL lock status. */
+        bool isScrollLock() const { return m_fScrollLock; }
+
+        /** Returns the NUM lock adaption count. */
+        uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
+        /** Defines the NUM lock adaption @a uCount. */
+        void setNumLockAdaptionCnt(uint uCount) { m_uNumLockAdaptionCnt = uCount; }
+
+        /** Returns the CAPS lock adaption count. */
+        uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
+        /** Defines the CAPS lock adaption @a uCount. */
+        void setCapsLockAdaptionCnt(uint uCount) { m_uCapsLockAdaptionCnt = uCount; }
+
+        /** Returns the keyboard-state. */
+        int keyboardState() const { return m_iKeyboardState; }
+    /** @} */
+
     /** @name Mouse cursor stuff.
      ** @{ */
         /** Returns whether we should hide host mouse pointer. */
@@ -158,6 +190,12 @@ public:
 
 public slots:
 
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Defines @a iKeyboardState. */
+        void setKeyboardState(int iKeyboardState) { m_iKeyboardState = iKeyboardState; emit sigKeyboardStateChange(m_iKeyboardState); }
+    /** @} */
+
     /** @name Mouse cursor stuff.
      ** @{ */
         /** Defines @a iMouseState. */
@@ -171,6 +209,15 @@ private slots:
 
     /** Visual state-change handler. */
     void sltChangeVisualState(UIVisualStateType visualStateType);
+
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Handles signal about keyboard LEDs change.
+          * @param  fNumLock     Brings NUM lock status.
+          * @param  fCapsLock    Brings CAPS lock status.
+          * @param  fScrollLock  Brings SCROLL lock status. */
+        void sltHandleKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    /** @} */
 
     /** @name Mouse cursor stuff.
      ** @{ */
@@ -216,7 +263,7 @@ private:
 
     /** Cleanup routine: Machine-logic stuff. */
     void cleanupMachineLogic();
-    /** Cleanup machine-window icon. */
+    /** Cleanup routine: Machine-window icon. */
     void cleanupMachineWindowIcon();
     /** Cleanup routine: Session stuff. */
     void cleanupSession();
@@ -283,6 +330,24 @@ private:
         /** Holds redefined machine-window name postfix. */
         QString m_strMachineWindowNamePostfix;
 #endif
+    /** @} */
+
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Holds the NUM lock status. */
+        bool  m_fNumLock;
+        /** Holds the CAPS lock status. */
+        bool  m_fCapsLock;
+        /** Holds the SCROLL lock status. */
+        bool  m_fScrollLock;
+
+        /** Holds the NUM lock adaption count. */
+        uint  m_uNumLockAdaptionCnt;
+        /** Holds the CAPS lock adaption count. */
+        uint  m_uCapsLockAdaptionCnt;
+
+        /** Holds the keyboard-state. */
+        int  m_iKeyboardState;
     /** @} */
 
     /** @name Mouse cursor stuff.

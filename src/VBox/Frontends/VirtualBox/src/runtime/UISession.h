@@ -81,8 +81,6 @@ signals:
     void sigFrameBufferResize();
 
     /* Console callback signals: */
-    /** Notifies listeners about keyboard state-change. */
-    void sigKeyboardStateChange(int iState);
     /** Notifies listeners about mouse pointer shape change. */
     void sigMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
     /** Notifies listeners about mouse capability change. */
@@ -91,7 +89,7 @@ signals:
                                   bool fNeedsHostCursor);
     /** Notifies listeners about cursor position change. */
     void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
-    void sigKeyboardLedsChange();
+    void sigKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sigMachineStateChange();
     void sigAdditionsStateChange();
     void sigAdditionsStateActualChange();
@@ -234,15 +232,6 @@ public:
     /** Returns whether GA can be upgraded. */
     bool guestAdditionsUpgradable();
 
-    /* Keyboard getters: */
-    /** Returns keyboard-state. */
-    int keyboardState() const { return m_iKeyboardState; }
-    bool isNumLock() const { return m_fNumLock; }
-    bool isCapsLock() const { return m_fCapsLock; }
-    bool isScrollLock() const { return m_fScrollLock; }
-    uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
-    uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
-
     /* Common setters: */
     bool pause() { return setPause(true); }
     bool unpause() { return setPause(false); }
@@ -250,10 +239,6 @@ public:
     void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
     void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled) { m_fIsAutoCaptureDisabled = fIsAutoCaptureDisabled; }
     void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
-
-    /* Keyboard setters: */
-    void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
-    void setCapsLockAdaptionCnt(uint uCapsLockAdaptionCnt) { m_uCapsLockAdaptionCnt = uCapsLockAdaptionCnt; }
 
     /* Screen visibility status for host-desires: */
     bool isScreenVisibleHostDesires(ulong uScreenId) const;
@@ -318,9 +303,6 @@ public slots:
       * @param  strSource  Brings the source of image being mounted. */
     void sltMountDVDAdHoc(const QString &strSource);
 
-    /** Defines @a iKeyboardState. */
-    void setKeyboardState(int iKeyboardState) { m_iKeyboardState = iKeyboardState; emit sigKeyboardStateChange(m_iKeyboardState); }
-
     /** Closes Runtime UI. */
     void closeRuntimeUI();
 
@@ -335,7 +317,6 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Console events slots */
-    void sltKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
     void sltVRDEChange();
@@ -511,15 +492,6 @@ private:
     ULONG m_ulGuestAdditionsRunLevel;
     bool  m_fIsGuestSupportsGraphics : 1;
     bool  m_fIsGuestSupportsSeamless : 1;
-
-    /* Keyboard flags: */
-    /** Holds the keyboard-state. */
-    int m_iKeyboardState;
-    bool m_fNumLock : 1;
-    bool m_fCapsLock : 1;
-    bool m_fScrollLock : 1;
-    uint m_uNumLockAdaptionCnt;
-    uint m_uCapsLockAdaptionCnt;
 
     /** Copy of IMachineDebugger::ExecutionEngine */
     KVMExecutionEngine m_enmVMExecutionEngine;

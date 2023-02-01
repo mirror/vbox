@@ -1832,16 +1832,16 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
 
 #if defined(VBOX_WS_MAC)
 
-    /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    /* if (uimachine()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
+    if (uimachine()->capsLockAdaptionCnt() && (uimachine()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        uimachine()->setCapsLockAdaptionCnt(uimachine()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
         piCodes[(*puCount)++] = 0x3a | 0x80;
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (uimachine()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -1850,21 +1850,21 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
 
 #elif defined(VBOX_WS_WIN)
 
-    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
+    if (uimachine()->numLockAdaptionCnt() && (uimachine()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
     {
-        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
+        uimachine()->setNumLockAdaptionCnt(uimachine()->numLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
+    if (uimachine()->capsLockAdaptionCnt() && (uimachine()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
     {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        uimachine()->setCapsLockAdaptionCnt(uimachine()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
         piCodes[(*puCount)++] = 0x3a | 0x80;
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (uimachine()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -1890,21 +1890,21 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
 
-    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
+    if (uimachine()->numLockAdaptionCnt() && (uimachine()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
     {
-        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
+        uimachine()->setNumLockAdaptionCnt(uimachine()->numLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
+    if (uimachine()->capsLockAdaptionCnt() && (uimachine()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
     {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        uimachine()->setCapsLockAdaptionCnt(uimachine()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
         piCodes[(*puCount)++] = 0x3a | 0x80;
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (uimachine()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;

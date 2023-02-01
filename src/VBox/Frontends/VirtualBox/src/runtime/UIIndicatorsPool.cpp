@@ -1259,9 +1259,9 @@ public:
         setStateIcon(6, UIIconPool::iconSet(":/hostkey_pressed_checked_16px.png"));
         setStateIcon(7, UIIconPool::iconSet(":/hostkey_captured_pressed_checked_16px.png"));
         /* Configure connection: */
-        connect(pSession, &UISession::sigKeyboardStateChange,
+        connect(pMachine, &UIMachine::sigKeyboardStateChange,
                 this, static_cast<void(UIIndicatorKeyboard::*)(int)>(&UIIndicatorKeyboard::setState));
-        setState(pSession->keyboardState());
+        setState(pMachine->keyboardState());
         /* Translate finally: */
         retranslateUi();
     }

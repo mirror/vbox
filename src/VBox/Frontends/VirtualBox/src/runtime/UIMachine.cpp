@@ -218,6 +218,38 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
     }
 }
 
+void UIMachine::sltHandleKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
+{
+    /* Check if something had changed: */
+    if (   m_fNumLock != fNumLock
+        || m_fCapsLock != fCapsLock
+        || m_fScrollLock != fScrollLock)
+    {
+        /* Store new num lock data: */
+        if (m_fNumLock != fNumLock)
+        {
+            m_fNumLock = fNumLock;
+            m_uNumLockAdaptionCnt = 2;
+        }
+
+        /* Store new caps lock data: */
+        if (m_fCapsLock != fCapsLock)
+        {
+            m_fCapsLock = fCapsLock;
+            m_uCapsLockAdaptionCnt = 2;
+        }
+
+        /* Store new scroll lock data: */
+        if (m_fScrollLock != fScrollLock)
+        {
+            m_fScrollLock = fScrollLock;
+        }
+
+        /* Notify listeners: */
+        emit sigKeyboardLedsChange();
+    }
+}
+
 void UIMachine::sltMousePointerShapeChange(const UIMousePointerShapeData &shapeData)
 {
     LogRelFlow(("GUI: UIMachine::sltMousePointerShapeChange: "
@@ -311,6 +343,12 @@ UIMachine::UIMachine()
     , m_enmRequestedVisualState(UIVisualStateType_Invalid)
     , m_pMachineLogic(0)
     , m_pMachineWindowIcon(0)
+    , m_fNumLock(false)
+    , m_fCapsLock(false)
+    , m_fScrollLock(false)
+    , m_uNumLockAdaptionCnt(2)
+    , m_uCapsLockAdaptionCnt(2)
+    , m_iKeyboardState(0)
     , m_fIsHidingHostPointer(true)
     , m_fIsValidPointerShapePresent(false)
     , m_fIsValidCursorPositionPresent(false)
@@ -365,6 +403,11 @@ bool UIMachine::prepare()
 
 void UIMachine::prepareSessionConnections()
 {
+    /* Keyboard stuff: */
+    connect(uisession(), &UISession::sigKeyboardLedsChange,
+            this, &UIMachine::sltHandleKeyboardLedsChange);
+
+    /* Mouse stuff: */
     connect(uisession(), &UISession::sigMousePointerShapeChange,
             this, &UIMachine::sltMousePointerShapeChange);
     connect(uisession(), &UISession::sigMouseCapabilityChange,

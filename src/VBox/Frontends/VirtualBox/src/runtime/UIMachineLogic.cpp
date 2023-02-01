@@ -640,12 +640,12 @@ void UIMachineLogic::sltKeyboardLedsChanged()
         return;
 
 #if defined(VBOX_WS_MAC)
-    DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+    DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uimachine()->isNumLock(), uimachine()->isCapsLock(), uimachine()->isScrollLock());
 #elif defined(VBOX_WS_WIN)
-    if (!winHidLedsInSync(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock()))
+    if (!winHidLedsInSync(uimachine()->isNumLock(), uimachine()->isCapsLock(), uimachine()->isScrollLock()))
     {
         keyboardHandler()->winSkipKeyboardEvents(true);
-        WinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+        WinHidDevicesBroadcastLeds(uimachine()->isNumLock(), uimachine()->isCapsLock(), uimachine()->isScrollLock());
         keyboardHandler()->winSkipKeyboardEvents(false);
     }
     else
@@ -810,9 +810,9 @@ void UIMachineLogic::setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler)
 {
     /* Set new handler: */
     m_pKeyboardHandler = pKeyboardHandler;
-    /* Connect to session: */
+    /* Connect to uimachine: */
     connect(m_pKeyboardHandler, &UIKeyboardHandler::sigStateChange,
-            uisession(), &UISession::setKeyboardState);
+            uimachine(), &UIMachine::setKeyboardState);
 }
 
 void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
@@ -888,7 +888,7 @@ void UIMachineLogic::prepareSessionConnections()
     connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
     connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
     connect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
-    connect(uisession(), &UISession::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
+    connect(uimachine(), &UIMachine::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
     connect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
     connect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
@@ -1146,8 +1146,8 @@ void UIMachineLogic::prepareHandlers()
     /* Create keyboard/mouse handlers: */
     setKeyboardHandler(UIKeyboardHandler::create(this, visualStateType()));
     setMouseHandler(UIMouseHandler::create(this, visualStateType()));
-    /* Update UI session values with current: */
-    uisession()->setKeyboardState(keyboardHandler()->state());
+    /* Update UI machine values with current: */
+    uimachine()->setKeyboardState(keyboardHandler()->state());
     uimachine()->setMouseState(mouseHandler()->state());
 }
 
@@ -1438,7 +1438,7 @@ void UIMachineLogic::cleanupSessionConnections()
     disconnect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
     disconnect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
     disconnect(uimachine(), &UIMachine::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
-    disconnect(uisession(), &UISession::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
+    disconnect(uimachine(), &UIMachine::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
     disconnect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
     disconnect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
@@ -2066,7 +2066,8 @@ void UIMachineLogic::sltShowSoftKeyboard()
     if (!m_pSoftKeyboardDialog)
     {
         QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
-        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uisession(), pCenterWidget, machine().GetName());
+        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), uisession(),
+                                                   pCenterWidget, machine().GetName());
         connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose, this, &UIMachineLogic::sltCloseSoftKeyboardDefault);
     }
 
@@ -2681,12 +2682,12 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
     if (m_pHostLedsState == NULL)
         m_pHostLedsState = DarwinHidDevicesKeepLedsState();
     if (m_pHostLedsState != NULL)
-        DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+        DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uimachine()->isNumLock(), uimachine()->isCapsLock(), uimachine()->isScrollLock());
 #elif defined(VBOX_WS_WIN)
     if (m_pHostLedsState == NULL)
         m_pHostLedsState = WinHidDevicesKeepLedsState();
     keyboardHandler()->winSkipKeyboardEvents(true);
-    WinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+    WinHidDevicesBroadcastLeds(uimachine()->isNumLock(), uimachine()->isCapsLock(), uimachine()->isScrollLock());
     keyboardHandler()->winSkipKeyboardEvents(false);
 #else
     LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones does not supported on this platform\n"));
