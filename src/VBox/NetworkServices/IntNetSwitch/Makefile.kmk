@@ -35,9 +35,9 @@ PROGRAMS += VBoxIntNetSwitch
 VBoxIntNetSwitch_TEMPLATE := VBoxR3Exe
 
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-VBoxIntNetSwitch_DEFS      = KBUILD_TYPE="$(KBUILD_TYPE)"
+ VBoxIntNetSwitch_DEFS     = KBUILD_TYPE="$(KBUILD_TYPE)"
 else
-VBoxIntNetSwitch_DEFS      = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
+ VBoxIntNetSwitch_DEFS     = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
 endif
 VBoxIntNetSwitch_DEFS     += VBOX_WITH_INTNET_SERVICE_IN_R3
 VBoxIntNetSwitch_INST.darwin = $(VBoxIntNetSwitch.xpc_INST)/MacOS/
@@ -49,12 +49,12 @@ VBoxIntNetSwitch_LDFLAGS.darwin = \
 	-rpath @executable_path/../../../../MacOS
 
 ifeq ($(KBUILD_TARGET),darwin)
-INSTALLS += VBoxIntNetSwitch.xpc
+ INSTALLS += VBoxIntNetSwitch.xpc
 
-VBoxIntNetSwitch.xpc_MODE = 644
-VBoxIntNetSwitch.xpc_INST = $(INST_VIRTUALBOX)Contents/XPCServices/org.virtualbox.intnet.xpc/Contents/
-VBoxIntNetSwitch.xpc_SOURCES = \
-	$(VBoxIntNetSwitch.xpc_0_OUTDIR)/Info.plist
+ VBoxIntNetSwitch.xpc_MODE = 644
+ VBoxIntNetSwitch.xpc_INST = $(INST_VIRTUALBOX)Contents/XPCServices/org.virtualbox.intnet.xpc/Contents/
+ VBoxIntNetSwitch.xpc_SOURCES = \
+ 	$(VBoxIntNetSwitch.xpc_0_OUTDIR)/Info.plist
 
  $$(VBoxIntNetSwitch.xpc_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VBoxIntNetSwitch.xpc,$<,$@)

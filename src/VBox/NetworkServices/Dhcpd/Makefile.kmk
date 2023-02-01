@@ -36,12 +36,12 @@ endif
 # Hardended stub executable.
 #
 ifdef VBOX_WITH_HARDENING
-PROGRAMS += VBoxNetDHCPHardened
-VBoxNetDHCPHardened_TEMPLATE = VBoxR3HardenedExe
-VBoxNetDHCPHardened_NAME     = VBoxNetDHCP
-VBoxNetDHCPHardened_SOURCES  = VBoxNetDhcpdHardened.cpp
-VBoxNetDHCPHardened_LDFLAGS.win = /SUBSYSTEM:windows
-$(call VBOX_SET_VER_INFO_DLL,VBoxNetDHCPHardened,VirtualBox DHCP Server,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
+ PROGRAMS += VBoxNetDHCPHardened
+ VBoxNetDHCPHardened_TEMPLATE = VBoxR3HardenedExe
+ VBoxNetDHCPHardened_NAME    = VBoxNetDHCP
+ VBoxNetDHCPHardened_SOURCES = VBoxNetDhcpdHardened.cpp
+ VBoxNetDHCPHardened_LDFLAGS.win = /SUBSYSTEM:windows
+ $(call VBOX_SET_VER_INFO_DLL,VBoxNetDHCPHardened,VirtualBox DHCP Server,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
 endif
 
 
@@ -49,32 +49,32 @@ endif
 # The DHCP server module (dll if hardended)
 #
 ifdef VBOX_WITH_HARDENING
-DLLS     += VBoxNetDHCP
-VBoxNetDHCP_TEMPLATE := VBoxR3Dll
+ DLLS    += VBoxNetDHCP
+ VBoxNetDHCP_TEMPLATE := VBoxR3Dll
 else
-PROGRAMS += VBoxNetDHCP
-VBoxNetDHCP_TEMPLATE := VBoxR3Exe
+ PROGRAMS += VBoxNetDHCP
+ VBoxNetDHCP_TEMPLATE := VBoxR3Exe
 endif
 
 # (current dir is for for lwipopts.h)
 VBoxNetDHCP_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-VBoxNetDHCP_DEFS      = KBUILD_TYPE="$(KBUILD_TYPE)"
+ VBoxNetDHCP_DEFS     = KBUILD_TYPE="$(KBUILD_TYPE)"
 else
-VBoxNetDHCP_DEFS      = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
+ VBoxNetDHCP_DEFS     = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
 endif
 VBoxNetDHCP_DEFS       += \
- 	$(if $(VBOX_WITH_INTNET_SERVICE_IN_R3),VBOX_WITH_INTNET_SERVICE_IN_R3,)
+	$(if $(VBOX_WITH_INTNET_SERVICE_IN_R3),VBOX_WITH_INTNET_SERVICE_IN_R3,)
 
 #VBoxNetDHCP_DEFS     += IPv6
 #VBoxNetDHCP_DEFS.linux = WITH_VALGRIND
 ifneq ($(KBUILD_TARGET),win)
-VBoxNetDHCP_DEFS     += VBOX_WITH_XPCOM
-VBoxNetDHCP_INCS     += $(VBOX_XPCOM_INCS)
+ VBoxNetDHCP_DEFS    += VBOX_WITH_XPCOM
+ VBoxNetDHCP_INCS    += $(VBOX_XPCOM_INCS)
  ifneq ($(KBUILD_TARGET),darwin)
   # We want -std=c++11 for 4.7 and newer compilers, and -std=c++0x for older ones.
-VBoxNetDHCP_CXXFLAGS += -std=$(if $(VBOX_GCC_VERSION_CXX),$(if $(VBOX_GCC_VERSION_CXX) < 40700,c++0x,c++11),c++0x)
+  VBoxNetDHCP_CXXFLAGS += -std=$(if $(VBOX_GCC_VERSION_CXX),$(if $(VBOX_GCC_VERSION_CXX) < 40700,c++0x,c++11),c++0x)
  endif
 endif
 VBoxNetDHCP_INCS += \
