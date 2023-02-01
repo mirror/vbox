@@ -30,49 +30,49 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
-  if defined(VBOX_WITH_QTGUI)
-   include $(PATH_SUB_CURRENT)/tstDragAndDropQt/Makefile.kmk
-  endif
+ if defined(VBOX_WITH_QTGUI)
+  include $(PATH_SUB_CURRENT)/tstDragAndDropQt/Makefile.kmk
+ endif
 
-  PROGRAMS += tstDnDTransferObject tstDnDTransferList tstDnDPath
-  TESTING  += \
-  	$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run \
-  	$(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run \
-  	$(tstDnDTransferPath_0_OUTDIR)/tstDnDPath.run
+ PROGRAMS  += tstDnDTransferObject tstDnDTransferList tstDnDPath
+ TESTING   += \
+ 	$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run \
+ 	$(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run \
+ 	$(tstDnDTransferPath_0_OUTDIR)/tstDnDPath.run
 
-  tstDnDTransferObject_TEMPLATE  = VBoxR3TstExe
-  tstDnDTransferObject_DEFS      = UNIT_TEST TESTCASE
-  tstDnDTransferObject_SOURCES   = \
-		tstDnDTransferObject.cpp \
-		../DnDTransferObject.cpp \
-		../DnDPath.cpp
-  tstDnDTransferObject_CLEAN     = $(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run
+ tstDnDTransferObject_TEMPLATE   = VBoxR3TstExe
+ tstDnDTransferObject_DEFS       = UNIT_TEST TESTCASE
+ tstDnDTransferObject_SOURCES    = \
+ 	tstDnDTransferObject.cpp \
+ 	../DnDTransferObject.cpp \
+ 	../DnDPath.cpp
+ tstDnDTransferObject_CLEAN      = $(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run
 
-  $$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run: $$(tstDnDTransferObject_1_STAGE_TARGET)
+ $$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run: $$(tstDnDTransferObject_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstDnDTransferObject_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-  tstDnDTransferList_TEMPLATE  = VBoxR3TstExe
-  tstDnDTransferList_DEFS      = UNIT_TEST TESTCASE
-  tstDnDTransferList_SOURCES   = \
-		tstDnDTransferList.cpp \
-		../DnDTransferObject.cpp \
-		../DnDTransferList.cpp \
-		../DnDPath.cpp
-  tstDnDTransferList_CLEAN     = $(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run
+ tstDnDTransferList_TEMPLATE   = VBoxR3TstExe
+ tstDnDTransferList_DEFS       = UNIT_TEST TESTCASE
+ tstDnDTransferList_SOURCES    = \
+ 	tstDnDTransferList.cpp \
+ 	../DnDTransferObject.cpp \
+ 	../DnDTransferList.cpp \
+ 	../DnDPath.cpp
+ tstDnDTransferList_CLEAN      = $(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run
 
-  $$(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run: $$(tstDnDTransferList_1_STAGE_TARGET)
+ $$(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run: $$(tstDnDTransferList_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstDnDTransferList_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-  tstDnDPath_TEMPLATE = VBoxR3TstExe
-  tstDnDPath_DEFS     = UNIT_TEST TESTCASE
-  tstDnDPath_SOURCES  = \
-		tstDnDPath.cpp \
-		../DnDPath.cpp
-  tstDnDPath_CLEAN    = $(tstDnDPath_0_OUTDIR)/tstDnDPath.run
+ tstDnDPath_TEMPLATE  = VBoxR3TstExe
+ tstDnDPath_DEFS      = UNIT_TEST TESTCASE
+ tstDnDPath_SOURCES   = \
+ 	tstDnDPath.cpp \
+ 	../DnDPath.cpp
+ tstDnDPath_CLEAN     = $(tstDnDPath_0_OUTDIR)/tstDnDPath.run
 
-  $$(tstDnDPath_0_OUTDIR)/tstDnDPath.run: $$(tstDnDPath_1_STAGE_TARGET)
+ $$(tstDnDPath_0_OUTDIR)/tstDnDPath.run: $$(tstDnDPath_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstDnDPath_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 

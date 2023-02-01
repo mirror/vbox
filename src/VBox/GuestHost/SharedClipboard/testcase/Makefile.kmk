@@ -39,9 +39,9 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   tstClipboardGH-X11_TEMPLATE  = VBoxR3TstExe
   tstClipboardGH-X11_DEFS      = VBOX_WITH_HGCM UNIT_TEST TESTCASE
   tstClipboardGH-X11_SOURCES   = \
-	tstClipboardGH-X11.cpp \
-	../clipboard-x11.cpp \
-	../clipboard-common.cpp
+  	tstClipboardGH-X11.cpp \
+  	../clipboard-x11.cpp \
+  	../clipboard-common.cpp
   tstClipboardGH-X11_CXXFLAGS += -Wno-array-bounds
   tstClipboardGH-X11_LIBS      = X11 Xt
   tstClipboardGH-X11_CLEAN     = $(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11.run
@@ -49,9 +49,9 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   tstClipboardGH-X11Smoke_TEMPLATE = VBoxR3TstExe
   tstClipboardGH-X11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
   tstClipboardGH-X11Smoke_SOURCES  = \
-	tstClipboardGH-X11Smoke.cpp \
-	../clipboard-x11.cpp \
-	../clipboard-common.cpp
+  	tstClipboardGH-X11Smoke.cpp \
+  	../clipboard-x11.cpp \
+  	../clipboard-common.cpp
   tstClipboardGH-X11Smoke_LIBPATH  = $(VBOX_LIBPATH_X11)
   tstClipboardGH-X11Smoke_LIBS     = X11 Xt
   tstClipboardGH-X11Smoke_CLEAN    = $(tstClipboardGH-X11Smoke_0_OUTDIR)/tstClipboardGH-X11Smoke.run
@@ -60,12 +60,12 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 	export VBOX_LOG_DEST=nofile; $(tstClipboardGH-X11_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-  $$(tstClipboardGH-X11Smoke_0_OUTDIR)/tstClipboardGH-X11Smoke.run:	$$(tstClipboardGH-X11Smoke_1_STAGE_TARGET)
+  $$(tstClipboardGH-X11Smoke_0_OUTDIR)/tstClipboardGH-X11Smoke.run: $$(tstClipboardGH-X11Smoke_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstClipboardGH-X11Smoke_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
   if defined(VBOX_WITH_QTGUI)
-    include $(PATH_SUB_CURRENT)/tstClipboardQt/Makefile.kmk
+   include $(PATH_SUB_CURRENT)/tstClipboardQt/Makefile.kmk
   endif
 
 
