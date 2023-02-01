@@ -599,7 +599,7 @@ static bool scmKmkHandleIfParentheses(KMKPARSER *pParser, size_t offToken, KMKTO
     const char * const pchLine   = pParser->pchLine;
     size_t  const      cchLine   = pParser->cchLine;
     uint32_t const     cchIndent = pParser->iActualDepth
-                                 - (fElse && pParser->iDepth > 0 && !pParser->aDepth[pParser->iDepth].fIgnoreNesting);
+                                 - (fElse && pParser->iActualDepth > 0 && !pParser->aDepth[pParser->iDepth - 1].fIgnoreNesting);
 
     /*
      * Push it onto the stack.  All these nestings are relevant.
@@ -746,7 +746,7 @@ static bool scmKmkHandleIfSpace(KMKPARSER *pParser, size_t offToken, KMKTOKEN en
     const char     *pchLine   = pParser->pchLine;
     size_t          cchLine   = pParser->cchLine;
     uint32_t const  cchIndent = pParser->iActualDepth
-                              - (fElse && pParser->iDepth > 0 && !pParser->aDepth[pParser->iDepth].fIgnoreNesting);
+                              - (fElse && pParser->iActualDepth > 0 && !pParser->aDepth[pParser->iDepth - 1].fIgnoreNesting);
 
     /*
      * Push it onto the stack.
@@ -1094,9 +1094,9 @@ static bool scmKmkHandleEndif(KMKPARSER *pParser, size_t offToken)
         AssertStmt(pParser->iActualDepth > 0, pParser->iActualDepth++);
         pParser->iActualDepth -= 1;
     }
-    uint32_t const cchIndent = pParser->iActualDepth;
     ScmVerbose(pParser->pState, 5, "%u: debug: unnesting %u/%u (endif)\n",
                ScmStreamTellLine(pParser->pIn), iDepth, pParser->iActualDepth);
+    uint32_t const cchIndent = pParser->iActualDepth;
 
     /*
      * We do not allow line continuation for these.
@@ -1179,14 +1179,16 @@ static bool scmKmkHandleSimple(KMKPARSER *pParser, size_t offToken, bool fIndent
 
 static bool scmKmkHandleDefine(KMKPARSER *pParser, size_t offToken)
 {
+    scmKmkHandleSimple(pParser, offToken);
+
     /* Hack Alert! Start out parsing the define in recipe mode.
 
        Technically, we shouldn't evaluate the content of a define till it's
        used. However, we ASSUME they are either makefile code snippets or
        recipe templates.  */
+    scmKmkPushNesting(pParser, kKmkToken_define);
     scmKmkSetInRecipe(pParser, true);
-
-    return scmKmkHandleSimple(pParser, offToken);
+    return false;
 }
 
 
@@ -1194,6 +1196,23 @@ static bool scmKmkHandleEndef(KMKPARSER *pParser, size_t offToken)
 {
     /* Leaving a define resets the recipt mode. */
     scmKmkSetInRecipe(pParser, false);
+
+    /*
+     * Pop a nesting.
+     */
+    if (pParser->iDepth < 1)
+        return scmKmkGiveUp(pParser, "Lone 'endef'");
+    uint32_t iDepth = pParser->iDepth - 1;
+    if (pParser->aDepth[iDepth].enmToken != kKmkToken_define)
+        return scmKmkGiveUp(pParser, "Unpexected 'endef', expected 'endif' for line %u", pParser->aDepth[iDepth].iLine);
+    pParser->iDepth = iDepth;
+    if (!pParser->aDepth[iDepth].fIgnoreNesting)
+    {
+        AssertStmt(pParser->iActualDepth > 0, pParser->iActualDepth++);
+        pParser->iActualDepth -= 1;
+    }
+    ScmVerbose(pParser->pState, 5, "%u: debug: unnesting %u/%u (endef)\n",
+               ScmStreamTellLine(pParser->pIn), iDepth, pParser->iActualDepth);
 
     return scmKmkHandleSimple(pParser, offToken);
 }
