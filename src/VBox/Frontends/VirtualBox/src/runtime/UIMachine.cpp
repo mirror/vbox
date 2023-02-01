@@ -710,6 +710,8 @@ UIMachine::UIMachine()
     , m_fIsMouseCaptured(false)
     , m_fIsMouseIntegrated(true)
     , m_iMouseState(0)
+    , m_defaultCloseAction(MachineCloseAction_Invalid)
+    , m_restrictedCloseActions(MachineCloseAction_Invalid)
 {
     m_spInstance = this;
 }
@@ -736,6 +738,7 @@ bool UIMachine::prepare()
     prepareScreens();
     prepareBranding();
     prepareKeyboard();
+    prepareClose();
     prepareMachineLogic();
 
     /* Try to initialize session UI: */
@@ -999,6 +1002,21 @@ void UIMachine::prepareKeyboard()
     connect(gEDataManager, &UIExtraDataManager::sigHidLedsSyncStateChange,
             this, &UIMachine::sltHidLedsSyncStateChanged);
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
+}
+
+void UIMachine::prepareClose()
+{
+    /* What is the default close action and the restricted are? */
+    const QUuid uMachineID = uiCommon().managedVMUuid();
+    m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
+    m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
+
+    /* Log whether HID LEDs sync is enabled: */
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    LogRel(("GUI: HID LEDs sync is %s\n", isHidLedsSyncEnabled() ? "enabled" : "disabled"));
+#else
+    LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));
+#endif
 }
 
 void UIMachine::prepareMachineLogic()

@@ -175,15 +175,6 @@ bool UISession::initialize()
     /* Load VM settings: */
     loadVMSettings();
 
-/* Log whether HID LEDs sync is enabled: */
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-    LogRel(("GUI: HID LEDs sync is %s\n",
-            uimachine()->isHidLedsSyncEnabled()
-            ? "enabled" : "disabled"));
-#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
-    LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));
-#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
-
 #ifdef VBOX_GUI_WITH_PIDFILE
     uiCommon().createPidfile();
 #endif /* VBOX_GUI_WITH_PIDFILE */
@@ -548,9 +539,6 @@ UISession::UISession(UIMachine *pMachine)
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
-    , m_defaultCloseAction(MachineCloseAction_Invalid)
-    , m_restrictedCloseActions(MachineCloseAction_Invalid)
-    , m_fAllCloseActionsRestricted(false)
     /* Common flags: */
     , m_fInitialized(false)
     , m_fIsGuestResizeIgnored(false)
@@ -585,9 +573,6 @@ bool UISession::prepare()
     /* Prepare GUI stuff: */
     prepareConnections();
     prepareSignalHandling();
-
-    /* Load settings: */
-    loadSessionSettings();
 
     /* True by default: */
     return true;
@@ -731,23 +716,6 @@ void UISession::prepareSignalHandling()
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     sigaction(SIGUSR1, &sa, NULL);
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
-}
-
-void UISession::loadSessionSettings()
-{
-    /* Load extra-data settings: */
-    {
-        /* Get machine ID: */
-        const QUuid uMachineID = uiCommon().managedVMUuid();
-
-        /* What is the default close action and the restricted are? */
-        m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
-        m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
-        m_fAllCloseActionsRestricted =  (!uiCommon().isSeparateProcess() || (m_restrictedCloseActions & MachineCloseAction_Detach))
-                                     && (m_restrictedCloseActions & MachineCloseAction_SaveState)
-                                     && (m_restrictedCloseActions & MachineCloseAction_Shutdown)
-                                     && (m_restrictedCloseActions & MachineCloseAction_PowerOff);
-    }
 }
 
 void UISession::cleanupFramebuffers()

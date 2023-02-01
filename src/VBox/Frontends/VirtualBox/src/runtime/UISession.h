@@ -175,25 +175,13 @@ public:
 
     /** Returns the machine name. */
     const QString& machineName() const { return m_strMachineName; }
-
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     KMachineState machineState() const { return m_machineState; }
+
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
     WId mainMachineWindowId() const;
     UIMachineWindow *activeMachineWindow() const;
-
-    /** @name Application Close configuration stuff.
-     * @{ */
-    /** Defines @a defaultCloseAction. */
-    void setDefaultCloseAction(MachineCloseAction defaultCloseAction) { m_defaultCloseAction = defaultCloseAction; }
-    /** Returns default close action. */
-    MachineCloseAction defaultCloseAction() const { return m_defaultCloseAction; }
-    /** Returns merged restricted close actions. */
-    MachineCloseAction restrictedCloseActions() const { return m_restrictedCloseActions; }
-    /** Returns whether all the close actions are restricted. */
-    bool isAllCloseActionsRestricted() const { return m_fAllCloseActionsRestricted; }
-    /** @} */
 
     /** Returns whether visual @a state is allowed. */
     bool isVisualStateAllowed(UIVisualStateType state) const;
@@ -328,9 +316,6 @@ private:
     void prepareConnections();
     void prepareSignalHandling();
 
-    /* Settings stuff: */
-    void loadSessionSettings();
-
     /* Cleanup helpers: */
     void cleanupFramebuffers();
     void cleanupConsoleEventHandlers();
@@ -369,23 +354,13 @@ private:
 
     /** Holds the machine name. */
     QString m_strMachineName;
+    /** Holds the previous machine state. */
+    KMachineState m_machineStatePrevious;
+    /** Holds the actual machine state. */
+    KMachineState m_machineState;
 
     /* Frame-buffers vector: */
     QVector<UIFrameBuffer*> m_frameBufferVector;
-
-    /* Common variables: */
-    KMachineState m_machineStatePrevious;
-    KMachineState m_machineState;
-
-    /** @name Application Close configuration variables.
-     * @{ */
-    /** Default close action. */
-    MachineCloseAction m_defaultCloseAction;
-    /** Merged restricted close actions. */
-    MachineCloseAction m_restrictedCloseActions;
-    /** Determines whether all the close actions are restricted. */
-    bool m_fAllCloseActionsRestricted;
-    /** @} */
 
     /* Common flags: */
     bool m_fInitialized : 1;

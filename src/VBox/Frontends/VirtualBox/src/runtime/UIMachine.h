@@ -295,6 +295,14 @@ public:
         int mouseState() const { return m_iMouseState; }
     /** @} */
 
+    /** @name Close configuration stuff.
+     * @{ */
+        /** Returns default close action. */
+        MachineCloseAction defaultCloseAction() const { return m_defaultCloseAction; }
+        /** Returns merged restricted close actions. */
+        MachineCloseAction restrictedCloseActions() const { return m_restrictedCloseActions; }
+    /** @} */
+
 public slots:
 
     /** @name Keyboard stuff.
@@ -421,6 +429,8 @@ private:
     void prepareActions();
     /** Prepare routine: Keyboard stuff. */
     void prepareKeyboard();
+    /** Prepare routine: Close stuff. */
+    void prepareClose();
     /** Prepare routine: Machine-logic stuff. */
     void prepareMachineLogic();
 
@@ -611,6 +621,14 @@ private:
 
         /** Holds the mouse-state. */
         int  m_iMouseState;
+    /** @} */
+
+    /** @name Close configuration stuff.
+     * @{ */
+        /** Default close action. */
+        MachineCloseAction  m_defaultCloseAction;
+        /** Merged restricted close actions. */
+        MachineCloseAction  m_restrictedCloseActions;
     /** @} */
 };
 

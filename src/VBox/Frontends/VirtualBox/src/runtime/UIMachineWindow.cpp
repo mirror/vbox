@@ -408,8 +408,8 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     MachineCloseAction closeAction = MachineCloseAction_Invalid;
 
     /* If default close-action defined and not restricted: */
-    MachineCloseAction defaultCloseAction = uisession()->defaultCloseAction();
-    MachineCloseAction restrictedCloseActions = uisession()->restrictedCloseActions();
+    MachineCloseAction defaultCloseAction = uimachine()->defaultCloseAction();
+    MachineCloseAction restrictedCloseActions = uimachine()->restrictedCloseActions();
     if ((defaultCloseAction != MachineCloseAction_Invalid) &&
         !(restrictedCloseActions & defaultCloseAction))
     {
