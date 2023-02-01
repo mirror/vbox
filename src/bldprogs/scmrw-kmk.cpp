@@ -51,6 +51,39 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+typedef enum KMKASSIGNTYPE
+{
+    kKmkAssignType_Recursive,
+    kKmkAssignType_Conditional,
+    kKmkAssignType_Appending,
+    kKmkAssignType_Prepending,
+    kKmkAssignType_Simple,
+    kKmkAssignType_Immediate
+} KMKASSIGNTYPE;
+
+/** Context for scmKmkWordLength. */
+typedef enum
+{
+    /** Target file or assignment.
+     *  Separators: space, '=', ':' */
+    kKmkWordCtx_TargetFileOrAssignment,
+    /** Target file.
+     *  Separators: space, ':' */
+    kKmkWordCtx_TargetFile,
+    /** Dependency file or (target variable) assignment.
+     *  Separators: space, '=', ':', '|' */
+    kKmkWordCtx_DepFileOrAssignment,
+    /** Dependency file.
+     *  Separators: space, '|' */
+    kKmkWordCtx_DepFile
+} KMKWORDCTX;
+
+typedef struct KMKWORDSTATE
+{
+    uint16_t uDepth;
+    char     chOpen;
+} KMKWORDSTATE;
+
 typedef enum KMKTOKEN
 {
     kKmkToken_Word = 0,
@@ -90,15 +123,13 @@ typedef struct KMKPARSER
     struct
     {
         KMKTOKEN        enmToken;
-        uint32_t        iLine;
         bool            fIgnoreNesting;
+        size_t          iLine;
     } aDepth[64];
     unsigned            iDepth;
     unsigned            iActualDepth;
     bool                fInRecipe;
 
-    /** The current line number (for error messages and peeking).   */
-    uint32_t            iLine;
     /** The EOL type of the current line. */
     SCMEOL              enmEol;
     /** The length of the current line. */
@@ -184,13 +215,25 @@ static KMKTOKEN scmKmkIdentifyToken(const char *pchWord, size_t cchWord)
 
 
 /**
+ * Modifies the fInRecipe state variable, logging changes in verbose mode.
+ */
+static void scmKmkSetInRecipe(KMKPARSER *pParser, bool fInRecipe)
+{
+    if (pParser->fInRecipe != fInRecipe)
+        ScmVerbose(pParser->pState, 4, "%u: debug: %s\n",
+                   ScmStreamTellLine(pParser->pIn), fInRecipe ? "in-recipe" : "not-in-recipe");
+    pParser->fInRecipe = fInRecipe;
+}
+
+
+/**
  * Gives up on the current line, copying it as it and requesting manual repair.
  */
 static bool scmKmkGiveUp(KMKPARSER *pParser, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    ScmFixManually(pParser->pState, "%u: %N\n", pParser->iLine, pszFormat, &va);
+    ScmFixManually(pParser->pState, "%u: %N\n", ScmStreamTellLine(pParser->pIn), pszFormat, &va);
     va_end(va);
 
     ScmStreamPutLine(pParser->pOut, pParser->pchLine, pParser->cchLine, pParser->enmEol);
@@ -276,15 +319,17 @@ static bool scmKmkPushNesting(KMKPARSER *pParser, KMKTOKEN enmToken)
     uint32_t iDepth = pParser->iDepth;
     if (iDepth + 1 >= RT_ELEMENTS(pParser->aDepth))
     {
-        ScmError(pParser->pState, VERR_ASN1_TOO_DEEPLY_NESTED /*?*/, "%u: Too deep if/define nesting!\n", pParser->iLine);
+        ScmError(pParser->pState, VERR_ASN1_TOO_DEEPLY_NESTED /*?*/,
+                 "%u: Too deep if/define nesting!\n", ScmStreamTellLine(pParser->pIn));
         return false;
     }
 
     pParser->aDepth[iDepth].enmToken       = enmToken;
-    pParser->aDepth[iDepth].iLine          = pParser->iLine;
+    pParser->aDepth[iDepth].iLine          = ScmStreamTellLine(pParser->pIn);
     pParser->aDepth[iDepth].fIgnoreNesting = false;
     pParser->iDepth        = iDepth + 1;
     pParser->iActualDepth += 1;
+    ScmVerbose(pParser->pState, 5, "%u: debug: nesting %u (token %u)\n", pParser->aDepth[iDepth].iLine, iDepth + 1, enmToken);
     return true;
 }
 
@@ -319,25 +364,13 @@ static size_t scmKmkSkipExpString(const char *pchLine, size_t cchLine, size_t of
 }
 
 
-/** Context for scmKmkWordLength. */
-typedef enum
-{
-    /** Target file or assignment.
-     *  Separators: space, '=', ':' */
-    kKmkWordCtx_TargetFileOrAssignment,
-    /** Target file.
-     *  Separators: space, ':' */
-    kKmkWordCtx_TargetFile,
-    /** Dependency file or (target variable) assignment.
-     *  Separators: space, '=', ':', '|' */
-    kKmkWordCtx_DepFileOrAssignment,
-    /** Dependency file.
-     *  Separators: space, '|' */
-    kKmkWordCtx_DepFile
-} KMKWORDCTX;
-
 /**
  * Finds the length of the word (file) @a offStart.
+ *
+ * This only takes one line into account, so variable expansions (function
+ * calls) spanning multiple lines will be handled as one word per line with help
+ * from @a pState.  This allows the caller to properly continutation intend the
+ * additional lines.
  *
  * @returns Length of word starting at @a offStart. Zero if there is whitespace
  *          at given offset or it's beyond the end of the line (both cases will
@@ -345,18 +378,95 @@ typedef enum
  * @param   pchLine             The line.
  * @param   cchLine             The line length.
  * @param   offStart            Offset to the start of the word.
+ * @param   pState              Where multiline variable expansion is tracked.
  */
-static size_t scmKmkWordLength(const char *pchLine, size_t cchLine, size_t offStart, KMKWORDCTX enmCtx)
+static size_t scmKmkWordLength(const char *pchLine, size_t cchLine, size_t offStart, KMKWORDCTX enmCtx, KMKWORDSTATE *pState)
 {
     AssertReturn(offStart < cchLine && !RT_C_IS_BLANK(pchLine[offStart]), 0);
+
+    /*
+     * Drop any line continuation slash from the line length, so we don't count
+     * it into the word length. Also, any spaces preceeding it (for multiline
+     * variable function expansion).  ASSUMES no trailing slash escaping.
+     */
+    if (cchLine > 0 && pchLine[cchLine - 1] == '\\')
+        do
+            cchLine--;
+        while (cchLine > offStart && RT_C_IS_SPACE(pchLine[cchLine - 1]));
+
+    /*
+     * If we were inside a variable function expansion, continue till we reach the end.
+     * This kind of duplicates the code below.
+     */
     size_t off = offStart;
+    if (pState->uDepth > 0)
+    {
+        Assert(pState->chOpen == '(' || pState->chOpen == '{');
+        char const chOpen  = pState->chOpen;
+        char const chClose = chOpen == '(' ? ')' : '}';
+        unsigned   uDepth  = pState->uDepth;
+        for (;;)
+        {
+            char ch;
+            if (off < cchLine)
+                ch = pchLine[off++];
+            else /* Reached the end while still inside the expansion. */
+            {
+                pState->chOpen = chOpen;
+                pState->uDepth = (uint16_t)uDepth;
+                return cchLine - offStart;
+            }
+            if (ch == chOpen)
+                uDepth++;
+            else if (ch == chClose && --uDepth == 0)
+                break;
+        }
+        pState->uDepth = 0;
+        pState->chOpen = 0;
+    }
+
+    /*
+     * Process till we find blank or end of the line.
+     */
     while (off < cchLine)
     {
         char ch = pchLine[off];
         if (RT_C_IS_BLANK(ch))
             break;
 
-        if (ch == ':')
+        if (ch == '$')
+        {
+            /*
+             * Skip variable expansion.
+             */
+            if (off + 2 >= cchLine)
+                return cchLine - offStart;
+            char const chOpen = pchLine[++off];
+            if (chOpen == '(' || chOpen == '{')
+            {
+                char const chClose = chOpen == '(' ? ')' : '}';
+                unsigned   uDepth  = 1;
+                off++;
+                for (;;)
+                {
+                    if (off < cchLine)
+                        ch = pchLine[off++];
+                    else /* Reached the end while inside the expansion. */
+                    {
+                        pState->chOpen = chOpen;
+                        pState->uDepth = (uint16_t)uDepth;
+                        return cchLine - offStart;
+                    }
+                    if (ch == chOpen)
+                        uDepth++;
+                    else if (ch == chClose && --uDepth == 0)
+                        break;
+                }
+                continue;
+            }
+            /* else: $X */
+        }
+        else if (ch == ':')
         {
             /*
              * Check for plain driver letter, omitting the archive member variant.
@@ -473,7 +583,7 @@ static bool scmKmkTailComment(KMKPARSER *pParser, const char *pchLine, size_t cc
 
     /* Complain and copy out the text unmodified. */
     ScmError(pParser->pState, VERR_PARSE_ERROR, "%u:%u: Expected comment, found: %.*s",
-             pParser->iLine, offSrc, cchLine - offSrc, &pchLine[offSrc]);
+             ScmStreamTellLine(pParser->pIn), offSrc, cchLine - offSrc, &pchLine[offSrc]);
     *ppszDst = (char *)mempcpy(pszDst, &pchLine[offSrcStart], cchLine - offSrcStart);
     return false; /*dummy*/
 }
@@ -494,8 +604,16 @@ static bool scmKmkHandleIfParentheses(KMKPARSER *pParser, size_t offToken, KMKTO
     /*
      * Push it onto the stack.  All these nestings are relevant.
      */
-    if (!scmKmkPushNesting(pParser, enmToken))
-        return false;
+    if (!fElse)
+    {
+        if (!scmKmkPushNesting(pParser, enmToken))
+            return false;
+    }
+    else
+    {
+        pParser->aDepth[pParser->iDepth - 1].enmToken = enmToken;
+        pParser->aDepth[pParser->iDepth - 1].iLine    = ScmStreamTellLine(pParser->pIn);
+    }
 
     /*
      * We do not allow line continuation for these.
@@ -636,20 +754,20 @@ static bool scmKmkHandleIfSpace(KMKPARSER *pParser, size_t offToken, KMKTOKEN en
      * For ifndef we ignore the outmost ifndef in non-Makefile.kmk files, if
      * the define matches the typical pattern for a file blocker.
      */
+    bool fIgnoredNesting = false;
     if (!fElse)
     {
         if (!scmKmkPushNesting(pParser, enmToken))
             return false;
+        if (enmToken == kKmkToken_ifndef)
+        {
+            /** @todo */
+        }
     }
     else
     {
         pParser->aDepth[pParser->iDepth - 1].enmToken = enmToken;
-        pParser->aDepth[pParser->iDepth - 1].iLine    = pParser->iLine;
-    }
-    bool fIgnoredNesting = false;
-    if (enmToken == kKmkToken_ifndef)
-    {
-        /** @todo */
+        pParser->aDepth[pParser->iDepth - 1].iLine    = ScmStreamTellLine(pParser->pIn);
     }
 
     /*
@@ -808,7 +926,6 @@ static bool scmKmkHandleIfSpace(KMKPARSER *pParser, size_t offToken, KMKTOKEN en
                 return false;
             }
             cchLine = pParser->cchLine;
-            pParser->iLine++;
 
             /* Skip leading whitespace and adjust the source continuation indent: */
             offSrc = 0;
@@ -851,13 +968,15 @@ static bool scmKmkHandleIfSpace(KMKPARSER *pParser, size_t offToken, KMKTOKEN en
         scmKmkTailComment(pParser, pchLine, cchLine, offSrc, &pszDst);
         *pszDst = '\0';
 
-        /* Check for special comment making us ignore the nesting. We do this in the
-
-           */
+        /* Check for special comment making us ignore the nesting.  We do this
+           on the destination buffer since it's zero terminated allowing normal
+           strstr use. */
         if (!fIgnoredNesting && strstr(pszDstSrc, "scm:ignore-nesting") != NULL)
         {
             pParser->aDepth[pParser->iDepth - 1].fIgnoreNesting = true;
             pParser->iActualDepth--;
+            ScmVerbose(pParser->pState, 5, "%u: debug: ignoring nesting - actual depth: %u\n",
+                       pParser->aDepth[pParser->iDepth - 1].iLine, pParser->iActualDepth);
         }
     }
 
@@ -976,6 +1095,8 @@ static bool scmKmkHandleEndif(KMKPARSER *pParser, size_t offToken)
         pParser->iActualDepth -= 1;
     }
     uint32_t const cchIndent = pParser->iActualDepth;
+    ScmVerbose(pParser->pState, 5, "%u: debug: unnesting %u/%u (endif)\n",
+               ScmStreamTellLine(pParser->pIn), iDepth, pParser->iActualDepth);
 
     /*
      * We do not allow line continuation for these.
@@ -1058,8 +1179,12 @@ static bool scmKmkHandleSimple(KMKPARSER *pParser, size_t offToken, bool fIndent
 
 static bool scmKmkHandleDefine(KMKPARSER *pParser, size_t offToken)
 {
-    /* Assignments takes us out of recipe mode. */
-    pParser->fInRecipe = false;
+    /* Hack Alert! Start out parsing the define in recipe mode.
+
+       Technically, we shouldn't evaluate the content of a define till it's
+       used. However, we ASSUME they are either makefile code snippets or
+       recipe templates.  */
+    scmKmkSetInRecipe(pParser, true);
 
     return scmKmkHandleSimple(pParser, offToken);
 }
@@ -1068,22 +1193,27 @@ static bool scmKmkHandleDefine(KMKPARSER *pParser, size_t offToken)
 static bool scmKmkHandleEndef(KMKPARSER *pParser, size_t offToken)
 {
     /* Leaving a define resets the recipt mode. */
-    pParser->fInRecipe = false;
+    scmKmkSetInRecipe(pParser, false);
 
     return scmKmkHandleSimple(pParser, offToken);
 }
 
 
-typedef enum KMKASSIGNTYPE
+/**
+ * Checks for escaped trailing slashes on a line, giving up and asking the
+ * developer to fix those manually.
+ *
+ * @returns true if we gave up. false if no escaped slashed and we didn't.
+ */
+static bool scmKmkGiveUpIfTrailingEscapedSlashed(KMKPARSER *pParser, const char *pchLine, size_t cchLine)
 {
-    kKmkAssignType_Recursive,
-    kKmkAssignType_Conditional,
-    kKmkAssignType_Appending,
-    kKmkAssignType_Prepending,
-    kKmkAssignType_Simple,
-    kKmkAssignType_Immediate
-} KMKASSIGNTYPE;
-
+    if (cchLine > 2 && pchLine[cchLine - 2] == '\\' && pchLine[cchLine - 1] == '\\')
+    {
+        scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+        return true;
+    }
+    return false;
+}
 
 /**
  * @returns dummy (false) to facility return + call.
@@ -1105,11 +1235,12 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
     Assert(!RT_C_IS_SPACE(pchLine[offVarEnd - 1]));
 
     /* Assignments takes us out of recipe mode. */
-    pParser->fInRecipe = false;
+    ScmVerbose(pParser->pState, 6, "%u: debug: assignment\n", ScmStreamTellLine(pParser->pIn));
+    scmKmkSetInRecipe(pParser, false);
 
     /* This is too much hazzle to deal with. */
-    if (cLines > 0 && pchLine[cchLine - 2] == '\\')
-        return scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+    if (cLines > 1 && scmKmkGiveUpIfTrailingEscapedSlashed(pParser, pchLine, cchLine))
+        return false;
     if (cchLine + 64 > sizeof(pParser->szBuf))
         return scmKmkGiveUp(pParser, "Line too long!");
 
@@ -1152,8 +1283,8 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
             AssertReturn(pchLine, false /*dummy*/);
             cchLine = pParser->cchLine;
             iSubLine++;
-            if (iSubLine + 1 < cLines && pchLine[cchLine - 2] == '\\')
-                return scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+            if (iSubLine + 1 < cLines && scmKmkGiveUpIfTrailingEscapedSlashed(pParser, pchLine, cchLine))
+                return false;
 
             /* Adjust offAssignOp: */
             offAssignOp -= (uintptr_t)pchLine - (uintptr_t)pchPrevLine;
@@ -1191,9 +1322,9 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
             offLine += 2;
             break;
         case kKmkAssignType_Prepending:
-            *pszDst++ = '>';
+            *pszDst++ = '<';
             *pszDst++ = '=';
-            Assert(pchLine[offLine] == '>'); Assert(pchLine[offLine + 1] == '=');
+            Assert(pchLine[offLine] == '<'); Assert(pchLine[offLine + 1] == '=');
             offLine += 2;
             break;
         case kKmkAssignType_Immediate:
@@ -1370,11 +1501,12 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
     uint32_t            iSubLine     = 0;
 
     /* Following this, we'll be in recipe-mode. */
-    pParser->fInRecipe = true;
+    ScmVerbose(pParser->pState, 4, "%u: debug: start rule\n", ScmStreamTellLine(pParser->pIn));
+    scmKmkSetInRecipe(pParser, true);
 
     /* This is too much hazzle to deal with. */
-    if (cLines > 0 && pchLine[cchLine - 2] == '\\')
-        return scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+    if (cLines > 0 && scmKmkGiveUpIfTrailingEscapedSlashed(pParser, pchLine, cchLine))
+        return false;
 
     /* Too special case. */
     if (offColon <= offFirstWord)
@@ -1388,16 +1520,16 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
 
     /*
      * Process word by word past the colon, taking new lines into account.
-     *
      */
-    KMKWORDCTX enmCtx      = kKmkWordCtx_TargetFileOrAssignment;
-    bool       fPendingEol = false;
+    KMKWORDSTATE WordState   = { 0, 0 };
+    KMKWORDCTX   enmCtx      = kKmkWordCtx_TargetFileOrAssignment;
+    bool         fPendingEol = false;
     for (;;)
     {
         /*
          * Output the next word.
          */
-        size_t cchWord = scmKmkWordLength(pchLine, cchLine, offLine, enmCtx);
+        size_t cchWord = scmKmkWordLength(pchLine, cchLine, offLine, enmCtx, &WordState);
         Assert(offLine + cchWord <= offColon);
         ScmStreamWrite(pOut, &pchLine[offLine], cchWord);
         offLine += cchWord;
@@ -1431,8 +1563,8 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
                 AssertReturn(pchLine, false /*dummy*/);
                 cchLine = pParser->cchLine;
                 iSubLine++;
-                if (iSubLine + 1 < cLines && pchLine[cchLine - 2] == '\\')
-                    return scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+                if (iSubLine + 1 < cLines && scmKmkGiveUpIfTrailingEscapedSlashed(pParser, pchLine, cchLine))
+                    return false;
 
                 /* Adjust offColon: */
                 offColon -= (uintptr_t)pchLine - (uintptr_t)pchPrevLine;
@@ -1459,11 +1591,14 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
                         ScmStreamPutCh(pOut, ':');
 
                     fPendingEol = true;
-                    break;
                 }
-                ScmStreamWrite(pOut, RT_STR_TUPLE(" \\"));
-                ScmStreamPutEol(pOut, pParser->enmEol);
-                ScmStreamWrite(pOut, g_szSpaces, cchIndent);
+                else
+                {
+                    ScmStreamWrite(pOut, RT_STR_TUPLE(" \\"));
+                    ScmStreamPutEol(pOut, pParser->enmEol);
+                    ScmStreamWrite(pOut, g_szSpaces, cchIndent);
+                }
+                break;
             }
             if (offLine >= offColon)
                 break;
@@ -1475,7 +1610,7 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
 
     /*
      * We're immediately past the colon now, so eat whitespace and newlines and
-     * whatever till we get to a solid word.
+     * whatever till we get to a solid word or the end of the line.
      */
     /* Skip spaces - there should be exactly one. */
     while (offLine < cchLine && RT_C_IS_SPACE(pchLine[offLine]))
@@ -1491,8 +1626,8 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
         AssertReturn(pchLine, false /*dummy*/);
         cchLine = pParser->cchLine;
         iSubLine++;
-        if (iSubLine + 1 < cLines && pchLine[cchLine - 2] == '\\')
-            return scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+        if (iSubLine + 1 < cLines && scmKmkGiveUpIfTrailingEscapedSlashed(pParser, pchLine, cchLine))
+            return false;
 
          /* Skip leading spaces. */
          offLine = 0;
@@ -1507,7 +1642,7 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
     /*
      * Special case: No dependencies.
      */
-    if (offLine == cchLine && iSubLine >= cLines)
+    if (offLine == cchLine && iSubLine + 1 >= cLines)
     {
         ScmStreamPutEol(pOut, pParser->enmEol);
         return false /*dummy*/;
@@ -1533,7 +1668,7 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
         }
 
         /* Get the next word and output it. */
-        size_t cchWord = scmKmkWordLength(pchLine, cchLine, offLine, enmCtx);
+        size_t cchWord = scmKmkWordLength(pchLine, cchLine, offLine, enmCtx, &WordState);
         Assert(offLine + cchWord <= cchLine);
 
         ScmStreamWrite(pOut, &pchLine[offLine], cchWord);
@@ -1559,8 +1694,8 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
                 AssertReturn(pchLine, false /*dummy*/);
                 cchLine = pParser->cchLine;
                 iSubLine++;
-                if (iSubLine + 1 < cLines && pchLine[cchLine - 2] == '\\')
-                    return scmKmkGiveUp(pParser, "Escaped slashes at end of line not allowed. Insert space before line continuation slash!");
+                if (iSubLine + 1 < cLines && scmKmkGiveUpIfTrailingEscapedSlashed(pParser, pchLine, cchLine))
+                    return false;
 
                 /* Skip leading spaces. */
                 offLine = 0;
@@ -1681,7 +1816,7 @@ static bool scmKmkHandleAssignmentOrRule(KMKPARSER *pParser, size_t offWord)
                         return scmKmkHandleAssignment2(pParser, offWord, offEndPrev, kKmkAssignType_Simple,      offLine, 0);
                     if (ch == '+')
                         return scmKmkHandleAssignment2(pParser, offWord, offEndPrev, kKmkAssignType_Appending,   offLine, 0);
-                    if (ch == '>')
+                    if (ch == '<')
                         return scmKmkHandleAssignment2(pParser, offWord, offEndPrev, kKmkAssignType_Prepending,  offLine, 0);
                     if (ch == '?')
                         return scmKmkHandleAssignment2(pParser, offWord, offEndPrev, kKmkAssignType_Conditional, offLine, 0);
@@ -1709,7 +1844,7 @@ static bool scmKmkHandleAssignmentOrRule(KMKPARSER *pParser, size_t offWord)
                     enmType = kKmkAssignType_Appending;
                 else if (ch == '?')
                     enmType = kKmkAssignType_Conditional;
-                else if (ch == '>')
+                else if (ch == '<')
                     enmType = kKmkAssignType_Prepending;
                 else
                     Assert(ch != ':');
@@ -1744,10 +1879,39 @@ static bool scmKmkHandleAssignmentOrRule(KMKPARSER *pParser, size_t offWord)
     }
 
     /*
+     * Check if this is a $(error ) or similar function call line.
+     */
+    if (   pchLine[offWord]     == '$'
+        && pchLine[offWord + 1] == '(')
+    {
+        size_t const cchLine = pParser->cchLine;
+        size_t       offEnd  = offWord + 2;
+        char         ch      = '\0';
+        while (offEnd < cchLine && (RT_C_IS_LOWER(ch = pchLine[offEnd]) || RT_C_IS_DIGIT(ch) || ch == '-'))
+            offEnd++;
+        if (offEnd >= cchLine || RT_C_IS_SPACE(ch) || (offEnd == cchLine - 1 && ch == '\\'))
+        {
+            static const RTSTRTUPLE s_aAllowedFunctions[] =
+            {
+                { RT_STR_TUPLE("info") },
+                { RT_STR_TUPLE("error") },
+                { RT_STR_TUPLE("warning") },
+                { RT_STR_TUPLE("eval") },
+                { RT_STR_TUPLE("set-umask") },
+            };
+            size_t cchFunc = offEnd - offWord - 2;
+            for (size_t i = 0; i < RT_ELEMENTS(s_aAllowedFunctions); i++)
+                if (   cchFunc == s_aAllowedFunctions[i].cch
+                    && memcmp(&pchLine[offWord + 2], s_aAllowedFunctions[i].psz, cchFunc) == 0)
+                    return scmKmkHandleSimple(pParser, offWord);
+        }
+    }
+
+    /*
      * If we didn't find anything, output it as-as.
      * We use scmKmkHandleSimple in a special way to do this.
      */
-    ScmVerbose(pParser->pState, 1, "debug: %u: Unable to make sense of this line!", pParser->iLine);
+    ScmVerbose(pParser->pState, 1, "%u: debug: Unable to make sense of this line!\n", ScmStreamTellLine(pParser->pIn));
     return scmKmkHandleSimple(pParser, 0 /*offToken*/, false /*fIndentIt*/);
 }
 
@@ -1756,7 +1920,7 @@ static bool scmKmkHandleAssignKeyword(KMKPARSER *pParser, size_t offToken, KMKTO
                                       bool fMustBeAssignment)
 {
     /* Assignments takes us out of recipe mode. */
-    pParser->fInRecipe = false;
+    scmKmkSetInRecipe(pParser, false);
 
     RT_NOREF(pParser, offToken, enmToken, cchWord, fMustBeAssignment);
     return scmKmkHandleSimple(pParser, offToken);
@@ -1789,7 +1953,6 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
     Parser.iDepth       = 0;
     Parser.iActualDepth = 0;
     Parser.fInRecipe    = false;
-    Parser.iLine        = 0;
     Parser.pState       = pState;
     Parser.pIn          = pIn;
     Parser.pOut         = pOut;
@@ -1802,7 +1965,6 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
     while ((Parser.pchLine = pchLine = ScmStreamGetLine(pIn, &Parser.cchLine, &Parser.enmEol)) != NULL)
     {
         size_t cchLine = Parser.cchLine;
-        Parser.iLine++;
 
         /*
          * If we're in the command part of a recipe, anything starting with a
@@ -1825,7 +1987,7 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
             while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
                 offLine++;
 
-            /* Find end of word (if any): */
+            /* Find end of word (if any) - only looking for keywords here: */
             size_t cchWord = 0;
             while (   offLine + cchWord < cchLine
                    && (   RT_C_IS_ALNUM(pchLine[offLine + cchWord])
@@ -1913,6 +2075,22 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                         continue;
                     }
                 }
+            }
+            /*
+             * Not keyword, check for assignment, rule or comment:
+             */
+            else if (offLine < cchLine)
+            {
+                if (pchLine[offLine] != '#')
+                {
+                    Parser.cLines       = 1;
+                    Parser.cchTotalLine = cchLine;
+                    if (scmKmkIsLineWithContinuation(pchLine, cchLine))
+                        Parser.cchTotalLine = scmKmkLineContinuationPeek(&Parser, &Parser.cLines, NULL);
+                    scmKmkHandleAssignmentOrRule(&Parser, offLine);
+                    continue;
+                }
+                /** @todo process comments. */
             }
         }
 
