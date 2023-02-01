@@ -166,69 +166,69 @@ bootsector2-triple-fault-1_SOURCES = bootsector2-triple-fault-1.asm
 
 
 ifeq ($(USERNAME),birdxx)
- if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH),win.amd64)
-#
-# Generated instruction tests (work in progress).
-#
+ if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), win.amd64)
+  #
+  # Generated instruction tests (work in progress).
+  #
 
-VBOX_PATH_VBINSTST = $(PATH_ROOT)/src/VBox/VMM/testcase/Instructions
-VBOX_VBINSTST_GEN  = $(VBOX_PATH_VBINSTST)/InstructionTestGen.py
-VBOX_BOOTSECTOR2_VBINSTST_AMD64_GEN   = $(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) \
-		--split 3 --target bs2-r0-64 --output-base $(bootsectors_0_OUTDIR)/VBInsTst-64 --test-size tiny
-VBOX_BOOTSECTOR2_VBINSTST_AMD64_FILES = $(shell $(VBOX_BOOTSECTOR2_VBINSTST_AMD64_GEN) --makefile-mode)
+  VBOX_PATH_VBINSTST = $(PATH_ROOT)/src/VBox/VMM/testcase/Instructions
+  VBOX_VBINSTST_GEN = $(VBOX_PATH_VBINSTST)/InstructionTestGen.py
+  VBOX_BOOTSECTOR2_VBINSTST_AMD64_GEN = $(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) \
+  	--split 3 --target bs2-r0-64 --output-base $(bootsectors_0_OUTDIR)/VBInsTst-64 --test-size tiny
+  VBOX_BOOTSECTOR2_VBINSTST_AMD64_FILES = $(shell $(VBOX_BOOTSECTOR2_VBINSTST_AMD64_GEN) --makefile-mode)
 
-#$$(bootsectors_0_OUTDIR)/VBInsTst.ts + $$(VBOX_BOOTSECTOR2_VBINSTST_AMD64_FILES): $(VBOX_VBINSTST_GEN) | $$(dir $$@)
-#	$(VBOX_BOOTSECTOR2_VBINSTST_AMD64_GEN)
-#	$(APPEND) -t $@
-#
-#bootsectors_SOURCES += $(bootsectors_0_OUTDIR)/bootsector2-vbinstst-1.img
-#bootsectors_CLEAN += $(VBOX_BOOTSECTOR2_VBINSTST_AMD64_FILES)
-#
-#$$(bootsectors_0_OUTDIR)/bootsector2-vbinstst-1.img: \
-#		$(PATH_SUB_CURRENT)/bootsector2-vbinstst-64-1.asm \
-#     		$$(bootsectors_0_OUTDIR)/VBInsTst-64.asm
-#	$(TOOL_$(VBOX_ASTOOL)_AS) -f bin -D ASM_FORMAT_BIN -I $(dir $@) -I $(PATH_ROOT)/include -I $(VBOX_PATH_VBINSTST) -o $@ -L nasm -l $@.lst $<
+  #$$(bootsectors_0_OUTDIR)/VBInsTst.ts + $$(VBOX_BOOTSECTOR2_VBINSTST_AMD64_FILES): $(VBOX_VBINSTST_GEN) | $$(dir $$@)
+  #	$(VBOX_BOOTSECTOR2_VBINSTST_AMD64_GEN)
+  #	$(APPEND) -t $@
+  #
+  #bootsectors_SOURCES += $(bootsectors_0_OUTDIR)/bootsector2-vbinstst-1.img
+  #bootsectors_CLEAN += $(VBOX_BOOTSECTOR2_VBINSTST_AMD64_FILES)
+  #
+  #$$(bootsectors_0_OUTDIR)/bootsector2-vbinstst-1.img: \
+  #		$(PATH_SUB_CURRENT)/bootsector2-vbinstst-64-1.asm \
+  #     		$$(bootsectors_0_OUTDIR)/VBInsTst-64.asm
+  #	$(TOOL_$(VBOX_ASTOOL)_AS) -f bin -D ASM_FORMAT_BIN -I $(dir $@) -I $(PATH_ROOT)/include -I $(VBOX_PATH_VBINSTST) -o $@ -L nasm -l $@.lst $<
 
-MISCBINS += bootsector2-vbinstst-kernel
-bootsector2-vbinstst-kernel_TEMPLATE = VBoxBsTestImg
-bootsector2-vbinstst-kernel_SOURCES = \
-	bootsector2-vbinstst-kernel.asm
+  MISCBINS += bootsector2-vbinstst-kernel
+  bootsector2-vbinstst-kernel_TEMPLATE = VBoxBsTestImg
+  bootsector2-vbinstst-kernel_SOURCES = \
+  	bootsector2-vbinstst-kernel.asm
 
 
-MISCBINS += bootsector2-vbinstst-64-1
-bootsector2-vbinstst-64-1_TEMPLATE = VBoxBsTestImg
-bootsector2-vbinstst-64-1_DEFS = \
-	BS2_BIG_IMAGE_LM64 \
-	BS2_BIG_IMAGE_GEN_SOURCE_FILE=bs2-vbinstst-64-1.asm \
-	BS2_BIG_IMAGE_GEN_TEST_NAME=\"bs2-vbinstst-64-1\"
-bootsector2-vbinstst-64-1_INCS = $(bootsector2-vbinstst-64-1_0_OUTDIR)/
-bootsector2-vbinstst-64-1_SOURCES = \
-	bootsector2-vbinstst-kernel.asm \
-	bootsector2-vbinstst-big-template.asm
-bootsector2-vbinstst-64-1_INTERMEDIATES = \
-	$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm
-bootsector2-vbinstst-64-1_CLEAN = \
-	$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm
+  MISCBINS += bootsector2-vbinstst-64-1
+  bootsector2-vbinstst-64-1_TEMPLATE = VBoxBsTestImg
+  bootsector2-vbinstst-64-1_DEFS = \
+  	BS2_BIG_IMAGE_LM64 \
+  	BS2_BIG_IMAGE_GEN_SOURCE_FILE=bs2-vbinstst-64-1.asm \
+  	BS2_BIG_IMAGE_GEN_TEST_NAME=\"bs2-vbinstst-64-1\"
+  bootsector2-vbinstst-64-1_INCS = $(bootsector2-vbinstst-64-1_0_OUTDIR)/
+  bootsector2-vbinstst-64-1_SOURCES = \
+  	bootsector2-vbinstst-kernel.asm \
+  	bootsector2-vbinstst-big-template.asm
+  bootsector2-vbinstst-64-1_INTERMEDIATES = \
+  	$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm
+  bootsector2-vbinstst-64-1_CLEAN = \
+  	$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm
 
-$$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm: $(VBOX_VBINSTST_GEN) | $$(dir $$@)
+  $$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm: $(VBOX_VBINSTST_GEN) | $$(dir $$@)
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) --target bs2-r0-64-big --output-base $(basename $@) --test-size medium
 
-MISCBINS += bootsector2-vbinstst-32-1
-bootsector2-vbinstst-32-1_TEMPLATE = VBoxBsTestImg
-bootsector2-vbinstst-32-1_DEFS = \
-	BS2_BIG_IMAGE_PP32 \
-	BS2_BIG_IMAGE_GEN_SOURCE_FILE=bs2-vbinstst-32-1.asm \
-	BS2_BIG_IMAGE_GEN_TEST_NAME=\"bs2-vbinstst-32-1\"
-bootsector2-vbinstst-32-1_INCS = $(bootsector2-vbinstst-32-1_0_OUTDIR)/
-bootsector2-vbinstst-32-1_SOURCES = \
-	bootsector2-vbinstst-kernel.asm \
-	bootsector2-vbinstst-big-template.asm
-bootsector2-vbinstst-32-1_INTERMEDIATES = \
-	$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm
-bootsector2-vbinstst-32-1_CLEAN = \
-	$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm
+  MISCBINS += bootsector2-vbinstst-32-1
+  bootsector2-vbinstst-32-1_TEMPLATE = VBoxBsTestImg
+  bootsector2-vbinstst-32-1_DEFS = \
+  	BS2_BIG_IMAGE_PP32 \
+  	BS2_BIG_IMAGE_GEN_SOURCE_FILE=bs2-vbinstst-32-1.asm \
+  	BS2_BIG_IMAGE_GEN_TEST_NAME=\"bs2-vbinstst-32-1\"
+  bootsector2-vbinstst-32-1_INCS = $(bootsector2-vbinstst-32-1_0_OUTDIR)/
+  bootsector2-vbinstst-32-1_SOURCES = \
+  	bootsector2-vbinstst-kernel.asm \
+  	bootsector2-vbinstst-big-template.asm
+  bootsector2-vbinstst-32-1_INTERMEDIATES = \
+  	$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm
+  bootsector2-vbinstst-32-1_CLEAN = \
+  	$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm
 
-$$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm: $(VBOX_VBINSTST_GEN) | $$(dir $$@)
+  $$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm: $(VBOX_VBINSTST_GEN) | $$(dir $$@)
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) --target bs2-r0-32-big --output-base $(basename $@) --test-size medium
 
  endif
@@ -236,219 +236,219 @@ endif # bird-only
 
 
 ifdef VBOX_WITH_BS3KIT
-#
-# Bs3kit
-#
+ #
+ # Bs3kit
+ #
 
-#
-# APIC
-#
-MISCBINS += bs3-apic-1
-bs3-apic-1_TEMPLATE = VBoxBS3KitImg
-bs3-apic-1_SOURCES  = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-apic-1.c \
-	bs3-apic-1-32.c32
-
-
-# CPU basics #2 (first being bootsector2-cpu-basic-1).
-MISCBINS += bs3-cpu-basic-2
-bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-basic-2_INCS  = .
-bs3-cpu-basic-2_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
-bs3-cpu-basic-2_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
-bs3-cpu-basic-2_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-cpu-basic-2.c \
-	bs3-cpu-basic-2-x0.c \
-	bs3-cpu-basic-2-32.c32 \
-	bs3-cpu-basic-2-pf.c32 \
-	bs3-cpu-basic-2-asm.asm \
-       bs3kit/bs3-cmn-instantiate-x0.c16 \
-       bs3kit/bs3-cmn-instantiate.c32 \
-       bs3kit/bs3-cmn-instantiate.c64
-bs3-cpu-basic-2-template.o:: \
-	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
-	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
-	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3-cpu-basic-2-asm.o16
-
-#
-# CPU weird stuff #1.
-#
-MISCBINS += bs3-cpu-weird-1
-bs3-cpu-weird-1_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-weird-1_INCS  = .
-bs3-cpu-weird-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-cpu-weird-1.c \
-	bs3-cpu-weird-1-x0.c \
-	bs3-cpu-weird-1-asm.asm
-
-#
-# 64-bit CPU state #1.
-#
-MISCBINS += bs3-cpu-state64-1
-bs3-cpu-state64-1_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-state64-1_INCS  = .
-bs3-cpu-state64-1_SOURCES = \
-	bs3kit/bs3-first-init-all-lm64.asm \
-	bs3-cpu-state64-1.c64 \
-	bs3-cpu-state64-1-asm.asm
-
-#
-# FPU state corruption checker.
-#
-MISCBINS += bs3-fpustate-1
-bs3-fpustate-1_TEMPLATE = VBoxBS3KitImg
-bs3-fpustate-1_INCS  = .
-bs3-fpustate-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-fpustate-1-template.c
-bs3-fpustate-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-fpustate-1-template.c
-bs3-fpustate-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-fpustate-1.c \
-       bs3kit/bs3-cmn-instantiate.c16 \
-       bs3kit/bs3-cmn-instantiate.c32 \
-       bs3kit/bs3-cmn-instantiate.c64 \
-	bs3-fpustate-1-asm.asm
-bs3-fpustate-1-template.o:: \
-	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
-	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
-	$$(bs3-fpustate-1_0_OUTDIR)/bs3-fpustate-1-asm.o16
-
-#
-# CPU instruction decoding experiments.
-#
-MISCBINS += bs3-cpu-decoding-1
-bs3-cpu-decoding-1_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-decoding-1_INCS  = .
-bs3-cpu-decoding-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
-bs3-cpu-decoding-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
-bs3-cpu-decoding-1_SOURCES = \
-	bs3kit/bs3-first-init-all-pp32.asm \
-	bs3-cpu-decoding-1.c32 \
-	bs3-cpu-decoding-1-asm.asm
-#       bs3kit/bs3-cmn-instantiate.c16 \
-#       bs3kit/bs3-cmn-instantiate.c32 \
-#       bs3kit/bs3-cmn-instantiate.c64
-bs3-cpu-decoding-1-template.o:: \
-	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3-cpu-decoding-1-asm.o16
-#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
-#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+ #
+ # APIC
+ #
+ MISCBINS += bs3-apic-1
+ bs3-apic-1_TEMPLATE = VBoxBS3KitImg
+ bs3-apic-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-apic-1.c \
+ 	bs3-apic-1-32.c32
 
 
-#
-# CPU instructions #2 (first being bootsector2-cpu-instr-1).
-#
-MISCBINS += bs3-cpu-instr-2
-bs3-cpu-instr-2_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-instr-2_INCS  = .
-bs3-cpu-instr-2_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-instr-2-template.c
-bs3-cpu-instr-2_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-instr-2-template.c
-bs3-cpu-instr-2_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-cpu-instr-2.c \
-	bs3-cpu-instr-2-asm.asm \
-       bs3kit/bs3-cmn-instantiate-x0.c16 \
-       bs3kit/bs3-cmn-instantiate.c32 \
-       bs3kit/bs3-cmn-instantiate.c64
-bs3-cpu-instr-2-template.o:: \
-	$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
-	$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-	$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
-	$$(bs3-cpu-instr-2_0_OUTDIR)/bs3-cpu-instr-2-asm.o16
+ # CPU basics #2 (first being bootsector2-cpu-basic-1).
+ MISCBINS += bs3-cpu-basic-2
+ bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-basic-2_INCS = .
+ bs3-cpu-basic-2_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
+ bs3-cpu-basic-2_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
+ bs3-cpu-basic-2_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-cpu-basic-2.c \
+ 	bs3-cpu-basic-2-x0.c \
+ 	bs3-cpu-basic-2-32.c32 \
+ 	bs3-cpu-basic-2-pf.c32 \
+ 	bs3-cpu-basic-2-asm.asm \
+ 	bs3kit/bs3-cmn-instantiate-x0.c16 \
+ 	bs3kit/bs3-cmn-instantiate.c32 \
+ 	bs3kit/bs3-cmn-instantiate.c64
+ bs3-cpu-basic-2-template.o:: \
+ 		$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
+ 		$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+ 		$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+ 		$$(bs3-cpu-basic-2_0_OUTDIR)/bs3-cpu-basic-2-asm.o16
 
-#
-# CPU instructions #3 - SSE, ++.
-#
-MISCBINS += bs3-cpu-instr-3
-bs3-cpu-instr-3_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-instr-3_INCS  = .
-bs3-cpu-instr-3_SOURCES = \
-	bs3kit/bs3-first-init-all-pe32.asm \
-	bs3-cpu-instr-3.c32 \
-	bs3-cpu-instr-3-asm.asm
-bs3-cpu-instr-3-template.o:: \
-	$$(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm.o16
+ #
+ # CPU weird stuff #1.
+ #
+ MISCBINS += bs3-cpu-weird-1
+ bs3-cpu-weird-1_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-weird-1_INCS = .
+ bs3-cpu-weird-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-cpu-weird-1.c \
+ 	bs3-cpu-weird-1-x0.c \
+ 	bs3-cpu-weird-1-asm.asm
 
-#
-# CPU generated instruction tests #1
-#
-MISCBINS += bs3-cpu-generated-1
-bs3-cpu-generated-1_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-generated-1_INCS = .
-bs3-cpu-generated-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-generated-1-template.c
-bs3-cpu-generated-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-cpu-generated-1.c \
-	bs3-cpu-generated-1-asm.asm \
-       bs3kit/bs3-cmn-instantiate-x0.c16 \
-       bs3kit/bs3-cmn-instantiate.c32 \
-       bs3kit/bs3-cmn-instantiate.c64 \
-	$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
-bs3-cpu-generated-1_CLEAN = $(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
+ #
+ # 64-bit CPU state #1.
+ #
+ MISCBINS += bs3-cpu-state64-1
+ bs3-cpu-state64-1_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-state64-1_INCS = .
+ bs3-cpu-state64-1_SOURCES = \
+ 	bs3kit/bs3-first-init-all-lm64.asm \
+ 	bs3-cpu-state64-1.c64 \
+ 	bs3-cpu-state64-1-asm.asm
 
-bs3-cpu-generated-1-template.o:: \
-	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
-	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
-	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-asm.o16
+ #
+ # FPU state corruption checker.
+ #
+ MISCBINS += bs3-fpustate-1
+ bs3-fpustate-1_TEMPLATE = VBoxBS3KitImg
+ bs3-fpustate-1_INCS = .
+ bs3-fpustate-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-fpustate-1-template.c
+ bs3-fpustate-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-fpustate-1-template.c
+ bs3-fpustate-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-fpustate-1.c \
+ 	bs3kit/bs3-cmn-instantiate.c16 \
+ 	bs3kit/bs3-cmn-instantiate.c32 \
+ 	bs3kit/bs3-cmn-instantiate.c64 \
+ 	bs3-fpustate-1-asm.asm
+ bs3-fpustate-1-template.o:: \
+ 		$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
+ 		$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+ 		$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+ 		$$(bs3-fpustate-1_0_OUTDIR)/bs3-fpustate-1-asm.o16
 
-$$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
-		$(PATH_SUB_CURRENT)/bs3-cpu-generated-1-data.py \
-		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructionsPython.py \
-		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructions*.cpp.h \
-               | $$(dir $$@)
+ #
+ # CPU instruction decoding experiments.
+ #
+ MISCBINS += bs3-cpu-decoding-1
+ bs3-cpu-decoding-1_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-decoding-1_INCS = .
+ bs3-cpu-decoding-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
+ bs3-cpu-decoding-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
+ bs3-cpu-decoding-1_SOURCES = \
+ 	bs3kit/bs3-first-init-all-pp32.asm \
+ 	bs3-cpu-decoding-1.c32 \
+ 	bs3-cpu-decoding-1-asm.asm
+ #       bs3kit/bs3-cmn-instantiate.c16 \
+ #       bs3kit/bs3-cmn-instantiate.c32 \
+ #       bs3kit/bs3-cmn-instantiate.c64
+ bs3-cpu-decoding-1-template.o:: \
+ 		$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3-cpu-decoding-1-asm.o16
+ #	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
+ #	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+ #	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+
+
+ #
+ # CPU instructions #2 (first being bootsector2-cpu-instr-1).
+ #
+ MISCBINS += bs3-cpu-instr-2
+ bs3-cpu-instr-2_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-instr-2_INCS = .
+ bs3-cpu-instr-2_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-instr-2-template.c
+ bs3-cpu-instr-2_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-instr-2-template.c
+ bs3-cpu-instr-2_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-cpu-instr-2.c \
+ 	bs3-cpu-instr-2-asm.asm \
+ 	bs3kit/bs3-cmn-instantiate-x0.c16 \
+ 	bs3kit/bs3-cmn-instantiate.c32 \
+ 	bs3kit/bs3-cmn-instantiate.c64
+ bs3-cpu-instr-2-template.o:: \
+ 		$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
+ 		$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+ 		$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+ 		$$(bs3-cpu-instr-2_0_OUTDIR)/bs3-cpu-instr-2-asm.o16
+
+ #
+ # CPU instructions #3 - SSE, ++.
+ #
+ MISCBINS += bs3-cpu-instr-3
+ bs3-cpu-instr-3_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-instr-3_INCS = .
+ bs3-cpu-instr-3_SOURCES = \
+ 	bs3kit/bs3-first-init-all-pe32.asm \
+ 	bs3-cpu-instr-3.c32 \
+ 	bs3-cpu-instr-3-asm.asm
+ bs3-cpu-instr-3-template.o:: \
+ 		$$(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm.o16
+
+ #
+ # CPU generated instruction tests #1
+ #
+ MISCBINS += bs3-cpu-generated-1
+ bs3-cpu-generated-1_TEMPLATE = VBoxBS3KitImg
+ bs3-cpu-generated-1_INCS = .
+ bs3-cpu-generated-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-generated-1-template.c
+ bs3-cpu-generated-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-cpu-generated-1.c \
+ 	bs3-cpu-generated-1-asm.asm \
+ 	bs3kit/bs3-cmn-instantiate-x0.c16 \
+ 	bs3kit/bs3-cmn-instantiate.c32 \
+ 	bs3kit/bs3-cmn-instantiate.c64 \
+ 	$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
+ bs3-cpu-generated-1_CLEAN = $(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
+
+ bs3-cpu-generated-1-template.o:: \
+ 		$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
+ 		$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+ 		$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+ 		$$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-asm.o16
+
+ $$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
+ 		$(PATH_SUB_CURRENT)/bs3-cpu-generated-1-data.py \
+ 		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructionsPython.py \
+ 		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructions*.cpp.h \
+ 		| $$(dir $$@)
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $@
 
-#
-# Memory allocation.
-#
-MISCBINS += bs3-memalloc-1
-bs3-memalloc-1_TEMPLATE = VBoxBS3KitImg
-bs3-memalloc-1_INCS  = .
-bs3-memalloc-1_SOURCES = \
-	bs3kit/bs3-first-init-all-lm64.asm \
-	bs3-memalloc-1.c64
+ #
+ # Memory allocation.
+ #
+ MISCBINS += bs3-memalloc-1
+ bs3-memalloc-1_TEMPLATE = VBoxBS3KitImg
+ bs3-memalloc-1_INCS = .
+ bs3-memalloc-1_SOURCES = \
+ 	bs3kit/bs3-first-init-all-lm64.asm \
+ 	bs3-memalloc-1.c64
 
 
-#
-# Timer Interrupts
-#
-MISCBINS += bs3-timers-1
-bs3-timers-1_TEMPLATE = VBoxBS3KitImg
-bs3-timers-1_INCS  = .
-bs3-timers-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-timers-1-template.c
-bs3-timers-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timers-1-template.c
-bs3-timers-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-timers-1.c \
-	bs3-timers-1-x0.c
+ #
+ # Timer Interrupts
+ #
+ MISCBINS += bs3-timers-1
+ bs3-timers-1_TEMPLATE = VBoxBS3KitImg
+ bs3-timers-1_INCS = .
+ bs3-timers-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-timers-1-template.c
+ bs3-timers-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timers-1-template.c
+ bs3-timers-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-timers-1.c \
+ 	bs3-timers-1-x0.c
 
-#
-# Timing
-#
-MISCBINS += bs3-timing-1
-bs3-timing-1_TEMPLATE = VBoxBS3KitImg
-bs3-timing-1_INCS  = .
-bs3-timing-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-timing-1-template.c
-bs3-timing-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timing-1-template.c
-bs3-timing-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-timing-1.c \
-	bs3-timing-1-32.c32
+ #
+ # Timing
+ #
+ MISCBINS += bs3-timing-1
+ bs3-timing-1_TEMPLATE = VBoxBS3KitImg
+ bs3-timing-1_INCS = .
+ bs3-timing-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-timing-1-template.c
+ bs3-timing-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timing-1-template.c
+ bs3-timing-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-timing-1.c \
+ 	bs3-timing-1-32.c32
 
-#
-# Lock contention and interruption.
-#
-MISCBINS += bs3-locking-1
-bs3-locking-1_TEMPLATE = VBoxBS3KitImg
-bs3-locking-1_INCS  = .
-bs3-locking-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-locking-1.c
+ #
+ # Lock contention and interruption.
+ #
+ MISCBINS += bs3-locking-1
+ bs3-locking-1_TEMPLATE = VBoxBS3KitImg
+ bs3-locking-1_INCS = .
+ bs3-locking-1_SOURCES = \
+ 	bs3kit/bs3-first-rm.asm \
+ 	bs3-locking-1.c
 
 endif # VBOX_WITH_BS3KIT
 

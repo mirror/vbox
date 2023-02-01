@@ -59,7 +59,7 @@ cpu-alloc-all-mem_SOURCES  = cpu-alloc-all-mem.cpp
 
 if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
  ifneq ($(KBUILD_HOST),os2)
- PROGRAMS += cidet-app
+  PROGRAMS += cidet-app
  endif
  cidet-app_TEMPLATE = VBoxValidationKitR3
  cidet-app_SOURCES  = \

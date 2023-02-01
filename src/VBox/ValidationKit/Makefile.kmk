@@ -49,7 +49,7 @@ VBOX_VALIDATIONKIT_INSTALLS := $(INSTALLS)
 # Include sub-makefiles.
 #
 include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
-ifneq ($(KBUILD_HOST),os2)	           # needs yasm
+ifneq ($(KBUILD_HOST),os2)            # needs yasm
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86) # needs yasm
   include $(PATH_SUB_CURRENT)/bootsectors/Makefile.kmk
  endif
@@ -112,8 +112,8 @@ ifndef VBOX_WITHOUT_VALIDATIONKIT_ZIP
  $(PATH_OUT)/VBoxValidationKit.zip: \
  		$(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso \
  		$(VBOX_PATH_VALIDATIONKIT)/ \
-               $$(foreach inst, $$(VBOX_VALIDATIONKIT_INSTALLS), \
-			$$(filter $(PATH_STAGE)/$(INST_VALIDATIONKIT)%, $$($$(inst)_2_STAGE_TARGETS)))
+ 		$$(foreach inst, $$(VBOX_VALIDATIONKIT_INSTALLS), \
+ 		$$(filter $(PATH_STAGE)/$(INST_VALIDATIONKIT)%, $$($$(inst)_2_STAGE_TARGETS)))
 	$(call MSG_L1,Packing the Test Suite $@)
 	$(QUIET)$(RM) -f $@
 	# Note: Exclude packing the testcase directory into .zip, as that directory only needs to be
@@ -174,8 +174,8 @@ VBOX_VALIDATIONKIT_FILESPEC = \
 ifneq ($(KBUILD_HOST),os2)
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   VBOX_VALIDATIONKIT_FILESPEC += \
-	$(VBOX_PATH_VALIDATIONKIT)/bootsectors/bootsector-pae.img \
-	$(VBOX_PATH_VALIDATIONKIT)/bootsectors/bootsector-shutdown.img
+  	$(VBOX_PATH_VALIDATIONKIT)/bootsectors/bootsector-pae.img \
+  	$(VBOX_PATH_VALIDATIONKIT)/bootsectors/bootsector-shutdown.img
  endif
 endif
 
@@ -219,11 +219,11 @@ define def_vbox_validationkit_common_files
  endif
 endef
 
-TMP_SUFF_EXE=.exe
+TMP_SUFF_EXE = .exe
 $(foreach os, os2 win,$(foreach arch, x86 amd64, \
 	$(eval $(def_vbox_validationkit_common_files)) \
 ))
-TMP_SUFF_EXE=
+TMP_SUFF_EXE =
 $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
 	$(eval $(def_vbox_validationkit_common_files)) \
 ))
@@ -286,11 +286,11 @@ ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64
  VBOX_VALIDATIONKIT_FILESPEC += \
  	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntSetFreq.exe \
  	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntTimeSources.exe
-  # Disabled for now; does not work without WinMM.dll export verification files.
-  #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
-  # VBOX_VALIDATIONKIT_FILESPEC += \
-  # 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntPlayToneWaveX.exe
-  #endif
+ # Disabled for now; does not work without WinMM.dll export verification files.
+ #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+ # VBOX_VALIDATIONKIT_FILESPEC += \
+ # 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntPlayToneWaveX.exe
+ #endif
 endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.x86
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.win.x86)/../vboxtxs.cmd)
@@ -321,18 +321,18 @@ ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
   # IPRT unit tests.
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $(VALKIT_UNITTESTS_WHITELIST_IPRT.$(os)), \
-		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
+  	$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
   # Unit tests which utilize parts of the Guest Additions.
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_GUEST_ADDITIONS) $(VALKIT_UNITTESTS_WHITELIST_GUEST_ADDITIONS.$(os)), \
-		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
+  	$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
  endef
 
- TMP_SUFF_EXE=.exe
+ TMP_SUFF_EXE = .exe
  $(foreach os, win,$(foreach arch, x86 amd64, \
  	$(eval $(def_vbox_validationkit_unittests)) \
  ))
- TMP_SUFF_EXE=
+ TMP_SUFF_EXE =
  $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
  	$(eval $(def_vbox_validationkit_unittests)) \
  ))

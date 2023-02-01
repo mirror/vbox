@@ -48,10 +48,10 @@ VBoxBs3Linker_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3Linker.cpp
 # 64-bit relocation conversion tool (used via the parent Config.kmk).
 BLDPROGS += VBoxBs3ObjConverter
 VBoxBs3ObjConverter_TEMPLATE = VBoxBldProg
-VBoxBs3ObjConverter_DEFS     =  BS3KIT_BS3CLASS16CODE=$(BS3KIT_BS3CLASS16CODE) IN_RT_R3
+VBoxBs3ObjConverter_DEFS     = BS3KIT_BS3CLASS16CODE=$(BS3KIT_BS3CLASS16CODE) IN_RT_R3
 VBoxBs3ObjConverter_SOURCES  = \
 	$(VBOX_PATH_BS3KIT_SRC)/VBoxBs3ObjConverter.cpp \
-       $(PATH_ROOT)/src/VBox/Runtime/common/sort/shellsort.cpp
+	$(PATH_ROOT)/src/VBox/Runtime/common/sort/shellsort.cpp
 
 
 # The boot sector.
@@ -80,154 +80,154 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-PrintX32.asm \
 	bs3-cmn-PrintStr.c \
 	bs3-cmn-PrintStrN.asm \
-       bs3-cmn-StrFormatV.c \
-       bs3-cmn-StrPrintf.c \
-       bs3-cmn-StrLen.c \
-       bs3-cmn-StrNLen.c \
-       bs3-cmn-StrCpy.c \
-       bs3-cmn-MemChr.asm \
-       bs3-cmn-MemCmp.asm \
-       bs3-cmn-MemCpy.c \
-       bs3-cmn-MemPCpy.c \
-       bs3-cmn-MemMove.c \
-       bs3-cmn-MemSet.asm \
-       bs3-cmn-MemZero.asm \
-       bs3-cmn-MemAlloc.c \
-       bs3-cmn-MemAllocZ.c \
-       bs3-cmn-MemFree.c \
-       bs3-cmn-MemGuardedTestPage.c \
-       bs3-cmn-MemPrintInfo.c \
-       bs3-cmn-PagingData.c \
-       bs3-cmn-PagingInitRootForPP.c \
-       bs3-cmn-PagingInitRootForPAE.c \
-       bs3-cmn-PagingInitRootForLM.c \
-       bs3-cmn-PagingAlias.c \
-       bs3-cmn-PagingProtect.c \
-       bs3-cmn-PagingQueryAddressInfo.c \
-       bs3-cmn-PagingSetupCanonicalTraps.c \
-       bs3-cmn-pic-data.c \
-       bs3-cmn-PicMaskAll.c \
-       bs3-cmn-PicUpdateMask.c \
-       bs3-cmn-PicSetup.c \
-       bs3-cmn-pit.c \
-       bs3-cmn-PitIrqHandler.c \
-       bs3-cmn-RegCtxRestore.asm \
-       bs3-cmn-RegCtxConvertToRingX.c \
-       bs3-cmn-RegCtxConvertV86ToRm.c \
-       bs3-cmn-RegCtxPrint.c \
-       bs3-cmn-RegCtxGetRspSsAsCurPtr.c \
-       bs3-cmn-RegCtxSave.asm \
-       bs3-cmn-RegCtxSaveEx.asm \
-       bs3-cmn-RegCtxSaveForMode.c \
-       bs3-cmn-RegCtxSetGrpSegFromCurPtr.c \
-       bs3-cmn-RegCtxSetGrpSegFromFlat.c \
-       bs3-cmn-RegCtxSetRipCsFromCurPtr.c \
-       bs3-cmn-RegCtxSetRipCsFromFlat.c \
-       bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
-       bs3-cmn-RegCtxSetGpr.c \
-       bs3-cmn-RegGetCr0.asm \
-       bs3-cmn-RegGetCr2.asm \
-       bs3-cmn-RegGetCr3.asm \
-       bs3-cmn-RegGetCr4.asm \
-       bs3-cmn-RegSetCr0.asm \
-       bs3-cmn-RegSetCr2.asm \
-       bs3-cmn-RegSetCr3.asm \
-       bs3-cmn-RegSetCr4.asm \
-       bs3-cmn-RegGetDr0.asm \
-       bs3-cmn-RegGetDr1.asm \
-       bs3-cmn-RegGetDr2.asm \
-       bs3-cmn-RegGetDr3.asm \
-       bs3-cmn-RegGetDr6.asm \
-       bs3-cmn-RegGetDr7.asm \
-       bs3-cmn-RegGetDrX.asm \
-       bs3-cmn-RegSetDr0.asm \
-       bs3-cmn-RegSetDr1.asm \
-       bs3-cmn-RegSetDr2.asm \
-       bs3-cmn-RegSetDr3.asm \
-       bs3-cmn-RegSetDr6.asm \
-       bs3-cmn-RegSetDr7.asm \
-       bs3-cmn-RegSetDrX.asm \
-       bs3-cmn-RegGetTr.asm \
-       bs3-cmn-RegSetTr.asm \
-       bs3-cmn-RegGetLdtr.asm \
-       bs3-cmn-RegSetLdtr.asm \
-       bs3-cmn-RegGetXcr0.asm \
-       bs3-cmn-RegSetXcr0.asm \
-       bs3-cmn-ExtCtxInit.c \
-       bs3-cmn-ExtCtxSave.asm \
-       bs3-cmn-ExtCtxSaveEx.asm \
-       bs3-cmn-ExtCtxRestore.asm \
-       bs3-cmn-ExtCtxRestoreEx.asm \
-       bs3-cmn-ExtCtxGetSize.c \
-       bs3-cmn-ExtCtxAlloc.c \
-       bs3-cmn-ExtCtxFree.c \
-       bs3-cmn-ExtCtxCopy.c \
-       bs3-cmn-ExtCtxGetFcw.c \
-       bs3-cmn-ExtCtxSetFcw.c \
-       bs3-cmn-ExtCtxGetFsw.c \
-       bs3-cmn-ExtCtxSetFsw.c \
-       bs3-cmn-ExtCtxGetAbridgedFtw.c \
-       bs3-cmn-ExtCtxSetAbridgedFtw.c \
-       bs3-cmn-ExtCtxGetMxCsr.c \
-       bs3-cmn-ExtCtxSetMxCsr.c \
-       bs3-cmn-ExtCtxGetMxCsrMask.c \
-       bs3-cmn-ExtCtxSetMxCsrMask.c \
-       bs3-cmn-ExtCtxGetMm.c \
-       bs3-cmn-ExtCtxSetMm.c \
-       bs3-cmn-ExtCtxGetXmm.c \
-       bs3-cmn-ExtCtxSetXmm.c \
-       bs3-cmn-ExtCtxGetYmm.c \
-       bs3-cmn-ExtCtxSetYmm.c \
-       bs3-cmn-SelFar32ToFlat32.c \
-       bs3-cmn-SelFar32ToFlat32NoClobber.asm \
-       bs3-cmn-SelProtFar32ToFlat32.c \
-       bs3-cmn-SelProtModeCodeToRealMode.asm \
-       bs3-cmn-SelRealModeCodeToProtMode.asm \
-       bs3-cmn-SelFlatCodeToRealMode.asm \
-       bs3-cmn-SelFlatCodeToProtFar16.asm \
-       bs3-cmn-SelRealModeDataToProtFar16.asm \
-       bs3-cmn-SelProtFar16DataToRealMode.asm \
-       bs3-cmn-SelRealModeDataToFlat.asm \
-       bs3-cmn-SelProtFar16DataToFlat.asm \
-       bs3-cmn-SelFlatDataToProtFar16.asm \
-       bs3-cmn-SelFlatDataToRealMode.asm \
-       bs3-cmn-SelLnkPtrToCurPtr.c \
-       bs3-cmn-SelLnkPtrToFlat.c \
-       bs3-cmn-SelSetup16BitData.c \
-       bs3-cmn-SelSetup16BitCode.c \
-       bs3-cmn-SelSetup32BitCode.c \
-       bs3-cmn-SelSetupGate.c \
-       bs3-cmn-SelSetupGate64.c \
-       bs3-cmn-SlabInit.c \
-       bs3-cmn-SlabAlloc.c \
-       bs3-cmn-SlabAllocEx.c \
-       bs3-cmn-SlabFree.c \
-       bs3-cmn-SlabListInit.c \
-       bs3-cmn-SlabListAdd.c \
-       bs3-cmn-SlabListAlloc.c \
-       bs3-cmn-SlabListAllocEx.c \
-       bs3-cmn-SlabListFree.c \
-       bs3-cmn-SwitchHlpConvRealModeRetfPopBpDecBpAndReturn.asm \
-       bs3-cmn-SwitchHlpConvProtModeRetfPopBpDecBpAndReturn.asm \
-       bs3-cmn-SwitchToRing0.asm \
-       bs3-cmn-SwitchToRing1.asm \
-       bs3-cmn-SwitchToRing2.asm \
-       bs3-cmn-SwitchToRing3.asm \
-       bs3-cmn-SwitchToRingX.asm \
-       bs3-cmn-SwitchTo16Bit.asm \
-       bs3-cmn-SwitchTo16BitV86.asm \
-       bs3-cmn-SwitchTo32Bit.asm \
-       bs3-cmn-SwitchTo64Bit.asm \
-       bs3-cmn-Syscall.asm \
-       bs3-cmn-TestData.c \
-       bs3-cmn-TestInit.c \
-       bs3-cmn-TestFailed.c \
+	bs3-cmn-StrFormatV.c \
+	bs3-cmn-StrPrintf.c \
+	bs3-cmn-StrLen.c \
+	bs3-cmn-StrNLen.c \
+	bs3-cmn-StrCpy.c \
+	bs3-cmn-MemChr.asm \
+	bs3-cmn-MemCmp.asm \
+	bs3-cmn-MemCpy.c \
+	bs3-cmn-MemPCpy.c \
+	bs3-cmn-MemMove.c \
+	bs3-cmn-MemSet.asm \
+	bs3-cmn-MemZero.asm \
+	bs3-cmn-MemAlloc.c \
+	bs3-cmn-MemAllocZ.c \
+	bs3-cmn-MemFree.c \
+	bs3-cmn-MemGuardedTestPage.c \
+	bs3-cmn-MemPrintInfo.c \
+	bs3-cmn-PagingData.c \
+	bs3-cmn-PagingInitRootForPP.c \
+	bs3-cmn-PagingInitRootForPAE.c \
+	bs3-cmn-PagingInitRootForLM.c \
+	bs3-cmn-PagingAlias.c \
+	bs3-cmn-PagingProtect.c \
+	bs3-cmn-PagingQueryAddressInfo.c \
+	bs3-cmn-PagingSetupCanonicalTraps.c \
+	bs3-cmn-pic-data.c \
+	bs3-cmn-PicMaskAll.c \
+	bs3-cmn-PicUpdateMask.c \
+	bs3-cmn-PicSetup.c \
+	bs3-cmn-pit.c \
+	bs3-cmn-PitIrqHandler.c \
+	bs3-cmn-RegCtxRestore.asm \
+	bs3-cmn-RegCtxConvertToRingX.c \
+	bs3-cmn-RegCtxConvertV86ToRm.c \
+	bs3-cmn-RegCtxPrint.c \
+	bs3-cmn-RegCtxGetRspSsAsCurPtr.c \
+	bs3-cmn-RegCtxSave.asm \
+	bs3-cmn-RegCtxSaveEx.asm \
+	bs3-cmn-RegCtxSaveForMode.c \
+	bs3-cmn-RegCtxSetGrpSegFromCurPtr.c \
+	bs3-cmn-RegCtxSetGrpSegFromFlat.c \
+	bs3-cmn-RegCtxSetRipCsFromCurPtr.c \
+	bs3-cmn-RegCtxSetRipCsFromFlat.c \
+	bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
+	bs3-cmn-RegCtxSetGpr.c \
+	bs3-cmn-RegGetCr0.asm \
+	bs3-cmn-RegGetCr2.asm \
+	bs3-cmn-RegGetCr3.asm \
+	bs3-cmn-RegGetCr4.asm \
+	bs3-cmn-RegSetCr0.asm \
+	bs3-cmn-RegSetCr2.asm \
+	bs3-cmn-RegSetCr3.asm \
+	bs3-cmn-RegSetCr4.asm \
+	bs3-cmn-RegGetDr0.asm \
+	bs3-cmn-RegGetDr1.asm \
+	bs3-cmn-RegGetDr2.asm \
+	bs3-cmn-RegGetDr3.asm \
+	bs3-cmn-RegGetDr6.asm \
+	bs3-cmn-RegGetDr7.asm \
+	bs3-cmn-RegGetDrX.asm \
+	bs3-cmn-RegSetDr0.asm \
+	bs3-cmn-RegSetDr1.asm \
+	bs3-cmn-RegSetDr2.asm \
+	bs3-cmn-RegSetDr3.asm \
+	bs3-cmn-RegSetDr6.asm \
+	bs3-cmn-RegSetDr7.asm \
+	bs3-cmn-RegSetDrX.asm \
+	bs3-cmn-RegGetTr.asm \
+	bs3-cmn-RegSetTr.asm \
+	bs3-cmn-RegGetLdtr.asm \
+	bs3-cmn-RegSetLdtr.asm \
+	bs3-cmn-RegGetXcr0.asm \
+	bs3-cmn-RegSetXcr0.asm \
+	bs3-cmn-ExtCtxInit.c \
+	bs3-cmn-ExtCtxSave.asm \
+	bs3-cmn-ExtCtxSaveEx.asm \
+	bs3-cmn-ExtCtxRestore.asm \
+	bs3-cmn-ExtCtxRestoreEx.asm \
+	bs3-cmn-ExtCtxGetSize.c \
+	bs3-cmn-ExtCtxAlloc.c \
+	bs3-cmn-ExtCtxFree.c \
+	bs3-cmn-ExtCtxCopy.c \
+	bs3-cmn-ExtCtxGetFcw.c \
+	bs3-cmn-ExtCtxSetFcw.c \
+	bs3-cmn-ExtCtxGetFsw.c \
+	bs3-cmn-ExtCtxSetFsw.c \
+	bs3-cmn-ExtCtxGetAbridgedFtw.c \
+	bs3-cmn-ExtCtxSetAbridgedFtw.c \
+	bs3-cmn-ExtCtxGetMxCsr.c \
+	bs3-cmn-ExtCtxSetMxCsr.c \
+	bs3-cmn-ExtCtxGetMxCsrMask.c \
+	bs3-cmn-ExtCtxSetMxCsrMask.c \
+	bs3-cmn-ExtCtxGetMm.c \
+	bs3-cmn-ExtCtxSetMm.c \
+	bs3-cmn-ExtCtxGetXmm.c \
+	bs3-cmn-ExtCtxSetXmm.c \
+	bs3-cmn-ExtCtxGetYmm.c \
+	bs3-cmn-ExtCtxSetYmm.c \
+	bs3-cmn-SelFar32ToFlat32.c \
+	bs3-cmn-SelFar32ToFlat32NoClobber.asm \
+	bs3-cmn-SelProtFar32ToFlat32.c \
+	bs3-cmn-SelProtModeCodeToRealMode.asm \
+	bs3-cmn-SelRealModeCodeToProtMode.asm \
+	bs3-cmn-SelFlatCodeToRealMode.asm \
+	bs3-cmn-SelFlatCodeToProtFar16.asm \
+	bs3-cmn-SelRealModeDataToProtFar16.asm \
+	bs3-cmn-SelProtFar16DataToRealMode.asm \
+	bs3-cmn-SelRealModeDataToFlat.asm \
+	bs3-cmn-SelProtFar16DataToFlat.asm \
+	bs3-cmn-SelFlatDataToProtFar16.asm \
+	bs3-cmn-SelFlatDataToRealMode.asm \
+	bs3-cmn-SelLnkPtrToCurPtr.c \
+	bs3-cmn-SelLnkPtrToFlat.c \
+	bs3-cmn-SelSetup16BitData.c \
+	bs3-cmn-SelSetup16BitCode.c \
+	bs3-cmn-SelSetup32BitCode.c \
+	bs3-cmn-SelSetupGate.c \
+	bs3-cmn-SelSetupGate64.c \
+	bs3-cmn-SlabInit.c \
+	bs3-cmn-SlabAlloc.c \
+	bs3-cmn-SlabAllocEx.c \
+	bs3-cmn-SlabFree.c \
+	bs3-cmn-SlabListInit.c \
+	bs3-cmn-SlabListAdd.c \
+	bs3-cmn-SlabListAlloc.c \
+	bs3-cmn-SlabListAllocEx.c \
+	bs3-cmn-SlabListFree.c \
+	bs3-cmn-SwitchHlpConvRealModeRetfPopBpDecBpAndReturn.asm \
+	bs3-cmn-SwitchHlpConvProtModeRetfPopBpDecBpAndReturn.asm \
+	bs3-cmn-SwitchToRing0.asm \
+	bs3-cmn-SwitchToRing1.asm \
+	bs3-cmn-SwitchToRing2.asm \
+	bs3-cmn-SwitchToRing3.asm \
+	bs3-cmn-SwitchToRingX.asm \
+	bs3-cmn-SwitchTo16Bit.asm \
+	bs3-cmn-SwitchTo16BitV86.asm \
+	bs3-cmn-SwitchTo32Bit.asm \
+	bs3-cmn-SwitchTo64Bit.asm \
+	bs3-cmn-Syscall.asm \
+	bs3-cmn-TestData.c \
+	bs3-cmn-TestInit.c \
+	bs3-cmn-TestFailed.c \
 	bs3-cmn-TestNow.asm \
-       bs3-cmn-TestSkipped.c \
-       bs3-cmn-TestSub.c \
-       bs3-cmn-TestSubDone.c \
-       bs3-cmn-TestSubErrorCount.c \
-       bs3-cmn-TestTerm.c \
+	bs3-cmn-TestSkipped.c \
+	bs3-cmn-TestSub.c \
+	bs3-cmn-TestSubDone.c \
+	bs3-cmn-TestSubErrorCount.c \
+	bs3-cmn-TestTerm.c \
 	bs3-cmn-TestSendCmdWithStr.asm \
 	bs3-cmn-TestSendCmdWithU32.asm \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
@@ -260,32 +260,32 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TrapSetJmpAndRestoreWithExtCtx.c \
 	bs3-cmn-TrapSetJmpAndRestoreWithExtCtxAndRm.c \
 	bs3-cmn-TrapUnsetJmp.c \
-       bs3-cmn-UtilSetFullGdtr.asm \
-       bs3-cmn-UtilSetFullIdtr.asm \
-       bs3-cmn-TestDoModesByOneHlp.asm \
-       ../../../Runtime/common/asm/ASMBitFirstClear.asm \
-       ../../../Runtime/common/asm/ASMBitFirstSet.asm \
-       ../../../Runtime/common/asm/ASMBitNextClear.asm \
-       ../../../Runtime/common/asm/ASMBitNextSet.asm \
-       ../../../Runtime/common/asm/ASMBitFirstSetU16.asm \
-       ../../../Runtime/common/asm/ASMBitFirstSetU32.asm \
-       ../../../Runtime/common/asm/ASMBitFirstSetU64.asm \
-       ../../../Runtime/common/asm/ASMBitLastSetU16.asm \
-       ../../../Runtime/common/asm/ASMBitLastSetU32.asm \
-       ../../../Runtime/common/asm/ASMBitLastSetU64.asm \
-       ../../../Runtime/common/asm/ASMMemFirstMismatchingU8.asm \
-       ../../../Runtime/common/asm/ASMSerializeInstruction-cpuid.asm \
-       ../../../Runtime/common/asm/ASMSerializeInstruction-iret.asm \
-       ../../../Runtime/common/asm/ASMSerializeInstruction-rdtscp.asm \
-       ../../../Runtime/common/asm/ASMCpuIdExSlow.asm \
-       ../../../Runtime/common/asm/ASMCpuId.asm \
-       ../../../Runtime/common/asm/ASMCpuId_Idx_ECX.asm \
-       ../../../Runtime/common/asm/ASMWrMsr.asm \
-       ../../../Runtime/common/asm/ASMGetXcr0.asm \
-       ../../../Runtime/common/asm/ASMSetXcr0.asm \
-       ../../../Runtime/common/asm/ASMSetFlags.asm \
-       ../../../Runtime/common/asm/ASMGetFlags.asm \
-       ../../../Runtime/common/asm/ASMMultU64ByU32DivByU32.asm \
+	bs3-cmn-UtilSetFullGdtr.asm \
+	bs3-cmn-UtilSetFullIdtr.asm \
+	bs3-cmn-TestDoModesByOneHlp.asm \
+	../../../Runtime/common/asm/ASMBitFirstClear.asm \
+	../../../Runtime/common/asm/ASMBitFirstSet.asm \
+	../../../Runtime/common/asm/ASMBitNextClear.asm \
+	../../../Runtime/common/asm/ASMBitNextSet.asm \
+	../../../Runtime/common/asm/ASMBitFirstSetU16.asm \
+	../../../Runtime/common/asm/ASMBitFirstSetU32.asm \
+	../../../Runtime/common/asm/ASMBitFirstSetU64.asm \
+	../../../Runtime/common/asm/ASMBitLastSetU16.asm \
+	../../../Runtime/common/asm/ASMBitLastSetU32.asm \
+	../../../Runtime/common/asm/ASMBitLastSetU64.asm \
+	../../../Runtime/common/asm/ASMMemFirstMismatchingU8.asm \
+	../../../Runtime/common/asm/ASMSerializeInstruction-cpuid.asm \
+	../../../Runtime/common/asm/ASMSerializeInstruction-iret.asm \
+	../../../Runtime/common/asm/ASMSerializeInstruction-rdtscp.asm \
+	../../../Runtime/common/asm/ASMCpuIdExSlow.asm \
+	../../../Runtime/common/asm/ASMCpuId.asm \
+	../../../Runtime/common/asm/ASMCpuId_Idx_ECX.asm \
+	../../../Runtime/common/asm/ASMWrMsr.asm \
+	../../../Runtime/common/asm/ASMGetXcr0.asm \
+	../../../Runtime/common/asm/ASMSetXcr0.asm \
+	../../../Runtime/common/asm/ASMSetFlags.asm \
+	../../../Runtime/common/asm/ASMGetFlags.asm \
+	../../../Runtime/common/asm/ASMMultU64ByU32DivByU32.asm
 
 # The 16-bit BS3Kit library.
 LIBRARIES += bs3kit-common-16
@@ -313,10 +313,10 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-wc16-U8LS.asm \
 	bs3-wc16-U4D.asm \
 	bs3-wc16-I4D.asm \
-       bs3-c16-SwitchFromV86To16BitAndCallC.asm \
-       bs3-c16-Trap16Generic.asm \
-       bs3-c16-TrapRmV86Generic.asm \
-       bs3-c16-TrapRmV86Data.c \
+	bs3-c16-SwitchFromV86To16BitAndCallC.asm \
+	bs3-c16-Trap16Generic.asm \
+	bs3-c16-TrapRmV86Generic.asm \
+	bs3-c16-TrapRmV86Data.c \
 	bs3-c16-CreateHybridFarRet.asm
 bs3kit-common-16_bs3-cmn-UInt64Div.c_CFLAGS = -oh -d0 # -d1+ vs -d0 saves 0x6a3-0x577 = 0x12C (300)!
 
@@ -336,8 +336,8 @@ bs3kit-common-32_INSTTYPE = none
 bs3kit-common-32_DEFS     = TMPL_PE32 BS3_CMN_ONLY
 bs3kit-common-32_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
-       bs3-cmn-PagingMapRamAbove4GForLM.c \
-       bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
+	bs3-cmn-PagingMapRamAbove4GForLM.c \
+	bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
 	bs3-cmn-UInt64Div.c \
 	bs3-wc32-U8D.asm \
 	bs3-wc32-I8D.asm \
@@ -345,7 +345,7 @@ bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-wc32-U8RS.asm \
 	bs3-wc32-U8LS.asm \
 	bs3-wc32-U8M.asm \
-       bs3-c32-Trap32Generic.asm
+	bs3-c32-Trap32Generic.asm
 
 # The 64-bit BS3Kit library.
 LIBRARIES += bs3kit-common-64
@@ -354,13 +354,13 @@ bs3kit-common-64_INSTTYPE = none
 bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
-       bs3-cmn-PagingMapRamAbove4GForLM.c \
-       bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
-       bs3-c64-Trap64Generic.asm \
-       ../../../Runtime/common/asm/ASMGetIDTR.asm \
-       ../../../Runtime/common/asm/ASMSetIDTR.asm \
-       ../../../Runtime/common/asm/ASMGetGDTR.asm \
-       ../../../Runtime/common/asm/ASMSetGDTR.asm \
+	bs3-cmn-PagingMapRamAbove4GForLM.c \
+	bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
+	bs3-c64-Trap64Generic.asm \
+	../../../Runtime/common/asm/ASMGetIDTR.asm \
+	../../../Runtime/common/asm/ASMSetIDTR.asm \
+	../../../Runtime/common/asm/ASMGetGDTR.asm \
+	../../../Runtime/common/asm/ASMSetGDTR.asm
 
 
 #
@@ -405,7 +405,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-TestDoModesByOne.c \
 	bs3-mode-TestDoModesByMax.c \
 	bs3-mode-TestDoModesHlp.asm \
-	bs3-mode-BiosInt15hE820.asm \
+	bs3-mode-BiosInt15hE820.asm
 
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm
@@ -417,7 +417,7 @@ bs3kit-rm_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 
 # The 16-bit BS3Kit library for 16-bit protected kernel+tss.
@@ -429,7 +429,7 @@ bs3kit-pe16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-first-pe16.asm \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 #	bs3-mode-CpuDetect.asm
 
 # The 32-bit BS3Kit library for 16-bit protected kernel+tss.
@@ -440,7 +440,7 @@ bs3kit-pe16_32_DEFS     = TMPL_MODE=BS3_MODE_PE16_32
 bs3kit-pe16_32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The v86 BS3Kit library for 16-bit protected kernel+tss.
 LIBRARIES += bs3kit-pe16_v86
@@ -450,7 +450,7 @@ bs3kit-pe16_v86_DEFS     = TMPL_MODE=BS3_MODE_PE16_V86
 bs3kit-pe16_v86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The 32-bit BS3Kit library for 32-bit protected kernel+tss.
 LIBRARIES += bs3kit-pe32
@@ -468,7 +468,7 @@ bs3kit-pe32_16_DEFS     = TMPL_MODE=BS3_MODE_PE32_16
 bs3kit-pe32_16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The v8086 BS3Kit library for 32-bit protected kernel+tss.
 LIBRARIES += bs3kit-pev86
@@ -486,7 +486,7 @@ bs3kit-pp16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The 32-bit BS3Kit library for 16-bit paged protected kernel+tss.
 LIBRARIES += bs3kit-pp16_32
@@ -518,7 +518,7 @@ bs3kit-pp32_16_DEFS     = TMPL_MODE=BS3_MODE_PP32_16
 bs3kit-pp32_16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The v8086 BS3Kit library for 32-bit paged protected kernel+tss.
 LIBRARIES += bs3kit-ppv86
@@ -537,7 +537,7 @@ bs3kit-pae16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The 16-bit BS3Kit library for 16-bit PAE paged protected kernel+tss.
 LIBRARIES += bs3kit-pae16_32
@@ -568,7 +568,7 @@ bs3kit-pae32_16_DEFS     = TMPL_MODE=BS3_MODE_PAE32_16
 bs3kit-pae32_16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The v8086 BS3Kit library for 32-bit PAE paged protected kernel+tss.
 LIBRARIES += bs3kit-paev86
@@ -586,7 +586,7 @@ bs3kit-lm16_DEFS     = TMPL_MODE=BS3_MODE_LM16
 bs3kit-lm16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
-	bs3-mode-TestDoModesByMaxStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm
 
 # The 32-bit long mode BS3Kit library.
 LIBRARIES += bs3kit-lm32
@@ -753,7 +753,7 @@ bs3kit-autostubs.kmk: \
 		--append "$(dir $<)$@"
 
 bs3kit-update:: bs3kit-autostubs.kmk bs3kit-mangling-code-define.h bs3kit-mangling-code-undef.h
-.NOTPARALLEL:   bs3kit-autostubs.kmk bs3kit-mangling-code-define.h bs3kit-mangling-code-undef.h
+.NOTPARALLEL: bs3kit-autostubs.kmk bs3kit-mangling-code-define.h bs3kit-mangling-code-undef.h
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -63,10 +63,10 @@ ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
    PROGRAMS += vkathost
   endif
  endif
- if    defined(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST) \
-    && defined(VBOX_WITH_ADDITIONS) \
-    && !defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
-    && (defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD))
+ if   defined(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST) \
+   && defined(VBOX_WITH_ADDITIONS) \
+   && !defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
+   && (defined(VBOX_ONLY_ADDITIONS) || !defined(VBOX_ONLY_BUILD))
   PROGRAMS += vkatadd
  endif
 endif
@@ -199,9 +199,9 @@ vkathost_LIBS       = \
 	$(LIB_RUNTIME)
 
 
-if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK) \
+if   defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK) \
   && 0 ## @todo r=bird: Disabled because nobody really wants or needs to run this during build other than Andy.
-       ##               And more importantly, it breaks the build (os2, bsd*).
+ ##               And more importantly, it breaks the build (os2, bsd*).
 
  PROGRAMS += tstVkatHostSelftest
  tstVkatHostSelftest_EXTENDS    = vkat

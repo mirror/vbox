@@ -41,20 +41,20 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS += TestExecService
 TestExecService_TEMPLATE = VBoxValidationKitR3
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-TestExecService_DEFS = \
-	KBUILD_TARGET="$(KBUILD_TARGET)" \
-	KBUILD_TARGET_ARCH="$(KBUILD_TARGET_ARCH)"
+ TestExecService_DEFS = \
+ 	KBUILD_TARGET="$(KBUILD_TARGET)" \
+ 	KBUILD_TARGET_ARCH="$(KBUILD_TARGET_ARCH)"
 else
-TestExecService_DEFS = \
-	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
-	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
+ TestExecService_DEFS = \
+ 	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
+ 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
 endif
 TestExecService_SOURCES = \
 	TestExecService.cpp \
 	TestExecServiceTcp.cpp
 
 ifn1of ($(KBUILD_TARGET), os2)
-TestExecService_SOURCES += \
+ TestExecService_SOURCES += \
  	TestExecServiceSerial.cpp
 endif
 

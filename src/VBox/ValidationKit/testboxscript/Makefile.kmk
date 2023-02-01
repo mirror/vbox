@@ -63,11 +63,11 @@ testboxscript_SOURCES.darwin = \
 testboxscript_EXEC_SOURCES.linux = \
 	linux/testboxscript-service.sh=>linux/testboxscript-service.sh
 testboxscript_SOURCES.linux = \
-       ../../Installer/linux/routines.sh=>linux/setup-installer-routines.sh \
+	../../Installer/linux/routines.sh=>linux/setup-installer-routines.sh \
 	linux/setup-routines.sh=>linux/setup-routines.sh
 
 testboxscript_SOURCES.solaris = \
-	solaris/setup-routines.sh=>solaris/setup-routines.sh \
+	solaris/setup-routines.sh=>solaris/setup-routines.sh
 
 testboxscript_SOURCES.win = \
 	win/autoexec-testbox.cmd=>win/autoexec-testbox.cmd \

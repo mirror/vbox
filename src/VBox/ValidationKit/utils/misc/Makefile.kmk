@@ -41,20 +41,20 @@ include $(KBUILD_PATH)/subheader.kmk
 # Load generator, optionally with an ring-0 IPI generator.
 #
 PROGRAMS += LoadGenerator
-if1of ($(KBUILD_TARGET_ARCH),amd64)
+if1of ($(KBUILD_TARGET_ARCH), amd64)
  ifdef VBOX_WITH_R0_MODULES
   ifdef VBOX_WITH_VBOXR0_AS_DLL
-DLLS    += loadgeneratorR0
+   DLLS += loadgeneratorR0
   else
-SYSMODS += loadgeneratorR0
+   SYSMODS += loadgeneratorR0
   endif
-loadgeneratorR0_TEMPLATE := VBoxValidationKitR0
-loadgeneratorR0_SOURCES  := loadgeneratorR0.cpp
+  loadgeneratorR0_TEMPLATE := VBoxValidationKitR0
+  loadgeneratorR0_SOURCES := loadgeneratorR0.cpp
  endif
-LoadGenerator_TEMPLATE := VBoxValidationKitR3SupDrv
-LoadGenerator_DEFS     := WITH_IPI_LOAD_GEN
+ LoadGenerator_TEMPLATE := VBoxValidationKitR3SupDrv
+ LoadGenerator_DEFS    := WITH_IPI_LOAD_GEN
 else
-LoadGenerator_TEMPLATE := VBoxValidationKitR3
+ LoadGenerator_TEMPLATE := VBoxValidationKitR3
 endif
 LoadGenerator_SOURCES  := loadgenerator.cpp
 

@@ -49,11 +49,11 @@ PROPS_ACCUMULATE_R += C32FLAGS C64FLAGS C32DEFS C64DEFS
 PROPS_ACCUMULATE_L += C32INCS C64INCS
 
 if 0 # Adding as few as possible new properties.
-KBUILD_COMPILE_CATEGTORIES += C16
-PROPS_TOOLS        += C16TOOL
-PROPS_SINGLE       += C16TOOL C16OBJSUFF
-PROPS_ACCUMULATE_R += C16FLAGS C16DEFS
-PROPS_ACCUMULATE_L += C16INCS
+ KBUILD_COMPILE_CATEGTORIES += C16
+ PROPS_TOOLS       += C16TOOL
+ PROPS_SINGLE      += C16TOOL C16OBJSUFF
+ PROPS_ACCUMULATE_R += C16FLAGS C16DEFS
+ PROPS_ACCUMULATE_L += C16INCS
 endif
 
 # Add noarch to the architectures list (will be there by default in a new kBuild).
@@ -69,17 +69,17 @@ VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_BOOTSECTORS_SRC)/bs3kit
 
 # The 16-bit code & data segment classes.
 if 1
-BS3KIT_CLASS_CODE16 = CODE
-BS3KIT_SEGNM_DATA16 =
-BS3KIT_CLASS_DATA16 = DATA
-BS3KIT_GRPNM_DATA16 = DGROUP
-BS3KIT_CLASS_BSS16  = BSS
+ BS3KIT_CLASS_CODE16 = CODE
+ BS3KIT_SEGNM_DATA16 =
+ BS3KIT_CLASS_DATA16 = DATA
+ BS3KIT_GRPNM_DATA16 = DGROUP
+ BS3KIT_CLASS_BSS16 = BSS
 else
-BS3KIT_CLASS_CODE16 = BS3CLASS16CODE
-BS3KIT_SEGNM_DATA16 = BS3DATA16
-BS3KIT_CLASS_DATA16 = FAR_DATA
-BS3KIT_GRPNM_DATA16 = BS3DATA16_GROUP
-BS3KIT_CLASS_BSS16  = ???
+ BS3KIT_CLASS_CODE16 = BS3CLASS16CODE
+ BS3KIT_SEGNM_DATA16 = BS3DATA16
+ BS3KIT_CLASS_DATA16 = FAR_DATA
+ BS3KIT_GRPNM_DATA16 = BS3DATA16_GROUP
+ BS3KIT_CLASS_BSS16 = ???
 endif
 
 
@@ -114,9 +114,9 @@ BS3KIT_FN_GEN_MODE_NEARSTUB = $(foreach suff, \
 # @param    2   The near function name.
 # @param    3   The far function name.
 define def_Bs3KitGenNearStubSource
-$1_SOURCES += $$($1_0_OUTDIR)/stub$2.asm
-$1_CLEAN   += $$($1_0_OUTDIR)/stub$2.asm
-$$$$($1_0_OUTDIR)/stub$2.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
+ $1_SOURCES += $$($1_0_OUTDIR)/stub$2.asm
+ $1_CLEAN  += $$($1_0_OUTDIR)/stub$2.asm
+ $$$$($1_0_OUTDIR)/stub$2.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
 	$(QUIET)$(APPEND) -tn $$@ \
 		'%include "bs3kit.mac"' \
        	'BS3_BEGIN_TEXT16' \
@@ -165,9 +165,9 @@ BS3KIT_FN_GEN_MODE_FARSTUB = $(foreach suff, \
 # @param    4   The near function suffix.
 # @param    5   The parameter size in bytes.
 define def_Bs3KitGenFarStubSource
-$1_SOURCES += $$($1_0_OUTDIR)/stub_$2$3.asm
-$1_CLEAN   += $$($1_0_OUTDIR)/stub_$2$3.asm
-$$$$($1_0_OUTDIR)/stub_$2$3.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
+ $1_SOURCES += $$($1_0_OUTDIR)/stub_$2$3.asm
+ $1_CLEAN  += $$($1_0_OUTDIR)/stub_$2$3.asm
+ $$$$($1_0_OUTDIR)/stub_$2$3.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
 	$(QUIET)$(APPEND) -tn $$@ \
 		'%include "bs3kit.mac"' \
        	'BS3_BEGIN_TEXT16' \
@@ -245,21 +245,21 @@ TOOL_VBoxNasm_COMPILE_AS_OUTPUT_MAYBE = $(obj).original
 TOOL_VBoxNasm_COMPILE_AS_DEPEND = $(VBoxBs3ObjConverter_1_TARGET)
 TOOL_VBoxNasm_COMPILE_AS_DEPORD =
 define TOOL_VBoxNasm_COMPILE_AS_CMDS
-ifdef TOOL_VBoxNasm_USE_KSUBMIT
+ ifdef TOOL_VBoxNasm_USE_KSUBMIT
 	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
 		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
 		-l $(outbase).lst\
 		-o $(obj)\
                -MD "$(dep)" -MP\
 		$(abspath $(source))
-else
+ else
 	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
 		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
 		-l $(outbase).lst\
 		-o $(obj)\
                -MD "$(dep)" -MP\
 		$(abspath $(source))
-endif
+ endif
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
@@ -527,18 +527,18 @@ endif
 # Source handlers for .c16, .c32 and .c64
 #
 define VBoxBs3KitImgSrcHandler_16bit_c
-local type := C
+ local type := C
  $(kb-src-one 2)
 endef
 
 C32TOOL = Bs3Ow32
 define VBoxBs3KitImgSrcHandler_32bit_c
-local type := C32
+ local type := C32
  $(kb-src-one 2)
 endef
 
 define VBoxBs3KitImgSrcHandler_64bit_c
-local type := C64
+ local type := C64
  $(kb-src-one 2)
 endef
 
@@ -604,8 +604,8 @@ TEMPLATE_VBoxBS3KitImg_ASOBJSUFF    = .o16
 TEMPLATE_VBoxBS3KitImg_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ ARCH_BITS=16 RT_ARCH_X86 ASM_MODEL_FAR_CODE \
-        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
-	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
+	BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg_DEFS         = IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_DEFS.debug   = BS3_STRICT
 
@@ -653,85 +653,85 @@ TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
 	debug $(BS3_OW_DBG_LDOPT) all \
 	option quiet, map, statics, verbose, symfile, start=_start, farcalls \
-       disable 1014, 1080 \
+	disable 1014, 1080 \
 	\
- 	output raw offset=0x10000 \
- 	order \
- 	 clname BS3FLAT segaddr=0x0000 \
- 	   segment BS3FLAT segaddr=0x0000 \
- 	 clname $(BS3KIT_CLASS_CODE16) segaddr=0x1000 \
- 	  segment BS3TEXT16 \
- 	  segment BS3TEXT16_NEARSTUBS \
-         segment BS3TEXT16_FARSTUBS \
- 	  segment BS3TEXT16_END \
-        clname BS3SYSTEM16 segaddr=0x2000 \
-         segment BS3SYSTEM16 \
-$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
- 	 clname DATA \
- 	  segment BS3DATA16 segaddr=0x2900 \
- 	  segment BS3DATA16_DATA \
- 	  segment DATA \
- 	  segment _DATA \
- 	  segment BS3DATA16CONST \
- 	  segment CONST \
- 	  segment BS3DATA16CONST2 \
- 	  segment CONST2 \
- 	  segment STRINGS \
- 	  segment BS3DATA16_END \
-        clname BSS \
- 	  segment BSS \
- 	  segment _BSS \
- 	  segment BS3DATA16_END \
- 	 clname FAR_DATA \
-         segment FAR_DATA \
-, \
- 	 clname FAR_DATA \
- 	  segment BS3DATA16 segaddr=0x2900 \
-         segment FAR_DATA \
- 	  segment BS3DATA16CONST \
- 	  segment BS3DATA16CONST2 \
- 	  segment BS3DATA16_DATA \
- 	  segment BS3DATA16_END \
-) \
-	  segment BS3DATA32 \
-	  segment BS3DATA32CONST \
-	  segment BS3DATA32CONST2 \
-	  segment BS3DATA32_DATA \
-	  segment BS3DATA32_BSS \
-	  segment BS3DATA32_END \
-         \
- 	  segment BS3DATA64 \
- 	  segment BS3DATA64CONST \
- 	  segment BS3DATA64_BSS \
- 	  segment BS3DATA64_END \
-        clname BS3CLASS16RMCODE \
- 	  segment BS3RMCODE16_START \
- 	  segment BS3RMCODE16 \
- 	  segment BS3RMCODE16_END \
-        clname BS3CLASS16X0CODE \
- 	  segment BS3X0CODE16_START \
- 	  segment BS3X0CODE16 \
- 	  segment BS3X0CODE16_END \
-        clname BS3CLASS16X1CODE \
- 	  segment BS3X1CODE16_START \
- 	  segment BS3X1CODE16 \
- 	  segment BS3X1CODE16_END \
-        clname BS3CLASS32CODE \
- 	  segment BS3TEXT32_START \
- 	  segment BS3TEXT32 \
- 	  segment BS3TEXT32_END \
-        clname BS3CLASSSEPARATE32AND64BITCODE \
- 	  segment BS3SEPARATE32AND64BITCODE \
- 	  segment BS3SEPARATE32AND64BITCODE_END \
-        clname BS3CLASS64CODE \
- 	  segment BS3TEXT64_START \
- 	  segment BS3TEXT64 \
- 	  segment BS3TEXT64_END
+	output raw offset=0x10000 \
+	order \
+	clname BS3FLAT segaddr=0x0000 \
+	segment BS3FLAT segaddr=0x0000 \
+	clname $(BS3KIT_CLASS_CODE16) segaddr=0x1000 \
+	segment BS3TEXT16 \
+	segment BS3TEXT16_NEARSTUBS \
+	segment BS3TEXT16_FARSTUBS \
+	segment BS3TEXT16_END \
+	clname BS3SYSTEM16 segaddr=0x2000 \
+	segment BS3SYSTEM16 \
+	$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
+	clname DATA \
+	segment BS3DATA16 segaddr=0x2900 \
+	segment BS3DATA16_DATA \
+	segment DATA \
+	segment _DATA \
+	segment BS3DATA16CONST \
+	segment CONST \
+	segment BS3DATA16CONST2 \
+	segment CONST2 \
+	segment STRINGS \
+	segment BS3DATA16_END \
+	clname BSS \
+	segment BSS \
+	segment _BSS \
+	segment BS3DATA16_END \
+	clname FAR_DATA \
+	segment FAR_DATA \
+	, \
+	clname FAR_DATA \
+	segment BS3DATA16 segaddr=0x2900 \
+	segment FAR_DATA \
+	segment BS3DATA16CONST \
+	segment BS3DATA16CONST2 \
+	segment BS3DATA16_DATA \
+	segment BS3DATA16_END \
+	) \
+	segment BS3DATA32 \
+	segment BS3DATA32CONST \
+	segment BS3DATA32CONST2 \
+	segment BS3DATA32_DATA \
+	segment BS3DATA32_BSS \
+	segment BS3DATA32_END \
+	\
+	segment BS3DATA64 \
+	segment BS3DATA64CONST \
+	segment BS3DATA64_BSS \
+	segment BS3DATA64_END \
+	clname BS3CLASS16RMCODE \
+	segment BS3RMCODE16_START \
+	segment BS3RMCODE16 \
+	segment BS3RMCODE16_END \
+	clname BS3CLASS16X0CODE \
+	segment BS3X0CODE16_START \
+	segment BS3X0CODE16 \
+	segment BS3X0CODE16_END \
+	clname BS3CLASS16X1CODE \
+	segment BS3X1CODE16_START \
+	segment BS3X1CODE16 \
+	segment BS3X1CODE16_END \
+	clname BS3CLASS32CODE \
+	segment BS3TEXT32_START \
+	segment BS3TEXT32 \
+	segment BS3TEXT32_END \
+	clname BS3CLASSSEPARATE32AND64BITCODE \
+	segment BS3SEPARATE32AND64BITCODE \
+	segment BS3SEPARATE32AND64BITCODE_END \
+	clname BS3CLASS64CODE \
+	segment BS3TEXT64_START \
+	segment BS3TEXT64 \
+	segment BS3TEXT64_END
 
 TEMPLATE_VBoxBS3KitImg_LNK_DEPS = \
 	$(bs3-bootsector_1_TARGET) \
 	$(VBoxBs3Linker_1_TARGET)
-TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY)\
+TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY) \
 	,,$(QUIET)$(MV_EXT) -f -- "$(out)" "$(out).tmp" \
 	$$(NLTAB)$(QUIET)$(VBoxBs3Linker_1_TARGET) -o $(out) $(bs3-bootsector_1_TARGET) $(out).tmp \
 	$$(NLTAB)$(QUIET)$(RM_EXT) -f -- "$(out).tmp") \
@@ -742,7 +742,7 @@ TEMPLATE_VBoxBS3KitImg_LIBS = \
 	$(PATH_OBJ)/bs3kit-common-16/bs3kit-common-16.lib \
 	$(PATH_OBJ)/bs3kit-common-32/bs3kit-common-32.lib \
 	$(PATH_OBJ)/bs3kit-common-64/bs3kit-common-64.lib \
-       \
+	\
 	$(PATH_OBJ)/bs3kit-rm/bs3kit-rm.lib \
 	$(PATH_OBJ)/bs3kit-pe16/bs3kit-pe16.lib \
 	$(PATH_OBJ)/bs3kit-pe16_32/bs3kit-pe16_32.lib \
@@ -775,8 +775,8 @@ TEMPLATE_VBoxBS3KitImg32_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg32_ASOBJSUFF    = .o32
 TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ \
-        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
-	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
+	BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
@@ -798,8 +798,8 @@ TEMPLATE_VBoxBS3KitImg64_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg64_ASOBJSUFF    = .o64
 TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF ASM_CALL64_MSC RT_NOINC_SEGMENTS __NASM__ \
-        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
-	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
+	BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
 TEMPLATE_VBoxBS3KitImg64_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg64_ARTOOL       = OPENWATCOM
@@ -817,9 +817,9 @@ else
  TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := Bs3Gcc64Elf64
  # Note! -mx32 would be exactly what we needed here, however it causes internal compiler errors with 4.8.4 on gentoo.
  TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_C) \
-    -msoft-float -fno-exceptions -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
+ 	-msoft-float -fno-exceptions -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
  TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_CXX) \
-    -msoft-float -fno-exceptions -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
+ 	-msoft-float -fno-exceptions -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
 endif
 TEMPLATE_VBoxBS3KitImg64_LDTOOL       = VBoxBsUnusedLd
 
@@ -834,8 +834,8 @@ TEMPLATE_VBoxBS3KitBS_MODE            = 0644
 TEMPLATE_VBoxBS3KitBS_ASTOOL          = YASM
 TEMPLATE_VBoxBS3KitBS_ASFLAGS         = -f bin --mapfile
 TEMPLATE_VBoxBS3KitBS_ASDEFS          = ASM_FORMAT_BIN RT_NOINC_SEGMENTS ARCH_BITS=16 __YASM__ \
-        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
-	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
+	BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitBS_INCS            = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitBS_LDTOOL          = VBoxBsCpLd
 
@@ -855,94 +855,94 @@ TEMPLATE_VBoxBS3KitUtil_CXXFLAGS = $(filter-out -zl,$(TEMPLATE_VBoxBS3KitImg_CXX
 TEMPLATE_VBoxBS3KitUtil_LDFLAGS  = system dos \
 	debug $(BS3_OW_DBG_LDOPT) all \
 	option quiet, map, statics, verbose, symfile \
-       disable 1080 \
- 	order \
- 	 clname $(BS3KIT_CLASS_CODE16) \
- 	  segment BEGTEXT \
- 	  segment BS3TEXT16 \
- 	  segment _TEXT \
- 	  segment BS3TEXT16_NEARSTUBS \
- 	  segment BS3TEXT16_FARSTUBS \
- 	  segment BS3TEXT16_END \
-        clname BS3SYSTEM16  \
-         segment BS3SYSTEM16 \
-         \
- 	 clname BEGDATA \
- 	  segment _NULL  \
- 	  segment _AFTERNULL  \
- 	 clname DATA \
-$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
- 	  segment BS3DATA16 \
- 	  segment BS3DATA16CONST \
- 	  segment CONST \
- 	  segment BS3DATA16CONST2 \
- 	  segment CONST2 \
-,\
- 	  segment CONST \
- 	  segment CONST2 \
-) \
- 	  segment _DATA  \
- 	  segment XIB  \
- 	  segment XI  \
- 	  segment XIE  \
- 	  segment YIB  \
- 	  segment YI  \
- 	  segment YIE  \
- 	  segment STRINGS  \
-$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
- 	  segment BS3DATA16_DATA \
-,) \
- 	  segment DATA  \
- 	 clname BSS \
-	  segment _BSS \
-	  segment BSS \
- 	  segment BS3DATA16_END \
- 	 clname STACK \
- 	  segment STACK \
-         \
- 	 clname FAR_DATA \
-$(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
- 	  segment BS3DATA16  \
- 	  segment BS3DATA16_DATA \
- 	  segment BS3DATA16CONST \
- 	  segment BS3DATA16CONST2 \
- 	  segment FAR_DATA \
- 	  segment BS3DATA16_END \
-,\
- 	  segment FAR_DATA \
-)\
-	  segment BS3DATA32 \
-	  segment BS3DATA32CONST \
-	  segment BS3DATA32CONST2 \
-	  segment BS3DATA32_DATA \
-	  segment BS3DATA32_BSS \
-	  segment BS3DATA32_END \
-         \
- 	  segment BS3DATA64 \
- 	  segment BS3DATA64CONST \
- 	  segment BS3DATA64_BSS \
- 	  segment BS3DATA64_END \
-        clname BS3CLASS16RMCODE \
- 	  segment BS3RMCODE16_START \
- 	  segment BS3RMCODE16 \
- 	  segment BS3RMCODE16_END \
-        clname BS3CLASS16X0CODE \
- 	  segment BS3X0CODE16_START \
- 	  segment BS3X0CODE16 \
- 	  segment BS3X0CODE16_END \
-        clname BS3CLASS16X1CODE \
- 	  segment BS3X1CODE16_START \
- 	  segment BS3X1CODE16 \
- 	  segment BS3X1CODE16_END \
-        clname BS3CLASS32CODE \
- 	  segment BS3TEXT32 \
- 	  segment BS3TEXT32_END \
-        clname BS3CLASSSEPARATE32AND64BITCODE \
- 	  segment BS3SEPARATE32AND64BITCODE \
- 	  segment BS3SEPARATE32AND64BITCODE_END \
-        clname BS3CLASS64CODE \
- 	  segment BS3TEXT64 \
- 	  segment BS3TEXT64_END
+	disable 1080 \
+	order \
+	clname $(BS3KIT_CLASS_CODE16) \
+	segment BEGTEXT \
+	segment BS3TEXT16 \
+	segment _TEXT \
+	segment BS3TEXT16_NEARSTUBS \
+	segment BS3TEXT16_FARSTUBS \
+	segment BS3TEXT16_END \
+	clname BS3SYSTEM16 \
+	segment BS3SYSTEM16 \
+	\
+	clname BEGDATA \
+	segment _NULL \
+	segment _AFTERNULL \
+	clname DATA \
+	$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
+	segment BS3DATA16 \
+	segment BS3DATA16CONST \
+	segment CONST \
+	segment BS3DATA16CONST2 \
+	segment CONST2 \
+	, \
+	segment CONST \
+	segment CONST2 \
+	) \
+	segment _DATA \
+	segment XIB \
+	segment XI \
+	segment XIE \
+	segment YIB \
+	segment YI \
+	segment YIE \
+	segment STRINGS \
+	$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
+	segment BS3DATA16_DATA \
+	,) \
+	segment DATA \
+	clname BSS \
+	segment _BSS \
+	segment BSS \
+	segment BS3DATA16_END \
+	clname STACK \
+	segment STACK \
+	\
+	clname FAR_DATA \
+	$(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
+	segment BS3DATA16 \
+	segment BS3DATA16_DATA \
+	segment BS3DATA16CONST \
+	segment BS3DATA16CONST2 \
+	segment FAR_DATA \
+	segment BS3DATA16_END \
+	, \
+	segment FAR_DATA \
+	) \
+	segment BS3DATA32 \
+	segment BS3DATA32CONST \
+	segment BS3DATA32CONST2 \
+	segment BS3DATA32_DATA \
+	segment BS3DATA32_BSS \
+	segment BS3DATA32_END \
+	\
+	segment BS3DATA64 \
+	segment BS3DATA64CONST \
+	segment BS3DATA64_BSS \
+	segment BS3DATA64_END \
+	clname BS3CLASS16RMCODE \
+	segment BS3RMCODE16_START \
+	segment BS3RMCODE16 \
+	segment BS3RMCODE16_END \
+	clname BS3CLASS16X0CODE \
+	segment BS3X0CODE16_START \
+	segment BS3X0CODE16 \
+	segment BS3X0CODE16_END \
+	clname BS3CLASS16X1CODE \
+	segment BS3X1CODE16_START \
+	segment BS3X1CODE16 \
+	segment BS3X1CODE16_END \
+	clname BS3CLASS32CODE \
+	segment BS3TEXT32 \
+	segment BS3TEXT32_END \
+	clname BS3CLASSSEPARATE32AND64BITCODE \
+	segment BS3SEPARATE32AND64BITCODE \
+	segment BS3SEPARATE32AND64BITCODE_END \
+	clname BS3CLASS64CODE \
+	segment BS3TEXT64 \
+	segment BS3TEXT64_END
 # 	 clname BS3FLAT segaddr=0x0000 \
 # 	   segment BS3FLAT segaddr=0x0000
 

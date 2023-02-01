@@ -88,9 +88,9 @@ TEMPLATE_VBoxValidationKitR3_LIBS = \
 	$(PATH_STAGE_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
 ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBoxValidationKitR3_LIBS += \
-	kstat \
-	nsl \
-	contract
+ 	kstat \
+ 	nsl \
+ 	contract
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   TEMPLATE_VBoxValidationKitR3_LIBS += \
   	smbios
@@ -103,15 +103,15 @@ endif
 
 # Make VCC100 output work on NT3.x, NT4, W2K, XP and W2K3.
 ifndef VBOX_WITH_NOCRT_STATIC
-TEMPLATE_VBoxValidationKitR3_LIBS.win.x86 = \
-       $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/oldnames.lib \
-       $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
-       $(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB)
-TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 = \
-  	-Include:_vcc100_shell32_fakes_cpp \
-	-Include:_vcc100_shell32_fakes_asm \
-	-Section:.bss,RW!K
+ TEMPLATE_VBoxValidationKitR3_LIBS.win.x86 = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/oldnames.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBoxValidationKitR3_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+ 	$(PATH_STAGE_LIB)/RuntimeR3VccTricks$(VBOX_SUFF_LIB)
+ TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 = \
+ 	-Include:_vcc100_shell32_fakes_cpp \
+ 	-Include:_vcc100_shell32_fakes_asm \
+ 	-Section:.bss,RW!K
 endif
 TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 += -NoOptIData
 TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS.win.x86)$$(NLTAB)
@@ -151,9 +151,9 @@ TEMPLATE_VBoxValidationKitR3SupDrv_LIBS = \
 	$(PATH_STAGE_LIB)/SUPR3Static$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
 ifndef VBOX_WITH_NOCRT_STATIC
-TEMPLATE_VBoxValidationKitR3SupDrv_LDFLAGS.win.x86 = \
-	-Include:_vcc100_ntdll_fakes_cpp \
-	-Include:_vcc100_ntdll_fakes_asm
+ TEMPLATE_VBoxValidationKitR3SupDrv_LDFLAGS.win.x86 = \
+ 	-Include:_vcc100_ntdll_fakes_cpp \
+ 	-Include:_vcc100_ntdll_fakes_asm
 endif
 
 #
@@ -190,31 +190,31 @@ endif
 BLDDIRS += $(PATH_TARGET)/pylint $(PATH_TARGET)/pyunittest
 
 define def_vbox_validationkit_py_check
-$(eval name:=$(basename $(notdir $(py))))
+ $(eval name:=$(basename $(notdir $(py))))
 
-pylint:   $(name)-py-phony.o
-$(name).o: $(name)-py-phony.o
-$(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
-ifdef VBOX_WITH_PYLINT
+ pylint: $(name)-py-phony.o
+ $(name).o: $(name)-py-phony.o
+ $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
+ ifdef VBOX_WITH_PYLINT
 	$(QUIET2)$(call MSG_L1,Subjecting $(py) to pylint...)
 	$(QUIET)$(REDIRECT) -C "$(dir $(py))" -E LC_ALL=C -E PYTHONPATH="$(VBOX_PYTHONPATH_VALIDATIONKIT)" -- \
 		$(VBOX_PYLINT) --rcfile=$(VBOX_PATH_VALIDATIONKIT_SRC)/pylintrc $$(VBOX_PYLINT_FLAGS) $$($(py)_VBOX_PYLINT_FLAGS) ./$(notdir $(py))
-endif
+ endif
 	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
 
-ifn1of ($(py),$(VBOX_VALIDATIONKIT_PYUNITTEST_EXCLUDE))
-pyunittest: $(name)-pyunittest.o
-$(PATH_TARGET)/pyunittest/$(name).o $(name)-pyunittest.o:: $(py) | $(PATH_TARGET)/pyunittest/
+ ifn1of ($(py), $(VBOX_VALIDATIONKIT_PYUNITTEST_EXCLUDE))
+  pyunittest: $(name)-pyunittest.o
+  $(PATH_TARGET)/pyunittest/$(name).o $(name)-pyunittest.o:: $(py) | $(PATH_TARGET)/pyunittest/
 	$(QUIET2)$(call MSG_L1,Unittesting Python source $(py)...)
 	$(QUIET)$(REDIRECT) -E LC_ALL=C -E PYTHONPATH="$(VBOX_PYTHONPATH_VALIDATIONKIT)" -C $(dir $(py)) \
 		-- $(VBOX_UNITTEST_PYTHON) -m unittest -v $(notdir $(basename $(py)))
 	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pyunittest/$(name).o"
-VBOX_VALIDATIONKIT_PYUNITTEST_TARGETS += $(PATH_TARGET)/pyunittest/$(name).o
+  VBOX_VALIDATIONKIT_PYUNITTEST_TARGETS += $(PATH_TARGET)/pyunittest/$(name).o
 
-TESTING += $(name)-pyunittest.o
-endif
-TESTING += $(name)-py-phony.o
-VBOX_VALIDATIONKIT_PYLINT_TARGETS     += $(PATH_TARGET)/pylint/$(name).o
+  TESTING += $(name)-pyunittest.o
+ endif
+ TESTING += $(name)-py-phony.o
+ VBOX_VALIDATIONKIT_PYLINT_TARGETS    += $(PATH_TARGET)/pylint/$(name).o
 endef # def_vbox_validationkit_py_check
 
 
@@ -240,17 +240,17 @@ endif
 VBOX_VALIDATIONKIT_JS_SOURCES :=
 
 define def_vbox_validationkit_js_check
-$(eval name:=$(basename $(notdir $(js))))
-$(name).o $(name).obj: # $(PATH_SUB_CURRENT)/$(js)
+ $(eval name:=$(basename $(notdir $(js))))
+ $(name).o $(name).obj: # $(PATH_SUB_CURRENT)/$(js)
 	-$(REDIRECT) -E LC_ALL=C  -C $(dir $(js)) -- $$(VBOX_JSHINT) ./$(notdir $(js)) $$(VBOX_JSHINT_FLAGS)
-jslint: $(name).o
+ jslint: $(name).o
 endef
 
 ifdef VBOX_WITH_JSHINT
-define def_vbox_validationkit_process_js_sources
+ define def_vbox_validationkit_process_js_sources
 $(if-expr $(words $(_SUB_MAKEFILE_STACK)) <= 0, \
 	$(foreach js, $(VBOX_VALIDATIONKIT_JS_SOURCES), $(eval $(def_vbox_validationkit_js_check))),)
-endef
+ endef
 endif
 
 

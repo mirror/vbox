@@ -47,16 +47,16 @@ ifndef VBOX_RST2HTML
    VBOX_RST2HTML := rst2html.py
   endif
  endif
- if1of ($(KBUILD_HOST),win)
+ if1of ($(KBUILD_HOST), win)
   VBOX_RST2HTML := $(VBOX_BLD_PYTHON) $(VBOX_RST2HTML)
  endif
 endif
 
 GENERATED_FILES = \
-    AutomaticTestingRevamp.html \
-    VBoxValidationKitReadMe.html \
-    VBoxAudioValidationKitReadMe.html \
-    TestBoxImaging.html
+	AutomaticTestingRevamp.html \
+	VBoxValidationKitReadMe.html \
+	VBoxAudioValidationKitReadMe.html \
+	TestBoxImaging.html
 
 all: $(GENERATED_FILES)
 
