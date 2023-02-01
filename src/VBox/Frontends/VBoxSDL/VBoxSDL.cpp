@@ -2940,7 +2940,7 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
     /* According to SDL2/SDL_scancodes.h ev->keysym.sym stores scancodes which are
     * based on USB usage page standard. This is what we can directly pass to
     * IKeyboard::putUsageCode. */
-    gpKeyboard->PutUsageCode(SDL_GetScancodeFromKey(ev->keysym.sym), 0x07, ev->type == SDL_KEYUP ? TRUE : FALSE);
+    gpKeyboard->PutUsageCode(SDL_GetScancodeFromKey(ev->keysym.sym), 0x07 /*usage code page id*/, ev->type == SDL_KEYUP ? TRUE : FALSE);
 }
 
 #ifdef RT_OS_DARWIN
@@ -3968,19 +3968,13 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
         case SDLK_F7: case SDLK_F8: case SDLK_F9:
         case SDLK_F10: case SDLK_F11: case SDLK_F12:
         {
-            // /* send Ctrl-Alt-Fx to guest */
-#if 0 // Fix me. I was not working with PutScancodes API. Need to find the corect way to do this with PutUsagecode API
-            com::SafeArray<LONG> keys(6);
-
-            keys[0] = 0x1d; // Ctrl down
-            keys[1] = 0x38; // Alt down
-            keys[2] = Keyevent2Keycode(pEv); // Fx down
-            keys[3] = keys[2] + 0x80; // Fx up
-            keys[4] = 0xb8; // Alt up
-            keys[5] = 0x9d;  // Ctrl up
-
-            gpKeyboard->PutScancodes(ComSafeArrayAsInParam(keys), NULL);
-#endif
+            /* send Ctrl-Alt-Fx to guest */
+            gpKeyboard->PutUsageCode(0xE0 /*left ctrl*/, 0x07 /*usage code page id*/, FALSE);
+            gpKeyboard->PutUsageCode(0xE2 /*left alt*/, 0x07 /*usage code page id*/, FALSE);
+            gpKeyboard->PutUsageCode(pEv->keysym.sym,  0x07 /*usage code page id*/, FALSE);
+            gpKeyboard->PutUsageCode(pEv->keysym.sym,  0x07 /*usage code page id*/, TRUE);
+            gpKeyboard->PutUsageCode(0xE0 /*left ctrl*/, 0x07 /*usage code page id*/, TRUE);
+            gpKeyboard->PutUsageCode(0xE2 /*left alt*/, 0x07 /*usage code page id*/, TRUE);
             return VINF_SUCCESS;
         }
 
