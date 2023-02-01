@@ -29,12 +29,12 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 if 0 # Disabled following OL's example.
-LIBRARIES += crypto_sm4
-crypto_sm4_TEMPLATE = SubLibCrypto
-crypto_sm4_DEFS = OPENSSL_NO_DEPRECATED
-crypto_sm4_SOURCES = \
-	sm4.c
-$(evalcall VBOX_OPENSSL_X86,crypto_sm4)
+ LIBRARIES += crypto_sm4
+ crypto_sm4_TEMPLATE = SubLibCrypto
+ crypto_sm4_DEFS = OPENSSL_NO_DEPRECATED
+ crypto_sm4_SOURCES = \
+ 	sm4.c
+ $(evalcall VBOX_OPENSSL_X86,crypto_sm4)
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

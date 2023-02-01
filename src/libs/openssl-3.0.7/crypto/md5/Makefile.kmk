@@ -37,16 +37,16 @@ crypto_md5_SOURCES = \
 	md5_sha1.c
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_ec_SOURCES.x86 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/md5-586.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/md5-586.S
  crypto_ec_SOURCES.amd64 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/md5-x86_64.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/md5-x86_64.S
 endif
 $(evalcall VBOX_OPENSSL_X86,crypto_md5)
 
 
 recreate-md5-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-	$(VBOX_PATH_CRYPTO_MD5)/asm/md5-586.pl \
-	$(VBOX_PATH_CRYPTO_MD5)/asm/md5-x86_64.pl
+		$(VBOX_PATH_CRYPTO_MD5)/asm/md5-586.pl \
+		$(VBOX_PATH_CRYPTO_MD5)/asm/md5-x86_64.pl
 	perl $(VBOX_PATH_CRYPTO_MD5)/asm/md5-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/md5-586.S
 	perl $(VBOX_PATH_CRYPTO_MD5)/asm/md5-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/md5-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_MD5)/asm/md5-586.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/md5-586.S

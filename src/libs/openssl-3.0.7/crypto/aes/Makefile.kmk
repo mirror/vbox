@@ -40,37 +40,37 @@ crypto_aes_SOURCES = \
 	aes_wrap.c
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_aes_SOURCES.x86 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/aes-586.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/vpaes-x86.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/aesni-x86.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aes-586.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/vpaes-x86.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aesni-x86.S
  crypto_aes_SOURCES.amd64 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/aes-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/vpaes-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/bsaes-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/aesni-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/aesni-mb-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/aesni-sha1-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/aesni-sha256-x86_64.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aes-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/vpaes-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/bsaes-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aesni-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aesni-mb-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aesni-sha1-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aesni-sha256-x86_64.S
 else
-  crypto_aes_SOURCES += \
-	aes_core.c \
-	aes_cbc.c
+ crypto_aes_SOURCES  += \
+ 	aes_core.c \
+ 	aes_cbc.c
 endif
 
 $(evalcall VBOX_OPENSSL_X86,crypto_aes)
 
 
 recreate-aes-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl
+		$(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/aes-586.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/vpaes-x86.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/aesni-x86.S

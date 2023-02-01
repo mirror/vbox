@@ -70,7 +70,7 @@ OSSL_PROVIDERS_DER_SRC_TEMPLATES := \
 #  instead of getting it expanded and executed at once...
 #
 recreate-providers-der-sources: $(VBOX_PATH_OPENSSL)/util/dofile.pl \
-	$(OSSL_PROVIDERS_DER_SRC_TEMPLATES)
+		$(OSSL_PROVIDERS_DER_SRC_TEMPLATES)
 	$(foreach src, $(OSSL_PROVIDERS_DER_SRC_TEMPLATES), \
 	    perl \
 	     -I$(VBOX_PATH_OPENSSL) \

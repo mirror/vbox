@@ -64,14 +64,14 @@ VBox-libproviders_SOURCES  = \
 	legacyprov.c \
 	nullprov.c \
 	prov_running.c
- VBox-libproviders_SOURCES += $(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $($(sublib)_1_TARGET))
+VBox-libproviders_SOURCES  += $(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $($(sublib)_1_TARGET))
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
  LIBRARIES += VBox-libproviders-x86
  VBox-libproviders-x86_TEMPLATE = VBoxLibCrypto-x86
  VBox-libproviders-x86_EXTENDS = VBox-libproviders
  VBox-libproviders-x86_SOURCES = $(filter %.c %.cpp,$(VBox-libproviders_SOURCES)) \
-	$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS_X86), $($(sublib)_1_TARGET))
+ 	$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS_X86), $($(sublib)_1_TARGET))
 endif
 
 
@@ -89,24 +89,24 @@ ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
 #
 # The build program libproviders version.
 #
-LIBRARIES += VBoxBldProg-libproviders
-VBoxBldProg-libproviders          = For bldRTSignTool
-VBoxBldProg-libproviders_EXTENDS  = VBox-libproviders
-VBoxBldProg-libproviders_TEMPLATE = VBoxLibCryptoBldProg
-VBoxBldProg-libproviders_SOURCES  = \
-	$(filter %.c,$(VBox-libproviders_SOURCES)) \
-	$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(VBoxBldProg-$(sublib)_1_TARGET))
+ LIBRARIES += VBoxBldProg-libproviders
+ VBoxBldProg-libproviders         = For bldRTSignTool
+ VBoxBldProg-libproviders_EXTENDS = VBox-libproviders
+ VBoxBldProg-libproviders_TEMPLATE = VBoxLibCryptoBldProg
+ VBoxBldProg-libproviders_SOURCES = \
+ 	$(filter %.c,$(VBox-libproviders_SOURCES)) \
+ 	$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(VBoxBldProg-$(sublib)_1_TARGET))
 
-define def_VBoxBldProg_libproviders_inherit
- LIBRARIES += VBoxBldProg-$(sublib)
- VBoxBldProg-$(sublib) = bldRTSignTool version of $(sublib)
- VBoxBldProg-$(sublib)_EXTENDS    = $(sublib)
- VBoxBldProg-$(sublib)_EXTENDS_BY = appending
- VBoxBldProg-$(sublib)_TEMPLATE   = VBoxSubLibCryptoBldProg
- VBoxBldProg-$(sublib)_DEFPATH    = $($(sublib)_DEFPATH)
+ define def_VBoxBldProg_libproviders_inherit
+  LIBRARIES += VBoxBldProg-$(sublib)
+  VBoxBldProg-$(sublib) = bldRTSignTool version of $(sublib)
+  VBoxBldProg-$(sublib)_EXTENDS   = $(sublib)
+  VBoxBldProg-$(sublib)_EXTENDS_BY = appending
+  VBoxBldProg-$(sublib)_TEMPLATE  = VBoxSubLibCryptoBldProg
+  VBoxBldProg-$(sublib)_DEFPATH   = $($(sublib)_DEFPATH)
  ## @todo kBuild: DEFPATH isn't inherited! FIXME!
-endef
-$(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(eval $(def_VBoxBldProg_libproviders_inherit)))
+ endef
+ $(foreach sublib,$(VBOX_CRYPTO_PROVIDERS_SUBLIBS), $(eval $(def_VBoxBldProg_libproviders_inherit)))
 
 endif # VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
 
@@ -131,8 +131,8 @@ OSSL_PROVIDERS_HDR_TEMPLATES := \
 #  instead of getting it expanded and executed at once...
 #
 recreate-providers-headers: $(VBOX_PATH_OPENSSL)/util/dofile.pl \
-	$(OSSL_PROVIDERS_HDR_TEMPLATES) \
-	recreate-providers-der-sources
+		$(OSSL_PROVIDERS_HDR_TEMPLATES) \
+		recreate-providers-der-sources
 	$(foreach header, $(OSSL_PROVIDERS_HDR_TEMPLATES), \
 	    perl \
 	     -I$(VBOX_PATH_OPENSSL) \

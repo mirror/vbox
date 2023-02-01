@@ -74,18 +74,18 @@ crypto_ec_SOURCES = \
 
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_ec_SOURCES.x86 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/ecp_nistz256-x86.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/ecp_nistz256-x86.S
  crypto_ec_SOURCES.amd64 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/ecp_nistz256-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/x25519-x86_64.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/ecp_nistz256-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/x25519-x86_64.S
 endif
 $(evalcall VBOX_OPENSSL_X86,crypto_ec)
 
 
 recreate-ec-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-	$(VBOX_PATH_CRYPTO_EC)/asm/ecp_nistz256-x86.pl \
-	$(VBOX_PATH_CRYPTO_EC)/asm/ecp_nistz256-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_EC)/asm/x25519-x86_64.pl
+		$(VBOX_PATH_CRYPTO_EC)/asm/ecp_nistz256-x86.pl \
+		$(VBOX_PATH_CRYPTO_EC)/asm/ecp_nistz256-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_EC)/asm/x25519-x86_64.pl
 	perl $(VBOX_PATH_CRYPTO_EC)/asm/ecp_nistz256-x86.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/ecp_nistz256-x86.S
 	perl $(VBOX_PATH_CRYPTO_EC)/asm/ecp_nistz256-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/ecp_nistz256-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_EC)/asm/x25519-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/x25519-x86_64.S

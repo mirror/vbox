@@ -45,18 +45,18 @@ crypto_modes_SOURCES = \
 	xts128.c
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_modes_SOURCES.x86 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/ghash-x86.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/ghash-x86.S
  crypto_modes_SOURCES.amd64 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/ghash-x86_64.S \
-	$(VBOX_PATH_CRYPTO_GENASM)/aesni-gcm-x86_64.S
+ 	$(VBOX_PATH_CRYPTO_GENASM)/ghash-x86_64.S \
+ 	$(VBOX_PATH_CRYPTO_GENASM)/aesni-gcm-x86_64.S
 endif
 $(evalcall VBOX_OPENSSL_X86,crypto_modes)
 
 
 recreate-modes-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-	$(VBOX_PATH_CRYPTO_MODES)/asm/ghash-x86.pl \
-	$(VBOX_PATH_CRYPTO_MODES)/asm/ghash-x86_64.pl \
-	$(VBOX_PATH_CRYPTO_MODES)/asm/aesni-gcm-x86_64.pl
+		$(VBOX_PATH_CRYPTO_MODES)/asm/ghash-x86.pl \
+		$(VBOX_PATH_CRYPTO_MODES)/asm/ghash-x86_64.pl \
+		$(VBOX_PATH_CRYPTO_MODES)/asm/aesni-gcm-x86_64.pl
 	perl $(VBOX_PATH_CRYPTO_MODES)/asm/ghash-x86.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/ghash-x86.S
 	perl $(VBOX_PATH_CRYPTO_MODES)/asm/ghash-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/ghash-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_MODES)/asm/aesni-gcm-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/aesni-gcm-x86_64.S

@@ -41,11 +41,11 @@ providers_rands_SOURCES = \
 	test_rng.c \
 	seeding/rand_cpu_x86.c
 ifn1of ($(KBUILD_TARGET), win)
-providers_rands_SOURCES += \
-	seeding/rand_unix.c
+ providers_rands_SOURCES += \
+ 	seeding/rand_unix.c
 else
-providers_rands_SOURCES += \
-	seeding/rand_win.c
+ providers_rands_SOURCES += \
+ 	seeding/rand_win.c
 endif
 $(evalcall VBOX_OPENSSL_X86,providers_rands)
 

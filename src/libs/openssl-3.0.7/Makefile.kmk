@@ -77,8 +77,8 @@ OSSL_HDR_TEMPLATES := \
 #  instead of getting it expanded and executed at once...
 #
 recreate-headers: $(PATH_SUB_CURRENT)/util/dofile.pl \
-	$(OSSL_HDR_TEMPLATES) \
-	recreate-providers-headers
+		$(OSSL_HDR_TEMPLATES) \
+		recreate-providers-headers
 	$(foreach header, $(OSSL_HDR_TEMPLATES), \
 	    perl -I$(PATH_SUB_CURRENT) \
 	     -Mconfigdata $(PATH_SUB_CURRENT)/util/dofile.pl -oMakefile \
