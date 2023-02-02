@@ -870,20 +870,29 @@ refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(base
 #  DITA-OT-xxxxx/doc folder for details.
 #
 ##########################################################################################
-define def_ditamap_to_pdf
-	DITA_ENV_SETUP ?= $(REDIRECT) \
- 		-E 'DITA_CLASSPATH=$(VBOX_DITA_PATH)/lib/dost.jar:\
-		$(VBOX_DITA_PATH)/lib:$(VBOX_DITA_PATH)/lib/commons-codec-1.4.jar:\
- 		$(VBOX_DITA_PATH)/lib/resolver.jar:$(VBOX_DITA_PATH)/lib/icu4j.jar:\
- 		$(VBOX_DITA_PATH)/lib/xercesImpl.jar:$(VBOX_DITA_PATH)/lib/xml-apis.jar:\
- 		$(VBOX_DITA_PATH)/lib/saxon/saxon9.jar:$(VBOX_DITA_PATH)/lib/saxon/saxon9-dom.jar' --
+VBOX_DITA_PATH_LIB  ?= $(VBOX_DITA_PATH)/lib
+VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
+	-E 'DITA_CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
+	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)' \
+	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
+ 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/resolver.jar' \
+	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/icu4j.jar' \
+ 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xercesImpl.jar' \
+	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xml-apis.jar' \
+ 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9.jar' \
+	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
+	--
 
-	$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
+ditamap-to-pdf:
+
+define def_ditamap_to_pdf
+ ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
+ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
 		$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap
-		$(QUIET)$(call DITA_ENV_SETUP) \
-			$(VBOX_JAVA) -jar lib/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap /transtype:pdf
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
+		$(VBOX_JAVA) -jar lib/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap /transtype:pdf
 endef
-ditamap-to-pdf: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf))
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
 
 #
 # ChangeLog.html
