@@ -30,19 +30,19 @@
 
 /* GUI includes: */
 #include "UIAbstractDockIconPreview.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
+#include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
-#include "UISession.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 
 
-UIAbstractDockIconPreview::UIAbstractDockIconPreview(UISession * /* pSession */, const QPixmap& /* overlayImage */)
+UIAbstractDockIconPreview::UIAbstractDockIconPreview(UIMachine *, const QPixmap &)
 {
 }
 
@@ -67,8 +67,8 @@ void UIAbstractDockIconPreview::updateDockPreview(UIFrameBuffer *pFrameBuffer)
     CGColorSpaceRelease(cs);
 }
 
-UIAbstractDockIconPreviewHelper::UIAbstractDockIconPreviewHelper(UISession *pSession, const QPixmap& overlayImage)
-    : m_pSession(pSession)
+UIAbstractDockIconPreviewHelper::UIAbstractDockIconPreviewHelper(UIMachine *pMachine, const QPixmap& overlayImage)
+    : m_pMachine(pMachine)
     , m_dockIconRect(CGRectMake(0, 0, 128, 128))
     , m_dockMonitor(NULL)
     , m_dockMonitorGlossy(NULL)
@@ -83,7 +83,7 @@ void* UIAbstractDockIconPreviewHelper::currentPreviewWindowId() const
 {
     /* Get the MachineView which is currently previewed and return the win id
        of the viewport. */
-    UIMachineView* pView = m_pSession->machineLogic()->dockPreviewView();
+    UIMachineView* pView = m_pMachine->machineLogic()->dockPreviewView();
     if (pView)
         return (void*)pView->viewport()->winId();
     return 0;

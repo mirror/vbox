@@ -78,8 +78,8 @@
 class UICocoaDockIconPreviewPrivate: public UIAbstractDockIconPreviewHelper
 {
 public:
-    inline UICocoaDockIconPreviewPrivate(UISession *pSession, const QPixmap& overlayImage)
-      :UIAbstractDockIconPreviewHelper(pSession, overlayImage)
+    inline UICocoaDockIconPreviewPrivate(UIMachine *pMachine, const QPixmap& overlayImage)
+        : UIAbstractDockIconPreviewHelper(pMachine, overlayImage)
     {
         mUIDockTile = [[UIDockTile alloc] initWithParent:this];
     }
@@ -97,12 +97,12 @@ public:
 /*
  * Cocoa wrapper for the abstract dock icon preview class
  */
-UICocoaDockIconPreview::UICocoaDockIconPreview(UISession *pSession, const QPixmap& overlayImage)
-  : UIAbstractDockIconPreview(pSession, overlayImage)
+UICocoaDockIconPreview::UICocoaDockIconPreview(UIMachine *pMachine, const QPixmap& overlayImage)
+    : UIAbstractDockIconPreview(pMachine, overlayImage)
 {
     CocoaAutoreleasePool pool;
 
-    d = new UICocoaDockIconPreviewPrivate(pSession, overlayImage);
+    d = new UICocoaDockIconPreviewPrivate(pMachine, overlayImage);
 }
 
 UICocoaDockIconPreview::~UICocoaDockIconPreview()

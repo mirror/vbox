@@ -40,9 +40,9 @@ class UIDockIconPreview : public UICocoaDockIconPreview
 {
 public:
 
-    /** Constructor taking passed @a pSession and @a overlayImage. */
-    UIDockIconPreview(UISession *pSession, const QPixmap& overlayImage)
-        : UICocoaDockIconPreview(pSession, overlayImage) {}
+    /** Constructor taking passed @a pMachine and @a overlayImage. */
+    UIDockIconPreview(UIMachine *pMachine, const QPixmap& overlayImage)
+        : UICocoaDockIconPreview(pMachine, overlayImage) {}
 };
 
 #endif /* !FEQT_INCLUDED_SRC_platform_darwin_DockIconPreview_h */

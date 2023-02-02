@@ -39,7 +39,7 @@ class UICocoaDockIconPreviewPrivate;
 class UICocoaDockIconPreview: public UIAbstractDockIconPreview
 {
 public:
-    UICocoaDockIconPreview(UISession *pSession, const QPixmap& overlayImage);
+    UICocoaDockIconPreview(UIMachine *pMachine, const QPixmap& overlayImage);
     ~UICocoaDockIconPreview();
 
     virtual void updateDockOverlay();
