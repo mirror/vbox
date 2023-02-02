@@ -292,7 +292,6 @@ private:
     /* Common helpers: */
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
-    bool postprocessInitialization();
     /** Loads VM settings. */
     void loadVMSettings();
 

@@ -1130,13 +1130,6 @@ void UIMachine::prepareClose()
     const QUuid uMachineID = uiCommon().managedVMUuid();
     m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
     m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
-
-    /* Log whether HID LEDs sync is enabled: */
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-    LogRel(("GUI: HID LEDs sync is %s\n", isHidLedsSyncEnabled() ? "enabled" : "disabled"));
-#else
-    LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));
-#endif
 }
 
 void UIMachine::prepareMachineLogic()

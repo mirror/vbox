@@ -161,10 +161,6 @@ bool UISession::initialize()
         return false;
     }
 
-    /* Postprocess initialization: */
-    if (!postprocessInitialization())
-        return false;
-
     /* Fetch corresponding states: */
     if (uiCommon().isSeparateProcess())
     {
@@ -190,10 +186,10 @@ bool UISession::initialize()
 bool UISession::powerUp()
 {
     /* Power UP machine: */
-    CProgress progress = uiCommon().shouldStartPaused() ? console().PowerUpPaused() : console().PowerUp();
+    CProgress comProgress = uiCommon().shouldStartPaused() ? console().PowerUpPaused() : console().PowerUp();
 
     /* Check for immediate failure: */
-    if (!console().isOk() || progress.isNull())
+    if (!console().isOk() || comProgress.isNull())
     {
         if (uiCommon().showStartVMErrors())
             msgCenter().cannotStartMachine(console(), machineName());
@@ -202,9 +198,14 @@ bool UISession::powerUp()
     }
 
     /* Some logging right after we powered up: */
-    LogRel(("Qt version: %s\n", UICommon::qtRTVersionString().toUtf8().constData()));
+    LogRel(("GUI: Qt version: %s\n", UICommon::qtRTVersionString().toUtf8().constData()));
 #ifdef VBOX_WS_X11
-    LogRel(("X11 Window Manager code: %d\n", (int)uiCommon().typeOfWindowManager()));
+    LogRel(("GUI: X11 Window Manager code: %d\n", (int)uiCommon().typeOfWindowManager()));
+#endif
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    LogRel(("GUI: HID LEDs sync is %s\n", uimachine()->isHidLedsSyncEnabled() ? "enabled" : "disabled"));
+#else
+    LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));
 #endif
 
     /* Enable 'manual-override',
@@ -215,26 +216,26 @@ bool UISession::powerUp()
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
     {
-        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_restore_90px.png", 0, 0);
+        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_state_restore_90px.png", 0, 0);
         /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
         machineLogic()->adjustMachineWindowsGeometry();
     }
     else
     {
 #ifdef VBOX_IS_QT6_OR_LATER /** @todo why is this any problem on qt6? */
-        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png", 0, 0);
+        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_start_90px.png", 0, 0);
 #else
-        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png");
+        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_start_90px.png");
 #endif
         /* After VM start, machine-window(s) size-hint(s) should be sent: */
         machineLogic()->sendMachineWindowsSizeHints();
     }
 
     /* Check for progress failure: */
-    if (!progress.isOk() || progress.GetResultCode() != 0)
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
         if (uiCommon().showStartVMErrors())
-            msgCenter().cannotStartMachine(progress, machineName());
+            msgCenter().cannotStartMachine(comProgress, machineName());
         LogRel(("GUI: Aborting startup due to power up progress issue detected...\n"));
         return false;
     }
@@ -638,68 +639,68 @@ void UISession::cleanupSession()
 bool UISession::preprocessInitialization()
 {
 #ifdef VBOX_WITH_NETFLT
-    /* Skip further checks if VM in saved state */
-    if (isSaved())
-        return true;
-
-    /* Make sure all the attached and enabled network
-     * adapters are present on the host. This check makes sense
-     * in two cases only - when attachement type is Bridged Network
-     * or Host-only Interface. NOTE: Only currently enabled
-     * attachement type is checked (incorrect parameters check for
-     * currently disabled attachement types is skipped). */
-    QStringList failedInterfaceNames;
-    QStringList availableInterfaceNames;
-
-    /* Create host network interface names list */
-    foreach (const CHostNetworkInterface &iface, uiCommon().host().GetNetworkInterfaces())
+    /* Skip network interface name checks if VM in saved state: */
+    if (!isSaved())
     {
-        availableInterfaceNames << iface.GetName();
-        availableInterfaceNames << iface.GetShortName();
-    }
+        /* Make sure all the attached and enabled network
+         * adapters are present on the host. This check makes sense
+         * in two cases only - when attachement type is Bridged Network
+         * or Host-only Interface. NOTE: Only currently enabled
+         * attachement type is checked (incorrect parameters check for
+         * currently disabled attachement types is skipped). */
+        QStringList failedInterfaceNames;
+        QStringList availableInterfaceNames;
 
-    ulong cCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine().GetChipsetType());
-    for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
-    {
-        CNetworkAdapter na = machine().GetNetworkAdapter(uAdapterIndex);
-
-        if (na.GetEnabled())
+        /* Create host network interface names list: */
+        foreach (const CHostNetworkInterface &comNetIface, uiCommon().host().GetNetworkInterfaces())
         {
-            QString strIfName = QString();
+            availableInterfaceNames << comNetIface.GetName();
+            availableInterfaceNames << comNetIface.GetShortName();
+        }
 
-            /* Get physical network interface name for currently
-             * enabled network attachement type */
-            switch (na.GetAttachmentType())
+        /* Enumerate all the virtual network adapters: */
+        const ulong cCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine().GetChipsetType());
+        for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
+        {
+            CNetworkAdapter comNetworkAdapter = machine().GetNetworkAdapter(uAdapterIndex);
+            if (comNetworkAdapter.GetEnabled())
             {
-                case KNetworkAttachmentType_Bridged:
-                    strIfName = na.GetBridgedInterface();
-                    break;
+                /* Get physical network interface name for
+                 * currently enabled network attachement type: */
+                QString strInterfaceName;
+                switch (comNetworkAdapter.GetAttachmentType())
+                {
+                    case KNetworkAttachmentType_Bridged:
+                        strInterfaceName = comNetworkAdapter.GetBridgedInterface();
+                        break;
 #ifndef VBOX_WITH_VMNET
-                case KNetworkAttachmentType_HostOnly:
-                    strIfName = na.GetHostOnlyInterface();
-                    break;
+                    case KNetworkAttachmentType_HostOnly:
+                        strInterfaceName = comNetworkAdapter.GetHostOnlyInterface();
+                        break;
 #endif /* !VBOX_WITH_VMNET */
-                default: break; /* Shut up, MSC! */
-            }
+                    default:
+                        break;
+                }
 
-            if (!strIfName.isEmpty() &&
-                !availableInterfaceNames.contains(strIfName))
-            {
-                LogFlow(("Found invalid network interface: %s\n", strIfName.toStdString().c_str()));
-                failedInterfaceNames << QString("%1 (adapter %2)").arg(strIfName).arg(uAdapterIndex + 1);
+                if (   !strInterfaceName.isEmpty()
+                    && !availableInterfaceNames.contains(strInterfaceName))
+                {
+                    LogRel(("GUI: Invalid network interface found: %s\n", strInterfaceName.toUtf8().constData()));
+                    failedInterfaceNames << QString("%1 (adapter %2)").arg(strInterfaceName).arg(uAdapterIndex + 1);
+                }
             }
         }
-    }
 
-    /* Check if non-existent interfaces found */
-    if (!failedInterfaceNames.isEmpty())
-    {
-        if (msgCenter().warnAboutNetworkInterfaceNotFound(machineName(), failedInterfaceNames.join(", ")))
-            machineLogic()->openNetworkSettingsDialog();
-        else
+        /* Check if non-existent interfaces found: */
+        if (!failedInterfaceNames.isEmpty())
         {
-            LogRel(("GUI: Aborting startup due to preprocess initialization issue detected...\n"));
-            return false;
+            if (msgCenter().warnAboutNetworkInterfaceNotFound(machineName(), failedInterfaceNames.join(", ")))
+                machineLogic()->openNetworkSettingsDialog();
+            else
+            {
+                LogRel(("GUI: Aborting startup due to preprocess initialization issue detected...\n"));
+                return false;
+            }
         }
     }
 #endif /* VBOX_WITH_NETFLT */
@@ -811,13 +812,6 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
     }
 
     /* True by default: */
-    return true;
-}
-
-bool UISession::postprocessInitialization()
-{
-    /* There used to be some raw-mode warnings here for raw-mode incompatible
-       guests (64-bit ones and OS/2).  Nothing to do at present. */
     return true;
 }
 
