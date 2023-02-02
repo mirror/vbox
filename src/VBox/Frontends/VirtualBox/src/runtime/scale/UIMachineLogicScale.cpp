@@ -49,8 +49,8 @@
 #include "CGraphicsAdapter.h"
 
 
-UIMachineLogicScale::UIMachineLogicScale(UIMachine *pMachine, UISession *pSession)
-    : UIMachineLogic(pMachine, pSession)
+UIMachineLogicScale::UIMachineLogicScale(UIMachine *pMachine)
+    : UIMachineLogic(pMachine)
 #ifndef VBOX_WS_MAC
     , m_pPopupMenu(0)
 #endif /* !VBOX_WS_MAC */

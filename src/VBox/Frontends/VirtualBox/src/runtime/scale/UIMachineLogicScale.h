@@ -42,9 +42,8 @@ class UIMachineLogicScale : public UIMachineLogic
 public:
 
     /** Constructs a logic passing @a pMachine and @a pSession to the base-class.
-      * @param  pMachine  Brings the machine this logic belongs to.
-      * @param  pSession  Brings the session this logic is created for. */
-    UIMachineLogicScale(UIMachine *pMachine, UISession *pSession);
+      * @param  pMachine  Brings the machine this logic belongs to. */
+    UIMachineLogicScale(UIMachine *pMachine);
 
     /** Returns visual state type. */
     virtual UIVisualStateType visualStateType() const { return UIVisualStateType_Scale; }

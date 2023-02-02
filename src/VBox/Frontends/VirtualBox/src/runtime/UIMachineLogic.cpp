@@ -155,26 +155,24 @@ Q_DECLARE_METATYPE(WebCamTarget);
 
 /* static */
 UIMachineLogic *UIMachineLogic::create(UIMachine *pMachine,
-                                       UISession *pSession,
                                        UIVisualStateType enmVisualStateType)
 {
     AssertPtrReturn(pMachine, 0);
-    AssertPtrReturn(pSession, 0);
 
     UIMachineLogic *pLogic = 0;
     switch (enmVisualStateType)
     {
         case UIVisualStateType_Normal:
-            pLogic = new UIMachineLogicNormal(pMachine, pSession);
+            pLogic = new UIMachineLogicNormal(pMachine);
             break;
         case UIVisualStateType_Fullscreen:
-            pLogic = new UIMachineLogicFullscreen(pMachine, pSession);
+            pLogic = new UIMachineLogicFullscreen(pMachine);
             break;
         case UIVisualStateType_Seamless:
-            pLogic = new UIMachineLogicSeamless(pMachine, pSession);
+            pLogic = new UIMachineLogicSeamless(pMachine);
             break;
         case UIVisualStateType_Scale:
-            pLogic = new UIMachineLogicScale(pMachine, pSession);
+            pLogic = new UIMachineLogicScale(pMachine);
             break;
         case UIVisualStateType_Invalid:
         case UIVisualStateType_All:
@@ -273,6 +271,11 @@ void UIMachineLogic::initializePostPowerUp()
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
+}
+
+UISession *UIMachineLogic::uisession() const
+{
+    return uimachine()->uisession();
 }
 
 UIActionPool *UIMachineLogic::actionPool() const
@@ -754,10 +757,9 @@ void UIMachineLogic::sltHostScreenAvailableAreaChange()
 #endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
-UIMachineLogic::UIMachineLogic(UIMachine *pMachine, UISession *pSession)
+UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
     : QIWithRetranslateUI3<QObject>(pMachine)
     , m_pMachine(pMachine)
-    , m_pSession(pSession)
     , m_pKeyboardHandler(0)
     , m_pMouseHandler(0)
     , m_pRunningActions(0)

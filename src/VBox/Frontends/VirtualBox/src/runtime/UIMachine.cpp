@@ -526,7 +526,7 @@ void UIMachine::closeRuntimeUI()
 void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
 {
     /* Create new machine-logic: */
-    UIMachineLogic *pMachineLogic = UIMachineLogic::create(this, uisession(), visualState);
+    UIMachineLogic *pMachineLogic = UIMachineLogic::create(this, visualState);
 
     /* First we have to check if the selected machine-logic is available at all.
      * Only then we delete the old machine-logic and switch to the new one. */

@@ -48,7 +48,6 @@ class UIMachine;
 class UIMachineLogic;
 class UIMachineView;
 class UIMachineWindow;
-class UISession;
 class CDisplay;
 class CMouse;
 
@@ -108,13 +107,12 @@ protected:
 
     /* Getters: */
     UIMachineLogic *machineLogic() const { return m_pMachineLogic; }
-    UISession *uisession() const;
     UIMachine *uimachine() const;
 
     /** Returns the console's display reference. */
-    CDisplay& display() const;
+    CDisplay &display() const;
     /** Returns the console's mouse reference. */
-    CMouse& mouse() const;
+    CMouse &mouse() const;
 
     /* Event handler for registered machine-view(s): */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);

@@ -1084,19 +1084,14 @@ UIActionPool *UIKeyboardHandler::actionPool() const
     return machineLogic()->actionPool();
 }
 
-UISession *UIKeyboardHandler::uisession() const
-{
-    return machineLogic()->uisession();
-}
-
 UIMachine *UIKeyboardHandler::uimachine() const
 {
     return machineLogic()->uimachine();
 }
 
-CKeyboard& UIKeyboardHandler::keyboard() const
+CKeyboard &UIKeyboardHandler::keyboard() const
 {
-    return uisession()->keyboard();
+    return machineLogic()->uisession()->keyboard();
 }
 
 /* Event handler for prepared listener(s): */

@@ -547,24 +547,19 @@ UIMouseHandler::~UIMouseHandler()
 {
 }
 
-UISession *UIMouseHandler::uisession() const
-{
-    return machineLogic()->uisession();
-}
-
 UIMachine *UIMouseHandler::uimachine() const
 {
     return machineLogic()->uimachine();
 }
 
-CDisplay& UIMouseHandler::display() const
+CDisplay &UIMouseHandler::display() const
 {
-    return uisession()->display();
+    return machineLogic()->uisession()->display();
 }
 
-CMouse& UIMouseHandler::mouse() const
+CMouse &UIMouseHandler::mouse() const
 {
-    return uisession()->mouse();
+    return machineLogic()->uisession()->mouse();
 }
 
 /* Event handler for registered machine-view(s): */

@@ -41,7 +41,6 @@
 #include "UIMachineWindow.h"
 #include "UIMenuBarEditorWindow.h"
 #include "UIMessageCenter.h"
-#include "UISession.h"
 #include "UIStatusBarEditorWindow.h"
 #ifndef VBOX_WS_MAC
 # include "QIMenu.h"
@@ -55,8 +54,8 @@
 #include "CGraphicsAdapter.h"
 
 
-UIMachineLogicNormal::UIMachineLogicNormal(UIMachine *pMachine, UISession *pSession)
-    : UIMachineLogic(pMachine, pSession)
+UIMachineLogicNormal::UIMachineLogicNormal(UIMachine *pMachine)
+    : UIMachineLogic(pMachine)
 #ifndef VBOX_WS_MAC
     , m_pPopupMenu(0)
 #endif /* !VBOX_WS_MAC */

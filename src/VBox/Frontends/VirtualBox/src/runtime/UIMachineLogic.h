@@ -92,7 +92,7 @@ public:
       * @param  pMachine            Brings the machine this logic belongs to.
       * @param  pSession            Brings the session this logic is created for.
       * @param  enmVisualStateType  Brings the visual state type of logic to be created. */
-    static UIMachineLogic *create(UIMachine *pMachine, UISession *pSession, UIVisualStateType enmVisualStateType);
+    static UIMachineLogic *create(UIMachine *pMachine, UIVisualStateType enmVisualStateType);
     /** Factory function to destroy passed @a pLogic. */
     static void destroy(UIMachineLogic *pLogic);
 
@@ -114,8 +114,7 @@ public:
     /** Returns machine UI reference.  */
     UIMachine *uimachine() const { return m_pMachine; }
     /** Returns session UI reference.  */
-    UISession *uisession() const { return m_pSession; }
-
+    UISession *uisession() const;
     /** Returns action-pool reference.  */
     UIActionPool *actionPool() const;
 
@@ -207,10 +206,9 @@ protected slots:
 
 protected:
 
-    /** Constructs a logic passing @a pMachine and @a pSession to the base-class.
-      * @param  pMachine  Brings the machine this logic belongs to.
-      * @param  pSession  Brings the session this logic is created for. */
-    UIMachineLogic(UIMachine *pMachine, UISession *pSession);
+    /** Constructs a logic passing @a pMachine to the base-class.
+      * @param  pMachine  Brings the machine this logic belongs to. */
+    UIMachineLogic(UIMachine *pMachine);
     /* Destructs the logic. */
     virtual ~UIMachineLogic() RT_OVERRIDE;
 
@@ -414,7 +412,6 @@ private:
 
     /* Private variables: */
     UIMachine *m_pMachine;
-    UISession *m_pSession;
     UIKeyboardHandler *m_pKeyboardHandler;
     UIMouseHandler *m_pMouseHandler;
     QList<UIMachineWindow*> m_machineWindowsList;

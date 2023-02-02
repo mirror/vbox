@@ -59,9 +59,8 @@ signals:
 public:
 
     /** Constructs a logic passing @a pMachine and @a pSession to the base-class.
-      * @param  pMachine  Brings the machine this logic belongs to.
-      * @param  pSession  Brings the session this logic is created for. */
-    UIMachineLogicFullscreen(UIMachine *pMachine, UISession *pSession);
+      * @param  pMachine  Brings the machine this logic belongs to. */
+    UIMachineLogicFullscreen(UIMachine *pMachine);
     /** Destructs the logic. */
     virtual ~UIMachineLogicFullscreen() RT_OVERRIDE;
 

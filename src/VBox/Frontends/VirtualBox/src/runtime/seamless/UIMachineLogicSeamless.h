@@ -45,9 +45,8 @@ class UIMachineLogicSeamless : public UIMachineLogic
 public:
 
     /** Constructs a logic passing @a pMachine and @a pSession to the base-class.
-      * @param  pMachine  Brings the machine this logic belongs to.
-      * @param  pSession  Brings the session this logic is created for. */
-    UIMachineLogicSeamless(UIMachine *pMachine, UISession *pSession);
+      * @param  pMachine  Brings the machine this logic belongs to. */
+    UIMachineLogicSeamless(UIMachine *pMachine);
     /** Destructs the logic. */
     virtual ~UIMachineLogicSeamless() RT_OVERRIDE;
 
