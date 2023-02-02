@@ -42,70 +42,70 @@ PROGRAMS   += tstVMStructSize tstAsmStructs
 ifdef VBOX_WITH_RAW_MODE
  PROGRAMS  += tstVMStructRC tstAsmStructsRC
 endif
-if !defined(VBOX_ONLY_EXTPACKS) \
- && (   defined(VBOX_WITH_DTRACE_R3) \
-     || defined(VBOX_WITH_DTRACE_R0) \
-     || defined(VBOX_WITH_DTRACE_RC))
-PROGRAMS += tstVMStructDTrace
-INSTALLS += VMMLibDTraceStructTest
+if   !defined(VBOX_ONLY_EXTPACKS) \
+  && (   defined(VBOX_WITH_DTRACE_R3) \
+      || defined(VBOX_WITH_DTRACE_R0) \
+  || defined(VBOX_WITH_DTRACE_RC))
+ PROGRAMS += tstVMStructDTrace
+ INSTALLS += VMMLibDTraceStructTest
 endif
 ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstGlobalConfigHardened
-DLL      += tstGlobalConfig
+  PROGRAMS += tstGlobalConfigHardened
+  DLL    += tstGlobalConfig
  else
-PROGRAMS += tstGlobalConfig
+  PROGRAMS += tstGlobalConfig
  endif
 
  ifdef VBOX_WITH_RAW_MODE
   if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstVMMHardened
-DLLS     += tstVMM
+   PROGRAMS += tstVMMHardened
+   DLLS  += tstVMM
   else
-PROGRAMS += tstVMM tstVMM-HM
+   PROGRAMS += tstVMM tstVMM-HM
   endif
   ifneq ($(KBUILD_TARGET),win)
-PROGRAMS += tstVMMFork
+   PROGRAMS += tstVMMFork
   endif
  endif
  ifdef VBOX_WITH_TESTCASES
   if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstCFGMHardened tstVMREQHardened tstAnimateHardened
-DLLS     += tstCFGM tstVMREQ tstAnimate
+   PROGRAMS += tstCFGMHardened tstVMREQHardened tstAnimateHardened
+   DLLS  += tstCFGM tstVMREQ tstAnimate
   else
-PROGRAMS += tstCFGM tstVMREQ tstAnimate
+   PROGRAMS += tstCFGM tstVMREQ tstAnimate
   endif
-PROGRAMS += \
-	tstCompressionBenchmark \
-	tstIEMCheckMc \
-	tstIEMAImpl \
-	tstPDMQueue \
-	tstSSM
-PROGRAMS.amd64 += tstIEMAImplAsm
+  PROGRAMS += \
+  	tstCompressionBenchmark \
+  	tstIEMCheckMc \
+  	tstIEMAImpl \
+  	tstPDMQueue \
+  	tstSSM
+  PROGRAMS.amd64 += tstIEMAImplAsm
 
-  if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
-PROGRAMS += \
-	tstVMMR0CallHost-1 \
-	tstX86-FpuSaveRestore
-   ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.x86 solaris.amd64 win.amd64 ) ## TODO: Fix the code.
-PROGRAMS += tstX86-1
+  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+   PROGRAMS += \
+   	tstVMMR0CallHost-1 \
+   	tstX86-FpuSaveRestore
+   ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.x86 solaris.amd64 win.amd64)  ## TODO: Fix the code.
+    PROGRAMS += tstX86-1
    endif
   endif
   ifdef VBOX_WITH_RAW_MODE
    if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstMicroHardened
-DLLS     += tstMicro
+    PROGRAMS += tstMicroHardened
+    DLLS += tstMicro
    else
-PROGRAMS += tstMicro
+    PROGRAMS += tstMicro
    endif
-SYSMODS   += tstMicroRC
+   SYSMODS += tstMicroRC
   endif
   ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
    if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstPDMAsyncCompletionHardened tstPDMAsyncCompletionStressHardened
-DLLS     += tstPDMAsyncCompletion tstPDMAsyncCompletionStress
+    PROGRAMS += tstPDMAsyncCompletionHardened tstPDMAsyncCompletionStressHardened
+    DLLS += tstPDMAsyncCompletion tstPDMAsyncCompletionStress
    else
-PROGRAMS += tstPDMAsyncCompletion tstPDMAsyncCompletionStress
+    PROGRAMS += tstPDMAsyncCompletion tstPDMAsyncCompletionStress
    endif
   endif
  endif # VBOX_WITH_TESTCASES
@@ -121,9 +121,9 @@ BLDDIRS += $(VBOX_VMM_TESTCASE_OUT_DIR)
 #
 ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
-OTHERS += \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
+  OTHERS += \
+  	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
+  	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
  endif
 endif
 
@@ -153,24 +153,24 @@ VBOX_PATH_VMM_SRC = $(PATH_ROOT)/src/VBox/VMM
 # Targets
 #
 ifdef VBOX_WITH_RAW_MODE
-tstVMStructRC_TEMPLATE  = VBoxRcExe
-tstVMStructRC_DEFS      = VBOX_IN_VMM IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
+ tstVMStructRC_TEMPLATE = VBoxRcExe
+ tstVMStructRC_DEFS     = VBOX_IN_VMM IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_R0_LOGGING
-tstVMStructRC_DEFS     += VBOX_WITH_R0_LOGGING
+  tstVMStructRC_DEFS   += VBOX_WITH_R0_LOGGING
  endif
-tstVMStructRC_SOURCES   = tstVMStructRC.cpp
-tstVMStructRC_INCS      = \
-	$(VBOX_PATH_VMM_SRC)/include \
-	$(VBOX_PATH_VMM_SRC)/PATM
+ tstVMStructRC_SOURCES  = tstVMStructRC.cpp
+ tstVMStructRC_INCS     = \
+ 	$(VBOX_PATH_VMM_SRC)/include \
+ 	$(VBOX_PATH_VMM_SRC)/PATM
 endif
 
-tstVMStructSize_TEMPLATE= VBoxR3AutoTest
+tstVMStructSize_TEMPLATE = VBoxR3AutoTest
 ifneq ($(KBUILD_TARGET),win)
-tstVMStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
+ tstVMStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
 endif
 tstVMStructSize_DEFS    = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
-tstVMStructSize_DEFS   += VBOX_WITH_RAW_MODE
+ tstVMStructSize_DEFS  += VBOX_WITH_RAW_MODE
 endif
 tstVMStructSize_INCS    = \
 	$(VBOX_PATH_VMM_SRC)/include \
@@ -178,22 +178,22 @@ tstVMStructSize_INCS    = \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)
 tstVMStructSize_SOURCES = tstVMStructSize.cpp
 ifdef VBOX_WITH_RAW_MODE
-tstVMStructSize.cpp_DEPS= $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h
+ tstVMStructSize.cpp_DEPS = $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h
 endif
 ifdef VBOX_WITH_R0_LOGGING
-tstVMStructSize_DEFS   += VBOX_WITH_R0_LOGGING
+ tstVMStructSize_DEFS  += VBOX_WITH_R0_LOGGING
 endif
 
 tstAsmStructs_TEMPLATE  = VBoxR3AutoTest
 ifneq ($(KBUILD_TARGET),win)
-tstAsmStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
+ tstAsmStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
 endif
 tstAsmStructs_DEFS      = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
-tstAsmStructs_DEFS     += VBOX_WITH_RAW_MODE
+ tstAsmStructs_DEFS    += VBOX_WITH_RAW_MODE
 endif
 ifdef VBOX_WITH_R0_LOGGING
-tstAsmStructs_DEFS     += VBOX_WITH_R0_LOGGING
+ tstAsmStructs_DEFS    += VBOX_WITH_R0_LOGGING
 endif
 tstAsmStructs_INCS      = \
 	$(VBOX_PATH_VMM_SRC)/include \
@@ -202,16 +202,16 @@ tstAsmStructs_SOURCES   = tstAsmStructs.cpp
 tstAsmStructs.cpp_DEPS  = $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h
 
 ifdef VBOX_WITH_RAW_MODE
-tstAsmStructsRC_TEMPLATE= VBoxRcExe
-tstAsmStructsRC_DEFS    = VBOX_IN_VMM IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
+ tstAsmStructsRC_TEMPLATE = VBoxRcExe
+ tstAsmStructsRC_DEFS   = VBOX_IN_VMM IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_R0_LOGGING
-tstAsmStructsRC_DEFS   += VBOX_WITH_R0_LOGGING
+  tstAsmStructsRC_DEFS += VBOX_WITH_R0_LOGGING
  endif
-tstAsmStructsRC_INCS    = \
-	$(VBOX_PATH_VMM_SRC)/include \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)
-tstAsmStructsRC_SOURCES = tstAsmStructs.cpp
-tstAsmStructs.cpp_DEPS += $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsRC.h
+ tstAsmStructsRC_INCS   = \
+ 	$(VBOX_PATH_VMM_SRC)/include \
+ 	$(VBOX_VMM_TESTCASE_OUT_DIR)
+ tstAsmStructsRC_SOURCES = tstAsmStructs.cpp
+ tstAsmStructs.cpp_DEPS += $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsRC.h
 endif # VBOX_WITH_RAW_MODE
 
 
@@ -219,17 +219,17 @@ endif # VBOX_WITH_RAW_MODE
 # Global config tool.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstGlobalConfigHardened_TEMPLATE = VBoxR3HardenedTstExe
-tstGlobalConfigHardened_NAME     = tstGlobalConfig
+ tstGlobalConfigHardened_TEMPLATE = VBoxR3HardenedTstExe
+ tstGlobalConfigHardened_NAME    = tstGlobalConfig
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstGlobalConfigHardened_DEFS     = PROGRAM_NAME_STR="tstGlobalConfig"
+  tstGlobalConfigHardened_DEFS   = PROGRAM_NAME_STR="tstGlobalConfig"
  else
-tstGlobalConfigHardened_DEFS     = PROGRAM_NAME_STR=\"tstGlobalConfig\"
+  tstGlobalConfigHardened_DEFS   = PROGRAM_NAME_STR=\"tstGlobalConfig\"
  endif
-tstGlobalConfigHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
-tstGlobalConfig_TEMPLATE = VBoxR3HardenedTstDll
+ tstGlobalConfigHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
+ tstGlobalConfig_TEMPLATE = VBoxR3HardenedTstDll
 else
-tstGlobalConfig_TEMPLATE = VBoxR3TstExe
+ tstGlobalConfig_TEMPLATE = VBoxR3TstExe
 endif
 tstGlobalConfig_SOURCES  = tstGlobalConfig.cpp
 tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
@@ -372,11 +372,11 @@ tstIEMAImplDataSseBinary.S_DEPS   = \
 
 ## @param 1   The sub-name of the file in question.
 define def_tstIEMAImplData_adjust
-$$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplData$(1).cpp: \
-		$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData$(1).cpp \
-		$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData.sh \
-		$$(tstIEMAImpl_DEFPATH)/tstIEMAImpl.h \
-		| $$(tstIEMAImpl_0_OUTDIR)/
+ $$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplData$(1).cpp: \
+ 		$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData$(1).cpp \
+ 		$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData.sh \
+ 		$$(tstIEMAImpl_DEFPATH)/tstIEMAImpl.h \
+ 		| $$(tstIEMAImpl_0_OUTDIR)/
 	$$(ASH)	"$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData.sh" \
 		"$$(CP_EXT)" \
 		"$$(MV_EXT)" \
@@ -409,9 +409,9 @@ tstIEMCheckMc_SOURCES   = tstIEMCheckMc.cpp
 tstIEMCheckMc_DEFS      = $(VMM_COMMON_DEFS)
 tstIEMCheckMc_LIBS      = $(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),win)
-tstIEMCheckMc_CXXFLAGS  = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -wd4189 # local variable is initialized but not used.
+ tstIEMCheckMc_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -wd4189 # local variable is initialized but not used.
 else
-tstIEMCheckMc_CXXFLAGS  = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -Wno-unused-value -Wno-unused-variable
+ tstIEMCheckMc_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -Wno-unused-value -Wno-unused-variable
 endif
 
 #
@@ -427,17 +427,17 @@ tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 # VMM configuration manager tests.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstCFGMHardened_TEMPLATE = VBoxR3HardenedTstExe
-tstCFGMHardened_NAME     = tstCFGM
+ tstCFGMHardened_TEMPLATE = VBoxR3HardenedTstExe
+ tstCFGMHardened_NAME    = tstCFGM
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstCFGMHardened_DEFS     = PROGRAM_NAME_STR="tstCFGM"
+  tstCFGMHardened_DEFS   = PROGRAM_NAME_STR="tstCFGM"
  else
-tstCFGMHardened_DEFS     = PROGRAM_NAME_STR=\"tstCFGM\"
+  tstCFGMHardened_DEFS   = PROGRAM_NAME_STR=\"tstCFGM\"
  endif
-tstCFGMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
-tstCFGM_TEMPLATE         = VBoxR3HardenedTstDll
+ tstCFGMHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
+ tstCFGM_TEMPLATE        = VBoxR3HardenedTstDll
 else
-tstCFGM_TEMPLATE         = VBoxR3TstExe
+ tstCFGM_TEMPLATE        = VBoxR3TstExe
 endif
 tstCFGM_DEFS             = $(VMM_COMMON_DEFS)
 tstCFGM_SOURCES          = tstCFGM.cpp
@@ -466,17 +466,17 @@ tstVMMR0CallHost-1_SOURCES.x86 = \
 # For testing the VM request queue code.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstVMREQHardened_TEMPLATE = VBoxR3HardenedExe
-tstVMREQHardened_NAME     = tstVMREQ
+ tstVMREQHardened_TEMPLATE = VBoxR3HardenedExe
+ tstVMREQHardened_NAME    = tstVMREQ
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstVMREQHardened_DEFS     = PROGRAM_NAME_STR="tstVMREQ"
+  tstVMREQHardened_DEFS   = PROGRAM_NAME_STR="tstVMREQ"
  else
-tstVMREQHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMREQ\"
+  tstVMREQHardened_DEFS   = PROGRAM_NAME_STR=\"tstVMREQ\"
  endif
-tstVMREQHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstVMREQ_TEMPLATE         = VBoxR3Dll
+ tstVMREQHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+ tstVMREQ_TEMPLATE        = VBoxR3Dll
 else
-tstVMREQ_TEMPLATE         = VBoxR3Exe
+ tstVMREQ_TEMPLATE        = VBoxR3Exe
 endif
 tstVMREQ_DEFS             = $(VMM_COMMON_DEFS)
 tstVMREQ_SOURCES          = tstVMREQ.cpp
@@ -486,17 +486,17 @@ tstVMREQ_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 # Tool for reanimate things like OS/2 dumps.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstAnimateHardened_TEMPLATE = VBoxR3HardenedExe
-tstAnimateHardened_NAME     = tstAnimate
+ tstAnimateHardened_TEMPLATE = VBoxR3HardenedExe
+ tstAnimateHardened_NAME    = tstAnimate
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstAnimateHardened_DEFS     = PROGRAM_NAME_STR="tstAnimate"
+  tstAnimateHardened_DEFS   = PROGRAM_NAME_STR="tstAnimate"
  else
-tstAnimateHardened_DEFS     = PROGRAM_NAME_STR=\"tstAnimate\"
+  tstAnimateHardened_DEFS   = PROGRAM_NAME_STR=\"tstAnimate\"
  endif
-tstAnimateHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstAnimate_TEMPLATE         = VBoxR3Dll
+ tstAnimateHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+ tstAnimate_TEMPLATE        = VBoxR3Dll
 else
-tstAnimate_TEMPLATE         = VBoxR3Exe
+ tstAnimate_TEMPLATE        = VBoxR3Exe
 endif
 tstAnimate_DEFS             = $(VMM_COMMON_DEFS)
 tstAnimate_SOURCES          = tstAnimate.cpp
@@ -517,97 +517,97 @@ ifdef VBOX_WITH_RAW_MODE
  # Raw-mode VMM testcase.
  #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstVMMHardened_TEMPLATE = VBoxR3HardenedExe
-tstVMMHardened_NAME     = tstVMM
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstVMMHardened_DEFS     = PROGRAM_NAME_STR="tstVMM"
+  tstVMMHardened_TEMPLATE = VBoxR3HardenedExe
+  tstVMMHardened_NAME   = tstVMM
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+   tstVMMHardened_DEFS  = PROGRAM_NAME_STR="tstVMM"
+  else
+   tstVMMHardened_DEFS  = PROGRAM_NAME_STR=\"tstVMM\"
+  endif
+  tstVMMHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstVMM_TEMPLATE       = VBoxR3Dll
  else
-tstVMMHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMM\"
+  tstVMM_TEMPLATE       = VBoxR3Exe
  endif
-tstVMMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstVMM_TEMPLATE         = VBoxR3Dll
- else
-tstVMM_TEMPLATE         = VBoxR3Exe
- endif
-tstVMM_SOURCES          = tstVMM.cpp
-tstVMM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ tstVMM_SOURCES         = tstVMM.cpp
+ tstVMM_LIBS            = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
-#
-# HM VMM testcase.
-#
-tstVMM-HM_TEMPLATE     = VBoxR3Exe
-tstVMM-HM_SOURCES      = tstVMM-HM.cpp
-tstVMM-HM_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ #
+ # HM VMM testcase.
+ #
+ tstVMM-HM_TEMPLATE    = VBoxR3Exe
+ tstVMM-HM_SOURCES     = tstVMM-HM.cpp
+ tstVMM-HM_LIBS        = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
-#
-# VMM host process fork test case (memory ++).
-#
-tstVMMFork_TEMPLATE    = VBoxR3Exe
-tstVMMFork_SOURCES     = tstVMMFork.cpp
-tstVMMFork_LIBS        = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ #
+ # VMM host process fork test case (memory ++).
+ #
+ tstVMMFork_TEMPLATE   = VBoxR3Exe
+ tstVMMFork_SOURCES    = tstVMMFork.cpp
+ tstVMMFork_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
-#
-# Raw-mode micro benchmark.
-#
+ #
+ # Raw-mode micro benchmark.
+ #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstMicroHardened_TEMPLATE = VBoxR3HardenedExe
-tstMicroHardened_NAME     = tstMicro
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstMicroHardened_DEFS     = PROGRAM_NAME_STR="tstMicro"
+  tstMicroHardened_TEMPLATE = VBoxR3HardenedExe
+  tstMicroHardened_NAME   = tstMicro
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+   tstMicroHardened_DEFS  = PROGRAM_NAME_STR="tstMicro"
+  else
+   tstMicroHardened_DEFS  = PROGRAM_NAME_STR=\"tstMicro\"
+  endif
+  tstMicroHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstMicro_TEMPLATE       = VBoxR3Dll
  else
-tstMicroHardened_DEFS     = PROGRAM_NAME_STR=\"tstMicro\"
+  tstMicro_TEMPLATE       = VBoxR3Exe
  endif
-tstMicroHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstMicro_TEMPLATE         = VBoxR3Dll
- else
-tstMicro_TEMPLATE         = VBoxR3Exe
- endif
-tstMicro_SOURCES          = tstMicro.cpp
-tstMicro_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
-tstMicro_DEFS             = $(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
+ tstMicro_SOURCES         = tstMicro.cpp
+ tstMicro_LIBS            = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ tstMicro_DEFS            = $(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
 
-tstMicroRC_TEMPLATE       = VBoxRc
-tstMicroRC_SOURCES        = tstMicroRC.cpp tstMicroRCA.asm
-tstMicroRC_DEFS           = $(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
-tstMicroRC_INCS           = $(VBOX_PATH_VMM_SRC)/testcase
+ tstMicroRC_TEMPLATE      = VBoxRc
+ tstMicroRC_SOURCES       = tstMicroRC.cpp tstMicroRCA.asm
+ tstMicroRC_DEFS          = $(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
+ tstMicroRC_INCS          = $(VBOX_PATH_VMM_SRC)/testcase
  ifeq ($(VBOX_LDR_FMT32),pe)
-tstMicroRC_LDFLAGS        = -Entry:tstMicroRC
+  tstMicroRC_LDFLAGS      = -Entry:tstMicroRC
  endif
-tstMicroRC_SYSSUFF        = .gc
-tstMicroRC_LIBS           = \
-	$(PATH_STAGE_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
+ tstMicroRC_SYSSUFF       = .gc
+ tstMicroRC_LIBS          = \
+ 	$(PATH_STAGE_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT32)),)
-tstMicroRC_LIBS          += \
-	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
-	$(LIB_VMMRC)
+  tstMicroRC_LIBS        += \
+  	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+  	$(LIB_VMMRC)
  endif
-tstMicroRC_SOURCES.win = tstMicroRC.def
+ tstMicroRC_SOURCES.win = tstMicroRC.def
 
 endif # VBOX_WITH_RAW_MODE
 
 
 if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
-#
-# Special NEM host testcase.
-#
- if ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "darwin.amd64" && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
- || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "linux.amd64"  && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
- || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "win.amd64"    &&  defined(VBOX_WITH_NATIVE_NEM))
-PROGRAMS += NemRawBench-1
-NemRawBench-1_TEMPLATE = VBoxR3Static
-NemRawBench-1_SOURCES = NemRawBench-1.cpp
-NemRawBench-1_BLD_TYPE = release
-NemRawBench-1_INCS.win = \
-	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
-	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
-NemRawBench-1_CXXFLAGS.darwin = \
-	-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform//Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks
-#NemRawBench-1_LDFLAGS.darwin =  \
+ #
+ # Special NEM host testcase.
+ #
+ if   ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "darwin.amd64" && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
+   || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "linux.amd64"  && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
+   || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "win.amd64"    &&  defined(VBOX_WITH_NATIVE_NEM))
+  PROGRAMS += NemRawBench-1
+  NemRawBench-1_TEMPLATE = VBoxR3Static
+  NemRawBench-1_SOURCES = NemRawBench-1.cpp
+  NemRawBench-1_BLD_TYPE = release
+  NemRawBench-1_INCS.win = \
+  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
+  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
+  NemRawBench-1_CXXFLAGS.darwin = \
+  	-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform//Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks
+  #NemRawBench-1_LDFLAGS.darwin =  \
 #	-F/System/Library/Frameworks \
 #	-framework Hypervisor
-NemRawBench-1_LDFLAGS.darwin = \
-	/System/Library/Frameworks/Hypervisor.framework/Hypervisor
+  NemRawBench-1_LDFLAGS.darwin = \
+  	/System/Library/Frameworks/Hypervisor.framework/Hypervisor
  endif
 endif
 
@@ -621,87 +621,87 @@ tstPDMQueue_LIBS     := $(LIB_VMM) $(LIB_RUNTIME)
 
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-#
-# PDM asynchronous completation test.
-#
+ #
+ # PDM asynchronous completation test.
+ #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstPDMAsyncCompletionHardened_TEMPLATE = VBoxR3HardenedExe
-tstPDMAsyncCompletionHardened_NAME     = tstPDMAsyncCompletion
+  tstPDMAsyncCompletionHardened_TEMPLATE = VBoxR3HardenedExe
+  tstPDMAsyncCompletionHardened_NAME   = tstPDMAsyncCompletion
   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletion"
+   tstPDMAsyncCompletionHardened_DEFS  = PROGRAM_NAME_STR="tstPDMAsyncCompletion"
   else
-tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletion\"
+   tstPDMAsyncCompletionHardened_DEFS  = PROGRAM_NAME_STR=\"tstPDMAsyncCompletion\"
   endif
-tstPDMAsyncCompletionHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstPDMAsyncCompletion_TEMPLATE         = VBoxR3Dll
+  tstPDMAsyncCompletionHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstPDMAsyncCompletion_TEMPLATE       = VBoxR3Dll
  else
-tstPDMAsyncCompletion_TEMPLATE         = VBoxR3Exe
+  tstPDMAsyncCompletion_TEMPLATE       = VBoxR3Exe
  endif
-tstPDMAsyncCompletion_DEFS             = $(VMM_COMMON_DEFS)
-tstPDMAsyncCompletion_INCS             = $(VBOX_PATH_VMM_SRC)/include
-tstPDMAsyncCompletion_SOURCES          = tstPDMAsyncCompletion.cpp
-tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ tstPDMAsyncCompletion_DEFS            = $(VMM_COMMON_DEFS)
+ tstPDMAsyncCompletion_INCS            = $(VBOX_PATH_VMM_SRC)/include
+ tstPDMAsyncCompletion_SOURCES         = tstPDMAsyncCompletion.cpp
+ tstPDMAsyncCompletion_LIBS            = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
-#
-# PDM asynchronous completation stress test.
-#
+ #
+ # PDM asynchronous completation stress test.
+ #
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstPDMAsyncCompletionStressHardened_TEMPLATE = VBoxR3HardenedExe
-tstPDMAsyncCompletionStressHardened_NAME     = tstPDMAsyncCompletionStress
+  tstPDMAsyncCompletionStressHardened_TEMPLATE = VBoxR3HardenedExe
+  tstPDMAsyncCompletionStressHardened_NAME   = tstPDMAsyncCompletionStress
   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletionStress"
+   tstPDMAsyncCompletionStressHardened_DEFS  = PROGRAM_NAME_STR="tstPDMAsyncCompletionStress"
   else
-tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletionStress\"
+   tstPDMAsyncCompletionStressHardened_DEFS  = PROGRAM_NAME_STR=\"tstPDMAsyncCompletionStress\"
   endif
-tstPDMAsyncCompletionStressHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
-tstPDMAsyncCompletionStress_TEMPLATE   = VBoxR3Dll
+  tstPDMAsyncCompletionStressHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+  tstPDMAsyncCompletionStress_TEMPLATE = VBoxR3Dll
  else
-tstPDMAsyncCompletionStress_TEMPLATE   = VBoxR3Exe
+  tstPDMAsyncCompletionStress_TEMPLATE = VBoxR3Exe
  endif
-tstPDMAsyncCompletionStress_DEFS       = $(VMM_COMMON_DEFS)
-tstPDMAsyncCompletionStress_INCS       = $(VBOX_PATH_VMM_SRC)/include
-tstPDMAsyncCompletionStress_SOURCES    = tstPDMAsyncCompletionStress.cpp
-tstPDMAsyncCompletionStress_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ tstPDMAsyncCompletionStress_DEFS      = $(VMM_COMMON_DEFS)
+ tstPDMAsyncCompletionStress_INCS      = $(VBOX_PATH_VMM_SRC)/include
+ tstPDMAsyncCompletionStress_SOURCES   = tstPDMAsyncCompletionStress.cpp
+ tstPDMAsyncCompletionStress_LIBS      = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 endif
 
 ifndef VBOX_ONLY_EXTPACKS
-PROGRAMS += tstSSM-2
-tstSSM-2_TEMPLATE       = VBoxR3TstExe
-tstSSM-2_DEFS           = IN_VMM_STATIC
-tstSSM-2_SOURCES        = tstSSM-2.cpp
-tstSSM-2_LIBS           = $(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB)
+ PROGRAMS += tstSSM-2
+ tstSSM-2_TEMPLATE      = VBoxR3TstExe
+ tstSSM-2_DEFS          = IN_VMM_STATIC
+ tstSSM-2_SOURCES       = tstSSM-2.cpp
+ tstSSM-2_LIBS          = $(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB)
 endif
 
 #
 # Generate VM structure tests.
 #
-if !defined(VBOX_ONLY_EXTPACKS) \
- && (   defined(VBOX_WITH_DTRACE_R3) \
-     || defined(VBOX_WITH_DTRACE_R0) \
-     || defined(VBOX_WITH_DTRACE_RC))
-tstVMStructDTrace_TEMPLATE = VBoxR3AutoTest
-tstVMStructDTrace_DEFS     = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
+if   !defined(VBOX_ONLY_EXTPACKS) \
+  && (   defined(VBOX_WITH_DTRACE_R3) \
+      || defined(VBOX_WITH_DTRACE_R0) \
+  || defined(VBOX_WITH_DTRACE_RC))
+ tstVMStructDTrace_TEMPLATE = VBoxR3AutoTest
+ tstVMStructDTrace_DEFS    = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_RAW_MODE
-tstVMStructDTrace_DEFS    += VBOX_WITH_RAW_MODE
+  tstVMStructDTrace_DEFS  += VBOX_WITH_RAW_MODE
  endif
-tstVMStructDTrace_INCS     = \
-	$(VBOX_PATH_VMM_SRC)/include \
-	$(VBOX_PATH_VMM_SRC)/PATM \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)
-tstVMStructDTrace_SOURCES  = tstVMStructDTrace.cpp
+ tstVMStructDTrace_INCS    = \
+ 	$(VBOX_PATH_VMM_SRC)/include \
+ 	$(VBOX_PATH_VMM_SRC)/PATM \
+ 	$(VBOX_VMM_TESTCASE_OUT_DIR)
+ tstVMStructDTrace_SOURCES = tstVMStructDTrace.cpp
  ifdef VBOX_WITH_R0_LOGGING
-tstVMStructDTrace_DEFS    += VBOX_WITH_R0_LOGGING
+  tstVMStructDTrace_DEFS  += VBOX_WITH_R0_LOGGING
  endif
 
 
-VMMLibDTraceStructTest_INST = $(VBOX_INST_DTRACE_TST)$(KBUILD_TARGET_ARCH)/
-VMMLibDTraceStructTest_SOURCES = \
-	$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d
-VMMLibDTraceStructTest_CLEAN = \
-	$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d
+ VMMLibDTraceStructTest_INST = $(VBOX_INST_DTRACE_TST)$(KBUILD_TARGET_ARCH)/
+ VMMLibDTraceStructTest_SOURCES = \
+ 	$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d
+ VMMLibDTraceStructTest_CLEAN = \
+ 	$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d
 
-$$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d: \
-		$$(tstVMStructDTrace_1_STAGE_TARGET) | $$(dir $$@)
+ $$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d: \
+ 		$$(tstVMStructDTrace_1_STAGE_TARGET) | $$(dir $$@)
 	$(QUIET)$(RM) -f $@
 	$< > $@
 
@@ -715,18 +715,18 @@ include $(FILE_KBUILD_SUB_FOOTER)
 # Some handcrafted support targets for tstAsmStructs.
 #
 MY_ASA_ASM_STUFF = \
-		$(addprefix -D, \
-			$(DEFS) \
-			$(DEFS.$(KBUILD_TYPE)) \
-			$(DEFS.$(KBUILD_TARGET)) \
-			IN_RING3 $(ARCH_BITS_DEFS) \
-			$(DEFS.$(KBUILD_TARGET_ARCH)) \
-			$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
-                       $(VMM_COMMON_DEFS) \
-		) \
-		-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_PATH_VMM_SRC)/include $(VBOX_VMM_TESTCASE_OUT_DIR)\
-			,-I$(inc)/)
+	$(addprefix -D, \
+	$(DEFS) \
+	$(DEFS.$(KBUILD_TYPE)) \
+	$(DEFS.$(KBUILD_TARGET)) \
+	IN_RING3 $(ARCH_BITS_DEFS) \
+	$(DEFS.$(KBUILD_TARGET_ARCH)) \
+	$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
+	$(VMM_COMMON_DEFS) \
+	) \
+	-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
+	$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_PATH_VMM_SRC)/include $(VBOX_VMM_TESTCASE_OUT_DIR) \
+	,-I$(inc)/)
 
 # 1a. make a header file which makes all the structures+members globals.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
@@ -825,8 +825,8 @@ endif
 #
 
 ifdef VBOX_WITH_RAW_MODE
-# 1. Manually dump selected structures and members.
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h: $$(tstVMStructRC_1_STAGE_TARGET) | $$(dir $$@)
+ # 1. Manually dump selected structures and members.
+ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h: $$(tstVMStructRC_1_STAGE_TARGET) | $$(dir $$@)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $<
 endif # VBOX_WITH_RAW_MODE

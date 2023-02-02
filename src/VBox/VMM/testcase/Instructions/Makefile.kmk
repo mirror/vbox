@@ -32,24 +32,24 @@ include $(KBUILD_PATH)/subheader.kmk
 # Python linting (can't live without pylint!).
 #
 ifdef VBOX_WITH_PYLINT
-TESTING +=
+ TESTING +=
 endif
 BLDDIRS += $(PATH_TARGET)/pylint
 
 define def_vbox_instructions_py_check
-$(eval name:=$(basename $(notdir $(py))))
+ $(eval name:=$(basename $(notdir $(py))))
 
-pylint:    $(name)-py-phony.o
-$(name).o: $(name)-py-phony.o
-$(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
-ifdef VBOX_WITH_PYLINT
+ pylint: $(name)-py-phony.o
+ $(name).o: $(name)-py-phony.o
+ $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
+ ifdef VBOX_WITH_PYLINT
 	$(QUIET2)$(call MSG_L1,Subjecting $(py) to pylint...)
 	$(QUIET)$(REDIRECT_EXT) -E LC_ALL=C -E PYTHONPATH="$(dir $(py))" -C $(dir $(py)) \
 		-- $$(VBOX_PYLINT) $$(VBOX_PYLINT_FLAGS) $$($(py)_VBOX_PYLINT_FLAGS) ./$(notdir $(py))
-endif
+ endif
 	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
 
-TESTING += $(name)-py-phony.o
+ TESTING += $(name)-py-phony.o
 endef # def_vbox_instructions_py_check
 
 
@@ -65,9 +65,9 @@ tstVBInsTstR3_TEMPLATE = VBoxR3TstExe
 tstVBInsTstR3_INCS = .
 tstVBInsTstR3_SOURCES = \
 	tstVBInsTstR3.cpp \
-       $(tstVBInsTstR3_0_OUTDIR)/tstVBInsTstR3A.asm
+	$(tstVBInsTstR3_0_OUTDIR)/tstVBInsTstR3A.asm
 tstVBInsTstR3_CLEAN = \
-       $(tstVBInsTstR3_0_OUTDIR)/tstVBInsTstR3A.asm
+	$(tstVBInsTstR3_0_OUTDIR)/tstVBInsTstR3A.asm
 
 $$(tstVBInsTstR3_0_OUTDIR)/tstVBInsTstR3A.asm: $(PATH_SUB_CURRENT)/InstructionTestGen.py
 	$(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/InstructionTestGen.py \
