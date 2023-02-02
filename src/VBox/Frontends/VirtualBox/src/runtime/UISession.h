@@ -52,7 +52,6 @@
 #include "CMouse.h"
 #include "CKeyboard.h"
 #include "CMachineDebugger.h"
-#include "CMedium.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -165,13 +164,13 @@ public:
     /** Returns the machine name. */
     QString machineName() const { return m_strMachineName; }
 
+    /** Returns main machine-widget id. */
+    WId mainMachineWindowId() const;
+
     /** Returns previous machine state. */
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     /** Returns machine state. */
     KMachineState machineState() const { return m_machineState; }
-
-    /** Returns main machine-widget id. */
-    WId mainMachineWindowId() const;
 
     bool isSaved() const { return machineState() == KMachineState_Saved ||
                                   machineState() == KMachineState_AbortedSaved; }
@@ -188,9 +187,11 @@ public:
     bool isStuck() const { return machineState() == KMachineState_Stuck; }
     bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
+    /** Returns whether guest-screen is undrawable.
+     *  @todo: extend this method to all the states when guest-screen is undrawable. */
+    bool isGuestScreenUnDrawable() const { return machineState() == KMachineState_Stopping ||
+                                                  machineState() == KMachineState_Saving; }
 
-    bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
-    bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > KAdditionsRunLevelType_None); }
@@ -205,14 +206,7 @@ public:
     bool pause() { return setPause(true); }
     bool unpause() { return setPause(false); }
     bool setPause(bool fOn);
-    void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
-    void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled) { m_fIsAutoCaptureDisabled = fIsAutoCaptureDisabled; }
     void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
-
-    /** Returns whether guest-screen is undrawable.
-     *  @todo: extend this method to all the states when guest-screen is undrawable. */
-    bool isGuestScreenUnDrawable() const { return machineState() == KMachineState_Stopping ||
-                                                  machineState() == KMachineState_Saving; }
 
     /* Returns existing framebuffer for the given screen-number;
      * Returns 0 (asserts) if screen-number attribute is out of bounds: */
@@ -222,9 +216,6 @@ public:
     void setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer);
     /** Returns existing frame-buffer vector. */
     const QVector<UIFrameBuffer*>& frameBuffers() const { return m_frameBufferVector; }
-
-    /** Returns a vector of media attached to the machine. */
-    CMediumVector machineMedia() const;
 
     /** Prepares VM to be saved. */
     bool prepareToBeSaved();
@@ -284,6 +275,9 @@ private:
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
 
+    /** Recaches media attached to the machine. */
+    void recacheMachineMedia();
+
     /* Private variables: */
     UIMachine *m_pMachine;
 
@@ -316,10 +310,6 @@ private:
 
     /* Frame-buffers vector: */
     QVector<UIFrameBuffer*> m_frameBufferVector;
-
-    /* Common flags: */
-    bool m_fIsGuestResizeIgnored : 1;
-    bool m_fIsAutoCaptureDisabled : 1;
 
     /* Guest additions flags: */
     ULONG m_ulGuestAdditionsRunLevel;

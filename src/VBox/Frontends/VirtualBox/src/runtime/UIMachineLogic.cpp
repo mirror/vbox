@@ -458,7 +458,7 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Stuck:
         {
             /* Prevent machine-view from resizing: */
-            uisession()->setGuestResizeIgnored(true);
+            uimachine()->setGuestResizeIgnored(true);
             /* Get log-folder: */
             QString strLogFolder = machine().GetLogFolder();
             /* Take the screenshot for debugging purposes: */

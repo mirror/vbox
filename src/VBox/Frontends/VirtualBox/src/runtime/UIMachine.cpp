@@ -817,12 +817,14 @@ UIMachine::UIMachine()
 #ifdef VBOX_WS_MAC
     , m_pWatchdogDisplayChange(0)
 #endif
+    , m_fIsGuestResizeIgnored(false)
     , m_fNumLock(false)
     , m_fCapsLock(false)
     , m_fScrollLock(false)
     , m_uNumLockAdaptionCnt(2)
     , m_uCapsLockAdaptionCnt(2)
     , m_fIsHidLedsSyncEnabled(false)
+    , m_fIsAutoCaptureDisabled(false)
     , m_iKeyboardState(0)
     , m_fIsHidingHostPointer(true)
     , m_fIsValidPointerShapePresent(false)
@@ -857,10 +859,6 @@ bool UIMachine::prepare()
     if (!UISession::create(m_pSession, this))
         return false;
     AssertPtrReturn(uisession(), false);
-
-    /* Cache media data early if necessary: */
-    if (uiCommon().agressiveCaching())
-        uiCommon().enumerateMedia(uisession()->machineMedia());
 
     /* Prepare stuff: */
     prepareSessionConnections();

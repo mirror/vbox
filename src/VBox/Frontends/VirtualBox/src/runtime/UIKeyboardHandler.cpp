@@ -1950,12 +1950,12 @@ void UIKeyboardHandler::sendChangedKeyStates()
 
 bool UIKeyboardHandler::isAutoCaptureDisabled()
 {
-    return uisession()->isAutoCaptureDisabled();
+    return uimachine()->isAutoCaptureDisabled();
 }
 
 void UIKeyboardHandler::setAutoCaptureDisabled(bool fIsAutoCaptureDisabled)
 {
-    uisession()->setAutoCaptureDisabled(fIsAutoCaptureDisabled);
+    uimachine()->setAutoCaptureDisabled(fIsAutoCaptureDisabled);
 }
 
 bool UIKeyboardHandler::autoCaptureSetGlobally()

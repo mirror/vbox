@@ -598,7 +598,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
     /* Some situations require frame-buffer resize-events to be ignored at all,
      * leaving machine-window, machine-view and frame-buffer sizes preserved: */
-    if (uisession()->isGuestResizeIgnored())
+    if (uimachine()->isGuestResizeIgnored())
         return;
 
     /* In some situations especially in some VM states, guest-screen is not drawable: */

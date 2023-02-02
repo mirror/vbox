@@ -367,9 +367,6 @@ UISession::UISession(UIMachine *pMachine)
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
-    /* Common flags: */
-    , m_fIsGuestResizeIgnored(false)
-    , m_fIsAutoCaptureDisabled(false)
     /* Guest additions flags: */
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
@@ -401,6 +398,10 @@ bool UISession::prepare()
     /* Prepare COM stuff: */
     if (!prepareSession())
         return false;
+
+    /* Cache media early if requested: */
+    if (uiCommon().agressiveCaching())
+        recacheMachineMedia();
 
     /* Prepare GUI stuff: */
     prepareNotificationCenter();
@@ -801,14 +802,16 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
     return true;
 }
 
-CMediumVector UISession::machineMedia() const
+void UISession::recacheMachineMedia()
 {
+    /* Compose a list of machine media: */
     CMediumVector comMedia;
+
     /* Enumerate all the controllers: */
-    foreach (const CStorageController &comController, m_machine.GetStorageControllers())
+    foreach (const CStorageController &comController, machine().GetStorageControllers())
     {
         /* Enumerate all the attachments: */
-        foreach (const CMediumAttachment &comAttachment, m_machine.GetMediumAttachmentsOfController(comController.GetName()))
+        foreach (const CMediumAttachment &comAttachment, machine().GetMediumAttachmentsOfController(comController.GetName()))
         {
             /* Skip unrelated device types: */
             const KDeviceType enmDeviceType = comAttachment.GetType();
@@ -822,7 +825,9 @@ CMediumVector UISession::machineMedia() const
             comMedia.append(comAttachment.GetMedium());
         }
     }
-    return comMedia;
+
+    /* Start media enumeration: */
+    uiCommon().enumerateMedia(comMedia);
 }
 
 bool UISession::prepareToBeSaved()

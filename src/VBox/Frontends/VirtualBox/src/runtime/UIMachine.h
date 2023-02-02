@@ -121,7 +121,7 @@ signals:
         void sigKeyboardStateChange(int iState);
     /** @} */
 
-    /** @name Mouse cursor stuff.
+    /** @name Mouse stuff.
      ** @{ */
         /** Notifies listeners about mouse pointer shape change. */
         void sigMousePointerShapeChange();
@@ -235,6 +235,11 @@ public:
         QSize lastFullScreenSize(ulong uScreenId) const;
         /** Defines last full-screen @a size for guest-screen with index @a uScreenId. */
         void setLastFullScreenSize(ulong uScreenId, QSize size);
+
+        /** Returns whether guest screen resize should be ignored. */
+        bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
+        /** Defines whether guest screen resize should be @a fIgnored. */
+        void setGuestResizeIgnored(bool fIgnored) { m_fIsGuestResizeIgnored = fIgnored; }
     /** @} */
 
     /** @name Keyboard stuff.
@@ -259,11 +264,16 @@ public:
         /** Returns whether VM should perform HID LEDs synchronization. */
         bool isHidLedsSyncEnabled() const { return m_fIsHidLedsSyncEnabled; }
 
+        /** Returns whether auto-capture is disabled. */
+        bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
+        /** Defines whether auto-capture is @a fDisabled. */
+        void setAutoCaptureDisabled(bool fDisabled) { m_fIsAutoCaptureDisabled = fDisabled; }
+
         /** Returns the keyboard-state. */
         int keyboardState() const { return m_iKeyboardState; }
     /** @} */
 
-    /** @name Mouse cursor stuff.
+    /** @name Mouse stuff.
      ** @{ */
         /** Returns whether we should hide host mouse pointer. */
         bool isHidingHostPointer() const { return m_fIsHidingHostPointer; }
@@ -353,7 +363,7 @@ public slots:
         void setKeyboardState(int iKeyboardState) { m_iKeyboardState = iKeyboardState; emit sigKeyboardStateChange(m_iKeyboardState); }
     /** @} */
 
-    /** @name Mouse cursor stuff.
+    /** @name Mouse stuff.
      ** @{ */
         /** Defines @a iMouseState. */
         void setMouseState(int iMouseState) { m_iMouseState = iMouseState; emit sigMouseStateChange(m_iMouseState); }
@@ -432,7 +442,7 @@ private slots:
         void sltHidLedsSyncStateChanged(bool fEnabled) { m_fIsHidLedsSyncEnabled = fEnabled; }
     /** @} */
 
-    /** @name Mouse cursor stuff.
+    /** @name Mouse stuff.
      ** @{ */
         /** Handles signal about mouse pointer shape data change.
           * @param  shapeData  Brings complex struct describing mouse pointer shape aspects. */
@@ -526,7 +536,7 @@ private:
         void updateHostScreenData();
     /** @} */
 
-    /** @name Mouse cursor stuff.
+    /** @name Mouse stuff.
      ** @{ */
         /** Updates mouse pointer shape. */
         void updateMousePointerShape();
@@ -625,6 +635,9 @@ private:
 
         /** Holds the list of guest-screen full-screen sizes. */
         QVector<QSize>  m_monitorLastFullScreenSizeVector;
+
+        /** Holds whether guest screen resize should be ignored. */
+        bool m_fIsGuestResizeIgnored;
     /** @} */
 
     /** @name Keyboard stuff.
@@ -644,11 +657,14 @@ private:
         /** Holds whether VM should perform HID LEDs synchronization. */
         bool m_fIsHidLedsSyncEnabled;
 
+        /** Holds whether auto-capture is disabled. */
+        bool m_fIsAutoCaptureDisabled;
+
         /** Holds the keyboard-state. */
         int  m_iKeyboardState;
     /** @} */
 
-    /** @name Mouse cursor stuff.
+    /** @name Mouse stuff.
      ** @{ */
         /** Holds whether we should hide host mouse pointer. */
         bool  m_fIsHidingHostPointer;
