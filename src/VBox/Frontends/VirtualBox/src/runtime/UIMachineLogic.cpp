@@ -585,7 +585,7 @@ void UIMachineLogic::sltAdditionsStateChanged()
     /* Update action states: */
     LogRel3(("GUI: UIMachineLogic::sltAdditionsStateChanged: Adjusting actions availability according to GA state.\n"));
     actionPool()->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(uimachine()->isVisualStateAllowed(UIVisualStateType_Seamless) &&
-                                                                        uisession()->isGuestSupportsSeamless());
+                                                                        uimachine()->isGuestSupportsSeamless());
 }
 
 void UIMachineLogic::sltMouseCapabilityChanged()
@@ -2284,7 +2284,7 @@ void UIMachineLogic::sltOpenSettingsDialogUSBDevices()
 void UIMachineLogic::sltOpenSettingsDialogSharedFolders()
 {
     /* Do not process if additions are not loaded! */
-    if (!uisession()->isGuestAdditionsActive())
+    if (!uimachine()->isGuestAdditionsActive())
         UINotificationMessage::remindAboutGuestAdditionsAreNotActive();
 
     /* Open VM settings : Shared folders page: */

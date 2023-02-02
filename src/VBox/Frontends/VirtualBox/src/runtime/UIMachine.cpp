@@ -234,7 +234,7 @@ QString UIMachine::machineName() const
 void UIMachine::updateStateAdditionsActions()
 {
     /* Make sure action-pool knows whether GA supports graphics: */
-    actionPool()->toRuntime()->setGuestSupportsGraphics(uisession()->isGuestSupportsGraphics());
+    actionPool()->toRuntime()->setGuestSupportsGraphics(isGuestSupportsGraphics());
     /* Enable/Disable Upgrade Additions action depending on feature status: */
     actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(uisession()->guestAdditionsUpgradable());
 }
@@ -420,6 +420,21 @@ void UIMachine::setLastFullScreenSize(ulong uScreenId, QSize size)
 
     /* Remember last full-screen size: */
     m_monitorLastFullScreenSizeVector[(int)uScreenId] = size;
+}
+
+bool UIMachine::isGuestAdditionsActive() const
+{
+    return uisession()->isGuestAdditionsActive();
+}
+
+bool UIMachine::isGuestSupportsGraphics() const
+{
+    return uisession()->isGuestSupportsGraphics();
+}
+
+bool UIMachine::isGuestSupportsSeamless() const
+{
+    return uisession()->isGuestSupportsSeamless();
 }
 
 void UIMachine::detachUi()

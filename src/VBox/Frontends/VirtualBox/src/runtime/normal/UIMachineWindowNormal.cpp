@@ -669,7 +669,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
          * or guest-additions doesn't support graphics
          * we should deduce widget's size-hint on visible scroll-bar's hint: */
         if (   !machineView()->isGuestAutoresizeEnabled()
-            || !uisession()->isGuestSupportsGraphics())
+            || !uimachine()->isGuestSupportsGraphics())
         {
             if (machineView()->verticalScrollBar()->isVisible())
                 sh -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
@@ -693,7 +693,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
      * we should take scroll-bars size-hints into account: */
     if (   frGeoNew != frGeo
         && (   !machineView()->isGuestAutoresizeEnabled()
-            || !uisession()->isGuestSupportsGraphics()))
+            || !uimachine()->isGuestSupportsGraphics()))
     {
         /* Determine whether we need additional space for one or both scroll-bars: */
         QSize addition;

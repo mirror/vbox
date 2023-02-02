@@ -89,7 +89,7 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
         case UIVisualStateType_Seamless:
         {
             /* And supported: */
-            if (uisession()->isGuestSupportsSeamless())
+            if (uimachine()->isGuestSupportsSeamless())
             {
                 LogRel(("GUI: UIMachineLogicNormal::sltCheckForRequestedVisualStateType: "
                         "Going 'seamless' as requested...\n"));

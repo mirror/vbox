@@ -235,7 +235,7 @@ void UIMultiScreenLayout::sltHandleScreenLayoutChange(int iRequestedGuestScreen,
 
     /* Check the memory requirements first: */
     bool fSuccess = true;
-    if (m_pMachineLogic->uisession()->isGuestSupportsGraphics())
+    if (m_pMachineLogic->uimachine()->isGuestSupportsGraphics())
     {
         quint64 availBits = m_pMachineLogic->machine().GetGraphicsAdapter().GetVRAMSize() * _1M * 8;
         quint64 usedBits = memoryRequirements(tmpMap);

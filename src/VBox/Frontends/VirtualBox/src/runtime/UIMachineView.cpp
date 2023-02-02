@@ -680,7 +680,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
      * do not store hints for these systems except when we explicitly send them
      * ourselves.  Windows guests should use VBoxVGA controllers, not VMSVGA. */
     if (   !isFullscreenOrSeamless()
-        && uisession()->isGuestSupportsGraphics()
+        && uimachine()->isGuestSupportsGraphics()
         && (machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA))
         setStoredGuestScreenSizeHint(frameBufferSizeNew);
 
@@ -778,7 +778,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
      * This should be done before the actual hint is sent in case the guest overrides it.
      * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
     if (   !isFullscreenOrSeamless()
-        && uisession()->isGuestSupportsGraphics()
+        && uimachine()->isGuestSupportsGraphics()
         && (   (int)frameBuffer()->width() != size.width()
             || (int)frameBuffer()->height() != size.height()
             || uimachine()->isScreenVisible(screenId()) != uimachine()->isScreenVisibleHostDesires(screenId())))
@@ -853,7 +853,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             fSendHint = false;
         }
         /* Do not send a hint if GA supports graphics and we have sent that hint already: */
-        if (fSendHint && uisession()->isGuestSupportsGraphics() && m_lastSizeHint == size)
+        if (fSendHint && uimachine()->isGuestSupportsGraphics() && m_lastSizeHint == size)
         {
             LogRel(("GUI: UIMachineView::sltPerformGuestResize: Omitting to send size-hint %dx%d to guest-screen %d "
                     "because this hint was previously sent.\n", (int)screenId(), size.width(), size.height()));
@@ -913,7 +913,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
          * This should be done before the actual hint is sent in case the guest overrides it.
          * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
         if (   !isFullscreenOrSeamless()
-            && uisession()->isGuestSupportsGraphics()
+            && uimachine()->isGuestSupportsGraphics()
             && (   frameBuffer()->width() != uWidth
                 || frameBuffer()->height() != uHeight
                 || uimachine()->isScreenVisible(screenId()) != uimachine()->isScreenVisibleHostDesires(screenId())))
@@ -964,7 +964,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
      * This should be done before the actual hint is sent in case the guest overrides it.
      * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
     if (   !isFullscreenOrSeamless()
-        && uisession()->isGuestSupportsGraphics()
+        && uimachine()->isGuestSupportsGraphics()
         && (   (int)frameBuffer()->width() != size.width()
             || (int)frameBuffer()->height() != size.height()
             || uimachine()->isScreenVisible(screenId()) != uimachine()->isScreenVisibleHostDesires(screenId())))

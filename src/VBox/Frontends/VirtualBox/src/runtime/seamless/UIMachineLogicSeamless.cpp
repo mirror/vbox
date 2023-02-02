@@ -79,7 +79,7 @@ bool UIMachineLogicSeamless::hasHostScreenForGuestScreen(int iScreenId) const
 bool UIMachineLogicSeamless::checkAvailability()
 {
     /* Check if there is enough physical memory to enter seamless: */
-    if (uisession()->isGuestSupportsSeamless())
+    if (uimachine()->isGuestSupportsSeamless())
     {
         quint64 availBits = machine().GetGraphicsAdapter().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
@@ -128,7 +128,7 @@ void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
         return;
 
     /* If 'seamless' visual-state type is no more supported: */
-    if (!uisession()->isGuestSupportsSeamless())
+    if (!uimachine()->isGuestSupportsSeamless())
     {
         LogRel(("GUI: UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: "
                 "Leaving 'seamless' as it is no more supported...\n"));

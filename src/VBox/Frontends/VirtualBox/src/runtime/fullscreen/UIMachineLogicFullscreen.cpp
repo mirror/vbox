@@ -83,7 +83,7 @@ bool UIMachineLogicFullscreen::hasHostScreenForGuestScreen(int iScreenId) const
 bool UIMachineLogicFullscreen::checkAvailability()
 {
     /* Check if there is enough physical memory to enter fullscreen: */
-    if (uisession()->isGuestSupportsGraphics())
+    if (uimachine()->isGuestSupportsGraphics())
     {
         quint64 availBits = machine().GetGraphicsAdapter().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
         quint64 usedBits = m_pScreenLayout->memoryRequirements();

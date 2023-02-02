@@ -1870,7 +1870,7 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
          * in the Guest Additions protocol, but in practice it should be fine. */
         if (   ulGuestBitsPerPixel != ulBitsPerPixel
             && ulGuestBitsPerPixel != 0
-            && m_pMachineView->uisession()->isGuestSupportsGraphics())
+            && m_pMachineView->uimachine()->isGuestSupportsGraphics())
             UINotificationMessage::remindAboutWrongColorDepth(ulGuestBitsPerPixel, ulBitsPerPixel);
         else
             UINotificationMessage::forgetAboutWrongColorDepth();

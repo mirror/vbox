@@ -127,7 +127,7 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
     {
         m_fGuestAutoresizeEnabled = fEnabled;
 
-        if (m_fGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        if (m_fGuestAutoresizeEnabled && uimachine()->isGuestSupportsGraphics())
             sltPerformGuestResize();
     }
 }

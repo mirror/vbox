@@ -271,6 +271,16 @@ public:
         void setGuestResizeIgnored(bool fIgnored) { m_fIsGuestResizeIgnored = fIgnored; }
     /** @} */
 
+    /** @name Guest additions stuff.
+     ** @{ */
+        /** Returns whether guest additions is active. */
+        bool isGuestAdditionsActive() const;
+        /** Returns whether guest additions supports graphics. */
+        bool isGuestSupportsGraphics() const;
+        /** Returns whether guest additions supports seamless. */
+        bool isGuestSupportsSeamless() const;
+    /** @} */
+
     /** @name Keyboard stuff.
      ** @{ */
         /** Returns the NUM lock status. */
