@@ -592,10 +592,11 @@ define def_vbox_link_msm
                '@echo Created MSM module: $$(@F)'
 endef
 
-$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
-	$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-		$(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
-			$(eval $(def_vbox_link_msm)))),)
+ifdef VBOX_WITH_MSM_INSTALL
+ $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
+ 	$(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
+		$(eval $(def_vbox_link_msm)))),)
+endif
 
 
 #
@@ -1108,7 +1109,9 @@ $(foreach lang,$(filter-out en_US, $(VBOX_INSTALLER_LANGUAGES)), \
 VBOX_INS_PROD_ARCH.amd64 = x64
 VBOX_INS_PROD_ARCH.x86   = Intel
 VBOX_INS_PROD_ARCH := $(VBOX_INS_PROD_ARCH.$(KBUILD_TARGET_ARCH))
-$(if $(VBOX_INS_PROD_ARCH),,$(error VBOX_INS_PROD_ARCH is empty!))
+ifeq ($(VBOX_INS_PROD_ARCH),)
+ $(error VBOX_INS_PROD_ARCH is empty!)
+endif
 VBOX_INS_PROD_LANG := 7="$(VBOX_INS_PROD_ARCH);1033
 $(foreach lang, $(filter-out en_US,$(VBOX_INSTALLER_LANGUAGES))\
 	, $(eval VBOX_INS_PROD_LANG := $(VBOX_INS_PROD_LANG)$(COMMA)$(VBOX_BRAND_$(lang)_LANG_ID)))
