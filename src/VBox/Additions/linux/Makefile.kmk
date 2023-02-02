@@ -391,10 +391,10 @@ $(VBOX_LNX_ADD_ARCHIVE.$(KBUILD_TARGET_ARCH)): \
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CHMOD) 0755 $(VBOX_LNX_ADD_ARCH_INST_DIRS)
 ifdef VBOX_USE_PBZIP2
- 	$(QUIET)tar --dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
- 		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		LICENSE bin init lib other sbin src \
- 		$(if $(filter $(KBUILD_TYPE),debug),debug)
+	$(QUIET)tar --dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
+		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
+		LICENSE bin init lib other sbin src \
+		$(if $(filter $(KBUILD_TYPE),debug),debug)
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
 	$(QUIET)tar --dereference --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
@@ -416,9 +416,9 @@ $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions-dbg.tar.bz2: \
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CHMOD) 0755 $(VBOX_LNX_ADD_DBG_DIRS)
 ifdef VBOX_USE_PBZIP2
- 	$(QUIET)tar --dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
- 		-C $(VBOX_LNX_ADD_INST_DBG_DIR) \
- 		bin lib sbin
+	$(QUIET)tar --dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
+		-C $(VBOX_LNX_ADD_INST_DBG_DIR) \
+		bin lib sbin
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
 	$(QUIET)tar --dereference --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
