@@ -2347,9 +2347,7 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
      */
     else
     {
-        rc = AudioMixerSinkDrainAndStopEx(pSink,
-                                          pStreamCC->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStreamCC->State.pCircBuf) : 0,
-                                          RT_MS_5SEC);
+        rc = AudioMixerSinkDrainAndStop(pSink, pStreamCC->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStreamCC->State.pCircBuf) : 0);
         ichac97R3StreamTearDown(pStream);
     }
 

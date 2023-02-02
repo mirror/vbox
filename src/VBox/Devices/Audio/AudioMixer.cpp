@@ -112,7 +112,6 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVolMaster);
 static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 static void audioMixerSinkResetInternal(PAUDMIXSINK pSink);
-static int audioMixerSinkWaitForDrainedLocked(PAUDMIXSINK pSink, RTMSINTERVAL msTimeout);
 
 static int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd);
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream, PPDMDEVINS pDevIns, bool fImmediate);
@@ -414,13 +413,12 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, PDMAUDIODIR en
 
             /* AIO */
             AssertPtr(pDevIns);
-            pSink->AIO.pDevIns       = pDevIns;
-            pSink->AIO.hThread       = NIL_RTTHREAD;
-            pSink->AIO.hEvent        = NIL_RTSEMEVENT;
-            pSink->AIO.hEventDrained = NIL_RTSEMEVENT;
-            pSink->AIO.fStarted      = false;
-            pSink->AIO.fShutdown     = false;
-            pSink->AIO.cUpdateJobs   = 0;
+            pSink->AIO.pDevIns     = pDevIns;
+            pSink->AIO.hThread     = NIL_RTTHREAD;
+            pSink->AIO.hEvent      = NIL_RTSEMEVENT;
+            pSink->AIO.fStarted    = false;
+            pSink->AIO.fShutdown   = false;
+            pSink->AIO.cUpdateJobs = 0;
 
             /*
              * Add it to the mixer.
@@ -579,10 +577,8 @@ static uint64_t audioMixerSinkDrainDeadline(PAUDMIXSINK pSink, uint32_t cbDmaLef
  * @param   cbComming   The number of bytes still left in the device's DMA
  *                      buffers that the update job has yet to transfer.  This
  *                      is ignored for input streams.
- * @param   msTimeout   Timeout to use for synchronously waiting for the draining / update jobs.
- *                      Set to 0 for running asynchronously.
  */
-int AudioMixerSinkDrainAndStopEx(PAUDMIXSINK pSink, uint32_t cbComming, RTMSINTERVAL msTimeout)
+int AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     Assert(pSink->uMagic == AUDMIXSINK_MAGIC);
@@ -623,18 +619,6 @@ int AudioMixerSinkDrainAndStopEx(PAUDMIXSINK pSink, uint32_t cbComming, RTMSINTE
                     /* Kick the AIO thread so it can keep pushing data till we're out of this
                        status. (The device's DMA timer won't kick it any more, so we must.) */
                     AudioMixerSinkSignalUpdateJob(pSink);
-#ifdef LOG_ENABLED
-                    uint64_t const msStart = RTTimeMilliTS();
-                    Log3Func(("Waiting for %RU32 update jobs (msTimeout=%RU32)\n", pSink->AIO.cUpdateJobs, msTimeout));
-#endif
-                    if (   msTimeout
-                        && pSink->AIO.cUpdateJobs)
-                    {
-                        rc = audioMixerSinkWaitForDrainedLocked(pSink, msTimeout);
-#ifdef LOG_ENABLED
-                        Log3Func(("Waiting for update jobs done (rc=%Rrc, took %RU64ms)\n", rc, RTTimeMilliTS() - msStart));
-#endif
-                    }
                 }
                 else
                 {
@@ -673,25 +657,6 @@ int AudioMixerSinkDrainAndStopEx(PAUDMIXSINK pSink, uint32_t cbComming, RTMSINTE
     LogRel2(("Audio Mixer: Started draining sink '%s': %s\n", pSink->pszName, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus)));
     RTCritSectLeave(&pSink->CritSect);
     return rc;
-}
-
-
-/**
- * Kicks off the draining and stopping playback/capture on the mixer sink.
- *
- * For input streams this causes an immediate stop, as draining only makes sense
- * to output stream in the VBox device context.
- *
- * @returns VBox status code.  Generally always VINF_SUCCESS unless the input
- *          is invalid.  Individual driver errors are suppressed and ignored.
- * @param   pSink       Mixer sink to control.
- * @param   cbComming   The number of bytes still left in the device's DMA
- *                      buffers that the update job has yet to transfer.  This
- *                      is ignored for input streams.
- */
-int AudioMixerSinkDrainAndStop(PAUDMIXSINK pSink, uint32_t cbComming)
-{
-    return AudioMixerSinkDrainAndStopEx(pSink, cbComming, 0 /* Don't wait */);
 }
 
 
@@ -756,11 +721,6 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
         int rc2 = RTSemEventSignal(pSink->AIO.hEvent);
         AssertRC(rc2);
     }
-    if (pSink->AIO.hEventDrained != NIL_RTSEMEVENT)
-    {
-        int rc2 = RTSemEventSignal(pSink->AIO.hEventDrained);
-        AssertRC(rc2);
-    }
     if (pSink->AIO.hThread != NIL_RTTHREAD)
     {
         LogFlowFunc(("Waiting for AIO thread for %s...\n", pSink->pszName));
@@ -773,12 +733,6 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink, PPDMDEVINS pDevIns)
         int rc2 = RTSemEventDestroy(pSink->AIO.hEvent);
         AssertRC(rc2);
         pSink->AIO.hEvent = NIL_RTSEMEVENT;
-    }
-    if (pSink->AIO.hEventDrained != NIL_RTSEMEVENT)
-    {
-        int rc2 = RTSemEventDestroy(pSink->AIO.hEventDrained);
-        AssertRC(rc2);
-        pSink->AIO.hEventDrained = NIL_RTSEMEVENT;
     }
 
     /*
@@ -1816,26 +1770,14 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void 
     /*
      * The run loop.
      */
-    bool fDrainingFinished = false; /* Whether draining the stream is finished. */
-#ifdef LOG_ENABLED
-    char szStatus[AUDIOMIXERSINK_STATUS_STR_MAX];
-#endif
-
     LogFlowFunc(("%s: Entering run loop...\n", pSink->pszName));
     while (!pSink->AIO.fShutdown)
     {
         RTMSINTERVAL cMsSleep = RT_INDEFINITE_WAIT;
 
         RTCritSectEnter(&pSink->CritSect);
-
-#ifdef LOG_ENABLED
-        Log3Func(("%s: Running async I/O (fStatus=%s) ...\n", pSink->pszName,
-                  dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus)));
-#endif
         if (pSink->fStatus & (AUDMIXSINK_STS_RUNNING | AUDMIXSINK_STS_DRAINING))
         {
-            uint32_t fStatusOld = pSink->fStatus;
-
             /*
              * Before doing jobs, always update input sinks.
              */
@@ -1861,14 +1803,7 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void 
              * DMA timer as it has normally stopped running at this point.
              */
             if (!(pSink->fStatus & AUDMIXSINK_STS_DRAINING))
-            {
-                /* likely */
-                if (fStatusOld & AUDMIXSINK_STS_DRAINING)
-                {
-                    Log3Func(("%s: Started draining\n", pSink->pszName));
-                    fDrainingFinished = true;
-                }
-            }
+            { /* likely */ }
             else
             {
                 /** @todo Also do some kind of timeout here and do a forced stream disable w/o
@@ -1876,23 +1811,8 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void 
                 cMsSleep = pSink->AIO.cMsMinTypicalInterval;
             }
 
-            fStatusOld = pSink->fStatus;
-
-            Log3Func(("%s: Running async I/O finished (fStatus=%s, cMsSleep=%RU32)\n",
-                      pSink->pszName, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus), cMsSleep));
         }
         RTCritSectLeave(&pSink->CritSect);
-
-        /*
-         * Signal waiters.
-         */
-        if (fDrainingFinished)
-        {
-            Log3Func(("%s: Finished draining\n", pSink->pszName));
-            int rc = RTSemEventSignal(pSink->AIO.hEventDrained);
-            AssertLogRelMsgReturn(RT_SUCCESS(rc), ("%s: RTSemEventSignal(hEventDrained) -> %Rrc\n", pSink->pszName, rc), rc);
-            fDrainingFinished = false;
-        }
 
         /*
          * Now block till we're signalled or
@@ -1901,9 +1821,6 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void 
         {
             int rc = RTSemEventWait(pSink->AIO.hEvent, cMsSleep);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%s: RTSemEventWait -> %Rrc\n", pSink->pszName, rc), rc);
-#ifdef LOG_ENABLED
-            Log3Func(("%s: Got signalled (fStatus=%s)\n", pSink->pszName, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus)));
-#endif
         }
     }
 
@@ -1969,11 +1886,6 @@ int AudioMixerSinkAddUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpdate,
         if (pSink->AIO.hEvent == NIL_RTSEMEVENT)
         {
             rc = RTSemEventCreate(&pSink->AIO.hEvent);
-            AssertRCReturnStmt(rc, RTCritSectLeave(&pSink->CritSect), rc);
-        }
-        if (pSink->AIO.hEventDrained == NIL_RTSEMEVENT)
-        {
-            rc = RTSemEventCreate(&pSink->AIO.hEventDrained);
             AssertRCReturnStmt(rc, RTCritSectLeave(&pSink->CritSect), rc);
         }
         static uint32_t volatile s_idxThread = 0;
@@ -2047,63 +1959,6 @@ int AudioMixerSinkRemoveUpdateJob(PAUDMIXSINK pSink, PFNAUDMIXSINKUPDATE pfnUpda
 
 
 /**
- * Waits for the sink's draining to complete, internal version.
- *
- * @returns VBox status code.
- * @param   pSink       The mixer sink which AIO thread needs waiting on.
- * @param   msTimeout   Timeout (in ms) to use for waiting on draining to be finished.
- *
- * @note    Caller holds the sink's lock.
- */
-static int audioMixerSinkWaitForDrainedLocked(PAUDMIXSINK pSink, RTMSINTERVAL msTimeout)
-{
-    AssertReturn((pSink->fStatus & AUDMIXSINK_STS_DRAINING), VERR_WRONG_ORDER);
-
-    int rc;
-
-    if (pSink->AIO.cUpdateJobs)
-    {
-        rc = RTCritSectLeave(&pSink->CritSect);
-        AssertRCReturn(rc, rc);
-
-        rc = RTSemEventWait(pSink->AIO.hEventDrained, msTimeout);
-
-        int rc2 = RTCritSectEnter(&pSink->CritSect);
-        AssertRCReturn(rc2, rc2);
-
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    return rc;
-}
-
-
-/**
- * Waits for the sink's draining to complete.
- *
- * @returns VBox status code.
- * @param   pSink       The mixer sink which AIO thread needs waiting on.
- * @param   msTimeout   Timeout (in ms) to use for waiting on draining to be finished.
- */
-int AudioMixerSinkWaitForDrained(PAUDMIXSINK pSink, RTMSINTERVAL msTimeout)
-{
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    Assert(pSink->uMagic == AUDMIXSINK_MAGIC);
-
-    int rc = RTCritSectEnter(&pSink->CritSect);
-    AssertRCReturn(rc, rc);
-
-    rc = audioMixerSinkWaitForDrainedLocked(pSink, msTimeout);
-
-    int rc2 = RTCritSectLeave(&pSink->CritSect);
-    AssertRCReturn(rc2, rc2);
-
-    return rc;
-}
-
-
-/**
  * Writes data to a mixer output sink.
  *
  * @param   pSink       The sink to write data to.
@@ -2168,8 +2023,7 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
     Log3Func(("idStream=%u: cbSinkWritable=%#RX32 cbCircBufReadable=%#RX32 -> cbToTransfer=%#RX32 @%#RX64\n",
               idStream, cbSinkWritable, cbCircBufReadable, cbToTransfer, offStream));
     AssertMsg(!(pSink->fStatus & AUDMIXSINK_STS_DRAINING) || cbCircBufReadable == pSink->cbDmaLeftToDrain,
-              ("idStream=%u: fStatus=%#x cbCircBufReadable=%#x cbDmaLeftToDrain=%#x\n",
-               idStream, pSink->fStatus, cbCircBufReadable, pSink->cbDmaLeftToDrain));
+              ("cbCircBufReadable=%#x cbDmaLeftToDrain=%#x\n", cbCircBufReadable, pSink->cbDmaLeftToDrain));
 
     /*
      * Do the pushing.
