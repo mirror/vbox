@@ -223,19 +223,6 @@ public:
     /** Returns existing frame-buffer vector. */
     const QVector<UIFrameBuffer*>& frameBuffers() const { return m_frameBufferVector; }
 
-    /** @name CPU hardware virtualization features for VM.
-     ** @{ */
-    /** Returns whether CPU hardware virtualization extension is enabled. */
-    KVMExecutionEngine getVMExecutionEngine() const { return m_enmVMExecutionEngine; }
-    /** Returns whether nested-paging CPU hardware virtualization extension is enabled. */
-    bool isHWVirtExNestedPagingEnabled() const { return m_fIsHWVirtExNestedPagingEnabled; }
-    /** Returns whether the VM is currently making use of the unrestricted execution feature of VT-x. */
-    bool isHWVirtExUXEnabled() const { return m_fIsHWVirtExUXEnabled; }
-    /** @} */
-
-    /** Returns VM's effective paravirtualization provider. */
-    KParavirtProvider paraVirtProvider() const { return m_paraVirtProvider; }
-
     /** Returns a vector of media attached to the machine. */
     CMediumVector machineMedia() const;
 
@@ -296,8 +283,6 @@ private:
     /* Common helpers: */
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
-    /** Loads VM settings. */
-    void loadVMSettings();
 
     /* Private variables: */
     UIMachine *m_pMachine;
@@ -340,20 +325,6 @@ private:
     ULONG m_ulGuestAdditionsRunLevel;
     bool  m_fIsGuestSupportsGraphics : 1;
     bool  m_fIsGuestSupportsSeamless : 1;
-
-    /** Copy of IMachineDebugger::ExecutionEngine */
-    KVMExecutionEngine m_enmVMExecutionEngine;
-
-    /** @name CPU hardware virtualization features for VM.
-     ** @{ */
-    /** Holds whether nested-paging CPU hardware virtualization extension is enabled. */
-    bool m_fIsHWVirtExNestedPagingEnabled;
-    /** Holds whether the VM is currently making use of the unrestricted execution feature of VT-x. */
-    bool m_fIsHWVirtExUXEnabled;
-    /** @} */
-
-    /** Holds VM's effective paravirtualization provider. */
-    KParavirtProvider m_paraVirtProvider;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UISession_h */

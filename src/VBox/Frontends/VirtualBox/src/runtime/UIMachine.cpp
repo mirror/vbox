@@ -835,6 +835,10 @@ UIMachine::UIMachine()
     , m_fIsMouseCaptured(false)
     , m_fIsMouseIntegrated(true)
     , m_iMouseState(0)
+    , m_enmVMExecutionEngine(KVMExecutionEngine_NotSet)
+    , m_fIsHWVirtExNestedPagingEnabled(false)
+    , m_fIsHWVirtExUXEnabled(false)
+    , m_enmParavirtProvider(KParavirtProvider_None)
     , m_fIsManualOverride(false)
     , m_defaultCloseAction(MachineCloseAction_Invalid)
     , m_restrictedCloseActions(MachineCloseAction_Invalid)
@@ -872,6 +876,7 @@ bool UIMachine::prepare()
         return false;
 
     /* Update stuff which doesn't send events on init: */
+    updateVirtualizationState();
     updateStateAudioActions();
     updateMouseState();
 
@@ -1703,3 +1708,11 @@ bool UIMachine::isPointer1bpp(const uint8_t *pu8XorMask,
     return true;
 }
 #endif /* VBOX_WS_WIN */
+
+void UIMachine::updateVirtualizationState()
+{
+    m_enmVMExecutionEngine = uisession()->debugger().GetExecutionEngine();
+    m_fIsHWVirtExNestedPagingEnabled = uisession()->debugger().GetHWVirtExNestedPagingEnabled();
+    m_fIsHWVirtExUXEnabled = uisession()->debugger().GetHWVirtExUXEnabled();
+    m_enmParavirtProvider = uisession()->machine().GetEffectiveParavirtProvider();
+}

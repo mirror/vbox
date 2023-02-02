@@ -307,6 +307,20 @@ public:
         int mouseState() const { return m_iMouseState; }
     /** @} */
 
+    /** @name Virtualization stuff.
+     ** @{ */
+        /** Returns IMachineDebugger::ExecutionEngine reference. */
+        KVMExecutionEngine vmExecutionEngine() const { return m_enmVMExecutionEngine; }
+
+        /** Returns whether nested-paging CPU hardware virtualization extension is enabled. */
+        bool isHWVirtExNestedPagingEnabled() const { return m_fIsHWVirtExNestedPagingEnabled; }
+        /** Returns whether the VM is currently making use of the unrestricted execution feature of VT-x. */
+        bool isHWVirtExUXEnabled() const { return m_fIsHWVirtExUXEnabled; }
+
+        /** Returns VM's effective paravirtualization provider. */
+        KParavirtProvider paravirtProvider() const { return m_enmParavirtProvider; }
+    /** @} */
+
     /** @name Close stuff.
      * @{ */
         /** Returns whether VM is in 'manual-override' mode.
@@ -543,6 +557,12 @@ private:
 #endif /* VBOX_WS_WIN */
     /** @} */
 
+    /** @name Virtualization stuff.
+     ** @{ */
+        /** Updates virtualization state. */
+        void updateVirtualizationState();
+    /** @} */
+
     /** Holds the static instance. */
     static UIMachine *s_pInstance;
 
@@ -669,6 +689,20 @@ private:
 
         /** Holds the mouse-state. */
         int  m_iMouseState;
+    /** @} */
+
+    /** @name Virtualization stuff.
+     ** @{ */
+        /** Holds the IMachineDebugger::ExecutionEngine reference. */
+        KVMExecutionEngine  m_enmVMExecutionEngine;
+
+        /** Holds whether nested-paging CPU hardware virtualization extension is enabled. */
+        bool  m_fIsHWVirtExNestedPagingEnabled;
+        /** Holds whether the VM is currently making use of the unrestricted execution feature of VT-x. */
+        bool  m_fIsHWVirtExUXEnabled;
+
+        /** Holds the VM's effective paravirtualization provider. */
+        KParavirtProvider  m_enmParavirtProvider;
     /** @} */
 
     /** @name Close stuff.

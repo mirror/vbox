@@ -1101,7 +1101,7 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* VT-x/AMD-V feature: */
-        KVMExecutionEngine enmEngine = m_pSession->getVMExecutionEngine();
+        KVMExecutionEngine enmEngine = m_pMachine->vmExecutionEngine();
         QString strExecutionEngine;
         switch (enmEngine)
         {
@@ -1124,12 +1124,12 @@ private:
         }
 
         /* Nested Paging feature: */
-        const QString strNestedPaging = m_pSession->isHWVirtExNestedPagingEnabled() ?
+        const QString strNestedPaging = m_pMachine->isHWVirtExNestedPagingEnabled() ?
                                         UICommon::tr("Active", "details report (Nested Paging)") :
                                         UICommon::tr("Inactive", "details report (Nested Paging)");
 
         /* Unrestricted Execution feature: */
-        const QString strUnrestrictExec = m_pSession->isHWVirtExUXEnabled() ?
+        const QString strUnrestrictExec = m_pMachine->isHWVirtExUXEnabled() ?
                                           UICommon::tr("Active", "details report (Unrestricted Execution)") :
                                           UICommon::tr("Inactive", "details report (Unrestricted Execution)");
 
@@ -1137,7 +1137,7 @@ private:
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
 
         /* Paravirtualization feature: */
-        const QString strParavirt = gpConverter->toString(m_pSession->paraVirtProvider());
+        const QString strParavirt = gpConverter->toString(m_pMachine->paravirtProvider());
 
         /* Prepare tool-tip: */
         QString strFullData;
