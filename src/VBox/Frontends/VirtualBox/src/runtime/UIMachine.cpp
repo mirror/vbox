@@ -404,6 +404,11 @@ QList<int> UIMachine::listOfVisibleWindows() const
     return visibleWindows;
 }
 
+QSize UIMachine::guestScreenSize(ulong uScreenId) const
+{
+    return uisession()->frameBufferSize(uScreenId);
+}
+
 QSize UIMachine::lastFullScreenSize(ulong uScreenId) const
 {
     /* Make sure index fits the bounds: */

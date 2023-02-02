@@ -255,6 +255,8 @@ public:
         void setFrameBuffer(ulong uScreenId, UIFrameBuffer *pFrameBuffer);
         /** Returns existing frame-buffer vector. */
         const QVector<UIFrameBuffer*> &frameBuffers() const { return m_frameBufferVector; }
+        /** Returns frame-buffer size for screen with index @a uScreenId. */
+        QSize frameBufferSize(ulong uScreenId) const;
     /** @} */
 
     /** @name Close stuff.

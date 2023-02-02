@@ -42,12 +42,10 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UINotificationCenter.h"
-#include "UISession.h"
 #if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
 #elif defined(VBOX_WS_MAC)
-# include "UIFrameBuffer.h"
 # include "VBoxUtils-darwin.h"
 # include "UICocoaApplication.h"
 #endif /* VBOX_WS_MAC */
@@ -383,8 +381,8 @@ void UIMachineWindowFullscreen::placeOnScreen()
         /* If normal geometry is null => use frame-buffer size: */
         if (geo.isNull())
         {
-            const UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(m_uScreenId);
-            geo = QRect(QPoint(0, 0), QSize(pFrameBuffer->width(), pFrameBuffer->height()).boundedTo(workingArea.size()));
+            const QSize guestScreenSize = uimachine()->guestScreenSize(m_uScreenId);
+            geo = QRect(QPoint(0, 0), guestScreenSize.boundedTo(workingArea.size()));
         }
         /* If normal geometry still null => use default size: */
         if (geo.isNull())

@@ -300,6 +300,12 @@ void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer *pFrameBuffer)
         m_frameBufferVector[(int)uScreenId] = pFrameBuffer;
 }
 
+QSize UISession::frameBufferSize(ulong uScreenId) const
+{
+    UIFrameBuffer *pFramebuffer = frameBuffer(uScreenId);
+    return pFramebuffer ? QSize(pFramebuffer->width(), pFramebuffer->height()) : QSize();
+}
+
 bool UISession::prepareToBeSaved()
 {
     return    isPaused()
