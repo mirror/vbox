@@ -34,20 +34,20 @@
 #endif
 
 /* GUI includes: */
-#include "UICommon.h"
-#include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIMachine.h"
-#include "UIMedium.h"
 #include "UIActionPoolRuntime.h"
+#include "UICommon.h"
+#include "UIConsoleEventHandler.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
+#include "UIMedium.h"
 #include "UIMessageCenter.h"
 #include "UIMousePointerShapeData.h"
 #include "UINotificationCenter.h"
-#include "UIConsoleEventHandler.h"
-#include "UIFrameBuffer.h"
+#include "UISession.h"
 #include "UISettingsDialogSpecific.h"
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 # include "UIKeyboardHandler.h"
@@ -245,6 +245,25 @@ WId UISession::mainMachineWindowId() const
     return mainMachineWindow() ? mainMachineWindow()->winId() : 0;
 }
 
+bool UISession::setPause(bool fPause)
+{
+    if (fPause)
+        console().Pause();
+    else
+        console().Resume();
+
+    const bool fOk = console().isOk();
+    if (!fOk)
+    {
+        if (fPause)
+            UINotificationMessage::cannotPauseMachine(console());
+        else
+            UINotificationMessage::cannotResumeMachine(console());
+    }
+
+    return fOk;
+}
+
 bool UISession::guestAdditionsUpgradable()
 {
     if (!machine().isOk())
@@ -268,23 +287,31 @@ bool UISession::guestAdditionsUpgradable()
     return true;
 }
 
-bool UISession::setPause(bool fOn)
+UIFrameBuffer *UISession::frameBuffer(ulong uScreenId) const
 {
-    if (fOn)
-        console().Pause();
-    else
-        console().Resume();
+    Assert(uScreenId < (ulong)m_frameBufferVector.size());
+    return m_frameBufferVector.value((int)uScreenId, 0);
+}
 
-    bool ok = console().isOk();
-    if (!ok)
-    {
-        if (fOn)
-            UINotificationMessage::cannotPauseMachine(console());
-        else
-            UINotificationMessage::cannotResumeMachine(console());
-    }
+void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer *pFrameBuffer)
+{
+    Assert(uScreenId < (ulong)m_frameBufferVector.size());
+    if (uScreenId < (ulong)m_frameBufferVector.size())
+        m_frameBufferVector[(int)uScreenId] = pFrameBuffer;
+}
 
-    return ok;
+bool UISession::prepareToBeSaved()
+{
+    return    isPaused()
+           || (isRunning() && pause());
+}
+
+bool UISession::prepareToBeShutdowned()
+{
+    const bool fValidMode = console().GetGuestEnteredACPIMode();
+    if (!fValidMode)
+        UINotificationMessage::cannotSendACPIToMachine();
+    return fValidMode;
 }
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
@@ -376,21 +403,6 @@ UISession::UISession(UIMachine *pMachine)
 
 UISession::~UISession()
 {
-}
-
-UIMachineLogic *UISession::machineLogic() const
-{
-    return uimachine() ? uimachine()->machineLogic() : 0;
-}
-
-UIMachineWindow *UISession::activeMachineWindow() const
-{
-    return machineLogic() ? machineLogic()->activeMachineWindow() : 0;
-}
-
-QWidget *UISession::mainMachineWindow() const
-{
-    return machineLogic() ? machineLogic()->mainMachineWindow() : 0;
 }
 
 bool UISession::prepare()
@@ -623,6 +635,21 @@ void UISession::cleanupSession()
     }
 }
 
+UIMachineLogic *UISession::machineLogic() const
+{
+    return uimachine() ? uimachine()->machineLogic() : 0;
+}
+
+UIMachineWindow *UISession::activeMachineWindow() const
+{
+    return machineLogic() ? machineLogic()->activeMachineWindow() : 0;
+}
+
+QWidget *UISession::mainMachineWindow() const
+{
+    return machineLogic() ? machineLogic()->mainMachineWindow() : 0;
+}
+
 bool UISession::preprocessInitialization()
 {
 #ifdef VBOX_WITH_NETFLT
@@ -828,33 +855,6 @@ void UISession::recacheMachineMedia()
 
     /* Start media enumeration: */
     uiCommon().enumerateMedia(comMedia);
-}
-
-bool UISession::prepareToBeSaved()
-{
-    return    isPaused()
-           || (isRunning() && pause());
-}
-
-bool UISession::prepareToBeShutdowned()
-{
-    const bool fValidMode = console().GetGuestEnteredACPIMode();
-    if (!fValidMode)
-        UINotificationMessage::cannotSendACPIToMachine();
-    return fValidMode;
-}
-
-UIFrameBuffer* UISession::frameBuffer(ulong uScreenId) const
-{
-    Assert(uScreenId < (ulong)m_frameBufferVector.size());
-    return m_frameBufferVector.value((int)uScreenId, 0);
-}
-
-void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer)
-{
-    Assert(uScreenId < (ulong)m_frameBufferVector.size());
-    if (uScreenId < (ulong)m_frameBufferVector.size())
-        m_frameBufferVector[(int)uScreenId] = pFrameBuffer;
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER

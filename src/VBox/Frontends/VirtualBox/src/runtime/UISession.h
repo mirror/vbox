@@ -32,10 +32,10 @@
 #endif
 
 /* Qt includes: */
-#include <QObject>
 #include <QCursor>
 #include <QEvent>
 #include <QMap>
+#include <QObject>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
@@ -44,14 +44,14 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CSession.h"
-#include "CMachine.h"
 #include "CConsole.h"
 #include "CDisplay.h"
 #include "CGuest.h"
-#include "CMouse.h"
 #include "CKeyboard.h"
+#include "CMachine.h"
 #include "CMachineDebugger.h"
+#include "CMouse.h"
+#include "CSession.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -64,257 +64,353 @@ class UIActionPool;
 class CUSBDevice;
 class CNetworkAdapter;
 class CMediumAttachment;
-#ifdef VBOX_WS_MAC
-class QMenuBar;
-#else /* !VBOX_WS_MAC */
-class QIcon;
-#endif /* !VBOX_WS_MAC */
 
+/** QObject subclass implementing
+  * COM related functionality for Runtime UI. */
 class UISession : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies about additions state change. */
-    void sigAdditionsStateChange();
-    /** Notifies about additions state actually change. */
-    void sigAdditionsStateActualChange();
-    /** Notifies about additions state actually change. */
-    void sigAudioAdapterChange();
-    /** Notifies about clipboard mode change. */
-    void sigClipboardModeChange(KClipboardMode enmMode);
-    /** Notifies about CPU execution cap change. */
-    void sigCPUExecutionCapChange();
-    /** Notifies about DnD mode change. */
-    void sigDnDModeChange(KDnDMode enmMode);
-    /** Notifies about guest monitor change. */
-    void sigGuestMonitorChange(KGuestMonitorChangedEventType enmChangeType, ulong uScreenId, QRect screenGeo);
-    /** Notifies about machine change. */
-    void sigMachineStateChange();
-    /** Notifies about medium change. */
-    void sigMediumChange(const CMediumAttachment &comMediumAttachment);
-    /** Notifies about network adapter change. */
-    void sigNetworkAdapterChange(const CNetworkAdapter &comNetworkAdapter);
-    /** Notifies about recording change. */
-    void sigRecordingChange();
-    /** Notifies about shared folder change. */
-    void sigSharedFolderChange();
-    /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
-    void sigStorageDeviceChange(const CMediumAttachment &comAttachment, bool fRemoved, bool fSilent);
-    /** Handles USB controller change signal. */
-    void sigUSBControllerChange();
-    /** Handles USB device state change signal. */
-    void sigUSBDeviceStateChange(const CUSBDevice &comDevice, bool fAttached, const CVirtualBoxErrorInfo &comError);
-    /** Notifies about VRDE change. */
-    void sigVRDEChange();
+    /** @name COM events stuff.
+     ** @{ */
+        /** Notifies about additions state change. */
+        void sigAdditionsStateChange();
+        /** Notifies about additions state actually change. */
+        void sigAdditionsStateActualChange();
+        /** Notifies about additions state actually change. */
+        void sigAudioAdapterChange();
+        /** Notifies about clipboard mode change. */
+        void sigClipboardModeChange(KClipboardMode enmMode);
+        /** Notifies about CPU execution cap change. */
+        void sigCPUExecutionCapChange();
+        /** Notifies about DnD mode change. */
+        void sigDnDModeChange(KDnDMode enmMode);
+        /** Notifies about guest monitor change. */
+        void sigGuestMonitorChange(KGuestMonitorChangedEventType enmChangeType, ulong uScreenId, QRect screenGeo);
+        /** Notifies about machine change. */
+        void sigMachineStateChange();
+        /** Notifies about medium change. */
+        void sigMediumChange(const CMediumAttachment &comMediumAttachment);
+        /** Notifies about network adapter change. */
+        void sigNetworkAdapterChange(const CNetworkAdapter &comNetworkAdapter);
+        /** Notifies about recording change. */
+        void sigRecordingChange();
+        /** Notifies about shared folder change. */
+        void sigSharedFolderChange();
+        /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
+        void sigStorageDeviceChange(const CMediumAttachment &comAttachment, bool fRemoved, bool fSilent);
+        /** Handles USB controller change signal. */
+        void sigUSBControllerChange();
+        /** Handles USB device state change signal. */
+        void sigUSBDeviceStateChange(const CUSBDevice &comDevice, bool fAttached, const CVirtualBoxErrorInfo &comError);
+        /** Notifies about VRDE change. */
+        void sigVRDEChange();
 
-    /** Notifies about runtime error happened. */
-    void sigRuntimeError(bool fFatal, const QString &strErrorId, const QString &strMessage);
+        /** Notifies about runtime error happened. */
+        void sigRuntimeError(bool fFatal, const QString &strErrorId, const QString &strMessage);
 
 #ifdef VBOX_WS_MAC
-    /** Notifies about VM window should be shown. */
-    void sigShowWindows();
+        /** Notifies about VM window should be shown. */
+        void sigShowWindows();
 #endif
+    /** @} */
 
-    /** Notifies about keyboard LEDs change. */
-    void sigKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Notifies about keyboard LEDs change. */
+        void sigKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    /** @} */
 
-    /** Notifies listeners about mouse pointer shape change. */
-    void sigMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
-    /** Notifies listeners about mouse capability change. */
-    void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
-                                  bool fSupportsTouchScreen, bool fSupportsTouchPad,
-                                  bool fNeedsHostCursor);
-    /** Notifies listeners about cursor position change. */
-    void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
+    /** @name Mouse stuff.
+     ** @{ */
+        /** Notifies listeners about mouse pointer shape change. */
+        void sigMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
+        /** Notifies listeners about mouse capability change. */
+        void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative,
+                                      bool fSupportsTouchScreen, bool fSupportsTouchPad,
+                                      bool fNeedsHostCursor);
+        /** Notifies listeners about cursor position change. */
+        void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
+    /** @} */
 
-    /** Notifies about frame-buffer resize. */
-    void sigFrameBufferResize();
+    /** @name Graphics stuff.
+     ** @{ */
+        /** Notifies about frame-buffer resize. */
+        void sigFrameBufferResize();
+    /** @} */
 
 public:
 
-    /** Factory constructor. */
+    /** Constructs session UI passing @a pMachine to the constructor.
+      * @param  pSession  Brings the pointer to the session UI being constructed.
+      * @param  pMachine  Brings the machine UI reference. */
     static bool create(UISession *&pSession, UIMachine *pMachine);
-    /** Factory destructor. */
+    /** Destructs session UI.
+      * @param  pSession  Brings the pointer to the session UI being destructed. */
     static void destroy(UISession *&pSession);
 
-    /* API: Runtime UI stuff: */
-    bool initialize();
-    /** Powers VM up. */
-    bool powerUp();
+    /** @name General stuff.
+     ** @{ */
+        /** Performs session UI intialization. */
+        bool initialize();
+        /** Powers VM up. */
+        bool powerUp();
+    /** @} */
 
-    /** Returns the session instance. */
-    CSession &session() { return m_session; }
-    /** Returns the session's machine instance. */
-    CMachine &machine() { return m_machine; }
-    /** Returns the session's console instance. */
-    CConsole &console() { return m_console; }
-    /** Returns the console's display instance. */
-    CDisplay &display() { return m_display; }
-    /** Returns the console's guest instance. */
-    CGuest &guest() { return m_guest; }
-    /** Returns the console's mouse instance. */
-    CMouse &mouse() { return m_mouse; }
-    /** Returns the console's keyboard instance. */
-    CKeyboard &keyboard() { return m_keyboard; }
-    /** Returns the console's debugger instance. */
-    CMachineDebugger &debugger() { return m_debugger; }
+    /** @name COM stuff.
+     ** @{ */
+        /** Returns the session instance. */
+        CSession &session() { return m_session; }
+        /** Returns the session's machine instance. */
+        CMachine &machine() { return m_machine; }
+        /** Returns the session's console instance. */
+        CConsole &console() { return m_console; }
+        /** Returns the console's display instance. */
+        CDisplay &display() { return m_display; }
+        /** Returns the console's guest instance. */
+        CGuest &guest() { return m_guest; }
+        /** Returns the console's mouse instance. */
+        CMouse &mouse() { return m_mouse; }
+        /** Returns the console's keyboard instance. */
+        CKeyboard &keyboard() { return m_keyboard; }
+        /** Returns the console's debugger instance. */
+        CMachineDebugger &debugger() { return m_debugger; }
+    /** @} */
 
-    /** Returns the machine name. */
-    QString machineName() const { return m_strMachineName; }
+    /** @name General stuff.
+     ** @{ */
+        /** Returns the machine name. */
+        QString machineName() const { return m_strMachineName; }
 
-    /** Returns main machine-widget id. */
-    WId mainMachineWindowId() const;
+        /** Returns main machine-widget id. */
+        WId mainMachineWindowId() const;
+    /** @} */
 
-    /** Returns previous machine state. */
-    KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
-    /** Returns machine state. */
-    KMachineState machineState() const { return m_machineState; }
+    /** @name Machine-state stuff.
+     ** @{ */
+        /** Returns previous machine state. */
+        KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
+        /** Returns machine state. */
+        KMachineState machineState() const { return m_machineState; }
 
-    bool isSaved() const { return machineState() == KMachineState_Saved ||
-                                  machineState() == KMachineState_AbortedSaved; }
-    bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
-                                      machineState() == KMachineState_Saved ||
-                                      machineState() == KMachineState_Teleported ||
-                                      machineState() == KMachineState_Aborted ||
-                                      machineState() == KMachineState_AbortedSaved; }
-    bool isPaused() const { return machineState() == KMachineState_Paused ||
-                                   machineState() == KMachineState_TeleportingPausedVM; }
-    bool isRunning() const { return machineState() == KMachineState_Running ||
-                                    machineState() == KMachineState_Teleporting ||
-                                    machineState() == KMachineState_LiveSnapshotting; }
-    bool isStuck() const { return machineState() == KMachineState_Stuck; }
-    bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
-                                    machineStatePrevious() == KMachineState_TeleportingPausedVM; }
-    /** Returns whether guest-screen is undrawable.
-     *  @todo: extend this method to all the states when guest-screen is undrawable. */
-    bool isGuestScreenUnDrawable() const { return machineState() == KMachineState_Stopping ||
-                                                  machineState() == KMachineState_Saving; }
+        /** Resets previous state to be the same as current one. */
+        void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
 
+        /** Returns whether VM is in one of saved states. */
+        bool isSaved() const { return    machineState() == KMachineState_Saved
+                                      || machineState() == KMachineState_AbortedSaved; }
+        /** Returns whether VM is in one of turned off states. */
+        bool isTurnedOff() const { return    machineState() == KMachineState_PoweredOff
+                                          || machineState() == KMachineState_Saved
+                                          || machineState() == KMachineState_Teleported
+                                          || machineState() == KMachineState_Aborted
+                                          || machineState() == KMachineState_AbortedSaved; }
+        /** Returns whether VM is in one of paused states. */
+        bool isPaused() const { return    machineState() == KMachineState_Paused
+                                       || machineState() == KMachineState_TeleportingPausedVM; }
+        /** Returns whether VM was in one of paused states. */
+        bool wasPaused() const { return    machineStatePrevious() == KMachineState_Paused
+                                        || machineStatePrevious() == KMachineState_TeleportingPausedVM; }
+        /** Returns whether VM is in one of running states. */
+        bool isRunning() const { return    machineState() == KMachineState_Running
+                                        || machineState() == KMachineState_Teleporting
+                                        || machineState() == KMachineState_LiveSnapshotting; }
+        /** Returns whether VM is in one of stuck states. */
+        bool isStuck() const { return machineState() == KMachineState_Stuck; }
+        /** Returns whether VM is one of states where guest-screen is undrawable. */
+        bool isGuestScreenUnDrawable() const { return    machineState() == KMachineState_Stopping
+                                                      || machineState() == KMachineState_Saving; }
 
-    /* Guest additions state getters: */
-    bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > KAdditionsRunLevelType_None); }
-    bool isGuestSupportsGraphics() const { return m_fIsGuestSupportsGraphics; }
-    /* The double check below is correct, even though it is an implementation
-     * detail of the Additions which the GUI should not ideally have to know. */
-    bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
-    /** Returns whether GA can be upgraded. */
-    bool guestAdditionsUpgradable();
+        /** Performes VM pausing. */
+        bool pause() { return setPause(true); }
+        /** Performes VM resuming. */
+        bool unpause() { return setPause(false); }
+        /** Performes VM pausing/resuming depending on @a fPause state. */
+        bool setPause(bool fPause);
+    /** @} */
 
-    /* Common setters: */
-    bool pause() { return setPause(true); }
-    bool unpause() { return setPause(false); }
-    bool setPause(bool fOn);
-    void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
+    /** @name Guest additions stuff.
+     ** @{ */
+        /** Returns whether guest additions is active. */
+        bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > KAdditionsRunLevelType_None); }
+        /** Returns whether guest additions supports graphics. */
+        bool isGuestSupportsGraphics() const { return m_fIsGuestSupportsGraphics; }
+        /** Returns whether guest additions supports seamless.
+          * @note The double check below is correct, even though it is an implementation
+          *       detail of the Additions which the GUI should not ideally have to know. */
+        bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
+        /** Returns whether GA can be upgraded. */
+        bool guestAdditionsUpgradable();
+    /** @} */
 
-    /* Returns existing framebuffer for the given screen-number;
-     * Returns 0 (asserts) if screen-number attribute is out of bounds: */
-    UIFrameBuffer* frameBuffer(ulong uScreenId) const;
-    /* Sets framebuffer for the given screen-number;
-     * Ignores (asserts) if screen-number attribute is out of bounds: */
-    void setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer);
-    /** Returns existing frame-buffer vector. */
-    const QVector<UIFrameBuffer*>& frameBuffers() const { return m_frameBufferVector; }
+    /** @name Graphics stuff.
+     ** @{ */
+        /** Returns existing framebuffer for the screen with given @a uScreenId;
+          * @returns 0 (asserts) if uScreenId attribute is out of bounds. */
+        UIFrameBuffer *frameBuffer(ulong uScreenId) const;
+        /** Sets framebuffer for the screen with given @a uScreenId;
+          * Ignores (asserts) if screen-number attribute is out of bounds. */
+        void setFrameBuffer(ulong uScreenId, UIFrameBuffer *pFrameBuffer);
+        /** Returns existing frame-buffer vector. */
+        const QVector<UIFrameBuffer*> &frameBuffers() const { return m_frameBufferVector; }
+    /** @} */
 
-    /** Prepares VM to be saved. */
-    bool prepareToBeSaved();
-    /** Returns whether VM can be shutdowned. */
-    bool prepareToBeShutdowned();
+    /** @name Close stuff.
+     ** @{ */
+        /** Prepares VM to be saved. */
+        bool prepareToBeSaved();
+        /** Returns whether VM can be shutdowned. */
+        bool prepareToBeShutdowned();
+    /** @} */
 
 public slots:
 
-    /** Handles request to install guest additions image.
-      * @param  strSource  Brings the source of image being installed. */
-    void sltInstallGuestAdditionsFrom(const QString &strSource);
-    /** Mounts DVD adhoc.
-      * @param  strSource  Brings the source of image being mounted. */
-    void sltMountDVDAdHoc(const QString &strSource);
+    /** @name Guest additions stuff.
+     ** @{ */
+        /** Handles request to install guest additions image.
+          * @param  strSource  Brings the source of image being installed. */
+        void sltInstallGuestAdditionsFrom(const QString &strSource);
+        /** Mounts DVD adhoc.
+          * @param  strSource  Brings the source of image being mounted. */
+        void sltMountDVDAdHoc(const QString &strSource);
+    /** @} */
 
 private slots:
 
-    /** Detaches COM. */
-    void sltDetachCOM();
+    /** @name COM stuff.
+     ** @{ */
+        /** Detaches COM. */
+        void sltDetachCOM();
+    /** @} */
 
-    /* Console events slots */
-    void sltStateChange(KMachineState state);
-    void sltAdditionsChange();
+    /** @name Machine-state stuff.
+     ** @{ */
+        /** Handles event about VM @a enmState change. */
+        void sltStateChange(KMachineState enmState);
+    /** @} */
+
+    /** @name Guest additions stuff.
+     ** @{ */
+        /** Handles event about guest additions change. */
+        void sltAdditionsChange();
+    /** @} */
 
 private:
 
-    /** Constructor. */
+    /** Constructs session UI passing @a pMachine to the base-class.
+      * @param  pMachine  Brings the machine UI reference. */
     UISession(UIMachine *pMachine);
-    /** Destructor. */
-    ~UISession();
+    /** Destructs session UI. */
+    virtual ~UISession() RT_OVERRIDE;
 
-    /** Returns machine UI reference. */
-    UIMachine *uimachine() const { return m_pMachine; }
-    /** Returns machine-logic reference. */
-    UIMachineLogic *machineLogic() const;
-    /** Returns main machine-window reference. */
-    UIMachineWindow *activeMachineWindow() const;
-    /** Returns main machine-widget reference. */
-    QWidget *mainMachineWindow() const;
+    /** @name Prepare/cleanup cascade.
+     ** @{ */
+        /** Prepares everything. */
+        bool prepare();
+        /** Prepares COM session. */
+        bool prepareSession();
+        /** Prepares notification-center. */
+        void prepareNotificationCenter();
+        /** Prepares console event-handler. */
+        void prepareConsoleEventHandlers();
+        /** Prepares frame-buffers. */
+        void prepareFramebuffers();
+        /** Prepares connections. */
+        void prepareConnections();
+        /** Prepares signal handling. */
+        void prepareSignalHandling();
 
-    /* Prepare helpers: */
-    bool prepare();
-    bool prepareSession();
-    void prepareNotificationCenter();
-    void prepareConsoleEventHandlers();
-    void prepareFramebuffers();
-    void prepareConnections();
-    void prepareSignalHandling();
+        /** Cleanups frame-buffers. */
+        void cleanupFramebuffers();
+        /** Cleanups console event-handler. */
+        void cleanupConsoleEventHandlers();
+        /** Cleanups notification-center. */
+        void cleanupNotificationCenter();
+        /** Cleanups COM session. */
+        void cleanupSession();
+    /** @} */
 
-    /* Cleanup helpers: */
-    void cleanupFramebuffers();
-    void cleanupConsoleEventHandlers();
-    void cleanupNotificationCenter();
-    void cleanupSession();
+    /** @name General stuff.
+     ** @{ */
+        /** Returns the machine UI reference. */
+        UIMachine *uimachine() const { return m_pMachine; }
+        /** Returns the machine-logic reference. */
+        UIMachineLogic *machineLogic() const;
+        /** Returns main machine-window reference. */
+        UIMachineWindow *activeMachineWindow() const;
+        /** Returns main machine-widget reference. */
+        QWidget *mainMachineWindow() const;
 
-    /* Common helpers: */
-    bool preprocessInitialization();
-    bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
+        /** Preprocess initialization. */
+        bool preprocessInitialization();
 
-    /** Recaches media attached to the machine. */
-    void recacheMachineMedia();
+        /** Mounts medium adhoc.
+          * @param  enmDeviceType  Brings device type.
+          * @param  enmMediumType  Brings medium type.
+          * @param  strMediumName  Brings medium name. */
+        bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
 
-    /* Private variables: */
-    UIMachine *m_pMachine;
+        /** Recaches media attached to the machine. */
+        void recacheMachineMedia();
+    /** @} */
 
-    /** Holds the CConsole event handler instance. */
-    UIConsoleEventHandler *m_pConsoleEventhandler;
+    /** @name General stuff.
+     ** @{ */
+        /** Holds the machine UI reference. */
+        UIMachine *m_pMachine;
 
-    /** Holds the session instance. */
-    CSession m_session;
-    /** Holds the session's machine instance. */
-    CMachine m_machine;
-    /** Holds the session's console instance. */
-    CConsole m_console;
-    /** Holds the console's display instance. */
-    CDisplay m_display;
-    /** Holds the console's guest instance. */
-    CGuest m_guest;
-    /** Holds the console's mouse instance. */
-    CMouse m_mouse;
-    /** Holds the console's keyboard instance. */
-    CKeyboard m_keyboard;
-    /** Holds the console's debugger instance. */
-    CMachineDebugger m_debugger;
+        /** Holds the machine name. */
+        QString  m_strMachineName;
+    /** @} */
 
-    /** Holds the machine name. */
-    QString m_strMachineName;
-    /** Holds the previous machine state. */
-    KMachineState m_machineStatePrevious;
-    /** Holds the actual machine state. */
-    KMachineState m_machineState;
+    /** @name COM stuff.
+     ** @{ */
+        /** Holds the CConsole event handler instance. */
+        UIConsoleEventHandler *m_pConsoleEventhandler;
 
-    /* Frame-buffers vector: */
-    QVector<UIFrameBuffer*> m_frameBufferVector;
+        /** Holds the session instance. */
+        CSession         m_session;
+        /** Holds the session's machine instance. */
+        CMachine         m_machine;
+        /** Holds the session's console instance. */
+        CConsole         m_console;
+        /** Holds the console's display instance. */
+        CDisplay         m_display;
+        /** Holds the console's guest instance. */
+        CGuest           m_guest;
+        /** Holds the console's mouse instance. */
+        CMouse           m_mouse;
+        /** Holds the console's keyboard instance. */
+        CKeyboard        m_keyboard;
+        /** Holds the console's debugger instance. */
+        CMachineDebugger m_debugger;
+    /** @} */
 
-    /* Guest additions flags: */
-    ULONG m_ulGuestAdditionsRunLevel;
-    bool  m_fIsGuestSupportsGraphics : 1;
-    bool  m_fIsGuestSupportsSeamless : 1;
+    /** @name Machine-state stuff.
+     ** @{ */
+        /** Holds the previous machine state. */
+        KMachineState  m_machineStatePrevious;
+        /** Holds the actual machine state. */
+        KMachineState  m_machineState;
+    /** @} */
+
+    /** @name Guest additions stuff.
+     ** @{ */
+        /** Holds the guest-additions run level. */
+        ULONG  m_ulGuestAdditionsRunLevel;
+        /** Holds whether guest-additions supports graphics. */
+        bool   m_fIsGuestSupportsGraphics;
+        /** Holds whether guest-additions supports seamless. */
+        bool   m_fIsGuestSupportsSeamless;
+    /** @} */
+
+    /** @name Machine-state stuff.
+     ** @{ */
+        /** Holds the frame-buffer vector. */
+        QVector<UIFrameBuffer*>  m_frameBufferVector;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UISession_h */
