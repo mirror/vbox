@@ -861,10 +861,10 @@ bool UIMachine::prepare()
     AssertPtrReturn(uisession(), false);
 
     /* Prepare stuff: */
+    prepareBranding();
     prepareSessionConnections();
     prepareActions();
     prepareScreens();
-    prepareBranding();
     prepareKeyboard();
     prepareClose();
     prepareMachineLogic();
@@ -884,6 +884,26 @@ bool UIMachine::prepare()
 
     /* True by default: */
     return true;
+}
+
+void UIMachine::prepareBranding()
+{
+    /* Acquire user machine-window icon: */
+    QIcon icon = generalIconPool().userMachineIcon(uisession()->machine());
+    /* Use the OS type icon if user one was not set: */
+    if (icon.isNull())
+        icon = generalIconPool().guestOSTypeIcon(uisession()->machine().GetOSTypeId());
+    /* Use the default icon if nothing else works: */
+    if (icon.isNull())
+        icon = QIcon(":/VirtualBox_48px.png");
+    /* Store the icon dynamically: */
+    m_pMachineWindowIcon = new QIcon(icon);
+
+#ifndef VBOX_WS_MAC
+    /* Load user's machine-window name postfix: */
+    const QUuid uMachineID = uiCommon().managedVMUuid();
+    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIMachine::prepareSessionConnections()
@@ -939,6 +959,82 @@ void UIMachine::prepareSessionConnections()
             this, &UIMachine::sltMouseCapabilityChange);
     connect(uisession(), &UISession::sigCursorPositionChange,
             this, &UIMachine::sltCursorPositionChange);
+}
+
+void UIMachine::prepareActions()
+{
+    /* Create action-pool: */
+    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+    if (actionPool())
+    {
+        /* Make sure action-pool knows guest-screen count: */
+        actionPool()->toRuntime()->setGuestScreenCount(uisession()->frameBuffers().size());
+        /* Update action restrictions: */
+        updateActionRestrictions();
+
+#ifdef VBOX_WS_MAC
+        /* Create Mac OS X menu-bar: */
+        m_pMenuBar = new QMenuBar;
+        if (m_pMenuBar)
+        {
+            /* Configure Mac OS X menu-bar: */
+            connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
+                    this, &UIMachine::sltHandleMenuBarConfigurationChange);
+            /* Update Mac OS X menu-bar: */
+            updateMenu();
+        }
+#endif /* VBOX_WS_MAC */
+
+        /* Get machine ID: */
+        const QUuid uMachineID = uiCommon().managedVMUuid();
+        Q_UNUSED(uMachineID);
+
+#ifdef VBOX_WS_MAC
+        /* User-element (Menu-bar and Dock) options: */
+        {
+            const bool fDisabled = gEDataManager->guiFeatureEnabled(GUIFeatureType_NoUserElements);
+            if (fDisabled)
+                UICocoaApplication::instance()->hideUserElements();
+        }
+#else /* !VBOX_WS_MAC */
+        /* Menu-bar options: */
+        {
+            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoMenuBar);
+            const bool fEnabledForMachine = gEDataManager->menuBarEnabled(uMachineID);
+            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->blockSignals(true);
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setChecked(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->blockSignals(false);
+        }
+#endif /* !VBOX_WS_MAC */
+
+        /* View options: */
+        const bool fGuestScreenAutoresize = gEDataManager->guestScreenAutoResizeEnabled(uMachineID);
+        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->blockSignals(true);
+        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setChecked(fGuestScreenAutoresize);
+        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->blockSignals(false);
+
+        /* Input options: */
+        const bool fMouseIntegrated = isMouseIntegrated(); // no e-data for now ..
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->blockSignals(true);
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->setChecked(fMouseIntegrated);
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->blockSignals(false);
+
+        /* Device options: */
+        actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(false);
+
+        /* Status-bar options: */
+        {
+            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoStatusBar);
+            const bool fEnabledForMachine = gEDataManager->statusBarEnabled(uMachineID);
+            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(true);
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setChecked(fEnabled);
+            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(false);
+        }
+    }
 }
 
 void UIMachine::prepareScreens()
@@ -1030,102 +1126,6 @@ void UIMachine::prepareScreens()
         actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
 }
 
-void UIMachine::prepareBranding()
-{
-    /* Acquire user machine-window icon: */
-    QIcon icon = generalIconPool().userMachineIcon(uisession()->machine());
-    /* Use the OS type icon if user one was not set: */
-    if (icon.isNull())
-        icon = generalIconPool().guestOSTypeIcon(uisession()->machine().GetOSTypeId());
-    /* Use the default icon if nothing else works: */
-    if (icon.isNull())
-        icon = QIcon(":/VirtualBox_48px.png");
-    /* Store the icon dynamically: */
-    m_pMachineWindowIcon = new QIcon(icon);
-
-#ifndef VBOX_WS_MAC
-    /* Load user's machine-window name postfix: */
-    const QUuid uMachineID = uiCommon().managedVMUuid();
-    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
-#endif /* !VBOX_WS_MAC */
-}
-
-void UIMachine::prepareActions()
-{
-    /* Create action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
-    if (actionPool())
-    {
-        /* Make sure action-pool knows guest-screen count: */
-        actionPool()->toRuntime()->setGuestScreenCount(uisession()->frameBuffers().size());
-        /* Update action restrictions: */
-        updateActionRestrictions();
-
-#ifdef VBOX_WS_MAC
-        /* Create Mac OS X menu-bar: */
-        m_pMenuBar = new QMenuBar;
-        if (m_pMenuBar)
-        {
-            /* Configure Mac OS X menu-bar: */
-            connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
-                    this, &UIMachine::sltHandleMenuBarConfigurationChange);
-            /* Update Mac OS X menu-bar: */
-            updateMenu();
-        }
-#endif /* VBOX_WS_MAC */
-
-        /* Get machine ID: */
-        const QUuid uMachineID = uiCommon().managedVMUuid();
-        Q_UNUSED(uMachineID);
-
-#ifdef VBOX_WS_MAC
-        /* User-element (Menu-bar and Dock) options: */
-        {
-            const bool fDisabled = gEDataManager->guiFeatureEnabled(GUIFeatureType_NoUserElements);
-            if (fDisabled)
-                UICocoaApplication::instance()->hideUserElements();
-        }
-#else /* !VBOX_WS_MAC */
-        /* Menu-bar options: */
-        {
-            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoMenuBar);
-            const bool fEnabledForMachine = gEDataManager->menuBarEnabled(uMachineID);
-            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
-            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(fEnabled);
-            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->blockSignals(true);
-            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setChecked(fEnabled);
-            actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->blockSignals(false);
-        }
-#endif /* !VBOX_WS_MAC */
-
-        /* View options: */
-        const bool fGuestScreenAutoresize = gEDataManager->guestScreenAutoResizeEnabled(uMachineID);
-        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->blockSignals(true);
-        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setChecked(fGuestScreenAutoresize);
-        actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->blockSignals(false);
-
-        /* Input options: */
-        const bool fMouseIntegrated = isMouseIntegrated(); // no e-data for now ..
-        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->blockSignals(true);
-        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->setChecked(fMouseIntegrated);
-        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->blockSignals(false);
-
-        /* Device options: */
-        actionPool()->action(UIActionIndexRT_M_Devices_S_UpgradeGuestAdditions)->setEnabled(false);
-
-        /* Status-bar options: */
-        {
-            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoStatusBar);
-            const bool fEnabledForMachine = gEDataManager->statusBarEnabled(uMachineID);
-            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
-            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(fEnabled);
-            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(true);
-            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setChecked(fEnabled);
-            actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->blockSignals(false);
-        }
-    }
-}
-
 void UIMachine::prepareKeyboard()
 {
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
@@ -1187,6 +1187,14 @@ void UIMachine::cleanupMachineLogic()
     }
 }
 
+void UIMachine::cleanupScreens()
+{
+#ifdef VBOX_WS_MAC
+    /* Remove display reconfiguration callback: */
+    CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
+#endif /* VBOX_WS_MAC */
+}
+
 void UIMachine::cleanupActions()
 {
 #ifdef VBOX_WS_MAC
@@ -1207,14 +1215,6 @@ void UIMachine::cleanupBranding()
     m_pMachineWindowIcon = 0;
 }
 
-void UIMachine::cleanupScreens()
-{
-#ifdef VBOX_WS_MAC
-    /* Remove display reconfiguration callback: */
-    CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
-#endif /* VBOX_WS_MAC */
-}
-
 void UIMachine::cleanupSession()
 {
     /* Destroy session UI if exists: */
@@ -1229,9 +1229,9 @@ void UIMachine::cleanup()
 
     /* Cleanup stuff: */
     cleanupMachineLogic();
-    cleanupBranding();
     cleanupScreens();
     cleanupActions();
+    cleanupBranding();
 
     /* Cleanup session UI: */
     cleanupSession();

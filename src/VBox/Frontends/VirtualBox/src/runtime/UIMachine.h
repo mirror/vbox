@@ -488,14 +488,14 @@ private:
 
     /** Prepare routine. */
     bool prepare();
-    /** Prepare routine: Session connection stuff. */
-    void prepareSessionConnections();
-    /** Prepare routine: Screens stuff. */
-    void prepareScreens();
     /** Prepare routine: Branding. */
     void prepareBranding();
+    /** Prepare routine: Session connection stuff. */
+    void prepareSessionConnections();
     /** Prepare routine: Actions stuff. */
     void prepareActions();
+    /** Prepare routine: Screens stuff. */
+    void prepareScreens();
     /** Prepare routine: Keyboard stuff. */
     void prepareKeyboard();
     /** Prepare routine: Close stuff. */
@@ -505,12 +505,12 @@ private:
 
     /** Cleanup routine: Machine-logic stuff. */
     void cleanupMachineLogic();
+    /** Cleanup routine: Screens stuff. */
+    void cleanupScreens();
     /** Cleanup routine: Actions stuff. */
     void cleanupActions();
     /** Cleanup routine: Branding. */
     void cleanupBranding();
-    /** Cleanup routine: Screens stuff. */
-    void cleanupScreens();
     /** Cleanup routine: Session stuff. */
     void cleanupSession();
     /** Cleanup routine. */

@@ -125,7 +125,7 @@ bool UISession::initialize()
     if (gEDataManager->autoCaptureEnabled())
         UINotificationMessage::remindAboutAutoCapture();
 
-    m_machineState = machine().GetState();
+    m_enmMachineState = machine().GetState();
 
     /* Apply debug settings from the command line. */
     if (!debugger().isNull() && debugger().isOk())
@@ -341,14 +341,14 @@ void UISession::sltDetachCOM()
     cleanupSession();
 }
 
-void UISession::sltStateChange(KMachineState state)
+void UISession::sltStateChange(KMachineState enmState)
 {
     /* Check if something had changed: */
-    if (m_machineState != state)
+    if (m_enmMachineState != enmState)
     {
         /* Store new data: */
-        m_machineStatePrevious = m_machineState;
-        m_machineState = state;
+        m_enmMachineStatePrevious = m_enmMachineState;
+        m_enmMachineState = enmState;
 
         /* Notify listeners about machine state changed: */
         emit sigMachineStateChange();
@@ -392,8 +392,8 @@ UISession::UISession(UIMachine *pMachine)
     , m_pMachine(pMachine)
     , m_pConsoleEventhandler(0)
     /* Common variables: */
-    , m_machineStatePrevious(KMachineState_Null)
-    , m_machineState(KMachineState_Null)
+    , m_enmMachineStatePrevious(KMachineState_Null)
+    , m_enmMachineState(KMachineState_Null)
     /* Guest additions flags: */
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
@@ -429,53 +429,53 @@ bool UISession::prepare()
 bool UISession::prepareSession()
 {
     /* Open session: */
-    m_session = uiCommon().openSession(uiCommon().managedVMUuid(),
-                                         uiCommon().isSeparateProcess()
-                                       ? KLockType_Shared
-                                       : KLockType_VM);
-    if (m_session.isNull())
+    m_comSession = uiCommon().openSession(uiCommon().managedVMUuid(),
+                                            uiCommon().isSeparateProcess()
+                                          ? KLockType_Shared
+                                          : KLockType_VM);
+    if (m_comSession.isNull())
         return false;
 
     /* Get machine: */
-    m_machine = m_session.GetMachine();
-    if (m_machine.isNull())
+    m_comMachine = m_comSession.GetMachine();
+    if (m_comMachine.isNull())
         return false;
 
     /* Get console: */
-    m_console = m_session.GetConsole();
-    if (m_console.isNull())
+    m_comConsole = m_comSession.GetConsole();
+    if (m_comConsole.isNull())
         return false;
 
     /* Get display: */
-    m_display = m_console.GetDisplay();
-    if (m_display.isNull())
+    m_comDisplay = m_comConsole.GetDisplay();
+    if (m_comDisplay.isNull())
         return false;
 
     /* Get guest: */
-    m_guest = m_console.GetGuest();
-    if (m_guest.isNull())
+    m_comGuest = m_comConsole.GetGuest();
+    if (m_comGuest.isNull())
         return false;
 
     /* Get mouse: */
-    m_mouse = m_console.GetMouse();
-    if (m_mouse.isNull())
+    m_comMouse = m_comConsole.GetMouse();
+    if (m_comMouse.isNull())
         return false;
 
     /* Get keyboard: */
-    m_keyboard = m_console.GetKeyboard();
-    if (m_keyboard.isNull())
+    m_comKeyboard = m_comConsole.GetKeyboard();
+    if (m_comKeyboard.isNull())
         return false;
 
     /* Get debugger: */
-    m_debugger = m_console.GetDebugger();
-    if (m_debugger.isNull())
+    m_comDebugger = m_comConsole.GetDebugger();
+    if (m_comDebugger.isNull())
         return false;
 
     /* Update machine-name: */
     m_strMachineName = machine().GetName();
 
     /* Update machine-state: */
-    m_machineState = machine().GetState();
+    m_enmMachineState = machine().GetState();
 
     /* True by default: */
     return true;
@@ -600,38 +600,38 @@ void UISession::cleanupNotificationCenter()
 void UISession::cleanupSession()
 {
     /* Detach debugger: */
-    if (!m_debugger.isNull())
-        m_debugger.detach();
+    if (!m_comDebugger.isNull())
+        m_comDebugger.detach();
 
     /* Detach keyboard: */
-    if (!m_keyboard.isNull())
-        m_keyboard.detach();
+    if (!m_comKeyboard.isNull())
+        m_comKeyboard.detach();
 
     /* Detach mouse: */
-    if (!m_mouse.isNull())
-        m_mouse.detach();
+    if (!m_comMouse.isNull())
+        m_comMouse.detach();
 
     /* Detach guest: */
-    if (!m_guest.isNull())
-        m_guest.detach();
+    if (!m_comGuest.isNull())
+        m_comGuest.detach();
 
     /* Detach display: */
-    if (!m_display.isNull())
-        m_display.detach();
+    if (!m_comDisplay.isNull())
+        m_comDisplay.detach();
 
     /* Detach console: */
-    if (!m_console.isNull())
-        m_console.detach();
+    if (!m_comConsole.isNull())
+        m_comConsole.detach();
 
     /* Detach machine: */
-    if (!m_machine.isNull())
-        m_machine.detach();
+    if (!m_comMachine.isNull())
+        m_comMachine.detach();
 
     /* Close session: */
-    if (!m_session.isNull() && uiCommon().isVBoxSVCAvailable())
+    if (!m_comSession.isNull() && uiCommon().isVBoxSVCAvailable())
     {
-        m_session.UnlockMachine();
-        m_session.detach();
+        m_comSession.UnlockMachine();
+        m_comSession.detach();
     }
 }
 

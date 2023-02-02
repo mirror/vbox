@@ -162,21 +162,21 @@ public:
     /** @name COM stuff.
      ** @{ */
         /** Returns the session instance. */
-        CSession &session() { return m_session; }
+        CSession &session() { return m_comSession; }
         /** Returns the session's machine instance. */
-        CMachine &machine() { return m_machine; }
+        CMachine &machine() { return m_comMachine; }
         /** Returns the session's console instance. */
-        CConsole &console() { return m_console; }
+        CConsole &console() { return m_comConsole; }
         /** Returns the console's display instance. */
-        CDisplay &display() { return m_display; }
+        CDisplay &display() { return m_comDisplay; }
         /** Returns the console's guest instance. */
-        CGuest &guest() { return m_guest; }
+        CGuest &guest() { return m_comGuest; }
         /** Returns the console's mouse instance. */
-        CMouse &mouse() { return m_mouse; }
+        CMouse &mouse() { return m_comMouse; }
         /** Returns the console's keyboard instance. */
-        CKeyboard &keyboard() { return m_keyboard; }
+        CKeyboard &keyboard() { return m_comKeyboard; }
         /** Returns the console's debugger instance. */
-        CMachineDebugger &debugger() { return m_debugger; }
+        CMachineDebugger &debugger() { return m_comDebugger; }
     /** @} */
 
     /** @name General stuff.
@@ -191,12 +191,12 @@ public:
     /** @name Machine-state stuff.
      ** @{ */
         /** Returns previous machine state. */
-        KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
+        KMachineState machineStatePrevious() const { return m_enmMachineStatePrevious; }
         /** Returns machine state. */
-        KMachineState machineState() const { return m_machineState; }
+        KMachineState machineState() const { return m_enmMachineState; }
 
         /** Resets previous state to be the same as current one. */
-        void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
+        void forgetPreviousMachineState() { m_enmMachineStatePrevious = m_enmMachineState; }
 
         /** Returns whether VM is in one of saved states. */
         bool isSaved() const { return    machineState() == KMachineState_Saved
@@ -371,29 +371,29 @@ private:
         UIConsoleEventHandler *m_pConsoleEventhandler;
 
         /** Holds the session instance. */
-        CSession         m_session;
+        CSession          m_comSession;
         /** Holds the session's machine instance. */
-        CMachine         m_machine;
+        CMachine          m_comMachine;
         /** Holds the session's console instance. */
-        CConsole         m_console;
+        CConsole          m_comConsole;
         /** Holds the console's display instance. */
-        CDisplay         m_display;
+        CDisplay          m_comDisplay;
         /** Holds the console's guest instance. */
-        CGuest           m_guest;
+        CGuest            m_comGuest;
         /** Holds the console's mouse instance. */
-        CMouse           m_mouse;
+        CMouse            m_comMouse;
         /** Holds the console's keyboard instance. */
-        CKeyboard        m_keyboard;
+        CKeyboard         m_comKeyboard;
         /** Holds the console's debugger instance. */
-        CMachineDebugger m_debugger;
+        CMachineDebugger  m_comDebugger;
     /** @} */
 
     /** @name Machine-state stuff.
      ** @{ */
         /** Holds the previous machine state. */
-        KMachineState  m_machineStatePrevious;
+        KMachineState  m_enmMachineStatePrevious;
         /** Holds the actual machine state. */
-        KMachineState  m_machineState;
+        KMachineState  m_enmMachineState;
     /** @} */
 
     /** @name Guest additions stuff.
