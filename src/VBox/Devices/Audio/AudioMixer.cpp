@@ -631,7 +631,6 @@ int AudioMixerSinkDrainAndStopEx(PAUDMIXSINK pSink, uint32_t cbComming, RTMSINTE
                         && pSink->AIO.cUpdateJobs)
                     {
                         rc = audioMixerSinkWaitForDrainedLocked(pSink, msTimeout);
-                        AssertRCReturn(rc, rc);
 #ifdef LOG_ENABLED
                         Log3Func(("Waiting for update jobs done (rc=%Rrc, took %RU64ms)\n", rc, RTTimeMilliTS() - msStart));
 #endif
@@ -673,7 +672,7 @@ int AudioMixerSinkDrainAndStopEx(PAUDMIXSINK pSink, uint32_t cbComming, RTMSINTE
 
     LogRel2(("Audio Mixer: Started draining sink '%s': %s\n", pSink->pszName, dbgAudioMixerSinkStatusToStr(pSink->fStatus, szStatus)));
     RTCritSectLeave(&pSink->CritSect);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
