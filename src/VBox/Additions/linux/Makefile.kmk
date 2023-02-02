@@ -218,7 +218,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)): \
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_SBIN files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR), \
-$(filter-out vbox-greeter,$(VBOX_LNX_ADD_STRIP_SBIN))): \
+	$(filter-out vbox-greeter,$(VBOX_LNX_ADD_STRIP_SBIN))): \
 		$(VBOX_LNX_ADD_INST_SBIN_DIR)% : $(PATH_STAGE_BIN)/additions/% \
 		$(VBOX_LNX_ADD_DBG_SBIN_DIR)% \
 		| $$(dir $$@)

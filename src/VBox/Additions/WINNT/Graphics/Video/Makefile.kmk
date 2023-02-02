@@ -180,13 +180,13 @@ ifdef VBOX_WITH_WDDM
   		$(if $(VBOX_WITH_WDDM_DX), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX.dll, ) \
   		$(if $(VBOX_WITH_WDDM_DX), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDX-x86.dll, ), ) \
   		$(if $(VBOX_WITH_MESA3D), \
-  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
-  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
-  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll \
-  		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
-  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
-  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
-  		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), )
+  			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
+  			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
+  			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll \
+  			$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
+  				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
+  				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
+  				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), )
 	$(call MSG_TOOL,Inf2Cat,VBoxWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing
