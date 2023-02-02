@@ -421,26 +421,26 @@ void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
 {
-    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-    uisession()->changeVisualState(UIVisualStateType_Normal);
+    uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uimachine()->asyncChangeVisualState(UIVisualStateType_Normal);
 }
 
 void UIMachineLogic::sltChangeVisualStateToFullscreen()
 {
-    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-    uisession()->changeVisualState(UIVisualStateType_Fullscreen);
+    uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uimachine()->asyncChangeVisualState(UIVisualStateType_Fullscreen);
 }
 
 void UIMachineLogic::sltChangeVisualStateToSeamless()
 {
-    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-    uisession()->changeVisualState(UIVisualStateType_Seamless);
+    uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uimachine()->asyncChangeVisualState(UIVisualStateType_Seamless);
 }
 
 void UIMachineLogic::sltChangeVisualStateToScale()
 {
-    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-    uisession()->changeVisualState(UIVisualStateType_Scale);
+    uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+    uimachine()->asyncChangeVisualState(UIVisualStateType_Scale);
 }
 
 void UIMachineLogic::sltMachineStateChanged()
@@ -584,7 +584,7 @@ void UIMachineLogic::sltAdditionsStateChanged()
 {
     /* Update action states: */
     LogRel3(("GUI: UIMachineLogic::sltAdditionsStateChanged: Adjusting actions availability according to GA state.\n"));
-    actionPool()->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(uisession()->isVisualStateAllowed(UIVisualStateType_Seamless) &&
+    actionPool()->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(uimachine()->isVisualStateAllowed(UIVisualStateType_Seamless) &&
                                                                         uisession()->isGuestSupportsSeamless());
 }
 
@@ -2705,7 +2705,7 @@ void UIMachineLogic::sltHandleVisualStateChange()
      * That way we will NOT enter seamless mode instantly if it is already planned
      * but is not entered because we're waiting for a guest addition permission. */
     if (   visualStateType() != enmRequestedState
-        && uisession()->requestedVisualState() != enmRequestedState)
+        && uimachine()->requestedVisualState() != enmRequestedState)
     {
         switch (enmRequestedState)
         {

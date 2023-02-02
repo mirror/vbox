@@ -245,11 +245,11 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
                     (int)pMachineWindow->screenId()));
 
             /* Change visual-state to requested: */
-            UIVisualStateType type = uisession()->requestedVisualState();
+            UIVisualStateType type = uimachine()->requestedVisualState();
             if (type == UIVisualStateType_Invalid)
                 type = UIVisualStateType_Normal;
-            uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-            uisession()->changeVisualState(type);
+            uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+            uimachine()->asyncChangeVisualState(type);
         }
     }
 }
@@ -285,7 +285,7 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenFailToEnter()
                 (int)pMachineWindow->screenId()));
 
         /* Ask session to change 'fullscreen' mode to 'normal': */
-        uisession()->setRequestedVisualState(UIVisualStateType_Normal);
+        uimachine()->setRequestedVisualState(UIVisualStateType_Normal);
 
         /* If session already initialized => push mode-change directly: */
         if (uisession()->isInitialized())
@@ -302,7 +302,7 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToNormal()
     else
     {
         /* Request 'normal' (window) visual-state: */
-        uisession()->setRequestedVisualState(UIVisualStateType_Normal);
+        uimachine()->setRequestedVisualState(UIVisualStateType_Normal);
         /* Ask window(s) to exit 'fullscreen' mode: */
         emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
@@ -317,7 +317,7 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToSeamless()
     else
     {
         /* Request 'seamless' visual-state: */
-        uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
+        uimachine()->setRequestedVisualState(UIVisualStateType_Seamless);
         /* Ask window(s) to exit 'fullscreen' mode: */
         emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
@@ -332,7 +332,7 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
     else
     {
         /* Request 'scale' visual-state: */
-        uisession()->setRequestedVisualState(UIVisualStateType_Scale);
+        uimachine()->setRequestedVisualState(UIVisualStateType_Scale);
         /* Ask window(s) to exit 'fullscreen' mode: */
         emit sigNotifyAboutNativeFullscreenShouldBeExited();
     }
@@ -341,7 +341,7 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
 void UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType()
 {
     LogRel(("GUI: UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
-            uisession()->requestedVisualState(), uisession()->machineState()));
+            uimachine()->requestedVisualState(), uisession()->machineState()));
 
     /* Do not try to change visual-state type if machine was not started yet: */
     if (!uisession()->isRunning() && !uisession()->isPaused())
@@ -352,15 +352,15 @@ void UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType()
         return;
 
     /* Check requested visual-state types: */
-    switch (uisession()->requestedVisualState())
+    switch (uimachine()->requestedVisualState())
     {
         /* If 'normal' visual-state type is requested: */
         case UIVisualStateType_Normal:
         {
             LogRel(("GUI: UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType: "
                     "Going 'normal' as requested...\n"));
-            uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-            uisession()->changeVisualState(UIVisualStateType_Normal);
+            uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+            uimachine()->asyncChangeVisualState(UIVisualStateType_Normal);
             break;
         }
         default:

@@ -43,7 +43,6 @@
 #include "UIMachineWindowScale.h"
 #include "UIMachineView.h"
 #include "UINotificationCenter.h"
-#include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 # include "UIImageTools.h"

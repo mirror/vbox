@@ -175,15 +175,6 @@ public:
     WId mainMachineWindowId() const;
     UIMachineWindow *activeMachineWindow() const;
 
-    /** Returns whether visual @a state is allowed. */
-    bool isVisualStateAllowed(UIVisualStateType state) const;
-    /** Requests visual-state change. */
-    void changeVisualState(UIVisualStateType visualStateType);
-    /** Requests visual-state to be entered when possible. */
-    void setRequestedVisualState(UIVisualStateType visualStateType);
-    /** Returns requested visual-state to be entered when possible. */
-    UIVisualStateType requestedVisualState() const;
-
     bool isSaved() const { return machineState() == KMachineState_Saved ||
                                   machineState() == KMachineState_AbortedSaved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||

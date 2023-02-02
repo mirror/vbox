@@ -686,8 +686,8 @@ void UIMachineWindow::handleStandardWindowButtonCallback(StandardWindowButtonTyp
                 else
                 {
                     /* Enter 'full-screen' mode: */
-                    uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
-                    uisession()->changeVisualState(UIVisualStateType_Fullscreen);
+                    uimachine()->setRequestedVisualState(UIVisualStateType_Invalid);
+                    uimachine()->asyncChangeVisualState(UIVisualStateType_Fullscreen);
                 }
             }
             break;

@@ -38,7 +38,6 @@
 #include "UIMachineLogicScale.h"
 #include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
-#include "UISession.h"
 #include "UIShortcutPool.h"
 #ifndef VBOX_WS_MAC
 # include "QIMenu.h"

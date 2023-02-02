@@ -117,7 +117,7 @@ void UIMachineLogicSeamless::adjustMachineWindowsGeometry()
 void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
 {
     LogRel(("GUI: UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
-            uisession()->requestedVisualState(), uisession()->machineState()));
+            uimachine()->requestedVisualState(), uisession()->machineState()));
 
     /* Do not try to change visual-state type if machine was not started yet: */
     if (!uisession()->isRunning() && !uisession()->isPaused())
@@ -132,8 +132,8 @@ void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
     {
         LogRel(("GUI: UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: "
                 "Leaving 'seamless' as it is no more supported...\n"));
-        uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
-        uisession()->changeVisualState(UIVisualStateType_Normal);
+        uimachine()->setRequestedVisualState(UIVisualStateType_Seamless);
+        uimachine()->asyncChangeVisualState(UIVisualStateType_Normal);
     }
 }
 

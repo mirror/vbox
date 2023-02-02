@@ -39,7 +39,6 @@
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowSeamless.h"
-#include "UISession.h"
 #if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"

@@ -38,7 +38,6 @@
 #include "UIMachineLogic.h"
 #include "UIMachineViewScale.h"
 #include "UIMachineWindow.h"
-#include "UISession.h"
 
 /* COM includes: */
 #include "CConsole.h"
