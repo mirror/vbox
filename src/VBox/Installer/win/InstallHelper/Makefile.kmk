@@ -51,8 +51,8 @@ VBoxInstallHelper_LIBS    = \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
 ifdef VBOX_WITH_NETFLT
  VBoxInstallHelper_LIBS   += \
-	$(PATH_STAGE_LIB)/WinNetConfigSharedStatic.lib \
-	$(PATH_STAGE_LIB)/VBoxDrvCfgSharedStatic.lib \
+ 	$(PATH_STAGE_LIB)/WinNetConfigSharedStatic.lib \
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfgSharedStatic.lib \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 endif

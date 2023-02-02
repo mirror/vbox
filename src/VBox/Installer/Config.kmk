@@ -76,7 +76,7 @@ ifdef VBOX_WITH_UNATTENDED
  	rhel4_ks.cfg \
  	rhel5_ks.cfg \
  	redhat67_ks.cfg \
-       os2_response_files.rsp \
+ 	os2_response_files.rsp \
  	win_nt5_unattended.sif \
  	win_nt6_unattended.xml \
  	\
@@ -85,12 +85,12 @@ ifdef VBOX_WITH_UNATTENDED
  	ol_postinstall.sh \
  	os2_cid_install.cmd \
  	win_postinstall.cmd \
-       \
-       os2_util.exe
+ 	\
+ 	os2_util.exe
  ifndef VBOX_OSE
   VBOX_UNATTENDED_TEMPLATES += \
- 	lgw_ks.cfg \
- 	lgw_postinstall.sh
+  	lgw_ks.cfg \
+  	lgw_postinstall.sh
  endif
 else
  VBOX_UNATTENDED_TEMPLATES :=
@@ -103,12 +103,12 @@ endif
 ifdef VBOX_WITH_DTRACE
  ## List of files in the per arch DTrace library directory.
  VBOXINST_DTRACE_LIB_ARCH_FILES := \
- 	 vbox-types.d \
- 	 vbox-arch-types.d \
- 	 vm.d \
- 	 cpumctx.d \
- 	 CPUMInternal.d \
- 	 x86.d
+ 	vbox-types.d \
+ 	vbox-arch-types.d \
+ 	vm.d \
+ 	cpumctx.d \
+ 	CPUMInternal.d \
+ 	x86.d
  ## List of files in the per arch DTrace testcase directory.
  VBOXINST_DTRACE_TESTCASE_ARCH_FILES := \
  	vbox-vm-struct-test.d
@@ -134,7 +134,7 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBOX_CP_OTHER_BITS = $(error VBOX_CP_OTHER_ARCH used in without VBOX_CP_OTHER_BITS set)
  endif
 else
-  VBOX_CP_THIS_BITS  := 64
+ VBOX_CP_THIS_BITS   := 64
  ifdef VBOX_WITH_COMBINED_PACKAGE
   VBOX_CP_OTHER_ARCH := x86
   VBOX_CP_OTHER_BITS := 32

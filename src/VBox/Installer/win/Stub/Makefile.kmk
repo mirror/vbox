@@ -77,7 +77,7 @@ ifdef VBOX_SIGNING_MODE
   VBoxStub.cpp_DEFS += VBOX_WITH_VBOX_LEGACY_TS_CA
  endif
 
- $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h:  | $$(dir $$@) $(VBOX_RTSIGNTOOL) $(VBOX_BIN2C) $(PATH_STAGE_SYS)/VBoxSup.sys
+ $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h: | $$(dir $$@) $(VBOX_RTSIGNTOOL) $(VBOX_BIN2C) $(PATH_STAGE_SYS)/VBoxSup.sys
 	$(RM) -f -- "$@" "$@.cer0" "$@.cer1" "$@.cer2" "$@.array"
 
 	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index 0 --exe "$(PATH_STAGE_SYS)/VBoxSup.sys" --output "$@.cer0" --der

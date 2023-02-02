@@ -48,25 +48,25 @@ VBOX_ARTWORK_PATH_WIN := $(subst /,\\,$(PATH_ROOT))/src/VBox/Artwork/win
 # Icon include file.
 # @todo Put this into Config.kmk?
 ifdef VBOX_OSE
-  # Hack: rc.exe on OSE build boxes don't support Vista icons; so
-  # use a special icon version (without the 256x256 size) instead.
-  VBOX_WINDOWS_ICON_EXT_VBOX    := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-vbox.ico
-  VBOX_WINDOWS_ICON_EXT_EXTPACK := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-vbox-extpack.ico
-  VBOX_WINDOWS_ICON_EXT_OVA     := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-ova.ico
-  VBOX_WINDOWS_ICON_EXT_OVF     := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-ovf.ico
-  VBOX_WINDOWS_ICON_EXT_VDI     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vdi.ico
-  VBOX_WINDOWS_ICON_EXT_VMDK    := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vmdk.ico
-  VBOX_WINDOWS_ICON_EXT_VHD     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vhd.ico
-  VBOX_WINDOWS_ICON_EXT_HDD     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-hdd.ico
+ # Hack: rc.exe on OSE build boxes don't support Vista icons; so
+ # use a special icon version (without the 256x256 size) instead.
+ VBOX_WINDOWS_ICON_EXT_VBOX     := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-vbox.ico
+ VBOX_WINDOWS_ICON_EXT_EXTPACK  := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-vbox-extpack.ico
+ VBOX_WINDOWS_ICON_EXT_OVA      := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-ova.ico
+ VBOX_WINDOWS_ICON_EXT_OVF      := $(VBOX_ARTWORK_PATH_WIN)/OSE/virtualbox-ovf.ico
+ VBOX_WINDOWS_ICON_EXT_VDI      := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vdi.ico
+ VBOX_WINDOWS_ICON_EXT_VMDK     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vmdk.ico
+ VBOX_WINDOWS_ICON_EXT_VHD      := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vhd.ico
+ VBOX_WINDOWS_ICON_EXT_HDD      := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-hdd.ico
 else
-  VBOX_WINDOWS_ICON_EXT_VBOX    := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-vbox.ico
-  VBOX_WINDOWS_ICON_EXT_EXTPACK := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-vbox-extpack.ico
-  VBOX_WINDOWS_ICON_EXT_OVA     := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-ova.ico
-  VBOX_WINDOWS_ICON_EXT_OVF     := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-ovf.ico
-  VBOX_WINDOWS_ICON_EXT_VDI     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vdi.ico
-  VBOX_WINDOWS_ICON_EXT_VMDK    := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vmdk.ico
-  VBOX_WINDOWS_ICON_EXT_VHD     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vhd.ico
-  VBOX_WINDOWS_ICON_EXT_HDD     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-hdd.ico
+ VBOX_WINDOWS_ICON_EXT_VBOX     := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-vbox.ico
+ VBOX_WINDOWS_ICON_EXT_EXTPACK  := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-vbox-extpack.ico
+ VBOX_WINDOWS_ICON_EXT_OVA      := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-ova.ico
+ VBOX_WINDOWS_ICON_EXT_OVF      := $(VBOX_ARTWORK_PATH_WIN)/NonOSE/virtualbox-ovf.ico
+ VBOX_WINDOWS_ICON_EXT_VDI      := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vdi.ico
+ VBOX_WINDOWS_ICON_EXT_VMDK     := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vmdk.ico
+ VBOX_WINDOWS_ICON_EXT_VHD      := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-vhd.ico
+ VBOX_WINDOWS_ICON_EXT_HDD      := $(VBOX_ARTWORK_PATH_WIN)/virtualbox-hdd.ico
 endif
 
 VBOX_RESOURCES_WIN := \

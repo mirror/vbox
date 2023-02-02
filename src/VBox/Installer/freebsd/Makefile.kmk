@@ -55,9 +55,9 @@ BLDDIRS  += $(VBOX_FBSD_INST_OUT_DIR) $(VBOX_FBSD_INST_STAGE_DIR)
 PACKING  += $(PATH_STAGE_BIN)/$(VBOX_FBSD_PACKAGE_NAME)
 
 OTHER_CLEAN   += \
-	$(addprefix $(VBOX_FBSD_INST_STAGE_DIR)/,\
-		pkg_plist \
-		LICENSE) \
+	$(addprefix $(VBOX_FBSD_INST_STAGE_DIR)/, \
+	pkg_plist \
+	LICENSE) \
 	$(wildcard $(VBOX_FBSD_INST_OUT_DIR)/VirtualBox-*)
 
 #
@@ -101,17 +101,17 @@ VBOX_FBSD_STRIP_BIN = \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxGuestControlSvc.so,) \
 	VBoxHostChannel.so \
 	$(if $(VBOX_WITH_MAIN), \
-		VBoxManage \
-		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
-		VBoxNetAdpCtl \
-		VBoxSVC \
-		VBoxXPCOM.so \
-		VBoxXPCOMC.so \
-		VBoxXPCOMIPCD \
-		components/VBoxXPCOMIPCC.so \
-		components/VBoxSVCM.so \
-		components/VBoxC.so,) \
-		VBoxTestOGL \
+	VBoxManage \
+	VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
+	VBoxNetAdpCtl \
+	VBoxSVC \
+	VBoxXPCOM.so \
+	VBoxXPCOMC.so \
+	VBoxXPCOMIPCD \
+	components/VBoxXPCOMIPCC.so \
+	components/VBoxSVCM.so \
+	components/VBoxC.so,) \
+	VBoxTestOGL \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
@@ -127,8 +127,8 @@ VBOX_FBSD_STRIP_OBJ = \
 VBOX_FBSD_NO_STRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	$(if $(VBOX_WITH_MAIN), \
-	  components/VBoxXPCOMBase.xpt \
-	  components/VirtualBox_XPCOM.xpt) \
+	components/VBoxXPCOMBase.xpt \
+	components/VirtualBox_XPCOM.xpt) \
 	vboxdrv.tar.gz
 
 # EFI firmware
@@ -141,8 +141,8 @@ endif
 # Symlinks residing in bin/
 VBOX_FBSD_SYMLINKS = \
 	$(if $(VBOX_WITH_MAIN), \
-		VBoxManage \
-		VBoxSVC) \
+	VBoxManage \
+	VBoxSVC) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
@@ -154,19 +154,19 @@ ifdef VBOX_WITH_QTGUI
  	VBoxKeyboard.so \
  	VirtualBox \
  	$(if $(VBOX_WITH_HARDENING),VirtualBox.so) \
-	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,)
+ 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,)
  VBOX_FBSD_SYMLINKS += \
  	VirtualBox
  VBOX_FBSD_NO_STRIP += \
-	$(VBOX_LICENSE_FILES) \
+ 	$(VBOX_LICENSE_FILES) \
  	$(if $(VBOX_WITH_ORACLE_QT),$(notdir $(wildcard $(PATH_STAGE_BIN)/lib*VBox*)),) \
-	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,) \
+ 	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
  VBOX_FBSD_DESKTOP_FILE = \
-	virtualbox.desktop \
-	virtualboxvm.desktop
+ 	virtualbox.desktop \
+ 	virtualboxvm.desktop
  VBOX_FBSD_ICON_FILE = \
-	VBox.png
+ 	VBox.png
 endif
 
 # Guest Additions
@@ -178,41 +178,41 @@ endif
 # Documentation
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_FBSD_NO_STRIP += \
-	VirtualBox.chm UserManual.pdf \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
+ 	VirtualBox.chm UserManual.pdf \
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
 endif
 
 # VRDP
 ifdef VBOX_WITH_VRDP
  VBOX_FBSD_STRIP_BIN += \
-	VBoxVRDP.so \
-	VBoxAuth.so
+ 	VBoxVRDP.so \
+ 	VBoxAuth.so
 endif
 
 # Headless
 ifdef VBOX_WITH_HEADLESS
  VBOX_FBSD_STRIP_BIN += \
-	VBoxHeadless \
-	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so)
+ 	VBoxHeadless \
+ 	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so)
  VBOX_FBSD_SYMLINKS += \
-	VBoxHeadless
+ 	VBoxHeadless
 endif
 
 # Webservices
 ifdef VBOX_WITH_WEBSERVICES
  VBOX_FBSD_STRIP_BIN += \
-	vboxwebsrv
+ 	vboxwebsrv
  VBOX_FBSD_SYMLINKS += \
-	vboxwebsrv
+ 	vboxwebsrv
 endif
 
 # DTrace library, testcase and scripts (as the rest of this file, this makes bold
 # ASSUMPTIONS about VBPX_INST_XXX variable values).
 ifdef VBOX_WITH_DTRACE
  VBOX_FBSD_NO_STRIP += \
-       $(addprefix dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
-       $(addprefix dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
-       $(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES))
+ 	$(addprefix dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+ 	$(addprefix dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+ 	$(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES))
 endif
 
 #

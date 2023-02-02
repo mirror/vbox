@@ -36,11 +36,11 @@ endif
 # Python glue installer
 ifdef VBOX_WITH_PYTHON
 
-INSTALLS += VBox-python-glue-installer
+ INSTALLS += VBox-python-glue-installer
 
-VBox-python-glue-installer_INST = $(INST_SDK)installer/
-VBox-python-glue-installer_MODE = a+r,u+w
-VBox-python-glue-installer_SOURCES = vboxapisetup.py
+ VBox-python-glue-installer_INST = $(INST_SDK)installer/
+ VBox-python-glue-installer_MODE = a+r,u+w
+ VBox-python-glue-installer_SOURCES = vboxapisetup.py
 
 endif # VBOX_WITH_PYTHON
 

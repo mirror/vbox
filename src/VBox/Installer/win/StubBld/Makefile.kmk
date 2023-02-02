@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Not a build program as it is needed for repacking after we Get the MS driver blessing.
 PROGRAMS += VBoxStubBld
-VBoxStubBld_TEMPLATE= VBoxBldProg
+VBoxStubBld_TEMPLATE = VBoxBldProg
 VBoxStubBld_DEFS    = _WIN32_WINNT=0x0400 VBOX_SVN_REV=$(VBOX_SVN_REV) $(VBOX_SVN_REV_KMK)
 VBoxStubBld_SOURCES = VBoxStubBld.cpp
 

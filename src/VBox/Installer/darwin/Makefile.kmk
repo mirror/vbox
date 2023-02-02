@@ -166,7 +166,7 @@ ifeq (1,1)
 		$(INSTALL) -m 644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UserManual.pdf $(VBOX_PATH_PACK_TMP)/DiskImage/User\ Manual.pdf$(NLTAB) \
 		$(if $(VBOX_ADD_MANUAL_de_DE),$(INSTALL) -m 644 $(VBOX_ADD_MANUAL_de_DE) "$(VBOX_PATH_PACK_TMP)/DiskImage/$(VBOX_BRAND_de_DE_MANUAL_NAME).pdf"$(NLTAB)) \
 		$(if $(VBOX_ADD_MANUAL_fr_FR),$(INSTALL) -m 644 $(VBOX_ADD_MANUAL_fr_FR) "$(VBOX_PATH_PACK_TMP)/DiskImage/$(VBOX_BRAND_fr_FR_MANUAL_NAME).pdf"$(NLTAB)))
-    # Rename the main package
+  # Rename the main package
  else
 	$(if $(VBOX_WITH_DOCS_PACKING), $(INSTALL) $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UserManual.pdf $(VBOX_PATH_PACK_TMP)/DiskImage/)
 	$(LN) -s /Applications/                                             $(VBOX_PATH_PACK_TMP)/DiskImage/Applications
@@ -201,8 +201,9 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		$(if $(VBOX_WITH_VBOXDRV), $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg) \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
-		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
+		$$(wildcard \
+			$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
+			$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
 		$(if $(VBOX_WITH_FUSE_PACKING), $(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
@@ -286,22 +287,23 @@ endif
 
 
 ifdef VBOX_WITH_VBOXDRV
-#
-# The VirtualBox Kernel extensions.
-#
-VBOX_DI_KEXTS_UNIVERSAL = VBoxDrv VBoxNetFlt VBoxNetAdp
-VBOX_DI_KEXTS = $(VBOX_DI_KEXTS_UNIVERSAL)
+ #
+ # The VirtualBox Kernel extensions.
+ #
+ VBOX_DI_KEXTS_UNIVERSAL = VBoxDrv VBoxNetFlt VBoxNetAdp
+ VBOX_DI_KEXTS = $(VBOX_DI_KEXTS_UNIVERSAL)
 
-$(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
-		$(foreach kext,$(VBOX_DI_KEXTS_UNIVERSAL), $(call VBOX_DI_FN_DEP_BOTH,$(kext).kext/Contents/MacOS/$(kext))) \
-		$(foreach kext,$(VBOX_DI_KEXTS), $(VBOX_PATH_DIST)/$(kext).kext/Contents/Info.plist) \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VBoxKEXTs/* \
-		            $(VBOX_PATH_DI_SRC)/VBoxKEXTs/*.lproj/*) \
-		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_DESCRIPTION_PLIST) \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML) \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)) \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
+ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
+ 		$(foreach kext,$(VBOX_DI_KEXTS_UNIVERSAL), $(call VBOX_DI_FN_DEP_BOTH,$(kext).kext/Contents/MacOS/$(kext))) \
+ 		$(foreach kext,$(VBOX_DI_KEXTS), $(VBOX_PATH_DIST)/$(kext).kext/Contents/Info.plist) \
+ 		$$(wildcard \
+ 			$(VBOX_PATH_DI_SRC)/VBoxKEXTs/* \
+ 			$(VBOX_PATH_DI_SRC)/VBoxKEXTs/*.lproj/*) \
+ 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
+ 			$(VBOX_BRAND_$(f)_VBOXKEXTS_DESCRIPTION_PLIST) \
+ 			$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML) \
+ 			$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)) \
+ 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,pkgbuild,,,$@)
 	@# Cleanup any previously failed attempts.
 	sudo rm -Rf \
@@ -332,13 +334,13 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/$(kext).kext/Contents/MacOS/$(kext) $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/)
 	@# Sign the kext bundles.
-ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_SIGNING_MODE
 	$(foreach kext,$(VBOX_DI_KEXTS) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/$(kext),org.virtualbox.app.kext.$(kext)) )
-	$(foreach kext,$(VBOX_DI_KEXTS), \
-		$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext,org.virtualbox.app.kext.$(kext)) )
-## @TODO check why this fails on the build box:	$(foreach kext,$(VBOX_DI_KEXTS), $(NLTAB)codesign --verify --verbose=1 $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext )
-endif
+	$(foreach kext,$(VBOX_DI_KEXTS) \
+		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext,org.virtualbox.app.kext.$(kext)) )
+  ## @TODO check why this fails on the build box:	$(foreach kext,$(VBOX_DI_KEXTS), $(NLTAB)codesign --verify --verbose=1 $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext )
+ endif
 	@# Set the correct owners.
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/
 	@# Do keyword replacement in the package info and description files.
@@ -365,12 +367,12 @@ endif
 		--ownership preserve \
 		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
-ifdef VBOX_SIGNING_MODE
- if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+ ifdef VBOX_SIGNING_MODE
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
 	@# Sign the created pkg.
 	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.vboxkexts)
+  endif
  endif
-endif
 	@# Cleanup
 	sudo chown -R "$(shell whoami)" \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root
@@ -447,7 +449,7 @@ VBOX_DI_VBAPP_DYLIBS = \
 	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,)
 ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_DYLIBS += \
-  	MacOS/UICommon.dylib
+ 	MacOS/UICommon.dylib
  ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
   VBOX_DI_VBAPP_DYLIBS += \
   	MacOS/accessible/libqtaccessiblewidgets.dylib
@@ -459,7 +461,7 @@ if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
 endif
 ifdef VBOX_WITH_DEBUGGER
  VBOX_DI_VBAPP_DYLIBS += \
-  	MacOS/DbgPlugInDiggers.dylib
+ 	MacOS/DbgPlugInDiggers.dylib
  if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
   VBOX_DI_VBAPP_DYLIBS += \
   	MacOS/VBoxDbg.dylib
@@ -506,7 +508,7 @@ endif
 if1of ($(VBOX_DI_VBAPP_DYLIBS.amd64), $(VBOX_DI_VBAPP_DYLIBS.x86))
  $(error Conflict.$(NLTAB)VBOX_DI_VBAPP_DYLIBS.amd64=$(VBOX_DI_VBAPP_DYLIBS.amd64)$(NLTAB)VBOX_DI_VBAPP_DYLIBS.x86  =$(VBOX_DI_VBAPP_DYLIBS.x86))
 endif
-if1of ($(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_DYLIBS.x86),$(VBOX_DI_VBAPP_DYLIBS))
+if1of ($(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_DYLIBS.x86), $(VBOX_DI_VBAPP_DYLIBS))
  $(error Conflict.$(NLTAB)VBOX_DI_VBAPP_DYLIBS.amd64=$(VBOX_DI_VBAPP_DYLIBS.amd64)$(NLTAB)VBOX_DI_VBAPP_DYLIBS.x86  =$(VBOX_DI_VBAPP_DYLIBS.x86)$(NLTAB)VBOX_DI_VBAPP_DYLIBS=$(VBOX_DI_VBAPP_DYLIBS))
 endif
 
@@ -566,14 +568,14 @@ ifdef VBOX_WITH_DOCS_PACKING
  	MacOS/UserManual.pdf
  ifdef VBOX_WITH_DOCS_QHELP_PACKING
   VBOX_DI_VBAPP_MISC_FILES += \
- 	MacOS/UserManual.qch \
- 	MacOS/UserManual.qhc
+  	MacOS/UserManual.qch \
+  	MacOS/UserManual.qhc
  endif
 endif
 ifdef VBOX_WITH_ADDITIONS_PACKING
  ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/VBoxGuestAdditions.iso),)
- VBOX_DI_VBAPP_MISC_FILES += \
- 	MacOS/VBoxGuestAdditions.iso
+  VBOX_DI_VBAPP_MISC_FILES += \
+  	MacOS/VBoxGuestAdditions.iso
  endif
 endif
 ifdef VBOX_WITH_EFIFW_PACKING
@@ -625,7 +627,7 @@ VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(PATH_ROOT)/src/VBox/HostDrivers/Support/
 # @param    3   Application ID.
 # @param    4   Team ID.
 define def_vbox_entitlement_add_app_and_team_id =
-$(2): $(1) $$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE) | $$$$(dir $$$$@)
+ $(2): $(1) $$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE) | $$$$(dir $$$$@)
 	$$(QUIET)$$(SED) \
 		-e '/^<dict>$$$$/a \    <key>com.apple.application-identifier</key>\n    <string>$(strip $(4)).$(strip $(3))</string>\n    <key>com.apple.developer.team-identifier</key>\n    <string>$(strip $(4))</string>' \
 		--output $$@ $$<
@@ -634,12 +636,12 @@ endef
 if defined(VBOX_WITH_MACOS_HARDENED_RUNTIME) && defined(VBOX_SIGNING_MODE) && defined(VBOX_PROVISIONPROFILE_TEAM_ID)
  ifdef VBOX_VIRTUALBOX_APP_ID
   VBOX_VIRTUALBOX_APP_ENTITLEMENTS := $(VBOX_PATH_PACK_TMP)/SUPR3HardenedEntitlements.plist
-$(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist,$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOX_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
+  $(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist,$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOX_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
  endif
 
  ifdef VBOX_VIRTUALBOXVM_APP_ID
   VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(VBOX_PATH_PACK_TMP)/SUPR3HardenedEntitlementsVM.plist
-$(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist,$(VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOXVM_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
+  $(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist,$(VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOXVM_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
  endif
 endif
 
@@ -650,9 +652,9 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 			$(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_PROGS_HARDENED) $(VBOX_DI_VBAPP_MISC_FILES) \
 			,$(call VBOX_DI_FN_DEP_BOTH,VirtualBox.app/Contents/$(f)) ) \
-		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_MISC_FILES.x86)\
+		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_MISC_FILES.x86) \
 			,$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/$(f)) ) \
-		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_MISC_FILES.amd64)\
+		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_MISC_FILES.amd64) \
 			,$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/$(f)) ) \
 		\
 		$(if $(VBOX_WITH_DOCS_PACKING),$(VBOX_ADD_MANUALS),) \
@@ -795,14 +797,14 @@ endif
 	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_PROGS_HARDENED) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(prog)$(NLTAB))
 ifdef VBOX_UNATTENDED_TEMPLATES
-# Unattended installation template scripts.
+ # Unattended installation template scripts.
 	$(MKDIR) -p -m 0755 -- $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/UnattendedTemplates
 	$(foreach file, $(VBOX_UNATTENDED_TEMPLATES) \
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UnattendedTemplates/$(file) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/UnattendedTemplates/$(file)$(NLTAB))
 endif
 ifdef VBOX_WITH_DTRACE
-# DTrace library, testcases and scripts.
+ # DTrace library, testcases and scripts.
 	$(MKDIR) -p -m 0755 -- \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/lib/$(KBUILD_TARGET_ARCH)/ \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/testcase/$(KBUILD_TARGET_ARCH)/ \
@@ -814,7 +816,7 @@ ifdef VBOX_WITH_DTRACE
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/$(file)$(NLTAB))
 endif
 ifndef VBOX_WITH_QTGUI
-# Hack alert! Just something to make pkgbuild happy.
+ # Hack alert! Just something to make pkgbuild happy.
 	$(APPEND) -tn "$(VBOX_PATH_VBOX_APP_TMP)/Contents/PkgInfo" "APPLVBOX"
 	$(APPEND) -tn "$(VBOX_PATH_VBOX_APP_TMP)/Contents/Info.plist" \
 		'<?xml version="1.0" encoding="UTF-8"?>' \
@@ -867,9 +869,9 @@ ifdef VBOX_SIGNING_MODE
 			$(addprefix MacOS/nls/,$(VBOX_INSTALL_LANG_FILES)) \
 		, $(NLTAB)$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(file),org.virtualbox.app.$(tolower $(subst $(SP),,$(subst /,.,$(file))))) )
 
-ifdef VBOX_PROVISIONPROFILE_TEAM_ID
-#	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile	$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/embedded.provisionprofile
-endif
+ ifdef VBOX_PROVISIONPROFILE_TEAM_ID
+  #	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile	$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/embedded.provisionprofile
+ endif
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME)\
 		,--entitlements="$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS)",))
  ifdef VBOX_WITH_QTGUI
@@ -955,8 +957,9 @@ endif
 # The VirtualBox CLI wrapper scripts.
 #
 $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg: \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBoxCLI/* \
-		            $(VBOX_PATH_DI_SRC)/VirtualBoxCLI/*.lproj/*) \
+		$$(wildcard \
+			$(VBOX_PATH_DI_SRC)/VirtualBoxCLI/* \
+			$(VBOX_PATH_DI_SRC)/VirtualBoxCLI/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES) \
 			,$(VBOX_BRAND_$(f)_VIRTUALBOXCLI_DESCRIPTION_PLIST)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
@@ -1041,12 +1044,12 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res
 
 ifdef VBOX_WITH_FUSE_PACKING
-#
-# The FUSE for macOS core package.
-#
-VBOX_PATH_FUSE_CORE_PKG ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))/Core.pkg
-$(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg: \
-		$(VBOX_PATH_FUSE_CORE_PKG)
+ #
+ # The FUSE for macOS core package.
+ #
+ VBOX_PATH_FUSE_CORE_PKG ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))/Core.pkg
+ $(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg: \
+ 		$(VBOX_PATH_FUSE_CORE_PKG)
 	$(call MSG_TOOL,Preparing FUSE for macOS core package,,,$@)
 	@# Cleanup any previously failed attempts.
 	sudo rm -Rf $@
@@ -1058,8 +1061,8 @@ endif
 #
 # Aliases.
 #
-VBoxKEXTs.pkg:        $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg
-VirtualBoxCLI.pkg:    $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg
-VirtualBox.pkg:       $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg
-VirtualBox.mpkg:      $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg
-VirtualBox.dmg:       $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
+VBoxKEXTs.pkg: $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg
+VirtualBoxCLI.pkg: $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg
+VirtualBox.pkg: $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg
+VirtualBox.mpkg: $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg
+VirtualBox.dmg: $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
