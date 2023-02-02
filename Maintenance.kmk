@@ -56,6 +56,6 @@ show-maintence-help:
 #
 # Include the normal root makefile, but without dragging in sub-makefiles.
 #
-VBOX_ONLY_ROOT_MAKEFILE=1
+VBOX_ONLY_ROOT_MAKEFILE = 1
 include $(dir $(firstword $(MAKEFILE_LIST)))Makefile.kmk
 
