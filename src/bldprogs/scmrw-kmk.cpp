@@ -2217,6 +2217,17 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                     ScmStreamWrite(pOut, g_szSpaces, Parser.iActualDepth);
                     ScmStreamWrite(pOut, &pchLine[offLine], cchLine - offLine);
                     ScmStreamPutEol(pOut, Parser.enmEol);
+
+                    /* If line continuation is used, it's typically to disable
+                       a property variable, so we just pass it thru as-is */
+                    while (scmKmkIsLineWithContinuation(pchLine, cchLine))
+                    {
+                        Parser.pchLine = pchLine = ScmStreamGetLine(pIn, &Parser.cchLine, &Parser.enmEol);
+                        if (!pchLine)
+                            break;
+                        cchLine = Parser.cchLine;
+                        ScmStreamPutLine(pOut, pchLine, cchLine, Parser.enmEol);
+                    }
                     continue;
                 }
             }
