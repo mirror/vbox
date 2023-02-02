@@ -355,6 +355,9 @@ static bool scmKmkHasCommentMarker(const char *pchLine, size_t cchLine, size_t o
 }
 
 
+/**
+ * Pushes a if or define on the nesting stack.
+ */
 static bool scmKmkPushNesting(KMKPARSER *pParser, KMKTOKEN enmToken)
 {
     uint32_t iDepth = pParser->iDepth;
@@ -372,6 +375,19 @@ static bool scmKmkPushNesting(KMKPARSER *pParser, KMKTOKEN enmToken)
     pParser->iActualDepth += 1;
     ScmVerbose(pParser->pState, 5, "%u: debug: nesting %u (token %u)\n", pParser->aDepth[iDepth].iLine, iDepth + 1, enmToken);
     return true;
+}
+
+
+/**
+ * Checks if we're inside a define or not.
+ */
+static bool scmKmkIsInsideDefine(KMKPARSER const *pParser)
+{
+    unsigned iDepth = pParser->iDepth;
+    while (iDepth-- > 0)
+        if (pParser->aDepth[iDepth].enmToken == kKmkToken_define)
+            return true;
+    return false;
 }
 
 
@@ -1963,38 +1979,46 @@ static bool scmKmkHandleAssignmentOrRule(KMKPARSER *pParser, size_t offWord)
 
     /*
      * Check if this is a $(error ) or similar function call line.
+     *
+     * If we're inside a 'define' we treat $$ as $ as it's probably a case of
+     * double expansion (e.g. def_vmm_lib_dtrace_preprocess in VMM/Makefile.kmk).
      */
-    if (   pchLine[offWord]     == '$'
-        && pchLine[offWord + 1] == '(')
+    if (pchLine[offWord] == '$')
     {
-        size_t const cchLine = pParser->cchLine;
-        size_t       offEnd  = offWord + 2;
-        char         ch      = '\0';
-        while (offEnd < cchLine && (RT_C_IS_LOWER(ch = pchLine[offEnd]) || RT_C_IS_DIGIT(ch) || ch == '-'))
-            offEnd++;
-        if (offEnd >= cchLine || RT_C_IS_SPACE(ch) || (offEnd == cchLine - 1 && ch == '\\'))
+        size_t const cDollars = pchLine[offWord + 1] != '$' || !scmKmkIsInsideDefine(pParser) ? 1 : 2;
+        if (   pchLine[offWord + cDollars] == '('
+            || pchLine[offWord + cDollars] == '{')
         {
-            static const RTSTRTUPLE s_aAllowedFunctions[] =
+            size_t const cchLine = pParser->cchLine;
+            size_t       offEnd  = offWord + cDollars + 1;
+            char         ch      = '\0';
+            while (offEnd < cchLine && (RT_C_IS_LOWER(ch = pchLine[offEnd]) || RT_C_IS_DIGIT(ch) || ch == '-'))
+                offEnd++;
+            if (offEnd >= cchLine || RT_C_IS_SPACE(ch) || (offEnd == cchLine - 1 && ch == '\\'))
             {
-                { RT_STR_TUPLE("info") },
-                { RT_STR_TUPLE("error") },
-                { RT_STR_TUPLE("warning") },
-                { RT_STR_TUPLE("set-umask") },
-                { RT_STR_TUPLE("foreach") },
-                { RT_STR_TUPLE("call") },
-                { RT_STR_TUPLE("eval") },
-                { RT_STR_TUPLE("evalctx") },
-                { RT_STR_TUPLE("evalval") },
-                { RT_STR_TUPLE("evalvalctx") },
-                { RT_STR_TUPLE("evalcall") },
-                { RT_STR_TUPLE("evalcall2") },
-                { RT_STR_TUPLE("eval-opt-var") },
-            };
-            size_t cchFunc = offEnd - offWord - 2;
-            for (size_t i = 0; i < RT_ELEMENTS(s_aAllowedFunctions); i++)
-                if (   cchFunc == s_aAllowedFunctions[i].cch
-                    && memcmp(&pchLine[offWord + 2], s_aAllowedFunctions[i].psz, cchFunc) == 0)
-                    return scmKmkHandleSimple(pParser, offWord);
+                static const RTSTRTUPLE s_aAllowedFunctions[] =
+                {
+                    { RT_STR_TUPLE("info") },
+                    { RT_STR_TUPLE("error") },
+                    { RT_STR_TUPLE("warning") },
+                    { RT_STR_TUPLE("set-umask") },
+                    { RT_STR_TUPLE("foreach") },
+                    { RT_STR_TUPLE("call") },
+                    { RT_STR_TUPLE("eval") },
+                    { RT_STR_TUPLE("evalctx") },
+                    { RT_STR_TUPLE("evalval") },
+                    { RT_STR_TUPLE("evalvalctx") },
+                    { RT_STR_TUPLE("evalcall") },
+                    { RT_STR_TUPLE("evalcall2") },
+                    { RT_STR_TUPLE("eval-opt-var") },
+                    { RT_STR_TUPLE("kb-src-one") },
+                };
+                size_t cchFunc = offEnd - offWord - cDollars - 1;
+                for (size_t i = 0; i < RT_ELEMENTS(s_aAllowedFunctions); i++)
+                    if (   cchFunc == s_aAllowedFunctions[i].cch
+                        && memcmp(&pchLine[offWord + cDollars + 1], s_aAllowedFunctions[i].psz, cchFunc) == 0)
+                        return scmKmkHandleSimple(pParser, offWord);
+            }
         }
     }
 
@@ -2002,7 +2026,8 @@ static bool scmKmkHandleAssignmentOrRule(KMKPARSER *pParser, size_t offWord)
      * If we didn't find anything, output it as-as.
      * We use scmKmkHandleSimple in a special way to do this.
      */
-    ScmVerbose(pParser->pState, 1, "%u: debug: Unable to make sense of this line!\n", ScmStreamTellLine(pParser->pIn));
+    if (!RTStrStartsWith(pchLine, "$(TOOL_")) /* ValKit/Config.kmk */
+        ScmVerbose(pParser->pState, 1, "%u: debug: Unable to make sense of this line!\n", ScmStreamTellLine(pParser->pIn));
     return scmKmkHandleSimple(pParser, 0 /*offToken*/, false /*fIndentIt*/);
 }
 
