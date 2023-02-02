@@ -26,185 +26,185 @@
 #
 
 ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
-VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED = 1
+ VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED = 1
 
-# Include the top-level configure file.
-ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
- include $(PATH_ROOT)/Config.kmk
-endif
-
-
-#
-# Globals.
-#
-
-# Source location.
-VBOX_PATH_MANUAL_SRC     := $(PATH_ROOT)/doc/manual
-# Output location.
-VBOX_PATH_MANUAL_OUTBASE := $(PATH_OBJ)/manual
-
-## List of refentry files (manpages).
-VBOX_MANUAL_XML_REFENTRY_FILES := \
-	man_VBoxManage-common.xml \
-	man_VBoxManage-list.xml \
-	man_VBoxManage-showvminfo.xml \
-	man_VBoxManage-registervm.xml \
-	man_VBoxManage-unregistervm.xml \
-	man_VBoxManage-createvm.xml \
-	man_VBoxManage-modifyvm.xml \
-	man_VBoxManage-snapshot.xml \
-	man_VBoxManage-clonevm.xml \
-	man_VBoxManage-movevm.xml \
-	man_VBoxManage-encryptvm.xml \
-	man_VBoxManage-startvm.xml \
-	man_VBoxManage-controlvm.xml \
-	man_VBoxManage-import.xml \
-	man_VBoxManage-export.xml \
-	man_VBoxManage-mediumio.xml \
-	man_VBoxManage-sharedfolder.xml \
-	man_VBoxManage-dhcpserver.xml \
-	man_VBoxManage-debugvm.xml \
-	man_VBoxManage-extpack.xml \
-	man_VBoxManage-unattended.xml \
-	man_VBoxManage-cloud.xml \
-	man_VBoxManage-cloudprofile.xml \
-	man_VBoxManage-signova.xml \
-	man_VBoxManage-modifynvram.xml \
-	man_VBoxManage-hostonlynet.xml \
-	man_VBoxManage-updatecheck.xml \
-	man_VBoxManage-discardstate.xml \
-	man_VBoxManage-adoptstate.xml \
-	man_VBoxManage-closemedium.xml \
-	man_VBoxManage-storageattach.xml \
-	man_VBoxManage-storagectl.xml \
-	man_VBoxManage-bandwidthctl.xml \
-	man_VBoxManage-showmediuminfo.xml \
-	man_VBoxManage-createmedium.xml \
-	man_VBoxManage-modifymedium.xml \
-	man_VBoxManage-clonemedium.xml \
-	man_VBoxManage-mediumproperty.xml \
-	man_VBoxManage-encryptmedium.xml \
-	man_VBoxManage-checkmediumpwd.xml \
-	man_VBoxManage-convertfromraw.xml \
-	man_VBoxManage-setextradata.xml \
-	man_VBoxManage-getextradata.xml \
-	man_VBoxManage-setproperty.xml \
-	man_VBoxManage-usbfilter.xml \
-	man_VBoxManage-guestproperty.xml \
-	man_VBoxManage-guestcontrol.xml \
-	man_VBoxManage-metrics.xml \
-	man_VBoxManage-natnetwork.xml \
-	man_VBoxManage-hostonlyif.xml \
-	man_VBoxManage-usbdevsource.xml
-
-## List of user manual XML files.
-VBOX_MANUAL_XML_FILES = \
-	UserManual.xml \
-	user_Preface.xml \
-	user_Introduction.xml \
-	user_Installation.xml \
-	user_BasicConcepts.xml \
-	user_GuestAdditions.xml \
-	user_Storage.xml \
-	user_Networking.xml \
-	user_Frontends.xml \
-	user_VBoxManage.xml \
-	user_AdvancedTopics.xml \
-	user_Technical.xml \
-	user_VirtualBoxAPI.xml \
-	user_Troubleshooting.xml \
-	user_Security.xml \
-	user_KnownIssues.xml \
-	user_ChangeLog.xml \
-	user_ThirdParty.xml \
-	user_PrivacyPolicy.xml \
-	user_Glossary.xml \
-	oracle-accessibility-ohc-en.xml \
-	oracle-diversity.xml \
-	oracle-support-en.xml
-
-## List of user manual XML files common for all languages.
-VBOX_MANUAL_XML_FILES_COMMON = \
-	$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
+ # Include the top-level configure file.
+ ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
+  include $(PATH_ROOT)/Config.kmk
+ endif
 
 
-# Tool locations.
-ifndef VBOX_OSE
- # use docbook from our tools directory
- VBOX_PATH_DOCBOOK        ?= $(KBUILD_DEVTOOLS)/common/DocBook/v1.69.1
- VBOX_PATH_DOCBOOK_DTD    ?= $(KBUILD_DEVTOOLS)/common/docbook-xml/v4.5
-else
- # use docbook of the build host
- VBOX_PATH_DOCBOOK        ?= /usr/share/xml/docbook/stylesheet/docbook-xsl
- VBOX_PATH_DOCBOOK_DTD    ?= /usr/share/xml/docbook/schema/dtd/4.5
-endif
-VBOX_XML_CATALOG          ?= $(VBOX_PATH_MANUAL_OUTBASE)/vbox-doc.cat
-VBOX_XML_CATALOG_DOCBOOK  ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook.cat
-VBOX_XML_CATALOG_MANUAL   ?= $(VBOX_PATH_MANUAL_OUTBASE)/manual.cat
-VBOX_XML_ENTITIES         ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
+ #
+ # Globals.
+ #
 
-# xsltproc with the catalog trick if applicable (set XML_DEBUG_CATALOG to
-# non-zero value to debug file/uri resolution through the catalogs, using
-# one of them is enough, they show the same information).
-ifdef VBOX_XML_CATALOG
- VBOX_XSLTPROC_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(if $(2),$(2),$(VBOX_XML_CATALOG))" -E "XML_DEBUG_CATALOG=" $1 -- \
-	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
- VBOX_XMLLINT_WITH_CAT     = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -E "XML_DEBUG_CATALOG=" -- \
-	$(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
-else
- VBOX_XSLTPROC_WITH_CAT    = $(if $(1), $(REDIRECT) $1 --,) $(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) \
-	--path "$(VBOX_PATH_MANUAL_OUTBASE)"
- VBOX_XMLLINT_WITH_CAT     = $(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
-endif
+ # Source location.
+ VBOX_PATH_MANUAL_SRC    := $(PATH_ROOT)/doc/manual
+ # Output location.
+ VBOX_PATH_MANUAL_OUTBASE := $(PATH_OBJ)/manual
+
+ ## List of refentry files (manpages).
+ VBOX_MANUAL_XML_REFENTRY_FILES := \
+ 	man_VBoxManage-common.xml \
+ 	man_VBoxManage-list.xml \
+ 	man_VBoxManage-showvminfo.xml \
+ 	man_VBoxManage-registervm.xml \
+ 	man_VBoxManage-unregistervm.xml \
+ 	man_VBoxManage-createvm.xml \
+ 	man_VBoxManage-modifyvm.xml \
+ 	man_VBoxManage-snapshot.xml \
+ 	man_VBoxManage-clonevm.xml \
+ 	man_VBoxManage-movevm.xml \
+ 	man_VBoxManage-encryptvm.xml \
+ 	man_VBoxManage-startvm.xml \
+ 	man_VBoxManage-controlvm.xml \
+ 	man_VBoxManage-import.xml \
+ 	man_VBoxManage-export.xml \
+ 	man_VBoxManage-mediumio.xml \
+ 	man_VBoxManage-sharedfolder.xml \
+ 	man_VBoxManage-dhcpserver.xml \
+ 	man_VBoxManage-debugvm.xml \
+ 	man_VBoxManage-extpack.xml \
+ 	man_VBoxManage-unattended.xml \
+ 	man_VBoxManage-cloud.xml \
+ 	man_VBoxManage-cloudprofile.xml \
+ 	man_VBoxManage-signova.xml \
+ 	man_VBoxManage-modifynvram.xml \
+ 	man_VBoxManage-hostonlynet.xml \
+ 	man_VBoxManage-updatecheck.xml \
+ 	man_VBoxManage-discardstate.xml \
+ 	man_VBoxManage-adoptstate.xml \
+ 	man_VBoxManage-closemedium.xml \
+ 	man_VBoxManage-storageattach.xml \
+ 	man_VBoxManage-storagectl.xml \
+ 	man_VBoxManage-bandwidthctl.xml \
+ 	man_VBoxManage-showmediuminfo.xml \
+ 	man_VBoxManage-createmedium.xml \
+ 	man_VBoxManage-modifymedium.xml \
+ 	man_VBoxManage-clonemedium.xml \
+ 	man_VBoxManage-mediumproperty.xml \
+ 	man_VBoxManage-encryptmedium.xml \
+ 	man_VBoxManage-checkmediumpwd.xml \
+ 	man_VBoxManage-convertfromraw.xml \
+ 	man_VBoxManage-setextradata.xml \
+ 	man_VBoxManage-getextradata.xml \
+ 	man_VBoxManage-setproperty.xml \
+ 	man_VBoxManage-usbfilter.xml \
+ 	man_VBoxManage-guestproperty.xml \
+ 	man_VBoxManage-guestcontrol.xml \
+ 	man_VBoxManage-metrics.xml \
+ 	man_VBoxManage-natnetwork.xml \
+ 	man_VBoxManage-hostonlyif.xml \
+ 	man_VBoxManage-usbdevsource.xml
+
+ ## List of user manual XML files.
+ VBOX_MANUAL_XML_FILES = \
+ 	UserManual.xml \
+ 	user_Preface.xml \
+ 	user_Introduction.xml \
+ 	user_Installation.xml \
+ 	user_BasicConcepts.xml \
+ 	user_GuestAdditions.xml \
+ 	user_Storage.xml \
+ 	user_Networking.xml \
+ 	user_Frontends.xml \
+ 	user_VBoxManage.xml \
+ 	user_AdvancedTopics.xml \
+ 	user_Technical.xml \
+ 	user_VirtualBoxAPI.xml \
+ 	user_Troubleshooting.xml \
+ 	user_Security.xml \
+ 	user_KnownIssues.xml \
+ 	user_ChangeLog.xml \
+ 	user_ThirdParty.xml \
+ 	user_PrivacyPolicy.xml \
+ 	user_Glossary.xml \
+ 	oracle-accessibility-ohc-en.xml \
+ 	oracle-diversity.xml \
+ 	oracle-support-en.xml
+
+ ## List of user manual XML files common for all languages.
+ VBOX_MANUAL_XML_FILES_COMMON = \
+ 	$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
 
 
-# File name of the generated stylesheet for transforming xref elements into
-# name user manual sections.
-VBOX_XML_XREF_TO_TEXT      = xref-to-text.xsl
+ # Tool locations.
+ ifndef VBOX_OSE
+  # use docbook from our tools directory
+  VBOX_PATH_DOCBOOK       ?= $(KBUILD_DEVTOOLS)/common/DocBook/v1.69.1
+  VBOX_PATH_DOCBOOK_DTD   ?= $(KBUILD_DEVTOOLS)/common/docbook-xml/v4.5
+ else
+  # use docbook of the build host
+  VBOX_PATH_DOCBOOK       ?= /usr/share/xml/docbook/stylesheet/docbook-xsl
+  VBOX_PATH_DOCBOOK_DTD   ?= /usr/share/xml/docbook/schema/dtd/4.5
+ endif
+ VBOX_XML_CATALOG         ?= $(VBOX_PATH_MANUAL_OUTBASE)/vbox-doc.cat
+ VBOX_XML_CATALOG_DOCBOOK ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook.cat
+ VBOX_XML_CATALOG_MANUAL  ?= $(VBOX_PATH_MANUAL_OUTBASE)/manual.cat
+ VBOX_XML_ENTITIES        ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
 
-##
-# Emits rules for preprocessing refentry sources (applying remarks element),
-# and for producing the actual man pages.
-#
-# $(evalcall2 def_vbox_refentry_preprocess_for_manpage)
-# @param    1   The output directory.
-# @param    2   The XML file name (no path).
-# @param    3   The XML file with full path.
-# @param    4   Non-empty if xrefs to replace.
-# @param    5   Language code (optional if $4 is empty).
-define def_vbox_refentry_preprocess_for_manpage
-$(1)/$(2): \
-		$(3) \
-		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
-		$(if $(4), $$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/$$(VBOX_XML_XREF_TO_TEXT),) \
-		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
-		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
+ # xsltproc with the catalog trick if applicable (set XML_DEBUG_CATALOG to
+ # non-zero value to debug file/uri resolution through the catalogs, using
+ # one of them is enough, they show the same information).
+ ifdef VBOX_XML_CATALOG
+  VBOX_XSLTPROC_WITH_CAT   = $(REDIRECT) -E "XML_CATALOG_FILES=$(if $(2),$(2),$(VBOX_XML_CATALOG))" -E "XML_DEBUG_CATALOG=" $1 -- \
+  	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
+  VBOX_XMLLINT_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -E "XML_DEBUG_CATALOG=" -- \
+  	$(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
+ else
+  VBOX_XSLTPROC_WITH_CAT   = $(if $(1), $(REDIRECT) $1 --,) $(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) \
+  	--path "$(VBOX_PATH_MANUAL_OUTBASE)"
+  VBOX_XMLLINT_WITH_CAT    = $(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
+ endif
+
+
+ # File name of the generated stylesheet for transforming xref elements into
+ # name user manual sections.
+ VBOX_XML_XREF_TO_TEXT     = xref-to-text.xsl
+
+ ##
+ # Emits rules for preprocessing refentry sources (applying remarks element),
+ # and for producing the actual man pages.
+ #
+ # $(evalcall2 def_vbox_refentry_preprocess_for_manpage)
+ # @param    1   The output directory.
+ # @param    2   The XML file name (no path).
+ # @param    3   The XML file with full path.
+ # @param    4   Non-empty if xrefs to replace.
+ # @param    5   Language code (optional if $4 is empty).
+ define def_vbox_refentry_preprocess_for_manpage
+  $(1)/$(2): \
+  		$(3) \
+  		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
+  		$(if $(4), $$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/$$(VBOX_XML_XREF_TO_TEXT),) \
+  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
+  		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@ \
 		"$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl" $$<
-ifneq ($(4),)
+  ifneq ($(4),)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@.tmp \
 		$$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/$$(VBOX_XML_XREF_TO_TEXT) $$@
 	$$(QUIET)$$(MV) -f -- "$$@.tmp" "$$@"
-endif
-if defined(VBOX_HAVE_XMLLINT) && "$(USER)" == "bird" # Effing stuff happends on build servers, probably kmk related...
+  endif
+  if defined(VBOX_HAVE_XMLLINT) && "$(USER)" == "bird" # Effing stuff happends on build servers, probably kmk related...
 	$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$@
-endif
-endef
+  endif
+ endef
 
-##
-# Generate a single header file containing everything (no C file).
-#
-# @param   1   Destination file.
-# @param   2   Full source file path.
-# @param   3   Help infix.
-define def_vbox_single_refentry_to_h
-$(1).ts +| $(1): \
-		$$(VBOX_DOCBOOK_REFENTRY_TO_C_HELP) \
-		$$(VBOX_DOCBOOK_REFENTRY_TO_H_HELP) \
-               $(2) \
-		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $(MAKEFILE) | $$$$(dir $$$$@)
+ ##
+ # Generate a single header file containing everything (no C file).
+ #
+ # @param   1   Destination file.
+ # @param   2   Full source file path.
+ # @param   3   Help infix.
+ define def_vbox_single_refentry_to_h
+  $(1).ts +| $(1): \
+  		$$(VBOX_DOCBOOK_REFENTRY_TO_C_HELP) \
+  		$$(VBOX_DOCBOOK_REFENTRY_TO_H_HELP) \
+  		$(2) \
+  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $(MAKEFILE) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(filter %.xml,$$^),$$(patsubst %.ts,%,$$@))
 	$$(QUIET)$$(APPEND) -tn "$$@" \
 		'/* Autogenerated by $$(notdir $$(filter %.xsl,$$^)), do not edit! */' \
@@ -230,28 +230,28 @@ $(1).ts +| $(1): \
                '' \
                '/* end of file */'
 	$$(QUIET)$$(CP) --changed -- "$$@" "$$(patsubst %.ts,%,$$@)"
-endef
+ endef
 
 
-#
-# Make sure we've got a rule to make the output directory.
-#
-BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
-
-
-ifdef VBOX_XML_CATALOG
- # Trickery for making sure that the file:/// URLs end up with exactly 3
- # slashes, both on Unixy OSes (where the absolute path contributes one more,
- # and some very picky xsltproc variants are floating around which do not work
- # quite correctly with file:////, doing incorrect filename transformations)
- # and on Windows (where the absolute path starts with a drive letter).
- VBOX_FILE_URL_MAYBE_SLASH = $(if $(eq $(KBUILD_HOST),win),/,)
  #
- # To avoid network I/O for fetching DTDs, we generate catalogs mapping the public
- # entity IDs to local files.  (Obviously, only done when we have local files.)
+ # Make sure we've got a rule to make the output directory.
  #
- # Create a catalog file for xsltproc that points to docbook catalog.
- $(VBOX_XML_CATALOG): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
+ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
+
+
+ ifdef VBOX_XML_CATALOG
+  # Trickery for making sure that the file:/// URLs end up with exactly 3
+  # slashes, both on Unixy OSes (where the absolute path contributes one more,
+  # and some very picky xsltproc variants are floating around which do not work
+  # quite correctly with file:////, doing incorrect filename transformations)
+  # and on Windows (where the absolute path starts with a drive letter).
+  VBOX_FILE_URL_MAYBE_SLASH = $(if $(eq $(KBUILD_HOST),win),/,)
+  #
+  # To avoid network I/O for fetching DTDs, we generate catalogs mapping the public
+  # entity IDs to local files.  (Obviously, only done when we have local files.)
+  #
+  # Create a catalog file for xsltproc that points to docbook catalog.
+  $(VBOX_XML_CATALOG): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0"?>' \
@@ -271,8 +271,8 @@ ifdef VBOX_XML_CATALOG
 		'  <delegateURI uriStartString="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)" catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_MANUAL)"/>' \
 		'</catalog>'
 
- # Create a docbook catalog file for xsltproc that points to the local docbook files.
- $(VBOX_XML_CATALOG_DOCBOOK): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
+  # Create a docbook catalog file for xsltproc that points to the local docbook files.
+  $(VBOX_XML_CATALOG_DOCBOOK): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0"?>' \
@@ -311,8 +311,8 @@ ifdef VBOX_XML_CATALOG
 		'  <public publicId="ISO 8879:1986//ENTITIES General Technical//EN"                     uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-tech.ent"/>' \
 		'</catalog>'
 
- # Create a docbook catalog file for xsltproc that points to the local manual files in non-default locations
- $(VBOX_XML_CATALOG_MANUAL): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
+  # Create a docbook catalog file for xsltproc that points to the local manual files in non-default locations
+  $(VBOX_XML_CATALOG_MANUAL): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0"?>' \
@@ -333,12 +333,12 @@ ifdef VBOX_XML_CATALOG
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/manpages/docbook.xsl"                          uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/manpages/docbook.xsl"/>' \
 		'</catalog>'
 
-endif # VBOX_XML_CATALOG
+ endif # VBOX_XML_CATALOG
 
 
-ifdef VBOX_XML_ENTITIES
+ ifdef VBOX_XML_ENTITIES
 
- $(VBOX_XML_ENTITIES): $(VBOX_PATH_MANUAL_SRC)/Config.kmk $(VBOX_VERSION_STAMP) | $$(dir $$@)
+  $(VBOX_XML_ENTITIES): $(VBOX_PATH_MANUAL_SRC)/Config.kmk $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_L1,Creating entities $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<!-- Entities for product names -->' \
@@ -360,28 +360,28 @@ ifdef VBOX_XML_ENTITIES
 		'<!ENTITY ohc-base-url "https://docs.oracle.com/en">' \
 		'<!ENTITY ohc-doc-page "&ohc-base-url;/virtualization/virtualbox/index.html">'
 
-endif # VBOX_XML_ENTITIES
+ endif # VBOX_XML_ENTITIES
 
 
-## Emit rules to produce stylesheet for translating cross references (xref)
-# to user manual chapters and sections in the man pages and --help output.
-#
-# Note! This requires processing UserManual.xml as a single document in order
-#       to get the correct chapter and section numbering, so we use a catalog
-#       file to replace the generated XML documents it includes with a dummy
-#       one.  This reduces the dependencies and recipies we require to build
-#       VBoxManage and the RTIsoMaker (w/ derivatives).
-# $(evalcall2 def_vbox_xref_to_text)
-# @param    1   Language code.
-define def_vbox_xref_to_text
-$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
-+ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat: \
-		$$(VBOX_PATH_MANUAL_SRC)/$(1)/docbook-refentry-link-replacement-xsl-gen.xsl \
-		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-link-replacement-xsl-gen.xsl \
-		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/en_US/,$$(VBOX_MANUAL_XML_FILES)) \
-		$$(VBOX_MANUAL_XML_FILES_COMMON) \
-		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $$(VBOX_XML_ENTITIES) \
-               | $$$$(dir $$$$@)
+ ## Emit rules to produce stylesheet for translating cross references (xref)
+ # to user manual chapters and sections in the man pages and --help output.
+ #
+ # Note! This requires processing UserManual.xml as a single document in order
+ #       to get the correct chapter and section numbering, so we use a catalog
+ #       file to replace the generated XML documents it includes with a dummy
+ #       one.  This reduces the dependencies and recipies we require to build
+ #       VBoxManage and the RTIsoMaker (w/ derivatives).
+ # $(evalcall2 def_vbox_xref_to_text)
+ # @param    1   Language code.
+ define def_vbox_xref_to_text
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat: \
+  		$$(VBOX_PATH_MANUAL_SRC)/$(1)/docbook-refentry-link-replacement-xsl-gen.xsl \
+  		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-link-replacement-xsl-gen.xsl \
+  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/en_US/,$$(VBOX_MANUAL_XML_FILES)) \
+  		$$(VBOX_MANUAL_XML_FILES_COMMON) \
+  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $$(VBOX_XML_ENTITIES) \
+  		| $$$$(dir $$$$@)
 	$$(call MSG_L1,Creating stylesheet $$@)
 	$$(QUIET)$$(APPEND) -nt "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat" \
 		'<?xml version="1.0"?>' \
@@ -399,22 +399,22 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
 			"$$<" "$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)")
 	$$(QUIET)$$(APPEND) -n "$$@" '' '</xsl:stylesheet>'
 
-BLDDIRS += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/
-endef
-# generate rules for $(VBOX_XML_XREF_TO_TEXT)
-$(evalcall2 def_vbox_xref_to_text,en_US)
+  BLDDIRS += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/
+ endef
+ # generate rules for $(VBOX_XML_XREF_TO_TEXT)
+ $(evalcall2 def_vbox_xref_to_text,en_US)
 
-#
-# Generate rules for editing the refentry to C/H style sheets.
-#
-VBOX_DOCBOOK_REFENTRY_TO_C_HELP = $(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-C-help.xsl
+ #
+ # Generate rules for editing the refentry to C/H style sheets.
+ #
+ VBOX_DOCBOOK_REFENTRY_TO_C_HELP = $(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-C-help.xsl
 
-VBOX_DOCBOOK_REFENTRY_TO_H_HELP = $(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-H-help.xsl
+ VBOX_DOCBOOK_REFENTRY_TO_H_HELP = $(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-H-help.xsl
 
-#
-# Manual dependency.
-#
-$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-C-help.xsl: $(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl
+ #
+ # Manual dependency.
+ #
+ $(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-C-help.xsl: $(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl
 
 
 endif # !defined(VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED)
