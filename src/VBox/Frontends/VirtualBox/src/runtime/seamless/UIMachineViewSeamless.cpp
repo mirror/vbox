@@ -141,7 +141,7 @@ void UIMachineViewSeamless::prepareSeamless()
 void UIMachineViewSeamless::cleanupSeamless()
 {
     /* Reset seamless feature flag if possible: */
-    if (uisession()->isRunning())
+    if (uimachine()->isRunning())
         display().SetSeamlessMode(false);
 }
 

@@ -446,12 +446,12 @@ void UIMachineLogic::sltChangeVisualStateToScale()
 void UIMachineLogic::sltMachineStateChanged()
 {
     /* Get machine state: */
-    KMachineState state = uisession()->machineState();
+    KMachineState state = uimachine()->machineState();
 
     /* Update action groups: */
-    m_pRunningActions->setEnabled(uisession()->isRunning());
-    m_pRunningOrPausedActions->setEnabled(uisession()->isRunning() || uisession()->isPaused());
-    m_pRunningOrPausedOrStackedActions->setEnabled(uisession()->isRunning() || uisession()->isPaused() || uisession()->isStuck());
+    m_pRunningActions->setEnabled(uimachine()->isRunning());
+    m_pRunningOrPausedActions->setEnabled(uimachine()->isRunning() || uimachine()->isPaused());
+    m_pRunningOrPausedOrStackedActions->setEnabled(uimachine()->isRunning() || uimachine()->isPaused() || uimachine()->isStuck());
 
     switch (state)
     {
@@ -850,7 +850,7 @@ void UIMachineLogic::updateDockOverlay()
     /* Only to an update to the realtime preview if this is enabled by the user
      * & we are in an state where the framebuffer is likely valid. Otherwise to
      * the overlay stuff only. */
-    KMachineState state = uisession()->machineState();
+    KMachineState state = uimachine()->machineState();
     if (m_fIsDockIconEnabled &&
         (state == KMachineState_Running ||
          state == KMachineState_Paused ||
@@ -1736,7 +1736,7 @@ void UIMachineLogic::sltCloseLogDialog()
 
 void UIMachineLogic::sltPause(bool fOn)
 {
-    uisession()->setPause(fOn);
+    uimachine()->setPause(fOn);
 }
 
 void UIMachineLogic::sltReset()
@@ -1747,7 +1747,7 @@ void UIMachineLogic::sltReset()
 void UIMachineLogic::sltDetach()
 {
     /* Make sure machine is in one of the allowed states: */
-    if (!uisession()->isRunning() && !uisession()->isPaused())
+    if (!uimachine()->isRunning() && !uimachine()->isPaused())
     {
         AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
         return;
@@ -1760,7 +1760,7 @@ void UIMachineLogic::sltDetach()
 void UIMachineLogic::sltSaveState()
 {
     /* Make sure machine is in one of the allowed states: */
-    if (!uisession()->isRunning() && !uisession()->isPaused())
+    if (!uimachine()->isRunning() && !uimachine()->isPaused())
     {
         AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
         return;
@@ -1773,7 +1773,7 @@ void UIMachineLogic::sltSaveState()
 void UIMachineLogic::sltShutdown()
 {
     /* Make sure machine is in one of the allowed states: */
-    if (!uisession()->isRunning())
+    if (!uimachine()->isRunning())
     {
         AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
         return;
@@ -1786,7 +1786,7 @@ void UIMachineLogic::sltShutdown()
 void UIMachineLogic::sltPowerOff()
 {
     /* Make sure machine is in one of the allowed states: */
-    if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
+    if (!uimachine()->isRunning() && !uimachine()->isPaused() && !uimachine()->isStuck())
     {
         AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
         return;

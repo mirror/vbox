@@ -208,6 +208,35 @@ public:
         void updateStateVRDEServerAction();
     /** @} */
 
+    /** @name Machine-state stuff.
+     ** @{ */
+        /** Returns machine state. */
+        KMachineState machineState() const;
+
+        /** Resets previous state to be the same as current one. */
+        void forgetPreviousMachineState();
+
+        /** Returns whether VM is in one of turned off states. */
+        bool isTurnedOff() const;
+        /** Returns whether VM is in one of paused states. */
+        bool isPaused() const;
+        /** Returns whether VM was in one of paused states. */
+        bool wasPaused() const;
+        /** Returns whether VM is in one of running states. */
+        bool isRunning() const;
+        /** Returns whether VM is in one of stuck states. */
+        bool isStuck() const;
+        /** Returns whether VM is one of states where guest-screen is undrawable. */
+        bool isGuestScreenUnDrawable() const;
+
+        /** Performes VM pausing. */
+        bool pause();
+        /** Performes VM resuming. */
+        bool unpause();
+        /** Performes VM pausing/resuming depending on @a fPause state. */
+        bool setPause(bool fPause);
+    /** @} */
+
     /** @name Host-screen stuff.
      ** @{ */
         /** Returns the list of host-screen geometries we currently have. */

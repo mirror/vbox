@@ -602,7 +602,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         return;
 
     /* In some situations especially in some VM states, guest-screen is not drawable: */
-    if (uisession()->isGuestScreenUnDrawable())
+    if (uimachine()->isGuestScreenUnDrawable())
         return;
 
     /* Get old frame-buffer size: */
@@ -1052,7 +1052,7 @@ void UIMachineView::sltHandleScalingOptimizationChange(const QUuid &uMachineID)
 void UIMachineView::sltMachineStateChanged()
 {
     /* Get machine state: */
-    KMachineState state = uisession()->machineState();
+    KMachineState state = uimachine()->machineState();
     switch (state)
     {
         case KMachineState_Paused:
@@ -1989,7 +1989,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         frameBuffer()->handlePaintEvent(pPaintEvent);
 #ifdef VBOX_WS_MAC
     /* Update the dock icon if we are in the running state: */
-    if (uisession()->isRunning())
+    if (uimachine()->isRunning())
         updateDockIcon();
 #endif /* VBOX_WS_MAC */
 }

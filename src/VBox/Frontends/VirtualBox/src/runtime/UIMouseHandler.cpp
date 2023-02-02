@@ -372,7 +372,7 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 void UIMouseHandler::sltMachineStateChanged()
 {
     /* Get machine state: */
-    KMachineState machineState = uisession()->machineState();
+    KMachineState machineState = uimachine()->machineState();
     /* Handle particular machine states: */
     switch (machineState)
     {
@@ -446,7 +446,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
     if (sender())
     {
         /* Do not annoy user while restoring VM: */
-        if (uisession()->machineState() != KMachineState_Restoring)
+        if (uimachine()->machineState() != KMachineState_Restoring)
             UINotificationMessage::remindAboutMouseIntegration(uimachine()->isMouseSupportsAbsolute());
     }
 
@@ -462,7 +462,7 @@ void UIMouseHandler::sltMousePointerShapeChanged()
      * 1. mouse is 'captured' or
      * 2. machine is NOT 'paused' and mouse is NOT 'captured' and 'integrated' and 'absolute' but host pointer is 'hidden' by the guest. */
     if (uimachine()->isMouseCaptured() ||
-        (!uisession()->isPaused() &&
+        (!uimachine()->isPaused() &&
          uimachine()->isMouseIntegrated() &&
          uimachine()->isMouseSupportsAbsolute() &&
          uimachine()->isHidingHostPointer()))
@@ -476,7 +476,7 @@ void UIMouseHandler::sltMousePointerShapeChanged()
 
     /* Otherwise we should show host pointer with guest shape assigned to it if:
      * machine is NOT 'paused', mouse is 'integrated' and 'absolute' and valid pointer shape is present. */
-    if (!uisession()->isPaused() &&
+    if (!uimachine()->isPaused() &&
         uimachine()->isMouseIntegrated() &&
         uimachine()->isMouseSupportsAbsolute() &&
         uimachine()->isValidPointerShapePresent())
@@ -926,7 +926,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         return true;
 
     /* Check if machine is still running: */
-    if (!uisession()->isRunning())
+    if (!uimachine()->isRunning())
         return true;
 
     /* Check if such view & viewport are registered: */
@@ -1163,9 +1163,9 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         {
             if (m_views[uScreenId]->hasFocus() && (iEventType == QEvent::MouseButtonRelease && mouseButtons == Qt::NoButton))
             {
-                if (uisession()->isPaused())
+                if (uimachine()->isPaused())
                     UINotificationMessage::remindAboutPausedVMInput();
-                else if (uisession()->isRunning())
+                else if (uimachine()->isRunning())
                 {
                     /* Temporarily disable auto capture that will take place after this dialog is dismissed because
                      * the capture state is to be defined by the dialog result itself: */
@@ -1199,7 +1199,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 {
     /* Eat if machine isn't running: */
-    if (!uisession()->isRunning())
+    if (!uimachine()->isRunning())
         return true;
 
     /* Eat if such view & viewport aren't registered: */

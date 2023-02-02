@@ -870,6 +870,6 @@ static void signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSec
     /* Only SIGUSR1 is interesting: */
     if (sig == SIGUSR1)
         if (gpMachine)
-            gpMachine->uisession()->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
+            gpMachine->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
 }
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */

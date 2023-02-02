@@ -274,7 +274,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
     if (iElement & UIVisualElement_WindowTitle)
     {
         /* Make sure machine state is one of valid: */
-        const KMachineState enmState = uisession()->machineState();
+        const KMachineState enmState = uimachine()->machineState();
         if (enmState == KMachineState_Null)
             return;
 
@@ -380,7 +380,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     pCloseEvent->ignore();
 
     /* Make sure machine is in one of the allowed states: */
-    if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
+    if (!uimachine()->isRunning() && !uimachine()->isPaused() && !uimachine()->isStuck())
     {
 #if defined(VBOX_IS_QT6_OR_LATER) && defined(VBOX_WS_MAC) /** @todo qt6 ... */
         /* If we want to close the application, we need to accept the close event.
@@ -389,7 +389,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
            "Qt DEBUG: Application termination canceled" in the debug log. */
         /** @todo qt6: This could easily be caused by something else, but needs to be
          * looked at by a proper GUI expert.  */
-        if (uisession()->isTurnedOff()) /** @todo qt6: Better state check here? */
+        if (uimachine()->isTurnedOff()) /** @todo qt6: Better state check here? */
             pCloseEvent->accept();
 #endif
         return;
@@ -420,7 +420,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
             case MachineCloseAction_Detach:
             case MachineCloseAction_SaveState:
             case MachineCloseAction_Shutdown:
-                closeAction = uisession()->isStuck() ? MachineCloseAction_Invalid : defaultCloseAction;
+                closeAction = uimachine()->isStuck() ? MachineCloseAction_Invalid : defaultCloseAction;
                 break;
             /* Otherwise we just use what we have: */
             default:
@@ -447,13 +447,13 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
             /* We are going to show close-dialog: */
             bool fShowCloseDialog = true;
             /* Check if VM is paused or stuck: */
-            const bool fWasPaused = uisession()->isPaused();
-            const bool fIsStuck = uisession()->isStuck();
+            const bool fWasPaused = uimachine()->isPaused();
+            const bool fIsStuck = uimachine()->isStuck();
             /* If VM is NOT paused and NOT stuck: */
             if (!fWasPaused && !fIsStuck)
             {
                 /* We should pause it first: */
-                const bool fIsPaused = uisession()->pause();
+                const bool fIsPaused = uimachine()->pause();
                 /* If we were unable to pause VM: */
                 if (!fIsPaused)
                 {
@@ -487,13 +487,13 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
 
                 /* If VM was not paused before but paused now,
                  * we should resume it if user canceled dialog or chosen shutdown: */
-                if (!fWasPaused && uisession()->isPaused() &&
+                if (!fWasPaused && uimachine()->isPaused() &&
                     (closeAction == MachineCloseAction_Invalid ||
                      closeAction == MachineCloseAction_Detach ||
                      closeAction == MachineCloseAction_Shutdown))
                 {
                     /* If we unable to resume VM, cancel closing: */
-                    if (!uisession()->unpause())
+                    if (!uimachine()->unpause())
                         closeAction = MachineCloseAction_Invalid;
                 }
             }

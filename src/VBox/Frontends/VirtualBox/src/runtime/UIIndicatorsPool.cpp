@@ -521,7 +521,7 @@ private slots:
     /** Updates auto-update timer depending on machine state. */
     void sltHandleMachineStateChange()
     {
-        if (m_pSession->machineState() == KMachineState_Running)
+        if (m_pMachine->machineState() == KMachineState_Running)
         {
             /* Start auto-update timer otherwise: */
             m_pTimerAutoUpdate->start(5000);
@@ -1067,7 +1067,7 @@ private slots:
     /** Updates auto-update timer depending on machine state. */
     void sltHandleMachineStateChange()
     {
-        if (m_pSession->machineState() == KMachineState_Running)
+        if (m_pMachine->machineState() == KMachineState_Running)
         {
             /* Start auto-update timer otherwise: */
             m_pTimerAutoUpdate->start(1000);

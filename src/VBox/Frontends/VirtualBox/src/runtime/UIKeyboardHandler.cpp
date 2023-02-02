@@ -910,7 +910,7 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 void UIKeyboardHandler::sltMachineStateChanged()
 {
     /* Get machine state: */
-    KMachineState state = uisession()->machineState();
+    KMachineState state = uimachine()->machineState();
     /* Handle particular machine states: */
     switch (state)
     {
@@ -1253,7 +1253,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 else if (!m_bIsHostComboPressed && pEvent->type() == QEvent::KeyRelease)
                 {
                     /* Show a possible warning on key release which seems to be more expected by the end user: */
-                    if (uisession()->isPaused())
+                    if (uimachine()->isPaused())
                         UINotificationMessage::remindAboutPausedVMInput();
                 }
 
@@ -1744,7 +1744,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     emit sigStateChange(state());
 
     /* If the VM is NOT paused: */
-    if (!uisession()->isPaused())
+    if (!uimachine()->isPaused())
     {
         /* If there are scan-codes to send: */
         if (uCodesCount)
@@ -1970,12 +1970,12 @@ bool UIKeyboardHandler::viewHasFocus(ulong uScreenId)
 
 bool UIKeyboardHandler::isSessionRunning()
 {
-    return uisession()->isRunning();
+    return uimachine()->isRunning();
 }
 
 bool UIKeyboardHandler::isSessionStuck()
 {
-    return uisession()->isStuck();
+    return uimachine()->isStuck();
 }
 
 UIMachineWindow* UIKeyboardHandler::isItListenedWindow(QObject *pWatchedObject) const

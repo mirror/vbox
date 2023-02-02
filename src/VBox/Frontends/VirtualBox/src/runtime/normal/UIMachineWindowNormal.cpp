@@ -202,7 +202,7 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QUuid &u
     statusBar()->setVisible(pActionStatusBarSwitch->isChecked());
     /* Update status-bar indicators-pool: */
     if (m_pIndicatorsPool)
-        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
+        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uimachine()->isRunning());
 
     /* Normalize geometry without moving: */
     normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
@@ -390,7 +390,7 @@ void UIMachineWindowNormal::loadSettings()
         /* Update status-bar visibility: */
         statusBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());
         if (m_pIndicatorsPool)
-            m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
+            m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uimachine()->isRunning());
     }
 
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
@@ -730,13 +730,13 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     /* Set status-bar indicator-pool auto update timer: */
     if (   m_pIndicatorsPool
         && iElement & UIVisualElement_IndicatorPoolStuff)
-        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
+        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uimachine()->isRunning());
     /* Update status-bar indicator-pool appearance only when status-bar is visible: */
     if (   m_pIndicatorsPool
         && statusBar()->isVisible())
     {
         /* If VM is running: */
-        if (uisession()->isRunning())
+        if (uimachine()->isRunning())
         {
             if (iElement & UIVisualElement_HDStuff)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_HardDisks);
@@ -758,7 +758,7 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
         }
         /* If VM is running or paused: */
-        if (uisession()->isRunning() || uisession()->isPaused())
+        if (uimachine()->isRunning() || uimachine()->isPaused())
         {
             if (iElement & UIVisualElement_Recording)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_Recording);
