@@ -651,10 +651,6 @@ if defined(VBOX_ONLY_SDK) && ("$(KBUILD_TARGET)" != "win" || defined(VBOX_FORCE_
  VBOXWEB_JAXWSSAMPLE           = $(VBOXWEB_SAMPLES_JAXWS_DIR)/clienttest.java
  VBOXWEB_METRICSAMPLE          = $(VBOXWEB_SAMPLES_JAXWS_DIR)/metrictest.java
 
- define find_java_files
-  $(shell find $(1) -name \*.java)
- endef
-
  VBOXWEB_OTHERS               +=  \
 	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_GLUE_PYTHON),) \
 	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_WS_PYTHON),) \
