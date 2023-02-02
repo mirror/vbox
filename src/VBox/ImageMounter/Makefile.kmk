@@ -29,7 +29,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_VBOXIMGMOUNT) && "$(intersects $(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))" != ""
-  include $(PATH_SUB_CURRENT)/vboximg-mount/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/vboximg-mount/Makefile.kmk
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

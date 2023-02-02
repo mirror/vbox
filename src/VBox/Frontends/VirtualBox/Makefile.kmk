@@ -1792,10 +1792,10 @@ UICommon_CLEAN         += $(wildcard $(UICommon_0_OUTDIR)/include/*) $(PATH_TARG
 $$(UICommon_0_OUTDIR)/include/COMWrappers \
 + $(PATH_TARGET)/UICommonComWrapperFiles.dep \
 +| $(if-expr defined(UICommon_VBOX_COMWRAPPERS) \
-, $(UICommon_VBOX_COMWRAPPERS) \
-, $$(UICommon_0_OUTDIR)/include/COMEnums.h \
-$$(UICommon_0_OUTDIR)/include/COMWrappers.cpp \
-): \
+	, $(UICommon_VBOX_COMWRAPPERS) \
+	, $$(UICommon_0_OUTDIR)/include/COMEnums.h \
+	$$(UICommon_0_OUTDIR)/include/COMWrappers.cpp \
+	): \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl \
 		$(VBOX_FILESPLIT) \

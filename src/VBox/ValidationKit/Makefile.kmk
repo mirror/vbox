@@ -113,7 +113,7 @@ ifndef VBOX_WITHOUT_VALIDATIONKIT_ZIP
  		$(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso \
  		$(VBOX_PATH_VALIDATIONKIT)/ \
  		$$(foreach inst, $$(VBOX_VALIDATIONKIT_INSTALLS), \
- 		$$(filter $(PATH_STAGE)/$(INST_VALIDATIONKIT)%, $$($$(inst)_2_STAGE_TARGETS)))
+ 			$$(filter $(PATH_STAGE)/$(INST_VALIDATIONKIT)%, $$($$(inst)_2_STAGE_TARGETS)))
 	$(call MSG_L1,Packing the Test Suite $@)
 	$(QUIET)$(RM) -f $@
 	# Note: Exclude packing the testcase directory into .zip, as that directory only needs to be

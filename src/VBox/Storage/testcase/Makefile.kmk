@@ -53,24 +53,24 @@ ifdef VBOX_WITH_TESTCASES
  #
  TSTVDIO_BUILTIN_TESTS_FILE = $(tstVDIo_0_OUTDIR)/BuiltinTests.cpp
  TSTVDIO_BUILTIN_TESTS := \
-        tstVDIo=tstVDIo.vd \
-        tstVDResize=tstVDResize.vd \
-        tstVDCompact=tstVDCompact.vd \
-        tstVDCopy=tstVDCopy.vd \
-        tstVDDiscard=tstVDDiscard.vd \
-        tstVDShareable=tstVDShareable.vd
+ 	tstVDIo=tstVDIo.vd \
+ 	tstVDResize=tstVDResize.vd \
+ 	tstVDCompact=tstVDCompact.vd \
+ 	tstVDCopy=tstVDCopy.vd \
+ 	tstVDDiscard=tstVDDiscard.vd \
+ 	tstVDShareable=tstVDShareable.vd
  TSTVDIO_BUILTIN_TEST_NAMES := $(foreach test,$(TSTVDIO_BUILTIN_TESTS),$(firstword $(subst =,$(SPACE) ,$(test))))
  TSTVDIO_PATH_TESTS := $(PATH_SUB_CURRENT)
 
  # 1=name, 2=filter
  TSTVDIO_GEN_TEST_MACRO = 'TSTVDIOTESTENTRY const g_a$(1)[] =' '{' \
-	$(foreach testnm,$(filter $(2),$(TSTVDIO_BUILTIN_TEST_NAMES)), '    TSTVDIOTESTENTRY_GEN($(testnm), g_ab$(testnm)),') \
-	'};' 'unsigned const g_c$(1) = RT_ELEMENTS(g_a$(1));' '' ''
+ 	$(foreach testnm,$(filter $(2),$(TSTVDIO_BUILTIN_TEST_NAMES)), '    TSTVDIOTESTENTRY_GEN($(testnm), g_ab$(testnm)),') \
+ 	'};' 'unsigned const g_c$(1) = RT_ELEMENTS(g_a$(1));' '' ''
 
  $$(TSTVDIO_BUILTIN_TESTS_FILE): $(MAKEFILE_CURRENT) \
-		$(foreach test,$(TSTVDIO_BUILTIN_TESTS),$(TSTVDIO_PATH_TESTS)/$(lastword $(subst =,$(SPACE) ,$(test)))) \
-		$(VBOX_BIN2C) \
-		| $$(dir $$@)
+ 		$(foreach test,$(TSTVDIO_BUILTIN_TESTS),$(TSTVDIO_PATH_TESTS)/$(lastword $(subst =,$(SPACE) ,$(test)))) \
+ 		$(VBOX_BIN2C) \
+ 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@ $@.vd
 	$(QUIET)$(APPEND) -n "$@" \
 		'' \
@@ -81,7 +81,7 @@ ifdef VBOX_WITH_TESTCASES
 		"$(TSTVDIO_PATH_TESTS)/$(lastword $(subst =,$(SP) ,$(test)))" \
 		"$@")
 
-# Generate test lists.
+ # Generate test lists.
 	$(QUIET)$(APPEND) -n "$@" '' \
                $(call TSTVDIO_GEN_TEST_MACRO,VDIoTests,%) \
 
@@ -118,39 +118,39 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  #
  # vbox-img - static because it might be used as a standalone tool.
  #
- ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.sparc32 solaris.sparc64)
- vbox-img_TEMPLATE := VBoxR3Exe
- vbox-img_DEFS     := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
+ ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.sparc32 solaris.sparc64)
+  vbox-img_TEMPLATE := VBoxR3Exe
+  vbox-img_DEFS    := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
  else
- vbox-img_TEMPLATE := VBoxR3Static
- vbox-img_DEFS     := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
+  vbox-img_TEMPLATE := VBoxR3Static
+  vbox-img_DEFS    := IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
  endif
  vbox-img_INCS     := \
-	../../Main/include
+ 	../../Main/include
  vbox-img_SOURCES  := \
-	vbox-img.cpp \
-	../VD.cpp \
-	../VDPlugin.cpp \
-	../VDVfs.cpp \
-	../VDI.cpp \
-	../VMDK.cpp \
-	../VHD.cpp \
-	../DMG.cpp \
-	../Parallels.cpp \
-	../ISCSI.cpp \
-	../RAW.cpp \
-	../QED.cpp \
-	../QCOW.cpp \
-	../VHDX.cpp \
-	../CUE.cpp \
-	../VISO.cpp \
-	../VCICache.cpp \
-	../VDIfVfs.cpp
+ 	vbox-img.cpp \
+ 	../VD.cpp \
+ 	../VDPlugin.cpp \
+ 	../VDVfs.cpp \
+ 	../VDI.cpp \
+ 	../VMDK.cpp \
+ 	../VHD.cpp \
+ 	../DMG.cpp \
+ 	../Parallels.cpp \
+ 	../ISCSI.cpp \
+ 	../RAW.cpp \
+ 	../QED.cpp \
+ 	../QCOW.cpp \
+ 	../VHDX.cpp \
+ 	../CUE.cpp \
+ 	../VISO.cpp \
+ 	../VCICache.cpp \
+ 	../VDIfVfs.cpp
  vbox-img_SOURCES.win = \
-	vbox-img.rc
+ 	vbox-img.rc
  ifeq ($(vbox-img_TEMPLATE),VBoxR3Exe)
   vbox-img_LIBS = \
- 	$(LIB_RUNTIME)
+  	$(LIB_RUNTIME)
   ifeq ($(KBUILD_TARGET),freebsd)
    vbox-img_LIBS += geom bsdxml sbuf
   else ifeq ($(KBUILD_TARGET),solaris)
@@ -159,15 +159,15 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 
  else
   vbox-img_LIBS = \
- 	$(VBOX_LIB_RUNTIME_STATIC)
-  if1of ($(KBUILD_TARGET),os2 win)
+  	$(VBOX_LIB_RUNTIME_STATIC)
+  if1of ($(KBUILD_TARGET), os2 win)
    vbox-img_LIBS += \
- 	$(SDK_VBoxLzf_STATIC_LIBS) \
- 	$(SDK_VBoxZlibStatic_LIBS)
+   	$(SDK_VBoxLzf_STATIC_LIBS) \
+   	$(SDK_VBoxZlibStatic_LIBS)
   else
    vbox-img_LIBS += \
- 	$(SDK_VBoxLzf_LIBS) \
- 	$(SDK_VBoxZlib_LIBS)
+   	$(SDK_VBoxLzf_LIBS) \
+   	$(SDK_VBoxZlib_LIBS)
   endif
   ifeq ($(KBUILD_TARGET),linux)
    ifdef SDK_VBoxLibXml2_LIBS
@@ -192,9 +192,9 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 
 endif
 
-if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
-   && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD) \
-   && defined(VBOX_WITH_VDKEYSTOREMGR)
+if   defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
+  && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD) \
+  && defined(VBOX_WITH_VDKEYSTOREMGR)
  PROGRAMS += vdkeystoremgr
 
  #
@@ -203,27 +203,27 @@ if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
  vdkeystoremgr_TEMPLATE = VBoxR3Static
  vdkeystoremgr_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
  vdkeystoremgr_SOURCES = \
-	vdkeystoremgr.cpp \
-	../VDKeyStore.cpp
+ 	vdkeystoremgr.cpp \
+ 	../VDKeyStore.cpp
  vdkeystoremgr_SOURCES.win = \
-	vdkeystoremgr_SOURCES.rc
+ 	vdkeystoremgr_SOURCES.rc
  vdkeystoremgr_LIBS = \
-	$(VBOX_LIB_RUNTIME_STATIC) \
-	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
- if1of ($(KBUILD_TARGET),os2 win)
+ 	$(VBOX_LIB_RUNTIME_STATIC) \
+ 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
+ if1of ($(KBUILD_TARGET), os2 win)
   vdkeystoremgr_LIBS += \
-	$(SDK_VBoxLzf_STATIC_LIBS) \
-	$(SDK_VBoxZlibStatic_LIBS)
+  	$(SDK_VBoxLzf_STATIC_LIBS) \
+  	$(SDK_VBoxZlibStatic_LIBS)
  else
   vdkeystoremgr_LIBS += \
-	$(SDK_VBoxLzf_LIBS) \
-	$(SDK_VBoxZlib_LIBS)
+  	$(SDK_VBoxLzf_LIBS) \
+  	$(SDK_VBoxZlib_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)
   ifdef SDK_VBoxLibXml2_LIBS
    vdkeystoremgr_LIBS += xml2
   endif
- else if1of ($(KBUILD_TARGET),darwin freebsd)
+ else if1of ($(KBUILD_TARGET), darwin freebsd)
   vdkeystoremgr_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
   vdkeystoremgr_SDKS.win = VBoxNtDll

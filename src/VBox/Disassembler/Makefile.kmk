@@ -42,7 +42,7 @@ DisasmR3_SOURCES        = \
 	DisasmCore.cpp \
 	DisasmTables.cpp \
 	DisasmTablesX64.cpp \
- 	DisasmMisc.cpp \
+	DisasmMisc.cpp \
 	DisasmFormatBytes.cpp \
 	DisasmFormatYasm.cpp
 

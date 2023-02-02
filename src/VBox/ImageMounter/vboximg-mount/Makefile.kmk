@@ -33,20 +33,20 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 PROGRAMS += vboximg-mount
 
-vboximg-mount_TEMPLATE =  VBoxMainClientExe
+vboximg-mount_TEMPLATE = VBoxMainClientExe
 vboximg-mount_DEFS.darwin = __FreeBSD_==10
 vboximg-mount_DEFS        = _FILE_OFFSET_BITS=64
 
 vboximg-mount_SOURCES = \
-    vboximg-mount.cpp \
-    vboximg-mount.h \
-    vboximgCrypto.cpp \
-    vboximgCrypto.h \
-    vboximgMedia.cpp \
-    vboximgMedia.h \
-    vboximgOpts.h \
-    SelfSizingTable.h \
-    fuse.cpp
+	vboximg-mount.cpp \
+	vboximg-mount.h \
+	vboximgCrypto.cpp \
+	vboximgCrypto.h \
+	vboximgMedia.cpp \
+	vboximgMedia.h \
+	vboximgOpts.h \
+	SelfSizingTable.h \
+	fuse.cpp
 
 vboximg-mount_LIBS = \
 	$(LIB_DDU) \

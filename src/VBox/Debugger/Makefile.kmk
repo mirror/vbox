@@ -103,32 +103,32 @@ tstDBGCParser_LIBS = \
 
 
 if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
-#
-# Debugger GUI component (Qt).
-#
+ #
+ # Debugger GUI component (Qt).
+ #
  ifndef VBOX_WITH_QT6
-USES += qt5
+  USES += qt5
  else
-USES += qt6
+  USES += qt6
  endif
-DLLS += VBoxDbg
-VBoxDbg_TEMPLATE = VBoxQtGuiDll
-VBoxDbg_DEFS = IN_DBG_R3
-VBoxDbg_INCS = .
-VBoxDbg_QT_MODULES = Core Gui Widgets
-VBoxDbg_QT_MOCHDRS = \
-	VBoxDbgGui.h \
-	VBoxDbgConsole.h \
-	VBoxDbgStatsQt.h
-VBoxDbg_SOURCES = \
-	VBoxDbg.cpp \
-	VBoxDbgGui.cpp \
-	VBoxDbgBase.cpp \
-	VBoxDbgConsole.cpp \
-	VBoxDbgStatsQt.cpp
-VBoxDbg_LDFLAGS.darwin = \
-	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
-$(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
+ DLLS += VBoxDbg
+ VBoxDbg_TEMPLATE = VBoxQtGuiDll
+ VBoxDbg_DEFS = IN_DBG_R3
+ VBoxDbg_INCS = .
+ VBoxDbg_QT_MODULES = Core Gui Widgets
+ VBoxDbg_QT_MOCHDRS = \
+ 	VBoxDbgGui.h \
+ 	VBoxDbgConsole.h \
+ 	VBoxDbgStatsQt.h
+ VBoxDbg_SOURCES = \
+ 	VBoxDbg.cpp \
+ 	VBoxDbgGui.cpp \
+ 	VBoxDbgBase.cpp \
+ 	VBoxDbgConsole.cpp \
+ 	VBoxDbgStatsQt.cpp
+ VBoxDbg_LDFLAGS.darwin = \
+ 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
+ $(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
 endif # Qt
 
 

@@ -1754,15 +1754,15 @@ PROPS_ALL                    += VBOX_NOCRT_ALIASES
 define def_unit_VBoxNoCrtAliases_double_expansion
  $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE).ts +| $$($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE): \
  		$$(abspathex \
- 		$$($(target)_SOURCES) \
- 		$$($(target)_SOURCES.$(bld_trg)) \
- 		$$($(target)_SOURCES.$(bld_trg).$(bld_type)) \
- 		$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch)) \
- 		$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
- 		$$($(target)_SOURCES.$(bld_trg_arch)) \
- 		$$($(target)_SOURCES.$(bld_trg_cpu)) \
- 		$$($(target)_SOURCES.$(bld_type)) \
- 		, $(firstfile $(defpath) $(PATH_SUB_CURRENT))) \
+ 			$$($(target)_SOURCES) \
+ 			$$($(target)_SOURCES.$(bld_trg)) \
+ 			$$($(target)_SOURCES.$(bld_trg).$(bld_type)) \
+ 			$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch)) \
+ 			$$($(target)_SOURCES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
+ 			$$($(target)_SOURCES.$(bld_trg_arch)) \
+ 			$$($(target)_SOURCES.$(bld_trg_cpu)) \
+ 			$$($(target)_SOURCES.$(bld_type)) \
+ 			, $(firstfile $(defpath) $(PATH_SUB_CURRENT))) \
  		$$(VBOX_PATH_RUNTIME_SRC)//nocrt-aliases.sed
 	$$(call MSG_GENERATE,$(target),$$@,)
 	$$(QUIET)$$(MKDIR) -p -- "$$(dir $$@)"
@@ -2976,7 +2976,7 @@ if1of ($(DLLS), VBoxRT)
  		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
  		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-3.0.def \
  		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) \
- 		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
+ 			,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
  		| $$(dir $$@) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
 	$(RM) -f -- $@
 	$(SED)  --output "$@" \
