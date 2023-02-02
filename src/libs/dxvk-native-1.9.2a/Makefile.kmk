@@ -61,12 +61,12 @@ endef
 ## Process the VBOX_SHADERS for a target.
 ## @param 1 target name
 define def_VBoxDxVkCompilerShaders
-$$(call KB_FN_DO_PASS0_ON_TARGET,$(1))
+ $$(call KB_FN_DO_PASS0_ON_TARGET,$(1))
  $(1)_INCS         += $$($(1)_0_OUTDIR)/shaders
  $(1)_BLDDIRS      += $$($(1)_0_OUTDIR)/shaders
  $(1)_INTERMEDIATES := $$(foreach shader,$$($(1)_VBOX_SHADERS) \
  	,$$($(1)_0_OUTDIR)/shaders/$$(basename $$(notdir $$(shader))).h)
-$$(foreach shader,$$($(1)_VBOX_SHADERS),$$(evalcall2 def_VBoxDxVkCompileShader,$$($(1)_0_OUTDIR),$$(shader)))
+ $$(foreach shader,$$($(1)_VBOX_SHADERS),$$(evalcall2 def_VBoxDxVkCompileShader,$$($(1)_0_OUTDIR),$$(shader)))
 endef
 
 
