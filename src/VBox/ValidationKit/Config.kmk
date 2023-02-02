@@ -219,8 +219,9 @@ endef # def_vbox_validationkit_py_check
 
 
 define def_vbox_validationkit_process_python_sources
-$(if-expr $(words $(_SUB_MAKEFILE_STACK)) <= 0 || "$1" == "FORCE", \
-	$(foreach py, $(VBOX_VALIDATIONKIT_PYTHON_SOURCES), $(eval $(def_vbox_validationkit_py_check))),)
+ if $(words $(_SUB_MAKEFILE_STACK)) <= 0 || "$1" == "FORCE"
+  $(foreach py, $(VBOX_VALIDATIONKIT_PYTHON_SOURCES), $(eval $(def_vbox_validationkit_py_check)))
+ endif
 endef
 
 
@@ -248,8 +249,9 @@ endef
 
 ifdef VBOX_WITH_JSHINT
  define def_vbox_validationkit_process_js_sources
-$(if-expr $(words $(_SUB_MAKEFILE_STACK)) <= 0, \
-	$(foreach js, $(VBOX_VALIDATIONKIT_JS_SOURCES), $(eval $(def_vbox_validationkit_js_check))),)
+  if $(words $(_SUB_MAKEFILE_STACK)) <= 0
+   $(foreach js, $(VBOX_VALIDATIONKIT_JS_SOURCES), $(eval $(def_vbox_validationkit_js_check)))
+  endif
  endef
 endif
 
