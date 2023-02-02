@@ -287,8 +287,8 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenFailToEnter()
         /* Ask session to change 'fullscreen' mode to 'normal': */
         uimachine()->setRequestedVisualState(UIVisualStateType_Normal);
 
-        /* If session already initialized => push mode-change directly: */
-        if (uisession()->isInitialized())
+        /* If machine UI already initialized => push mode-change directly: */
+        if (uimachine()->isInitialized())
             sltCheckForRequestedVisualStateType();
     }
 }

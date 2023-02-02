@@ -77,9 +77,6 @@ class UISession : public QObject
 
 signals:
 
-    /** Notifies listeners about session initialized. */
-    void sigInitialized();
-
     /** Notifies about additions state change. */
     void sigAdditionsStateChange();
     /** Notifies about additions state actually change. */
@@ -192,7 +189,6 @@ public:
     bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
 
-    bool isInitialized() const { return m_fInitialized; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
@@ -337,7 +333,6 @@ private:
     QVector<UIFrameBuffer*> m_frameBufferVector;
 
     /* Common flags: */
-    bool m_fInitialized : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;
 

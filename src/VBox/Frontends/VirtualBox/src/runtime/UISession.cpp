@@ -175,10 +175,6 @@ bool UISession::initialize()
     uiCommon().createPidfile();
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
-    /* Warn listeners about we are initialized: */
-    m_fInitialized = true;
-    emit sigInitialized();
-
     /* True by default: */
     return true;
 }
@@ -375,7 +371,6 @@ UISession::UISession(UIMachine *pMachine)
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
     /* Common flags: */
-    , m_fInitialized(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
     /* Guest additions flags: */

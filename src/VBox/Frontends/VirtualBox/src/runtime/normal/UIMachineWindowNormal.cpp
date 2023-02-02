@@ -272,8 +272,8 @@ void UIMachineWindowNormal::prepareSessionConnections()
     connect(machineLogic()->uimachine(), &UIMachine::sigCPUExecutionCapChange,
             this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
 
-    /* Watch for UISession signals: */
-    connect(machineLogic()->uisession(), &UISession::sigInitialized,
+    /* Watch for UIMachine signals: */
+    connect(machineLogic()->uimachine(), &UIMachine::sigInitialized,
             this, &UIMachineWindowNormal::sltHandleSessionInitialized);
 }
 

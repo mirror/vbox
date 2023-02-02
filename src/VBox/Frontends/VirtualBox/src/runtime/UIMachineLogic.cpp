@@ -875,7 +875,7 @@ void UIMachineLogic::prepareSessionConnections()
             this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
 
     /* We should watch for requested modes: */
-    connect(uisession(), &UISession::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType, Qt::QueuedConnection);
+    connect(uimachine(), &UIMachine::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType, Qt::QueuedConnection);
     connect(uimachine(), &UIMachine::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
 
     /* We should watch for console events: */
@@ -1419,7 +1419,7 @@ void UIMachineLogic::cleanupSessionConnections()
                this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
 
     /* We should stop watching for requested modes: */
-    disconnect(uisession(), &UISession::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
+    disconnect(uimachine(), &UIMachine::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
     disconnect(uimachine(), &UIMachine::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
 
     /* We should stop watching for console events: */

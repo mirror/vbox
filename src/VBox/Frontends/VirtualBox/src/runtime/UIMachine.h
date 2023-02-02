@@ -62,6 +62,9 @@ class UIMachine : public QObject
 
 signals:
 
+    /** Notifies listeners about machine initialized. */
+    void sigInitialized();
+
     /** Requests async visual-state change. */
     void sigRequestAsyncVisualStateChange(UIVisualStateType visualStateType);
 
@@ -152,6 +155,9 @@ public:
     static void destroy();
     /** Static instance. */
     static UIMachine *instance() { return s_pInstance; }
+
+    /** Returns whether machine is initialized. */
+    bool isInitialized() const { return m_fInitialized; }
 
     /** Returns session UI instance. */
     UISession *uisession() const { return m_pSession; }
@@ -539,6 +545,9 @@ private:
 
     /** Holds the static instance. */
     static UIMachine *s_pInstance;
+
+    /** Holds whether machine is initialized. */
+    bool  m_fInitialized;
 
     /** Holds the session UI instance. */
     UISession *m_pSession;
