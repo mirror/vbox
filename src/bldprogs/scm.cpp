@@ -216,7 +216,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fOnlyGuestHostPage = */                     false,
     /* .fNoASMMemPageUse = */                       false,
     /* .fOnlyHrcVrcInsteadOfRc */                   false,
-    /* .fStandarizeKmk */                           false,
+    /* .fStandarizeKmk */                           true,
     /* .fUpdateCopyrightYear = */                   false,
     /* .fExternalCopyright = */                     false,
     /* .fLgplDisclaimer = */                        false,
