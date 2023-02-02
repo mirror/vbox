@@ -53,8 +53,8 @@ TOOL_VBoxXGccX86RedHatLinux_LDFLAGS.dll ?= -shared
 TOOL_VBoxXGccX86RedHatLinux_LDFLAGS.sysmod ?= -r
 
 ifdef SLKRUNS
-TOOL_VBoxXGccX86RedHatLinux_CC  += -fmessage-length=0
-TOOL_VBoxXGccX86RedHatLinux_CXX += -fmessage-length=0
+ TOOL_VBoxXGccX86RedHatLinux_CC  += -fmessage-length=0
+ TOOL_VBoxXGccX86RedHatLinux_CXX += -fmessage-length=0
 endif
 
 # General Properties used by kBuild:

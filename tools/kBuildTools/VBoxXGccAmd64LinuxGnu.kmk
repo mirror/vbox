@@ -34,7 +34,7 @@ endif
 ifndef PATH_TOOL_VBoxXGccAmd64LinuxGnu
  PATH_TOOL_VBoxXGccAmd64LinuxGnu := $(lastword $(wildcard $(KBUILD_DEVTOOLS_HST)/x86_64-linux-gnu/*))
  ifeq ($(PATH_TOOL_VBoxXGccAmd64LinuxGnu),)
-   PATH_TOOL_VBoxXGccAmd64LinuxGnu := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/x86_64-linux-gnu/*)))
+  PATH_TOOL_VBoxXGccAmd64LinuxGnu := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/x86_64-linux-gnu/*)))
  endif
 endif
 TOOL_VBoxXGccAmd64LinuxGnu_PREFIX := $(PATH_TOOL_VBoxXGccAmd64LinuxGnu)/usr/bin/$(TOOL_VBoxXGccAmd64LinuxGnu_PREFIX)
@@ -53,8 +53,8 @@ TOOL_VBoxXGccAmd64LinuxGnu_LDFLAGS.dll ?= -shared
 TOOL_VBoxXGccAmd64LinuxGnu_LDFLAGS.sysmod ?= -r
 
 ifdef SLKRUNS
-TOOL_VBoxXGccAmd64LinuxGnu_CC  += -fmessage-length=0
-TOOL_VBoxXGccAmd64LinuxGnu_CXX += -fmessage-length=0
+ TOOL_VBoxXGccAmd64LinuxGnu_CC  += -fmessage-length=0
+ TOOL_VBoxXGccAmd64LinuxGnu_CXX += -fmessage-length=0
 endif
 
 # General Properties used by kBuild:

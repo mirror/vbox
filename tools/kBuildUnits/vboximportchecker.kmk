@@ -36,21 +36,21 @@ PROPS_SYSMODS_SINGLE  += VBOX_IMPORT_CHECKER
 
 # Helper for expanding certain variables while assigning.
 define def_unit_vboximportchecker_internal_expand_twice
-$(target)_POST_CMDS += $$(if-expr "$$(tool_do)" != "LINK_LIBRARY",$$(NLTAB)$$(VBOX_RTLDRCHECKIMPORTS) -q -p "$$(KBUILD_DEVTOOLS)/$(bld_trg).$(bld_trg_arch)/exports/$$($(target)_2_VBOX_IMPORT_CHECKER)" $$(out),)
+ $(target)_POST_CMDS += $$(if-expr "$$(tool_do)" != "LINK_LIBRARY",$$(NLTAB)$$(VBOX_RTLDRCHECKIMPORTS) -q -p "$$(KBUILD_DEVTOOLS)/$(bld_trg).$(bld_trg_arch)/exports/$$($(target)_2_VBOX_IMPORT_CHECKER)" $$(out),)
 endef
 
 define def_unit_vboximportchecker_target_pre
-# Do not apply to ASAN builds as it requires newere DLLs.
-ifneq ($(KBUILD_TYPE),asan)
+ # Do not apply to ASAN builds as it requires newere DLLs.
+ ifneq ($(KBUILD_TYPE),asan)
 
-# Set pass 2 variable (simpler) and act on it.
- $(target)_2_VBOX_IMPORT_CHECKER := $(evalcall def_fn_prop_get_first_defined,VBOX_IMPORT_CHECKER)
- ifdef $(target)_2_VBOX_IMPORT_CHECKER
-  $(target)_LNK_ORDERDEPS += $(VBOX_RTLDRCHECKIMPORTS)
-  $(eval $(def_unit_vboximportchecker_internal_expand_twice))
+  # Set pass 2 variable (simpler) and act on it.
+  $(target)_2_VBOX_IMPORT_CHECKER := $(evalcall def_fn_prop_get_first_defined,VBOX_IMPORT_CHECKER)
+  ifdef $(target)_2_VBOX_IMPORT_CHECKER
+   $(target)_LNK_ORDERDEPS += $(VBOX_RTLDRCHECKIMPORTS)
+   $(eval $(def_unit_vboximportchecker_internal_expand_twice))
+  endif
+
  endif
-
-endif
 
 endef
 
