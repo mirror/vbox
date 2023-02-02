@@ -94,6 +94,8 @@ ifdef HHC
 endif
 
 VBOX_DITA_CONVERTER_PATH = $(PATH_ROOT)/src/libs/dbdita/db2dita/
+VBOX_DITA_PATH = $(PATH_ROOT)/src/libs/DITA-OT1.8.5
+
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \
 	UserManual.qhc
@@ -859,8 +861,29 @@ endef
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
 
-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
 			,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/$(file).dita))
+
+##########################################################################################
+#
+#  Use DITA-OT to create pdf out of UserManual.ditamap. See usermanual.pdf under
+#  DITA-OT-xxxxx/doc folder for details.
+#
+##########################################################################################
+define def_ditamap_to_pdf
+	DITA_ENV_SETUP ?= $(REDIRECT) \
+ 		-E 'DITA_CLASSPATH=$(VBOX_DITA_PATH)/lib/dost.jar:\
+		$(VBOX_DITA_PATH)/lib:$(VBOX_DITA_PATH)/lib/commons-codec-1.4.jar:\
+ 		$(VBOX_DITA_PATH)/lib/resolver.jar:$(VBOX_DITA_PATH)/lib/icu4j.jar:\
+ 		$(VBOX_DITA_PATH)/lib/xercesImpl.jar:$(VBOX_DITA_PATH)/lib/xml-apis.jar:\
+ 		$(VBOX_DITA_PATH)/lib/saxon/saxon9.jar:$(VBOX_DITA_PATH)/lib/saxon/saxon9-dom.jar' --
+
+	$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
+		$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap
+		$(QUIET)$(call DITA_ENV_SETUP) \
+			$(VBOX_JAVA) -jar lib/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap /transtype:pdf
+endef
+ditamap-to-pdf: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf))
 
 #
 # ChangeLog.html
