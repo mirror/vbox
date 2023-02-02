@@ -38,7 +38,7 @@ ifndef VBOX_ONLY_SDK
   	tstAPI \
   	tstVBoxAPI \
   	tstVBoxAPIPerf \
-	tstVBoxMultipleVM \
+  	tstVBoxMultipleVM \
   	$(if $(VBOX_OSE),,tstOVF) \
   	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin msiDarwinDescriptorDecoder) \
   	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
@@ -46,7 +46,7 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlPaths,) \
   	tstMediumLock \
-	tstBstr \
+  	tstBstr \
   	tstGuid \
   	tstUnattendedScript \
   	tstVBoxCrypto
@@ -108,17 +108,17 @@ tstOVF_TEMPLATE = VBoxMainClientTstExe
 tstOVF_SOURCES  = tstOVF.cpp
 
 ifndef VBOX_OSE
-#
-# OVF test data.
-#
-INSTALLS += ovf-testcases
-ovf-testcases_MODE = a+r,u+w
-ovf-testcases_INST = $(INST_TESTCASE)ovf-testcases/
-ovf-testcases_SOURCES = \
-	ovf-dummy.vmdk \
-	ovf-joomla-0.9/joomla-1.1.4-ovf.ovf=>ovf-joomla-0.9/joomla-1.1.4-ovf.ovf \
-	ovf-winhost-audio-nodisks/WinXP.ovf=>ovf-winhost-audio-nodisks/WinXP.ovf \
-	ovf-winxp-vbox-sharedfolders/winxp.ovf=>ovf-winxp-vbox-sharedfolders/winxp.ovf
+ #
+ # OVF test data.
+ #
+ INSTALLS += ovf-testcases
+ ovf-testcases_MODE = a+r,u+w
+ ovf-testcases_INST = $(INST_TESTCASE)ovf-testcases/
+ ovf-testcases_SOURCES = \
+ 	ovf-dummy.vmdk \
+ 	ovf-joomla-0.9/joomla-1.1.4-ovf.ovf=>ovf-joomla-0.9/joomla-1.1.4-ovf.ovf \
+ 	ovf-winhost-audio-nodisks/WinXP.ovf=>ovf-winhost-audio-nodisks/WinXP.ovf \
+ 	ovf-winxp-vbox-sharedfolders/winxp.ovf=>ovf-winxp-vbox-sharedfolders/winxp.ovf
 endif
 
 
@@ -216,7 +216,7 @@ tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlContextID_INCS     = ../include \
-     $(VBOX_MAIN_APIWRAPPER_INCS)
+	$(VBOX_MAIN_APIWRAPPER_INCS)
 
 
 #
@@ -229,7 +229,7 @@ tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlParseBuffer_INCS     = ../include \
-    $(VBOX_MAIN_APIWRAPPER_INCS)
+	$(VBOX_MAIN_APIWRAPPER_INCS)
 
 
 #
@@ -242,7 +242,7 @@ tstGuestCtrlPaths_SOURCES        = \
 	tstGuestCtrlPaths.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlPaths_INCS           = ../include \
-    $(VBOX_MAIN_APIWRAPPER_INCS)
+	$(VBOX_MAIN_APIWRAPPER_INCS)
 
 if 0 # Enable this if you want automatic runs after compilation.
  $$(tstGuestCtrlPaths_0_OUTDIR)/tstGuestCtrlPaths.run: $$(tstGuestCtrlPaths_1_STAGE_TARGET)
@@ -307,19 +307,19 @@ tstUnattendedScript_TEMPLATE = VBoxMainClientTstExe
 tstUnattendedScript_DEFS     = VBOX_WITH_UNATTENDED IN_VBOXSVC IN_TST_UNATTENDED_SCRIPT
 tstUnattendedScript_INTERMEDIATES = \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS) \
-       $(VBOX_XML_SCHEMADEFS_H)
+	$(VBOX_XML_SCHEMADEFS_H)
 tstUnattendedScript_INCS     = \
 	../include \
-     $(VBOX_MAIN_APIWRAPPER_INCS) \
-     $(dir $(VBOX_XML_SCHEMADEFS_H))
+	$(VBOX_MAIN_APIWRAPPER_INCS) \
+	$(dir $(VBOX_XML_SCHEMADEFS_H))
 tstUnattendedScript_SOURCES  = \
 	tstUnattendedScript.cpp \
-       ../src-server/UnattendedScript.cpp \
-       ../src-all/TextScript.cpp \
-       ../src-all/VirtualBoxBase.cpp \
-       ../src-all/VirtualBoxErrorInfoImpl.cpp \
-       ../src-all/AutoCaller.cpp \
-       ../src-all/GlobalStatusConversion.cpp
+	../src-server/UnattendedScript.cpp \
+	../src-all/TextScript.cpp \
+	../src-all/VirtualBoxBase.cpp \
+	../src-all/VirtualBoxErrorInfoImpl.cpp \
+	../src-all/AutoCaller.cpp \
+	../src-all/GlobalStatusConversion.cpp
 tstUnattendedScript_LIBS     = \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
 

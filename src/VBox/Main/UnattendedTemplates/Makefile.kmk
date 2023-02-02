@@ -64,8 +64,8 @@ ifdef VBOX_WITH_UNATTENDED
 
  ifndef VBOX_OSE
   VBoxUnattendedTemplates_SOURCES += \
- 	lgw_ks.cfg \
- 	lgw_postinstall.sh
+  	lgw_ks.cfg \
+  	lgw_postinstall.sh
  endif
 
 endif # VBOX_WITH_UNATTENDED

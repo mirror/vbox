@@ -49,10 +49,10 @@ endif
 # VBoxTestOGL - OpenGL support test app.
 # Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
 #
-if    defined(VBOX_WITH_QTGUI) \
-   && (defined(VBOX_WITH_VMSVGA3D) || defined(VBOX_WITH_VIDEOHWACCEL)) \
-   && !defined(VBOX_WITH_DEBUG_VCC_CRT) \
-   && "$(KBUILD_TARGET)" != "darwin"
+if   defined(VBOX_WITH_QTGUI) \
+  && (defined(VBOX_WITH_VMSVGA3D) || defined(VBOX_WITH_VIDEOHWACCEL)) \
+  && !defined(VBOX_WITH_DEBUG_VCC_CRT) \
+  && "$(KBUILD_TARGET)" != "darwin"
  ifdef VBOX_WITH_VIDEOHWACCEL
   ifndef VBOX_WITH_QT6
    USES += qt5

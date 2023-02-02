@@ -55,8 +55,8 @@ os2_util_LDFLAGS        = \
 	OPTION PROTmode \
 	SEGMENT IOPL IOPL EXECUTEREAD
 if 0
-os2_util_LDFLAGS       += Debug Watcom All
-os2_util_CFLAGS        += -d2 -hw
+ os2_util_LDFLAGS      += Debug Watcom All
+ os2_util_CFLAGS       += -d2 -hw
 endif
 
 os2_util_INCS           = $(PATH_TOOL_OPENWATCOM)/h/os21x
