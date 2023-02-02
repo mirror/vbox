@@ -75,7 +75,9 @@ typedef enum
     kKmkWordCtx_DepFileOrAssignment,
     /** Dependency file.
      *  Separators: space, '|' */
-    kKmkWordCtx_DepFile
+    kKmkWordCtx_DepFile,
+    /** Last context which may do double expansion. */
+    kKmkWordCtx_LastDoubleExpansion = kKmkWordCtx_DepFile
 } KMKWORDCTX;
 
 typedef struct KMKWORDSTATE
@@ -157,6 +159,11 @@ typedef struct KMKPARSER
     char                szBuf[4096];
 } KMKPARSER;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static char const g_szTabs[] = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
 
 
 static KMKTOKEN scmKmkIdentifyToken(const char *pchWord, size_t cchWord)
@@ -471,34 +478,46 @@ static size_t scmKmkWordLength(const char *pchLine, size_t cchLine, size_t offSt
         if (ch == '$')
         {
             /*
-             * Skip variable expansion.
+             * Skip variable expansion. ASSUMING double expansion being enabled
+             * for rules, we respond to both $() and $$() here, $$$$()
              */
-            if (off + 2 >= cchLine)
-                return cchLine - offStart;
-            char const chOpen = pchLine[++off];
-            if (chOpen == '(' || chOpen == '{')
+            size_t cDollars = 0;
+            do
             {
-                char const chClose = chOpen == '(' ? ')' : '}';
-                unsigned   uDepth  = 1;
                 off++;
-                for (;;)
+                if (off >= cchLine)
+                    return cchLine - offStart;
+                cDollars++;
+                ch = pchLine[off];
+            } while (ch == '$');
+            if ((cDollars & 1) || (cDollars == 2 && enmCtx <= kKmkWordCtx_LastDoubleExpansion))
+            {
+                char const chOpen = ch;
+                if (ch == '(' || ch == '{')
                 {
-                    if (off < cchLine)
-                        ch = pchLine[off++];
-                    else /* Reached the end while inside the expansion. */
+                    char const chClose = chOpen == '(' ? ')' : '}';
+                    unsigned   uDepth  = 1;
+                    off++;
+                    for (;;)
                     {
-                        pState->chOpen = chOpen;
-                        pState->uDepth = (uint16_t)uDepth;
-                        return cchLine - offStart;
+                        if (off < cchLine)
+                            ch = pchLine[off++];
+                        else /* Reached the end while inside the expansion. */
+                        {
+                            pState->chOpen = chOpen;
+                            pState->uDepth = (uint16_t)uDepth;
+                            return cchLine - offStart;
+                        }
+                        if (ch == chOpen)
+                            uDepth++;
+                        else if (ch == chClose && --uDepth == 0)
+                            break;
                     }
-                    if (ch == chOpen)
-                        uDepth++;
-                    else if (ch == chClose && --uDepth == 0)
-                        break;
                 }
-                continue;
+                else if (cDollars & 1)
+                    off++; /* $X */
             }
-            /* else: $X */
+            continue;
         }
         else if (ch == ':')
         {
@@ -1580,9 +1599,9 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
     /*
      * Process word by word past the colon, taking new lines into account.
      */
-    KMKWORDSTATE WordState   = { 0, 0 };
-    KMKWORDCTX   enmCtx      = kKmkWordCtx_TargetFileOrAssignment;
-    bool         fPendingEol = false;
+    KMKWORDSTATE WordState    = { 0, 0 };
+    KMKWORDCTX   enmCtx       = kKmkWordCtx_TargetFileOrAssignment;
+    unsigned     cPendingEols = 0;
     for (;;)
     {
         /*
@@ -1649,13 +1668,15 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
                     if (fDoubleColon)
                         ScmStreamPutCh(pOut, ':');
 
-                    fPendingEol = true;
+                    cPendingEols = 1;
                 }
                 else
                 {
                     ScmStreamWrite(pOut, RT_STR_TUPLE(" \\"));
                     ScmStreamPutEol(pOut, pParser->enmEol);
                     ScmStreamWrite(pOut, g_szSpaces, cchIndent);
+                    if (WordState.uDepth > 0)
+                        ScmStreamWrite(pOut, g_szTabs, RT_MIN(WordState.uDepth, sizeof(g_szTabs) - 1));
                 }
                 break;
             }
@@ -1678,7 +1699,7 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
     /* Deal with new lines: */
     while (offLine + 1 == cchLine && pchLine[offLine] == '\\')
     {
-        fPendingEol = true;
+        cPendingEols = 1;
 
         Assert(iSubLine + 1 < cLines);
         pParser->pchLine = pchLine = ScmStreamGetLine(pParser->pIn, &pParser->cchLine, &pParser->enmEol);
@@ -1715,7 +1736,7 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
     for (;;)
     {
         /* Indent the next word. */
-        if (!fPendingEol)
+        if (cPendingEols == 0)
             ScmStreamPutCh(pOut, ' ');
         else
         {
@@ -1723,8 +1744,17 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
             ScmStreamPutEol(pOut, pParser->enmEol);
             ScmStreamWrite(pOut, g_szSpaces, cchIndent);
             ScmStreamWrite(pOut, RT_STR_TUPLE("\t\t"));
-            fPendingEol = false;
+            if (cPendingEols > 1)
+            {
+                ScmStreamWrite(pOut, RT_STR_TUPLE("\\"));
+                ScmStreamPutEol(pOut, pParser->enmEol);
+                ScmStreamWrite(pOut, g_szSpaces, cchIndent);
+                ScmStreamWrite(pOut, RT_STR_TUPLE("\t\t"));
+            }
+            cPendingEols = 0;
         }
+        if (WordState.uDepth > 0)
+            ScmStreamWrite(pOut, g_szTabs, RT_MIN(WordState.uDepth, sizeof(g_szTabs) - 1));
 
         /* Get the next word and output it. */
         size_t cchWord = scmKmkWordLength(pchLine, cchLine, offLine, enmCtx, &WordState);
@@ -1741,7 +1771,6 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
         if (iSubLine + 1 < cLines && offLine + 1 == cchLine && pchLine[offLine] == '\\')
         {
             /* Get the next input line. */
-            unsigned cEmptyLines = 0;
             for (;;)
             {
                 Assert(iSubLine + 1 < cLines);
@@ -1758,13 +1787,9 @@ static bool scmKmkHandleRule(KMKPARSER *pParser, size_t offFirstWord, bool fDoub
                     offLine++;
 
                 /* Just drop empty lines, we'll re-add one of them afterward if we find more dependencies. */
+                cPendingEols++;
                 if (offLine + 1 == cchLine && pchLine[offLine] == '\\')
-                {
-                    cEmptyLines++;
                     continue;
-                }
-
-                fPendingEol = true;
                 break;
             }
         }
@@ -2159,7 +2184,7 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                 }
 
                 /*
-                 * Indent comment lines, unless the comment is too far into the line and such.
+                 * Indent comment lines, unless the comment is too far too the right.
                  */
                 size_t const offEffLine = ScmCalcSpacesForSrcSpan(pchLine, 0, offLine, pSettings);
                 if (offEffLine <= Parser.iActualDepth + 7)
