@@ -171,6 +171,12 @@ public:
     /** Returns requested visual-state to be entered when possible. */
     UIVisualStateType requestedVisualState() const;
 
+    /** @name General stuff.
+     ** @{ */
+        /** Returns the machine name. */
+        QString machineName() const;
+    /** @} */
+
     /** @name Branding stuff.
      ** @{ */
         /** Returns the cached machine-window icon. */

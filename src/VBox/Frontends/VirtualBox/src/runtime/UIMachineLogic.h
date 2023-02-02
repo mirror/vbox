@@ -137,7 +137,7 @@ public:
     CMachineDebugger& debugger() const;
 
     /** Returns the machine name. */
-    const QString& machineName() const;
+    QString machineName() const;
     const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }
     UIKeyboardHandler* keyboardHandler() const { return m_pKeyboardHandler; }
     UIMouseHandler* mouseHandler() const { return m_pMouseHandler; }

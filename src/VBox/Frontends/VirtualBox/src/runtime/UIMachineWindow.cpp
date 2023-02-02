@@ -236,9 +236,9 @@ CConsole& UIMachineWindow::console() const
     return uisession()->console();
 }
 
-const QString& UIMachineWindow::machineName() const
+QString UIMachineWindow::machineName() const
 {
-    return uisession()->machineName();
+    return uimachine()->machineName();
 }
 
 bool UIMachineWindow::shouldResizeToGuestDisplay() const

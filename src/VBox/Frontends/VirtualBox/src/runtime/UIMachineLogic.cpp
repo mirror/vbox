@@ -320,9 +320,9 @@ CMachineDebugger& UIMachineLogic::debugger() const
     return uisession()->debugger();
 }
 
-const QString& UIMachineLogic::machineName() const
+QString UIMachineLogic::machineName() const
 {
-    return uisession()->machineName();
+    return uimachine()->machineName();
 }
 
 UIMachineWindow* UIMachineLogic::mainMachineWindow() const

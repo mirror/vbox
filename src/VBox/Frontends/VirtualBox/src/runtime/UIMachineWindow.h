@@ -101,7 +101,7 @@ public:
     CConsole& console() const;
 
     /** Returns the machine name. */
-    const QString& machineName() const;
+    QString machineName() const;
 
     /** Returns whether the machine-window should resize to fit to the guest display.
       * @note Relevant only to normal (windowed) case. */

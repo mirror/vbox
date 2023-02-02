@@ -149,31 +149,32 @@ public:
     bool powerUp();
 
     /** Returns the session instance. */
-    CSession& session() { return m_session; }
+    CSession &session() { return m_session; }
     /** Returns the session's machine instance. */
-    CMachine& machine() { return m_machine; }
+    CMachine &machine() { return m_machine; }
     /** Returns the session's console instance. */
-    CConsole& console() { return m_console; }
+    CConsole &console() { return m_console; }
     /** Returns the console's display instance. */
-    CDisplay& display() { return m_display; }
+    CDisplay &display() { return m_display; }
     /** Returns the console's guest instance. */
-    CGuest& guest() { return m_guest; }
+    CGuest &guest() { return m_guest; }
     /** Returns the console's mouse instance. */
-    CMouse& mouse() { return m_mouse; }
+    CMouse &mouse() { return m_mouse; }
     /** Returns the console's keyboard instance. */
-    CKeyboard& keyboard() { return m_keyboard; }
+    CKeyboard &keyboard() { return m_keyboard; }
     /** Returns the console's debugger instance. */
-    CMachineDebugger& debugger() { return m_debugger; }
+    CMachineDebugger &debugger() { return m_debugger; }
 
     /** Returns the machine name. */
-    const QString& machineName() const { return m_strMachineName; }
+    QString machineName() const { return m_strMachineName; }
+
+    /** Returns previous machine state. */
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
+    /** Returns machine state. */
     KMachineState machineState() const { return m_machineState; }
 
-    UIMachineLogic* machineLogic() const;
-    QWidget* mainMachineWindow() const;
+    /** Returns main machine-widget id. */
     WId mainMachineWindowId() const;
-    UIMachineWindow *activeMachineWindow() const;
 
     bool isSaved() const { return machineState() == KMachineState_Saved ||
                                   machineState() == KMachineState_AbortedSaved; }
@@ -190,6 +191,7 @@ public:
     bool isStuck() const { return machineState() == KMachineState_Stuck; }
     bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
+
     bool isInitialized() const { return m_fInitialized; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
@@ -271,8 +273,14 @@ private:
     /** Destructor. */
     ~UISession();
 
-    /* Private getters: */
-    UIMachine* uimachine() const { return m_pMachine; }
+    /** Returns machine UI reference. */
+    UIMachine *uimachine() const { return m_pMachine; }
+    /** Returns machine-logic reference. */
+    UIMachineLogic *machineLogic() const;
+    /** Returns main machine-window reference. */
+    UIMachineWindow *activeMachineWindow() const;
+    /** Returns main machine-widget reference. */
+    QWidget *mainMachineWindow() const;
 
     /* Prepare helpers: */
     bool prepare();

@@ -226,6 +226,11 @@ UIVisualStateType UIMachine::requestedVisualState() const
     return m_enmRequestedVisualState;
 }
 
+QString UIMachine::machineName() const
+{
+    return uisession()->machineName();
+}
+
 void UIMachine::updateStateAdditionsActions()
 {
     /* Make sure action-pool knows whether GA supports graphics: */
