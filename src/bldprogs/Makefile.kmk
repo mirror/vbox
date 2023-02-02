@@ -34,7 +34,8 @@ ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.sparc64)
 endif
 
 bin2c_TEMPLATE = VBoxBldProg
-bin2c_SOURCES = bin2c.c
+bin2c_SOURCES = \
+	bin2c.c
 
 biossums_TEMPLATE = VBoxBldProg
 biossums_SOURCES = biossums.c
@@ -56,7 +57,7 @@ ifndef VBOX_ONLY_BUILD
  	scmdiff.cpp \
  	scmrw.cpp \
  	scmrw-kmk.cpp \
-       scmparser.cpp \
+ 	scmparser.cpp \
  	scmstream.cpp \
  	scmsubversion.cpp
  ifdef VBOX_PATH_SUBVERSION_INCS
