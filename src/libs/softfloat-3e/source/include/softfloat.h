@@ -223,6 +223,7 @@ float32_t f32_mulAdd( float32_t, float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA
 float32_t f32_div( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
 float32_t f32_rem( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
 float32_t f32_sqrt( float32_t SOFTFLOAT_STATE_DECL_COMMA );
+float32_t f32_rsqrt( float32_t SOFTFLOAT_STATE_DECL_COMMA );
 bool f32_eq( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
 bool f32_le( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );
 bool f32_lt( float32_t, float32_t SOFTFLOAT_STATE_DECL_COMMA );

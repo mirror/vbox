@@ -119,3 +119,65 @@ float32_t f32_sqrt( float32_t a SOFTFLOAT_STATE_DECL_COMMA )
 
 }
 
+float32_t f32_rsqrt( float32_t a SOFTFLOAT_STATE_DECL_COMMA )
+{
+    union ui32_f32 uA;
+    uint_fast32_t uiA;
+    bool signA;
+    int_fast16_t expA;
+    uint_fast32_t sigA, uiZ;
+    struct exp16_sig32 normExpSig;
+    int_fast16_t expZ;
+    uint_fast32_t sigZ;
+    union ui32_f32 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    uA.f = a;
+    uiA = uA.ui;
+    signA = signF32UI( uiA );
+    expA  = expF32UI( uiA );
+    sigA  = fracF32UI( uiA );
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( expA == 0xFF ) {
+        if ( sigA ) {
+            uiZ = softfloat_propagateNaNF32UI( uiA, 0 SOFTFLOAT_STATE_ARG_COMMA );
+            goto uiZ;
+        }
+        if ( ! signA ) return a;
+        goto invalid;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( signA ) {
+        if ( ! (expA | sigA) ) return a;
+        goto invalid;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( ! expA ) {
+        if ( ! sigA ) return a;
+        normExpSig = softfloat_normSubnormalF32Sig( sigA );
+        expA = normExpSig.exp;
+        sigA = normExpSig.sig;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expZ = 0x7F - ((expA - 0x7F)>>1) - 2;
+    expA &= 1;
+    sigA = (sigA | 0x00800000)<<8;
+    sigZ = softfloat_approxRecipSqrt32_1( expA, sigA );
+    sigZ >>= 1;
+
+    return softfloat_roundPackToF32( 0, expZ, sigZ SOFTFLOAT_STATE_ARG_COMMA);
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ invalid:
+    softfloat_raiseFlags( softfloat_flag_invalid SOFTFLOAT_STATE_ARG_COMMA);
+    uiZ = defaultNaNF32UI;
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+
+}
