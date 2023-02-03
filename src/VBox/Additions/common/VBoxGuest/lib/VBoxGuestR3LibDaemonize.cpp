@@ -63,6 +63,9 @@
 
 #include <iprt/process.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
+#include <VBox/log.h>
+
 #include "VBoxGuestR3LibInternal.h"
 
 
@@ -73,24 +76,42 @@
  *
  * @returns 0 on success
  *
- * @param   fNoChDir    Pass false to change working directory to root.
- * @param   fNoClose    Pass false to redirect standard file streams to /dev/null.
- * @param   fRespawn    Restart the daemonised process after five seconds if it
- *                      terminates abnormally.
- * @param   pcRespawn   Where to store a count of how often we have respawned,
- *                      intended for avoiding error spamming.  Optional.
+ * @param   fNoChDir        Pass false to change working directory to root.
+ * @param   fNoClose        Pass false to redirect standard file streams to /dev/null.
+ * @param   fRespawn        Restart the daemonised process after five seconds if it
+ *                          terminates abnormally.
+ * @param   pcRespawn       Where to store a count of how often we have respawned,
+ *                          intended for avoiding error spamming.  Optional.
+ * @param   fReturnOnUpdate If True, this function will return control to caller when
+ *                          child process will terminate with exit code of VBGLR3EXITCODERELOAD,
+ *                          indicating that Guest Additions update has been started and this running
+ *                          process will be asked to be restarted by arrival of the next SIGUSR1
+ *                          signal (caller should wait for SIGUSR1). If False, this functions will
+ *                          never return, but rather exit() when child process terminates with
+ *                          exit code 0.
+ * @param   pfUpdateStarted A flag which passed to caller if fReturnOnUpdate is True (can be NULL).
+ * @param   szPidfile       Optional path to parent process' pidfile (can be NULL).
+ * @param   phPidfile       Optional path to parent process' pidfile handle (can not be NULL if
+ *                          szPidfile was specified).
  *
  * @todo    Use RTProcDaemonize instead of this.
  * @todo    Implement fRespawn on OS/2.
  * @todo    Make the respawn interval configurable.  But not until someone
  *          actually needs that.
  */
-VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, unsigned *pcRespawn)
+VBGLR3DECL(int) VbglR3DaemonizeEx(bool fNoChDir, bool fNoClose, bool fRespawn, unsigned *pcRespawn,
+                                  bool fReturnOnUpdate, bool *pfUpdateStarted, const char *szPidfile,
+                                  RTFILE *phPidfile)
 {
 #if defined(RT_OS_OS2)
     PPIB pPib;
     PTIB pTib;
     DosGetInfoBlocks(&pTib, &pPib);
+
+    RT_NOREF(fReturnOnUpdate);
+    RT_NOREF(pfUpdateStarted);
+    RT_NOREF(szPidfile);
+    RT_NOREF(phPidfile);
 
     AssertRelease(!fRespawn);
     /* Get the full path to the executable. */
@@ -229,6 +250,28 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, uns
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
         exit(0);
+
+    /* Check if another instance is already running. */
+    if (szPidfile != NULL)
+    {
+        if (phPidfile != NULL)
+        {
+            int rc = VbglR3PidfileWait(szPidfile, phPidfile, 5000);
+
+             /* Another instance of process is already running. */
+            if (rc == VERR_FILE_LOCK_VIOLATION)
+            {
+                LogRel(("cannot aquire pidfile %s, exitting\n", szPidfile));
+                exit(1);
+            }
+
+            /* Unable to lock on pidfile. */
+            if (RT_FAILURE(rc))
+                exit(1);
+        }
+        else
+            return VERR_INVALID_PARAMETER;
+    }
 # endif /* RT_OS_LINUX */
 
     if (fRespawn)
@@ -253,12 +296,31 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, uns
             while (rcWait == -1 && errno == EINTR);
             if (rcWait == -1)
                 exit(1);
-            if (WIFEXITED(iStatus) && WEXITSTATUS(iStatus) == 0)
-                exit(0);
+            if (WIFEXITED(iStatus))
+            {
+                if (WEXITSTATUS(iStatus) == 0)
+                    exit(0);
+                else if (fReturnOnUpdate && WEXITSTATUS(iStatus) == VBGLR3EXITCODERELOAD)
+                {
+                    /* Tell caller that update has been started. */
+                    if (pfUpdateStarted != NULL)
+                        *pfUpdateStarted = true;
+
+                    return VINF_SUCCESS;
+                }
+            }
             sleep(5);
             ++cRespawn;
         }
     }
     return VINF_SUCCESS;
 #endif
+}
+
+/**
+ * A wrapper function for VbglR3DaemonizeEx.
+ */
+VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, unsigned *pcRespawn)
+{
+    return VbglR3DaemonizeEx(fNoChDir, fNoClose, fRespawn, pcRespawn, false, NULL, NULL, NULL);
 }

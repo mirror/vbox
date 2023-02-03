@@ -553,6 +553,10 @@ DECLR0VBGL(int)     VbglR0SetMouseStatus(uint32_t fFeatures);
 
 /** @name General-purpose functions
  * @{ */
+/** Exit code which is returned by VBoxClient child process to notify
+ * parent to release VBoxGuest driver resources on Unix-like guests. */
+#define VBGLR3EXITCODERELOAD    (2)
+
 VBGLR3DECL(int)     VbglR3Init(void);
 VBGLR3DECL(int)     VbglR3InitUser(void);
 VBGLR3DECL(void)    VbglR3Term(void);
@@ -563,8 +567,12 @@ VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
 VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cch);
 VBGLR3DECL(int)     VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot);
 VBGLR3DECL(int)     VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, unsigned *pcRespawn);
+VBGLR3DECL(int)     VbglR3DaemonizeEx(bool fNoChDir, bool fNoClose, bool fRespawn, unsigned *pcRespawn,
+                                      bool fReturnOnUpdate, bool *pfUpdateStarted, const char *szPidfile,
+                                      RTFILE *phPidfile);
 VBGLR3DECL(int)     VbglR3PidFile(const char *pszPath, PRTFILE phFile);
 VBGLR3DECL(void)    VbglR3ClosePidFile(const char *pszPath, RTFILE hFile);
+VBGLR3DECL(int)     VbglR3PidfileWait(const char *szPidfile, RTFILE *phPidfile, uint64_t u64TimeoutMs);
 VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot);
 VBGLR3DECL(int)     VbglR3AcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fConfig);
 VBGLR3DECL(int)     VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfEvents);
