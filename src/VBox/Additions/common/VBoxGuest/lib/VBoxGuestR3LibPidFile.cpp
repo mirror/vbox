@@ -42,6 +42,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/process.h>
+#include <iprt/thread.h>
 #include <iprt/err.h>
 #include "VBoxGuestR3LibInternal.h"
 
