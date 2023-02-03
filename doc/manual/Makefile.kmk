@@ -892,9 +892,10 @@ man_vboximg-mount.xml \
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
-  		$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap
+  		$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual_dita.ditamap
 	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap /transtype:pdf /ditadir:$(VBOX_DITA_PATH)
+		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual_dita.ditamap \
+			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
 
