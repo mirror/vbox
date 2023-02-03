@@ -146,8 +146,12 @@ module_build_log()
 dev=/dev/vboxguest
 userdev=/dev/vboxuser
 config=/var/lib/VBoxGuestAdditions/config
+user_config=/etc/virtualbox-guest-additions.conf
 owner=vboxadd
 group=1
+
+# Include custom user configuration file.
+[ -r "$user_config" ] && . "$user_config"
 
 if test -r $config; then
   . $config
@@ -184,6 +188,31 @@ running_vboxsf()
 running_vboxvideo()
 {
     lsmod | grep -q "vboxvideo[^_-]"
+}
+
+# Get version string of currently running kernel module.
+running_module_version()
+{
+    mod=$1
+    version_string_path="/sys/module/"$mod"/version"
+
+    [ -n "$mod" ] || return
+    [ -r "$version_string_path" ] || return
+
+    cat "$version_string_path"
+}
+
+# Check if currently loaded kernel module version matches to
+# current Guest Additions installed version and revision.
+check_running_module_version()
+{
+    mod=$1
+    expected="$VBOX_VERSION $VBOX_REVISION"
+
+    [ -n "$mod" ] || return
+    [ -n "$expected" ] || return
+
+    [ "$expected" = "$(running_module_version "$mod")" ] || return
 }
 
 do_vboxguest_non_udev()
@@ -643,6 +672,16 @@ module_signed()
     mod="$1"
     [ -n "$mod" ] || return
 
+    # Be nice with distributions which do not provide tools which we
+    # use in order to verify module signature. This variable needs to
+    # be explicitly set by administrator. This script will look for it
+    # in /etc/virtualbox-guest-additions.conf. Make sure that you know
+    # what you do!
+    if [ "$VBOX_BYPASS_MODULES_SIGNATURE_CHECK" = "1" ]; then
+        echo "1"
+        return
+    fi
+
     extraction_tool=/lib/modules/"$(uname -r)"/build/scripts/extract-module-sig.pl
     mod_path=$(module_path "$mod" 2>/dev/null)
     openssl_tool=$(which openssl 2>/dev/null)
@@ -769,7 +808,8 @@ Please install them and execute
     groupadd -r -f vboxdrmipc >/dev/null 2>&1
 
     if  running_vboxguest || running_vboxadd; then
-        info "Running kernel modules will not be replaced until the system is restarted"
+        # Only warn user if currently loaded modules version do not match Guest Additions Installation.
+        check_running_module_version "vboxguest" || info "Running kernel modules will not be replaced until the system is restarted or 'rcvboxadd reload' triggered"
     fi
 
     # Put the X.Org driver in place.  This is harmless if it is not needed.
@@ -814,7 +854,7 @@ start()
 
     # Check if kernel modules for currently running kernel are ready
     # and rebuild them if needed.
-    setup
+    test "$(setup_complete)" = "1" || setup
 
     # Warn if Secure Boot setup not yet complete.
     if test -n "$HAVE_SEC_BOOT" && test -z "$DEB_KEY_ENROLLED"; then
@@ -877,8 +917,179 @@ stop()
         [ -n "$(findmnt -t vboxsf)" ] && fail "Cannot unmount vboxsf folders"
     fi
     test -n "${INSTALL_NO_MODULE_BUILDS}" ||
-        info "You may need to restart your guest system to finish removing guest drivers."
+        info "You may need to restart your guest system to finish removing guest drivers or consider running 'rcvboxadd reload'."
     return 0
+}
+
+# Checks if systemctl is present and functional (i.e., systemd is the init process).
+use_systemd()
+{
+    systemctl status >/dev/null 2>&1
+}
+
+## Did we install a systemd service?
+systemd_service_installed()
+{
+    ## Name of service to test.
+    name="${1}"
+
+    test -f /lib/systemd/system/"${name}".service ||
+        test -f /usr/lib/systemd/system/"${name}".service
+}
+
+## Perform an action on a service
+do_sysvinit_action()
+{
+    ## Name of service to start.
+    name="${1}"
+    ## The action to perform, normally "start", "stop" or "status".
+    action="${2}"
+
+    if use_systemd -a systemd_service_installed "${name}"; then
+        systemctl -q ${action} "${name}"
+    elif test -x "/etc/rc.d/init.d/${name}"; then
+        "/etc/rc.d/init.d/${name}" "${action}" quiet
+    elif test -x "/etc/init.d/${name}"; then
+        "/etc/init.d/${name}" "${action}" quiet
+    fi
+}
+
+# Check if process with this PID is running.
+check_pid()
+{
+    pid=$1
+
+    [ -d "/proc/$pid" ] && true
+}
+
+send_sig_usr1_by_pidfile()
+{
+    pidfile=$1
+
+    if [ -f "$pidfile" ]; then
+        check_pid $(cat "$pidfile")
+        if [ $? -eq 0 ]; then
+            kill -USR1 $(cat "$pidfile") >/dev/null 2>&1
+        else
+            # Do not spoil $?.
+            true
+        fi
+    else
+        # Do not spoil $?.
+        true
+    fi
+}
+
+# SIGUSR1 is used in order to notify VBoxClient processes that system
+# update is started or kernel modules are going to be reloaded,
+# so VBoxClient can release vboxguest.ko resources and then restart itself.
+send_sig_usr1()
+{
+    # Specify whether we sending signal to VBoxClient parent (control)
+    # process or a child (actual service) process.
+    process_type="$1"
+
+    pidfile_postfix=""
+    [ -z "$process_type" ] || pidfile_postfix="-$process_type"
+
+    for user_home in $(getent passwd | cut -d ':' -f 6); do
+        if [ -d "$user_home" ]; then
+
+            for pid_file in "$user_home"/.vboxclient-*"$pidfile_postfix".pid; do
+
+                # If process type was not specified, we assume that signal supposed
+                # to be sent to legacy VBoxClient processes which have different
+                # pidfile name pattern (it does not contain "control" or "service").
+                # Skip those pidfiles who has.
+                [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "control")" ] && continue
+                [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "service")" ] && continue
+
+                send_sig_usr1_by_pidfile "$pid_file"
+            done
+
+        fi
+    done
+}
+
+reload()
+{
+    begin "reloading kernel modules and services"
+
+    # Check if script was started with root privileges.
+    [ `id -u` -eq 0 ] || fail "root privileges are required"
+
+    # Check if modules were previously build.
+    [ "$(setup_complete)" = "1" ] || fail "kernel modules were set up yet, please consider running 'rcvboxadd setup' first."
+
+    # Stop VBoxService (systemctl stop vboxadd-service.service).
+    do_sysvinit_action vboxadd-service stop >/dev/null 2>&1
+
+    # Unmount Shared Folders.
+    [ $? -eq 0 ] && umount -a -t vboxsf >/dev/null 2>&1
+
+    # Stop VBoxDRMClient.
+    [ $? -eq 0 ] && send_sig_usr1_by_pidfile "/var/run/VBoxDRMClient"
+
+    if [ $? -eq 0 ]; then
+        # Tell legacy VBoxClient processes to release vboxguest.ko references.
+        send_sig_usr1 ""
+
+        # Tell compatible VBoxClient processes to release vboxguest.ko references.
+        send_sig_usr1 "service"
+
+        # Try unload.
+        for attempt in 1 2 3 4 5; do
+
+            # Give VBoxClient processes some time to close reference to vboxguest module.
+            [ $? -ne 0 ] && sleep 1
+
+            # Try unload drivers unconditionally (ignore previous command exit code).
+            # If final goal of unloading vboxguest.ko won't be met, we will fail on
+            # the next step anyway.
+            running_vboxvideo && modprobe -r vboxvideo >/dev/null  2>&1
+            running_vboxsf && modprobe -r vboxsf >/dev/null  2>&1
+            running_vboxguest
+            if [ $? -eq 0 ]; then
+                modprobe -r vboxguest >/dev/null  2>&1
+            else
+                # Do not spoil $?.
+                true
+            fi
+        done
+
+        # Check if we succeeded with unloading vboxguest after several attempts.
+        running_vboxguest
+        if [ $? -eq 0 ]; then
+            fail "Cannot reload kernel modules: one or more module(s) is still in use"
+        else
+            # Do not spoil $?.
+            true
+        fi
+
+        # Load drivers (skip vboxvideo since it is not loaded for very old guests).
+        [ $? -eq 0 ] && modprobe vboxguest >/dev/null 2>&1
+        [ $? -eq 0 ] && modprobe vboxsf >/dev/null 2>&1
+
+        # Start VBoxService and VBoxDRMClient (systemctl start vboxadd-service.service).
+        [ $? -eq 0 ] && do_sysvinit_action vboxadd-service start >/dev/null 2>&1
+
+        # Reload VBoxClient processes.
+        [ $? -eq 0 ] && send_sig_usr1 "control"
+    fi
+
+    if [ $? -eq 0 ]; then
+
+        # Check if we just loaded modules of correct version. Skip vboxvideo
+        # since it's not loaded for very old guests.
+        for mod in vboxguest vboxsf; do
+            check_running_module_version "$mod" || fail "currently loaded module $mod version ($(running_module_version "$mod") does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION))"
+        done
+        # Take reported version of running Guest Additions from running vboxguest module (as a paranoia check).
+        info "kernel modules and services $(running_module_version "vboxguest") reloaded"
+        info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
+    else
+        fail "cannot reload kernel modules and restart services"
+    fi
 }
 
 dmnstatus()
@@ -907,6 +1118,10 @@ stop)
     ;;
 restart)
     restart
+    ;;
+# Tries to reload kernel modules and restart user processes.
+reload)
+    reload
     ;;
 # Setup does a clean-up (see below) and re-does all Additions-specific
 # configuration of the guest system, including building kernel modules for the
@@ -937,7 +1152,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup} [quiet]"
+    echo "Usage: $0 {start|stop|restart|reload|status|setup|quicksetup|cleanup} [quiet]"
     exit 1
 esac
 
