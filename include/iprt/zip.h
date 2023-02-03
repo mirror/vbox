@@ -305,6 +305,12 @@ typedef enum RTZIPTARFORMAT
     RTZIPTARFORMAT_USTAR,
     /** PAX format from POSIX.1-2001. */
     RTZIPTARFORMAT_PAX,
+    /** CPIO format (portable ASCII foramt as defined by SuSV2). */
+    RTZIPTARFORMAT_CPIO_ASCII_SUSV2,
+    /** CPIO format (New ascii format). */
+    RTZIPTARFORMAT_CPIO_ASCII_NEW,
+    /** CPIO format (New ascii format with checksumming). */
+    RTZIPTARFORMAT_CPIO_ASCII_NEW_CHKSUM,
     /** End of valid formats. */
     RTZIPTARFORMAT_END,
     /** Make sure the type is at least 32 bits wide. */
