@@ -315,6 +315,48 @@ static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hV
 
 
 /**
+ * Archives a symlink.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + printed message.
+ * @param   pOpts           The options.
+ * @param   hVfsFss         The TAR filesystem stream handle.
+ * @param   pszSrc          The file path or VFS spec.
+ * @param   paObjInfo[3]    Array of three FS object info structures.  The first
+ *                          one is always filled with RTFSOBJATTRADD_UNIX info.
+ *                          The next two may contain owner and group names if
+ *                          available.  Buffers can be modified.
+ * @param   pszDst          The name to archive the file under.
+ * @param   pErrInfo        Error info buffer (saves stack space).
+ */
+static RTEXITCODE rtZipTarCmdArchiveSymlink(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss, const char *pszSrc,
+                                            RTFSOBJINFO paObjInfo[3], const char *pszDst, PRTERRINFOSTATIC pErrInfo)
+{
+    if (pOpts->fVerbose)
+        RTPrintf("%s\n", pszDst);
+
+    /* Open the file. */
+    uint32_t        offError;
+    RTVFSOBJ        hVfsObjSrc;
+    int rc = RTVfsChainOpenObj(pszSrc, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                               RTVFSOBJ_F_OPEN_SYMLINK | RTVFSOBJ_F_CREATE_NOTHING | RTPATH_F_ON_LINK,
+                               &hVfsObjSrc, &offError, RTErrInfoInitStatic(pErrInfo));
+    if (RT_FAILURE(rc))
+        return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenObj", pszSrc, rc, offError, &pErrInfo->Core);
+
+    rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObjSrc, 0 /*fFlags*/);
+    RTVfsObjRelease(hVfsObjSrc);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (rc != VINF_SUCCESS)
+            RTMsgWarning("%Rrc adding '%s'", rc, pszDst);
+        return RTEXITCODE_SUCCESS;
+    }
+    return RTMsgErrorExitFailure("%Rrc adding '%s'", rc, pszDst);
+}
+
+
+/**
  * Sub-directory helper for creating archives.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + printed message.
@@ -362,6 +404,16 @@ static RTEXITCODE rtZipTarCmdArchiveDirSub(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM 
     /* Ditto for destination. */
     if (cchDst + 3 >= RTPATH_MAX)
         return RTMsgErrorExitFailure("Destination path too long: '%s'\n", pszDst);
+
+    /* For CPIO we need to add the directory entry itself first. */
+    if (pOpts->enmFormat == RTZIPTARCMDFORMAT_CPIO)
+    {
+        RTVFSOBJ hVfsObjSrc = RTVfsObjFromDir(hVfsIoDir);
+        rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObjSrc, 0 /*fFlags*/);
+        RTVfsObjRelease(hVfsObjSrc);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExitFailure("Failed to add directory to archive: '%s' -> %Rrc\n", pszDst, rc);
+    }
 
     if (!RTPATH_IS_SEP(pszDst[cchDst - 1]))
     {
@@ -415,6 +467,18 @@ static RTEXITCODE rtZipTarCmdArchiveDirSub(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM 
                 {
                     memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
                     rc = rtZipTarCmdArchiveFile(pOpts, hVfsFss, pszSrc, paObjInfo, pszDst, pErrInfo);
+                }
+                break;
+            }
+
+            case RTFS_TYPE_SYMLINK:
+            {
+                memcpy(&pszSrc[cchSrc], pDirEntry->szName, pDirEntry->cbName + 1);
+                rc = rtZipTarCmdQueryObjInfo(pszSrc, paObjInfo, 3 /* cObjInfo */);
+                if (RT_SUCCESS(rc))
+                {
+                    memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
+                    rc = rtZipTarCmdArchiveSymlink(pOpts, hVfsFss, pszSrc, paObjInfo, pszDst, pErrInfo);
                 }
                 break;
             }
@@ -560,6 +624,7 @@ static RTEXITCODE rtZipTarCmdOpenOutputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSST
      * Open the filesystem stream creator.
      */
     if (   pOpts->enmFormat == RTZIPTARCMDFORMAT_TAR
+        || pOpts->enmFormat == RTZIPTARCMDFORMAT_CPIO
         || pOpts->enmFormat == RTZIPTARCMDFORMAT_AUTO_DEFAULT)
     {
         RTVFSFSSTREAM hVfsFss;
@@ -703,7 +768,7 @@ static RTEXITCODE rtZipTarCreate(PRTZIPTARCMDOPS pOpts)
                         else if (RTFS_IS_FILE(aObjInfo[0].Attr.fMode))
                             rcExit2 = rtZipTarCmdArchiveFile(pOpts, hVfsFss, szSrc, aObjInfo, szDst, &ErrInfo);
                         else if (RTFS_IS_SYMLINK(aObjInfo[0].Attr.fMode))
-                            rcExit2 = RTMsgErrorExitFailure("Symlink archiving is not implemented");
+                            rcExit2 = rtZipTarCmdArchiveSymlink(pOpts, hVfsFss, szSrc, aObjInfo, szDst, &ErrInfo);
                         else if (RTFS_IS_FIFO(aObjInfo[0].Attr.fMode))
                             rcExit2 = RTMsgErrorExitFailure("FIFO archiving is not implemented");
                         else if (RTFS_IS_SOCKET(aObjInfo[0].Attr.fMode))
@@ -1877,7 +1942,10 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
                 else if (!strcmp(ValueUnion.psz, "xar"))
                     Opts.enmFormat    = RTZIPTARCMDFORMAT_XAR;
                 else if (!strcmp(ValueUnion.psz, "cpio"))
+                {
                     Opts.enmFormat    = RTZIPTARCMDFORMAT_CPIO;
+                    Opts.enmTarFormat = RTZIPTARFORMAT_CPIO_ASCII_NEW;
+                }
                 else
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown archive format: '%s'", ValueUnion.psz);
                 break;
