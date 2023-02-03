@@ -644,7 +644,7 @@ static int rtZipTarFssWriter_ObjInfoToHdrCpio(PRTZIPTARFSSTREAMWRITER pThis, con
     /*
      * File path size including the terminator.
      */
-    rtZipTarFssWriter_CpioFmtU32(pThis->Cpio.Hdr.AsciiNew.achNameSize, cchPath);
+    rtZipTarFssWriter_CpioFmtU32(pThis->Cpio.Hdr.AsciiNew.achNameSize, (uint32_t)cchPath);
 
     pThis->cHdrs = 1;
     pThis->cbHdr = RT_ALIGN_32(sizeof(pThis->Cpio.Hdr) + cchPath, 4);
