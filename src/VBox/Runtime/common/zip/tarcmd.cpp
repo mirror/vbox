@@ -331,6 +331,8 @@ static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hV
 static RTEXITCODE rtZipTarCmdArchiveSymlink(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss, const char *pszSrc,
                                             RTFSOBJINFO paObjInfo[3], const char *pszDst, PRTERRINFOSTATIC pErrInfo)
 {
+    RT_NOREF(paObjInfo);
+
     if (pOpts->fVerbose)
         RTPrintf("%s\n", pszDst);
 
