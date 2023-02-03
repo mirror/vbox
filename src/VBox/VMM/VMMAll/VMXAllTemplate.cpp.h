@@ -5922,25 +5922,36 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
  */
 DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+#ifdef DEBUG_ramshankar
+# define VMEXIT_CALL_RET(a_fSave, a_CallExpr) \
+       do { \
+            if (a_fSave != 0) \
+                vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__); \
+            VBOXSTRICTRC rcStrict = a_CallExpr; \
+            return rcStrict; \
+        } while (0)
+#else
+# define VMEXIT_CALL_RET(a_fSave, a_CallExpr) return a_CallExpr
+#endif
+
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        case VMX_EXIT_EPT_MISCONFIG:            return vmxHCExitEptMisconfigNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_EPT_VIOLATION:            return vmxHCExitEptViolationNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_EPT_MISCONFIG:            VMEXIT_CALL_RET(0, vmxHCExitEptMisconfigNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_EPT_VIOLATION:            VMEXIT_CALL_RET(0, vmxHCExitEptViolationNested(pVCpu, pVmxTransient));
 # else
-        case VMX_EXIT_EPT_MISCONFIG:            return vmxHCExitEptMisconfig(pVCpu, pVmxTransient);
-        case VMX_EXIT_EPT_VIOLATION:            return vmxHCExitEptViolation(pVCpu, pVmxTransient);
+        case VMX_EXIT_EPT_MISCONFIG:            VMEXIT_CALL_RET(0, vmxHCExitEptMisconfig(pVCpu, pVmxTransient));
+        case VMX_EXIT_EPT_VIOLATION:            VMEXIT_CALL_RET(0, vmxHCExitEptViolation(pVCpu, pVmxTransient));
 # endif
-        case VMX_EXIT_XCPT_OR_NMI:              return vmxHCExitXcptOrNmiNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_IO_INSTR:                 return vmxHCExitIoInstrNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_HLT:                      return vmxHCExitHltNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_XCPT_OR_NMI:              VMEXIT_CALL_RET(0, vmxHCExitXcptOrNmiNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_IO_INSTR:                 VMEXIT_CALL_RET(0, vmxHCExitIoInstrNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_HLT:                      VMEXIT_CALL_RET(0, vmxHCExitHltNested(pVCpu, pVmxTransient));
 
         /*
          * We shouldn't direct host physical interrupts to the nested-guest.
          */
-        case VMX_EXIT_EXT_INT:
-            return vmxHCExitExtInt(pVCpu, pVmxTransient);
+        case VMX_EXIT_EXT_INT:                  VMEXIT_CALL_RET(0, vmxHCExitExtInt(pVCpu, pVmxTransient));
 
         /*
          * Instructions that cause VM-exits unconditionally or the condition is
@@ -5959,7 +5970,7 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VMXOFF:
         case VMX_EXIT_ENCLS:              /* Condition specified solely by nested hypervisor. */
         case VMX_EXIT_VMFUNC:
-            return vmxHCExitInstrNested(pVCpu, pVmxTransient);
+            VMEXIT_CALL_RET(0, vmxHCExitInstrNested(pVCpu, pVmxTransient));
 
         /*
          * Instructions that cause VM-exits unconditionally or the condition is
@@ -5990,42 +6001,42 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_XRSTORS:
         case VMX_EXIT_UMWAIT:
         case VMX_EXIT_TPAUSE:
-            return vmxHCExitInstrWithInfoNested(pVCpu, pVmxTransient);
+            VMEXIT_CALL_RET(0, vmxHCExitInstrWithInfoNested(pVCpu, pVmxTransient));
 
-        case VMX_EXIT_RDTSC:                    return vmxHCExitRdtscNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_RDTSCP:                   return vmxHCExitRdtscpNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_RDMSR:                    return vmxHCExitRdmsrNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_WRMSR:                    return vmxHCExitWrmsrNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_INVLPG:                   return vmxHCExitInvlpgNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_INVPCID:                  return vmxHCExitInvpcidNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_TASK_SWITCH:              return vmxHCExitTaskSwitchNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_WBINVD:                   return vmxHCExitWbinvdNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_MTF:                      return vmxHCExitMtfNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_APIC_ACCESS:              return vmxHCExitApicAccessNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_APIC_WRITE:               return vmxHCExitApicWriteNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_VIRTUALIZED_EOI:          return vmxHCExitVirtEoiNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_MOV_CRX:                  return vmxHCExitMovCRxNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_INT_WINDOW:               return vmxHCExitIntWindowNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_NMI_WINDOW:               return vmxHCExitNmiWindowNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_TPR_BELOW_THRESHOLD:      return vmxHCExitTprBelowThresholdNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_MWAIT:                    return vmxHCExitMwaitNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_MONITOR:                  return vmxHCExitMonitorNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_PAUSE:                    return vmxHCExitPauseNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_RDTSC:                    VMEXIT_CALL_RET(0, vmxHCExitRdtscNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_RDTSCP:                   VMEXIT_CALL_RET(0, vmxHCExitRdtscpNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_RDMSR:                    VMEXIT_CALL_RET(0, vmxHCExitRdmsrNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_WRMSR:                    VMEXIT_CALL_RET(0, vmxHCExitWrmsrNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_INVLPG:                   VMEXIT_CALL_RET(0, vmxHCExitInvlpgNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_INVPCID:                  VMEXIT_CALL_RET(0, vmxHCExitInvpcidNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_TASK_SWITCH:              VMEXIT_CALL_RET(0, vmxHCExitTaskSwitchNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_WBINVD:                   VMEXIT_CALL_RET(0, vmxHCExitWbinvdNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_MTF:                      VMEXIT_CALL_RET(0, vmxHCExitMtfNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_APIC_ACCESS:              VMEXIT_CALL_RET(0, vmxHCExitApicAccessNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_APIC_WRITE:               VMEXIT_CALL_RET(0, vmxHCExitApicWriteNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_VIRTUALIZED_EOI:          VMEXIT_CALL_RET(0, vmxHCExitVirtEoiNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_MOV_CRX:                  VMEXIT_CALL_RET(0, vmxHCExitMovCRxNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_INT_WINDOW:               VMEXIT_CALL_RET(0, vmxHCExitIntWindowNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_NMI_WINDOW:               VMEXIT_CALL_RET(0, vmxHCExitNmiWindowNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_TPR_BELOW_THRESHOLD:      VMEXIT_CALL_RET(0, vmxHCExitTprBelowThresholdNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_MWAIT:                    VMEXIT_CALL_RET(0, vmxHCExitMwaitNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_MONITOR:                  VMEXIT_CALL_RET(0, vmxHCExitMonitorNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_PAUSE:                    VMEXIT_CALL_RET(0, vmxHCExitPauseNested(pVCpu, pVmxTransient));
 
         case VMX_EXIT_PREEMPT_TIMER:
         {
             /** @todo NSTVMX: Preempt timer. */
-            return vmxHCExitPreemptTimer(pVCpu, pVmxTransient);
+            VMEXIT_CALL_RET(0, vmxHCExitPreemptTimer(pVCpu, pVmxTransient));
         }
 
-        case VMX_EXIT_MOV_DRX:                  return vmxHCExitMovDRxNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_RDPMC:                    return vmxHCExitRdpmcNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_MOV_DRX:                  VMEXIT_CALL_RET(0, vmxHCExitMovDRxNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_RDPMC:                    VMEXIT_CALL_RET(0, vmxHCExitRdpmcNested(pVCpu, pVmxTransient));
 
         case VMX_EXIT_VMREAD:
-        case VMX_EXIT_VMWRITE:                  return vmxHCExitVmreadVmwriteNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_VMWRITE:                  VMEXIT_CALL_RET(0, vmxHCExitVmreadVmwriteNested(pVCpu, pVmxTransient));
 
-        case VMX_EXIT_TRIPLE_FAULT:             return vmxHCExitTripleFaultNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_ERR_INVALID_GUEST_STATE:  return vmxHCExitErrInvalidGuestStateNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_TRIPLE_FAULT:             VMEXIT_CALL_RET(0, vmxHCExitTripleFaultNested(pVCpu, pVmxTransient));
+        case VMX_EXIT_ERR_INVALID_GUEST_STATE:  VMEXIT_CALL_RET(0, vmxHCExitErrInvalidGuestStateNested(pVCpu, pVmxTransient));
 
         case VMX_EXIT_INIT_SIGNAL:
         case VMX_EXIT_SIPI:
@@ -6038,6 +6049,7 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
         default:
             return vmxHCExitErrUnexpected(pVCpu, pVmxTransient);
     }
+#undef VMEXIT_CALL_RET
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
