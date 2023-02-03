@@ -250,6 +250,7 @@ VBGLR3DECL(int) VbglR3DaemonizeEx(bool fNoChDir, bool fNoClose, bool fRespawn, u
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
         exit(0);
+# endif /* RT_OS_LINUX */
 
     /* Check if another instance is already running. */
     if (szPidfile != NULL)
@@ -272,7 +273,6 @@ VBGLR3DECL(int) VbglR3DaemonizeEx(bool fNoChDir, bool fNoClose, bool fRespawn, u
         else
             return VERR_INVALID_PARAMETER;
     }
-# endif /* RT_OS_LINUX */
 
     if (fRespawn)
     {
