@@ -293,7 +293,7 @@ VBCLSERVICE g_SvcDisplayLegacy =
 {
     "dp-legacy-x11",                    /* szName */
     "Legacy display assistant",         /* pszDescription */
-    ".vboxclient-display.pid",          /* pszPidFilePath (no pid file lock) */
+    ".vboxclient-display",              /* pszPidFilePathTemplate */
     NULL,                               /* pszUsage */
     NULL,                               /* pszOptions */
     NULL,                               /* pfnOption */

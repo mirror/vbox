@@ -44,6 +44,8 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/env.h>
+#include <iprt/process.h>
+#include <iprt/linux/sysfs.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
@@ -106,6 +108,11 @@ static char          g_szPidFile[RTPATH_MAX] = "";
 /** The file handle of our pidfile.  It is global for the benefit of the
  * cleanup routine. */
 static RTFILE        g_hPidFile;
+/** The name of pidfile for parent (control) process. */
+static char          g_szControlPidFile[RTPATH_MAX] = "";
+/** The file handle of parent process pidfile. */
+static RTFILE        g_hControlPidFile;
+
 /** Global critical section held during the clean-up routine (to prevent it
  * being called on multiple threads at once) or things which may not happen
  * during clean-up (e.g. pausing and resuming the service).
@@ -117,6 +124,8 @@ unsigned             g_cRespawn = 0;
 unsigned             g_cVerbosity = 0;
 /** Absolute path to log file, if any. */
 static char          g_szLogFile[RTPATH_MAX + 128] = "";
+/** Set by the signal handler when SIGUSR1 received. */
+static volatile bool g_fProcessReloadRequested = false;
 
 /**
  * Tries to determine if the session parenting this process is of Xwayland.
@@ -211,6 +220,13 @@ static void vboxClientSignalHandler(int iSignal)
 
         VBClLogVerbose(2, "Received signal %d\n", iSignal);
         g_fSignalHandlerCalled = true;
+
+        /* In our internal convention, when VBoxClient process receives SIGUSR1,
+         * this is a trigger for restarting a process with exec() call. Usually
+         * happens as a result of Guest Additions update in order to seamlessly
+         * restart newly installed binaries. */
+        if (iSignal == SIGUSR1)
+            g_fProcessReloadRequested = true;
 
         /* Leave critical section before stopping the service. */
         RTCritSectLeave(&g_csSignalHandler);
@@ -367,6 +383,114 @@ static DECLCALLBACK(int) vbclThread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 /**
+ * Wait for SIGUSR1 and re-exec.
+ */
+static void vbclHandleUpdateStarted(char *const argv[])
+{
+    /* Context of parent process */
+    sigset_t signalMask;
+    int      iSignal;
+    int      rc;
+
+    /* Release reference to guest driver. */
+    VbglR3Term();
+
+    sigemptyset(&signalMask);
+    sigaddset(&signalMask, SIGUSR1);
+    rc = pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
+
+    if (rc == 0)
+    {
+        LogRel(("%s: waiting for Guest Additions installation to be completed\n",
+                g_Service.pDesc->pszDesc));
+
+        /* Wait for SIGUSR1. */
+        rc = sigwait(&signalMask, &iSignal);
+        if (rc == 0)
+        {
+            LogRel(("%s: Guest Additions installation to be completed, reloading service\n",
+                    g_Service.pDesc->pszDesc));
+
+            /* Release pidfile, otherwise new VBoxClient instance won't be able to quire it. */
+            VBClShutdown(false);
+
+            rc = RTProcCreate(argv[0], argv, RTENV_DEFAULT,
+                              RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
+            if (RT_SUCCESS(rc))
+                LogRel(("%s: service restarted\n", g_Service.pDesc->pszDesc));
+            else
+                LogRel(("%s: cannot replace running image with %s (%s), automatic service reloading has failed\n",
+                        g_Service.pDesc->pszDesc, argv[0], strerror(errno)));
+        }
+        else
+            LogRel(("%s: cannot wait for signal (%s), automatic service reloading has failed\n",
+                    g_Service.pDesc->pszDesc, strerror(errno)));
+    }
+    else
+        LogRel(("%s: failed to setup signal handler, automatic service reloading has failed\n",
+                g_Service.pDesc->pszDesc));
+
+    exit(RT_BOOL(rc != 0));
+}
+
+/**
+ * Compose pidfile name.
+ *
+ * @returns IPRT status code.
+ * @param   szBuf           Buffer to store pidfile name into.
+ * @param   cbBuf           Size of buffer.
+ * @param   szTemplate      Null-terminated string which contains pidfile name.
+ * @param   fParentProcess  Whether pidfile path should be composed for
+ *                          parent (control) process or for a child (actual
+ *                          service) process.
+ */
+static int vbclGetPidfileName(char *szBuf, size_t cbBuf, const char *szTemplate,
+                              bool fParentProcess)
+{
+    int rc;
+    char pszActiveTTY[128];
+    size_t cchRead;
+
+    RT_ZERO(pszActiveTTY);
+
+    AssertPtrReturn(szBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(cbBuf > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(szTemplate, VERR_INVALID_PARAMETER);
+
+    rc = RTPathUserHome(szBuf, cbBuf);
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("%s: getting home directory failed: %Rrc\n",
+                          g_Service.pDesc->pszDesc, rc);
+
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppend(szBuf, cbBuf, szTemplate);
+
+#ifdef RT_OS_LINUX
+    if (RT_SUCCESS(rc))
+        rc = RTLinuxSysFsReadStrFile(pszActiveTTY, sizeof(pszActiveTTY) - 1 /* reserve last byte for string termination */,
+                                     &cchRead, "class/tty/tty0/active");
+    if (RT_SUCCESS(rc))
+    {
+        RTStrCat(szBuf, cbBuf, "-");
+        RTStrCat(szBuf, cbBuf, pszActiveTTY);
+    }
+    else
+        VBClLogInfo("%s: cannot detect currently active tty device, "
+                    "multiple service instances for a single user will not be allowed, rc=%Rrc",
+                    g_Service.pDesc->pszDesc, rc);
+#endif /* RT_OS_LINUX */
+
+    if (RT_SUCCESS(rc))
+        RTStrCat(szBuf, cbBuf, fParentProcess ? "-control.pid" : "-service.pid");
+
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("%s: reating PID file path failed: %Rrc\n",
+                          g_Service.pDesc->pszDesc, rc);
+
+    return rc;
+}
+
+/**
  * The main loop for the VBoxClient daemon.
  */
 int main(int argc, char *argv[])
@@ -377,6 +501,9 @@ int main(int argc, char *argv[])
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
+
+    /* A flag which is returned to the parent process when Guest Additions update started. */
+    bool fUpdateStarted = false;
 
     /* This should never be called twice in one process - in fact one Display
      * object should probably never be used from multiple threads anyway. */
@@ -605,18 +732,28 @@ int main(int argc, char *argv[])
     rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
         VBClLogFatalError("Initializing critical section failed: %Rrc\n", rc);
-    if (g_Service.pDesc->pszPidFilePath)
+    if (g_Service.pDesc->pszPidFilePathTemplate)
     {
-        rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
+        /* Get pidfile name for parent (control) process. */
+        rc = vbclGetPidfileName(g_szControlPidFile, sizeof(g_szControlPidFile), g_Service.pDesc->pszPidFilePathTemplate, true);
         if (RT_FAILURE(rc))
-            VBClLogFatalError("Getting home directory failed: %Rrc\n", rc);
-        rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile), g_Service.pDesc->pszPidFilePath);
+            return RTEXITCODE_FAILURE;
+
+        /* Get pidfile name for service process. */
+        rc = vbclGetPidfileName(g_szPidFile, sizeof(g_szPidFile), g_Service.pDesc->pszPidFilePathTemplate, false);
         if (RT_FAILURE(rc))
-            VBClLogFatalError("Creating PID file path failed: %Rrc\n", rc);
+            return RTEXITCODE_FAILURE;
     }
 
     if (fDaemonise)
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &g_cRespawn);
+    {
+        rc = VbglR3DaemonizeEx(false /* fNoChDir */, false /* fNoClose */, fRespawn, &g_cRespawn,
+                               true /* fReturnOnUpdate */, &fUpdateStarted, g_szControlPidFile, &g_hControlPidFile);
+        /* This combination only works in context of parent process. */
+        if (RT_SUCCESS(rc) && fUpdateStarted)
+            vbclHandleUpdateStarted(argv);
+    }
+
     if (RT_FAILURE(rc))
         VBClLogFatalError("Daemonizing service failed: %Rrc\n", rc);
 
@@ -624,9 +761,16 @@ int main(int argc, char *argv[])
     {
         rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
         if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
+        {
+            VBClLogInfo("%s: service already running, exitting\n",
+                        g_Service.pDesc->pszDesc);
             return RTEXITCODE_SUCCESS;
+        }
         if (RT_FAILURE(rc))
-            VBClLogFatalError("Creating PID file failed: %Rrc\n", rc);
+        {
+            VBClLogFatalError("Creating PID file %s failed: %Rrc\n", g_szPidFile, rc);
+            return RTEXITCODE_FAILURE;
+        }
     }
 
 #ifndef VBOXCLIENT_WITHOUT_X11
@@ -736,6 +880,6 @@ int main(int argc, char *argv[])
 
     /** @todo r=andy Should we return an appropriate exit code if the service failed to init?
      *               Must be tested carefully with our init scripts first. */
-    return RTEXITCODE_SUCCESS;
+    return g_fProcessReloadRequested ? VBGLR3EXITCODERELOAD : RTEXITCODE_SUCCESS;
 }
 

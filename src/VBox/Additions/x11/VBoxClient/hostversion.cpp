@@ -118,7 +118,7 @@ VBCLSERVICE g_SvcHostVersion =
 {
     "hostversion",                   /* szName */
     "VirtualBox host version check", /* pszDescription */
-    ".vboxclient-hostversion.pid",   /* pszPidFilePath */
+    ".vboxclient-hostversion",       /* pszPidFilePathTemplate */
     NULL,                            /* pszUsage */
     NULL,                            /* pszOptions */
     NULL,                            /* pfnOption */

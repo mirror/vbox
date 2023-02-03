@@ -428,7 +428,7 @@ VBCLSERVICE g_SvcClipboard =
 {
     "shcl",                      /* szName */
     "Shared Clipboard",          /* pszDescription */
-    ".vboxclient-clipboard.pid", /* pszPidFilePath */
+    ".vboxclient-clipboard",     /* pszPidFilePathTemplate */
     NULL,                        /* pszUsage */
     NULL,                        /* pszOptions */
     NULL,                        /* pfnOption */

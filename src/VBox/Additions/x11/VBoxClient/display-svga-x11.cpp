@@ -1390,7 +1390,7 @@ VBCLSERVICE g_SvcDisplaySVGA =
 {
     "dp-svga-x11",                      /* szName */
     "SVGA X11 display",                 /* pszDescription */
-    ".vboxclient-display-svga-x11.pid", /* pszPidFilePath */
+    ".vboxclient-display-svga-x11",     /* pszPidFilePathTemplate */
     NULL,                               /* pszUsage */
     NULL,                               /* pszOptions */
     NULL,                               /* pfnOption */

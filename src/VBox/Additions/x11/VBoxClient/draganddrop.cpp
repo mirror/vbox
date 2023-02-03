@@ -3865,7 +3865,7 @@ VBCLSERVICE g_SvcDragAndDrop =
 {
     "dnd",                         /* szName */
     "Drag'n'Drop",                 /* pszDescription */
-    ".vboxclient-draganddrop.pid", /* pszPidFilePath */
+    ".vboxclient-draganddrop",     /* pszPidFilePathTemplate */
     NULL,                          /* pszUsage */
     NULL,                          /* pszOptions */
     NULL,                          /* pfnOption */

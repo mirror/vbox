@@ -45,7 +45,7 @@
  * display offsets change notification monitor of a generic helper.
  *
  * Multiple instances of this daemon are allowed to run in parallel
- * with the following limitations (see also vbclSVGASessionPidFileLock()).
+ * with the following limitations.
  * A single user cannot run multiple daemon instances per single TTY device,
  * however, multiple instances are allowed for the user on different
  * TTY devices (i.e. in case if user runs multiple X servers on different
@@ -66,10 +66,6 @@
 #include <iprt/path.h>
 #include <iprt/linux/sysfs.h>
 
-/** Lock file handle. */
-static RTFILE g_hPidFile;
-/** Full path to PID lock file. */
-static char g_szPidFilePath[RTPATH_MAX];
 
 /** Handle to IPC client connection. */
 VBOX_DRMIPC_CLIENT g_hClient = VBOX_DRMIPC_CLIENT_INITIALIZER;
@@ -116,69 +112,6 @@ static DECLCALLBACK(int) vbclSVGASessionDisplayOffsetChanged(uint32_t cDisplays,
 }
 
 /**
- * Prevent multiple instances of the service from start.
- *
- * @returns IPRT status code.
- */
-static int vbclSVGASessionPidFileLock(void)
-{
-    int rc;
-
-    /* Allow parallel running instances of the service for processes
-     * which are running in separate X11/Wayland sessions. Compose
-     * custom PID file name based on currently active TTY device. */
-
-    char *pszPidFileName = RTStrAlloc(RTPATH_MAX);
-    if (pszPidFileName)
-    {
-        rc = RTPathUserHome(g_szPidFilePath, sizeof(g_szPidFilePath));
-        if (RT_SUCCESS(rc))
-        {
-            char pszActiveTTY[128];
-            size_t cchRead;
-
-            RT_ZERO(pszActiveTTY);
-
-            RTStrAAppend(&pszPidFileName, ".vboxclient-vmsvga-session");
-
-            rc = RTLinuxSysFsReadStrFile(pszActiveTTY, sizeof(pszActiveTTY) - 1 /* reserve last byte for string termination */,
-                                         &cchRead, "class/tty/tty0/active");
-            if (RT_SUCCESS(rc))
-            {
-                RTStrAAppend(&pszPidFileName, "-");
-                RTStrAAppend(&pszPidFileName, pszActiveTTY);
-            }
-            else
-                VBClLogInfo("cannot detect currently active tty device, "
-                            "multiple service instances for a single user will not be allowed, rc=%Rrc", rc);
-
-            RTStrAAppend(&pszPidFileName, ".pid");
-
-            RTPathAppend(g_szPidFilePath, sizeof(g_szPidFilePath), pszPidFileName);
-
-            VBClLogVerbose(1, "lock file path: %s\n", g_szPidFilePath);
-            rc = VbglR3PidFile(g_szPidFilePath, &g_hPidFile);
-        }
-        else
-            VBClLogError("unable to get user home directory, rc=%Rrc\n", rc);
-
-        RTStrFree(pszPidFileName);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-/**
- * Release lock file.
- */
-static void vbclSVGASessionPidFileRelease(void)
-{
-    VbglR3ClosePidFile(g_szPidFilePath, g_hPidFile);
-}
-
-/**
  * @interface_method_impl{VBCLSERVICE,pfnInit}
  */
 static DECLCALLBACK(int) vbclSVGASessionInit(void)
@@ -191,13 +124,6 @@ static DECLCALLBACK(int) vbclSVGASessionInit(void)
     static const char *pszLogPrefix = "VBoxClient VMSVGA:";
 
     VBClLogSetLogPrefix(pszLogPrefix);
-
-    rc = vbclSVGASessionPidFileLock();
-    if (RT_FAILURE(rc))
-    {
-        VBClLogVerbose(1, "cannot acquire pid lock, rc=%Rrc\n", rc);
-        return rc;
-    }
 
     rc = RTCritSectInit(&g_hClientCritSect);
     if (RT_FAILURE(rc))
@@ -516,8 +442,6 @@ static DECLCALLBACK(int) vbclSVGASessionTerm(void)
         }
     }
 
-    vbclSVGASessionPidFileRelease();
-
     return VINF_SUCCESS;
 }
 
@@ -525,7 +449,7 @@ VBCLSERVICE g_SvcDisplaySVGASession =
 {
     "vmsvga-session",                   /* szName */
     "VMSVGA display assistant",         /* pszDescription */
-    NULL,                               /* pszPidFilePath (no pid file lock) */
+    ".vboxclient-vmsvga-session",       /* pszPidFilePathTemplate */
     NULL,                               /* pszUsage */
     NULL,                               /* pszOptions */
     NULL,                               /* pfnOption */

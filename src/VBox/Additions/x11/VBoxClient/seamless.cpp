@@ -348,7 +348,7 @@ VBCLSERVICE g_SvcSeamless =
 {
     "seamless",                 /* szName */
     "Seamless Mode Support",    /* pszDescription */
-    ".vboxclient-seamless.pid", /* pszPidFilePath */
+    ".vboxclient-seamless",     /* pszPidFilePathTemplate */
     NULL,                       /* pszUsage */
     NULL,                       /* pszOptions */
     NULL,                       /* pfnOption */
