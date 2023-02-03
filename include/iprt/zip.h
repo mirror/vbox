@@ -252,21 +252,6 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
 
 
 /**
- * Opens a xz decompression I/O stream.
- *
- * @returns IPRT status code.
- *
- * @param   hVfsIosIn           The compressed input stream (must be readable).
- *                              The reference is not consumed, instead another
- *                              one is retained.
- * @param   fFlags              Flags, MBZ.
- * @param   phVfsIosGunzip      Where to return the handle to the gunzipped I/O
- *                              stream (read).
- */
-RTDECL(int) RTZipXzDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSIOSTREAM phVfsIosGunzip);
-
-
-/**
  * Opens a gzip decompression I/O stream.
  *
  * @returns IPRT status code.
@@ -280,22 +265,6 @@ RTDECL(int) RTZipXzDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, 
  *                              (you write to this).
  */
 RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags, uint8_t uLevel, PRTVFSIOSTREAM phVfsIosGzip);
-
-
-/**
- * Opens a xz decompression I/O stream.
- *
- * @returns IPRT status code.
- *
- * @param   hVfsIosDst          The compressed output stream (must be writable).
- *                              The reference is not consumed, instead another
- *                              one is retained.
- * @param   fFlags              Flags, MBZ.
- * @param   uLevel              The xz compression level, 1 thru 9.
- * @param   phVfsIosGzip        Where to return the xz input I/O stream handle
- *                              (you write to this).
- */
-RTDECL(int) RTZipXzCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags, uint8_t uLevel, PRTVFSIOSTREAM phVfsIosXz);
 
 
 /**
