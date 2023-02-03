@@ -125,7 +125,7 @@ typedef struct RTZIPTARCMDOPS
     bool            fUsePushFile;
     /** Whether to handle directories recursively or not. Defaults to \c true. */
     bool            fRecursive;
-    /** The compressor/decompressor method to employ (0, z or j or J). */
+    /** The compressor/decompressor method to employ (0, z or j). */
     char            chZipper;
 
     /** The owner to set. NULL if not applicable.
@@ -331,8 +331,6 @@ static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hV
 static RTEXITCODE rtZipTarCmdArchiveSymlink(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss, const char *pszSrc,
                                             RTFSOBJINFO paObjInfo[3], const char *pszDst, PRTERRINFOSTATIC pErrInfo)
 {
-    RT_NOREF(paObjInfo);
-
     if (pOpts->fVerbose)
         RTPrintf("%s\n", pszDst);
 
@@ -597,15 +595,6 @@ static RTEXITCODE rtZipTarCmdOpenOutputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSST
                 RTMsgError("Failed to open gzip decompressor: %Rrc", rc);
             break;
 
-#ifdef IPRT_WITH_LZMA
-        /* xz/lzma */
-        case 'J':
-            rc = RTZipXzCompressIoStream(hVfsIos, 0 /*fFlags*/, 6, &hVfsIosComp);
-            if (RT_FAILURE(rc))
-                RTMsgError("Failed to open xz compressor: %Rrc", rc);
-            break;
-#endif
-
         /* bunzip2 */
         case 'j':
             rc = VERR_NOT_SUPPORTED;
@@ -868,15 +857,6 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
             if (RT_FAILURE(rc))
                 RTMsgError("Failed to open gzip decompressor: %Rrc", rc);
             break;
-
-#ifdef IPRT_WITH_LZMA
-        /* xz/lzma */
-        case 'J':
-            rc = RTZipXzDecompressIoStream(hVfsIos, 0 /*fFlags*/, &hVfsIosDecomp);
-            if (RT_FAILURE(rc))
-                RTMsgError("Failed to open gzip decompressor: %Rrc", rc);
-            break;
-#endif
 
         /* bunzip2 */
         case 'j':
@@ -1685,10 +1665,6 @@ static void rtZipTarUsage(const char *pszProgName)
              "        Compress/decompress the archive with bzip2.\n"
              "    -z, --gzip, --gunzip, --ungzip        (all)\n"
              "        Compress/decompress the archive with gzip.\n"
-#ifdef IPRT_WITH_LZMA
-             "    -J, --xz                              (all)\n"
-             "        Compress/decompress the archive using xz/lzma.\n"
-#endif
              "\n");
     RTPrintf("Misc Options:\n"
              "    --owner <uid/username>                (-A, -c, -d, -r, -u, -x)\n"
@@ -1771,9 +1747,6 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         { "--gzip",                 'z',                                RTGETOPT_REQ_NOTHING },
         { "--gunzip",               'z',                                RTGETOPT_REQ_NOTHING },
         { "--ungzip",               'z',                                RTGETOPT_REQ_NOTHING },
-#ifdef IPRT_WITH_LZMA
-        { "--xz",                   'J',                                RTGETOPT_REQ_NOTHING },
-#endif
 
         /* other options. */
         { "--owner",                RTZIPTARCMD_OPT_OWNER,              RTGETOPT_REQ_STRING },
@@ -1866,9 +1839,6 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 
             case 'j':
             case 'z':
-#ifdef IPRT_WITH_LZMA
-            case 'J':
-#endif
                 if (Opts.chZipper)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "You may only specify one compressor / decompressor");
                 Opts.chZipper = rc;
