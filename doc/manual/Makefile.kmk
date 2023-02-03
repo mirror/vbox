@@ -873,9 +873,9 @@ man_vboximg-mount.xml \
  VBOX_DITA_PATH_LIB ?= $(VBOX_DITA_PATH)/lib
  VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
  	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
-	-E 'ANT_HOME=$(VBOX_DITA_PATH)/tools/ant' \
-	-E 'DITA_DIR=$(VBOX_DITA_PATH)' \
-	-A 'PATH=:$(VBOX_DITA_PATH)/tools/ant/bin' \
+ 	-E 'ANT_HOME=$(VBOX_DITA_PATH)/tools/ant' \
+ 	-E 'DITA_DIR=$(VBOX_DITA_PATH)' \
+ 	-A 'PATH=:$(VBOX_DITA_PATH)/tools/ant/bin' \
  	-E 'CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
  	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)' \
  	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
