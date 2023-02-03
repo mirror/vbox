@@ -623,21 +623,26 @@ void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& ma
     report->addItem(new BugReportFile(PathJoin(pszHome, "VirtualBox.xml"), "VirtualBox.xml"));
     report->addItem(new BugReportCommand("HostUsbDevices", g_pszVBoxManage, "list", "usbhost", NULL));
     report->addItem(new BugReportCommand("HostUsbFilters", g_pszVBoxManage, "list", "usbfilters", NULL));
+
     for (MachineInfoList::iterator it = machines.begin(); it != machines.end(); ++it)
     {
-        VBRDir VmDir(PathJoin((*it)->getLogPath(), "VBox.log*"));
-        const char *pcszVmLogFile = VmDir.next();
-        while (pcszVmLogFile)
+        static const char * const s_apszLogFilePatterns[] = { "VBox.log*", "VBoxHardening.log" };
+        for (size_t iPat = 0; iPat < RT_ELEMENTS(s_apszLogFilePatterns); iPat++)
         {
-            report->addItem(new BugReportFile(PathJoin((*it)->getLogPath(), pcszVmLogFile),
-                                              PathJoin((*it)->getName(), pcszVmLogFile)));
-            pcszVmLogFile = VmDir.next();
+            VBRDir VmLogFiles(PathJoin((*it)->getLogPath(), s_apszLogFilePatterns[iPat]));
+            const char *pcszVmLogFile = VmLogFiles.next();
+            while (pcszVmLogFile)
+            {
+                report->addItem(new BugReportFile(PathJoin((*it)->getLogPath(), pcszVmLogFile),
+                                                  PathJoin((*it)->getName(), pcszVmLogFile)));
+                pcszVmLogFile = VmLogFiles.next();
+            }
         }
         report->addItem(new BugReportFile((*it)->getSettingsFile(),
-                                         PathJoin((*it)->getName(), RTPathFilename((*it)->getSettingsFile()))));
+                                          PathJoin((*it)->getName(), RTPathFilename((*it)->getSettingsFile()))));
         report->addItem(new BugReportCommand(PathJoin((*it)->getName(), "GuestProperties"),
-                                            g_pszVBoxManage, "guestproperty", "enumerate",
-                                            (*it)->getName(), NULL));
+                                             g_pszVBoxManage, "guestproperty", "enumerate",
+                                             (*it)->getName(), NULL));
     }
 
     createBugReportOsSpecific(report, pszHome);
