@@ -872,15 +872,19 @@ man_vboximg-mount.xml \
  ##########################################################################################
  VBOX_DITA_PATH_LIB ?= $(VBOX_DITA_PATH)/lib
  VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
- 	-E 'DITA_CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/resolver.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/icu4j.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xercesImpl.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xml-apis.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9.jar' \
- 	-A 'DITA_CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
+ 	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
+	-E 'ANT_HOME=$(VBOX_DITA_PATH)/tools/ant' \
+	-E 'DITA_DIR=$(VBOX_DITA_PATH)' \
+	-A 'PATH=:$(VBOX_DITA_PATH)/tools/ant/bin' \
+ 	-E 'CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/resolver.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/icu4j.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xercesImpl.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xml-apis.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9.jar' \
+ 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
  	--
 
  ditamap-to-pdf:
@@ -888,9 +892,9 @@ man_vboximg-mount.xml \
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
-  		$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap
+  		$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap
 	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar lib/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/some_dita.ditamap /transtype:pdf
+		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap /transtype:pdf /ditadir:$(VBOX_DITA_PATH)
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
 
