@@ -119,6 +119,7 @@ float32_t f32_sqrt( float32_t a SOFTFLOAT_STATE_DECL_COMMA )
 
 }
 
+#ifdef VBOX/* Remake of f32_sqrt using the same algorithm from softfloat_approxRecipSqrt32_1 */
 float32_t f32_rsqrt( float32_t a SOFTFLOAT_STATE_DECL_COMMA )
 {
     union ui32_f32 uA;
@@ -181,3 +182,4 @@ float32_t f32_rsqrt( float32_t a SOFTFLOAT_STATE_DECL_COMMA )
     return uZ.f;
 
 }
+#endif
