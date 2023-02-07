@@ -594,7 +594,7 @@ static void tstSeh8(void)
 
 int main()
 {
-    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTNoCrt-2", &g_hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTNoCrt-3", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
