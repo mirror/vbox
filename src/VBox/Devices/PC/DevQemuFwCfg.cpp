@@ -45,8 +45,9 @@
  *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/CmdLine"     "<cmd line string>"
  *
  * The only mandatory item is the KernelImage one, the others are optional if the
- * kernel is configured to not require it. If the kernel is not an EFI compatible
- * executable (CONFIG_EFI_STUB=y for Linux) a dedicated setup image might be required
+ * kernel is configured to not require it. The InitrdImage item accepts a path to a directory as well.
+ * If a directory is encountered, the CPIO initrd image is created on the fly and passed to the guest.
+ * If the kernel is not an EFI compatible executable (CONFIG_EFI_STUB=y for Linux) a dedicated setup image might be required
  * which can be set with:
  *
  *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/SetupImage" /path/to/setup_image
@@ -70,10 +71,13 @@
 #include <VBox/log.h>
 #include <iprt/errcore.h>
 #include <iprt/assert.h>
+#include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/zero.h>
+#include <iprt/zip.h>
 
 #include "VBoxDD.h"
 
@@ -146,6 +150,9 @@
 #define QEMU_FW_CFG_ITEM_FILE_DIR                   UINT16_C(0x0019)
 /** @} */
 
+/** The size of the directory entry buffer we're using. */
+#define QEMUFWCFG_DIRENTRY_BUF_SIZE (sizeof(RTDIRENTRYEX) + RTPATH_MAX)
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -192,6 +199,8 @@ typedef struct DEVQEMUFWCFG
     uint32_t                    u32Version;
     /** Guest physical address of the DMA descriptor. */
     RTGCPHYS                    GCPhysDma;
+    /** VFS file of the on-the-fly created initramfs. */
+    RTVFSFILE                   hVfsFileInitrd;
 
     /** Scratch buffer for config item specific data. */
     union
@@ -302,40 +311,51 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFileSz(PDEVQEMUFWCFG pThis, PCQEMUF
 {
     PCPDMDEVHLPR3 pHlp  = pThis->pDevIns->pHlpR3;
 
-    /* Query the path from the CFGM key. */
-    char *pszFilePath = NULL;
-    int rc = pHlp->pfnCFGMQueryStringAlloc(pThis->pCfg, pItem->pszCfgmKey, &pszFilePath);
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    if (   pItem->uCfgItem == QEMU_FW_CFG_ITEM_INITRD_SIZE
+        && pThis->hVfsFileInitrd != NIL_RTVFSFILE)
     {
-        RTVFSFILE hVfsFile = NIL_RTVFSFILE;
-        rc = RTVfsFileOpenNormal(pszFilePath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
-        if (RT_SUCCESS(rc))
-        {
-            uint64_t cbFile = 0;
-            rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
-            if (RT_SUCCESS(rc))
-            {
-                if (cbFile < _4G)
-                {
-                    pThis->u.u32 = (uint32_t)cbFile;
-                    *pcbItem = sizeof(uint32_t);
-                }
-                else
-                {
-                    rc = VERR_BUFFER_OVERFLOW;
-                    LogRel(("QemuFwCfg: File \"%s\" exceeds 4G limit (%llu)\n", pszFilePath, cbFile));
-                }
-            }
-            else
-                LogRel(("QemuFwCfg: Failed to query file size from \"%s\" -> %Rrc\n", pszFilePath, rc));
-            RTVfsFileRelease(hVfsFile);
-        }
-        else
-            LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
-        PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
+        RTVfsFileRetain(pThis->hVfsFileInitrd);
+        hVfsFile = pThis->hVfsFileInitrd;
     }
     else
-        LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
+    {
+        /* Query the path from the CFGM key. */
+        char *pszFilePath = NULL;
+        rc = pHlp->pfnCFGMQueryStringAlloc(pThis->pCfg, pItem->pszCfgmKey, &pszFilePath);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTVfsFileOpenNormal(pszFilePath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+            if (RT_FAILURE(rc))
+                LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
+            PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
+        }
+        else
+            LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t cbFile = 0;
+        rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
+        if (RT_SUCCESS(rc))
+        {
+            if (cbFile < _4G)
+            {
+                pThis->u.u32 = (uint32_t)cbFile;
+                *pcbItem = sizeof(uint32_t);
+            }
+            else
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+                LogRel(("QemuFwCfg: File exceeds 4G limit (%llu)\n", cbFile));
+            }
+        }
+        else
+            LogRel(("QemuFwCfg: Failed to query file size from -> %Rrc\n", rc));
+        RTVfsFileRelease(hVfsFile);
+    }
 
     return rc;
 }
@@ -389,35 +409,46 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFile(PDEVQEMUFWCFG pThis, PCQEMUFWC
 {
     PCPDMDEVHLPR3 pHlp  = pThis->pDevIns->pHlpR3;
 
-    /* Query the path from the CFGM key. */
-    char *pszFilePath = NULL;
-    int rc = pHlp->pfnCFGMQueryStringAlloc(pThis->pCfg, pItem->pszCfgmKey, &pszFilePath);
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    if (   pItem->uCfgItem == QEMU_FW_CFG_ITEM_INITRD_DATA
+        && pThis->hVfsFileInitrd != NIL_RTVFSFILE)
     {
-        rc = RTVfsFileOpenNormal(pszFilePath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &pThis->u.hVfsFile);
-        if (RT_SUCCESS(rc))
-        {
-            uint64_t cbFile = 0;
-            rc = RTVfsFileQuerySize(pThis->u.hVfsFile, &cbFile);
-            if (RT_SUCCESS(rc))
-            {
-                if (cbFile < _4G)
-                    *pcbItem = (uint32_t)cbFile;
-                else
-                {
-                    rc = VERR_BUFFER_OVERFLOW;
-                    LogRel(("QemuFwCfg: File \"%s\" exceeds 4G limit (%llu)\n", pszFilePath, cbFile));
-                }
-            }
-            else
-                LogRel(("QemuFwCfg: Failed to query file size from \"%s\" -> %Rrc\n", pszFilePath, rc));
-        }
-        else
-            LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
-        PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
+        RTVfsFileRetain(pThis->hVfsFileInitrd);
+        pThis->u.hVfsFile = pThis->hVfsFileInitrd;
     }
     else
-        LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
+    {
+        /* Query the path from the CFGM key. */
+        char *pszFilePath = NULL;
+        rc = pHlp->pfnCFGMQueryStringAlloc(pThis->pCfg, pItem->pszCfgmKey, &pszFilePath);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTVfsFileOpenNormal(pszFilePath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &pThis->u.hVfsFile);
+            if (RT_FAILURE(rc))
+                LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
+            PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
+        }
+        else
+            LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t cbFile = 0;
+        rc = RTVfsFileQuerySize(pThis->u.hVfsFile, &cbFile);
+        if (RT_SUCCESS(rc))
+        {
+            if (cbFile < _4G)
+                *pcbItem = (uint32_t)cbFile;
+            else
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+                LogRel(("QemuFwCfg: File exceeds 4G limit (%llu)\n", cbFile));
+            }
+        }
+        else
+            LogRel(("QemuFwCfg: Failed to query file size from -> %Rrc\n", rc));
+    }
 
     return rc;
 }
@@ -761,6 +792,336 @@ static DECLCALLBACK(VBOXSTRICTRC) qemuFwCfgIoPortRead(PPDMDEVINS pDevIns, void *
 
 
 /**
+ * Sets up the initrd memory file and CPIO filesystem stream for writing.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The QEMU fw config device instance.
+ * @param   phVfsFss            Where to return the filesystem stream handle.
+ */
+static int qemuFwCfgCreateOutputArchive(PDEVQEMUFWCFG pThis, PRTVFSFSSTREAM phVfsFss)
+{
+    int rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, 0 /*cbEstimate*/, &pThis->hVfsFileInitrd);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSFSSTREAM hVfsFss;
+        RTVFSIOSTREAM hVfsIosOut = RTVfsFileToIoStream(pThis->hVfsFileInitrd);
+        rc = RTZipTarFsStreamToIoStream(hVfsIosOut, RTZIPTARFORMAT_CPIO_ASCII_NEW, 0 /*fFlags*/, &hVfsFss);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTZipTarFsStreamSetOwner(hVfsFss, 0, "root");
+            if (RT_SUCCESS(rc))
+                rc = RTZipTarFsStreamSetGroup(hVfsFss, 0, "root");
+
+            if (RT_SUCCESS(rc))
+                *phVfsFss = hVfsFss;
+            else
+            {
+                RTVfsFsStrmRelease(hVfsFss);
+                *phVfsFss = NIL_RTVFSFSSTREAM;
+            }
+        }
+        RTVfsIoStrmRelease(hVfsIosOut);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Archives a file.
+ *
+ * @returns VBox status code.
+ * @param   hVfsFss         The TAR filesystem stream handle.
+ * @param   pszSrc          The file path or VFS spec.
+ * @param   pszDst          The name to archive the file under.
+ * @param   pErrInfo        Error info buffer (saves stack space).
+ */
+static int qemuFwCfgInitrdArchiveFile(RTVFSFSSTREAM hVfsFss, const char *pszSrc,
+                                      const char *pszDst, PRTERRINFOSTATIC pErrInfo)
+{
+    /* Open the file. */
+    uint32_t        offError;
+    RTVFSIOSTREAM   hVfsIosSrc;
+    int rc = RTVfsChainOpenIoStream(pszSrc, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                    &hVfsIosSrc, &offError, RTErrInfoInitStatic(pErrInfo));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* I/O stream to base object. */
+    RTVFSOBJ hVfsObjSrc = RTVfsObjFromIoStream(hVfsIosSrc);
+    if (hVfsObjSrc != NIL_RTVFSOBJ)
+    {
+        /*
+         * Add it to the stream.
+         */
+        rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObjSrc, 0 /*fFlags*/);
+        RTVfsIoStrmRelease(hVfsIosSrc);
+        RTVfsObjRelease(hVfsObjSrc);
+        return rc;
+    }
+    RTVfsIoStrmRelease(hVfsIosSrc);
+    return VERR_INVALID_POINTER;
+}
+
+
+/**
+ * Archives a symlink.
+ *
+ * @returns VBox status code.
+ * @param   hVfsFss         The TAR filesystem stream handle.
+ * @param   pszSrc          The file path or VFS spec.
+ * @param   pszDst          The name to archive the file under.
+ * @param   pErrInfo        Error info buffer (saves stack space).
+ */
+static int qemuFwCfgInitrdArchiveSymlink(RTVFSFSSTREAM hVfsFss, const char *pszSrc,
+                                         const char *pszDst, PRTERRINFOSTATIC pErrInfo)
+{
+    /* Open the file. */
+    uint32_t        offError;
+    RTVFSOBJ        hVfsObjSrc;
+    int rc = RTVfsChainOpenObj(pszSrc, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                               RTVFSOBJ_F_OPEN_SYMLINK | RTVFSOBJ_F_CREATE_NOTHING | RTPATH_F_ON_LINK,
+                               &hVfsObjSrc, &offError, RTErrInfoInitStatic(pErrInfo));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObjSrc, 0 /*fFlags*/);
+    RTVfsObjRelease(hVfsObjSrc);
+    return rc;
+}
+
+
+/**
+ * Sub-directory helper for creating archives.
+ *
+ * @returns VBox status code.
+ * @param   hVfsFss         The TAR filesystem stream handle.
+ * @param   pszSrc          The directory path or VFS spec.  We append to the
+ *                          buffer as we decend.
+ * @param   cchSrc          The length of the input.
+ * @param   pszDst          The name to archive it the under.  We append to the
+ *                          buffer as we decend.
+ * @param   cchDst          The length of the input.
+ * @param   pDirEntry       Directory entry to use for the directory to handle.
+ * @param   pErrInfo        Error info buffer (saves stack space).
+ */
+static int qemuFwCfgInitrdArchiveDirSub(RTVFSFSSTREAM hVfsFss,
+                                        char *pszSrc, size_t cchSrc,
+                                        char pszDst[RTPATH_MAX], size_t cchDst, PRTDIRENTRYEX pDirEntry,
+                                        PRTERRINFOSTATIC pErrInfo)
+{
+    uint32_t offError;
+    RTVFSDIR hVfsIoDir;
+    int rc = RTVfsChainOpenDir(pszSrc, 0 /*fFlags*/,
+                               &hVfsIoDir, &offError, RTErrInfoInitStatic(pErrInfo));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Make sure we've got some room in the path, to save us extra work further down. */
+    if (cchSrc + 3 >= RTPATH_MAX)
+        return VERR_FILENAME_TOO_LONG;
+
+    /* Ensure we've got a trailing slash (there is space for it see above). */
+    if (!RTPATH_IS_SEP(pszSrc[cchSrc - 1]))
+    {
+        pszSrc[cchSrc++] = RTPATH_SLASH;
+        pszSrc[cchSrc]   = '\0';
+    }
+
+    /* Ditto for destination. */
+    if (cchDst + 3 >= RTPATH_MAX)
+        return VERR_FILENAME_TOO_LONG;
+
+    /* Don't try adding the root directory. */
+    if (*pszDst != '\0')
+    {
+        RTVFSOBJ hVfsObjSrc = RTVfsObjFromDir(hVfsIoDir);
+        rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObjSrc, 0 /*fFlags*/);
+        RTVfsObjRelease(hVfsObjSrc);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (!RTPATH_IS_SEP(pszDst[cchDst - 1]))
+        {
+            pszDst[cchDst++] = RTPATH_SLASH;
+            pszDst[cchDst]   = '\0';
+        }
+    }
+
+    /*
+     * Process the files and subdirs.
+     */
+    for (;;)
+    {
+        size_t cbDirEntry = QEMUFWCFG_DIRENTRY_BUF_SIZE;
+        rc = RTVfsDirReadEx(hVfsIoDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Check length. */
+        if (pDirEntry->cbName + cchSrc + 3 >= RTPATH_MAX)
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
+
+        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+        {
+            case RTFS_TYPE_DIRECTORY:
+            {
+                if (RTDirEntryExIsStdDotLink(pDirEntry))
+                    continue;
+
+                memcpy(&pszSrc[cchSrc], pDirEntry->szName, pDirEntry->cbName + 1);
+                memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
+                rc = qemuFwCfgInitrdArchiveDirSub(hVfsFss, pszSrc, cchSrc + pDirEntry->cbName,
+                                                  pszDst, cchDst + pDirEntry->cbName, pDirEntry, pErrInfo);
+                break;
+            }
+
+            case RTFS_TYPE_FILE:
+            {
+                memcpy(&pszSrc[cchSrc], pDirEntry->szName, pDirEntry->cbName + 1);
+                memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
+                rc = qemuFwCfgInitrdArchiveFile(hVfsFss, pszSrc, pszDst, pErrInfo);
+                break;
+            }
+
+            case RTFS_TYPE_SYMLINK:
+            {
+                memcpy(&pszSrc[cchSrc], pDirEntry->szName, pDirEntry->cbName + 1);
+                memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
+                rc = qemuFwCfgInitrdArchiveSymlink(hVfsFss, pszSrc, pszDst, pErrInfo);
+                break;
+            }
+
+            default:
+            {
+                LogRel(("Warning: File system type %#x for '%s' not implemented yet, sorry! Skipping ...\n",
+                        pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK, pDirEntry->szName));
+                break;
+            }
+        }
+    }
+
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+
+    RTVfsDirRelease(hVfsIoDir);
+    return rc;
+}
+
+
+/**
+ * Archives a directory recursively.
+ *
+ * @returns VBox status code.
+ * @param   hVfsFss         The CPIO filesystem stream handle.
+ * @param   pszSrc          The directory path or VFS spec.  We append to the
+ *                          buffer as we decend.
+ * @param   cchSrc          The length of the input.
+ * @param   pszDst          The name to archive it the under.  We append to the
+ *                          buffer as we decend.
+ * @param   cchDst          The length of the input.
+ * @param   pErrInfo        Error info buffer (saves stack space).
+ */
+static int qemuFwCfgInitrdArchiveDir(RTVFSFSSTREAM hVfsFss, char pszSrc[RTPATH_MAX], size_t cchSrc,
+                                     char pszDst[RTPATH_MAX], size_t cchDst,
+                                     PRTERRINFOSTATIC pErrInfo)
+{
+    RT_NOREF(cchSrc);
+
+    char szSrcAbs[RTPATH_MAX];
+    int rc = RTPathAbs(pszSrc, szSrcAbs, sizeof(szSrcAbs));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    union
+    {
+        uint8_t         abPadding[QEMUFWCFG_DIRENTRY_BUF_SIZE];
+        RTDIRENTRYEX    DirEntry;
+    } uBuf;
+
+    return qemuFwCfgInitrdArchiveDirSub(hVfsFss, szSrcAbs, strlen(szSrcAbs), pszDst, cchDst, &uBuf.DirEntry, pErrInfo);
+}
+
+
+/**
+ * Creates an on the fly initramfs for a given root directory.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The QEMU fw config device instance.
+ * @param   pszPath             The path to work on.
+ */
+static int qemuFwCfgInitrdCreate(PDEVQEMUFWCFG pThis, const char *pszPath)
+{
+    /*
+     * First open the output file.
+     */
+    RTVFSFSSTREAM hVfsFss;
+    int rc = qemuFwCfgCreateOutputArchive(pThis, &hVfsFss);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Construct/copy the source name.
+     */
+    char szSrc[RTPATH_MAX];
+    rc = RTStrCopy(szSrc, sizeof(szSrc), pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        RTERRINFOSTATIC ErrInfo;
+        char  szDst[RTPATH_MAX]; RT_ZERO(szDst);
+        rc = qemuFwCfgInitrdArchiveDir(hVfsFss, szSrc, strlen(szSrc),
+                                       szDst, strlen(szDst), &ErrInfo);
+    }
+
+    /*
+     * Finalize the archive.
+     */
+    int rc2 = RTVfsFsStrmEnd(hVfsFss); AssertRC(rc2);
+    RTVfsFsStrmRelease(hVfsFss);
+    return rc;
+}
+
+
+/**
+ * Checks whether creation of the initrd should be done on the fly.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The QEMU fw config device instance.
+ */
+static int qemuFwCfgInitrdMaybeCreate(PDEVQEMUFWCFG pThis)
+{
+    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    /* Query the path from the CFGM key. */
+    char *pszFilePath = NULL;
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pThis->pCfg, "InitrdImage", &pszFilePath);
+    if (RT_SUCCESS(rc))
+    {
+        if (RTDirExists(pszFilePath))
+        {
+            rc = qemuFwCfgInitrdCreate(pThis, pszFilePath);
+            if (RT_FAILURE(rc))
+                rc = PDMDEV_SET_ERROR(pDevIns, rc,
+                                      N_("QemuFwCfg: failed to create the in memory initram filesystem"));
+        }
+        /*else: Probably a normal file. */
+        PDMDevHlpMMHeapFree(pDevIns, pszFilePath);
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        rc = PDMDEV_SET_ERROR(pDevIns, rc,
+                              N_("Configuration error: Querying \"InitrdImage\" as a string failed"));
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) qemuFwCfgReset(PPDMDEVINS pDevIns)
@@ -769,6 +1130,12 @@ static DECLCALLBACK(void) qemuFwCfgReset(PPDMDEVINS pDevIns)
 
     qemuFwCfgR3ItemReset(pThis);
     pThis->GCPhysDma = 0;
+
+    if (pThis->hVfsFileInitrd != NIL_RTVFSFILE)
+        RTVfsFileRelease(pThis->hVfsFileInitrd);
+    pThis->hVfsFileInitrd = NIL_RTVFSFILE;
+
+    qemuFwCfgInitrdMaybeCreate(pThis); /* Ignores status code. */
 }
 
 
@@ -782,6 +1149,10 @@ static DECLCALLBACK(int) qemuFwCfgDestruct(PPDMDEVINS pDevIns)
 
     qemuFwCfgR3ItemReset(pThis);
     pThis->GCPhysDma = 0;
+
+    if (pThis->hVfsFileInitrd != NIL_RTVFSFILE)
+        RTVfsFileRelease(pThis->hVfsFileInitrd);
+    pThis->hVfsFileInitrd = NIL_RTVFSFILE;
 
     return VINF_SUCCESS;
 }
@@ -819,8 +1190,13 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
     pThis->pCfg           = pCfg;
     pThis->u32Version     = QEMU_FW_CFG_VERSION_LEGACY | (fDmaEnabled ? QEMU_FW_CFG_VERSION_DMA : 0);
     pThis->GCPhysDma      = 0;
+    pThis->hVfsFileInitrd = NIL_RTVFSFILE;
 
     qemuFwCfgR3ItemReset(pThis);
+
+    rc = qemuFwCfgInitrdMaybeCreate(pThis);
+    if (RT_FAILURE(rc))
+        return rc; /* Error set. */
 
     /*
      * Register I/O Ports
