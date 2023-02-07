@@ -56,7 +56,7 @@ int main()
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    /**
+    /*
      * No-CRT vector testcases.
      */
     std::vector<int> v;
