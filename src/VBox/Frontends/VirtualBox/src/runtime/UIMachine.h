@@ -373,8 +373,14 @@ public:
         KParavirtProvider paravirtProvider() const { return m_enmParavirtProvider; }
     /** @} */
 
+    /** @name Status-bar stuff.
+     ** @{ */
+        /** Acquires device activity composing a vector of current @a states for device with @a deviceTypes specified. */
+        void acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states);
+    /** @} */
+
     /** @name Close stuff.
-     * @{ */
+     ** @{ */
         /** Returns whether VM is in 'manual-override' mode.
           * @note S.a. #m_fIsManualOverride description for more information. */
         bool isManualOverrideMode() const { return m_fIsManualOverride; }
@@ -412,7 +418,7 @@ public slots:
     /** @} */
 
     /** @name Close stuff.
-     * @{ */
+     ** @{ */
         /** Closes Runtime UI. */
         void closeRuntimeUI();
     /** @} */
@@ -445,7 +451,7 @@ private slots:
     /** @} */
 
     /** @name Host-screen stuff.
-     * @{ */
+     ** @{ */
         /** Handles host-screen count change. */
         void sltHandleHostScreenCountChange();
         /** Handles host-screen geometry change. */
@@ -466,7 +472,7 @@ private slots:
     /** @} */
 
     /** @name Guest-screen stuff.
-     * @{ */
+     ** @{ */
         /** Handles guest-monitor state change. */
         void sltHandleGuestMonitorChange(KGuestMonitorChangedEventType enmChangeType, ulong uScreenId, QRect screenGeo);
     /** @} */
@@ -508,7 +514,7 @@ private slots:
     /** @} */
 
     /** @name Close stuff.
-     * @{ */
+     ** @{ */
         /** Handles signal about machine state saved.
           * @param  fSuccess  Brings whether state was saved successfully. */
         void sltHandleMachineStateSaved(bool fSuccess);
@@ -573,7 +579,7 @@ private:
     /** @} */
 
     /** @name Host-screen stuff.
-     * @{ */
+     ** @{ */
         /** Update host-screen data. */
         void updateHostScreenData();
     /** @} */
@@ -658,7 +664,7 @@ private:
     /** @} */
 
     /** @name Host-screen stuff.
-     * @{ */
+     ** @{ */
         /** Holds the list of host-screen geometries we currently have. */
         QList<QRect>  m_hostScreens;
 
@@ -669,7 +675,7 @@ private:
     /** @} */
 
     /** @name Guest-screen stuff.
-     * @{ */
+     ** @{ */
         /** Holds the list of desired guest-screen visibility flags. */
         QVector<bool>  m_monitorVisibilityVectorHostDesires;
         /** Holds the list of actual guest-screen visibility flags. */
@@ -764,7 +770,7 @@ private:
     /** @} */
 
     /** @name Close stuff.
-     * @{ */
+     ** @{ */
         /** Holds whether VM is in 'manual-override' mode
           * which means there will be no automatic UI shutdowns,
           * visual representation mode changes and other stuff. */

@@ -667,6 +667,15 @@ void UINotificationMessage::cannotAcquireMachineParameter(const CMachine &comMac
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireConsoleParameter(const CConsole &comConsole)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Console failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire console parameter.") +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot)
 {
     createMessage(

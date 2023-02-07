@@ -38,12 +38,11 @@
 #include "UIAnimationFramework.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
 #include "UIIndicatorsPool.h"
-#include "UIExtraDataManager.h"
 #include "UIMachine.h"
-#include "UIMachineDefs.h"
 #include "UIMedium.h"
 #include "UISession.h"
 
@@ -65,7 +64,6 @@
 #include "CUSBDeviceFilters.h"
 #include "CUSBDevice.h"
 #include "CSharedFolder.h"
-#include "CVRDEServer.h"
 
 /* Other VBox includes: */
 #include <iprt/time.h>
@@ -1409,12 +1407,9 @@ void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
     if (m_pool.contains(IndicatorType_Display))
         deviceTypes.append(KDeviceType_Graphics3D);
 
-    /* Acquire current states from the console: */
-    CConsole console = m_pSession->console();
-    if (console.isNull() || !console.isOk())
-        return;
-    const QVector<KDeviceActivity> states = console.GetDeviceActivity(deviceTypes);
-    AssertReturnVoid(console.isOk());
+    /* Acquire current device states from the machine: */
+    QVector<KDeviceActivity> states;
+    m_pMachine->acquireDeviceActivity(deviceTypes, states);
 
     /* Update indicators with the acquired states: */
     for (int iIndicator = 0; iIndicator < states.size(); ++iIndicator)
@@ -1646,7 +1641,7 @@ int UIIndicatorsPool::indicatorPosition(IndicatorType indicatorType) const
     return iPosition;
 }
 
-void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceActivity state)
+void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceActivity enmState)
 {
     /* Assert indicators with NO state: */
     QIStateStatusBarIndicator *pStateIndicator = qobject_cast<QIStateStatusBarIndicator*>(pIndicator);
@@ -1657,7 +1652,7 @@ void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndi
         return;
 
     /* Paused VM have all indicator states set to IDLE: */
-    if (m_pSession->isPaused())
+    if (m_pMachine->isPaused())
     {
         /* If current state differs from IDLE => set the IDLE one:  */
         if (pStateIndicator->state() != KDeviceActivity_Idle)
@@ -1666,9 +1661,8 @@ void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndi
     else
     {
         /* If current state differs from actual => set the actual one: */
-        const int iState = (int)state;
-        if (pStateIndicator->state() != iState)
-            pStateIndicator->setState(iState);
+        if (pStateIndicator->state() != enmState)
+            pStateIndicator->setState(enmState);
     }
 }
 

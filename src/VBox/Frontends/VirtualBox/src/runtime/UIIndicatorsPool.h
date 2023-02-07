@@ -33,7 +33,6 @@
 
 /* Qt includes: */
 #include <QWidget>
-#include <QList>
 #include <QMap>
 
 /* GUI includes: */
@@ -43,12 +42,11 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
+class QTimer;
+class QHBoxLayout;
+class QIStatusBarIndicator;
 class UIMachine;
 class UISession;
-class CSession;
-class QIStatusBarIndicator;
-class QHBoxLayout;
-class QTimer;
 
 /** QWidget extension
   * providing Runtime UI with status-bar indicators. */

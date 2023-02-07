@@ -290,8 +290,11 @@ public:
           * @param  comSession  Brings the object parameter get acquired from. */
         static void cannotAcquireSessionParameter(const CSession &comSession);
         /** Notifies about inability to acquire IMachine parameter.
-          * @param  comSession  Brings the object parameter get acquired from. */
+          * @param  comMachine  Brings the object parameter get acquired from. */
         static void cannotAcquireMachineParameter(const CMachine &comMachine);
+        /** Notifies about inability to acquire IConsole parameter.
+          * @param  comConsole  Brings the object parameter get acquired from. */
+        static void cannotAcquireConsoleParameter(const CConsole &comConsole);
         /** Notifies about inability to acquire ISnapshot parameter.
           * @param  comSnapshot  Brings the object parameter get acquired from. */
         static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);

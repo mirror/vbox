@@ -442,6 +442,11 @@ bool UIMachine::isGuestSupportsSeamless() const
     return uisession()->isGuestSupportsSeamless();
 }
 
+void UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
+{
+    uisession()->acquireDeviceActivity(deviceTypes, states);
+}
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */

@@ -259,6 +259,12 @@ public:
         QSize frameBufferSize(ulong uScreenId) const;
     /** @} */
 
+    /** @name Status-bar stuff.
+     ** @{ */
+        /** Acquires device activity composing a vector of current @a states for device with @a deviceTypes specified. */
+        void acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states);
+    /** @} */
+
     /** @name Close stuff.
      ** @{ */
         /** Prepares VM to be saved. */

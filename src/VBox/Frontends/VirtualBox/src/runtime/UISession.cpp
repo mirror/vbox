@@ -306,6 +306,14 @@ QSize UISession::frameBufferSize(ulong uScreenId) const
     return pFramebuffer ? QSize(pFramebuffer->width(), pFramebuffer->height()) : QSize();
 }
 
+void UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
+{
+    CConsole comConsole = console();
+    states = comConsole.GetDeviceActivity(deviceTypes);
+    if (!comConsole.isOk())
+        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+}
+
 bool UISession::prepareToBeSaved()
 {
     return    isPaused()
