@@ -29,7 +29,6 @@
 #include <QAccessibleWidget>
 #include <QHBoxLayout>
 #include <QPainter>
-#include <QStyle>
 #include <QTimer>
 
 /* GUI includes: */
@@ -48,14 +47,8 @@
 /* COM includes: */
 #include "CRecordingSettings.h"
 #include "CRecordingScreenSettings.h"
-#include "CConsole.h"
 #include "CMachine.h"
 #include "CMachineDebugger.h"
-#include "CGuest.h"
-#include "CUSBController.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDevice.h"
-#include "CSharedFolder.h"
 
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */
@@ -451,7 +444,7 @@ class UIIndicatorUSB : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorUSB(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_USB, pMachine, pSession)
     {
@@ -469,36 +462,17 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
         QString strFullData;
+        bool fUsbEnabled = false;
+        m_pMachine->acquireUsbStatusInfo(strFullData, fUsbEnabled);
 
-        /* Check whether there is at least one USB controller with an available proxy. */
-        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
-                           && !machine.GetUSBControllers().isEmpty()
-                           && machine.GetUSBProxyAvailable();
-        if (fUSBEnabled)
-        {
-            /* Enumerate all the USB devices: */
-            const CConsole console = m_pSession->console();
-            foreach (const CUSBDevice &usbDevice, console.GetUSBDevices())
-                strFullData += s_strTableRow1.arg(uiCommon().usbDetails(usbDevice));
-            /* Handle 'no-usb-devices' case: */
-            if (strFullData.isNull())
-                strFullData = s_strTableRow1
-                    .arg(QApplication::translate("UIIndicatorsPool", "No USB devices attached", "USB tooltip"));
-        }
-
-        /* Hide indicator if there are USB controllers: */
-        if (!fUSBEnabled)
-            hide();
+        /* Hide indicator if no USB enabled: */
+        setVisible(fUsbEnabled);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(fUsbEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 };
 
@@ -510,7 +484,7 @@ class UIIndicatorSharedFolders : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorSharedFolders(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_SharedFolders, pMachine, pSession)
     {
@@ -528,39 +502,14 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get objects: */
-        const CMachine machine = m_pSession->machine();
-        const CConsole console = m_pSession->console();
-        const CGuest guest = m_pSession->guest();
-
-        /* Prepare tool-tip: */
         QString strFullData;
-
-        /* Enumerate all the folders: */
-        QMap<QString, QString> sfs;
-        foreach (const CSharedFolder &sf, machine.GetSharedFolders())
-            sfs.insert(sf.GetName(), sf.GetHostPath());
-        foreach (const CSharedFolder &sf, console.GetSharedFolders())
-            sfs.insert(sf.GetName(), sf.GetHostPath());
-
-        /* Append attachment data: */
-        for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); it != sfs.constEnd(); ++it)
-        {
-            /* Select slashes depending on the OS type: */
-            if (UICommon::isDOSType(guest.GetOSTypeId()))
-                strFullData += s_strTableRow2.arg(QString("<b>\\\\vboxsvr\\%1</b>").arg(it.key()), it.value());
-            else
-                strFullData += s_strTableRow2.arg(QString("<b>%1</b>").arg(it.key()), it.value());
-        }
-        /* Handle 'no-folders' case: */
-        if (sfs.isEmpty())
-            strFullData = s_strTableRow1
-                .arg(QApplication::translate("UIIndicatorsPool", "No shared folders", "Shared folders tooltip"));
+        bool fFoldersPresent = false;
+        m_pMachine->acquireSharedFoldersStatusInfo(strFullData, fFoldersPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(fFoldersPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 };
 

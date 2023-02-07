@@ -345,6 +345,21 @@ void UISession::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresen
     UIDetailsGenerator::acquireNetworkStatusInfo(comMachine, strInfo, fAdaptersPresent, fCablesDisconnected);
 }
 
+void UISession::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnableds)
+{
+    CMachine comMachine = machine();
+    CConsole comConsole = console();
+    UIDetailsGenerator::acquireUsbStatusInfo(comMachine, comConsole, strInfo, fUsbEnableds);
+}
+
+void UISession::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)
+{
+    CMachine comMachine = machine();
+    CConsole comConsole = console();
+    CGuest comGuest = guest();
+    UIDetailsGenerator::acquireSharedFoldersStatusInfo(comMachine, comConsole, comGuest, strInfo, fFoldersPresent);
+}
+
 void UISession::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
 {
     CMachine comMachine = machine();

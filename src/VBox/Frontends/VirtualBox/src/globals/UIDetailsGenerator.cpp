@@ -46,9 +46,11 @@
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
 #include "CCloudMachine.h"
+#include "CConsole.h"
 #include "CForm.h"
 #include "CFormValue.h"
 #include "CGraphicsAdapter.h"
+#include "CGuest.h"
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
@@ -65,6 +67,7 @@
 #include "CTrustedPlatformModule.h"
 #include "CUefiVariableStore.h"
 #include "CUSBController.h"
+#include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #include "CVRDEServer.h"
@@ -1336,6 +1339,52 @@ void UIDetailsGenerator::acquireNetworkStatusInfo(CMachine &comMachine, QString 
                      QApplication::translate("UIIndicatorsPool", "Disconnected", "cable (Network tooltip)"));
         }
     }
+}
+
+void UIDetailsGenerator::acquireUsbStatusInfo(CMachine &comMachine, CConsole &comConsole,
+                                              QString &strInfo, bool &fUsbEnabled)
+{
+    /* Check whether there is at least one USB controller with an available proxy: */
+    fUsbEnabled =    !comMachine.GetUSBDeviceFilters().isNull()
+                  && !comMachine.GetUSBControllers().isEmpty()
+                  && comMachine.GetUSBProxyAvailable();
+    if (fUsbEnabled)
+    {
+        /* Enumerate all the USB devices: */
+        foreach (const CUSBDevice &comUsbDevice, comConsole.GetUSBDevices())
+            strInfo += e_strTableRow1.arg(uiCommon().usbDetails(comUsbDevice));
+        /* Handle 'no-usb-devices' case: */
+        if (strInfo.isNull())
+            strInfo = e_strTableRow1
+                .arg(QApplication::translate("UIIndicatorsPool", "No USB devices attached", "USB tooltip"));
+    }
+}
+
+void UIDetailsGenerator::acquireSharedFoldersStatusInfo(CMachine &comMachine, CConsole &comConsole, CGuest &comGuest,
+                                                        QString &strInfo, bool &fFoldersPresent)
+{
+    /* Enumerate all the folders: */
+    QMap<QString, QString> folders;
+    foreach (const CSharedFolder &comPermanentFolder, comMachine.GetSharedFolders())
+        folders.insert(comPermanentFolder.GetName(), comPermanentFolder.GetHostPath());
+    foreach (const CSharedFolder &comTemporaryFolder, comConsole.GetSharedFolders())
+        folders.insert(comTemporaryFolder.GetName(), comTemporaryFolder.GetHostPath());
+    fFoldersPresent = !folders.isEmpty();
+
+    /* Append attachment data: */
+    for (QMap<QString, QString>::const_iterator it = folders.constBegin(); it != folders.constEnd(); ++it)
+    {
+        /* Select slashes depending on the OS type: */
+        if (UICommon::isDOSType(comGuest.GetOSTypeId()))
+            strInfo += e_strTableRow2.arg(QString("<b>\\\\vboxsvr\\%1</b>").arg(it.key()), it.value());
+        else
+            strInfo += e_strTableRow2.arg(QString("<b>%1</b>").arg(it.key()), it.value());
+    }
+
+    /* Handle 'no-folders' case: */
+    if (!fFoldersPresent)
+        strInfo = e_strTableRow1
+            .arg(QApplication::translate("UIIndicatorsPool", "No shared folders", "Shared folders tooltip"));
 }
 
 void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,

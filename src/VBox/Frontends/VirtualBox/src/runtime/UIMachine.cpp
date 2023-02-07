@@ -472,6 +472,16 @@ void UIMachine::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresen
     uisession()->acquireNetworkStatusInfo(strInfo, fAdaptersPresent, fCablesDisconnected);
 }
 
+void UIMachine::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnableds)
+{
+    uisession()->acquireUsbStatusInfo(strInfo, fUsbEnableds);
+}
+
+void UIMachine::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)
+{
+    uisession()->acquireSharedFoldersStatusInfo(strInfo, fFoldersPresent);
+}
+
 void UIMachine::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
 {
     uisession()->acquireDisplayStatusInfo(strInfo, fAcceleration3D);
