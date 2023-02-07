@@ -310,7 +310,7 @@ void UIMachineWindowNormal::prepareStatusBar()
         connect(statusBar(), &QIStatusBar::customContextMenuRequested,
                 this, &UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest);
         /* Create indicator-pool: */
-        m_pIndicatorsPool = new UIIndicatorsPool(machineLogic()->uimachine(), machineLogic()->uisession());
+        m_pIndicatorsPool = new UIIndicatorsPool(machineLogic()->uimachine());
         AssertPtrReturnVoid(m_pIndicatorsPool);
         {
             /* Configure indicator-pool: */

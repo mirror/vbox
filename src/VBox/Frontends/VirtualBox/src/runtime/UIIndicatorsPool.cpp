@@ -43,7 +43,6 @@
 #include "UIIconPool.h"
 #include "UIIndicatorsPool.h"
 #include "UIMachine.h"
-#include "UISession.h"
 
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */
@@ -54,7 +53,7 @@ class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatu
 public:
 
     /** Constructor which remembers passed @a session object. */
-    UISessionStateStatusBarIndicator(IndicatorType enmType, UIMachine *pMachine, UISession *pSession);
+    UISessionStateStatusBarIndicator(IndicatorType enmType, UIMachine *pMachine);
 
     /** Returns the indicator type. */
     IndicatorType type() const { return m_enmType; }
@@ -75,8 +74,6 @@ protected:
 
     /** Holds the machine UI reference. */
     UIMachine *m_pMachine;
-    /** Holds the session UI reference. */
-    UISession *m_pSession;
 
     /** Holds the indicator description. */
     QString m_strDescription;
@@ -144,10 +141,9 @@ private:
 };
 
 
-UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType enmType, UIMachine *pMachine, UISession *pSession)
+UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType enmType, UIMachine *pMachine)
     : m_enmType(enmType)
     , m_pMachine(pMachine)
-    , m_pSession(pSession)
 {
     /* Install UISessionStateStatusBarIndicator accessibility interface factory: */
     QAccessible::installFactory(QIAccessibilityInterfaceForUISessionStateStatusBarIndicator::pFactory);
@@ -172,8 +168,8 @@ class UIIndicatorHardDrive : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorHardDrive(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_HardDisks, pMachine, pSession)
+    UIIndicatorHardDrive(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_HardDisks, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
@@ -224,8 +220,8 @@ class UIIndicatorOpticalDisks : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorOpticalDisks(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_OpticalDisks, pMachine, pSession)
+    UIIndicatorOpticalDisks(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_OpticalDisks, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
@@ -265,8 +261,8 @@ class UIIndicatorFloppyDisks : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorFloppyDisks(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_FloppyDisks, pMachine, pSession)
+    UIIndicatorFloppyDisks(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_FloppyDisks, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
@@ -315,8 +311,8 @@ public:
     };
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorAudio(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Audio, pMachine, pSession)
+    UIIndicatorAudio(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Audio, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(AudioState_AllOff, UIIconPool::iconSet(":/audio_all_off_16px.png"));
@@ -362,8 +358,8 @@ class UIIndicatorNetwork : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorNetwork(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Network, pMachine, pSession)
+    UIIndicatorNetwork(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Network, pMachine)
         , m_pTimerAutoUpdate(0)
     {
         /* Assign state-icons: */
@@ -440,8 +436,8 @@ class UIIndicatorUSB : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorUSB(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_USB, pMachine, pSession)
+    UIIndicatorUSB(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_USB, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
@@ -480,8 +476,8 @@ class UIIndicatorSharedFolders : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorSharedFolders(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_SharedFolders, pMachine, pSession)
+    UIIndicatorSharedFolders(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_SharedFolders, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
@@ -517,8 +513,8 @@ class UIIndicatorDisplay : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorDisplay(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Display, pMachine, pSession)
+    UIIndicatorDisplay(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Display, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/display_software_16px.png"));
@@ -564,8 +560,8 @@ class UIIndicatorRecording : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorRecording(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Recording, pMachine, pSession)
+    UIIndicatorRecording(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Recording, pMachine)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
     {
@@ -673,8 +669,8 @@ class UIIndicatorFeatures : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructs indicator passing @a pMachine to the base-class. */
-    UIIndicatorFeatures(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Features, pMachine, pSession)
+    UIIndicatorFeatures(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Features, pMachine)
         , m_iCPULoadPercentage(0)
     {
         /* Assign state-icons: */
@@ -780,8 +776,8 @@ class UIIndicatorMouse : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructor, using @a pMachine for state-update routine. */
-    UIIndicatorMouse(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Mouse, pMachine, pSession)
+    UIIndicatorMouse(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Mouse, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
@@ -856,8 +852,8 @@ class UIIndicatorKeyboard : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructor, using @a pMachine for state-update routine. */
-    UIIndicatorKeyboard(UIMachine *pMachine, UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Keyboard, pMachine, pSession)
+    UIIndicatorKeyboard(UIMachine *pMachine)
+        : UISessionStateStatusBarIndicator(IndicatorType_Keyboard, pMachine)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
@@ -938,11 +934,11 @@ private:
 };
 
 
-UIIndicatorsPool::UIIndicatorsPool(UIMachine *pMachine, UISession *pSession, QWidget *pParent /* = 0 */)
+UIIndicatorsPool::UIIndicatorsPool(UIMachine *pMachine, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pMachine(pMachine)
-    , m_pSession(pSession)
     , m_fEnabled(false)
+    , m_pMainLayout(0)
     , m_pTimerAutoUpdate(0)
 {
     prepare();
@@ -1181,19 +1177,19 @@ void UIIndicatorsPool::updatePool()
             /* Create indicator: */
             switch (indicatorType)
             {
-                case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_pMachine, m_pSession);     break;
-                case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_pMachine, m_pSession);  break;
-                case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_pMachine, m_pSession);   break;
-                case IndicatorType_Audio:             m_pool[indicatorType] = new UIIndicatorAudio(m_pMachine, m_pSession);         break;
-                case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_pMachine, m_pSession);       break;
-                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_pMachine, m_pSession);           break;
-                case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_pMachine, m_pSession); break;
-                case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_pMachine, m_pSession);       break;
-                case IndicatorType_Recording:         m_pool[indicatorType] = new UIIndicatorRecording(m_pMachine, m_pSession);     break;
-                case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_pMachine, m_pSession);      break;
-                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pMachine, m_pSession);         break;
-                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_pMachine, m_pSession);      break;
-                case IndicatorType_KeyboardExtension: m_pool[indicatorType] = new UIIndicatorKeyboardExtension;                     break;
+                case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_pMachine);     break;
+                case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_pMachine);  break;
+                case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_pMachine);   break;
+                case IndicatorType_Audio:             m_pool[indicatorType] = new UIIndicatorAudio(m_pMachine);         break;
+                case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_pMachine);       break;
+                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_pMachine);           break;
+                case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_pMachine); break;
+                case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_pMachine);       break;
+                case IndicatorType_Recording:         m_pool[indicatorType] = new UIIndicatorRecording(m_pMachine);     break;
+                case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_pMachine);      break;
+                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pMachine);         break;
+                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_pMachine);      break;
+                case IndicatorType_KeyboardExtension: m_pool[indicatorType] = new UIIndicatorKeyboardExtension;         break;
                 default: break;
             }
             /* Configure indicator: */

@@ -46,7 +46,6 @@ class QTimer;
 class QHBoxLayout;
 class QIStatusBarIndicator;
 class UIMachine;
-class UISession;
 
 /** QWidget extension
   * providing Runtime UI with status-bar indicators. */
@@ -63,12 +62,11 @@ signals:
 
 public:
 
-    /** Constructor, passes @a pParent to the QWidget constructor.
-      * @param  pMachine  Brings the machine UI reference.
-      * @param  pSession  Brings the session UI reference. */
-    UIIndicatorsPool(UIMachine *pMachine, UISession *pSession, QWidget *pParent = 0);
-    /** Destructor. */
-    ~UIIndicatorsPool();
+    /** Constructs indicator-pool passing @a pParent to the base-class.
+      * @param  pMachine  Brings the machine UI reference. */
+    UIIndicatorsPool(UIMachine *pMachine, QWidget *pParent = 0);
+    /** Destructs indicator-pool. */
+    virtual ~UIIndicatorsPool() RT_OVERRIDE;
 
     /** Updates appearance for passed @a indicatorType. */
     void updateAppearance(IndicatorType indicatorType);
@@ -122,18 +120,21 @@ private:
 
     /** Holds the machine UI reference. */
     UIMachine *m_pMachine;
-    /** Holds the session UI reference. */
-    UISession *m_pSession;
+
     /** Holds whether status-bar is enabled. */
-    bool m_fEnabled;
+    bool  m_fEnabled;
+
     /** Holds the cached restrictions. */
-    QList<IndicatorType> m_restrictions;
+    QList<IndicatorType>  m_restrictions;
     /** Holds the cached order. */
-    QList<IndicatorType> m_order;
+    QList<IndicatorType>  m_order;
+
     /** Holds cached indicator instances. */
-    QMap<IndicatorType, QIStatusBarIndicator*> m_pool;
+    QMap<IndicatorType, QIStatusBarIndicator*>  m_pool;
+
     /** Holds the main-layout instance. */
     QHBoxLayout *m_pMainLayout;
+
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
 };
