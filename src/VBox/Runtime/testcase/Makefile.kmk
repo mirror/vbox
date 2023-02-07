@@ -214,7 +214,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
     PROGRAMS += tstRTNoCrt-2
    endif
    if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
-    PROGRAMS += tstRTNoCrt-3 tstRTNoCrt-3r tstRTNoCrt-4
+    PROGRAMS += tstRTNoCrt-3 tstRTNoCrt-3r tstRTNoCrt-4 tstRTNoCrt-5
    endif
   endif
 
@@ -734,6 +734,25 @@ ifdef VBOX_WITH_TESTCASES # The whole file
 
  tstRTNoCrt-4_TEMPLATE := VBoxR3TstExe
  tstRTNoCrt-4_SOURCES := tstRTNoCrt-4.cpp
+
+ tstRTNoCrt-5_TEMPLATE := VBoxR3TstExeStatic
+ if   "$(KBUILD_TARGET_ARCH)" == "amd64" \
+   && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_ONLY_DOCS) # mirrors RuntimeR3-x86 cond
+  tstRTNoCrt-5_BLD_TRG_ARCH := x86
+ endif
+ tstRTNoCrt-5_SOURCES := tstRTNoCrt-5.cpp
+ tstRTNoCrt-5_SOURCES.win.x86 := \
+ 	../common/compiler/vcc/x86-allshl.asm \
+ 	../common/compiler/vcc/x86-allshr.asm \
+ 	../common/compiler/vcc/x86-aullshr.asm \
+ 	../common/compiler/vcc/x86-allmul.asm \
+ 	../common/compiler/vcc/x86-aulldiv.asm \
+ 	../common/compiler/vcc/x86-aullrem.asm \
+ 	../common/compiler/vcc/x86-aulldvrm.asm \
+ 	../common/compiler/vcc/x86-alldiv.asm \
+ 	../common/compiler/vcc/x86-allrem.asm \
+ 	../common/compiler/vcc/x86-alldvrm.asm \
+ 	../common/compiler/vcc/RTVccUInt64Div.cpp
 
  tstRTNtPath-1_TEMPLATE = VBoxR3TstExe
  tstRTNtPath-1_SOURCES = tstRTNtPath-1.cpp
