@@ -46,9 +46,6 @@
 #include "UISession.h"
 
 /* COM includes: */
-#include "CAudioAdapter.h"
-#include "CAudioSettings.h"
-#include "CGraphicsAdapter.h"
 #include "CRecordingSettings.h"
 #include "CRecordingScreenSettings.h"
 #include "CConsole.h"
@@ -334,7 +331,7 @@ public:
         AudioState_AllOn    = AudioState_InputOn | AudioState_OutputOn
     };
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorAudio(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Audio, pMachine, pSession)
     {
@@ -352,42 +349,24 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine comMachine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
         QString strFullData;
+        bool fAudioEnabled = false;
+        bool fEnabledOutput = false;
+        bool fEnabledInput = false;
+        m_pMachine->acquireAudioStatusInfo(strFullData, fAudioEnabled, fEnabledOutput, fEnabledInput);
 
-        /* Get audio adapter: */
-        const CAudioSettings comAudioSettings = comMachine.GetAudioSettings();
-        const CAudioAdapter  comAdapter       = comAudioSettings.GetAdapter();
-        const bool fAudioEnabled = comAdapter.GetEnabled();
-        if (fAudioEnabled)
-        {
-            const bool fEnabledOutput = comAdapter.GetEnabledOut();
-            const bool fEnabledInput = comAdapter.GetEnabledIn();
-            strFullData = QString(s_strTableRow2).arg(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
-                                                      fEnabledOutput ?
-                                                      QApplication::translate("UIDetails", "Enabled", "details (audio/output)") :
-                                                      QApplication::translate("UIDetails", "Disabled", "details (audio/output)"))
-                        + QString(s_strTableRow2).arg(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
-                                                      fEnabledInput ?
-                                                      QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
-                                                      QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
-            AudioState enmState = AudioState_AllOff;
-            if (fEnabledOutput)
-                enmState = (AudioState)(enmState | AudioState_OutputOn);
-            if (fEnabledInput)
-                enmState = (AudioState)(enmState | AudioState_InputOn);
-            setState(enmState);
-        }
-
-        /* Hide indicator if adapter is disabled: */
-        if (!fAudioEnabled)
-            hide();
+        /* Hide indicator if no audio enabled: */
+        setVisible(fAudioEnabled);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
+        /* Update indicator state: */
+        AudioState enmState = AudioState_AllOff;
+        if (fEnabledOutput)
+            enmState = (AudioState)(enmState | AudioState_OutputOn);
+        if (fEnabledInput)
+            enmState = (AudioState)(enmState | AudioState_InputOn);
+        setState(enmState);
     }
 };
 
@@ -661,7 +640,7 @@ class UIIndicatorDisplay : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorDisplay(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Display, pMachine, pSession)
     {
@@ -678,40 +657,9 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
         QString strFullData;
-
-        /* Get graphics adapter: */
-        CGraphicsAdapter comGraphics = machine.GetGraphicsAdapter();
-
-        /* Video Memory: */
-        const ULONG uVRAMSize = comGraphics.GetVRAMSize();
-        const QString strVRAMSize = UICommon::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
-        strFullData += s_strTableRow2
-            .arg(QApplication::translate("UIIndicatorsPool", "Video memory", "Display tooltip"), strVRAMSize);
-
-        /* Monitor Count: */
-        const ULONG uMonitorCount = comGraphics.GetMonitorCount();
-        if (uMonitorCount > 1)
-        {
-            const QString strMonitorCount = QString::number(uMonitorCount);
-            strFullData += s_strTableRow2
-                .arg(QApplication::translate("UIIndicatorsPool", "Screens", "Display tooltip"), strMonitorCount);
-        }
-
-        /* 3D acceleration: */
-        const bool fAcceleration3D = comGraphics.GetAccelerate3DEnabled();
-        if (fAcceleration3D)
-        {
-            const QString strAcceleration3D = fAcceleration3D ?
-                UICommon::tr("Enabled", "details report (3D Acceleration)") :
-                UICommon::tr("Disabled", "details report (3D Acceleration)");
-            strFullData += s_strTableRow2
-                .arg(QApplication::translate("UIIndicatorsPool", "3D acceleration", "Display tooltip"), strAcceleration3D);
-        }
+        bool fAcceleration3D = false;
+        m_pMachine->acquireDisplayStatusInfo(strFullData, fAcceleration3D);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));

@@ -1252,3 +1252,58 @@ void UIDetailsGenerator::acquireFloppyDiskStatusInfo(CMachine &comMachine, QStri
             strInfo += e_strTableRow1.arg(comController.GetName()) + strAttData;
     }
 }
+
+void UIDetailsGenerator::acquireAudioStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput)
+{
+    /* Get audio settings & adapter: */
+    const CAudioSettings comAudioSettings = comMachine.GetAudioSettings();
+    const CAudioAdapter comAdapter = comAudioSettings.GetAdapter();
+    fAudioEnabled = comAdapter.GetEnabled();
+    if (fAudioEnabled)
+    {
+        fEnabledOutput = comAdapter.GetEnabledOut();
+        fEnabledInput = comAdapter.GetEnabledIn();
+        strInfo = QString(e_strTableRow2).arg(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
+                                              fEnabledOutput ?
+                                              QApplication::translate("UIDetails", "Enabled", "details (audio/output)") :
+                                              QApplication::translate("UIDetails", "Disabled", "details (audio/output)"))
+                + QString(e_strTableRow2).arg(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
+                                              fEnabledInput ?
+                                              QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
+                                              QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
+    }
+}
+
+void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                  bool &fAcceleration3D)
+{
+    /* Get graphics adapter: */
+    CGraphicsAdapter comGraphics = comMachine.GetGraphicsAdapter();
+
+    /* Video Memory: */
+    const ULONG uVRAMSize = comGraphics.GetVRAMSize();
+    const QString strVRAMSize = UICommon::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
+    strInfo += e_strTableRow2
+        .arg(QApplication::translate("UIIndicatorsPool", "Video memory", "Display tooltip"), strVRAMSize);
+
+    /* Monitor Count: */
+    const ULONG uMonitorCount = comGraphics.GetMonitorCount();
+    if (uMonitorCount > 1)
+    {
+        const QString strMonitorCount = QString::number(uMonitorCount);
+        strInfo += e_strTableRow2
+            .arg(QApplication::translate("UIIndicatorsPool", "Screens", "Display tooltip"), strMonitorCount);
+    }
+
+    /* 3D acceleration: */
+    fAcceleration3D = comGraphics.GetAccelerate3DEnabled();
+    if (fAcceleration3D)
+    {
+        const QString strAcceleration3D = fAcceleration3D
+            ? UICommon::tr("Enabled", "details report (3D Acceleration)")
+            : UICommon::tr("Disabled", "details report (3D Acceleration)");
+        strInfo += e_strTableRow2
+            .arg(QApplication::translate("UIIndicatorsPool", "3D acceleration", "Display tooltip"), strAcceleration3D);
+    }
+}

@@ -270,6 +270,10 @@ public:
         void acquireOpticalDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted);
         /** Acquires status info for floppy disk indicator. */
         void acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted);
+        /** Acquires status info for audio indicator. */
+        void acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput);
+        /** Acquires status info for Display indicator. */
+        void acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D);
     /** @} */
 
     /** @name Close stuff.

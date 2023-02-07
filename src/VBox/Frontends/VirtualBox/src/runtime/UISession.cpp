@@ -333,6 +333,18 @@ void UISession::acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachments
     UIDetailsGenerator::acquireFloppyDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent, fAttachmentsMounted);
 }
 
+void UISession::acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput)
+{
+    CMachine comMachine = machine();
+    UIDetailsGenerator::acquireAudioStatusInfo(comMachine, strInfo, fAudioEnabled, fEnabledOutput, fEnabledInput);
+}
+
+void UISession::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
+{
+    CMachine comMachine = machine();
+    UIDetailsGenerator::acquireDisplayStatusInfo(comMachine, strInfo, fAcceleration3D);
+}
+
 bool UISession::prepareToBeSaved()
 {
     return    isPaused()

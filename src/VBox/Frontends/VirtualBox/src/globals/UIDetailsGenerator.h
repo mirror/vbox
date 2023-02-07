@@ -90,6 +90,12 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF void acquireFloppyDiskStatusInfo(CMachine &comMachine, QString &strInfo,
                                                           bool &fAttachmentsPresent, bool &fAttachmentsMounted);
 
+    SHARED_LIBRARY_STUFF void acquireAudioStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                     bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput);
+
+    SHARED_LIBRARY_STUFF void acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                       bool &fAcceleration3D);
+
     /** Holds the table row format 1. */
     extern const QString e_strTableRow1;
     /** Holds the table row format 2. */

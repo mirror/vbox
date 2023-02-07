@@ -462,6 +462,16 @@ void UIMachine::acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachments
     uisession()->acquireFloppyDiskStatusInfo(strInfo, fAttachmentsPresent, fAttachmentsMounted);
 }
 
+void UIMachine::acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput)
+{
+    uisession()->acquireAudioStatusInfo(strInfo, fAudioEnabled, fEnabledOutput, fEnabledInput);
+}
+
+void UIMachine::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
+{
+    uisession()->acquireDisplayStatusInfo(strInfo, fAcceleration3D);
+}
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */
