@@ -15580,10 +15580,25 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sqrtsd_u128_r64,(PX86FXSTATE pFpuState, PIEMSSE
  */
 static uint32_t iemAImpl_rsqrt_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val)
 {
-    RT_NOREF(pr32Res);
-    RT_NOREF(pr32Val);
-    AssertReleaseFailed();
-    return fMxcsr;
+    if (iemSseUnaryValIsNaNR32(pr32Res, pr32Val, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT32U r32Src;
+    iemSsePrepareValueR32(&r32Src, fMxcsr | X86_MXCSR_DAZ, pr32Val);
+    if (RTFLOAT32U_IS_ZERO(&r32Src))
+    {
+        *pr32Res = g_ar32Infinity[r32Src.s.fSign];
+        return fMxcsr;
+    }
+    else if (r32Src.s.fSign)
+    {
+        *pr32Res = g_ar32QNaN[1];
+        return fMxcsr | X86_MXCSR_IE;
+    }
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f32_rsqrt(iemFpSoftF32FromIprt(&r32Src), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
 }
 
 
