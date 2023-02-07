@@ -70,6 +70,7 @@
 #include "CVRDEServer.h"
 
 /* VirtualBox interface declarations: */
+#include <iprt/time.h>
 #include <VBox/com/VirtualBox.h>
 
 
@@ -1272,6 +1273,68 @@ void UIDetailsGenerator::acquireAudioStatusInfo(CMachine &comMachine, QString &s
                                               fEnabledInput ?
                                               QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
                                               QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
+    }
+}
+
+void UIDetailsGenerator::acquireNetworkStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                  bool &fAdaptersPresent, bool &fCablesDisconnected)
+{
+    /* Determine max amount of network adapters: */
+    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const KChipsetType enmChipsetType = comMachine.GetChipsetType();
+    CSystemProperties comSystemProperties = comVBox.GetSystemProperties();
+    const ulong cMaxNetworkAdapters = comSystemProperties.GetMaxNetworkAdapters(enmChipsetType);
+
+    /* Gather adapter properties: */
+    RTTIMESPEC time;
+    uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
+    QString strFlags, strCount;
+    LONG64 iTimestamp;
+    comMachine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, iTimestamp, strFlags);
+    bool fPropsValid = (u64Now - iTimestamp < UINT64_C(60000000000)); /* timeout beacon */
+    QStringList ipList, macList;
+    if (fPropsValid)
+    {
+        const ulong cAdapters = qMin(strCount.toULong(), cMaxNetworkAdapters);
+        for (ulong i = 0; i < cAdapters; ++i)
+        {
+            ipList << comMachine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
+            macList << comMachine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/MAC").arg(i));
+        }
+    }
+
+    /* Enumerate up to cMaxNetworkAdapters adapters: */
+    for (ulong uSlot = 0; uSlot < cMaxNetworkAdapters; ++uSlot)
+    {
+        const CNetworkAdapter &comAdapter = comMachine.GetNetworkAdapter(uSlot);
+        if (comMachine.isOk() && !comAdapter.isNull() && comAdapter.GetEnabled())
+        {
+            fAdaptersPresent = true;
+            QString strGuestIp;
+            if (fPropsValid)
+            {
+                const QString strGuestMac = comAdapter.GetMACAddress();
+                const int iIp = macList.indexOf(strGuestMac);
+                if (iIp >= 0)
+                    strGuestIp = ipList.at(iIp);
+            }
+            /* Check if the adapter's cable is connected: */
+            const bool fCableConnected = comAdapter.GetCableConnected();
+            if (fCablesDisconnected && fCableConnected)
+                fCablesDisconnected = false;
+            /* Append adapter data: */
+            strInfo += e_strTableRow1
+                .arg(QApplication::translate("UIIndicatorsPool", "Adapter %1 (%2)", "Network tooltip")
+                        .arg(uSlot + 1).arg(gpConverter->toString(comAdapter.GetAttachmentType())));
+            if (!strGuestIp.isEmpty())
+                strInfo += e_strTableRow3
+                    .arg(QApplication::translate("UIIndicatorsPool", "IP", "Network tooltip"), strGuestIp);
+            strInfo += e_strTableRow3
+                .arg(QApplication::translate("UIIndicatorsPool", "Cable", "Network tooltip"))
+                .arg(fCableConnected ?
+                     QApplication::translate("UIIndicatorsPool", "Connected", "cable (Network tooltip)") :
+                     QApplication::translate("UIIndicatorsPool", "Disconnected", "cable (Network tooltip)"));
+        }
     }
 }
 

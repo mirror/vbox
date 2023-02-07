@@ -50,17 +50,12 @@
 #include "CRecordingScreenSettings.h"
 #include "CConsole.h"
 #include "CMachine.h"
-#include "CSystemProperties.h"
 #include "CMachineDebugger.h"
 #include "CGuest.h"
-#include "CNetworkAdapter.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
 #include "CUSBDevice.h"
 #include "CSharedFolder.h"
-
-/* Other VBox includes: */
-#include <iprt/time.h>
 
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */
@@ -378,11 +373,10 @@ class UIIndicatorNetwork : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorNetwork(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Network, pMachine, pSession)
         , m_pTimerAutoUpdate(0)
-        , m_cMaxNetworkAdapters(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
@@ -392,10 +386,6 @@ public:
         /* Configure machine state-change listener: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorNetwork::sltHandleMachineStateChange);
-        /* Fetch maximum network adapters count: */
-        const CVirtualBox vbox = uiCommon().virtualBox();
-        const CMachine machine = m_pSession->machine();
-        m_cMaxNetworkAdapters = vbox.GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
         /* Create auto-update timer: */
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
@@ -435,69 +425,13 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
         QString strFullData;
-
-        /* Gather adapter properties: */
-        RTTIMESPEC time;
-        uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
-        QString strFlags, strCount;
-        LONG64 iTimestamp;
-        machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, iTimestamp, strFlags);
-        bool fPropsValid = (u64Now - iTimestamp < UINT64_C(60000000000)); /* timeout beacon */
-        QStringList ipList, macList;
-        if (fPropsValid)
-        {
-            const int cAdapters = RT_MIN(strCount.toInt(), (int)m_cMaxNetworkAdapters);
-            for (int i = 0; i < cAdapters; ++i)
-            {
-                ipList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
-                macList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/MAC").arg(i));
-            }
-        }
-
-        /* Enumerate up to m_cMaxNetworkAdapters adapters: */
         bool fAdaptersPresent = false;
         bool fCablesDisconnected = true;
-        for (ulong uSlot = 0; uSlot < m_cMaxNetworkAdapters; ++uSlot)
-        {
-            const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
-            if (machine.isOk() && !adapter.isNull() && adapter.GetEnabled())
-            {
-                fAdaptersPresent = true;
-                QString strGuestIp;
-                if (fPropsValid)
-                {
-                    const QString strGuestMac = adapter.GetMACAddress();
-                    int iIp = macList.indexOf(strGuestMac);
-                    if (iIp >= 0)
-                        strGuestIp = ipList[iIp];
-                }
-                /* Check if the adapter's cable is connected: */
-                const bool fCableConnected = adapter.GetCableConnected();
-                if (fCablesDisconnected && fCableConnected)
-                    fCablesDisconnected = false;
-                /* Append adapter data: */
-                strFullData += s_strTableRow1
-                    .arg(QApplication::translate("UIIndicatorsPool", "Adapter %1 (%2)", "Network tooltip")
-                            .arg(uSlot + 1).arg(gpConverter->toString(adapter.GetAttachmentType())));
-                if (!strGuestIp.isEmpty())
-                    strFullData += s_strTableRow4
-                        .arg(QApplication::translate("UIIndicatorsPool", "IP", "Network tooltip"), strGuestIp);
-                strFullData += s_strTableRow4
-                    .arg(QApplication::translate("UIIndicatorsPool", "Cable", "Network tooltip"))
-                    .arg(fCableConnected ?
-                         QApplication::translate("UIIndicatorsPool", "Connected", "cable (Network tooltip)") :
-                         QApplication::translate("UIIndicatorsPool", "Disconnected", "cable (Network tooltip)"));
-            }
-        }
+        m_pMachine->acquireNetworkStatusInfo(strFullData, fAdaptersPresent, fCablesDisconnected);
 
         /* Hide indicator if there are no enabled adapters: */
-        if (!fAdaptersPresent)
-            hide();
+        setVisible(fAdaptersPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
@@ -507,8 +441,6 @@ private:
 
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
-    /** Holds the maximum amount of the network adapters. */
-    ulong m_cMaxNetworkAdapters;
 };
 
 

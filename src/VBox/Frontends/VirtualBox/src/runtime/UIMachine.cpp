@@ -467,6 +467,11 @@ void UIMachine::acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bo
     uisession()->acquireAudioStatusInfo(strInfo, fAudioEnabled, fEnabledOutput, fEnabledInput);
 }
 
+void UIMachine::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresent, bool &fCablesDisconnected)
+{
+    uisession()->acquireNetworkStatusInfo(strInfo, fAdaptersPresent, fCablesDisconnected);
+}
+
 void UIMachine::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
 {
     uisession()->acquireDisplayStatusInfo(strInfo, fAcceleration3D);

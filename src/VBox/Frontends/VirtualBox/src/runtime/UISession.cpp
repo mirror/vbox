@@ -339,6 +339,12 @@ void UISession::acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bo
     UIDetailsGenerator::acquireAudioStatusInfo(comMachine, strInfo, fAudioEnabled, fEnabledOutput, fEnabledInput);
 }
 
+void UISession::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresent, bool &fCablesDisconnected)
+{
+    CMachine comMachine = machine();
+    UIDetailsGenerator::acquireNetworkStatusInfo(comMachine, strInfo, fAdaptersPresent, fCablesDisconnected);
+}
+
 void UISession::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
 {
     CMachine comMachine = machine();

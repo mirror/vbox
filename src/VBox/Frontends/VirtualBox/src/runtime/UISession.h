@@ -272,6 +272,8 @@ public:
         void acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted);
         /** Acquires status info for audio indicator. */
         void acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput);
+        /** Acquires status info for network indicator. */
+        void acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresent, bool &fCablesDisconnected);
         /** Acquires status info for Display indicator. */
         void acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D);
     /** @} */

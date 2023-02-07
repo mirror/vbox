@@ -93,6 +93,9 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF void acquireAudioStatusInfo(CMachine &comMachine, QString &strInfo,
                                                      bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput);
 
+    SHARED_LIBRARY_STUFF void acquireNetworkStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                       bool &fAdaptersPresent, bool &fCablesDisconnected);
+
     SHARED_LIBRARY_STUFF void acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
                                                        bool &fAcceleration3D);
 
