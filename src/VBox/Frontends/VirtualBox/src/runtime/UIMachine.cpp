@@ -487,6 +487,11 @@ void UIMachine::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D
     uisession()->acquireDisplayStatusInfo(strInfo, fAcceleration3D);
 }
 
+void UIMachine::acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEnabled, bool &fMachinePaused)
+{
+    uisession()->acquireRecordingStatusInfo(strInfo, fRecordingEnabled, fMachinePaused);
+}
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */

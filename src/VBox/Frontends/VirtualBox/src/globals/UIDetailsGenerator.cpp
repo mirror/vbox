@@ -1419,3 +1419,36 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
             .arg(QApplication::translate("UIIndicatorsPool", "3D acceleration", "Display tooltip"), strAcceleration3D);
     }
 }
+
+void UIDetailsGenerator::acquireRecordingStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                    bool &fRecordingEnabled)
+{
+    /* Get recording settings: */
+    CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
+    fRecordingEnabled = comRecordingSettings.GetEnabled();
+    if (fRecordingEnabled)
+    {
+        /* For now all screens have the same config: */
+        CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+        const bool fVideoEnabled = comRecordingScreen0Settings.IsFeatureEnabled(KRecordingFeature_Video);
+        const bool fAudioEnabled = comRecordingScreen0Settings.IsFeatureEnabled(KRecordingFeature_Audio);
+
+        /* Compose tool-tip: */
+        QString strToolTip;
+        if (fVideoEnabled && fAudioEnabled)
+            strToolTip = QApplication::translate("UIIndicatorsPool", "Video/audio recording file", "Recording tooltip");
+        else if (fAudioEnabled)
+            strToolTip = QApplication::translate("UIIndicatorsPool", "Audio recording file", "Recording tooltip");
+        else if (fVideoEnabled)
+            strToolTip = QApplication::translate("UIIndicatorsPool", "Video recording file", "Recording tooltip");
+        strInfo += e_strTableRow2
+            .arg(strToolTip)
+            .arg(comRecordingScreen0Settings.GetFilename());
+    }
+    /* Handle 'no-recording' case: */
+    else
+    {
+        strInfo += e_strTableRow1
+            .arg(QApplication::translate("UIIndicatorsPool", "Recording disabled", "Recording tooltip"));
+    }
+}

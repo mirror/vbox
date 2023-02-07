@@ -29,6 +29,7 @@
 #include <QAccessibleWidget>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QStyle>
 #include <QTimer>
 
 /* GUI includes: */
@@ -45,8 +46,6 @@
 #include "UISession.h"
 
 /* COM includes: */
-#include "CRecordingSettings.h"
-#include "CRecordingScreenSettings.h"
 #include "CMachine.h"
 #include "CMachineDebugger.h"
 
@@ -566,22 +565,13 @@ class UIIndicatorRecording : public UISessionStateStatusBarIndicator
         UIIndicatorStateRecording_Paused   = 2
     };
 
-    /** Recording modes. */
-    enum UIIndicatorStateRecordingMode
-    {
-        UIIndicatorStateRecordingMode_None  = RT_BIT(0),
-        UIIndicatorStateRecordingMode_Video = RT_BIT(1),
-        UIIndicatorStateRecordingMode_Audio = RT_BIT(2)
-    };
-
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorRecording(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Recording, pMachine, pSession)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
-        , m_enmRecordingMode(UIIndicatorStateRecordingMode_None)
     {
         /* Assign state-icons: */
         setStateIcon(UIIndicatorStateRecording_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
@@ -647,59 +637,20 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine comMachine = m_pSession->machine();
-        const bool fMachinePaused = m_pSession->isPaused();
+        QString strFullData;
+        bool fRecordingEnabled = false;
+        bool fMachinePaused = false;
+        m_pMachine->acquireRecordingStatusInfo(strFullData, fRecordingEnabled, fMachinePaused);
 
-        /* Update indicator state early: */
-        CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
-        Assert(comRecordingSettings.isOk());
-        if (!comRecordingSettings.GetEnabled())
+        /* Update tool-tip: */
+        setToolTip(s_strTable.arg(strFullData));
+        /* Set initial indicator state: */
+        if (!fRecordingEnabled)
             setState(UIIndicatorStateRecording_Disabled);
         else if (!fMachinePaused)
             setState(UIIndicatorStateRecording_Enabled);
         else
             setState(UIIndicatorStateRecording_Paused);
-
-        updateRecordingMode();
-
-        /* Prepare tool-tip: */
-        QString strFullData;
-        switch (state())
-        {
-            case UIIndicatorStateRecording_Disabled:
-            {
-                strFullData += s_strTableRow1
-                    .arg(QApplication::translate("UIIndicatorsPool", "Recording disabled", "Recording tooltip"));
-                break;
-            }
-            case UIIndicatorStateRecording_Enabled:
-            case UIIndicatorStateRecording_Paused:
-            {
-                QString strToolTip;
-                if (   m_enmRecordingMode & UIIndicatorStateRecordingMode_Audio
-                    && m_enmRecordingMode & UIIndicatorStateRecordingMode_Video)
-                    strToolTip = QApplication::translate("UIIndicatorsPool", "Video/audio recording file", "Recording tooltip");
-                else if (m_enmRecordingMode & UIIndicatorStateRecordingMode_Audio)
-                    strToolTip = QApplication::translate("UIIndicatorsPool", "Audio recording file", "Recording tooltip");
-                else if (m_enmRecordingMode & UIIndicatorStateRecordingMode_Video)
-                    strToolTip = QApplication::translate("UIIndicatorsPool", "Video recording file", "Recording tooltip");
-
-                /* For now all screens have the same config: */
-                CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
-                Assert(comRecordingScreen0Settings.isOk());
-
-                strFullData += s_strTableRow2
-                    .arg(strToolTip)
-                    .arg(comRecordingScreen0Settings.GetFilename());
-                break;
-            }
-            default:
-                break;
-        }
-
-        /* Update tool-tip: */
-        setToolTip(s_strTable.arg(strFullData));
     }
 
     /** Returns rotation start angle. */
@@ -711,35 +662,10 @@ private:
     /** Defines current rotation angle. */
     void setRotationAngle(double dRotationAngle) { m_dRotationAngle = dRotationAngle; update(); }
 
-    /* Parses RecordScreenSettings::Options and updates m_enmRecordingMode accordingly. */
-    void updateRecordingMode()
-    {
-        m_enmRecordingMode = UIIndicatorStateRecordingMode_None;
-
-        /* Get machine: */
-        if (!m_pSession)
-            return;
-        const CMachine comMachine = m_pSession->machine();
-        if (comMachine.isNull())
-            return;
-
-        CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
-        /* For now all screens have the same config: */
-        CRecordingScreenSettings recordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
-        if (recordingScreen0Settings.IsFeatureEnabled(KRecordingFeature_Video))
-            m_enmRecordingMode = (UIIndicatorStateRecordingMode)((int)m_enmRecordingMode | (int)UIIndicatorStateRecordingMode_Video);
-
-        if (recordingScreen0Settings.IsFeatureEnabled(KRecordingFeature_Audio))
-            m_enmRecordingMode = (UIIndicatorStateRecordingMode)((int)m_enmRecordingMode | (int)UIIndicatorStateRecordingMode_Audio);
-    }
-
     /** Holds the rotation animation instance. */
     UIAnimationLoop *m_pAnimation;
     /** Holds current rotation angle. */
-    double m_dRotationAngle;
-
-    /** Holds the recording mode. */
-    UIIndicatorStateRecordingMode m_enmRecordingMode;
+    double  m_dRotationAngle;
 };
 
 

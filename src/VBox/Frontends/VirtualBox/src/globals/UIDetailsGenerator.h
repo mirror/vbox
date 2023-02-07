@@ -107,6 +107,9 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF void acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
                                                        bool &fAcceleration3D);
 
+    SHARED_LIBRARY_STUFF void acquireRecordingStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                         bool &fRecordingEnabled);
+
     /** Holds the table row format 1. */
     extern const QString e_strTableRow1;
     /** Holds the table row format 2. */
