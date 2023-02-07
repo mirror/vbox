@@ -373,6 +373,27 @@ void UISession::acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEna
     UIDetailsGenerator::acquireRecordingStatusInfo(comMachine, strInfo, fRecordingEnabled);
 }
 
+void UISession::acquireCpuLoadPercentage(int &iPercentage)
+{
+    CMachineDebugger comDebugger = debugger();
+    ULONG uPctExecuting;
+    ULONG uPctHalted;
+    ULONG uPctOther;
+    comDebugger.GetCPULoad(0x7fffffff, uPctExecuting, uPctHalted, uPctOther);
+    iPercentage = uPctExecuting + uPctOther;
+}
+
+void UISession::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &enmEngine,
+                                          bool fNestedPagingEnabled, bool fUxEnabled,
+                                          KParavirtProvider enmProvider)
+{
+    CMachine comMachine = machine();
+    UIDetailsGenerator::acquireFeaturesStatusInfo(comMachine, strInfo,
+                                                  enmEngine,
+                                                  fNestedPagingEnabled, fUxEnabled,
+                                                  enmProvider);
+}
+
 bool UISession::prepareToBeSaved()
 {
     return    isPaused()

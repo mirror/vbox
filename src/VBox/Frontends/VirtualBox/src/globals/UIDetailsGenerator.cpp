@@ -1452,3 +1452,59 @@ void UIDetailsGenerator::acquireRecordingStatusInfo(CMachine &comMachine, QStrin
             .arg(QApplication::translate("UIIndicatorsPool", "Recording disabled", "Recording tooltip"));
     }
 }
+
+void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                   KVMExecutionEngine &enmEngine,
+                                                   bool fNestedPagingEnabled, bool fUxEnabled,
+                                                   KParavirtProvider enmProvider)
+{
+    /* VT-x/AMD-V feature: */
+    QString strExecutionEngine;
+    switch (enmEngine)
+    {
+        case KVMExecutionEngine_Emulated:
+            strExecutionEngine = "IEM";         /* no translation */
+            break;
+        case KVMExecutionEngine_HwVirt:
+            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+            break;
+        case KVMExecutionEngine_NativeApi:
+            strExecutionEngine = "native API";  /* no translation */
+            break;
+        default:
+            AssertFailed();
+            enmEngine = KVMExecutionEngine_NotSet;
+            RT_FALL_THRU();
+        case KVMExecutionEngine_NotSet:
+            strExecutionEngine = UICommon::tr("not set", "details report (execution engine)");
+            break;
+    }
+
+    /* Nested Paging feature: */
+    const QString strNestedPaging = fNestedPagingEnabled
+                                  ? UICommon::tr("Active", "details report (Nested Paging)")
+                                  : UICommon::tr("Inactive", "details report (Nested Paging)");
+
+    /* Unrestricted Execution feature: */
+    const QString strUnrestrictExec = fUxEnabled
+                                    ? UICommon::tr("Active", "details report (Unrestricted Execution)")
+                                    : UICommon::tr("Inactive", "details report (Unrestricted Execution)");
+
+    /* CPU Execution Cap feature: */
+    const QString strCPUExecCap = QString::number(comMachine.GetCPUExecutionCap());
+
+    /* Paravirtualization feature: */
+    const QString strParavirt = gpConverter->toString(enmProvider);
+
+    /* Compose tool-tip: */
+    strInfo += e_strTableRow2.arg(UICommon::tr("Execution engine", "details report"),             strExecutionEngine);
+    strInfo += e_strTableRow2.arg(UICommon::tr("Nested Paging"),                                  strNestedPaging);
+    strInfo += e_strTableRow2.arg(UICommon::tr("Unrestricted Execution"),                         strUnrestrictExec);
+    strInfo += e_strTableRow2.arg(UICommon::tr("Execution Cap", "details report"),                strCPUExecCap);
+    strInfo += e_strTableRow2.arg(UICommon::tr("Paravirtualization Interface", "details report"), strParavirt);
+
+    /* Add CPU count optional info: */
+    const int cCpuCount = comMachine.GetCPUCount();
+    if (cCpuCount > 1)
+        strInfo += e_strTableRow2.arg(UICommon::tr("Processors", "details report"), QString::number(cCpuCount));
+}

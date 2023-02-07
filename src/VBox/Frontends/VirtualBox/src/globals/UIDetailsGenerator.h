@@ -35,6 +35,9 @@
 #include "UIExtraDataDefs.h"
 #include "UITextTable.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 /* Forward declarations: */
 class CCloudMachine;
 class CConsole;
@@ -109,6 +112,11 @@ namespace UIDetailsGenerator
 
     SHARED_LIBRARY_STUFF void acquireRecordingStatusInfo(CMachine &comMachine, QString &strInfo,
                                                          bool &fRecordingEnabled);
+
+    SHARED_LIBRARY_STUFF void acquireFeaturesStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                        KVMExecutionEngine &enmEngine,
+                                                        bool fNestedPagingEnabled, bool fUxEnabled,
+                                                        KParavirtProvider enmProvider);
 
     /** Holds the table row format 1. */
     extern const QString e_strTableRow1;

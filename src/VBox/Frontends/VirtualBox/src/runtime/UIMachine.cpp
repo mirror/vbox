@@ -492,6 +492,20 @@ void UIMachine::acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEna
     uisession()->acquireRecordingStatusInfo(strInfo, fRecordingEnabled, fMachinePaused);
 }
 
+void UIMachine::acquireCpuLoadPercentage(int &iPercentage)
+{
+    uisession()->acquireCpuLoadPercentage(iPercentage);
+}
+
+void UIMachine::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &enmEngine)
+{
+    enmEngine = vmExecutionEngine();
+    uisession()->acquireFeaturesStatusInfo(strInfo, enmEngine,
+                                           isHWVirtExNestedPagingEnabled(),
+                                           isHWVirtExUXEnabled(),
+                                           paravirtProvider());
+}
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */

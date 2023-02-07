@@ -45,10 +45,6 @@
 #include "UIMachine.h"
 #include "UISession.h"
 
-/* COM includes: */
-#include "CMachine.h"
-#include "CMachineDebugger.h"
-
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */
 class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
@@ -676,27 +672,26 @@ class UIIndicatorFeatures : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorFeatures(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Features, pMachine, pSession)
         , m_iCPULoadPercentage(0)
     {
         /* Assign state-icons: */
-/** @todo  The vtx_amdv_disabled_16px.png icon isn't really approprate anymore (no raw-mode),
- * might want to get something different for KVMExecutionEngine_Emulated or reuse the
- * vm_execution_engine_native_api_16px.png one... @bugref{9898} */
+        /** @todo  The vtx_amdv_disabled_16px.png icon isn't really approprate anymore (no raw-mode),
+         * might want to get something different for KVMExecutionEngine_Emulated or reuse the
+         * vm_execution_engine_native_api_16px.png one... @bugref{9898} */
         setStateIcon(KVMExecutionEngine_NotSet, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(KVMExecutionEngine_Emulated, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(KVMExecutionEngine_HwVirt, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
-
         /* Configure machine state-change listener: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorFeatures::sltHandleMachineStateChange);
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
         {
-            connect(m_pTimerAutoUpdate, &QTimer::timeout, this, &UIIndicatorFeatures::sltTimeout);
+            connect(m_pTimerAutoUpdate, &QTimer::timeout, this, &UIIndicatorFeatures::sltHandleTimeout);
             /* Start the timer immediately if the machine is running: */
             sltHandleMachineStateChange();
         }
@@ -706,6 +701,7 @@ public:
 
 protected:
 
+    /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE
     {
         UISessionStateStatusBarIndicator::paintEvent(pEvent);
@@ -746,18 +742,10 @@ private slots:
         m_pTimerAutoUpdate->stop();
     }
 
-    void sltTimeout()
+    /** Handles timer timeout with CPU load percentage update. */
+    void sltHandleTimeout()
     {
-        if (!m_pSession)
-            return;
-        CMachineDebugger comMachineDebugger = m_pSession->debugger();
-        if (comMachineDebugger.isNull())
-            return;
-        ULONG aPctExecuting;
-        ULONG aPctHalted;
-        ULONG aPctOther;
-        comMachineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
-        m_iCPULoadPercentage = aPctExecuting + aPctOther;
+        m_pMachine->acquireCpuLoadPercentage(m_iCPULoadPercentage);
         update();
     }
 
@@ -766,59 +754,9 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get objects: */
-        const CMachine machine = m_pSession->machine();
-
-        /* VT-x/AMD-V feature: */
-        KVMExecutionEngine enmEngine = m_pMachine->vmExecutionEngine();
-        QString strExecutionEngine;
-        switch (enmEngine)
-        {
-            case KVMExecutionEngine_HwVirt:
-                strExecutionEngine = "VT-x/AMD-V";  /* no translation */
-                break;
-            case KVMExecutionEngine_Emulated:
-                strExecutionEngine = "IEM";         /* no translation */
-                break;
-            case KVMExecutionEngine_NativeApi:
-                strExecutionEngine = "native API";  /* no translation */
-                break;
-            default:
-                AssertFailed();
-                enmEngine = KVMExecutionEngine_NotSet;
-                RT_FALL_THRU();
-            case KVMExecutionEngine_NotSet:
-                strExecutionEngine = UICommon::tr("not set", "details report (execution engine)");
-                break;
-        }
-
-        /* Nested Paging feature: */
-        const QString strNestedPaging = m_pMachine->isHWVirtExNestedPagingEnabled() ?
-                                        UICommon::tr("Active", "details report (Nested Paging)") :
-                                        UICommon::tr("Inactive", "details report (Nested Paging)");
-
-        /* Unrestricted Execution feature: */
-        const QString strUnrestrictExec = m_pMachine->isHWVirtExUXEnabled() ?
-                                          UICommon::tr("Active", "details report (Unrestricted Execution)") :
-                                          UICommon::tr("Inactive", "details report (Unrestricted Execution)");
-
-        /* CPU Execution Cap feature: */
-        QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
-
-        /* Paravirtualization feature: */
-        const QString strParavirt = gpConverter->toString(m_pMachine->paravirtProvider());
-
-        /* Prepare tool-tip: */
         QString strFullData;
-        //strFullData += s_strTableRow2.arg(UICommon::tr("VT-x/AMD-V", "details report"),                   strVirtualization);
-        strFullData += s_strTableRow2.arg(UICommon::tr("Execution engine", "details report"),             strExecutionEngine);
-        strFullData += s_strTableRow2.arg(UICommon::tr("Nested Paging"),                                  strNestedPaging);
-        strFullData += s_strTableRow2.arg(UICommon::tr("Unrestricted Execution"),                         strUnrestrictExec);
-        strFullData += s_strTableRow2.arg(UICommon::tr("Execution Cap", "details report"),                strCPUExecCap);
-        strFullData += s_strTableRow2.arg(UICommon::tr("Paravirtualization Interface", "details report"), strParavirt);
-        const int cpuCount = machine.GetCPUCount();
-        if (cpuCount > 1)
-            strFullData += s_strTableRow2.arg(UICommon::tr("Processors", "details report"), QString::number(cpuCount));
+        KVMExecutionEngine enmEngine = KVMExecutionEngine_NotSet;
+        m_pMachine->acquireFeaturesStatusInfo(strFullData, enmEngine);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
@@ -826,8 +764,11 @@ private:
         setState(enmEngine);
     }
 
+    /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
-    ULONG m_iCPULoadPercentage;
+
+    /** Holds the current CPU load percentage. */
+    int  m_iCPULoadPercentage;
 };
 
 
@@ -838,7 +779,7 @@ class UIIndicatorMouse : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, using @a pSession for state-update routine. */
+    /** Constructor, using @a pMachine for state-update routine. */
     UIIndicatorMouse(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Mouse, pMachine, pSession)
     {
@@ -914,7 +855,7 @@ class UIIndicatorKeyboard : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, using @a pSession for state-update routine. */
+    /** Constructor, using @a pMachine for state-update routine. */
     UIIndicatorKeyboard(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Keyboard, pMachine, pSession)
     {
