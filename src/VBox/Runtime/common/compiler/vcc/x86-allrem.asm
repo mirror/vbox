@@ -44,19 +44,19 @@
 ;*********************************************************************************************************************************
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
-extern __aulldvrm
+extern __aullrem
 
 
 ;;
-; Division of signed 64-bit values, returning both the quotient and reminder.
+; Division of signed 64-bit values, returning the reminder.
 ;
-; @returns  EDX:EAX Quotient, EBX:ECX Remainder.
+; @returns  EDX:EAX Remainder.
 ; @param    [esp+04h] [ebp+08h]     Dividend (64-bit)
 ; @param    [esp+0ch] [ebp+10h]     Divisor (64-bit)
 ;
 ; @note     The remainder registers are swapped compared to Watcom's I8D and U8D.
 ;
-BEGINPROC_RAW   __alldvrm
+BEGINPROC_RAW   __allrem
         ;
         ; Load high parts so we can examine them for negativity.
         ;
@@ -64,7 +64,7 @@ BEGINPROC_RAW   __alldvrm
         mov     ecx, [esp + 10h]            ; divisor_hi
 
         ;
-        ; We use __aulldvrm to do the work, we take care of the signedness.
+        ; We use __aullrem to do the work, we take care of the signedness.
         ;
         or      edx, edx
         js      .negative_dividend
@@ -73,7 +73,17 @@ BEGINPROC_RAW   __alldvrm
         js      .negative_divisor_positive_dividend
 
         ; Both positive, so same as unsigned division.
-        jmp     __aulldvrm
+        jmp     __aullrem
+
+
+.negative_divisor_positive_dividend:
+        ; negate the divisor, do unsigned division(, and negate the quotient).
+        neg     ecx
+        neg     dword [esp + 0ch]
+        sbb     ecx, 0
+        mov     [esp + 0ch+4], ecx
+
+        jmp     __aullrem
 
 
         ;
@@ -81,39 +91,13 @@ BEGINPROC_RAW   __alldvrm
         ; calls rather than tail jumps.
         ;
 
-.negative_divisor_positive_dividend:
-        push    ebp
-        mov     ebp, esp
-
-        ; Load the low values to as we will be pushing them and probably negating them.
-        mov     eax, dword [ebp + 08h]      ; dividend_lo
-        mov     ebx, dword [ebp + 10h]      ; divisor_lo
-
-        ; negate the divisor, do unsigned division, and negate the quotient.
-        neg     ecx
-        neg     ebx
-        sbb     ecx, 0
-
-        push    ecx
-        push    ebx
-        push    edx
-        push    eax
-        call    __aulldvrm                  ; cleans up the the stack.
-
-        neg     edx
-        neg     eax
-        sbb     edx, 0
-
-        leave
-        ret     10h
-
 .negative_dividend:
         push    ebp
         mov     ebp, esp
 
         ; Load the low values to as we will be pushing them and probably negating them.
         mov     eax, dword [ebp + 08h]      ; dividend_lo
-        mov     ebx, dword [ebp + 10h]      ; divisor_lo
+        ;mov     ebx, dword [ebp + 10h]      ; divisor_lo
 
         neg     edx
         neg     eax
@@ -123,22 +107,18 @@ BEGINPROC_RAW   __alldvrm
         js      .negative_dividend_negative_divisor
 
 .negative_dividend_positive_divisor:
-        ; negate the dividend (above), do unsigned division, and negate both quotient and remainder
+        ; negate the dividend (above), do unsigned division, and negate (both quotient and) remainder
 
         push    ecx
-        push    ebx
+        push    dword [ebp + 10h]
         push    edx
         push    eax
-        call    __aulldvrm                  ; cleans up the the stack.
+        call    __aullrem                   ; cleans up the the stack.
 
+.return_negated_remainder:
         neg     edx
         neg     eax
         sbb     edx, 0
-
-.return_negated_remainder:
-        neg     ebx
-        neg     ecx
-        sbb     ebx, 0
 
         leave
         ret     10h
@@ -146,15 +126,9 @@ BEGINPROC_RAW   __alldvrm
 .negative_dividend_negative_divisor:
         ; negate both dividend (above) and divisor, do unsigned division, and negate the remainder.
         neg     ecx
-        neg     ebx
+        neg     dword [ebp + 10h]
         sbb     ecx, 0
 
-        push    ecx
-        push    ebx
-        push    edx
-        push    eax
-        call    __aulldvrm                  ; cleans up the the stack.
-
-        jmp     .return_negated_remainder
-ENDPROC_RAW     __alldvrm
+        jmp     .negative_dividend_positive_divisor
+ENDPROC_RAW     __allrem
 
