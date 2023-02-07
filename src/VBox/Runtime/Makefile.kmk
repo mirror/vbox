@@ -2136,7 +2136,18 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/compiler/vcc/stack-probe-vcc.asm \
   	common/compiler/vcc/ftol2-vcc.asm \
   	common/compiler/vcc/except-x86-vcc.cpp \
-  	common/compiler/vcc/except-x86-vcc-asm.asm
+  	common/compiler/vcc/except-x86-vcc-asm.asm \
+  	common/compiler/vcc/x86-allshl.asm \
+  	common/compiler/vcc/x86-allshr.asm \
+  	common/compiler/vcc/x86-aullshr.asm \
+  	common/compiler/vcc/x86-allmul.asm \
+  	common/compiler/vcc/x86-alldiv.asm \
+  	common/compiler/vcc/x86-allrem.asm \
+  	common/compiler/vcc/x86-alldvrm.asm \
+  	common/compiler/vcc/x86-aulldiv.asm \
+  	common/compiler/vcc/x86-aullrem.asm \
+  	common/compiler/vcc/x86-aulldvrm.asm \
+  	common/compiler/vcc/RTVccUInt64Div.cpp
   RuntimeR3_VBOX_NOCRT_ALIASES.win := \
   	strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
   	$(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
