@@ -55,9 +55,9 @@ RT_C_DECLS_BEGIN
  * Test if a 128-bit unsigned integer value is zero.
  *
  * @returns true if they are, false if they aren't.
- * @param   pValue          The input and output value.
+ * @param   pValue          The value to examine.
  */
-DECLINLINE(bool) RTUInt64IsZero(PRTUINT64U pValue)
+DECLINLINE(bool) RTUInt64IsZero(PCRTUINT64U pValue)
 {
 #if ARCH_BITS >= 32
     return pValue->s.Lo == 0
@@ -67,6 +67,22 @@ DECLINLINE(bool) RTUInt64IsZero(PRTUINT64U pValue)
         && pValue->Words.w1 == 0
         && pValue->Words.w2 == 0
         && pValue->Words.w3 == 0;
+#endif
+}
+
+
+/**
+ * Checks if the sign-bit is set. 
+ *  
+ * @returns Sign bit.
+ * @param   pValue              The value to examine.
+ */
+DECLINLINE(bool) RTUInt64IsSigned(PCRTUINT64U pValue)
+{
+#if ARCH_BITS >= 32
+    return RT_BOOL(pValue->DWords.dw1 & RT_BIT_32(31));
+#else
+    return RT_BOOL(pValue->Words.w3 & ((uint16_t)1 << 15));
 #endif
 }
 
@@ -164,6 +180,23 @@ DECLINLINE(PRTUINT64U) RTUInt64Sub(PRTUINT64U pResult, PCRTUINT64U pValue1, PCRT
     pResult->s.Lo = pValue1->s.Lo - pValue2->s.Lo;
     pResult->s.Hi = pValue1->s.Hi - pValue2->s.Hi;
     if (pResult->s.Lo > pValue1->s.Lo)
+        pResult->s.Hi--;
+    return pResult;
+}
+
+
+/**
+ * Calculates the negated number (special case of subtraction)
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue              The value to negate.
+ */
+DECLINLINE(PRTUINT64U) RTUInt64Neg(PRTUINT64U pResult, PCRTUINT64U pValue)
+{
+    pResult->s.Lo = UINT32_C(0) - pValue->s.Lo;
+    pResult->s.Hi = UINT32_C(0) - pValue->s.Hi;
+    if (pResult->s.Lo > UINT32_C(0))
         pResult->s.Hi--;
     return pResult;
 }
@@ -310,6 +343,7 @@ DECLINLINE(PRTUINT64U) RTUInt64MulU32ByU32(PRTUINT64U pResult, uint32_t uValue1,
 
 
 DECLINLINE(PRTUINT64U) RTUInt64DivRem(PRTUINT64U pQuotient, PRTUINT64U pRemainder, PCRTUINT64U pValue1, PCRTUINT64U pValue2);
+DECLINLINE(PRTUINT64U) RTUInt64DivRemSigned(PRTUINT64U pQuotient, PRTUINT64U pRemainder, PCRTUINT64U pValue1, PCRTUINT64U pValue2);
 
 /**
  * Divides a 64-bit unsigned integer value by another.
@@ -338,6 +372,37 @@ DECLINLINE(PRTUINT64U) RTUInt64Mod(PRTUINT64U pResult, PCRTUINT64U pValue1, PCRT
 {
     RTUINT64U Ignored;
     RTUInt64DivRem(&Ignored, pResult, pValue1, pValue2);
+    return pResult;
+}
+
+
+/**
+ * Divides a 64-bit signed integer value by another.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The dividend value.
+ * @param   pValue2             The divisor value.
+ */
+DECLINLINE(PRTUINT64U) RTUInt64DivSigned(PRTUINT64U pResult, PCRTUINT64U pValue1, PCRTUINT64U pValue2)
+{
+    RTUINT64U Ignored;
+    return RTUInt64DivRemSigned(pResult, &Ignored, pValue1, pValue2);
+}
+
+
+/**
+ * Divides a 64-bit unsigned integer value by another, returning the remainder.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable (remainder).
+ * @param   pValue1             The dividend value.
+ * @param   pValue2             The divisor value.
+ */
+DECLINLINE(PRTUINT64U) RTUInt64ModSigned(PRTUINT64U pResult, PCRTUINT64U pValue1, PCRTUINT64U pValue2)
+{
+    RTUINT64U Ignored;
+    RTUInt64DivRemSigned(&Ignored, pResult, pValue1, pValue2);
     return pResult;
 }
 
@@ -618,6 +683,22 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignSub(PRTUINT64U pValue1Result, PCRTUINT64U p
 
 
 /**
+ * Negates a 64-bit unsigned integer value, returning the result in place.
+ *
+ * @returns pValueResult.
+ * @param   pValueResult    The value and result.
+ */
+DECLINLINE(PRTUINT64U) RTUInt64AssignNeg(PRTUINT64U pValueResult)
+{
+    pValueResult->s.Lo = UINT32_C(0) - pValueResult->s.Lo;
+    pValueResult->s.Hi = UINT32_C(0) - pValueResult->s.Hi;
+    if (pValueResult->s.Lo > UINT32_C(0))
+        pValueResult->s.Hi--;
+    return pValueResult;
+}
+
+
+/**
  * Multiplies two 64-bit unsigned integer values, storing the result in the
  * first.
  *
@@ -811,7 +892,7 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignShiftLeft(PRTUINT64U pValueResult, int cBit
     if (cBits > 0)
     {
         /* (left shift) */
-        cBits &= 31;
+        cBits &= 63;
         if (cBits >= 32)
         {
             pValueResult->s.Lo  = 0;
@@ -828,7 +909,7 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignShiftLeft(PRTUINT64U pValueResult, int cBit
     {
         /* (right shift) */
         cBits = -cBits;
-        cBits &= 31;
+        cBits &= 63;
         if (cBits >= 32)
         {
             pValueResult->s.Hi  = 0;
@@ -1330,6 +1411,66 @@ DECLINLINE(PRTUINT64U) RTUInt64DivRem(PRTUINT64U pQuotient, PRTUINT64U pRemainde
                 iBitAdder--;
             }
         }
+    }
+    return pQuotient;
+}
+
+
+/**
+ * Divides a 64-bit signed integer value by another, returning both quotient and
+ * remainder.
+ *
+ * @returns pQuotient, NULL if pValue2 is 0.
+ * @param   pQuotient           Where to return the quotient.
+ * @param   pRemainder          Where to return the remainder.
+ * @param   pValue1             The dividend value.
+ * @param   pValue2             The divisor value.
+ */
+DECLINLINE(PRTUINT64U) RTUInt64DivRemSigned(PRTUINT64U pQuotient, PRTUINT64U pRemainder, PCRTUINT64U pValue1, PCRTUINT64U pValue2)
+{
+    /*
+     * If both values are positive, we can do a straight unsigned division.
+     */
+    if (!RTUInt64IsSigned(pValue1))
+    {
+        if (!RTUInt64IsSigned(pValue2))
+            return RTUInt64DivRem(pQuotient, pRemainder, pValue1, pValue2);
+
+        /*
+         * Negative divisor, Positive dividend:
+         *      negate the divisor, do unsigned division, and negate the quotient.
+         */
+        {
+            RTUINT64U NegDivisor;
+            RTUInt64DivRem(pQuotient, pRemainder, pValue1, RTUInt64Neg(&NegDivisor, pValue2));
+            RTUInt64AssignNeg(pQuotient);
+        }
+    }
+    else
+    {
+        /* Negate the dividend to get a positive value. */
+        RTUINT64U NegDividend;
+        RTUInt64Neg(&NegDividend, pValue1);
+
+        if (!RTUInt64IsSigned(pValue2))
+        {
+            /*
+             * Negative dividend, positive divisor:
+             *      Negate the dividend (above), do unsigned division, and negate both quotient and remainder
+             */
+            RTUInt64DivRem(pQuotient, pRemainder, &NegDividend, pValue2);
+            RTUInt64AssignNeg(pQuotient);
+        }
+        else
+        {
+            /*
+             * Negative dividend, negative divisor:
+             *      Negate both dividend (above) and divisor, do unsigned division, and negate the remainder.
+             */
+            RTUINT64U NegDivisor;
+            RTUInt64DivRem(pQuotient, pRemainder, &NegDividend, RTUInt64Neg(&NegDivisor, pValue2));
+        }
+        RTUInt64AssignNeg(pRemainder);
     }
     return pQuotient;
 }
