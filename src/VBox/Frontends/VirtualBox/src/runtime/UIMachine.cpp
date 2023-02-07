@@ -447,6 +447,21 @@ void UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, Q
     uisession()->acquireDeviceActivity(deviceTypes, states);
 }
 
+void UIMachine::acquireHardDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent)
+{
+    uisession()->acquireHardDiskStatusInfo(strInfo, fAttachmentsPresent);
+}
+
+void UIMachine::acquireOpticalDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+{
+    uisession()->acquireOpticalDiskStatusInfo(strInfo, fAttachmentsPresent, fAttachmentsMounted);
+}
+
+void UIMachine::acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+{
+    uisession()->acquireFloppyDiskStatusInfo(strInfo, fAttachmentsPresent, fAttachmentsMounted);
+}
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */

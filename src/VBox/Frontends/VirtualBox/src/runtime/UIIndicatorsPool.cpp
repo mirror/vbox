@@ -43,7 +43,6 @@
 #include "UIIconPool.h"
 #include "UIIndicatorsPool.h"
 #include "UIMachine.h"
-#include "UIMedium.h"
 #include "UISession.h"
 
 /* COM includes: */
@@ -57,8 +56,6 @@
 #include "CSystemProperties.h"
 #include "CMachineDebugger.h"
 #include "CGuest.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
@@ -194,7 +191,7 @@ class UIIndicatorHardDrive : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorHardDrive(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_HardDisks, pMachine, pSession)
     {
@@ -204,7 +201,7 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/hd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
         /* Configure connection: */
-        connect(pSession, &UISession::sigStorageDeviceChange,
+        connect(pMachine, &UIMachine::sigStorageDeviceChange,
                 this, &UIIndicatorHardDrive::sltStorageDeviceChange);
         /* Translate finally: */
         retranslateUi();
@@ -212,11 +209,9 @@ public:
 
 private slots:
 
-    /** Refresh the tooltip if the device config changes at runtime (hotplugging,
-     *  USB storage). */
-    void sltStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent)
+    /** Refreshes the tooltip if the device config changes at runtime (hotplugging, USB storage). */
+    void sltStorageDeviceChange()
     {
-        RT_NOREF(attachment, fRemoved, fSilent);
         updateAppearance();
     }
 
@@ -225,33 +220,10 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
+        /* Acquire data: */
         QString strFullData;
-
-        /* Enumerate all the controllers: */
         bool fAttachmentsPresent = false;
-        foreach (const CStorageController &controller, machine.GetStorageControllers())
-        {
-            QString strAttData;
-            /* Enumerate all the attachments: */
-            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
-            {
-                /* Skip unrelated attachments: */
-                if (attachment.GetType() != KDeviceType_HardDisk)
-                    continue;
-                /* Append attachment data: */
-                strAttData += s_strTableRow4
-                    .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
-                    .arg(UIMedium(attachment.GetMedium(), UIMediumDeviceType_HardDisk).location());
-                fAttachmentsPresent = true;
-            }
-            /* Append controller data: */
-            if (!strAttData.isNull())
-                strFullData += s_strTableRow1.arg(controller.GetName()) + strAttData;
-        }
+        m_pMachine->acquireHardDiskStatusInfo(strFullData, fAttachmentsPresent);
 
         /* Hide indicator if there are no attachments: */
         setVisible(fAttachmentsPresent);
@@ -271,7 +243,7 @@ class UIIndicatorOpticalDisks : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorOpticalDisks(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_OpticalDisks, pMachine, pSession)
     {
@@ -289,41 +261,13 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
         QString strFullData;
-
-        /* Enumerate all the controllers: */
         bool fAttachmentsPresent = false;
         bool fAttachmentsMounted = false;
-        foreach (const CStorageController &controller, machine.GetStorageControllers())
-        {
-            QString strAttData;
-            /* Enumerate all the attachments: */
-            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
-            {
-                /* Skip unrelated attachments: */
-                if (attachment.GetType() != KDeviceType_DVD)
-                    continue;
-                /* Append attachment data: */
-                UIMedium vboxMedium(attachment.GetMedium(), UIMediumDeviceType_DVD);
-                strAttData += s_strTableRow4
-                    .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
-                    .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-                fAttachmentsPresent = true;
-                if (!vboxMedium.isNull())
-                    fAttachmentsMounted = true;
-            }
-            /* Append controller data: */
-            if (!strAttData.isNull())
-                strFullData += s_strTableRow1.arg(controller.GetName()) + strAttData;
-        }
+        m_pMachine->acquireOpticalDiskStatusInfo(strFullData, fAttachmentsPresent, fAttachmentsMounted);
 
         /* Hide indicator if there are no attachments: */
-        if (!fAttachmentsPresent)
-            hide();
+        setVisible(fAttachmentsPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
@@ -340,7 +284,7 @@ class UIIndicatorFloppyDisks : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorFloppyDisks(UIMachine *pMachine, UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_FloppyDisks, pMachine, pSession)
     {
@@ -358,41 +302,13 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_pSession->machine();
-
-        /* Prepare tool-tip: */
         QString strFullData;
-
-        /* Enumerate all the controllers: */
         bool fAttachmentsPresent = false;
         bool fAttachmentsMounted = false;
-        foreach (const CStorageController &controller, machine.GetStorageControllers())
-        {
-            QString strAttData;
-            /* Enumerate all the attachments: */
-            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
-            {
-                /* Skip unrelated attachments: */
-                if (attachment.GetType() != KDeviceType_Floppy)
-                    continue;
-                /* Append attachment data: */
-                UIMedium vboxMedium(attachment.GetMedium(), UIMediumDeviceType_Floppy);
-                strAttData += s_strTableRow4
-                    .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
-                    .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-                fAttachmentsPresent = true;
-                if (!vboxMedium.isNull())
-                    fAttachmentsMounted = true;
-            }
-            /* Append controller data: */
-            if (!strAttData.isNull())
-                strFullData += s_strTableRow1.arg(controller.GetName()) + strAttData;
-        }
+        m_pMachine->acquireFloppyDiskStatusInfo(strFullData, fAttachmentsPresent, fAttachmentsMounted);
 
         /* Hide indicator if there are no attachments: */
-        if (!fAttachmentsPresent)
-            hide();
+        setVisible(fAttachmentsPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));

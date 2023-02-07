@@ -80,6 +80,22 @@ namespace UIDetailsGenerator
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationDescription(CMachine &comMachine,
                                                                            const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions);
+
+    SHARED_LIBRARY_STUFF void acquireHardDiskStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                        bool &fAttachmentsPresent);
+
+    SHARED_LIBRARY_STUFF void acquireOpticalDiskStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                           bool &fAttachmentsPresent, bool &fAttachmentsMounted);
+
+    SHARED_LIBRARY_STUFF void acquireFloppyDiskStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                          bool &fAttachmentsPresent, bool &fAttachmentsMounted);
+
+    /** Holds the table row format 1. */
+    extern const QString e_strTableRow1;
+    /** Holds the table row format 2. */
+    extern const QString e_strTableRow2;
+    /** Holds the table row format 3. */
+    extern const QString e_strTableRow3;
 }
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIDetailsGenerator_h */

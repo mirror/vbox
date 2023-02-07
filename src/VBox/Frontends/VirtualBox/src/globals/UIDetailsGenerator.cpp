@@ -36,6 +36,7 @@
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
+#include "UIMedium.h"
 #include "UITranslator.h"
 
 /* COM includes: */
@@ -70,6 +71,11 @@
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
+
+
+const QString UIDetailsGenerator::e_strTableRow1 = QString("<tr><td colspan='2'><nobr><b>%1</b></nobr></td></tr>");
+const QString UIDetailsGenerator::e_strTableRow2 = QString("<tr><td><nobr>%1:</nobr></td><td><nobr>%2</nobr></td></tr>");
+const QString UIDetailsGenerator::e_strTableRow3 = QString("<tr><td><nobr>&nbsp;%1:</nobr></td><td><nobr>%2</nobr></td></tr>");
 
 
 UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comMachine,
@@ -1164,4 +1170,85 @@ UITextTable UIDetailsGenerator::generateMachineInformationDescription(CMachine &
         table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (description)"), QString());
 
     return table;
+}
+
+void UIDetailsGenerator::acquireHardDiskStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                   bool &fAttachmentsPresent)
+{
+    /* Enumerate all the controllers: */
+    foreach (const CStorageController &comController, comMachine.GetStorageControllers())
+    {
+        /* Enumerate all the attachments: */
+        QString strAttData;
+        foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
+        {
+            /* Skip unrelated attachments: */
+            if (comAttachment.GetType() != KDeviceType_HardDisk)
+                continue;
+            /* Append attachment data: */
+            strAttData += e_strTableRow3
+                .arg(gpConverter->toString(StorageSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice())))
+                .arg(UIMedium(comAttachment.GetMedium(), UIMediumDeviceType_HardDisk).location());
+            fAttachmentsPresent = true;
+        }
+        /* Append controller data: */
+        if (!strAttData.isNull())
+            strInfo += e_strTableRow1.arg(comController.GetName()) + strAttData;
+    }
+}
+
+void UIDetailsGenerator::acquireOpticalDiskStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                      bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+{
+    /* Enumerate all the controllers: */
+    foreach (const CStorageController &comController, comMachine.GetStorageControllers())
+    {
+        QString strAttData;
+        /* Enumerate all the attachments: */
+        foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
+        {
+            /* Skip unrelated attachments: */
+            if (comAttachment.GetType() != KDeviceType_DVD)
+                continue;
+            /* Append attachment data: */
+            UIMedium vboxMedium(comAttachment.GetMedium(), UIMediumDeviceType_DVD);
+            strAttData += e_strTableRow3
+                .arg(gpConverter->toString(StorageSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice())))
+                .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
+            fAttachmentsPresent = true;
+            if (!vboxMedium.isNull())
+                fAttachmentsMounted = true;
+        }
+        /* Append controller data: */
+        if (!strAttData.isNull())
+            strInfo += e_strTableRow1.arg(comController.GetName()) + strAttData;
+    }
+}
+
+void UIDetailsGenerator::acquireFloppyDiskStatusInfo(CMachine &comMachine, QString &strInfo,
+                                                     bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+{
+    /* Enumerate all the controllers: */
+    foreach (const CStorageController &comController, comMachine.GetStorageControllers())
+    {
+        QString strAttData;
+        /* Enumerate all the attachments: */
+        foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
+        {
+            /* Skip unrelated attachments: */
+            if (comAttachment.GetType() != KDeviceType_Floppy)
+                continue;
+            /* Append attachment data: */
+            UIMedium vboxMedium(comAttachment.GetMedium(), UIMediumDeviceType_Floppy);
+            strAttData += e_strTableRow3
+                .arg(gpConverter->toString(StorageSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice())))
+                .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
+            fAttachmentsPresent = true;
+            if (!vboxMedium.isNull())
+                fAttachmentsMounted = true;
+        }
+        /* Append controller data: */
+        if (!strAttData.isNull())
+            strInfo += e_strTableRow1.arg(comController.GetName()) + strAttData;
+    }
 }
