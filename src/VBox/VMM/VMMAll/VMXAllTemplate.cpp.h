@@ -3506,9 +3506,8 @@ DECL_FORCE_INLINE(void) vmxHCImportGuestCr0(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsI
  * Imports the guest CR3 from the VMCS into the guest-CPU context.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS info. object.
  */
-DECL_FORCE_INLINE(void) vmxHCImportGuestCr3(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+DECL_FORCE_INLINE(void) vmxHCImportGuestCr3(PVMCPUCC pVCpu)
 {
     PVMCC const pVM  = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX    pCtx = &pVCpu->cpum.GstCtx;
@@ -3833,7 +3832,7 @@ static int vmxHCImportGuestStateEx(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                     vmxHCImportGuestCr4(pVCpu, pVmcsInfo);
 
                 if (fWhat & CPUMCTX_EXTRN_CR3)
-                    vmxHCImportGuestCr3(pVCpu, pVmcsInfo);
+                    vmxHCImportGuestCr3(pVCpu);
             }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -4099,7 +4098,7 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
         vmxHCImportGuestCr4(pVCpu, pVmcsInfo);
 
     if (a_fWhat & CPUMCTX_EXTRN_CR3)
-        vmxHCImportGuestCr3(pVCpu, pVmcsInfo);
+        vmxHCImportGuestCr3(pVCpu);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (a_fWhat & CPUMCTX_EXTRN_HWVIRT)
