@@ -231,6 +231,21 @@ public:
         bool setPause(bool fPause);
     /** @} */
 
+    /** @name Keyboard stuff.
+     ** @{ */
+        /** Sends a scan @a iCode to VM's keyboard. */
+        void putScancode(LONG iCode);
+        /** Sends a list of scan @a codes to VM's keyboard. */
+        void putScancodes(const QVector<LONG> &codes);
+        /** Sends the CAD sequence to VM's keyboard. */
+        void putCad();
+        /** Releases all keys. */
+        void releaseKeys();
+        /** Sends a USB HID @a iUsageCode and @a iUsagePage to VM's keyboard.
+          * The @a fKeyRelease flag is set when the key is being released. */
+        void putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease);
+    /** @} */
+
     /** @name Guest additions stuff.
      ** @{ */
         /** Returns whether guest additions is active. */

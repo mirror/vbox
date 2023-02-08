@@ -442,6 +442,31 @@ bool UIMachine::isGuestSupportsSeamless() const
     return uisession()->isGuestSupportsSeamless();
 }
 
+void UIMachine::putScancode(LONG iCode)
+{
+    uisession()->putScancode(iCode);
+}
+
+void UIMachine::putScancodes(const QVector<LONG> &codes)
+{
+    uisession()->putScancodes(codes);
+}
+
+void UIMachine::putCad()
+{
+    uisession()->putCad();
+}
+
+void UIMachine::releaseKeys()
+{
+    uisession()->releaseKeys();
+}
+
+void UIMachine::putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease)
+{
+    uisession()->putUsageCode(iUsageCode, iUsagePage, fKeyRelease);
+}
+
 void UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     uisession()->acquireDeviceActivity(deviceTypes, states);

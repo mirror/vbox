@@ -59,7 +59,6 @@ class CConsole;
 class CDisplay;
 class CGuest;
 class CMouse;
-class CKeyboard;
 class CMachineDebugger;
 class CSnapshot;
 class CUSBDevice;
@@ -130,8 +129,6 @@ public:
     CGuest& guest() const;
     /** Returns the console's mouse reference. */
     CMouse& mouse() const;
-    /** Returns the console's keyboard reference. */
-    CKeyboard& keyboard() const;
     /** Returns the console's debugger reference. */
     CMachineDebugger& debugger() const;
 

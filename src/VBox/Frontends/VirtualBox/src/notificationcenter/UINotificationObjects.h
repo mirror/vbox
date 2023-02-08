@@ -71,6 +71,7 @@ class CCloudProviderManager;
 class CCloudProvider;
 class CCloudProfile;
 class CEmulatedUSB;
+class CKeyboard;
 class CNetworkAdapter;
 class CVirtualBox;
 class CVirtualBoxErrorInfo;
@@ -380,6 +381,9 @@ public:
         /** Notifies about inability to change IUpdateAgent parameter.
           * @param  comAgent  Brings the object parameter being changed for. */
         static void cannotChangeUpdateAgentParameter(const CUpdateAgent &comAgent);
+        /** Notifies about inability to change IKeyboard parameter.
+          * @param  comKeyboard  Brings the object parameter being changed for. */
+        static void cannotChangeKeyboardParameter(const CKeyboard &comKeyboard);
         /** Notifies about inability to change IVirtualSystemDescription parameter.
           * @param  comVsd  Brings the object parameter being changed for. */
         static void cannotChangeVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,

@@ -60,6 +60,7 @@
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
 #include "CHostOnlyNetwork.h"
+#include "CKeyboard.h"
 #include "CMediumAttachment.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
@@ -921,6 +922,15 @@ void UINotificationMessage::cannotChangeUpdateAgentParameter(const CUpdateAgent 
         QApplication::translate("UIMessageCenter", "Update failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to assign update agent parameter.") +
         UIErrorString::formatErrorInfo(comAgent));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeKeyboardParameter(const CKeyboard &comKeyboard)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Keyboard failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to assign keyboard parameter.") +
+        UIErrorString::formatErrorInfo(comKeyboard));
 }
 
 /* static */

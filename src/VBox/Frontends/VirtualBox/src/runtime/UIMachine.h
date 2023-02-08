@@ -313,6 +313,18 @@ public:
 
         /** Returns the keyboard-state. */
         int keyboardState() const { return m_iKeyboardState; }
+
+        /** Sends a scan @a iCode to VM's keyboard. */
+        void putScancode(LONG iCode);
+        /** Sends a list of scan @a codes to VM's keyboard. */
+        void putScancodes(const QVector<LONG> &codes);
+        /** Sends the CAD sequence to VM's keyboard. */
+        void putCad();
+        /** Releases all keys. */
+        void releaseKeys();
+        /** Sends a USB HID @a iUsageCode and @a iUsagePage to VM's keyboard.
+          * The @a fKeyRelease flag is set when the key is being released. */
+        void putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease);
     /** @} */
 
     /** @name Mouse stuff.

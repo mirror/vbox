@@ -54,7 +54,6 @@ class UIMachine;
 class UIMachineLogic;
 class UIMachineView;
 class UIMachineWindow;
-class CKeyboard;
 #ifdef VBOX_WS_WIN
 class WinAltGrMonitor;
 #endif
@@ -148,9 +147,6 @@ protected:
     UIActionPool *actionPool() const;
     UIMachine *uimachine() const;
 
-    /** Returns the console's keyboard reference. */
-    CKeyboard &keyboard() const;
-
     /* Event handler for registered machine-view(s): */
     bool eventFilter(QObject *pWatchedObject, QEvent *pEvent);
 
@@ -170,7 +166,6 @@ protected:
     bool keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount);
     bool keyEventHostComboHandled(int iKey, wchar_t *pUniKey, bool isHostComboStateChanged, bool *pfResult);
     void keyEventHandleHostComboRelease(ulong uScreenId);
-    void keyEventReleaseHostComboKeys(const CKeyboard &keyboard);
     /* Separate function to handle most of existing keyboard-events: */
     bool keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScreenId, wchar_t *pUniKey = 0);
     bool processHotKey(int iHotKey, wchar_t *pUniKey);

@@ -56,7 +56,6 @@
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
-#include "UISession.h"
 #include "UISoftKeyboard.h"
 #include "UICommon.h"
 #ifdef VBOX_WS_MAC
@@ -3923,11 +3922,10 @@ void UISoftKeyboardSettingsWidget::sltColorSelectionButtonClicked()
 *   UISoftKeyboard implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine, UISession *pSession,
+UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
                                QWidget *pCenterWidget, QString strMachineName /* = QString() */)
     : QMainWindowWithRestorableGeometryAndRetranslateUi(pParent)
     , m_pMachine(pMachine)
-    , m_pSession(pSession)
     , m_pCenterWidget(pCenterWidget)
     , m_pMainLayout(0)
     , m_strMachineName(strMachineName)
@@ -3987,7 +3985,7 @@ void UISoftKeyboard::closeEvent(QCloseEvent *event)
             return;
         }
     }
-    keyboard().ReleaseKeys();
+    m_pMachine->releaseKeys();
     emit sigClose();
     event->ignore();
 }
@@ -4040,19 +4038,19 @@ void UISoftKeyboard::sltKeyboardLedsChange()
 
 void UISoftKeyboard::sltPutKeyboardSequence(QVector<LONG> sequence)
 {
-    keyboard().PutScancodes(sequence);
+    m_pMachine->putScancodes(sequence);
 }
 
 void UISoftKeyboard::sltPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence)
 {
     for (int i = 0; i < sequence.size(); ++i)
-        keyboard().PutUsageCode(sequence[i].first, sequence[i].second, false);
+        m_pMachine->putUsageCode(sequence[i].first, sequence[i].second, false);
 }
 
 void UISoftKeyboard::sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence)
 {
     for (int i = 0; i < sequence.size(); ++i)
-        keyboard().PutUsageCode(sequence[i].first, sequence[i].second, true);
+        m_pMachine->putUsageCode(sequence[i].first, sequence[i].second, true);
 }
 
 void UISoftKeyboard::sltLayoutSelectionChanged(const QUuid &layoutUid)
@@ -4238,7 +4236,7 @@ void UISoftKeyboard::sltResetKeyboard()
         m_pKeyboardWidget->reset();
     if (m_pLayoutEditor)
         m_pLayoutEditor->reset();
-    keyboard().ReleaseKeys();
+    m_pMachine->releaseKeys();
     update();
 }
 
@@ -4376,7 +4374,7 @@ void UISoftKeyboard::sltSaveSettings()
 
 void UISoftKeyboard::sltReleaseKeys()
 {
-    keyboard().ReleaseKeys();
+    m_pMachine->releaseKeys();
 }
 
 void UISoftKeyboard::loadSettings()
@@ -4469,11 +4467,6 @@ void UISoftKeyboard::updateLayoutSelectorList()
     if (!m_pKeyboardWidget || !m_pLayoutSelector)
         return;
     m_pLayoutSelector->setLayoutList(m_pKeyboardWidget->layoutNameList(), m_pKeyboardWidget->layoutUidList());
-}
-
-CKeyboard& UISoftKeyboard::keyboard() const
-{
-    return m_pSession->keyboard();
 }
 
 #include "UISoftKeyboard.moc"

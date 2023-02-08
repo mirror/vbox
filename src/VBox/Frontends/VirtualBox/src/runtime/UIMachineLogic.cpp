@@ -313,11 +313,6 @@ CMouse& UIMachineLogic::mouse() const
     return uisession()->mouse();
 }
 
-CKeyboard& UIMachineLogic::keyboard() const
-{
-    return uisession()->keyboard();
-}
-
 CMachineDebugger& UIMachineLogic::debugger() const
 {
     return uisession()->debugger();
@@ -2039,8 +2034,7 @@ void UIMachineLogic::sltShowSoftKeyboard()
     if (!m_pSoftKeyboardDialog)
     {
         QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
-        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), uisession(),
-                                                   pCenterWidget, machine().GetName());
+        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), pCenterWidget, machine().GetName());
         connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose, this, &UIMachineLogic::sltCloseSoftKeyboardDefault);
     }
 
@@ -2066,8 +2060,7 @@ void UIMachineLogic::sltCloseSoftKeyboard(bool fAsync /* = false */)
 
 void UIMachineLogic::sltTypeCAD()
 {
-    keyboard().PutCAD();
-    AssertWrapperOk(keyboard());
+    uimachine()->putCad();
 }
 
 #ifdef VBOX_WS_X11
@@ -2080,8 +2073,7 @@ void UIMachineLogic::sltTypeCABS()
     sequence[3] = 0x0E | 0x80; /* Backspace up */
     sequence[4] = 0x38 | 0x80; /* Alt up */
     sequence[5] = 0x1d | 0x80; /* Ctrl up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
+    uimachine()->putScancodes(sequence);
 }
 #endif /* VBOX_WS_X11 */
 
@@ -2094,8 +2086,7 @@ void UIMachineLogic::sltTypeCtrlBreak()
     sequence[3] = 0xe0;        /* Extended flag */
     sequence[4] = 0x46 | 0x80; /* Break up */
     sequence[5] = 0x1d | 0x80; /* Ctrl up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
+    uimachine()->putScancodes(sequence);
 }
 
 void UIMachineLogic::sltTypeInsert()
@@ -2105,8 +2096,7 @@ void UIMachineLogic::sltTypeInsert()
     sequence[1] = 0x52;        /* Insert down */
     sequence[2] = 0xE0;        /* Extended flag */
     sequence[3] = 0x52 | 0x80; /* Insert up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
+    uimachine()->putScancodes(sequence);
 }
 
 void UIMachineLogic::sltTypePrintScreen()
@@ -2120,8 +2110,7 @@ void UIMachineLogic::sltTypePrintScreen()
     sequence[5] = 0x37 | 0x80; /* ..Screen up */
     sequence[6] = 0xE0;        /* Extended flag */
     sequence[7] = 0x2A | 0x80; /* Print.. up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
+    uimachine()->putScancodes(sequence);
 }
 
 void UIMachineLogic::sltTypeAltPrintScreen()
@@ -2137,8 +2126,7 @@ void UIMachineLogic::sltTypeAltPrintScreen()
     sequence[7] = 0xE0;        /* Extended flag */
     sequence[8] = 0x2A | 0x80; /* Print.. up */
     sequence[9] = 0x38 | 0x80; /* Alt up */
-    keyboard().PutScancodes(sequence);
-    AssertWrapperOk(keyboard());
+    uimachine()->putScancodes(sequence);
 }
 
 void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool fToggleSequence)
@@ -2164,8 +2152,7 @@ void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool fToggleSequence)
         }
     }
 
-    keyboard().PutScancodes(codes);
-    AssertWrapperOk(keyboard());
+    uimachine()->putScancodes(codes);
 }
 
 void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)

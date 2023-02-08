@@ -60,7 +60,6 @@
 #include "UIMessageCenter.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
-#include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "VBoxUtils-darwin.h"
@@ -73,9 +72,6 @@
 # include "XKeyboard.h"
 # include "VBoxUtils-x11.h"
 #endif
-
-/* COM includes: */
-#include "CKeyboard.h"
 
 /* Other VBox includes: */
 #ifdef VBOX_WS_MAC
@@ -439,17 +435,17 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
                         codes << 0xE0;
                     codes << ((idxCode & 0x7F) | 0x80);
                 }
-                keyboard().PutScancodes(codes);
+                uimachine()->putScancodes(codes);
                 fSentRESEND = true;
             }
             if (m_pressedKeys[i] & IsKeyPressed)
-                keyboard().PutScancode(i | 0x80);
+                uimachine()->putScancode(i | 0x80);
             else
             {
                 QVector <LONG> codes(2);
                 codes[0] = 0xE0;
                 codes[1] = i | 0x80;
-                keyboard().PutScancodes(codes);
+                uimachine()->putScancodes(codes);
             }
         }
         m_pressedKeys[i] = 0;
@@ -722,7 +718,7 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
                 m_pAltGrMonitor->updateStateFromKeyEvent(uScan, iFlags & KeyPressed, iFlags & KeyExtended);
                 /* And release left Ctrl key early (if required): */
                 if (m_pAltGrMonitor->isLeftControlReleaseNeeded())
-                    keyboard().PutScancode(0x1D | 0x80);
+                    uimachine()->putScancode(0x1D | 0x80);
             }
 
             /* Check for special Korean keys. Based on the keyboard layout selected
@@ -1089,11 +1085,6 @@ UIMachine *UIKeyboardHandler::uimachine() const
     return machineLogic()->uimachine();
 }
 
-CKeyboard &UIKeyboardHandler::keyboard() const
-{
-    return machineLogic()->uisession()->keyboard();
-}
-
 /* Event handler for prepared listener(s): */
 bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
@@ -1240,7 +1231,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                             combo[2] = 0x57 + (pKeyEvent->key() - Qt::Key_F11); /* F11-F12 down */
                             combo[3] = 0xd7 + (pKeyEvent->key() - Qt::Key_F11); /* F11-F12 up   */
                         }
-                        keyboard().PutScancodes(combo);
+                        uimachine()->putScancodes(combo);
                     }
                     /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
                     actionPool()->processHotKey(QKeySequence(pKeyEvent->key()));
@@ -1592,30 +1583,6 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
     }
 }
 
-void UIKeyboardHandler::keyEventReleaseHostComboKeys(const CKeyboard &constKeyboard)
-{
-    /* Get keyboard: */
-    CKeyboard keyboard(constKeyboard);
-    /* We have to make guest to release pressed keys from the host-combination: */
-    QList<uint8_t> hostComboScans = m_pressedHostComboKeys.values();
-    for (int i = 0 ; i < hostComboScans.size(); ++i)
-    {
-        uint8_t uScan = hostComboScans[i];
-        if (m_pressedKeys[uScan] & IsKeyPressed)
-        {
-            keyboard.PutScancode(uScan | 0x80);
-        }
-        else if (m_pressedKeys[uScan] & IsExtKeyPressed)
-        {
-            QVector<LONG> scancodes(2);
-            scancodes[0] = 0xE0;
-            scancodes[1] = uScan | 0x80;
-            keyboard.PutScancodes(scancodes);
-        }
-        m_pressedKeys[uScan] = 0;
-    }
-}
-
 bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScreenId, wchar_t *pUniKey /* = 0 */)
 {
     /* Get host-combo key list: */
@@ -1748,13 +1715,28 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             QVector<LONG> scancodes;
             for (uint i = 0; i < uCodesCount; ++i)
                 scancodes.append(pCodes[i]);
-            keyboard().PutScancodes(scancodes);
+            uimachine()->putScancodes(scancodes);
         }
 
         /* If full host-key sequence was just finalized: */
         if (isHostComboStateChanged && m_bIsHostComboPressed)
         {
-            keyEventReleaseHostComboKeys(keyboard());
+            /* We have to make guest to release pressed keys from the host-combination: */
+            foreach (const uint8_t &uScan, m_pressedHostComboKeys.values())
+            {
+                if (m_pressedKeys[uScan] & IsKeyPressed)
+                {
+                    uimachine()->putScancode(uScan | 0x80);
+                }
+                else if (m_pressedKeys[uScan] & IsExtKeyPressed)
+                {
+                    QVector<LONG> scancodes(2);
+                    scancodes[0] = 0xE0;
+                    scancodes[1] = uScan | 0x80;
+                    uimachine()->putScancodes(scancodes);
+                }
+                m_pressedKeys[uScan] = 0;
+            }
         }
     }
 
@@ -1930,7 +1912,7 @@ void UIKeyboardHandler::sendChangedKeyStates()
             codes[0] = i;
             if (!(ns & IsKeyPressed))
                 codes[0] |= 0x80;
-            keyboard().PutScancode(codes[0]);
+            uimachine()->putScancode(codes[0]);
         }
         else if ((os & IsExtKeyPressed) != (ns & IsExtKeyPressed))
         {
@@ -1938,7 +1920,7 @@ void UIKeyboardHandler::sendChangedKeyStates()
             codes[1] = i;
             if (!(ns & IsExtKeyPressed))
                 codes[1] |= 0x80;
-            keyboard().PutScancodes(codes);
+            uimachine()->putScancodes(codes);
         }
     }
 }
