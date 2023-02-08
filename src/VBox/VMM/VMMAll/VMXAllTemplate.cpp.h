@@ -3239,13 +3239,13 @@ DECLINLINE(void) vmxHCImportGuestSegReg(PVMCPUCC pVCpu)
 
 
 /**
- * Imports the guest LDTR from the current VMCS into the guest-CPU context.
+ * Imports the guest LDTR from the VMCS into the guest-CPU context.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  *
  * @remarks Called with interrupts and/or preemption disabled.
  */
-DECLINLINE(void) vmxHCImportGuestLdtr(PVMCPUCC pVCpu)
+DECL_FORCE_INLINE(void) vmxHCImportGuestLdtr(PVMCPUCC pVCpu)
 {
     uint16_t u16Sel;
     uint64_t u64Base;
@@ -3267,13 +3267,13 @@ DECLINLINE(void) vmxHCImportGuestLdtr(PVMCPUCC pVCpu)
 
 
 /**
- * Imports the guest TR from the current VMCS into the guest-CPU context.
+ * Imports the guest TR from the VMCS into the guest-CPU context.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  *
  * @remarks Called with interrupts and/or preemption disabled.
  */
-DECLINLINE(void) vmxHCImportGuestTr(PVMCPUCC pVCpu)
+DECL_FORCE_INLINE(void) vmxHCImportGuestTr(PVMCPUCC pVCpu)
 {
     uint16_t u16Sel;
     uint64_t u64Base;
@@ -3295,7 +3295,7 @@ DECLINLINE(void) vmxHCImportGuestTr(PVMCPUCC pVCpu)
 
 
 /**
- * Core: Imports the guest RIP from the VMCS back into the guest-CPU context.
+ * Core: Imports the guest RIP from the VMCS into the guest-CPU context.
  *
  * @returns The RIP value.
  * @param   pVCpu               The cross context virtual CPU structure.
@@ -3316,7 +3316,7 @@ DECL_FORCE_INLINE(uint64_t) vmxHCImportGuestCoreRip(PVMCPUCC pVCpu)
 
 
 /**
- * Imports the guest RIP from the VMCS back into the guest-CPU context.
+ * Imports the guest RIP from the VMCS into the guest-CPU context.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  *
@@ -3324,7 +3324,7 @@ DECL_FORCE_INLINE(uint64_t) vmxHCImportGuestCoreRip(PVMCPUCC pVCpu)
  * @remarks Do -not- call this function directly, use vmxHCImportGuestState()
  *          instead!!!
  */
-DECLINLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
+DECL_FORCE_INLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
 {
     if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP)
     {
@@ -3335,7 +3335,7 @@ DECLINLINE(void) vmxHCImportGuestRip(PVMCPUCC pVCpu)
 
 
 /**
- * Core: Imports the guest RFLAGS from the VMCS back into the guest-CPU context.
+ * Core: Imports the guest RFLAGS from the VMCS into the guest-CPU context.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
@@ -3369,7 +3369,7 @@ DECL_FORCE_INLINE(void) vmxHCImportGuestCoreRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO
 
 
 /**
- * Imports the guest RFLAGS from the VMCS back into the guest-CPU context.
+ * Imports the guest RFLAGS from the VMCS into the guest-CPU context.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
@@ -3378,13 +3378,212 @@ DECL_FORCE_INLINE(void) vmxHCImportGuestCoreRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO
  * @remarks Do -not- call this function directly, use vmxHCImportGuestState()
  *          instead!!!
  */
-DECLINLINE(void) vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+DECL_FORCE_INLINE(void) vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
     if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RFLAGS)
     {
         vmxHCImportGuestCoreRFlags(pVCpu, pVmcsInfo);
         pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_RFLAGS;
     }
+}
+
+
+/**
+ * Imports the guest TSX AUX and certain other MSRs from the VMCS into the guest-CPU
+ * context.
+ *
+ * The other MSRs are in the VM-exit MSR-store.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ * @param   fEFlags     Saved EFLAGS for restoring the interrupt flag (in case of
+ *                      unexpected errors). Ignored in NEM/darwin context.
+ */
+DECL_FORCE_INLINE(int) vmxHCImportGuestTscAuxAndOtherMsrs(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uint32_t fEFlags)
+{
+    PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+    PCVMXAUTOMSR       pMsrs           = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
+    uint32_t const     cMsrs           = pVmcsInfo->cExitMsrStore;
+    Assert(pMsrs);
+    Assert(cMsrs <= VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc));
+    Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
+    for (uint32_t i = 0; i < cMsrs; i++)
+    {
+        uint32_t const idMsr = pMsrs[i].u32Msr;
+        switch (idMsr)
+        {
+            case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsrs[i].u64Value);     break;
+            case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsrs[i].u64Value);   break;
+            case MSR_K6_EFER:           /* Can't be changed without causing a VM-exit */  break;
+            default:
+            {
+                uint32_t idxLbrMsr;
+                PVMCC const pVM = pVCpu->CTX_SUFF(pVM);
+                if (VM_IS_VMX_LBR(pVM))
+                {
+                    if (hmR0VmxIsLbrBranchFromMsr(pVM, idMsr, &idxLbrMsr))
+                    {
+                        Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
+                        pVmcsInfoShared->au64LbrFromIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
+                        break;
+                    }
+                    if (hmR0VmxIsLbrBranchToMsr(pVM, idMsr, &idxLbrMsr))
+                    {
+                        Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
+                        pVmcsInfoShared->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
+                        break;
+                    }
+                    if (idMsr == pVM->hmr0.s.vmx.idLbrTosMsr)
+                    {
+                        pVmcsInfoShared->u64LbrTosMsr = pMsrs[i].u64Value;
+                        break;
+                    }
+                    /* Fallthru (no break) */
+                }
+                pVCpu->cpum.GstCtx.fExtrn = 0;
+                VCPU_2_VMXSTATE(pVCpu).u32HMError = pMsrs->u32Msr;
+                ASMSetFlags(fEFlags);
+                AssertMsgFailed(("Unexpected MSR in auto-load/store area. idMsr=%#RX32 cMsrs=%u\n", idMsr, cMsrs));
+                return VERR_HM_UNEXPECTED_LD_ST_MSR;
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Imports the guest CR0 from the VMCS into the guest-CPU context.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ */
+DECL_FORCE_INLINE(void) vmxHCImportGuestCr0(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+{
+    uint64_t u64Cr0;
+    uint64_t u64Shadow;
+    int rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR0,            &u64Cr0);       AssertRC(rc);
+    rc     = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow);    AssertRC(rc);
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
+    u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
+           | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
+#else
+    if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+    {
+        u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
+               | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
+    }
+    else
+    {
+        /*
+         * We've merged the guest and nested-guest's CR0 guest/host mask while executing
+         * the nested-guest using hardware-assisted VMX. Accordingly we need to
+         * re-construct CR0. See @bugref{9180#c95} for details.
+         */
+        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
+        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+        u64Cr0 = (u64Cr0                     & ~(pVmcsInfoGst->u64Cr0Mask & pVmcsNstGst->u64Cr0Mask.u))
+               | (pVmcsNstGst->u64GuestCr0.u &   pVmcsNstGst->u64Cr0Mask.u)
+               | (u64Shadow                  &  (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
+        Assert(u64Cr0 & X86_CR0_NE);
+    }
+#endif
+
+#ifndef IN_NEM_DARWIN
+    VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
+#endif
+    CPUMSetGuestCR0(pVCpu, u64Cr0);
+#ifndef IN_NEM_DARWIN
+    VMMRZCallRing3Enable(pVCpu);
+#endif
+}
+
+
+/**
+ * Imports the guest CR3 from the VMCS into the guest-CPU context.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ */
+DECL_FORCE_INLINE(void) vmxHCImportGuestCr3(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+{
+    PVMCC const pVM  = pVCpu->CTX_SUFF(pVM);
+    PCPUMCTX    pCtx = &pVCpu->cpum.GstCtx;
+
+    /* CR0.PG bit changes are always intercepted, so it's up to date. */
+    if (   VM_IS_VMX_UNRESTRICTED_GUEST(pVM)
+        || (   VM_IS_VMX_NESTED_PAGING(pVM)
+            && CPUMIsGuestPagingEnabledEx(pCtx)))
+    {
+        uint64_t u64Cr3;
+        int rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR3, &u64Cr3);  AssertRC(rc);
+        if (pCtx->cr3 != u64Cr3)
+        {
+            pCtx->cr3 = u64Cr3;
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
+        }
+
+        /*
+         * If the guest is in PAE mode, sync back the PDPE's into the guest state.
+         * CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date.
+         */
+        if (CPUMIsGuestInPAEModeEx(pCtx))
+        {
+            X86PDPE aPaePdpes[4];
+            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE0_FULL, &aPaePdpes[0].u);     AssertRC(rc);
+            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE1_FULL, &aPaePdpes[1].u);     AssertRC(rc);
+            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE2_FULL, &aPaePdpes[2].u);     AssertRC(rc);
+            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE3_FULL, &aPaePdpes[3].u);     AssertRC(rc);
+            if (memcmp(&aPaePdpes[0], &pCtx->aPaePdpes[0], sizeof(aPaePdpes)))
+            {
+                memcpy(&pCtx->aPaePdpes[0], &aPaePdpes[0], sizeof(aPaePdpes));
+                /* PGM now updates PAE PDPTEs while updating CR3. */
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
+            }
+        }
+    }
+}
+
+
+/**
+ * Imports the guest CR4 from the VMCS into the guest-CPU context.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ */
+DECL_FORCE_INLINE(void) vmxHCImportGuestCr4(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+{
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    uint64_t u64Cr4;
+    uint64_t u64Shadow;
+    int rc  = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR4,            &u64Cr4);      AssertRC(rc);
+    rc      = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow);   AssertRC(rc);
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
+    u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
+           | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
+#else
+    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
+    {
+        u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
+               | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
+    }
+    else
+    {
+        /*
+         * We've merged the guest and nested-guest's CR4 guest/host mask while executing
+         * the nested-guest using hardware-assisted VMX. Accordingly we need to
+         * re-construct CR4. See @bugref{9180#c95} for details.
+         */
+        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
+        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+        u64Cr4 = (u64Cr4                     & ~(pVmcsInfo->u64Cr4Mask & pVmcsNstGst->u64Cr4Mask.u))
+               | (pVmcsNstGst->u64GuestCr4.u &   pVmcsNstGst->u64Cr4Mask.u)
+               | (u64Shadow                  &  (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
+        Assert(u64Cr4 & X86_CR4_VMXE);
+    }
+#endif
+    pCtx->cr4 = u64Cr4;
 }
 
 
@@ -3411,7 +3610,7 @@ DECL_NO_INLINE(static,void) vmxHCImportGuestIntrStateSlow(PVMCPUCC pVCpu, PCVMXV
 
 
 /**
- * Imports the guest interruptibility-state from the VMCS back into the guest-CPU
+ * Imports the guest interruptibility-state from the VMCS into the guest-CPU
  * context.
  *
  * @note    May import RIP and RFLAGS if interrupt or NMI are blocked.
@@ -3618,164 +3817,21 @@ static int vmxHCImportGuestStateEx(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
 
             if (fWhat & (CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
             {
-                PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-                PCVMXAUTOMSR       pMsrs           = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-                uint32_t const     cMsrs           = pVmcsInfo->cExitMsrStore;
-                Assert(pMsrs);
-                Assert(cMsrs <= VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc));
-                Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
-                for (uint32_t i = 0; i < cMsrs; i++)
-                {
-                    uint32_t const idMsr = pMsrs[i].u32Msr;
-                    switch (idMsr)
-                    {
-                        case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsrs[i].u64Value);     break;
-                        case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsrs[i].u64Value);   break;
-                        case MSR_K6_EFER:           /* Can't be changed without causing a VM-exit */  break;
-                        default:
-                        {
-                            uint32_t idxLbrMsr;
-                            if (VM_IS_VMX_LBR(pVM))
-                            {
-                                if (hmR0VmxIsLbrBranchFromMsr(pVM, idMsr, &idxLbrMsr))
-                                {
-                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
-                                    pVmcsInfoShared->au64LbrFromIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
-                                    break;
-                                }
-                                if (hmR0VmxIsLbrBranchToMsr(pVM, idMsr, &idxLbrMsr))
-                                {
-                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
-                                    pVmcsInfoShared->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
-                                    break;
-                                }
-                                if (idMsr == pVM->hmr0.s.vmx.idLbrTosMsr)
-                                {
-                                    pVmcsInfoShared->u64LbrTosMsr = pMsrs[i].u64Value;
-                                    break;
-                                }
-                                /* Fallthru (no break) */
-                            }
-                            pCtx->fExtrn = 0;
-                            VCPU_2_VMXSTATE(pVCpu).u32HMError = pMsrs->u32Msr;
-                            ASMSetFlags(fEFlags);
-                            AssertMsgFailed(("Unexpected MSR in auto-load/store area. idMsr=%#RX32 cMsrs=%u\n", idMsr, cMsrs));
-                            return VERR_HM_UNEXPECTED_LD_ST_MSR;
-                        }
-                    }
-                }
+                rc = vmxHCImportGuestTscAuxAndOtherMsrs(pVCpu, pVmcsInfo, fEFlags);
+                AssertRCReturn(rc, rc);
             }
 #endif
 
             if (fWhat & CPUMCTX_EXTRN_CR_MASK)
             {
                 if (fWhat & CPUMCTX_EXTRN_CR0)
-                {
-                    uint64_t u64Cr0;
-                    uint64_t u64Shadow;
-                    rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR0,            &u64Cr0);       AssertRC(rc);
-                    rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow);    AssertRC(rc);
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
-                    u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
-                           | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-#else
-                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
-                    {
-                        u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
-                               | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-                    }
-                    else
-                    {
-                        /*
-                         * We've merged the guest and nested-guest's CR0 guest/host mask while executing
-                         * the nested-guest using hardware-assisted VMX. Accordingly we need to
-                         * re-construct CR0. See @bugref{9180#c95} for details.
-                         */
-                        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-                        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-                        u64Cr0 = (u64Cr0                     & ~(pVmcsInfoGst->u64Cr0Mask & pVmcsNstGst->u64Cr0Mask.u))
-                               | (pVmcsNstGst->u64GuestCr0.u &   pVmcsNstGst->u64Cr0Mask.u)
-                               | (u64Shadow                  &  (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
-                        Assert(u64Cr0 & X86_CR0_NE);
-                    }
-#endif
-#ifndef IN_NEM_DARWIN
-                    VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
-#endif
-                    CPUMSetGuestCR0(pVCpu, u64Cr0);
-#ifndef IN_NEM_DARWIN
-                    VMMRZCallRing3Enable(pVCpu);
-#endif
-                }
+                    vmxHCImportGuestCr0(pVCpu, pVmcsInfo);
 
                 if (fWhat & CPUMCTX_EXTRN_CR4)
-                {
-                    uint64_t u64Cr4;
-                    uint64_t u64Shadow;
-                    rc  = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR4,            &u64Cr4);      AssertRC(rc);
-                    rc |= VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow);   AssertRC(rc);
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
-                    u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
-                           | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-#else
-                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
-                    {
-                        u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
-                               | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-                    }
-                    else
-                    {
-                        /*
-                         * We've merged the guest and nested-guest's CR4 guest/host mask while executing
-                         * the nested-guest using hardware-assisted VMX. Accordingly we need to
-                         * re-construct CR4. See @bugref{9180#c95} for details.
-                         */
-                        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-                        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-                        u64Cr4 = (u64Cr4                     & ~(pVmcsInfo->u64Cr4Mask & pVmcsNstGst->u64Cr4Mask.u))
-                               | (pVmcsNstGst->u64GuestCr4.u &   pVmcsNstGst->u64Cr4Mask.u)
-                               | (u64Shadow                  &  (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
-                        Assert(u64Cr4 & X86_CR4_VMXE);
-                    }
-#endif
-                    pCtx->cr4 = u64Cr4;
-                }
+                    vmxHCImportGuestCr4(pVCpu, pVmcsInfo);
 
                 if (fWhat & CPUMCTX_EXTRN_CR3)
-                {
-                    /* CR0.PG bit changes are always intercepted, so it's up to date. */
-                    if (   VM_IS_VMX_UNRESTRICTED_GUEST(pVM)
-                        || (   VM_IS_VMX_NESTED_PAGING(pVM)
-                            && CPUMIsGuestPagingEnabledEx(pCtx)))
-                    {
-                        uint64_t u64Cr3;
-                        rc = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR3, &u64Cr3);  AssertRC(rc);
-                        if (pCtx->cr3 != u64Cr3)
-                        {
-                            pCtx->cr3 = u64Cr3;
-                            VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-                        }
-
-                        /*
-                         * If the guest is in PAE mode, sync back the PDPE's into the guest state.
-                         * CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date.
-                         */
-                        if (CPUMIsGuestInPAEModeEx(pCtx))
-                        {
-                            X86PDPE aPaePdpes[4];
-                            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE0_FULL, &aPaePdpes[0].u);     AssertRC(rc);
-                            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE1_FULL, &aPaePdpes[1].u);     AssertRC(rc);
-                            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE2_FULL, &aPaePdpes[2].u);     AssertRC(rc);
-                            rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE3_FULL, &aPaePdpes[3].u);     AssertRC(rc);
-                            if (memcmp(&aPaePdpes[0], &pCtx->aPaePdpes[0], sizeof(aPaePdpes)))
-                            {
-                                memcpy(&pCtx->aPaePdpes[0], &aPaePdpes[0], sizeof(aPaePdpes));
-                                /* PGM now updates PAE PDPTEs while updating CR3. */
-                                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-                            }
-                        }
-                    }
-                }
+                    vmxHCImportGuestCr3(pVCpu, pVmcsInfo);
             }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -4029,157 +4085,19 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
 
     if (a_fWhat & (CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
     {
-        PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-        PCVMXAUTOMSR       pMsrs           = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-        uint32_t const     cMsrs           = pVmcsInfo->cExitMsrStore;
-        Assert(pMsrs);
-        Assert(cMsrs <= VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc));
-        Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
-        for (uint32_t i = 0; i < cMsrs; i++)
-        {
-            uint32_t const idMsr = pMsrs[i].u32Msr;
-            switch (idMsr)
-            {
-                case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsrs[i].u64Value);     break;
-                case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsrs[i].u64Value);   break;
-                case MSR_K6_EFER:           /* Can't be changed without causing a VM-exit */  break;
-                default:
-                {
-                    uint32_t idxLbrMsr;
-                    if (VM_IS_VMX_LBR(pVM))
-                    {
-                        if (hmR0VmxIsLbrBranchFromMsr(pVM, idMsr, &idxLbrMsr))
-                        {
-                            Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
-                            pVmcsInfoShared->au64LbrFromIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
-                            break;
-                        }
-                        if (hmR0VmxIsLbrBranchToMsr(pVM, idMsr, &idxLbrMsr))
-                        {
-                            Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
-                            pVmcsInfoShared->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
-                            break;
-                        }
-                        if (idMsr == pVM->hmr0.s.vmx.idLbrTosMsr)
-                        {
-                            pVmcsInfoShared->u64LbrTosMsr = pMsrs[i].u64Value;
-                            break;
-                        }
-                    }
-                    pVCpu->cpum.GstCtx.fExtrn = 0;
-                    VCPU_2_VMXSTATE(pVCpu).u32HMError = pMsrs->u32Msr;
-                    ASMSetFlags(fEFlags);
-                    AssertMsgFailed(("Unexpected MSR in auto-load/store area. idMsr=%#RX32 cMsrs=%u\n", idMsr, cMsrs));
-                    return VERR_HM_UNEXPECTED_LD_ST_MSR;
-                }
-            }
-        }
+        int const rc1 = vmxHCImportGuestTscAuxAndOtherMsrs(pVCpu, pVmcsInfo, fEFlags);
+        AssertRCReturn(rc1, rc1);
     }
 #endif
 
     if (a_fWhat & CPUMCTX_EXTRN_CR0)
-    {
-        uint64_t u64Cr0;
-        uint64_t u64Shadow;
-        int const rc1 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR0,            &u64Cr0);    AssertRC(rc1);
-        int const rc2 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow); AssertRC(rc2);
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
-        u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
-               | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-#else
-        if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
-            u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
-                   | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-        else
-        {
-            /*
-             * We've merged the guest and nested-guest's CR0 guest/host mask while executing
-             * the nested-guest using hardware-assisted VMX. Accordingly we need to
-             * re-construct CR0. See @bugref{9180#c95} for details.
-             */
-            PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-            PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-            u64Cr0 = (u64Cr0                     & ~(pVmcsInfoGst->u64Cr0Mask & pVmcsNstGst->u64Cr0Mask.u))
-                   | (pVmcsNstGst->u64GuestCr0.u &   pVmcsNstGst->u64Cr0Mask.u)
-                   | (u64Shadow                  &  (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
-            Assert(u64Cr0 & X86_CR0_NE);
-        }
-#endif
-#ifndef IN_NEM_DARWIN
-        VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
-#endif
-        CPUMSetGuestCR0(pVCpu, u64Cr0);
-#ifndef IN_NEM_DARWIN
-        VMMRZCallRing3Enable(pVCpu);
-#endif
-    }
+        vmxHCImportGuestCr0(pVCpu, pVmcsInfo);
 
     if (a_fWhat & CPUMCTX_EXTRN_CR4)
-    {
-        uint64_t u64Cr4;
-        uint64_t u64Shadow;
-        int rc1 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR4,            &u64Cr4);    AssertRC(rc1);
-        int rc2 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow); AssertRC(rc2);
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
-        u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
-               | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-#else
-        if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
-            u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
-                   | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-        else
-        {
-            /*
-             * We've merged the guest and nested-guest's CR4 guest/host mask while executing
-             * the nested-guest using hardware-assisted VMX. Accordingly we need to
-             * re-construct CR4. See @bugref{9180#c95} for details.
-             */
-            PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-            PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-            u64Cr4 = (u64Cr4                     & ~(pVmcsInfo->u64Cr4Mask & pVmcsNstGst->u64Cr4Mask.u))
-                   | (pVmcsNstGst->u64GuestCr4.u &   pVmcsNstGst->u64Cr4Mask.u)
-                   | (u64Shadow                  &  (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
-            Assert(u64Cr4 & X86_CR4_VMXE);
-        }
-#endif
-        pVCpu->cpum.GstCtx.cr4 = u64Cr4;
-    }
+        vmxHCImportGuestCr4(pVCpu, pVmcsInfo);
 
     if (a_fWhat & CPUMCTX_EXTRN_CR3)
-    {
-        /* CR0.PG bit changes are always intercepted, so it's up to date. */
-        if (   VM_IS_VMX_UNRESTRICTED_GUEST(pVM)
-            || (   VM_IS_VMX_NESTED_PAGING(pVM)
-                && CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)))
-        {
-            uint64_t u64Cr3;
-            int const rc0 = VMX_VMCS_READ_NW(pVCpu, VMX_VMCS_GUEST_CR3, &u64Cr3);  AssertRC(rc0);
-            if (pVCpu->cpum.GstCtx.cr3 != u64Cr3)
-            {
-                pVCpu->cpum.GstCtx.cr3 = u64Cr3;
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-            }
-
-            /*
-             * If the guest is in PAE mode, sync back the PDPE's into the guest state.
-             * CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date.
-             */
-            if (CPUMIsGuestInPAEModeEx(&pVCpu->cpum.GstCtx))
-            {
-                X86PDPE aPaePdpes[4];
-                int const rc1 = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE0_FULL, &aPaePdpes[0].u); AssertRC(rc1);
-                int const rc2 = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE1_FULL, &aPaePdpes[1].u); AssertRC(rc2);
-                int const rc3 = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE2_FULL, &aPaePdpes[2].u); AssertRC(rc3);
-                int const rc4 = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_GUEST_PDPTE3_FULL, &aPaePdpes[3].u); AssertRC(rc4);
-                if (memcmp(&aPaePdpes[0], &pVCpu->cpum.GstCtx.aPaePdpes[0], sizeof(aPaePdpes)))
-                {
-                    memcpy(&pVCpu->cpum.GstCtx.aPaePdpes[0], &aPaePdpes[0], sizeof(aPaePdpes));
-                    /* PGM now updates PAE PDPTEs while updating CR3. */
-                    VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-                }
-            }
-        }
-    }
+        vmxHCImportGuestCr3(pVCpu, pVmcsInfo);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (a_fWhat & CPUMCTX_EXTRN_HWVIRT)
