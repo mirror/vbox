@@ -72,8 +72,8 @@ DECLINLINE(bool) RTUInt64IsZero(PCRTUINT64U pValue)
 
 
 /**
- * Checks if the sign-bit is set. 
- *  
+ * Checks if the sign-bit is set.
+ *
  * @returns Sign bit.
  * @param   pValue              The value to examine.
  */
