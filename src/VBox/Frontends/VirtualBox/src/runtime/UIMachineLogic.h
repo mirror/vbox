@@ -127,8 +127,6 @@ public:
     CDisplay& display() const;
     /** Returns the console's guest reference. */
     CGuest& guest() const;
-    /** Returns the console's mouse reference. */
-    CMouse& mouse() const;
     /** Returns the console's debugger reference. */
     CMachineDebugger& debugger() const;
 

@@ -58,7 +58,6 @@
 
 /* COM includes: */
 #include "CDisplay.h"
-#include "CMouse.h"
 
 /* Other VBox includes: */
 #include <iprt/time.h>
@@ -201,7 +200,7 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
 #endif /* !VBOX_WS_MAC */
 
         /* Switch guest mouse to the relative mode: */
-        mouse().PutMouseEvent(0, 0, 0, 0, 0);
+        uimachine()->putMouseEvent(0, 0, 0, 0, 0);
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
@@ -408,7 +407,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
         /* Release the mouse: */
         releaseMouse();
         /* Also we should switch guest mouse to the absolute mode: */
-        mouse().PutMouseEventAbsolute(-1, -1, 0, 0, 0);
+        uimachine()->putMouseEventAbsolute(-1, -1, 0, 0, 0);
     }
 #if 0 /* current team's decision is NOT to capture mouse on mouse-absolute mode loosing! */
     /* If mouse-integration deactivated or mouse doesn't supports absolute pointing: */
@@ -437,7 +436,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
     else
     {
         /* Switch guest mouse to the relative mode: */
-        mouse().PutMouseEvent(0, 0, 0, 0, 0);
+        uimachine()->putMouseEvent(0, 0, 0, 0, 0);
     }
 #endif
 
@@ -555,11 +554,6 @@ UIMachine *UIMouseHandler::uimachine() const
 CDisplay &UIMouseHandler::display() const
 {
     return machineLogic()->uisession()->display();
-}
-
-CMouse &UIMouseHandler::mouse() const
-{
-    return machineLogic()->uisession()->mouse();
 }
 
 /* Event handler for registered machine-view(s): */
@@ -983,9 +977,9 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 #endif
 
         /* Pass event to the guest: */
-        mouse().PutMouseEvent(globalPos.x() - m_lastMousePos.x(),
-                              globalPos.y() - m_lastMousePos.y(),
-                              iWheelVertical, iWheelHorizontal, iMouseButtonsState);
+        uimachine()->putMouseEvent(globalPos.x() - m_lastMousePos.x(),
+                                   globalPos.y() - m_lastMousePos.y(),
+                                   iWheelVertical, iWheelHorizontal, iMouseButtonsState);
 
 #ifdef VBOX_WS_WIN
         /* Compose viewport-rectangle in local coordinates: */
@@ -1151,7 +1145,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             cpnt.setY(cpnt.y() + yShift);
 
             /* Post absolute mouse-event into guest: */
-            mouse().PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);
+            uimachine()->putMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);
             return true;
         }
         else
@@ -1273,10 +1267,10 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
         ++iTouchPointIndex;
     }
 
-    mouse().PutEventMultiTouch(pTouchEvent->touchPoints().size(),
-                               contacts,
-                               fTouchScreen,
-                               (ULONG)RTTimeMilliTS());
+    uimachine()->putEventMultiTouch(pTouchEvent->touchPoints().size(),
+                                    contacts,
+                                    fTouchScreen,
+                                    (ULONG)RTTimeMilliTS());
 
     /* Eat by default? */
     return true;

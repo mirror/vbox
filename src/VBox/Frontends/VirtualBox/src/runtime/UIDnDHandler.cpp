@@ -47,6 +47,7 @@
 #endif
 #include "UIDnDMIMEData.h"
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
+#include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UISession.h"
 
@@ -79,8 +80,9 @@
 #endif
 
 
-UIDnDHandler::UIDnDHandler(UISession *pSession, QWidget *pParent)
-    : m_pSession(pSession)
+UIDnDHandler::UIDnDHandler(UIMachine *pMachine, UISession *pSession, QWidget *pParent)
+    : m_pMachine(pMachine)
+    , m_pSession(pSession)
     , m_pParent(pParent)
     , m_fDataRetrieved(false)
 #ifdef RT_OS_WINDOWS
@@ -753,8 +755,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
     {
         /* Send a mouse event with released mouse buttons into the guest that triggers
          * the "drop" event in our proxy window on the guest. */
-        AssertPtr(m_pSession);
-        m_pSession->mouse().PutMouseEvent(0, 0, 0, 0, 0);
+        m_pMachine->putMouseEvent(0, 0, 0, 0, 0);
 
         msgCenter().showModalProgressDialog(progress,
                                             tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",

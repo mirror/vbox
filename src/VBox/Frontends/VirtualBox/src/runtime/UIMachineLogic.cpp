@@ -308,11 +308,6 @@ CGuest& UIMachineLogic::guest() const
     return uisession()->guest();
 }
 
-CMouse& UIMachineLogic::mouse() const
-{
-    return uisession()->mouse();
-}
-
 CMachineDebugger& UIMachineLogic::debugger() const
 {
     return uisession()->debugger();

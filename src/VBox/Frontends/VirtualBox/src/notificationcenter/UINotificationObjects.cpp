@@ -62,6 +62,7 @@
 #include "CHostOnlyNetwork.h"
 #include "CKeyboard.h"
 #include "CMediumAttachment.h"
+#include "CMouse.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
 #include "CRangedIntegerFormValue.h"
@@ -931,6 +932,15 @@ void UINotificationMessage::cannotChangeKeyboardParameter(const CKeyboard &comKe
         QApplication::translate("UIMessageCenter", "Keyboard failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to assign keyboard parameter.") +
         UIErrorString::formatErrorInfo(comKeyboard));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeMouseParameter(const CMouse &comMouse)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Mouse failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to assign mouse parameter.") +
+        UIErrorString::formatErrorInfo(comMouse));
 }
 
 /* static */

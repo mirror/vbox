@@ -246,6 +246,27 @@ public:
         void putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease);
     /** @} */
 
+    /** @name Mouse stuff.
+     ** @{ */
+        /** Returns whether VM's mouse supports absolute coordinates. */
+        BOOL getAbsoluteSupported();
+        /** Returns whether VM's mouse supports relative coordinates. */
+        BOOL getRelativeSupported();
+        /** Returns whether VM's mouse supports touch screen device. */
+        BOOL getTouchScreenSupported();
+        /** Returns whether VM's mouse supports touch pad device. */
+        BOOL getTouchPadSupported();
+        /** Returns whether VM's mouse requires host cursor. */
+        BOOL getNeedsHostCursor();
+
+        /** Sends relative mouse move event to VM's mouse. */
+        void putMouseEvent(LONG iDx, LONG iDy, LONG iDz, LONG iDw, LONG iButtonState);
+        /** Sends absolute mouse move event to VM's mouse. */
+        void putMouseEventAbsolute(LONG iX, LONG iY, LONG iDz, LONG iDw, LONG iButtonState);
+        /** Sends multi-touch event to VM's mouse. */
+        void putEventMultiTouch(LONG iCount, const QVector<LONG64> &contacts, BOOL fIsTouchScreen, ULONG uScanTime);
+    /** @} */
+
     /** @name Guest additions stuff.
      ** @{ */
         /** Returns whether guest additions is active. */

@@ -1327,7 +1327,7 @@ int UIMachineView::prepareDnd(void)
     int vrc;
 
     /* Create the drag and drop handler instance: */
-    m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
+    m_pDnDHandler = new UIDnDHandler(uimachine(), uisession(), this /* pParent */);
     if (m_pDnDHandler)
     {
         vrc = m_pDnDHandler->init();
