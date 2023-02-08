@@ -2146,8 +2146,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/compiler/vcc/x86-alldvrm.asm \
   	common/compiler/vcc/x86-aulldiv.asm \
   	common/compiler/vcc/x86-aullrem.asm \
-  	common/compiler/vcc/x86-aulldvrm.asm \
-  	common/compiler/vcc/RTVccUInt64Div.cpp
+  	common/compiler/vcc/x86-aulldvrm.asm
   RuntimeR3_VBOX_NOCRT_ALIASES.win := \
   	strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
   	$(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
@@ -4156,9 +4155,13 @@ RuntimeR0Drv_ORDERDEPS.freebsd = \
 
 #
 # RuntimeGuestR0 - Guest driver runtime.
-#                  This is almost the same as the RuntimeR0Drv, the main difference
-#                  is in the backdoor logging and the lack of sup.h (which should be
-#                  made irrelevant even for RuntimeR0Drv).
+#
+#   This is almost the same as the RuntimeR0Drv, the main difference is in the
+#   backdoor logging and the lack of sup.h (which should be made irrelevant even
+#   for RuntimeR0Drv).
+#
+#   In addition we include 64-bit integer stuff, since older kernels doesn't
+#   export all of these and we happen to have all of it.
 #
 RuntimeGuestR0_TEMPLATE  := VBoxGuestR0DrvLib
 RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
@@ -4168,6 +4171,19 @@ RuntimeGuestR0_SOURCES   += \
 	VBox/logbackdoor.cpp
 RuntimeGuestR0_SOURCES.win := \
 	$(filter-out common/checksum/md% common/checksum/sha%, $(RuntimeR0Drv_SOURCES.win))
+RuntimeGuestR0_SOURCES.win.x86 := \
+	$(RuntimeR0Drv_SOURCES.win.x86) \
+  	common/compiler/vcc/x86-allshl.asm \
+  	common/compiler/vcc/x86-allshr.asm \
+  	common/compiler/vcc/x86-aullshr.asm \
+  	common/compiler/vcc/x86-allmul.asm \
+  	common/compiler/vcc/x86-alldiv.asm \
+  	common/compiler/vcc/x86-allrem.asm \
+  	common/compiler/vcc/x86-alldvrm.asm \
+  	common/compiler/vcc/x86-aulldiv.asm \
+  	common/compiler/vcc/x86-aullrem.asm \
+  	common/compiler/vcc/x86-aulldvrm.asm
+
 
 
 ifdef VBOX_WITH_RAW_MODE

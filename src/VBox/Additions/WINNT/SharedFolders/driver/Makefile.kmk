@@ -60,7 +60,9 @@ VBoxSF_LIBS = \
 	$(VBoxSF_0_OUTDIR)/rdbsslib.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/copysup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/hal.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ksecdd.lib
+	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ksecdd.lib \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0) # before ntoskrnl.lib
 ifneq ($(VBOX_VCC_CC_GUARD_CF),)
  VBoxSF_LIBS += \
  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
@@ -70,9 +72,6 @@ else
  	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowK.lib
 endif
-VBoxSF_LIBS += \
-	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0)
 
 VBoxSF_CLEAN = \
 	$(VBoxSF_0_OUTDIR)/rdbsslib.lib
@@ -85,7 +84,6 @@ VBoxSF_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  #
  # This driver version is used for Windows 2000, XP, W2K3, Vista and 7.
- # Note! Including int64.lib here for _aulldvrm which isn't exported by w2k.
  #
  SYSMODS += VBoxSFW2K
  VBoxSFW2K_EXTENDS      := VBoxSF
@@ -98,8 +96,7 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ksecdd.lib \
  	\
  	$(VBOX_LIB_VBGL_R0) \
- 	$(VBOX_LIB_IPRT_GUEST_R0) \
- 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB)/int64.lib
+ 	$(VBOX_LIB_IPRT_GUEST_R0) # before ntoskrnl.lib
  ifneq ($(VBOX_VCC_CC_GUARD_CF),)
   VBoxSFW2K_LIBS += \
   	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/ntoskrnl.lib \

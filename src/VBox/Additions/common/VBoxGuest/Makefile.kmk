@@ -97,7 +97,6 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin
     	$(VBOX_LIB_VBGL_R0BASE) \
     	$(VBOX_LIB_IPRT_GUEST_R0) \
     	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
-    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/int64.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
     ifneq ($(VBOX_VCC_CC_GUARD_CF),)

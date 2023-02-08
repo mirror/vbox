@@ -5077,23 +5077,6 @@ else
 endif
 
 #
-# SDK for including int64.lib for x86 targets.
-# It conceptually moved from the WDK to the PSDK with W10, as it's now in the um subdir.
-#
-SDK_VBoxWinInt64Lib             := Abstracts where to find int64.lib for x86 builds.
-ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
- SDK_VBoxWinInt64Lib_LIBS.x86    = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/int64.lib
- ifeq ($(KBUILD_TARGET),win)
-  include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
- endif
-else
- SDK_VBoxWinInt64Lib_LIBS.x86    = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
- ifeq ($(KBUILD_TARGET),win)
-  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
- endif
-endif
-
-#
 # Determine Solaris version.
 #
 ifeq ($(KBUILD_TARGET),solaris)
@@ -5214,7 +5197,6 @@ ifdef VBOX_WITH_RAW_MODE
   ifdef VBOX_SIGNING_MODE
    TEMPLATE_VBoxRc_LDFLAGS          += -IntegrityCheck
   endif
-  TEMPLATE_VBoxRc_SDKS.x86          += VBoxWinInt64Lib
   TEMPLATE_VBoxRc_LIBS              += \
   	$(PATH_STAGE_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
   TEMPLATE_VBoxRc_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
@@ -5385,7 +5367,6 @@ ifeq ($(VBOX_LDR_FMT),pe)
   	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/BufferOverflowK.lib
   include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
  endif
- TEMPLATE_VBoxR0_SDKS.x86          += VBoxWinInt64Lib
  TEMPLATE_VBoxR0_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
  TEMPLATE_VBoxR0_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif # pe
@@ -6431,7 +6412,6 @@ ifeq ($(KBUILD_TARGET),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   ifdef VBOX_WITH_NOCRT_STATIC
    TEMPLATE_VBoxR3StaticBase_SDKS          = $(subst WINSDK10-UCRT,,$(TEMPLATE_VBoxR3Exe_SDKS))
-   TEMPLATE_VBoxR3StaticBase_SDKS.x86      = $(TEMPLATE_VBoxR3Exe_SDKS.x86) VBoxWinInt64Lib  ## @todo drop this asap. @bugref{10261}
   else
    TEMPLATE_VBoxR3StaticBase_SDKS          = $(subst WINSDK10-UCRT, WINSDK10-UCRT-STATIC,$(TEMPLATE_VBoxR3Exe_SDKS))
   endif
@@ -6687,7 +6667,6 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBoxR3StaticNoCrt_LIBS.win.x86  = \
   	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticNoCrt_TOOL.win.x86)_LIB)/chkstk.obj
  endif
- TEMPLATE_VBoxR3StaticNoCrt_SDKS.win.x86  += VBoxWinInt64Lib
  TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS        = $(filter-out $(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxR3Static_LDFLAGS))
  TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxR3Static_LDFLAGS.win.x86))
  TEMPLATE_VBoxR3StaticNoCrt_CFLAGS         = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Static_CFLAGS)) /GS- -EHs-
@@ -6730,7 +6709,6 @@ ifeq ($(KBUILD_TARGET),linux)
 endif
 ifeq ($(KBUILD_TARGET),win) # No CRT!
  TEMPLATE_VBoxR3HardenedExe_SDKS          = VBoxNtDll $(TEMPLATE_VBoxR3Exe_SDKS)
- TEMPLATE_VBoxR3HardenedExe_SDKS.x86      = VBoxWinInt64Lib
  ifneq ($(VBOX_VCC_LD_GUARD_CF),)
   TEMPLATE_VBoxR3HardenedExe_CXXFLAGS       = $(filter-out -RTC% -GZ $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Exe_CXXFLAGS))
   TEMPLATE_VBoxR3HardenedExe_CXXFLAGS.debug = $(filter-out -RTC% -GZ $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Exe_CXXFLAGS.debug)) #-O2 -Oy-
@@ -8585,7 +8563,6 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxGuestR3NoCrtExe_LIBS.win       = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBoxGuestR3NoCrtExe_LIBS.win.x86   = \
  	$(PATH_TOOL_$(TEMPLATE_VBoxGuestR3NoCrtExe_TOOL.win.x86)_LIB)/chkstk.obj
- TEMPLATE_VBoxGuestR3NoCrtExe_SDKS.win.x86   = VBoxWinInt64Lib
  TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS        = $(filter-out $(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS))
  TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win.x86))
  TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS.win    = $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win) /entry:CustomMainEntrypoint /subsystem:console
@@ -8673,7 +8650,7 @@ TEMPLATE_VBoxGuestR3XOrgLib_INST     = $(INST_ADDITIONS_LIB)
 TEMPLATE_VBoxGuestR0Drv             = VBox Guest Driver
 TEMPLATE_VBoxGuestR0Drv_EXTENDS     = VBoxR0Drv
 TEMPLATE_VBoxGuestR0Drv_INST        = $(INST_ADDITIONS)
-TEMPLATE_VBoxGuestR0Drv_SDKS.win.x86   = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS) VBoxWinInt64Lib
+TEMPLATE_VBoxGuestR0Drv_SDKS.win.x86   = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS)
 TEMPLATE_VBoxGuestR0Drv_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS)
 TEMPLATE_VBoxGuestR0Drv_DEFS        = $(TEMPLATE_VBoxR0Drv_DEFS) IN_GUEST IN_GUEST_R0
 TEMPLATE_VBoxGuestR0Drv_DEFS.linux  = RT_NO_EXPORT_SYMBOL

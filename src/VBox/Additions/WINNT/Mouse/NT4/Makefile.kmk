@@ -45,7 +45,6 @@ VBoxMouseNT_SOURCES     = \
 VBoxMouseNT_LIBS        = \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
 	$(VBOX_LIB_VBGL_R0) \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/int64.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib
