@@ -4173,16 +4173,16 @@ RuntimeGuestR0_SOURCES.win := \
 	$(filter-out common/checksum/md% common/checksum/sha%, $(RuntimeR0Drv_SOURCES.win))
 RuntimeGuestR0_SOURCES.win.x86 := \
 	$(RuntimeR0Drv_SOURCES.win.x86) \
-  	common/compiler/vcc/x86-allshl.asm \
-  	common/compiler/vcc/x86-allshr.asm \
-  	common/compiler/vcc/x86-aullshr.asm \
-  	common/compiler/vcc/x86-allmul.asm \
-  	common/compiler/vcc/x86-alldiv.asm \
-  	common/compiler/vcc/x86-allrem.asm \
-  	common/compiler/vcc/x86-alldvrm.asm \
-  	common/compiler/vcc/x86-aulldiv.asm \
-  	common/compiler/vcc/x86-aullrem.asm \
-  	common/compiler/vcc/x86-aulldvrm.asm
+	common/compiler/vcc/x86-allshl.asm \
+	common/compiler/vcc/x86-allshr.asm \
+	common/compiler/vcc/x86-aullshr.asm \
+	common/compiler/vcc/x86-allmul.asm \
+	common/compiler/vcc/x86-alldiv.asm \
+	common/compiler/vcc/x86-allrem.asm \
+	common/compiler/vcc/x86-alldvrm.asm \
+	common/compiler/vcc/x86-aulldiv.asm \
+	common/compiler/vcc/x86-aullrem.asm \
+	common/compiler/vcc/x86-aulldvrm.asm
 
 
 
