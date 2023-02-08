@@ -48,7 +48,7 @@ extern __aullrem
 
 
 ;;
-; Division of signed 64-bit values, returning the reminder.
+; Division of signed 64-bit values, returning the remainder.
 ;
 ; @returns  EDX:EAX Remainder.
 ; @param    [esp+04h] [ebp+08h]     Dividend (64-bit)

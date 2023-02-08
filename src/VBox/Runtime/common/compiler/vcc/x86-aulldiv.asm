@@ -57,9 +57,9 @@ extern NAME(RTVccUInt64Div)
 BEGINPROC_RAW   __aulldiv
         push    ebp
         mov     ebp, esp
-        sub     esp, 10h                    ; space for quotient and reminder.
+        sub     esp, 10h                    ; space for quotient and remainder.
 
-        ; Call RTVccUInt64Div(RTUINT64U const *paDividendDivisor, RTUINT64U *paQuotientReminder)
+        ; Call RTVccUInt64Div(RTUINT64U const *paDividendDivisor, RTUINT64U *paQuotientRemainder)
         mov     edx, esp
         push    edx
         lea     ecx, [ebp + 8]

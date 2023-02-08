@@ -48,7 +48,7 @@ extern __aulldvrm
 
 
 ;;
-; Division of signed 64-bit values, returning both the quotient and reminder.
+; Division of signed 64-bit values, returning both the quotient and remainder.
 ;
 ; @returns  EDX:EAX Quotient, EBX:ECX Remainder.
 ; @param    [esp+04h] [ebp+08h]     Dividend (64-bit)

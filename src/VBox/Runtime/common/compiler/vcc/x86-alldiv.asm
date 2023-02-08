@@ -48,7 +48,7 @@ extern __aulldiv
 
 
 ;;
-; Division of signed 64-bit values, returning both the quotient and reminder.
+; Division of signed 64-bit values, returning both the quotient and remainder.
 ;
 ; @returns  EDX:EAX Quotient.
 ; @param    [esp+04h] [ebp+08h]     Dividend (64-bit)

@@ -41,8 +41,8 @@
 #include <iprt/uint64.h>
 
 
-DECLASM(void) RTVccUInt64Div(RTUINT64U const *paDividendDivisor, RTUINT64U *paQuotientReminder)
+DECLASM(void) RTVccUInt64Div(RTUINT64U const *paDividendDivisor, RTUINT64U *paQuotientRemainder)
 {
-    RTUInt64DivRem(&paQuotientReminder[0], &paQuotientReminder[1], &paDividendDivisor[0], &paDividendDivisor[1]);
+    RTUInt64DivRem(&paQuotientRemainder[0], &paQuotientRemainder[1], &paDividendDivisor[0], &paDividendDivisor[1]);
 }
 
