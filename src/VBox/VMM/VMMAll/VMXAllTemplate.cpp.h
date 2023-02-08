@@ -4091,6 +4091,8 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
         int const rc1 = vmxHCImportGuestTscAuxAndOtherMsrs(pVCpu, pVmcsInfo, fEFlags);
         AssertRCReturn(rc1, rc1);
     }
+#else
+    NOREF(pVM);
 #endif
 
     if (a_fWhat & CPUMCTX_EXTRN_CR0)
