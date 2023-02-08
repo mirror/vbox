@@ -3693,9 +3693,10 @@ static int vmxHCImportGuestStateEx(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                          */
                         PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
                         PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-                        u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
-                               | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
-                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
+                        u64Cr0 = (u64Cr0                     & ~(pVmcsInfoGst->u64Cr0Mask & pVmcsNstGst->u64Cr0Mask.u))
+                               | (pVmcsNstGst->u64GuestCr0.u &   pVmcsNstGst->u64Cr0Mask.u)
+                               | (u64Shadow                  &  (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
+                        Assert(u64Cr0 & X86_CR0_NE);
                     }
 #endif
 #ifndef IN_NEM_DARWIN
@@ -3731,9 +3732,10 @@ static int vmxHCImportGuestStateEx(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                          */
                         PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
                         PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-                        u64Cr4 = (u64Cr4                     & ~pVmcsInfo->u64Cr4Mask)
-                               | (pVmcsNstGst->u64GuestCr4.u &  pVmcsNstGst->u64Cr4Mask.u)
-                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
+                        u64Cr4 = (u64Cr4                     & ~(pVmcsInfo->u64Cr4Mask & pVmcsNstGst->u64Cr4Mask.u))
+                               | (pVmcsNstGst->u64GuestCr4.u &   pVmcsNstGst->u64Cr4Mask.u)
+                               | (u64Shadow                  &  (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
+                        Assert(u64Cr4 & X86_CR4_VMXE);
                     }
 #endif
                     pCtx->cr4 = u64Cr4;
