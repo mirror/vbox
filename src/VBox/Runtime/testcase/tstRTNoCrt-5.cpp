@@ -47,7 +47,11 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define RANDOM_LOOPS        _256K
+#ifdef DEBUG
+# define RANDOM_LOOPS        _256K
+#else
+# define RANDOM_LOOPS        _1M
+#endif
 
 
 /*********************************************************************************************************************************
@@ -69,7 +73,7 @@ typedef struct TSTRTNOCRT5MULT
 typedef struct TSTRTNOCRT5DIV
 {
     uint64_t    uDividend, uDivisor;
-    uint64_t    uQuotient, uReminder;
+    uint64_t    uQuotient, uRemainder;
 } TSTRTNOCRT5DIV;
 
 
@@ -360,6 +364,21 @@ TSTRTNOCRT5DIV volatile const g_aDivU[] =
     { UINT64_C(0xf439583044583049), UINT64_C(0x0984987539485732), /* => */ UINT64_C(0x0000000000000019), UINT64_C(0x064674BDAC47AC67) },
     { UINT64_C(0xdf8305930df94306), UINT64_C(0x00000043d9dfa039), /* => */ UINT64_C(0x00000000034B4D9D), UINT64_C(0x0000000990EFDB11) },
     { UINT64_C(0xff9f939d0f0302d9), UINT64_C(0x0000000000000042), /* => */ UINT64_C(0x03DF823C8FBE1B31), UINT64_C(0x0000000000000037) },
+    { UINT64_C(0xffffffffffffffff), UINT64_C(0x0000000000000042), /* => */ UINT64_C(0x03E0F83E0F83E0F8), UINT64_C(0x000000000000000f) },
+    { UINT64_C(0xffffffffffffffff), UINT64_C(0x0000000000000007), /* => */ UINT64_C(0x2492492492492492), UINT64_C(0x0000000000000001) },
+    { UINT64_C(0xe1f17ac834b412b4), UINT64_C(0xda38027453291b1e), /* => */ UINT64_C(0x0000000000000001), UINT64_C(0x07b97853e18af796) },
+    /* These should trigger the rare overflow condition in the 32-bit approximation algorithm. */
+    { UINT64_C(0xe101721f65eb6226), UINT64_C(0x0000028180a483fa), /* => */ UINT64_C(0x000000000059CA9C), UINT64_C(0x000002814F9DB1CE) },
+    { UINT64_C(0x8b0a3ed1cda21100), UINT64_C(0x8b0a3ed1cda231d4), /* => */ UINT64_C(0x0000000000000000), UINT64_C(0x8B0A3ED1CDA21100) },
+    { UINT64_C(0xf1387d27f3a0c583), UINT64_C(0x000735f0d9661f93), /* => */ UINT64_C(0x0000000000002173), UINT64_C(0x000735F020AEA37A) },
+    { UINT64_C(0xb690b755d6f4496f), UINT64_C(0x000143027675d0d7), /* => */ UINT64_C(0x00000000000090b0), UINT64_C(0x00014302207bc59f) },
+    { UINT64_C(0x78a5b3efc6c82cf7), UINT64_C(0x00000f9b4400a9f0), /* => */ UINT64_C(0x000000000007bb06), UINT64_C(0x00000f9b0d11e157) },
+    { UINT64_C(0x8ae75b071b094efc), UINT64_C(0x0020904259dedd1e), /* => */ UINT64_C(0x0000000000000443), UINT64_C(0x002090421a40f822) },
+    { UINT64_C(0x90c9fb203c85fa7c), UINT64_C(0x000001ef807ef1e9), /* => */ UINT64_C(0x00000000004ace0e), UINT64_C(0x000001ef219141be) },
+    { UINT64_C(0xf9ae8ea6b31751df), UINT64_C(0x00004281110e2327), /* => */ UINT64_C(0x000000000003c11e), UINT64_C(0x00004280a179cc4d) },
+    /* These trigger an even more special case, where the QapproxDividend calculation overflows. */
+    { UINT64_C(0xffffffffffffffff), UINT64_C(0x00003C11D54B525f), /* => */ UINT64_C(0x00000000000442FF), UINT64_C(0x00003C11D540755E) },
+    { UINT64_C(0xfffffffffefa1235), UINT64_C(0x0001001702112f8c), /* => */ UINT64_C(0x000000000000FFE8), UINT64_C(0x00010017010A8755) },
 };
 
 static void tstUnsignedDivision()
@@ -379,21 +398,21 @@ static void tstUnsignedDivision()
     for (size_t i = 0; i < RT_ELEMENTS(g_aDivU); i++)
     {
         uint64_t const uResult = g_aDivU[i].uDividend % g_aDivU[i].uDivisor; /* aullrem */
-        if (uResult != g_aDivU[i].uReminder)
+        if (uResult != g_aDivU[i].uRemainder)
             RTTestFailed(g_hTest, "i=%u %#018RX64 %% %#018RX64 => %#018RX64, expected %#018RX64",
-                         i, g_aDivU[i].uDividend, g_aDivU[i].uDivisor, uResult, g_aDivU[i].uReminder);
+                         i, g_aDivU[i].uDividend, g_aDivU[i].uDivisor, uResult, g_aDivU[i].uRemainder);
     }
     for (size_t i = 0; i < RT_ELEMENTS(g_aDivU); i++)
     {
-        uint64_t const uDividend = g_aDivU[i].uDividend;
-        uint64_t const uDivisor  = g_aDivU[i].uDivisor;
-        uint64_t const uQuotient = uDividend / uDivisor; /* auldvrm hopefully - only not in unoptimized builds. */
-        uint64_t const uReminder = uDividend % uDivisor;
-        if (   uQuotient != g_aDivU[i].uQuotient
-            || uReminder != g_aDivU[i].uReminder)
+        uint64_t const uDividend  = g_aDivU[i].uDividend;
+        uint64_t const uDivisor   = g_aDivU[i].uDivisor;
+        uint64_t const uQuotient  = uDividend / uDivisor; /* auldvrm hopefully - only not in unoptimized builds. */
+        uint64_t const uRemainder = uDividend % uDivisor;
+        if (   uQuotient  != g_aDivU[i].uQuotient
+            || uRemainder != g_aDivU[i].uRemainder)
             RTTestFailed(g_hTest, "i=%u %#018RX64 / %#018RX64 => q=%#018RX64 r=%#018RX64, expected q=%#018RX64 r=%#018RX64",
                          i, g_aDivU[i].uDividend, g_aDivU[i].uDivisor,
-                         uQuotient, uReminder, g_aDivU[i].uQuotient, g_aDivU[i].uReminder);
+                         uQuotient, uRemainder, g_aDivU[i].uQuotient, g_aDivU[i].uRemainder);
     }
 
     /* 
@@ -419,18 +438,18 @@ static void tstUnsignedDivision()
         if (uResult != uExpected.u)
             RTTestFailed(g_hTest, "%#018RX64 %% %#018RX64 => %#018RX64, expected %#018RX64", uDividend.u, uDivisor.u, uResult, uExpected.u);
     }
-    for (size_t i = 0; i < RANDOM_LOOPS; i++)
+    for (uint64_t i = 0; i < RANDOM_LOOPS; i++)
     {
-        RTUINT64U const uDividend = { RTRandU64Ex(0, i & 7 ? UINT64_MAX : UINT32_MAX) };
-        RTUINT64U const uDivisor  = { RTRandU64Ex(0, i & 3 ? UINT64_MAX : UINT32_MAX) };
-        uint64_t  const uReminder = uDividend.u % uDivisor.u;
-        uint64_t  const uQuotient = uDividend.u / uDivisor.u;
+        RTUINT64U const uDividend  = { RTRandU64Ex(0, i & 7 ? UINT64_MAX : UINT32_MAX) };
+        RTUINT64U const uDivisor   = { RTRandU64Ex(0, i & 3 ? UINT64_MAX : UINT32_MAX) };
+        uint64_t  const uRemainder = uDividend.u % uDivisor.u;
+        uint64_t  const uQuotient  = uDividend.u / uDivisor.u;
         RTUINT64U uExpectedQ, uExpectedR;
         RTUInt64DivRem(&uExpectedQ, &uExpectedR, &uDividend, &uDivisor);
-        if (   uQuotient != uExpectedQ.u
-            || uReminder != uExpectedR.u)
+        if (   uQuotient  != uExpectedQ.u
+            || uRemainder != uExpectedR.u)
             RTTestFailed(g_hTest, "%#018RX64 / %#018RX64 => q=%#018RX64 r=%#018RX64, expected q=%#018RX64 r=%#018RX64",
-                         uDividend.u, uDivisor.u, uQuotient, uReminder, uExpectedQ.u, uExpectedR.u);
+                         uDividend.u, uDivisor.u, uQuotient, uRemainder, uExpectedQ.u, uExpectedR.u);
     }
 }
 
@@ -451,6 +470,15 @@ TSTRTNOCRT5DIV volatile const g_aDivS[] =
     { UINT64_C(0xfffffffffffffffd), UINT64_C(0x0000000000000002), /* => */ UINT64_C(0xffffffffffffffff), UINT64_C(0xffffffffffffffff) },
     { UINT64_C(0x0000000000000003), UINT64_C(0xfffffffffffffffe), /* => */ UINT64_C(0xffffffffffffffff), UINT64_C(0x0000000000000001) },
     { UINT64_C(0xfffffffffffffffd), UINT64_C(0xfffffffffffffffe), /* => */ UINT64_C(0x0000000000000001), UINT64_C(0xffffffffffffffff) },
+
+    { UINT64_C(0x8000000000000001), UINT64_C(0x0000000000000001), /* => */ UINT64_C(0x8000000000000001), UINT64_C(0x0000000000000000) },
+    { UINT64_C(0x8000000000000001), UINT64_C(0x0000000000000002), /* => */ UINT64_C(0xc000000000000001), UINT64_C(0xffffffffffffffff) },
+    { UINT64_C(0x8000000000000001), UINT64_C(0x0000000000000002), /* => */ UINT64_C(0xc000000000000001), UINT64_C(0xffffffffffffffff) },
+
+    { UINT64_C(0x8000000000000000), UINT64_C(0x0000000000000001), /* => */ UINT64_C(0x8000000000000000), UINT64_C(0x0000000000000000) },
+    { UINT64_C(0x8000000000000000), UINT64_C(0x0000000000000002), /* => */ UINT64_C(0xc000000000000000), UINT64_C(0x0000000000000000) },
+    { UINT64_C(0x8000000000000000), UINT64_C(0xffffffffffffffff), /* => */ UINT64_C(0x8000000000000000), UINT64_C(0x0000000000000000) },
+    { UINT64_C(0x8000000000000000), UINT64_C(0xfffffffffffffffe), /* => */ UINT64_C(0x4000000000000000), UINT64_C(0x0000000000000000) },
 };
 
 static void tstSignedDivision()
@@ -470,21 +498,21 @@ static void tstSignedDivision()
     for (size_t i = 0; i < RT_ELEMENTS(g_aDivS); i++)
     {
         int64_t const iResult = (int64_t)g_aDivS[i].uDividend % (int64_t)g_aDivS[i].uDivisor; /* aullrem */
-        if ((uint64_t)iResult != g_aDivS[i].uReminder)
+        if ((uint64_t)iResult != g_aDivS[i].uRemainder)
             RTTestFailed(g_hTest, "i=%u %#018RX64 %% %#018RX64 => %#018RX64, expected %#018RX64",
-                         i, g_aDivS[i].uDividend, g_aDivS[i].uDivisor, iResult, g_aDivS[i].uReminder);
+                         i, g_aDivS[i].uDividend, g_aDivS[i].uDivisor, iResult, g_aDivS[i].uRemainder);
     }
     for (size_t i = 0; i < RT_ELEMENTS(g_aDivS); i++)
     {
-        int64_t const iDividend = (int64_t)g_aDivS[i].uDividend;
-        int64_t const iDivisor  = (int64_t)g_aDivS[i].uDivisor;
-        int64_t const iQuotient = iDividend / iDivisor; /* auldvrm hopefully - only not in unoptimized builds. */
-        int64_t const iReminder = iDividend % iDivisor;
-        if (   (uint64_t)iQuotient != g_aDivS[i].uQuotient
-            || (uint64_t)iReminder != g_aDivS[i].uReminder)
+        int64_t const iDividend  = (int64_t)g_aDivS[i].uDividend;
+        int64_t const iDivisor   = (int64_t)g_aDivS[i].uDivisor;
+        int64_t const iQuotient  = iDividend / iDivisor; /* auldvrm hopefully - only not in unoptimized builds. */
+        int64_t const iRemainder = iDividend % iDivisor;
+        if (   (uint64_t)iQuotient  != g_aDivS[i].uQuotient
+            || (uint64_t)iRemainder != g_aDivS[i].uRemainder)
             RTTestFailed(g_hTest, "i=%u %#018RX64 / %#018RX64 => q=%#018RX64 r=%#018RX64, expected q=%#018RX64 r=%#018RX64",
                          i, g_aDivS[i].uDividend, g_aDivS[i].uDivisor,
-                         iQuotient, iReminder, g_aDivS[i].uQuotient, g_aDivS[i].uReminder);
+                         iQuotient, iRemainder, g_aDivS[i].uQuotient, g_aDivS[i].uRemainder);
     }
 
     /* Check that uint64 works: */
@@ -522,16 +550,16 @@ static void tstSignedDivision()
     }
     for (size_t i = 0; i < RANDOM_LOOPS; i++)
     {
-        RTUINT64U const uDividend = { RTRandU64Ex(0, i & 7 ? UINT64_MAX : UINT32_MAX) };
-        RTUINT64U const uDivisor  = { RTRandU64Ex(1, i & 3 ? UINT64_MAX : UINT32_MAX) };
-        int64_t   const iReminder = (int64_t)uDividend.u % (int64_t)uDivisor.u;
-        int64_t   const iQuotient = (int64_t)uDividend.u / (int64_t)uDivisor.u;
+        RTUINT64U const uDividend  = { RTRandU64Ex(0, i & 7 ? UINT64_MAX : UINT32_MAX) };
+        RTUINT64U const uDivisor   = { RTRandU64Ex(1, i & 3 ? UINT64_MAX : UINT32_MAX) };
+        int64_t   const iRemainder = (int64_t)uDividend.u % (int64_t)uDivisor.u;
+        int64_t   const iQuotient  = (int64_t)uDividend.u / (int64_t)uDivisor.u;
         RTUINT64U uExpectedQ, uExpectedR;
         RTUInt64DivRemSigned(&uExpectedQ, &uExpectedR, &uDividend, &uDivisor);
-        if (   (uint64_t)iQuotient != uExpectedQ.u
-            || (uint64_t)iReminder != uExpectedR.u)
+        if (   (uint64_t)iQuotient  != uExpectedQ.u
+            || (uint64_t)iRemainder != uExpectedR.u)
             RTTestFailed(g_hTest, "%#018RX64 / %#018RX64 => q=%#018RX64 r=%#018RX64, expected q=%#018RX64 r=%#018RX64",
-                         uDividend.u, uDivisor.u, iQuotient, iReminder, uExpectedQ.u, uExpectedR.u);
+                         uDividend.u, uDivisor.u, iQuotient, iRemainder, uExpectedQ.u, uExpectedR.u);
     }
 }
 
