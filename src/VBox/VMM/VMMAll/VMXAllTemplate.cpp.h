@@ -3388,6 +3388,7 @@ DECL_FORCE_INLINE(void) vmxHCImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVm
 }
 
 
+#ifndef IN_NEM_DARWIN
 /**
  * Imports the guest TSX AUX and certain other MSRs from the VMCS into the guest-CPU
  * context.
@@ -3451,6 +3452,7 @@ DECL_FORCE_INLINE(int) vmxHCImportGuestTscAuxAndOtherMsrs(PVMCPUCC pVCpu, PCVMXV
     }
     return VINF_SUCCESS;
 }
+#endif /* !IN_NEM_DARWIN */
 
 
 /**
