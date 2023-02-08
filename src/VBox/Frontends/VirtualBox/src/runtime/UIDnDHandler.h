@@ -134,7 +134,7 @@ protected:
 protected:
 
     /** Pointer to machine UI. */
-    UIMachine        *m_pMachine; 
+    UIMachine        *m_pMachine;
     /** Pointer to session UI. */
     UISession        *m_pSession;
     /** Pointer to parent widget. */
