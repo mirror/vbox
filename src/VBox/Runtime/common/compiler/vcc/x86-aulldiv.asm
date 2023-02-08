@@ -39,38 +39,8 @@
 ;*  Header Files                                                                                                                 *
 ;*********************************************************************************************************************************
 %include "iprt/asmdefs.mac"
+%include "x86-aulldvrm-core.mac"
 
 
-;*********************************************************************************************************************************
-;*  External Symbols                                                                                                             *
-;*********************************************************************************************************************************
-extern NAME(RTVccUInt64Div)
-
-
-;;
-; Division of unsigned 64-bit values, returning the quotient.
-;
-; @returns  Quotient in edx:eax.
-; @param    [ebp+08h]   Dividend (64-bit)
-; @param    [ebp+10h]   Divisor (64-bit)
-;
-BEGINPROC_RAW   __aulldiv
-        push    ebp
-        mov     ebp, esp
-        sub     esp, 10h                    ; space for quotient and remainder.
-
-        ; Call RTVccUInt64Div(RTUINT64U const *paDividendDivisor, RTUINT64U *paQuotientRemainder)
-        mov     edx, esp
-        push    edx
-        lea     ecx, [ebp + 8]
-        push    ecx
-        call    NAME(RTVccUInt64Div)
-
-        ; Load the result (quotient).
-        mov     eax, [ebp - 10h]
-        mov     edx, [ebp - 10h + 4]
-
-        leave
-        ret     10h
-ENDPROC_RAW     __aulldiv
+rtVccUnsignedDivision __aulldiv, 1
 
