@@ -1722,20 +1722,20 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         if (isHostComboStateChanged && m_bIsHostComboPressed)
         {
             /* We have to make guest to release pressed keys from the host-combination: */
-            foreach (const uint8_t &uScan, m_pressedHostComboKeys.values())
+            foreach (const uint8_t &uCurrentScan, m_pressedHostComboKeys.values())
             {
-                if (m_pressedKeys[uScan] & IsKeyPressed)
+                if (m_pressedKeys[uCurrentScan] & IsKeyPressed)
                 {
-                    uimachine()->putScancode(uScan | 0x80);
+                    uimachine()->putScancode(uCurrentScan | 0x80);
                 }
-                else if (m_pressedKeys[uScan] & IsExtKeyPressed)
+                else if (m_pressedKeys[uCurrentScan] & IsExtKeyPressed)
                 {
                     QVector<LONG> scancodes(2);
                     scancodes[0] = 0xE0;
-                    scancodes[1] = uScan | 0x80;
+                    scancodes[1] = uCurrentScan | 0x80;
                     uimachine()->putScancodes(scancodes);
                 }
-                m_pressedKeys[uScan] = 0;
+                m_pressedKeys[uCurrentScan] = 0;
             }
         }
     }
