@@ -3119,29 +3119,26 @@ int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
 void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const
 {
     /* Get console: */
-    const int cGuestScreens = machine().GetGraphicsAdapter().GetMonitorCount();
+    const ulong cGuestScreens = machine().GetGraphicsAdapter().GetMonitorCount();
     QList<QImage> images;
-    ULONG uMaxWidth  = 0;
-    ULONG uMaxHeight = 0;
+    ulong uMaxWidth  = 0;
+    ulong uMaxHeight = 0;
     /* First create screenshots of all guest screens and save them in a list.
      * Also sum the width of all images and search for the biggest image height. */
-    for (int i = 0; i < cGuestScreens; ++i)
+    for (ulong uScreenIndex = 0; uScreenIndex < cGuestScreens; ++uScreenIndex)
     {
-        ULONG width  = 0;
-        ULONG height = 0;
-        ULONG bpp    = 0;
-        LONG xOrigin = 0;
-        LONG yOrigin = 0;
-        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        display().GetScreenResolution(i, width, height, bpp, xOrigin, yOrigin, monitorStatus);
-        uMaxWidth  += width;
-        uMaxHeight  = RT_MAX(uMaxHeight, height);
-        QImage shot = QImage(width, height, QImage::Format_RGB32);
+        ulong uWidth = 0, uHeight = 0, uDummy = 0;
+        long iDummy = 0;
+        KGuestMonitorStatus enmDummy = KGuestMonitorStatus_Disabled;
+        uimachine()->acquireGuestScreenParameters(uScreenIndex, uWidth, uHeight, uDummy, iDummy, iDummy, enmDummy);
+        uMaxWidth  += uWidth;
+        uMaxHeight  = RT_MAX(uMaxHeight, uHeight);
+        QImage shot = QImage(uWidth, uHeight, QImage::Format_RGB32);
         /* For separate process: */
         if (uiCommon().isSeparateProcess())
         {
             /* Take screen-data to array first: */
-            const QVector<BYTE> screenData = display().TakeScreenShotToArray(i, shot.width(), shot.height(), KBitmapFormat_BGR0);
+            const QVector<BYTE> screenData = display().TakeScreenShotToArray(uScreenIndex, shot.width(), shot.height(), KBitmapFormat_BGR0);
             /* And copy that data to screen-shot if it is Ok: */
             if (display().isOk() && !screenData.isEmpty())
                 memcpy(shot.bits(), screenData.data(), shot.width() * shot.height() * 4);
@@ -3150,7 +3147,7 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
         else
         {
             /* Take the screen-shot directly: */
-            display().TakeScreenShot(i, shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
+            display().TakeScreenShot(uScreenIndex, shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
         }
         images << shot;
     }

@@ -294,13 +294,7 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
 
 quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayout) const
 {
-    ULONG uWidth = 0;
-    ULONG uHeight = 0;
-    ULONG uGuestBpp = 0;
-    LONG xOrigin = 0;
-    LONG yOrigin = 0;
     quint64 uUsedBits = 0;
-    KGuestMonitorStatus enmMonitorStatus = KGuestMonitorStatus_Enabled;
     const UIVisualStateType enmVisualStateType = machineLogic()->visualStateType();
     foreach (int iGuestScreen, m_guestScreens)
     {
@@ -313,8 +307,11 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
         AssertReturn(screen.isValid(), 0);
 
         /* Get some useful screen info: */
-        machineLogic()->display().GetScreenResolution(iGuestScreen, uWidth, uHeight, uGuestBpp,
-                                                      xOrigin, yOrigin, enmMonitorStatus);
+        ulong uDummy = 0, uGuestBpp = 0;
+        long iDummy = 0;
+        KGuestMonitorStatus enmDummy = KGuestMonitorStatus_Disabled;
+        uimachine()->acquireGuestScreenParameters(iGuestScreen, uDummy, uDummy, uGuestBpp,
+                                                  iDummy, iDummy, enmDummy);
         uUsedBits += screen.width() * /* display width */
                      screen.height() * /* display height */
                      uGuestBpp + /* guest bits per pixel */

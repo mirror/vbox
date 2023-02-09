@@ -742,7 +742,7 @@ void UINotificationMessage::cannotAcquireNATNetworkParameter(const CNATNetwork &
 }
 
 /* static */
-void UINotificationMessage::cannotAcquireDispayParameter(const CDisplay &comDisplay)
+void UINotificationMessage::cannotAcquireDisplayParameter(const CDisplay &comDisplay)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Display failure ..."),

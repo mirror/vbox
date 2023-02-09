@@ -275,6 +275,11 @@ public:
         bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
         /** Defines whether guest screen resize should be @a fIgnored. */
         void setGuestResizeIgnored(bool fIgnored) { m_fIsGuestResizeIgnored = fIgnored; }
+
+        /** Acquires parameters for guest-screen with passed uScreenId. */
+        bool acquireGuestScreenParameters(ulong uScreenId,
+                                          ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
+                                          long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus);
     /** @} */
 
     /** @name Guest additions stuff.

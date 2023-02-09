@@ -428,6 +428,15 @@ void UIMachine::setLastFullScreenSize(ulong uScreenId, QSize size)
     m_monitorLastFullScreenSizeVector[(int)uScreenId] = size;
 }
 
+bool UIMachine::acquireGuestScreenParameters(ulong uScreenId,
+                                             ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
+                                             long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus)
+{
+    return uisession()->acquireGuestScreenParameters(uScreenId,
+                                                     uWidth, uHeight, uBitsPerPixel,
+                                                     xOrigin, yOrigin, enmMonitorStatus);
+}
+
 bool UIMachine::isGuestAdditionsActive() const
 {
     return uisession()->isGuestAdditionsActive();
@@ -1292,14 +1301,12 @@ void UIMachine::prepareScreens()
         /* Update screen visibility status from display directly: */
         for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
         {
-            KGuestMonitorStatus enmStatus = KGuestMonitorStatus_Disabled;
-            ULONG uGuestWidth = 0, uGuestHeight = 0, uBpp = 0;
-            LONG iGuestOriginX = 0, iGuestOriginY = 0;
-            uisession()->display().GetScreenResolution(iScreenIndex,
-                                                       uGuestWidth, uGuestHeight, uBpp,
-                                                       iGuestOriginX, iGuestOriginY, enmStatus);
-            m_monitorVisibilityVector[iScreenIndex] = (   enmStatus == KGuestMonitorStatus_Enabled
-                                                       || enmStatus == KGuestMonitorStatus_Blank);
+            KGuestMonitorStatus enmMonitorStatus = KGuestMonitorStatus_Disabled;
+            ulong uDummy = 0;
+            long iDummy = 0;
+            acquireGuestScreenParameters(iScreenIndex, uDummy, uDummy, uDummy, iDummy, iDummy, enmMonitorStatus);
+            m_monitorVisibilityVector[iScreenIndex] = (   enmMonitorStatus == KGuestMonitorStatus_Enabled
+                                                       || enmMonitorStatus == KGuestMonitorStatus_Blank);
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */
         if (countOfVisibleWindows() < 1)

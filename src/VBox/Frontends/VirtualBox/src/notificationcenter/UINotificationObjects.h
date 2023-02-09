@@ -321,7 +321,7 @@ public:
         static void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork);
         /** Notifies about inability to acquire INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter get acquired from. */
-        static void cannotAcquireDispayParameter(const CDisplay &comDisplay);
+        static void cannotAcquireDisplayParameter(const CDisplay &comDisplay);
         /** Notifies about inability to acquire IUpdateAgent parameter.
           * @param  comAgent  Brings the object parameter get acquired from. */
         static void cannotAcquireUpdateAgentParameter(const CUpdateAgent &comAgent);

@@ -293,6 +293,11 @@ public:
         const QVector<UIFrameBuffer*> &frameBuffers() const { return m_frameBufferVector; }
         /** Returns frame-buffer size for screen with index @a uScreenId. */
         QSize frameBufferSize(ulong uScreenId) const;
+
+        /** Acquires parameters for guest-screen with passed uScreenId. */
+        bool acquireGuestScreenParameters(ulong uScreenId,
+                                          ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
+                                          long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus);
     /** @} */
 
     /** @name Status-bar stuff.

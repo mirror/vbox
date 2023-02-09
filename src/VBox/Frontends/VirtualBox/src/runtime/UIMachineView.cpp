@@ -884,15 +884,13 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
         return;
 
     /* Acquire current resolution: */
-    ULONG uWidth, uHeight, uBitsPerPixel;
-    LONG uOriginX, uOriginY;
-    KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-    display().GetScreenResolution(screenId(), uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
-    if (!display().isOk())
-    {
-        UINotificationMessage::cannotAcquireDispayParameter(display());
+    ulong uWidth = 0, uHeight = 0, uDummy = 0;
+    long iDummy = 0;
+    KGuestMonitorStatus enmDummy = KGuestMonitorStatus_Disabled;
+    const bool fSuccess = uimachine()->acquireGuestScreenParameters(screenId(), uWidth, uHeight,
+                                                                    uDummy, iDummy, iDummy, enmDummy);
+    if (!fSuccess)
         return;
-    }
 
     /* Update desirable screen status: */
     uimachine()->setScreenVisibleHostDesires(screenId(), fEnabled);

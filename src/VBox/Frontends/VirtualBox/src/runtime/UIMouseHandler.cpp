@@ -44,7 +44,6 @@
 #include "UIMessageCenter.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
-#include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 # include "CocoaEventHelper.h"
@@ -55,9 +54,6 @@
 #ifdef VBOX_WS_X11
 # include "VBoxUtils-x11.h"
 #endif
-
-/* COM includes: */
-#include "CDisplay.h"
 
 /* Other VBox includes: */
 #include <iprt/time.h>
@@ -549,11 +545,6 @@ UIMouseHandler::~UIMouseHandler()
 UIMachine *UIMouseHandler::uimachine() const
 {
     return machineLogic()->uimachine();
-}
-
-CDisplay &UIMouseHandler::display() const
-{
-    return machineLogic()->uisession()->display();
 }
 
 /* Event handler for registered machine-view(s): */
@@ -1136,10 +1127,10 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             else if (cpnt.y() > iCh - 1) cpnt.setY(iCh - 1);
 
             /* Determine shifting: */
-            LONG xShift = 0, yShift = 0;
-            ULONG dummy;
-            KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-            display().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
+            ulong uDummy;
+            long xShift = 0, yShift = 0;
+            KGuestMonitorStatus enmDummy = KGuestMonitorStatus_Disabled;
+            uimachine()->acquireGuestScreenParameters(uScreenId, uDummy, uDummy, uDummy, xShift, yShift, enmDummy);
             /* Set shifting: */
             cpnt.setX(cpnt.x() + xShift);
             cpnt.setY(cpnt.y() + yShift);
@@ -1197,7 +1188,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
 
-    LONG xShift = 0, yShift = 0;
+    long xShift = 0, yShift = 0;
 
 #ifdef VBOX_IS_QT6_OR_LATER /* QTouchDevice was consumed by QInputDevice in 6.0 */
     bool fTouchScreen = (pTouchEvent->device()->type() == QInputDevice::DeviceType::TouchScreen);
@@ -1210,9 +1201,9 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     if (fTouchScreen)
     {
-        ULONG dummy;
-        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        display().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
+        ulong uDummy;
+        KGuestMonitorStatus enmDummy = KGuestMonitorStatus_Disabled;
+        uimachine()->acquireGuestScreenParameters(uScreenId, uDummy, uDummy, uDummy, xShift, yShift, enmDummy);
     }
 
     /* Pass all multi-touch events into guest: */

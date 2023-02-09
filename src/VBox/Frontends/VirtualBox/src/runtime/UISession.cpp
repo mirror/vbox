@@ -396,6 +396,28 @@ QSize UISession::frameBufferSize(ulong uScreenId) const
     return pFramebuffer ? QSize(pFramebuffer->width(), pFramebuffer->height()) : QSize();
 }
 
+bool UISession::acquireGuestScreenParameters(ulong uScreenId,
+                                             ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
+                                             long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus)
+{
+    CDisplay comDisplay = display();
+    ULONG uGuestWidth = 0, uGuestHeight = 0, uGuestBitsPerPixel = 0;
+    LONG iGuestXOrigin = 0, iGuestYOrigin = 0;
+    KGuestMonitorStatus enmGuestMonitorStatus = KGuestMonitorStatus_Disabled;
+    comDisplay.GetScreenResolution(uScreenId, uGuestWidth, uGuestHeight, uGuestBitsPerPixel,
+                                   iGuestXOrigin, iGuestYOrigin, enmGuestMonitorStatus);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireDisplayParameter(comDisplay);
+    uWidth = uGuestWidth;
+    uHeight = uGuestHeight;
+    uBitsPerPixel = uGuestBitsPerPixel;
+    xOrigin = iGuestXOrigin;
+    yOrigin = iGuestYOrigin;
+    enmMonitorStatus = enmGuestMonitorStatus;
+    return fSuccess;
+}
+
 void UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     CConsole comConsole = console();
