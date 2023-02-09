@@ -59,7 +59,6 @@ class CConsole;
 class CDisplay;
 class CGuest;
 class CMouse;
-class CMachineDebugger;
 class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
@@ -127,8 +126,6 @@ public:
     CDisplay& display() const;
     /** Returns the console's guest reference. */
     CGuest& guest() const;
-    /** Returns the console's debugger reference. */
-    CMachineDebugger& debugger() const;
 
     /** Returns the machine name. */
     QString machineName() const;

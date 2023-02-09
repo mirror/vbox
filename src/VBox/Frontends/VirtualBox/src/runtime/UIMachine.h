@@ -418,10 +418,19 @@ public:
         void acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D);
         /** Acquires status info for Recording indicator. */
         void acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEnabled, bool &fMachinePaused);
-        /** Acquires CPU load @a iPercentage. */
-        void acquireCpuLoadPercentage(int &iPercentage);
         /** Acquires status info for Features indicator. */
         void acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &enmEngine);
+    /** @} */
+
+    /** @name Debugger stuff.
+     ** @{ */
+        /** Defines whether log is @a fEnabled. */
+        void setLogEnabled(bool fEnabled);
+        /** Returns whether log is enabled. */
+        bool isLogEnabled();
+
+        /** Returns CPU load percentage. */
+        int cpuLoadPercentage();
     /** @} */
 
     /** @name Close stuff.

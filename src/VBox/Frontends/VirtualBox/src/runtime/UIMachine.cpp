@@ -533,11 +533,6 @@ void UIMachine::acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEna
     uisession()->acquireRecordingStatusInfo(strInfo, fRecordingEnabled, fMachinePaused);
 }
 
-void UIMachine::acquireCpuLoadPercentage(int &iPercentage)
-{
-    uisession()->acquireCpuLoadPercentage(iPercentage);
-}
-
 void UIMachine::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &enmEngine)
 {
     enmEngine = vmExecutionEngine();
@@ -545,6 +540,21 @@ void UIMachine::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &
                                            isHWVirtExNestedPagingEnabled(),
                                            isHWVirtExUXEnabled(),
                                            paravirtProvider());
+}
+
+void UIMachine::setLogEnabled(bool fEnabled)
+{
+    uisession()->setLogEnabled(fEnabled);
+}
+
+bool UIMachine::isLogEnabled()
+{
+    return uisession()->isLogEnabled();
+}
+
+int UIMachine::cpuLoadPercentage()
+{
+    return uisession()->cpuLoadPercentage();
 }
 
 void UIMachine::detachUi()
@@ -1889,8 +1899,8 @@ bool UIMachine::isPointer1bpp(const uint8_t *pu8XorMask,
 
 void UIMachine::updateVirtualizationState()
 {
-    m_enmVMExecutionEngine = uisession()->debugger().GetExecutionEngine();
-    m_fIsHWVirtExNestedPagingEnabled = uisession()->debugger().GetHWVirtExNestedPagingEnabled();
-    m_fIsHWVirtExUXEnabled = uisession()->debugger().GetHWVirtExUXEnabled();
+    m_enmVMExecutionEngine = uisession()->executionEngineType();
+    m_fIsHWVirtExNestedPagingEnabled = uisession()->isHwVirtExNestedPagingEnabled();
+    m_fIsHWVirtExUXEnabled = uisession()->isHwVirtExUXEnabled();
     m_enmParavirtProvider = uisession()->machine().GetEffectiveParavirtProvider();
 }

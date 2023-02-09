@@ -318,12 +318,28 @@ public:
         void acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D);
         /** Acquires status info for Recording indicator. */
         void acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEnabled, bool &fMachinePaused);
-        /** Acquires CPU load @a iPercentage. */
-        void acquireCpuLoadPercentage(int &iPercentage);
         /** Acquires status info for Features indicator. */
         void acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &enmEngine,
                                        bool fNestedPagingEnabled, bool fUxEnabled,
                                        KParavirtProvider enmProvider);
+    /** @} */
+
+    /** @name Debugger stuff.
+     ** @{ */
+        /** Defines whether log is @a fEnabled. */
+        void setLogEnabled(bool fEnabled);
+        /** Returns whether log is enabled. */
+        bool isLogEnabled();
+
+        /** Returns VM's execution engine type. */
+        KVMExecutionEngine executionEngineType();
+        /** Returns whether nested paging hardware virtualization extension is enabled. */
+        bool isHwVirtExNestedPagingEnabled();
+        /** Returns whether UX hardware virtualization extension is enabled. */
+        bool isHwVirtExUXEnabled();
+
+        /** Returns CPU load percentage. */
+        int cpuLoadPercentage();
     /** @} */
 
     /** @name Close stuff.

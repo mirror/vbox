@@ -1456,11 +1456,6 @@ CDisplay& UIMachineView::display() const
     return uisession()->display();
 }
 
-CGuest& UIMachineView::guest() const
-{
-    return uisession()->guest();
-}
-
 UIActionPool* UIMachineView::actionPool() const
 {
     return machineWindow()->actionPool();

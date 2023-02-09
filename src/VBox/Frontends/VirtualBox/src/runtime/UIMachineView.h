@@ -281,8 +281,6 @@ protected:
     CConsole& console() const;
     /** Returns the console's display reference. */
     CDisplay& display() const;
-    /** Returns the console's guest reference. */
-    CGuest& guest() const;
 
     /* Protected getters: */
     UIActionPool* actionPool() const;

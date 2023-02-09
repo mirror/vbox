@@ -741,7 +741,7 @@ private slots:
     /** Handles timer timeout with CPU load percentage update. */
     void sltHandleTimeout()
     {
-        m_pMachine->acquireCpuLoadPercentage(m_iCPULoadPercentage);
+        m_iCPULoadPercentage = m_pMachine->cpuLoadPercentage();
         update();
     }
 
