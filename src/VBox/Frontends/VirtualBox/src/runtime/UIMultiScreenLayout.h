@@ -32,15 +32,17 @@
 #endif
 
 /* Qt includes: */
-#include <QObject>
 #include <QMap>
+#include <QObject>
 
 /* Forward declarations: */
+class UIActionPool;
+class UIMachine;
 class UIMachineLogic;
-class QMenu;
-class QAction;
 
-/* Multi-screen layout manager: */
+/** QObject subclass containing a part of
+  * machine-logic related to multi-screen layout handling.
+  * Used in such modes as Full-screen and Seamless. */
 class UIMultiScreenLayout : public QObject
 {
     Q_OBJECT;
@@ -52,44 +54,72 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
+    /** Constructs multi-screen layout passing @a pMachineLogic to the base-class.
+      * @param  pMachineLogic  Brings the parent machine-logic reference. */
     UIMultiScreenLayout(UIMachineLogic *pMachineLogic);
 
-    /* API: Update stuff: */
-    void update();
-    void rebuild();
-
-    /* API: Getters: */
-    int hostScreenCount() const;
-    int guestScreenCount() const;
-    int hostScreenForGuestScreen(int iScreenId) const;
+    /** Returns whether there is host-monitor suitable for guest-screen with @a iScreenId specified. */
     bool hasHostScreenForGuestScreen(int iScreenId) const;
+    /** Returns a host-monitor suitable for guest-screen with @a iScreenId specified. */
+    int hostScreenForGuestScreen(int iScreenId) const;
+
+    /** Returns video memory requirements for currently cached multi-screen layout. */
     quint64 memoryRequirements() const;
+
+    /** Updates multi-screen layout on the basis
+      * of known host/guest screen count. */
+    void update();
+    /** Updates everything.
+      * Recalculates host/guest screen count
+      * and calls for update wrapper above. */
+    void rebuild();
 
 private slots:
 
-    /* Handler: Screen change stuff: */
-    void sltHandleScreenLayoutChange(int iRequestedGuestScreen, int iRequestedHostScreen);
+    /** Handles screen layout change request.
+      * @param  iRequestedGuestScreen  Brings the index of guest-screen which needs to be mapped to certain host-monitor.
+      * @param  iRequestedHostMonitor  Brings the index of host-monitor which needs to be mapped to certain guest-screen.*/
+    void sltHandleScreenLayoutChange(int iRequestedGuestScreen, int iRequestedHostMonitor);
 
 private:
 
-    /* Helpers: Prepare stuff: */
-    void calculateHostMonitorCount();
-    void calculateGuestScreenCount();
+    /** Prepares everything. */
+    void prepare();
+    /** Prepares connections. */
     void prepareConnections();
 
-    /* Other helpers: */
-    void saveScreenMapping();
+    /** Returns parent machine-logic reference. */
+    UIMachineLogic *machineLogic() const { return m_pMachineLogic; }
+    /** Returns machine UI reference. */
+    UIMachine *uimachine() const;
+    /** Returns action-pool reference. */
+    UIActionPool *actionPool() const;
+
+    /** Recalculates host-monitor count. */
+    void calculateHostMonitorCount();
+    /** Recalculates guest-screen count. */
+    void calculateGuestScreenCount();
+
+    /** Calculates memory requirements for passed @a screenLayout. */
     quint64 memoryRequirements(const QMap<int, int> &screenLayout) const;
 
-    /* Variables: */
+    /** Holds the machine-logic reference. */
     UIMachineLogic *m_pMachineLogic;
-    QList<int> m_guestScreens;
-    QList<int> m_disabledGuestScreens;
-    const uint m_cGuestScreens;
-    int m_cHostScreens;
+
+    /** Holds the number of guest-screens. */
+    const uint  m_cGuestScreens;
+    /** Holds the number of host-monitors. */
+    int         m_cHostMonitors;
+
+    /** Holds currently cached enabled guest-screens. */
+    QList<int>  m_guestScreens;
+    /** Holds currently cached disabled guest-screens. */
+    QList<int>  m_disabledGuestScreens;
+
+    /** Holds the cached screens map.
+      * The keys used for guest-screens.
+      * The values used for host-monitors. */
     QMap<int, int> m_screenMap;
-    QList<QMenu*> m_screenMenuList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIMultiScreenLayout_h */
