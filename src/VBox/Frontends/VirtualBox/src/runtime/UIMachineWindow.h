@@ -93,8 +93,6 @@ public:
     /** Returns action-pool reference. */
     UIActionPool *actionPool() const;
 
-    /** Returns the session reference. */
-    CSession& session() const;
     /** Returns the session's machine reference. */
     CMachine& machine() const;
     /** Returns the session's console reference. */

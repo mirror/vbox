@@ -273,8 +273,6 @@ protected:
     virtual void cleanupNativeFilters();
     //virtual void saveMachineViewSettings() {}
 
-    /** Returns the session reference. */
-    CSession& session() const;
     /** Returns the session's machine reference. */
     CMachine& machine() const;
     /** Returns the session's console reference. */

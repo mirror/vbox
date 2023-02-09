@@ -470,7 +470,6 @@ int UIDnDHandler::dragCheckPending(ulong screenID)
      * Note: This function *blocks* until the actual drag'n drop operation
      *       has been finished (successfully or not)!
      */
-    CGuest guest = m_pSession->guest();
 
     /* Clear our current data set. */
     m_dataSource.lstFormats.clear();

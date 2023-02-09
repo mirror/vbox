@@ -1436,11 +1436,6 @@ void UIMachineView::cleanupNativeFilters()
     }
 }
 
-CSession& UIMachineView::session() const
-{
-    return uisession()->session();
-}
-
 CMachine& UIMachineView::machine() const
 {
     return uisession()->machine();

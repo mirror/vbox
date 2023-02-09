@@ -221,11 +221,6 @@ UIActionPool *UIMachineWindow::actionPool() const
     return machineLogic()->actionPool();
 }
 
-CSession& UIMachineWindow::session() const
-{
-    return uisession()->session();
-}
-
 CMachine& UIMachineWindow::machine() const
 {
     return uisession()->machine();
