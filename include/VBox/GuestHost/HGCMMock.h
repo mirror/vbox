@@ -699,6 +699,13 @@ VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
     return tstHgcmMockSvcDisconnect(pSvc, pSvc->fnTable.pvService, idClient);
 }
 
+VBGLR3DECL(int) VbglR3GetSessionId(uint64_t *pu64IdSession)
+{
+    if (pu64IdSession)
+        *pu64IdSession = 42;
+    return VINF_SUCCESS;
+}
+
 /**
  * Makes a fully prepared HGCM call to an HGCM mock service.
  *
