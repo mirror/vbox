@@ -6340,7 +6340,7 @@ static int iemVmxVmentryCheckEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr, VMXVDIAG *
  */
 static int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr) RT_NOEXCEPT
 {
-    PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+    PVMXVVMCS pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     const char * const pszFailure = "VMFail";
     bool const fVmxTrueMsrs       = RT_BOOL(pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Basic & VMX_BF_BASIC_TRUE_CTLS_MASK);
 
