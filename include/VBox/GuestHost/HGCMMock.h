@@ -214,8 +214,8 @@ int                TstHgcmMockSvcHostCall(PTSTHGCMMOCKSVC pSvc, void *pvService,
 
 VBGLR3DECL(int)    VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)    VbglR3HGCMDisconnect(HGCMCLIENTID idClient);
+VBGLR3DECL(int)    VbglR3GetSessionId(uint64_t *pu64IdSession);
 VBGLR3DECL(int)    VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo);
-
 
 
 /*********************************************************************************************************************************
@@ -699,6 +699,12 @@ VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
     return tstHgcmMockSvcDisconnect(pSvc, pSvc->fnTable.pvService, idClient);
 }
 
+/**
+ * Query the session ID of the mocked VM.
+ *
+ * @returns IPRT status code.
+ * @param   pu64IdSession       Session id (out).
+ */
 VBGLR3DECL(int) VbglR3GetSessionId(uint64_t *pu64IdSession)
 {
     if (pu64IdSession)
