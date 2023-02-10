@@ -87,7 +87,6 @@ class WuiAdminBuildList(WuiListContentBase):
     WUI Admin Build List Content Generator.
     """
 
-    ksResultsSortByOs_Darwin = ''
     def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Builds', sId = 'builds', fnDPrint = fnDPrint, oDisp = oDisp,
