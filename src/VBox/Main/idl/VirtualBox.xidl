@@ -14244,6 +14244,34 @@
   </enum>
 
   <enum
+    name="DirectoryStatus"
+    uuid="a50ca1fc-85a9-4a7a-b755-68c3db01caf1"
+    >
+    <desc>
+      Directory statuses.
+    </desc>
+
+    <const name="Undefined"             value="0">
+      <desc>Directory is in an undefined state.</desc>
+    </const>
+    <const name="Open"                  value="1">
+      <desc>Guest directory has been successfully opened.</desc>
+    </const>
+    <const name="Close"                 value="2">
+      <desc>Guest directory has been closed.</desc>
+    </const>
+    <const name="Rewind"                value="3">
+      <desc>Guest directory reading was rewound.</desc>
+    </const>
+    <const name="Down"                  value="4">
+      <desc>Service/OS is stopping, guest directory was closed.</desc>
+    </const>
+    <const name="Error"                 value="5">
+      <desc>Something went wrong.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="FileAccessMode"
     uuid="231a578f-47fb-ea30-3b3e-8489558227f0"
     >
@@ -16379,7 +16407,7 @@
 
   <interface
     name="IDirectory" extends="$unknown"
-    uuid="758d7eac-e4b1-486a-8f2e-747ae346c3e9"
+    uuid="c7b24ad6-dba7-486c-b1ed-5f16d8d6da22"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -16391,8 +16419,26 @@
       <desc>The path specified when opening the directory.</desc>
     </attribute>
 
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for directory events.
+      </desc>
+    </attribute>
+
     <attribute name="filter" type="wstring" readonly="yes">
       <desc>Directory listing filter to (specified when opening the directory).</desc>
+    </attribute>
+
+    <attribute name="id" type="unsigned long" readonly="yes">
+      <desc>
+        The ID VirtualBox internally assigned to the open directory.
+      </desc>
+    </attribute>
+
+    <attribute name="status" type="DirectoryStatus" readonly="yes">
+      <desc>
+        Current directory status.
+      </desc>
     </attribute>
 
     <method name="close">
@@ -16413,6 +16459,12 @@
         <desc>Object information of the current directory entry read. Also see
           <link to="IFsObjInfo"/>.</desc>
       </param>
+    </method>
+
+    <method name="rewind">
+      <desc>
+        Rewinds the directory reading.
+      </desc>
     </method>
 
     <!-- Would be useful to add queryInfo() and setACL() here later, but at
@@ -16798,7 +16850,7 @@
     </attribute>
     <attribute name="fileAttributes" type="wstring" readonly="yes">
       <desc>
-        File attributes. Not implemented yet.
+        File attributes.
       </desc>
     </attribute>
     <attribute name="objectSize" type="long long" readonly="yes">
@@ -26259,7 +26311,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="e4c5252d-7d1a-4051-8cfb-5b2d7a73d992"
+    uuid="03b0e6ea-28fe-4f0a-a3ec-1a21703da6f7"
     >
 
     <desc>
@@ -26758,8 +26810,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IMachineGroupsChangedEvent">IMachineGroupsChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestDirectoryRegistered" value="119">
+      <desc>
+        See <link to="IGuestDirectoryRegisteredEvent">IGuestDirectoryRegisteredEvent</link>.
+      </desc>
+    </const>
+    <const name="OnGuestDirectoryStateChanged" value="120">
+      <desc>
+        See <link to="IGuestDirectoryStateChangedEvent">IGuestDirectoryStateChangedEvent</link>.
+      </desc>
+    </const>
+    <const name="OnGuestDirectoryRead" value="121">
+      <desc>
+        See <link to="IGuestDirectoryReadEvent">IGuestDirectoryReadEvent</link>.
+        <note internal="yes">For performance reasons this is a separate event to
+          not unnecessarily overflow the event queue.</note>
+      </desc>
+    </const>
     <!-- End event marker -->
-    <const name="End" value="119">
+    <const name="End" value="122">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -27978,6 +28047,83 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Actual output data.
       </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IGuestDirectoryEvent" extends="IGuestSessionEvent"
+    uuid="02b69798-7cc2-4005-ac57-1ad7ff7a0997"
+    wsmap="managed"
+    >
+    <desc>Base abstract interface for all guest directory events.</desc>
+
+    <attribute name="directory" type="IGuestDirectory" readonly="yes">
+      <desc>
+        Guest directory object which is related to this event.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IGuestDirectoryRegisteredEvent" extends="IGuestDirectoryEvent"
+    uuid="926baa39-cfc9-462e-a1a1-c439e28f7f89"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestDirectoryRegistered"
+    >
+    <desc>
+      Notification when a guest directory was registered or unregistered.
+    </desc>
+
+    <attribute name="registered" type="boolean" readonly="yes">
+      <desc>
+        If @c true, the guest directory was registered, otherwise it was
+        unregistered.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IGuestDirectoryStateChangedEvent" extends="IGuestDirectoryEvent"
+    uuid="c32bce60-d69d-4eb7-a02a-411ecbab6a18"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestDirectoryStateChanged"
+    >
+    <desc>
+      Notification when a guest directory changed its state.
+    </desc>
+
+    <attribute name="status" type="DirectoryStatus" readonly="yes">
+      <desc>
+        New guest directory status.
+      </desc>
+    </attribute>
+    <attribute name="error" type="IVirtualBoxErrorInfo" readonly="yes">
+      <desc>
+        Error information in case of new session status is indicating an error.
+
+        The attribute <link to="IVirtualBoxErrorInfo::resultDetail"/> will contain
+        the runtime (IPRT) error code from the guest. See include/iprt/err.h and
+        include/VBox/err.h for details.
+      </desc>
+    </attribute>
+    <!-- Note: No events for reads for performance reasons.
+               See dedicated event IGuestDirectoryReadEvent. -->
+
+  </interface>
+
+  <interface
+    name="IGuestDirectoryReadEvent" extends="IGuestDirectoryEvent"
+    uuid="6eef78d9-51d6-495b-8f91-807654a189a2"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestDirectoryRead"
+    >
+    <desc>
+      Notification when a directory entry has been read.
+    </desc>
+
+    <attribute name="objInfo" type="IFsObjInfo" readonly="yes">
+      <desc>Object information of the current directory entry read. Also see
+        <link to="IFsObjInfo"/>.</desc>
     </attribute>
 
   </interface>

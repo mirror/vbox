@@ -228,14 +228,14 @@ struct GuestProcessToolErrorInfo
  * Note! When implementing new functionality / commands, do *not* use this approach anymore!
  *       This class has to be kept to guarantee backwards-compatibility.
  */
-class GuestProcessTool
+class GuestProcessToolbox
 {
 public:
     DECLARE_TRANSLATE_METHODS(GuestProcessTool)
 
-    GuestProcessTool(void);
+    GuestProcessToolbox(void);
 
-    virtual ~GuestProcessTool(void);
+    virtual ~GuestProcessToolbox(void);
 
 public:
 
@@ -243,19 +243,19 @@ public:
 
     void uninit(void);
 
-    int getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
+    int getCurrentBlock(uint32_t uHandle, GuestToolboxStreamBlock &strmBlock);
 
     int getRc(void) const;
 
     /** Returns the stdout output from the guest process tool. */
-    GuestProcessStream &getStdOut(void) { return mStdOut; }
+    GuestToolboxStream &getStdOut(void) { return mStdOut; }
 
     /** Returns the stderr output from the guest process tool. */
-    GuestProcessStream &getStdErr(void) { return mStdErr; }
+    GuestToolboxStream &getStdErr(void) { return mStdErr; }
 
     int wait(uint32_t fToolWaitFlags, int *pvrcGuest);
 
-    int waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *pStreamBlock, int *pvrcGuest);
+    int waitEx(uint32_t fToolWaitFlags, GuestToolboxStreamBlock *pStreamBlock, int *pvrcGuest);
 
     bool isRunning(void);
 
@@ -301,9 +301,9 @@ protected:
     /** The toolbox' startup info. */
     GuestProcessStartupInfo     mStartupInfo;
     /** Stream object for handling the toolbox' stdout data. */
-    GuestProcessStream          mStdOut;
+    GuestToolboxStream          mStdOut;
     /** Stream object for handling the toolbox' stderr data. */
-    GuestProcessStream          mStdErr;
+    GuestToolboxStream          mStdErr;
 };
 
 #endif /* !MAIN_INCLUDED_GuestProcessImpl_h */

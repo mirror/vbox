@@ -490,6 +490,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_GUESTDEBUGCONTROL,
     /** Main group, IGuestDirectory. */
     LOG_GROUP_MAIN_GUESTDIRECTORY,
+    /** Main group, IGuestDirectoryEvent. */
+    LOG_GROUP_MAIN_GUESTDIRECTORYEVENT,
     /** Main group, IGuestDnDSource. */
     LOG_GROUP_MAIN_GUESTDNDSOURCE,
     /** Main group, IGuestDnDTarget. */
@@ -1062,6 +1064,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_GUEST", \
     "MAIN_GUESTDEBUGCONTROL", \
     "MAIN_GUESTDIRECTORY", \
+    "MAIN_GUESTDIRECTORYEVENT", \
     "MAIN_GUESTDNDSOURCE", \
     "MAIN_GUESTDNDTARGET", \
     "MAIN_GUESTERRORINFO", \

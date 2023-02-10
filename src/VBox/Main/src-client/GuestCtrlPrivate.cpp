@@ -52,6 +52,177 @@
 #include <VBox/AssertGuest.h>
 
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+/**
+ * Returns a stringyfied error of a guest fs error.
+ *
+ * @returns Stringyfied error.
+ * @param   guestErrorInfo      Guest error info to get stringyfied error for.
+ */
+/* static */
+Utf8Str GuestFs::guestErrorToString(const GuestErrorInfo &guestErrorInfo)
+{
+    Utf8Str strErr;
+
+    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
+    switch (guestErrorInfo.getVrc())
+    {
+        case VERR_ACCESS_DENIED:
+            strErr.printf(tr("Access to \"%s\" denied"), guestErrorInfo.getWhat().c_str());
+            break;
+
+        case VERR_FILE_NOT_FOUND: /* This is the most likely error. */
+            RT_FALL_THROUGH();
+        case VERR_PATH_NOT_FOUND:
+            strErr.printf(tr("No such file or directory \"%s\""), guestErrorInfo.getWhat().c_str());
+            break;
+
+        case VERR_INVALID_VM_HANDLE:
+            strErr.printf(tr("VMM device is not available (is the VM running?)"));
+            break;
+
+        case VERR_HGCM_SERVICE_NOT_FOUND:
+            strErr.printf(tr("The guest execution service is not available"));
+            break;
+
+        case VERR_BAD_EXE_FORMAT:
+            strErr.printf(tr("The file \"%s\" is not an executable format"), guestErrorInfo.getWhat().c_str());
+            break;
+
+        case VERR_AUTHENTICATION_FAILURE:
+            strErr.printf(tr("The user \"%s\" was not able to logon"), guestErrorInfo.getWhat().c_str());
+            break;
+
+        case VERR_INVALID_NAME:
+            strErr.printf(tr("The file \"%s\" is an invalid name"), guestErrorInfo.getWhat().c_str());
+            break;
+
+        case VERR_TIMEOUT:
+            strErr.printf(tr("The guest did not respond within time"));
+            break;
+
+        case VERR_CANCELLED:
+            strErr.printf(tr("The execution operation was canceled"));
+            break;
+
+        case VERR_GSTCTL_MAX_CID_OBJECTS_REACHED:
+            strErr.printf(tr("Maximum number of concurrent guest processes has been reached"));
+            break;
+
+        case VERR_NOT_FOUND:
+            strErr.printf(tr("The guest execution service is not ready (yet)"));
+            break;
+
+        default:
+            strErr.printf(tr("Unhandled error %Rrc for \"%s\" occurred on guest -- please file a bug report"),
+                          guestErrorInfo.getVrc(), guestErrorInfo.getWhat().c_str());
+            break;
+    }
+
+    return strErr;
+}
+
+
+/**
+ * Set the file system object data from a given GSTCTLFSOBJINFO struct.
+ *
+ * @returns VBox status code.
+ * @param   pFsObjInfo          Pointer to GSTCTLFSOBJINFO struct to use.
+ * @param   strUser             Resolved user name owning the object on the guest.
+ * @param   strGroups           Resolved user group(s) the object on the guest is associated with.
+ *                              On Windows there can be multiple groups assigned. The groups are separated with ";"
+ *                              The first group found is always the primary group.
+ * @param   pvACL               ACL data associated with the object.
+ * @param   cbACL               Size of ACL data (in bytes) associated with the object.
+ */
+int GuestFsObjData::FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo,
+                                       const Utf8Str &strUser /* = "" */, const Utf8Str &strGroups /* = "" */, const void *pvACL /* = NULL */, size_t cbACL /* = 0 */)
+{
+    RT_NOREF(pvACL, cbACL);
+
+    int rc;
+
+    mType = GuestBase::fileModeToFsObjType(pFsObjInfo->Attr.fMode);
+
+    mFileAttrs = "";
+    switch (mType)
+    {
+        case FsObjType_File:      mFileAttrs += '-'; break;
+        case FsObjType_Directory: mFileAttrs += 'd'; break;
+        case FsObjType_Symlink:   mFileAttrs += 'l'; break;
+        case FsObjType_DevChar:   mFileAttrs += 'c'; break;
+        case FsObjType_DevBlock:  mFileAttrs += 'b'; break;
+        case FsObjType_Fifo:      mFileAttrs += 'f'; break;
+        case FsObjType_Socket:    mFileAttrs += 's'; break;
+        case FsObjType_WhiteOut:  mFileAttrs += 'w'; break;
+        default:
+            mFileAttrs += '?';
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+            break;
+    }
+
+#define ADD_ATTR(a_Flag, a_Set, a_Clear) \
+    mFileAttrs += pFsObjInfo->Attr.fMode & a_Flag ? a_Set : a_Clear
+
+    ADD_ATTR(RTFS_UNIX_IRUSR, 'r', '-');
+    ADD_ATTR(RTFS_UNIX_IWUSR, 'w', '-');
+    ADD_ATTR(RTFS_UNIX_IXUSR, 'x', '-');
+
+    ADD_ATTR(RTFS_UNIX_IRGRP, 'r', '-');
+    ADD_ATTR(RTFS_UNIX_IWGRP, 'w', '-');
+    ADD_ATTR(RTFS_UNIX_IXGRP, 'x', '-');
+
+    ADD_ATTR(RTFS_UNIX_IROTH, 'r', '-');
+    ADD_ATTR(RTFS_UNIX_IWOTH, 'w', '-');
+    ADD_ATTR(RTFS_UNIX_IXOTH, 'x', '-');
+
+    /** @todo Implement sticky bits. */
+    mFileAttrs += "   "; /* Reserve 3 chars for sticky bits. */
+
+    mFileAttrs += " "; /* Separator. */
+
+    ADD_ATTR(RTFS_DOS_READONLY              , 'R', '-');
+    ADD_ATTR(RTFS_DOS_HIDDEN                , 'H', '-');
+    ADD_ATTR(RTFS_DOS_SYSTEM                , 'S', '-');
+    ADD_ATTR(RTFS_DOS_DIRECTORY             , 'D', '-');
+    ADD_ATTR(RTFS_DOS_ARCHIVED              , 'A', '-');
+    ADD_ATTR(RTFS_DOS_NT_DEVICE             , 'd', '-');
+    ADD_ATTR(RTFS_DOS_NT_NORMAL             , 'N', '-');
+    ADD_ATTR(RTFS_DOS_NT_TEMPORARY          , 'T', '-');
+    ADD_ATTR(RTFS_DOS_NT_SPARSE_FILE        , 'P', '-');
+    ADD_ATTR(RTFS_DOS_NT_REPARSE_POINT      , 'J', '-');
+    ADD_ATTR(RTFS_DOS_NT_COMPRESSED         , 'C', '-');
+    ADD_ATTR(RTFS_DOS_NT_OFFLINE            , 'O', '-');
+    ADD_ATTR(RTFS_DOS_NT_NOT_CONTENT_INDEXED, 'I', '-');
+    ADD_ATTR(RTFS_DOS_NT_ENCRYPTED          , 'E', '-');
+
+#undef ADD_ATTR
+
+    mObjectSize       = pFsObjInfo->cbObject;
+    mAllocatedSize    = pFsObjInfo->cbAllocated;
+    mAccessTime       = pFsObjInfo->AccessTime.i64NanosecondsRelativeToUnixEpoch;
+    mBirthTime        = pFsObjInfo->BirthTime.i64NanosecondsRelativeToUnixEpoch;
+    mChangeTime       = pFsObjInfo->ChangeTime.i64NanosecondsRelativeToUnixEpoch;
+    mModificationTime = pFsObjInfo->ModificationTime.i64NanosecondsRelativeToUnixEpoch;
+    mUserName         = strUser;
+    mUID              = pFsObjInfo->Attr.u.Unix.uid;
+    mGID              = pFsObjInfo->Attr.u.Unix.gid;
+    mGroupName        = strGroups; /** @todo Separate multiple group. */
+    mNumHardLinks     = pFsObjInfo->Attr.u.Unix.cHardlinks;
+    mNodeIDDevice     = pFsObjInfo->Attr.u.Unix.INodeIdDevice;
+    mNodeID           = pFsObjInfo->Attr.u.Unix.INodeId;
+    mDeviceNumber     =    RTFS_IS_DEV_BLOCK(pFsObjInfo->Attr.fMode)
+                        || RTFS_IS_DEV_CHAR (pFsObjInfo->Attr.fMode) ? pFsObjInfo->Attr.u.Unix.Device : 0;
+    mGenerationID     = pFsObjInfo->Attr.u.Unix.GenerationId;
+    mUserFlags        = 0;
+
+    mACL              = ""; /** @todo Implement ACL handling. */
+
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
 /**
  * Extracts the timespec from a given stream block key.
  *
@@ -61,7 +232,7 @@
  * @param  pTimeSpec            Where to store the extracted timespec.
  */
 /* static */
-PRTTIMESPEC GuestFsObjData::TimeSpecFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey, PRTTIMESPEC pTimeSpec)
+PRTTIMESPEC GuestFsObjData::TimeSpecFromKey(const GuestToolboxStreamBlock &strmBlk, const Utf8Str &strKey, PRTTIMESPEC pTimeSpec)
 {
     AssertPtrReturn(pTimeSpec, NULL);
 
@@ -83,7 +254,7 @@ PRTTIMESPEC GuestFsObjData::TimeSpecFromKey(const GuestProcessStreamBlock &strmB
  * @param  strKey               Key to get nanoseconds for.
  */
 /* static */
-int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey)
+int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestToolboxStreamBlock &strmBlk, const Utf8Str &strKey)
 {
     RTTIMESPEC TimeSpec;
     if (!GuestFsObjData::TimeSpecFromKey(strmBlk, strKey, &TimeSpec))
@@ -102,7 +273,7 @@ int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBl
  * @param  strmBlk              Stream block to use for initialization.
  * @param  fLong                Whether the stream block contains long (detailed) information or not.
  */
-int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
+int GuestFsObjData::FromToolboxLs(const GuestToolboxStreamBlock &strmBlk, bool fLong)
 {
     LogFlowFunc(("\n"));
 #ifdef DEBUG
@@ -252,7 +423,7 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
  * @returns VBox status code.
  * @param   strmBlk             Stream block output data to parse.
  */
-int GuestFsObjData::FromRm(const GuestProcessStreamBlock &strmBlk)
+int GuestFsObjData::FromToolboxRm(const GuestToolboxStreamBlock &strmBlk)
 {
 #ifdef DEBUG
     strmBlk.DumpToLog();
@@ -271,10 +442,10 @@ int GuestFsObjData::FromRm(const GuestProcessStreamBlock &strmBlk)
  * @returns VBox status code.
  * @param   strmBlk             Stream block output data to parse.
  */
-int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
+int GuestFsObjData::FromToolboxStat(const GuestToolboxStreamBlock &strmBlk)
 {
     /* Should be identical output. */
-    return GuestFsObjData::FromLs(strmBlk, true /*fLong*/);
+    return GuestFsObjData::FromToolboxLs(strmBlk, true /*fLong*/);
 }
 
 /**
@@ -284,7 +455,7 @@ int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
  * @returns VBox status code.
  * @param   strmBlk             Stream block output data to parse.
  */
-int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
+int GuestFsObjData::FromToolboxMkTemp(const GuestToolboxStreamBlock &strmBlk)
 {
     LogFlowFunc(("\n"));
 
@@ -300,6 +471,8 @@ int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
+
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 /**
  * Returns the IPRT-compatible file mode.
@@ -336,15 +509,16 @@ RTFMODE GuestFsObjData::GetFileMode(void) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
 /** @todo *NOT* thread safe yet! */
 /** @todo Add exception handling for STL stuff! */
 
-GuestProcessStreamBlock::GuestProcessStreamBlock(void)
+GuestToolboxStreamBlock::GuestToolboxStreamBlock(void)
 {
 
 }
 
-GuestProcessStreamBlock::~GuestProcessStreamBlock()
+GuestToolboxStreamBlock::~GuestToolboxStreamBlock()
 {
     Clear();
 }
@@ -352,7 +526,7 @@ GuestProcessStreamBlock::~GuestProcessStreamBlock()
 /**
  * Clears (destroys) the currently stored stream pairs.
  */
-void GuestProcessStreamBlock::Clear(void)
+void GuestToolboxStreamBlock::Clear(void)
 {
     mPairs.clear();
 }
@@ -361,7 +535,7 @@ void GuestProcessStreamBlock::Clear(void)
 /**
  * Dumps the currently stored stream pairs to the (debug) log.
  */
-void GuestProcessStreamBlock::DumpToLog(void) const
+void GuestToolboxStreamBlock::DumpToLog(void) const
 {
     LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items):\n",
                  this, mPairs.size()));
@@ -381,7 +555,7 @@ void GuestProcessStreamBlock::DumpToLog(void) const
  * @param  pszKey               Name of key to get the value for.
  * @param  piVal                Pointer to value to return.
  */
-int GuestProcessStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal) const
+int GuestToolboxStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal) const
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
     AssertPtrReturn(piVal, VERR_INVALID_POINTER);
@@ -400,7 +574,7 @@ int GuestProcessStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal) cons
  * @return  int64_t             Value to return, 0 if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
-int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey) const
+int64_t GuestToolboxStreamBlock::GetInt64(const char *pszKey) const
 {
     int64_t iVal;
     if (RT_SUCCESS(GetInt64Ex(pszKey, &iVal)))
@@ -413,7 +587,7 @@ int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey) const
  *
  * @return  uint32_t            Current number of stream pairs.
  */
-size_t GuestProcessStreamBlock::GetCount(void) const
+size_t GuestToolboxStreamBlock::GetCount(void) const
 {
     return mPairs.size();
 }
@@ -424,7 +598,7 @@ size_t GuestProcessStreamBlock::GetCount(void) const
  * @return  VBox status code.
  * @retval  VERR_NOT_FOUND if the return code string ("rc") was not found.
  */
-int GuestProcessStreamBlock::GetVrc(void) const
+int GuestToolboxStreamBlock::GetVrc(void) const
 {
     const char *pszValue = GetString("rc");
     if (pszValue)
@@ -439,7 +613,7 @@ int GuestProcessStreamBlock::GetVrc(void) const
  * @return  uint32_t            Pointer to string to return, NULL if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
-const char *GuestProcessStreamBlock::GetString(const char *pszKey) const
+const char *GuestToolboxStreamBlock::GetString(const char *pszKey) const
 {
     AssertPtrReturn(pszKey, NULL);
 
@@ -463,7 +637,7 @@ const char *GuestProcessStreamBlock::GetString(const char *pszKey) const
  * @param   pszKey              Name of key to get the value for.
  * @param   puVal               Pointer to value to return.
  */
-int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal) const
+int GuestToolboxStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal) const
 {
     const char *pszValue = GetString(pszKey);
     if (pszValue)
@@ -481,7 +655,7 @@ int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal) co
  * @param   pszKey              Name of key to get the value for.
  * @param   iDefault            The default to return on error if not found.
  */
-int32_t GuestProcessStreamBlock::GetInt32(const char *pszKey, int32_t iDefault) const
+int32_t GuestToolboxStreamBlock::GetInt32(const char *pszKey, int32_t iDefault) const
 {
     const char *pszValue = GetString(pszKey);
     if (pszValue)
@@ -502,7 +676,7 @@ int32_t GuestProcessStreamBlock::GetInt32(const char *pszKey, int32_t iDefault) 
  * @param   pszKey              Name of key to get the value for.
  * @param   uDefault            The default value to return.
  */
-uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey, uint32_t uDefault /*= 0*/) const
+uint32_t GuestToolboxStreamBlock::GetUInt32(const char *pszKey, uint32_t uDefault /*= 0*/) const
 {
     uint32_t uVal;
     if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))
@@ -517,7 +691,7 @@ uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey, uint32_t uDefaul
  * @param   pszKey              Key name to process.
  * @param   pszValue            Value to set. Set NULL for deleting the key.
  */
-int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
+int GuestToolboxStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
 
@@ -537,7 +711,7 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 
         if (pszValue)
         {
-            GuestProcessStreamValue val(pszValue);
+            GuestToolboxStreamValue val(pszValue);
             mPairs[strKey] = val;
         }
     }
@@ -550,14 +724,14 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-GuestProcessStream::GuestProcessStream(void)
+GuestToolboxStream::GuestToolboxStream(void)
     : m_cbMax(_32M)
     , m_cbAllocated(0)
     , m_cbUsed(0)
     , m_offBuffer(0)
     , m_pbBuffer(NULL) { }
 
-GuestProcessStream::~GuestProcessStream(void)
+GuestToolboxStream::~GuestToolboxStream(void)
 {
     Destroy();
 }
@@ -570,7 +744,7 @@ GuestProcessStream::~GuestProcessStream(void)
  * @param   pbData              Pointer to data to add.
  * @param   cbData              Size (in bytes) of data to add.
  */
-int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
+int GuestToolboxStream::AddData(const BYTE *pbData, size_t cbData)
 {
     AssertPtrReturn(pbData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -641,7 +815,7 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
 /**
  * Destroys the internal data buffer.
  */
-void GuestProcessStream::Destroy(void)
+void GuestToolboxStream::Destroy(void)
 {
     if (m_pbBuffer)
     {
@@ -661,7 +835,7 @@ void GuestProcessStream::Destroy(void)
  *
  * @param   pszFile             Absolute path to host file to dump the output to.
  */
-void GuestProcessStream::Dump(const char *pszFile)
+void GuestToolboxStream::Dump(const char *pszFile)
 {
     LogFlowFunc(("Dumping contents of stream=0x%p (cbAlloc=%u, cbSize=%u, cbOff=%u) to %s\n",
                  m_pbBuffer, m_cbAllocated, m_cbUsed, m_offBuffer, pszFile));
@@ -693,7 +867,7 @@ void GuestProcessStream::Dump(const char *pszFile)
  * @return VBox status code.
  * @param streamBlock               Reference to guest stream block to fill.
  */
-int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
+int GuestToolboxStream::ParseBlock(GuestToolboxStreamBlock &streamBlock)
 {
     if (   !m_pbBuffer
         || !m_cbUsed)
@@ -748,6 +922,7 @@ int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
 
     return vrc;
 }
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 GuestBase::GuestBase(void)
     : mConsole(NULL)
@@ -1351,12 +1526,14 @@ int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEv
 
     Utf8Str strErr;
 
-#define CASE_TOOL_ERROR(a_eType, a_strTool) \
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+# define CASE_TOOL_ERROR(a_eType, a_strTool) \
     case a_eType: \
     { \
-        strErr = GuestProcessTool::guestErrorToString(a_strTool, guestErrorInfo); \
+        strErr = GuestProcessToolbox::guestErrorToString(a_strTool, guestErrorInfo); \
         break; \
     }
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
     switch (guestErrorInfo.getType())
     {
@@ -1376,13 +1553,17 @@ int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEv
             strErr = GuestDirectory::i_guestErrorToString(guestErrorInfo.getVrc(), guestErrorInfo.getWhat().c_str());
             break;
 
-        CASE_TOOL_ERROR(GuestErrorInfo::Type_ToolCat,    VBOXSERVICE_TOOL_CAT);
+        case GuestErrorInfo::Type_Fs:
+            strErr = GuestFs::guestErrorToString(guestErrorInfo);
+            break;
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         CASE_TOOL_ERROR(GuestErrorInfo::Type_ToolLs,     VBOXSERVICE_TOOL_LS);
         CASE_TOOL_ERROR(GuestErrorInfo::Type_ToolMkDir,  VBOXSERVICE_TOOL_MKDIR);
         CASE_TOOL_ERROR(GuestErrorInfo::Type_ToolMkTemp, VBOXSERVICE_TOOL_MKTEMP);
         CASE_TOOL_ERROR(GuestErrorInfo::Type_ToolRm,     VBOXSERVICE_TOOL_RM);
         CASE_TOOL_ERROR(GuestErrorInfo::Type_ToolStat,   VBOXSERVICE_TOOL_STAT);
-
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
         default:
             AssertMsgFailed(("Type not implemented (type=%RU32, vrc=%Rrc)\n", guestErrorInfo.getType(), guestErrorInfo.getVrc()));
             strErr = Utf8StrFmt("Unknown / Not implemented -- Please file a bug report (type=%RU32, vrc=%Rrc)\n",
@@ -1404,9 +1585,14 @@ int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEv
 /* static */
 FsObjType_T GuestBase::fileModeToFsObjType(RTFMODE fMode)
 {
-    if (RTFS_IS_FILE(fMode))           return FsObjType_File;
+         if (RTFS_IS_FIFO(fMode))      return FsObjType_Fifo;
+    else if (RTFS_IS_DEV_CHAR(fMode))  return FsObjType_DevChar;
     else if (RTFS_IS_DIRECTORY(fMode)) return FsObjType_Directory;
+    else if (RTFS_IS_DEV_BLOCK(fMode)) return FsObjType_DevBlock;
+    else if (RTFS_IS_FILE(fMode))      return FsObjType_File;
     else if (RTFS_IS_SYMLINK(fMode))   return FsObjType_Symlink;
+    else if (RTFS_IS_SOCKET(fMode))    return FsObjType_Socket;
+    else if (RTFS_IS_WHITEOUT(fMode))  return FsObjType_WhiteOut;
 
     return FsObjType_Unknown;
 }

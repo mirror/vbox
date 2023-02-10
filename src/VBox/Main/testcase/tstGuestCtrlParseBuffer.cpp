@@ -163,12 +163,12 @@ int manualTest(void)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "Manual test #%d\n", iTest);
 
-        GuestProcessStream stream;
+        GuestToolboxStream stream;
         rc = stream.AddData((BYTE *)s_aTest[iTest].pbData, s_aTest[iTest].cbData);
 
         for (;;)
         {
-            GuestProcessStreamBlock block;
+            GuestToolboxStreamBlock block;
             rc = stream.ParseBlock(block);
             RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with rc=%Rrc, numItems=%ld\n",
                           rc, block.GetCount());
@@ -212,7 +212,7 @@ int main()
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
-        GuestProcessStream stream;
+        GuestToolboxStream stream;
         if (RT_FAILURE(g_aTestBlocks[iTest].iResult))
             RTTestDisableAssertions(hTest);
         int iResult = stream.AddData((BYTE *)g_aTestBlocks[iTest].pbData, g_aTestBlocks[iTest].cbData);
@@ -220,7 +220,7 @@ int main()
             RTTestRestoreAssertions(hTest);
         if (RT_SUCCESS(iResult))
         {
-            GuestProcessStreamBlock curBlock;
+            GuestToolboxStreamBlock curBlock;
             iResult = stream.ParseBlock(curBlock);
             if (iResult != g_aTestBlocks[iTest].iResult)
                 RTTestFailed(hTest, "Block #%u: Returned %Rrc, expected %Rrc", iTest, iResult, g_aTestBlocks[iTest].iResult);
@@ -256,7 +256,7 @@ int main()
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
-        GuestProcessStream stream;
+        GuestToolboxStream stream;
         int iResult = stream.AddData((BYTE*)g_aTestStream[iTest].pbData, g_aTestStream[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
@@ -264,7 +264,7 @@ int main()
             uint8_t uSafeCouunter = 0;
             do
             {
-                GuestProcessStreamBlock curBlock;
+                GuestToolboxStreamBlock curBlock;
                 iResult = stream.ParseBlock(curBlock);
                 RTTestIPrintf(RTTESTLVL_DEBUG, "Block #%u: Returned with %Rrc", iTest, iResult);
                 if (RT_SUCCESS(iResult))

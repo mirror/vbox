@@ -30,6 +30,38 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
+ #
+ # Testcase which mocks HGCM to also test the VbglR3-side of Guest Control.
+ #
+ # Goal is to use and test as much guest side code as possible as a self-contained
+ # binary on the host here.
+ #
+ # Note: No #ifdef TESTCASE hacks or similar allowed, has to run
+ #       without #ifdef modifications to the core code!
+ #
+ PROGRAMS += tstGuestControlMockHGCM
+
+ tstGuestControlMockHGCM_TEMPLATE = VBoxR3TstExe
+ tstGuestControlMockHGCM_DEFS     = VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL
+ tstGuestControlMockHGCM_SOURCES  = \
+ 	../VBoxGuestControlSvc.cpp \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3LibGuestCtrl.cpp \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3LibMisc.cpp \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3Lib.cpp \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3LibGR.cpp \
+ 	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
+ 	tstGuestControlMockHGCM.cpp
+ tstGuestControlMockHGCM_LIBS     = $(LIB_RUNTIME)
+ tstGuestControlMockHGCM_CLEAN    = $(tstGuestControlMockHGCM_0_OUTDIR)/tstGuestControlMockHGCM.run
+
+ if 0 # Enable this if you want automatic runs after compilation.
+  $$(tstGuestControlMockHGCM_0_OUTDIR)/tstGuestControlMockHGCM.run: $$(tstGuestControlMockHGCM_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstGuestControlMockHGCM_1_STAGE_TARGET) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+  OTHERS += $(tstGuestControlMockHGCM_0_OUTDIR)/tstGuestControlMockHGCM.run
+ endif
+
+
  # Set this in LocalConfig.kmk if you are working on the guest property
  # service to automatically run the testcase at build time.
  #    OTHERS += $(tstGuestControlSvc_0_OUTDIR)/tstGuestControlSvc.run
@@ -52,5 +84,14 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 
 endif
 
-include $(FILE_KBUILD_SUB_FOOTER)
+#
+# List of above testcases that will be included in the ValKit.
+#
+ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+ if1of ($(KBUILD_TARGET), linux solaris win)
+  VALKIT_UNITTESTS_WHITELIST_GUEST_ADDITIONS += \
+  	tstGuestControlMockHGCM
+ endif
+endif # VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
 
+include $(FILE_KBUILD_SUB_FOOTER)

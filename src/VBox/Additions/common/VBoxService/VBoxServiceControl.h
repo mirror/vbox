@@ -57,13 +57,37 @@ typedef enum VBOXSERVICECTRLPIPEID
     VBOXSERVICECTRLPIPEID_IPC_NOTIFY        = 100
 } VBOXSERVICECTRLPIPEID;
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+/**
+ * Structure for one (opened) guest directory.
+ */
+typedef struct VBOXSERVICECTRLDIR
+{
+    /** Pointer to list archor of following list node.
+     *  @todo Would be nice to have a RTListGetAnchor(). */
+    PRTLISTANCHOR                   pAnchor;
+    /** Node to global guest control directory list. */
+    /** @todo Use a map later? */
+    RTLISTNODE                      Node;
+    /** The (absolute) directory path. */
+    char                           *pszPathAbs;
+    /** The directory handle on the guest. */
+    RTDIR                           hDir;
+    /** Directory handle to identify this directory. */
+    uint32_t                        uHandle;
+    /** Context ID. */
+    uint32_t                        uContextID;
+} VBOXSERVICECTRLDIR;
+/** Pointer to a guest directory. */
+typedef VBOXSERVICECTRLDIR *PVBOXSERVICECTRLDIR;
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+
 /**
  * Structure for one (opened) guest file.
  */
 typedef struct VBOXSERVICECTRLFILE
 {
-    /** Pointer to list archor of following
-     *  list node.
+    /** Pointer to list archor of following list node.
      *  @todo Would be nice to have a RTListGetAnchor(). */
     PRTLISTANCHOR                   pAnchor;
     /** Node to global guest control file list. */
@@ -80,7 +104,7 @@ typedef struct VBOXSERVICECTRLFILE
     /** RTFILE_O_XXX flags. */
     uint64_t                        fOpen;
 } VBOXSERVICECTRLFILE;
-/** Pointer to thread data. */
+/** Pointer to a guest file. */
 typedef VBOXSERVICECTRLFILE *PVBOXSERVICECTRLFILE;
 
 /**
@@ -176,9 +200,15 @@ typedef struct VBOXSERVICECTRLSESSION
     RTLISTANCHOR                    lstProcesses;
     /** Number of guest processes in the process list. */
     uint32_t                        cProcesses;
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+    /** List of guest control files (VBOXSERVICECTRLDIR). */
+    RTLISTANCHOR                    lstDirs;
+    /** Number of guest directories in \a lstDirs. */
+    uint32_t                        cDirs;
+#endif
     /** List of guest control files (VBOXSERVICECTRLFILE). */
     RTLISTANCHOR                    lstFiles;
-    /** Number of guest files in the file list. */
+    /** Number of guest files in \a lstFiles. */
     uint32_t                        cFiles;
     /** The session's critical section. */
     RTCRITSECT                      CritSect;

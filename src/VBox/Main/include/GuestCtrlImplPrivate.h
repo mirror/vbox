@@ -61,7 +61,7 @@ typedef std::vector <LONG> ProcessAffinity;
 /** Vector holding process startup arguments. */
 typedef std::vector <Utf8Str> ProcessArguments;
 
-class GuestProcessStreamBlock;
+class GuestToolboxStreamBlock;
 class GuestSession;
 
 
@@ -635,8 +635,9 @@ public:
         Type_File,
         /** Guest error is from a guest directory object. */
         Type_Directory,
-        /** Guest error is from a the built-in toolbox "vbox_cat" command. */
-        Type_ToolCat,
+        /** Guest error is from a file system operation. */
+        Type_Fs,
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         /** Guest error is from a the built-in toolbox "vbox_ls" command. */
         Type_ToolLs,
         /** Guest error is from a the built-in toolbox "vbox_rm" command. */
@@ -647,6 +648,7 @@ public:
         Type_ToolMkTemp,
         /** Guest error is from a the built-in toolbox "vbox_stat" command. */
         Type_ToolStat,
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
         /** The usual 32-bit hack. */
         Type_32BIT_HACK = 0x7fffffff
     };
@@ -720,13 +722,16 @@ protected:
 struct GuestDirectoryOpenInfo
 {
     GuestDirectoryOpenInfo(void)
-        : mFlags(0) { }
+        : menmFilter(GSTCTLDIRFILTER_NONE)
+        , mFlags(0) { }
 
     /** The directory path. */
     Utf8Str                 mPath;
-    /** Then open filter. */
+    /** The filter to use (wildcard style). */
     Utf8Str                 mFilter;
-    /** Opening flags. */
+    /** The filter option to use. */
+    GSTCTLDIRFILTER         menmFilter;
+    /** Opening flags (of type GSTCTLDIRFILTER_XXX). */
     uint32_t                mFlags;
 };
 
@@ -798,12 +803,30 @@ struct GuestFileOpenInfo
 
 
 /**
+ * Helper class for guest file system operations.
+ */
+class GuestFs
+{
+    DECLARE_TRANSLATE_METHODS(GuestFs)
+
+private:
+
+    /* Not directly instantiable. */
+    GuestFs(void) { }
+
+public:
+
+    static Utf8Str guestErrorToString(const GuestErrorInfo &guestErrorInfo);
+};
+
+
+/**
  * Structure representing information of a
  * file system object.
  */
 struct GuestFsObjData
 {
-    GuestFsObjData(void)
+    GuestFsObjData(const Utf8Str &strName = "")
         : mType(FsObjType_Unknown)
         , mObjectSize(0)
         , mAllocatedSize(0)
@@ -818,21 +841,32 @@ struct GuestFsObjData
         , mNumHardLinks(0)
         , mDeviceNumber(0)
         , mGenerationID(0)
-        , mUserFlags(0) { }
+        , mUserFlags(0) { mName = strName; }
 
+    void Init(const Utf8Str &strName) { mName = strName; }
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+    int FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo, const Utf8Str &strUser = "", const Utf8Str &strGroups = "",
+                           const void *pvACL = NULL, size_t cbACL = 0);
+#endif
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
     /** @name Helper functions to extract the data from a certin VBoxService tool's guest stream block.
      * @{ */
-    int FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong);
-    int FromRm(const GuestProcessStreamBlock &strmBlk);
-    int FromStat(const GuestProcessStreamBlock &strmBlk);
-    int FromMkTemp(const GuestProcessStreamBlock &strmBlk);
+    int FromToolboxLs(const GuestToolboxStreamBlock &strmBlk, bool fLong);
+    int FromToolboxRm(const GuestToolboxStreamBlock &strmBlk);
+    int FromToolboxStat(const GuestToolboxStreamBlock &strmBlk);
+    int FromToolboxMkTemp(const GuestToolboxStreamBlock &strmBlk);
     /** @}  */
+#endif
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
     /** @name Static helper functions to work with time from stream block keys.
      * @{ */
-    static PRTTIMESPEC TimeSpecFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey, PRTTIMESPEC pTimeSpec);
-    static int64_t UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey);
+    static PRTTIMESPEC TimeSpecFromKey(const GuestToolboxStreamBlock &strmBlk, const Utf8Str &strKey, PRTTIMESPEC pTimeSpec);
+    static int64_t UnixEpochNsFromKey(const GuestToolboxStreamBlock &strmBlk, const Utf8Str &strKey);
     /** @}  */
+#endif
 
     /** @name helper functions to work with IPRT stuff.
      * @{ */
@@ -931,19 +965,19 @@ public:
 /**
  * Class representing the "value" side of a "key=value" pair.
  */
-class GuestProcessStreamValue
+class GuestToolboxStreamValue
 {
 public:
 
-    GuestProcessStreamValue(void) { }
-    GuestProcessStreamValue(const char *pszValue)
+    GuestToolboxStreamValue(void) { }
+    GuestToolboxStreamValue(const char *pszValue)
         : mValue(pszValue) {}
 
-    GuestProcessStreamValue(const GuestProcessStreamValue& aThat)
+    GuestToolboxStreamValue(const GuestToolboxStreamValue& aThat)
            : mValue(aThat.mValue) { }
 
     /** Copy assignment operator. */
-    GuestProcessStreamValue &operator=(GuestProcessStreamValue const &a_rThat) RT_NOEXCEPT
+    GuestToolboxStreamValue &operator=(GuestToolboxStreamValue const &a_rThat) RT_NOEXCEPT
     {
         mValue = a_rThat.mValue;
 
@@ -954,23 +988,26 @@ public:
 };
 
 /** Map containing "key=value" pairs of a guest process stream. */
-typedef std::pair< Utf8Str, GuestProcessStreamValue > GuestCtrlStreamPair;
-typedef std::map < Utf8Str, GuestProcessStreamValue > GuestCtrlStreamPairMap;
-typedef std::map < Utf8Str, GuestProcessStreamValue >::iterator GuestCtrlStreamPairMapIter;
-typedef std::map < Utf8Str, GuestProcessStreamValue >::const_iterator GuestCtrlStreamPairMapIterConst;
+typedef std::pair< Utf8Str, GuestToolboxStreamValue > GuestCtrlStreamPair;
+typedef std::map < Utf8Str, GuestToolboxStreamValue > GuestCtrlStreamPairMap;
+typedef std::map < Utf8Str, GuestToolboxStreamValue >::iterator GuestCtrlStreamPairMapIter;
+typedef std::map < Utf8Str, GuestToolboxStreamValue >::const_iterator GuestCtrlStreamPairMapIterConst;
 
 /**
  * Class representing a block of stream pairs (key=value). Each block in a raw guest
  * output stream is separated by "\0\0", each pair is separated by "\0". The overall
  * end of a guest stream is marked by "\0\0\0\0".
+ *
+ * Only used for the busybox-like toolbox commands within VBoxService.
+ * Deprecated, do not use anymore.
  */
-class GuestProcessStreamBlock
+class GuestToolboxStreamBlock
 {
 public:
 
-    GuestProcessStreamBlock(void);
+    GuestToolboxStreamBlock(void);
 
-    virtual ~GuestProcessStreamBlock(void);
+    virtual ~GuestToolboxStreamBlock(void);
 
 public:
 
@@ -999,22 +1036,24 @@ protected:
 };
 
 /** Vector containing multiple allocated stream pair objects. */
-typedef std::vector< GuestProcessStreamBlock > GuestCtrlStreamObjects;
-typedef std::vector< GuestProcessStreamBlock >::iterator GuestCtrlStreamObjectsIter;
-typedef std::vector< GuestProcessStreamBlock >::const_iterator GuestCtrlStreamObjectsIterConst;
+typedef std::vector< GuestToolboxStreamBlock > GuestCtrlStreamObjects;
+typedef std::vector< GuestToolboxStreamBlock >::iterator GuestCtrlStreamObjectsIter;
+typedef std::vector< GuestToolboxStreamBlock >::const_iterator GuestCtrlStreamObjectsIterConst;
 
 /**
  * Class for parsing machine-readable guest process output by VBoxService'
  * toolbox commands ("vbox_ls", "vbox_stat" etc), aka "guest stream".
+ *
+ * Deprecated, do not use anymore.
  */
-class GuestProcessStream
+class GuestToolboxStream
 {
 
 public:
 
-    GuestProcessStream();
+    GuestToolboxStream();
 
-    virtual ~GuestProcessStream();
+    virtual ~GuestToolboxStream();
 
 public:
 
@@ -1030,7 +1069,7 @@ public:
 
     size_t GetSize() { return m_cbUsed; }
 
-    int ParseBlock(GuestProcessStreamBlock &streamBlock);
+    int ParseBlock(GuestToolboxStreamBlock &streamBlock);
 
 protected:
 

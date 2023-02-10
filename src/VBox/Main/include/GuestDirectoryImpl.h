@@ -67,10 +67,21 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
-    int            i_closeInternal(int *pvrcGuest);
+    int            i_open(int *pvrcGuest);
+    int            i_close(int *pvrcGuest);
+    EventSource   *i_getEventSource(void) { return mEventSource; }
+    int            i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int            i_read(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pvrcGuest);
-    int            i_readInternal(GuestFsObjData &objData, int *prcGuest);
+    int            i_readInternal(GuestFsObjData &objData, int *pvrcGuest);
+    int            i_rewind(uint32_t uTimeoutMS, int *pvrcGuest);
+    int            i_setStatus(DirectoryStatus_T enmStatus, int vrcDir);
     /** @}  */
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    int            i_openViaToolbox(int *pvrcGuest);
+    int            i_closeViaToolbox(int *pvrcGuest);
+    int            i_readInternalViaToolbox(GuestFsObjData &objData, int *pvrcGuest);
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 public:
     /** @name Public static internal methods.
@@ -89,15 +100,30 @@ private:
     /** Wrapped @name IGuestDirectory methods.
      * @{ */
     HRESULT close();
+    HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+    HRESULT getId(ULONG *aId);
+    HRESULT getStatus(DirectoryStatus_T *aStatus);
     HRESULT read(ComPtr<IFsObjInfo> &aObjInfo);
+    HRESULT rewind(void);
     /** @}  */
+
+    /** This can safely be used without holding any locks.
+     * An AutoCaller suffices to prevent it being destroy while in use and
+     * internally there is a lock providing the necessary serialization. */
+    const ComObjPtr<EventSource> mEventSource;
 
     struct Data
     {
         /** The directory's open info. */
         GuestDirectoryOpenInfo     mOpenInfo;
+        /** The current directory status. */
+        DirectoryStatus_T          mStatus;
+        /** The last returned directory error returned from the guest side. */
+        int                        mLastError;
+# ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         /** The process tool instance to use. */
-        GuestProcessTool           mProcessTool;
+        GuestProcessToolbox        mProcessTool;
+# endif
         /** Object data cache.
          *  Its mName attribute acts as a beacon if the cache is valid or not. */
         GuestFsObjData             mObjData;

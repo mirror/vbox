@@ -549,7 +549,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
     {
         if (vrc == VERR_GSTCTL_GUEST_ERROR)
             setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Guest file lookup failed"),
-                                GuestErrorInfo(GuestErrorInfo::Type_ToolStat, vrcGuest, strSrc.c_str()));
+                                GuestErrorInfo(GuestErrorInfo::Type_Fs, vrcGuest, strSrc.c_str()));
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(tr("Guest file lookup for \"%s\" failed: %Rrc"), strSrc.c_str(), vrc));
@@ -1246,7 +1246,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
             vrc = VINF_SUCCESS;
     }
 
-    int vrc2 = pDir->i_closeInternal(&vrcGuest);
+    int vrc2 = pDir->i_close(&vrcGuest);
     if (RT_SUCCESS(vrc))
         vrc = vrc2;
 
@@ -1543,7 +1543,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 if (vrc == VERR_GSTCTL_GUEST_ERROR)
                     strErrorInfo = GuestBase::getErrorAsString(tr("Guest source lookup failed"),
-                                                               GuestErrorInfo(GuestErrorInfo::Type_ToolStat, vrcGuest, strSrc.c_str()));
+                                                               GuestErrorInfo(GuestErrorInfo::Type_Fs, vrcGuest, strSrc.c_str()));
                 else
                     strErrorInfo.printf(tr("Guest source lookup for \"%s\" failed: %Rrc"),
                                         strSrc.c_str(), vrc);
@@ -2629,15 +2629,15 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 
     LogRel(("Running %s ...\n", procInfo.mName.c_str()));
 
-    GuestProcessTool procTool;
+    GuestProcessToolbox procToRun;
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = procTool.init(pSession, procInfo, false /* Async */, &vrcGuest);
+    int vrc = procToRun.init(pSession, procInfo, false /* Async */, &vrcGuest);
     if (RT_SUCCESS(vrc))
     {
         if (RT_SUCCESS(vrcGuest))
-            vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &vrcGuest);
+            vrc = procToRun.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &vrcGuest);
         if (RT_SUCCESS(vrc))
-            vrc = procTool.getTerminationStatus();
+            vrc = procToRun.getTerminationStatus();
     }
 
     if (RT_FAILURE(vrc))
@@ -2647,7 +2647,7 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
             case VERR_GSTCTL_PROCESS_EXIT_CODE:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(tr("Running update file \"%s\" on guest failed: %Rrc"),
-                                               procInfo.mExecutable.c_str(), procTool.getRc()));
+                                               procInfo.mExecutable.c_str(), procToRun.getRc()));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:

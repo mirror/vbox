@@ -73,6 +73,8 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 #include <VBox/GuestHost/GuestControl.h> /** @todo r=bird: Why two headers??? */
 
+#include "VBoxGuestControlSvc-internal.h"
+
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/AssertGuest.h>
@@ -1625,6 +1627,7 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                         hostCallback(GUEST_MSG_FILE_NOTIFY, 3, aReplyParams);
                         break;
                     case HOST_MSG_FILE_READ:
+                        RT_FALL_THROUGH();
                     case HOST_MSG_FILE_READ_AT:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_READ);  /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
@@ -1632,6 +1635,7 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                         hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
                     case HOST_MSG_FILE_WRITE:
+                        RT_FALL_THROUGH();
                     case HOST_MSG_FILE_WRITE_AT:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_WRITE); /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
@@ -1656,14 +1660,36 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                         HGCMSvcSetU64(&aReplyParams[3], 0);                              /* actual */
                         hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
-
-                    case HOST_MSG_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
-                    case HOST_MSG_EXEC_TERMINATE:  /** @todo This can't be right/work. */
-                    case HOST_MSG_EXEC_WAIT_FOR:   /** @todo This can't be right/work. */
-                    case HOST_MSG_PATH_USER_DOCUMENTS:
-                    case HOST_MSG_PATH_USER_HOME:
-                    case HOST_MSG_PATH_RENAME:
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+                    case HOST_MSG_FS_QUERY_INFO:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_FS_CREATE_TEMP:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_FILE_REMOVE:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_DIR_OPEN:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_DIR_CLOSE:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_DIR_READ:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_DIR_REWIND:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_DIR_CREATE:
+                        RT_FALL_THROUGH();
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+                    case HOST_MSG_EXEC_GET_OUTPUT: /** @todo BUGBUG This can't be right/work. */
+                    case HOST_MSG_EXEC_TERMINATE:  /** @todo BUGBUG This can't be right/work. */
+                    case HOST_MSG_EXEC_WAIT_FOR:   /** @todo BUGBUG This can't be right/work. */
+                        break;
                     case HOST_MSG_DIR_REMOVE:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_PATH_RENAME:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_PATH_USER_DOCUMENTS:
+                        RT_FALL_THROUGH();
+                    case HOST_MSG_PATH_USER_HOME:
+                        RT_FALL_THROUGH();
                     default:
                         HGCMSvcSetU32(&aReplyParams[1], pFirstMsg->mType);
                         HGCMSvcSetU32(&aReplyParams[2], (uint32_t)rcSkip);
@@ -2609,4 +2635,3 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
 }
-

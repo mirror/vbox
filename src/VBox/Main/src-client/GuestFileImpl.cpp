@@ -899,7 +899,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
  */
 int GuestFile::i_queryInfo(GuestFsObjData &objData, int *prcGuest)
 {
-    AssertPtr(mSession);
+    AssertPtrReturn(mSession, VERR_OBJECT_DESTROYED);
     return mSession->i_fsQueryInfo(mData.mOpenInfo.mFilename, FALSE /* fFollowSymlinks */, objData, prcGuest);
 }
 
@@ -1575,7 +1575,13 @@ HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
-            GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, vrcGuest, mData.mOpenInfo.mFilename.c_str());
+            GuestErrorInfo ge(
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+                              GuestErrorInfo::Type_ToolStat,
+#else
+                              GuestErrorInfo::Type_File,
+#endif
+                              vrcGuest, mData.mOpenInfo.mFilename.c_str());
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file information failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
         }
@@ -1608,7 +1614,13 @@ HRESULT GuestFile::querySize(LONG64 *aSize)
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
-            GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, vrcGuest, mData.mOpenInfo.mFilename.c_str());
+            GuestErrorInfo ge(
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+                              GuestErrorInfo::Type_ToolStat,
+#else
+                              GuestErrorInfo::Type_File,
+#endif
+                              vrcGuest, mData.mOpenInfo.mFilename.c_str());
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file size failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
         }

@@ -42,6 +42,7 @@
 # pragma once
 #endif
 
+#include <iprt/time.h>
 #include <iprt/types.h>
 
 /* Everything defined in this file lives in this namespace. */
@@ -141,6 +142,33 @@ enum eProcessStatus
 #define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000003)
 /** @} */
 
+/** @name GSTCTL_CREATETEMP_F_XXX - Guest temporary directory/file creation flags.
+ * @{
+ */
+/** Does not specify anything. */
+#define GSTCTL_CREATETEMP_F_NONE            UINT32_C(0)
+/** Creates a directory instead of a file. */
+#define GSTCTL_CREATETEMP_F_DIRECTORY       RT_BIT(0)
+/** Creates a secure temporary file / directory.
+ *  Might not be supported on all (guest) OSes.
+ *
+ *  @sa IPRT's implementation of RTDirCreateTempSecure() / RTFileCreateTempSecumre(). */
+#define GSTCTL_CREATETEMP_F_SECURE          RT_BIT(1)
+/** Mask of valid flags. */
+#define GSTCTL_CREATETEMP_F_VALID_MASK      UINT32_C(0x00000003)
+/** @} */
+
+/** @name GSTCTL_CREATEDIRECTORY_F_XXX - Guest directory creation flags.
+ * @{
+ */
+/** Does not specify anything. */
+#define GSTCTL_CREATEDIRECTORY_F_NONE       UINT32_C(0)
+/** Also creates parent directories if they don't exist yet. */
+#define GSTCTL_CREATEDIRECTORY_F_PARENTS    RT_BIT(0)
+/** Mask of valid flags. */
+#define GSTCTL_CREATEDIRECTORY_F_VALID_MASK UINT32_C(0x00000001)
+/** @} */
+
 /** @name GUEST_SHUTDOWN_FLAG_XXX - Guest shutdown flags.
  * Must match Main's GuestShutdownFlag_ definitions.
  * @{
@@ -228,7 +256,281 @@ enum eInputStatus
     INPUT_STS_OVERFLOW = 30
 };
 
+/**
+ * Guest file system object -- additional information in a GSTCTLFSOBJATTR object.
+ */
+enum GSTCTLFSOBJATTRADD
+{
+    /** No additional information is available / requested. */
+    GSTCTLFSOBJATTRADD_NOTHING = 1,
+    /** The additional unix attributes (RTFSOBJATTR::u::Unix) are available /
+     *  requested. */
+    GSTCTLFSOBJATTRADD_UNIX,
+    /** The additional unix attributes (RTFSOBJATTR::u::UnixOwner) are
+     * available / requested. */
+    GSTCTLFSOBJATTRADD_UNIX_OWNER,
+    /** The additional unix attributes (RTFSOBJATTR::u::UnixGroup) are
+     * available / requested. */
+    GSTCTLFSOBJATTRADD_UNIX_GROUP,
+    /** The additional extended attribute size (RTFSOBJATTR::u::EASize) is available / requested. */
+    GSTCTLFSOBJATTRADD_EASIZE,
+    /** The last valid item (inclusive).
+     * The valid range is RTFSOBJATTRADD_NOTHING thru RTFSOBJATTRADD_LAST.  */
+    GSTCTLFSOBJATTRADD_LAST = GSTCTLFSOBJATTRADD_EASIZE,
 
+    /** The usual 32-bit hack. */
+    GSTCTLFSOBJATTRADD_32BIT_SIZE_HACK = 0x7fffffff
+};
+
+/** The number of bytes reserved for the additional attribute union. */
+#define GSTCTLFSOBJATTRUNION_MAX_SIZE       128
+
+/**
+ * Additional Unix Attributes (GSTCTLFSOBJATTRADD_UNIX).
+ */
+typedef struct GSTCTLFSOBJATTRUNIX
+{
+    /** The user owning the filesystem object (st_uid).
+     * This field is NIL_RTUID if not supported. */
+    RTUID           uid;
+
+    /** The group the filesystem object is assigned (st_gid).
+     * This field is NIL_RTGID if not supported. */
+    RTGID           gid;
+
+    /** Number of hard links to this filesystem object (st_nlink).
+     * This field is 1 if the filesystem doesn't support hardlinking or
+     * the information isn't available.
+     */
+    uint32_t        cHardlinks;
+
+    /** The device number of the device which this filesystem object resides on (st_dev).
+     * This field is 0 if this information is not available. */
+    RTDEV           INodeIdDevice;
+
+    /** The unique identifier (within the filesystem) of this filesystem object (st_ino).
+     * Together with INodeIdDevice, this field can be used as a OS wide unique id
+     * when both their values are not 0.
+     * This field is 0 if the information is not available.
+     *
+     * @remarks  The special '..' dir always shows up with 0 on NTFS/Windows. */
+    RTINODE         INodeId;
+
+    /** User flags (st_flags).
+     * This field is 0 if this information is not available. */
+    uint32_t        fFlags;
+
+    /** The current generation number (st_gen).
+     * This field is 0 if this information is not available. */
+    uint32_t        GenerationId;
+
+    /** The device number of a character or block device type object (st_rdev).
+     * This field is 0 if the file isn't of a character or block device type and
+     * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
+    RTDEV           Device;
+} GSTCTLFSOBJATTRUNIX;
+
+/**
+ * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_OWNER).
+ */
+typedef struct GSTCTLFSOBJATTRUNIXOWNER
+{
+    /** The user owning the filesystem object (st_uid).
+     * This field is NIL_RTUID if not supported. */
+    RTUID           uid;
+    /** The user name.
+     * Empty if not available or not supported, truncated if too long. */
+    char            szName[GSTCTLFSOBJATTRUNION_MAX_SIZE - sizeof(RTUID)];
+} GSTCTLFSOBJATTRUNIXOWNER;
+
+/**
+ * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_GROUP).
+ */
+typedef struct GSTCTLFSOBJATTRUNIXGROUP
+{
+    /** The user owning the filesystem object (st_uid).
+     * This field is NIL_RTUID if not supported. */
+    RTGID           gid;
+    /** The group name.
+     * Empty if not available or not supported, truncated if too long. */
+    char            szName[GSTCTLFSOBJATTRUNION_MAX_SIZE - sizeof(RTGID)];
+} GSTCTLFSOBJATTRUNIXGROUP;
+
+/**
+ * Guest filesystem object attributes.
+ */
+#pragma pack(1)
+typedef struct GSTCTLFSOBJATTR
+{
+    /** Mode flags (st_mode). RTFS_UNIX_*, RTFS_TYPE_*, and RTFS_DOS_*. */
+    RTFMODE                     fMode;
+
+    /** The additional attributes available. */
+    GSTCTLFSOBJATTRADD          enmAdditional;
+
+    /**
+     * Additional attributes.
+     *
+     * Unless explicitly specified to an API, the API can provide additional
+     * data as it is provided by the underlying OS.
+     */
+    union GSTCTLFSOBJATTRUNION
+    {
+        /** Additional Unix Attributes - GUEST_FSOBJATTRADD_UNIX. */
+        GSTCTLFSOBJATTRUNIX         Unix;
+        /** Additional Unix Owner Attributes - GUEST_FSOBJATTRADD_UNIX_OWNER. */
+        GSTCTLFSOBJATTRUNIXOWNER    UnixOwner;
+        /** Additional Unix Group Attributes - GUEST_FSOBJATTRADD_UNIX_GROUP. */
+        GSTCTLFSOBJATTRUNIXGROUP    UnixGroup;
+
+        /**
+         * Extended attribute size is available when RTFS_DOS_HAVE_EA_SIZE is set.
+         */
+        struct GSTCTLFSOBJATTREASIZE
+        {
+            /** Size of EAs. */
+            RTFOFF          cb;
+        } EASize;
+        /** Reserved space. */
+        uint8_t         abReserveSpace[128];
+    } u;
+} GSTCTLFSOBJATTR;
+#pragma pack()
+/** Pointer to a guest filesystem object attributes structure. */
+typedef GSTCTLFSOBJATTR *PGSTCTLFSOBJATTR;
+/** Pointer to a const guest filesystem object attributes structure. */
+typedef const GSTCTLFSOBJATTR *PCGSTCTLFSOBJATTR;
+
+/** @name GSTCTL_QUERYINFO_F_XXX - Generic flags for querying guest file system information.
+ * @{ */
+/** No guest stat flags specified. */
+#define GSTCTL_QUERYINFO_F_NONE               UINT32_C(0)
+/** Last component: Work on the link. */
+#define GSTCTL_QUERYINFO_F_ON_LINK            RT_BIT_32(0)
+/** Last component: Follow if link. */
+#define GSTCTL_QUERYINFO_F_FOLLOW_LINK        RT_BIT_32(1)
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
+#define GSTCTL_QUERYINFO_F_NO_SYMLINKS        RT_BIT_32(2)
+/** GSTCTL_QUERYINFO_F_XXX flag valid mask. */
+#define GSTCTL_QUERYINFO_F_VALID_MASK         UINT32_C(0x00000007)
+/** @} */
+
+/**
+ * Filter option for HOST_MSG_DIR_OPEN.
+ */
+typedef enum GSTCTLDIRFILTER
+{
+    /** The usual invalid 0 entry. */
+    GSTCTLDIRFILTER_INVALID = 0,
+    /** No filter should be applied (and none was specified). */
+    GSTCTLDIRFILTER_NONE,
+    /** The Windows NT filter.
+     * The following wildcard chars: *, ?, <, > and "
+     * The matching is done on the uppercased strings.  */
+    GSTCTLDIRFILTER_WINNT,
+    /** The UNIX filter.
+     * The following wildcard chars: *, ?, [..]
+     * The matching is done on exact case. */
+    GSTCTLDIRFILTER_UNIX,
+    /** The UNIX filter, uppercased matching.
+     * Same as GSTCTLDIRFILTER_UNIX except that the strings are uppercased before comparing. */
+    GSTCTLDIRFILTER_UNIX_UPCASED,
+
+    /** The usual full 32-bit value. */
+    GSTCTLDIRFILTER_32BIT_HACK = 0x7fffffff
+} GSTCTLDIRFILTER;
+
+/** @name GSTCTLDIR_F_XXX - Directory flags for HOST_MSG_DIR_OPEN.
+ * @{ */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
+#define GSTCTLDIR_F_NO_SYMLINKS     RT_BIT_32(0)
+/** Deny relative opening of anything above this directory. */
+#define GSTCTLDIR_F_DENY_ASCENT     RT_BIT_32(1)
+/** Don't follow symbolic links in the final component. */
+#define GSTCTLDIR_F_NO_FOLLOW       RT_BIT_32(2)
+/** Long path hack: Don't apply RTPathAbs to the path. */
+#define GSTCTLDIR_F_NO_ABS_PATH     RT_BIT_32(3)
+/** Valid flag mask.   */
+#define GSTCTLDIR_F_VALID_MASK      UINT32_C(0x0000000f)
+
+/**
+ * Guest filesystem object information structure.
+ *
+ * This is returned by
+ *     - GUEST_FS_NOTIFYTYPE_QUERY_INFO
+ *     - GUEST_DIR_NOTIFYTYPE_READ
+ */
+#pragma pack(1)
+typedef struct GSTCTLFSOBJINFO
+{
+   /** Logical size (st_size).
+    * For normal files this is the size of the file.
+    * For symbolic links, this is the length of the path name contained
+    * in the symbolic link.
+    * For other objects this fields needs to be specified.
+    */
+   RTFOFF           cbObject;
+
+   /** Disk allocation size (st_blocks * DEV_BSIZE). */
+   RTFOFF           cbAllocated;
+
+   /** Time of last access (st_atime). */
+   RTTIMESPEC       AccessTime;
+
+   /** Time of last data modification (st_mtime). */
+   RTTIMESPEC       ModificationTime;
+
+   /** Time of last status change (st_ctime).
+    * If not available this is set to ModificationTime.
+    */
+   RTTIMESPEC       ChangeTime;
+
+   /** Time of file birth (st_birthtime).
+    * If not available this is set to ChangeTime.
+    */
+   RTTIMESPEC       BirthTime;
+
+   /** Attributes. */
+   GSTCTLFSOBJATTR  Attr;
+
+} GSTCTLFSOBJINFO;
+#pragma pack()
+/** Pointer to a guest filesystem object information structure. */
+typedef GSTCTLFSOBJINFO *PGSTCTLFSOBJINFO;
+/** Pointer to a const guest filesystem object information structure. */
+typedef const GSTCTLFSOBJINFO *PCGSTCTLFSOBJINFO;
+
+/**
+ * Guest directory entry with extended information.
+ *
+ * This is inspired by IPRT + the PC interfaces.
+ */
+#pragma pack(1)
+typedef struct GSTCTLDIRENTRYEX
+{
+    /** Full information about the guest object. */
+    GSTCTLFSOBJINFO  Info;
+    /** The length of the short field (number of RTUTF16 entries (not chars)).
+     * It is 16-bit for reasons of alignment. */
+    uint16_t        cwcShortName;
+    /** The short name for 8.3 compatibility.
+     * Empty string if not available.
+     * Since the length is a bit tricky for a UTF-8 encoded name, and since this
+     * is practically speaking only a windows thing, it is encoded as UCS-2. */
+    RTUTF16         wszShortName[14];
+    /** The length of the filename. */
+    uint16_t        cbName;
+    /** The filename. (no path)
+     * Using the pcbDirEntry parameter of RTDirReadEx makes this field variable in size. */
+    char            szName[260];
+} GSTCTLDIRENTRYEX;
+#pragma pack()
+/** Pointer to a guest directory entry. */
+typedef GSTCTLDIRENTRYEX *PGSTCTLDIRENTRYEX;
+/** Pointer to a const guest directory entry. */
+typedef GSTCTLDIRENTRYEX const *PCGSTCTLDIRENTRYEX;
 
 } /* namespace guestControl */
 
