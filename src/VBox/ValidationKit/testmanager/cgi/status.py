@@ -63,51 +63,52 @@ def timeDeltaToHours(oTimeDelta):
 
 
 def testbox_data_processing(oDb):
-    testboxes_dict = {}
+    dTestBoxes = {}
     while True:
-        line = oDb.fetchOne();
-        if line is None:
+        # Fetch the next row and unpack it.
+        aoRow = oDb.fetchOne();
+        if aoRow is None:
             break;
-        testbox_name = line[0]
-        test_result = line[1]
-        oTimeDeltaSinceStarted = line[2]
-        test_box_os = line[3]
-        test_sched_group = line[4]
+        sTextBoxName           = aoRow[0];
+        enmStatus              = aoRow[1];
+        oTimeDeltaSinceStarted = aoRow[2];
+        sTestBoxOs             = aoRow[3]
+        sSchedGroupNames       = aoRow[4];
 
-        # idle testboxes might have an assigned testsets, skipping them
-        if test_result not in g_kdTestStatuses:
-            continue
+        # Idle testboxes will not have an assigned test set, so enmStatus
+        # will be None.  Skip these.
+        if enmStatus:
+            dict_update(dTestBoxes, sTextBoxName, enmStatus)
 
-        testboxes_dict = dict_update(testboxes_dict, testbox_name, test_result)
+            if "testbox_os" not in dTestBoxes[sTextBoxName]:
+                dTestBoxes[sTextBoxName].update({"testbox_os": sTestBoxOs})
 
-        if "testbox_os" not in testboxes_dict[testbox_name]:
-            testboxes_dict[testbox_name].update({"testbox_os": test_box_os})
+            if "sched_group" not in dTestBoxes[sTextBoxName]:
+                dTestBoxes[sTextBoxName].update({"sched_group": sSchedGroupNames})
+            elif sSchedGroupNames not in dTestBoxes[sTextBoxName]["sched_group"]:
+                dTestBoxes[sTextBoxName]["sched_group"] += "," + sSchedGroupNames
 
-        if "sched_group" not in testboxes_dict[testbox_name]:
-            testboxes_dict[testbox_name].update({"sched_group": test_sched_group})
-        elif test_sched_group not in testboxes_dict[testbox_name]["sched_group"]:
-            testboxes_dict[testbox_name]["sched_group"] += "," + test_sched_group
+            if enmStatus == "running":
+                dTestBoxes[sTextBoxName].update({"hours_running": timeDeltaToHours(oTimeDeltaSinceStarted)})
 
-        if test_result == "running":
-            testboxes_dict[testbox_name].update({"hours_running": timeDeltaToHours(oTimeDeltaSinceStarted)})
-
-    return testboxes_dict;
+    return dTestBoxes;
 
 
-def os_results_separating(vb_dict, test_name, testbox_os, test_result):
-    if testbox_os == "linux":
-        dict_update(vb_dict, test_name + " / linux", test_result)
-    elif testbox_os == "win":
-        dict_update(vb_dict, test_name + " / windows", test_result)
-    elif testbox_os == "darwin":
-        dict_update(vb_dict, test_name + " / darwin", test_result)
-    elif testbox_os == "solaris":
-        dict_update(vb_dict, test_name + " / solaris", test_result)
+def os_results_separating(dResult, sTestName, sTestBoxOs, enmStatus):
+    if sTestBoxOs == "linux":
+        dict_update(dResult, sTestName + " / linux", enmStatus)
+    elif sTestBoxOs == "win":
+        dict_update(dResult, sTestName + " / windows", enmStatus)
+    elif sTestBoxOs == "darwin":
+        dict_update(dResult, sTestName + " / darwin", enmStatus)
+    elif sTestBoxOs == "solaris":
+        dict_update(dResult, sTestName + " / solaris", enmStatus)
     else:
-        dict_update(vb_dict, test_name + " / other", test_result)
+        dict_update(dResult, sTestName + " / other", enmStatus)
 
 
-# const/immutable.
+## Template dictionary for new dTarget[] entries in dict_update.
+# This _MUST_ include all values of the TestStatus_T SQL enum type.
 g_kdTestStatuses = {
     'running': 0,
     'success': 0,
@@ -119,12 +120,10 @@ g_kdTestStatuses = {
     'rebooted': 0,
 }
 
-def dict_update(target_dict, key_name, test_result):
-    if key_name not in target_dict:
-        target_dict.update({key_name: g_kdTestStatuses.copy()})
-    if test_result in g_kdTestStatuses:
-        target_dict[key_name][test_result] += 1
-    return target_dict
+def dict_update(dTarget, sKeyName, enmStatus):
+    if sKeyName not in dTarget:
+        dTarget.update({sKeyName: g_kdTestStatuses.copy()})
+    dTarget[sKeyName][enmStatus] += 1
 
 
 def formatDataEntry(sKey, dEntry):
