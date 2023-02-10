@@ -52,7 +52,6 @@
 #include <VBox/AssertGuest.h>
 
 
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /**
  * Returns a stringyfied error of a guest fs error.
  *
@@ -122,7 +121,7 @@ Utf8Str GuestFs::guestErrorToString(const GuestErrorInfo &guestErrorInfo)
     return strErr;
 }
 
-
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /**
  * Set the file system object data from a given GSTCTLFSOBJINFO struct.
  *
