@@ -2402,10 +2402,11 @@ template<> QString toInternalString(const MachineCloseAction &machineCloseAction
     QString strResult;
     switch (machineCloseAction)
     {
-        case MachineCloseAction_Detach:    strResult = "Detach"; break;
-        case MachineCloseAction_SaveState: strResult = "SaveState"; break;
-        case MachineCloseAction_Shutdown:  strResult = "Shutdown"; break;
-        case MachineCloseAction_PowerOff:  strResult = "PowerOff"; break;
+        case MachineCloseAction_Detach:                     strResult = "Detach"; break;
+        case MachineCloseAction_SaveState:                  strResult = "SaveState"; break;
+        case MachineCloseAction_Shutdown:                   strResult = "Shutdown"; break;
+        case MachineCloseAction_PowerOff:                   strResult = "PowerOff"; break;
+        case MachineCloseAction_PowerOff_RestoringSnapshot: strResult = "PowerOffRestoringSnapshot"; break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", machineCloseAction));
@@ -2426,6 +2427,8 @@ template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QStri
         return MachineCloseAction_Shutdown;
     if (strMachineCloseAction.compare("PowerOff", Qt::CaseInsensitive) == 0)
         return MachineCloseAction_PowerOff;
+    if (strMachineCloseAction.compare("PowerOffRestoringSnapshot", Qt::CaseInsensitive) == 0)
+        return MachineCloseAction_PowerOff_RestoringSnapshot;
     return MachineCloseAction_Invalid;
 }
 

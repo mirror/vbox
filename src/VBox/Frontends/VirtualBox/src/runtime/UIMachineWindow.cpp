@@ -528,10 +528,12 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
             break;
         }
         case MachineCloseAction_PowerOff:
+        case MachineCloseAction_PowerOff_RestoringSnapshot:
         {
             /* Power VM off: */
             LogRel(("GUI: Request for close-action to power VM off.\n"));
-            const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
+            const bool fDiscardStateOnPowerOff  = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid())
+                                               || closeAction == MachineCloseAction_PowerOff_RestoringSnapshot;
             uimachine()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
             break;
         }
