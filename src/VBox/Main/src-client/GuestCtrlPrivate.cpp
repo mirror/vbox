@@ -140,7 +140,7 @@ int GuestFsObjData::FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo,
 {
     RT_NOREF(pvACL, cbACL);
 
-    int rc;
+    int vrc;
 
     mType = GuestBase::fileModeToFsObjType(pFsObjInfo->Attr.fMode);
 
@@ -157,7 +157,7 @@ int GuestFsObjData::FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo,
         case FsObjType_WhiteOut:  mFileAttrs += 'w'; break;
         default:
             mFileAttrs += '?';
-            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+            AssertFailedStmt(vrc = VERR_NOT_SUPPORTED);
             break;
     }
 
@@ -1044,7 +1044,7 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     /* pSvcCb->mpaParms[0] always contains the context ID. */
                     vrc = HGCMSvcGetU32(&pSvcCb->mpaParms[idx++], &dataCb.uType);
                     AssertRCReturn(vrc, vrc);
-                    vrc = HGCMSvcGetU32(&pSvcCb->mpaParms[idx++], &dataCb.rc);
+                    vrc = HGCMSvcGetU32(&pSvcCb->mpaParms[idx++], &dataCb.vrc);
                     AssertRCReturn(vrc, vrc);
                     vrc = HGCMSvcGetPv(&pSvcCb->mpaParms[idx++], &dataCb.pvPayload, &dataCb.cbPayload);
                     AssertRCReturn(vrc, vrc);
@@ -1052,7 +1052,7 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     try
                     {
                         GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload);
-                        vrc = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
+                        vrc = signalWaitEventInternal(pCtxCb, dataCb.vrc, &evPayload);
                     }
                     catch (int vrcEx) /* Thrown by GuestWaitEventPayload constructor. */
                     {

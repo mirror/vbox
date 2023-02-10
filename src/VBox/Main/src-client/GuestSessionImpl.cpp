@@ -982,7 +982,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                // TODO
+                /// @todo To be implemented
             }
         }
     }
@@ -1259,7 +1259,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                // TODO
+                /// @todo To be implemented
             }
         }
     }
@@ -1710,7 +1710,7 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                // TODO
+                /// @todo To be implemented
             }
         }
     }
@@ -1990,7 +1990,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                // TODO
+                /// @todo To be implemented
             #if 0
                 const ComPtr<IEvent> pThisEvent = pEvent->Event();
                 if (pThisEvent.isNotNull()) /* Make sure that we actually have an event associated. */

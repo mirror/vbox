@@ -201,7 +201,7 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
     {
         case GUEST_MSG_DISCONNECTED:
             /** @todo vrc = i_onGuestDisconnected(pCbCtx, pSvcCb); */
-            vrc = VINF_SUCCESS; // TODO
+            vrc = VINF_SUCCESS; /// @todo To be implemented
             break;
 
         case GUEST_MSG_DIR_NOTIFY:
@@ -553,7 +553,7 @@ int GuestDirectory::i_close(int *pvrcGuest)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     if (mSession->i_getParent()->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
     {
-        // TODO
+        /// @todo To be implemented
         vrc = VERR_NOT_IMPLEMENTED;
     }
     else
@@ -608,7 +608,7 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     if (mSession->i_getParent()->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
     {
-        // TODO
+        /// @todo To be implemented
         RT_NOREF(objData, pvrcGuest);
         vrc = 0;
     }
