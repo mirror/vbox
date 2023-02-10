@@ -201,8 +201,11 @@ private:
         bool fAttachmentsPresent = false;
         m_pMachine->acquireHardDiskStatusInfo(strFullData, fAttachmentsPresent);
 
-        /* Hide indicator if there are no attachments: */
-        setVisible(fAttachmentsPresent);
+        /* Show/hide indicator if there are no attachments
+         * and parent is visible already: */
+        if (   parentWidget()
+            && parentWidget()->isVisible())
+            setVisible(fAttachmentsPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
@@ -242,8 +245,11 @@ private:
         bool fAttachmentsMounted = false;
         m_pMachine->acquireOpticalDiskStatusInfo(strFullData, fAttachmentsPresent, fAttachmentsMounted);
 
-        /* Hide indicator if there are no attachments: */
-        setVisible(fAttachmentsPresent);
+        /* Show/hide indicator if there are no attachments
+         * and parent is visible already: */
+        if (   parentWidget()
+            && parentWidget()->isVisible())
+            setVisible(fAttachmentsPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
@@ -283,8 +289,11 @@ private:
         bool fAttachmentsMounted = false;
         m_pMachine->acquireFloppyDiskStatusInfo(strFullData, fAttachmentsPresent, fAttachmentsMounted);
 
-        /* Hide indicator if there are no attachments: */
-        setVisible(fAttachmentsPresent);
+        /* Show/hide indicator if there are no attachments
+         * and parent is visible already: */
+        if (   parentWidget()
+            && parentWidget()->isVisible())
+            setVisible(fAttachmentsPresent);
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
