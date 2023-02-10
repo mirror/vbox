@@ -3719,8 +3719,8 @@ vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAd
     uint32_t fOldCaps = pThis->fMouseCapabilities;
     pThis->fMouseCapabilities &= ~(fCapsRemoved & VMMDEV_MOUSE_HOST_MASK);
     pThis->fMouseCapabilities |= (fCapsAdded & VMMDEV_MOUSE_HOST_MASK)
-                              | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR
-                              | VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL;
+                              |  VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR
+                              |  VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL;
     bool fNotify = fOldCaps != pThis->fMouseCapabilities;
 
     LogRelFlow(("VMMDev: vmmdevIPort_UpdateMouseCapabilities: fCapsAdded=0x%x, fCapsRemoved=0x%x, fNotify=%RTbool\n", fCapsAdded,
@@ -5060,7 +5060,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * In this version of VirtualBox full mouse state can be provided to the guest over DevVMM.
      */
-    pThis->fMouseCapabilities |= VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL;
+    pThis->fMouseCapabilities |= VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL;
 
     /*
      * Statistics.

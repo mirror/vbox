@@ -422,7 +422,7 @@ AssertCompileSize(VMMDevReqMouseStatusEx, 24+24);
 /** The guest can read VMMDev events to find out about full mouse state */
 #define VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL         RT_BIT(7)
 /** The host can provide full mouse state over VMMDev events */
-#define VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL          RT_BIT(8)
+#define VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL      RT_BIT(8)
 /** The mask of all VMMDEV_MOUSE_* flags */
 #define VMMDEV_MOUSE_MASK                                   UINT32_C(0x000001ff)
 /** The mask of guest capability changes for which notification events should
@@ -442,7 +442,7 @@ AssertCompileSize(VMMDevReqMouseStatusEx, 24+24);
        | VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER \
        | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR \
        | VMMDEV_MOUSE_HOST_HAS_ABS_DEV \
-       | VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL)
+       | VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL)
 /** @} */
 
 /** @name Absolute mouse reporting range

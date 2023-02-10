@@ -508,7 +508,7 @@ static int __init vgdrvLinuxCreateInputDevice(void)
         rc = VbglR0GRPerform(&g_pMouseStatusReqEx->Core.header);
         if (RT_SUCCESS(rc))
         {
-            if (g_pMouseStatusReqEx->Core.mouseFeatures & VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL)
+            if (g_pMouseStatusReqEx->Core.mouseFeatures & VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL)
             {
                 VMMDevReqMouseStatusEx *pReqEx = NULL;
                 rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pReqEx, sizeof(*pReqEx), VMMDevReq_GetMouseStatusEx);
@@ -1318,8 +1318,9 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
         input_report_abs(g_pInputDevice, ABS_Y, y);
 
         if (   vgdrvLinuxUsesMouseStatusEx()
-            && fMouseFeatures & VMMDEV_MOUSE_HOST_USES_FULL_STATE_PROTOCOL
-            && fMouseFeatures & VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL)
+            &&    (  fMouseFeatures
+                   & (VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL | VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL))
+               == (   VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL | VMMDEV_MOUSE_GUEST_USES_FULL_STATE_PROTOCOL ) )
         {
             /* Vertical and horizontal scroll values come as-is from GUI.
              * Invert values here as it is done in PS/2 mouse driver, so
