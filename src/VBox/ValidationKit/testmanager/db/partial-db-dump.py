@@ -264,8 +264,8 @@ COPY (SELECT * FROM TestBoxStrTab WHERE idStr IN (
 
         try:
             oZipFile = zipfile.ZipFile(self.oConfig.sFilename, 'r');
-        except:
-            print('error: Dump file "%s" cannot be opened! Use "-f <file>" to specify a file.' % (self.oConfig.sFilename,));
+        except oXcpt:
+            print('error: Failed to open dump file "%s": %s' % (self.oConfig.sFilename, oXcpt));
             return 1;
 
         asTablesInLoadOrder = [
