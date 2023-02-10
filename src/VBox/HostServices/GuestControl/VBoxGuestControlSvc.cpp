@@ -73,8 +73,6 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 #include <VBox/GuestHost/GuestControl.h> /** @todo r=bird: Why two headers??? */
 
-#include "VBoxGuestControlSvc-internal.h"
-
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/AssertGuest.h>
