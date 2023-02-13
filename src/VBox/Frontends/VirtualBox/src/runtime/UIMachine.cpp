@@ -455,6 +455,11 @@ bool UIMachine::acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fCha
                                              uBitsPerPixel);
 }
 
+bool UIMachine::acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, KBitmapFormat enmFormat, uchar *pBits)
+{
+    return uisession()->acquireScreenShot(uScreenId, uWidth, uHeight, enmFormat, pBits);
+}
+
 bool UIMachine::isGuestAdditionsActive() const
 {
     return uisession()->isGuestAdditionsActive();

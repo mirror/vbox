@@ -306,6 +306,8 @@ public:
         bool acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fChangeOrigin,
                                   long &xOrigin, long &yOrigin, ulong &uWidth, ulong &uHeight,
                                   ulong &uBitsPerPixel);
+        /** Acquires screen-shot for guest-screen with passed uScreenId. */
+        bool acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, KBitmapFormat enmFormat, uchar *pBits);
     /** @} */
 
     /** @name Status-bar stuff.

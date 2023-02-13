@@ -87,7 +87,6 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CAudioSettings.h"
-#include "CDisplay.h"
 #include "CEmulatedUSB.h"
 #include "CGraphicsAdapter.h"
 #include "CHostUSBDevice.h"
@@ -296,11 +295,6 @@ CMachine& UIMachineLogic::machine() const
 CConsole& UIMachineLogic::console() const
 {
     return uisession()->console();
-}
-
-CDisplay& UIMachineLogic::display() const
-{
-    return uisession()->display();
 }
 
 CGuest& UIMachineLogic::guest() const
@@ -3134,21 +3128,7 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
         uMaxWidth  += uWidth;
         uMaxHeight  = RT_MAX(uMaxHeight, uHeight);
         QImage shot = QImage(uWidth, uHeight, QImage::Format_RGB32);
-        /* For separate process: */
-        if (uiCommon().isSeparateProcess())
-        {
-            /* Take screen-data to array first: */
-            const QVector<BYTE> screenData = display().TakeScreenShotToArray(uScreenIndex, shot.width(), shot.height(), KBitmapFormat_BGR0);
-            /* And copy that data to screen-shot if it is Ok: */
-            if (display().isOk() && !screenData.isEmpty())
-                memcpy(shot.bits(), screenData.data(), shot.width() * shot.height() * 4);
-        }
-        /* For the same process: */
-        else
-        {
-            /* Take the screen-shot directly: */
-            display().TakeScreenShot(uScreenIndex, shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
-        }
+        uimachine()->acquireScreenShot(uScreenIndex, shot.width(), shot.height(), KBitmapFormat_BGR0, shot.bits());
         images << shot;
     }
     /* Create a image which will hold all sub images vertically. */

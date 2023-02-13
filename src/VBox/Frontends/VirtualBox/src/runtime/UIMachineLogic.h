@@ -56,7 +56,6 @@ class UIVMInformationDialog;
 class CSession;
 class CMachine;
 class CConsole;
-class CDisplay;
 class CGuest;
 class CMouse;
 class CSnapshot;
@@ -122,8 +121,6 @@ public:
     CMachine& machine() const;
     /** Returns the session's console reference. */
     CConsole& console() const;
-    /** Returns the console's display reference. */
-    CDisplay& display() const;
     /** Returns the console's guest reference. */
     CGuest& guest() const;
 
