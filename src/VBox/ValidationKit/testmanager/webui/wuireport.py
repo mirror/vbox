@@ -292,7 +292,7 @@ class WuiReportSuccessRate(WuiReportBase):
 
                 if cTotalSkipped > 0:
                     oTable.addRow(None, #self._oModel.getPeriodDesc(i),
-                                  [ cSuccesses, cSkipped, cFailures, ],
+                                  [ cSuccesses, cFailures, cSkipped, ],
                                   [ str(cSuccesses) if cSuccesses > 0 else None,
                                     str(cFailures) if cFailures > 0 else None,
                                     str(cSkipped) if cSkipped > 0 else None, ]);
