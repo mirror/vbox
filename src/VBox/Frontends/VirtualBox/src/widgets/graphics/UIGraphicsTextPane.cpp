@@ -407,7 +407,7 @@ void UIGraphicsTextPane::updateHoverStuff()
 
     /* Update tool-tip: */
     const QString strType = m_strHoveredAnchor.section(',', 0, 0);
-    if (strType == "#attach")
+    if (strType == "#attach" || strType == "#mount")
         setToolTip(m_strHoveredAnchor.section(',', -1));
     else
         setToolTip(QString());
