@@ -418,6 +418,42 @@ bool UISession::acquireGuestScreenParameters(ulong uScreenId,
     return fSuccess;
 }
 
+bool UISession::setVideoModeHint(ulong uScreenId, bool fEnabled, bool fChangeOrigin, long xOrigin, long yOrigin,
+                                 ulong uWidth, ulong uHeight, ulong uBitsPerPixel, bool fNotify)
+{
+    CDisplay comDisplay = display();
+    comDisplay.SetVideoModeHint(uScreenId, fEnabled, fChangeOrigin, xOrigin, yOrigin,
+                                uWidth, uHeight, uBitsPerPixel, fNotify);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
+bool UISession::acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fChangeOrigin,
+                                     long &xOrigin, long &yOrigin, ulong &uWidth, ulong &uHeight,
+                                     ulong &uBitsPerPixel)
+{
+    CDisplay comDisplay = display();
+    BOOL fGuestEnabled = false, fGuestChangeOrigin = false;
+    LONG iGuestXOrigin = 0, iGuestYOrigin = 0;
+    ULONG uGuestWidth = 0, uGuestHeight = 0, uGuestBitsPerPixel = 0;
+    comDisplay.GetVideoModeHint(uScreenId, fGuestEnabled, fGuestChangeOrigin,
+                                iGuestXOrigin, iGuestYOrigin, uGuestWidth, uGuestHeight,
+                                uGuestBitsPerPixel);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireDisplayParameter(comDisplay);
+    fEnabled = fGuestEnabled;
+    fChangeOrigin = fGuestChangeOrigin;
+    xOrigin = iGuestXOrigin;
+    yOrigin = iGuestYOrigin;
+    uWidth = uGuestWidth;
+    uHeight = uGuestHeight;
+    uBitsPerPixel = uGuestBitsPerPixel;
+    return fSuccess;
+}
+
 void UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     CConsole comConsole = console();

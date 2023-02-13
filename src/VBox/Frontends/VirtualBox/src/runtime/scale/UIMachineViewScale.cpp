@@ -40,7 +40,6 @@
 #include "UIMachineWindow.h"
 
 /* COM includes: */
-#include "CConsole.h"
 #include "CDisplay.h"
 #include "CGraphicsAdapter.h"
 
@@ -165,6 +164,11 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
 
 void UIMachineViewScale::resendSizeHint()
 {
+    /* Skip if VM isn't running/paused yet: */
+    if (   !uimachine()->isRunning()
+        && !uimachine()->isPaused())
+        return;
+
     /* Get the last guest-screen size-hint, taking the scale factor into account. */
     const QSize sizeHint = scaledBackward(storedGuestScreenSizeHint());
     LogRel(("GUI: UIMachineViewScale::resendSizeHint: Restoring guest size-hint for screen %d to %dx%d\n",
@@ -175,9 +179,13 @@ void UIMachineViewScale::resendSizeHint()
 
     /* Send saved size-hint to the guest: */
     uimachine()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
-    display().SetVideoModeHint(screenId(),
-                               guestScreenVisibilityStatus(),
-                               false, 0, 0, sizeHint.width(), sizeHint.height(), 0, true);
+    uimachine()->setVideoModeHint(screenId(),
+                                  guestScreenVisibilityStatus(),
+                                  false /* change origin? */,
+                                  0 /* origin x */, 0 /* origin y */,
+                                  sizeHint.width(), sizeHint.height(),
+                                  0 /* bits per pixel */,
+                                  true /* notify? */);
 }
 
 QSize UIMachineViewScale::sizeHint() const

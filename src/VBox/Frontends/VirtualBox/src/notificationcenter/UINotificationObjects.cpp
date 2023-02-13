@@ -927,6 +927,15 @@ void UINotificationMessage::cannotChangeNATNetworkParameter(const CNATNetwork &c
 }
 
 /* static */
+void UINotificationMessage::cannotChangeDisplayParameter(const CDisplay &comDisplay)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Display failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change display parameter.") +
+        UIErrorString::formatErrorInfo(comDisplay));
+}
+
+/* static */
 void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfile &comProfile)
 {
     createMessage(

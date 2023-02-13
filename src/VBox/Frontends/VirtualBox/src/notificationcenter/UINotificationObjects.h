@@ -319,8 +319,8 @@ public:
         /** Notifies about inability to acquire INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter get acquired from. */
         static void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork);
-        /** Notifies about inability to acquire INATNetwork parameter.
-          * @param  comNetwork  Brings the object parameter get acquired from. */
+        /** Notifies about inability to acquire IDisplay parameter.
+          * @param  comDisplay  Brings the object parameter get acquired from. */
         static void cannotAcquireDisplayParameter(const CDisplay &comDisplay);
         /** Notifies about inability to acquire IUpdateAgent parameter.
           * @param  comAgent  Brings the object parameter get acquired from. */
@@ -383,6 +383,9 @@ public:
         /** Notifies about inability to change INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter being changed for. */
         static void cannotChangeNATNetworkParameter(const CNATNetwork &comNetwork);
+        /** Notifies about inability to change IDisplay parameter.
+          * @param  comDisplay  Brings the object parameter being changed for. */
+        static void cannotChangeDisplayParameter(const CDisplay &comDisplay);
         /** Notifies about inability to change ICloudProfile parameter.
           * @param  comProfile  Brings the object parameter being changed for. */
         static void cannotChangeCloudProfileParameter(const CCloudProfile &comProfile);

@@ -298,6 +298,14 @@ public:
         bool acquireGuestScreenParameters(ulong uScreenId,
                                           ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
                                           long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus);
+        /** Defines video mode hint for guest-screen with passed uScreenId. */
+        bool setVideoModeHint(ulong uScreenId, bool fEnabled, bool fChangeOrigin,
+                              long xOrigin, long yOrigin, ulong uWidth, ulong uHeight,
+                              ulong uBitsPerPixel, bool fNotify);
+        /** Acquires video mode hint for guest-screen with passed uScreenId. */
+        bool acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fChangeOrigin,
+                                  long &xOrigin, long &yOrigin, ulong &uWidth, ulong &uHeight,
+                                  ulong &uBitsPerPixel);
     /** @} */
 
     /** @name Status-bar stuff.

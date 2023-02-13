@@ -795,15 +795,13 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             {
                 LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot resizing screen %d as %dx%d\n",
                         (int)screenId(), size.width(), size.height()));
-                display().SetVideoModeHint(screenId(),
-                                           uimachine()->isScreenVisible(screenId()),
-                                           false /* change origin? */,
-                                           0 /* origin x */,
-                                           0 /* origin y */,
-                                           size.width(),
-                                           size.height(),
-                                           0 /* bits per pixel */,
-                                           true /* notify? */);
+                uimachine()->setVideoModeHint(screenId(),
+                                              uimachine()->isScreenVisible(screenId()),
+                                              false /* change origin? */,
+                                              0 /* origin x */, 0 /* origin y */,
+                                              size.width(), size.height(),
+                                              0 /* bits per pixel */,
+                                              true /* notify? */);
             }
         }
         else
@@ -813,30 +811,26 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             {
                 /* Send enabling size-hint to the guest: */
                 LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot enabling guest-screen %d\n", (int)screenId()));
-                display().SetVideoModeHint(screenId(),
-                                           true /* enabled? */,
-                                           false /* change origin? */,
-                                           0 /* origin x */,
-                                           0 /* origin y */,
-                                           size.width(),
-                                           size.height(),
-                                           0 /* bits per pixel */,
-                                           true /* notify? */);
+                uimachine()->setVideoModeHint(screenId(),
+                                              true /* enabled? */,
+                                              false /* change origin? */,
+                                              0 /* origin x */, 0 /* origin y */,
+                                              size.width(), size.height(),
+                                              0 /* bits per pixel */,
+                                              true /* notify? */);
             }
             /* If host desires to have guest-screen disabled and guest-screen is enabled, retrying: */
             else
             {
                 /* Send disabling size-hint to the guest: */
                 LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot disabling guest-screen %d\n", (int)screenId()));
-                display().SetVideoModeHint(screenId(),
-                                           false /* enabled? */,
-                                           false /* change origin? */,
-                                           0 /* origin x */,
-                                           0 /* origin y */,
-                                           0 /* width */,
-                                           0 /* height */,
-                                           0 /* bits per pixel */,
-                                           true /* notify? */);
+                uimachine()->setVideoModeHint(screenId(),
+                                              false /* enabled? */,
+                                              false /* change origin? */,
+                                              0 /* origin x */, 0 /* origin y */,
+                                              0 /* width */, 0 /* height */,
+                                              0 /* bits per pixel */,
+                                              true /* notify? */);
             }
         }
     }
@@ -863,15 +857,13 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         {
             LogRel(("GUI: UIMachineView::sltPerformGuestResize: Sending guest size-hint to screen %d as %dx%d\n",
                     (int)screenId(), size.width(), size.height()));
-            display().SetVideoModeHint(screenId(),
-                                       uimachine()->isScreenVisible(screenId()),
-                                       false /* change origin? */,
-                                       0 /* origin x */,
-                                       0 /* origin y */,
-                                       size.width(),
-                                       size.height(),
-                                       0 /* bits per pixel */,
-                                       true /* notify? */);
+            uimachine()->setVideoModeHint(screenId(),
+                                          uimachine()->isScreenVisible(screenId()),
+                                          false /* change origin? */,
+                                          0 /* origin x */, 0 /* origin y */,
+                                          size.width(), size.height(),
+                                          0 /* bits per pixel */,
+                                          true /* notify? */);
             m_lastSizeHint = size;
         }
     }
@@ -919,29 +911,25 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
 
         /* Send enabling size-hint to the guest: */
         LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenToggle: Enabling guest-screen %d\n", (int)screenId()));
-        display().SetVideoModeHint(screenId(),
-                                   true /* enabled? */,
-                                   false /* change origin? */,
-                                   0 /* origin x */,
-                                   0 /* origin y */,
-                                   uWidth,
-                                   uHeight,
-                                   0 /* bits per pixel */,
-                                   true /* notify? */);
+        uimachine()->setVideoModeHint(screenId(),
+                                      true /* enabled? */,
+                                      false /* change origin? */,
+                                      0 /* origin x */, 0 /* origin y */,
+                                      uWidth, uHeight,
+                                      0 /* bits per pixel */,
+                                      true /* notify? */);
     }
     else
     {
         /* Send disabling size-hint to the guest: */
         LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenToggle: Disabling guest-screen %d\n", (int)screenId()));
-        display().SetVideoModeHint(screenId(),
-                                   false /* enabled? */,
-                                   false /* change origin? */,
-                                   0 /* origin x */,
-                                   0 /* origin y */,
-                                   0 /* width */,
-                                   0 /* height */,
-                                   0 /* bits per pixel */,
-                                   true /* notify? */);
+        uimachine()->setVideoModeHint(screenId(),
+                                      false /* enabled? */,
+                                      false /* change origin? */,
+                                      0 /* origin x */, 0 /* origin y */,
+                                      0 /* width */, 0 /* height */,
+                                      0 /* bits per pixel */,
+                                      true /* notify? */);
     }
 }
 
@@ -970,15 +958,13 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
 
     /* Send enabling size-hint to the guest: */
     LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenResize: Resizing guest-screen %d\n", (int)screenId()));
-    display().SetVideoModeHint(screenId(),
-                               true /* enabled? */,
-                               false /* change origin? */,
-                               0 /* origin x */,
-                               0 /* origin y */,
-                               size.width(),
-                               size.height(),
-                               0 /* bits per pixel */,
-                               true /* notify? */);
+    uimachine()->setVideoModeHint(screenId(),
+                                  true /* enabled? */,
+                                  false /* change origin? */,
+                                  0 /* origin x */, 0 /* origin y */,
+                                  size.width(), size.height(),
+                                  0 /* bits per pixel */,
+                                  true /* notify? */);
 }
 
 void UIMachineView::sltDesktopResized()
@@ -1516,11 +1502,12 @@ void UIMachineView::setStoredGuestScreenSizeHint(const QSize &sizeHint)
 QSize UIMachineView::requestedGuestScreenSizeHint() const
 {
     /* Acquire last guest-screen size-hint set, if any: */
-    BOOL fEnabled, fChangeOrigin;
-    LONG iOriginX, iOriginY;
-    ULONG uWidth, uHeight, uBitsPerPixel;
-    display().GetVideoModeHint(screenId(), fEnabled, fChangeOrigin,
-                               iOriginX, iOriginY, uWidth, uHeight, uBitsPerPixel);
+    bool fDummy = false;
+    long iDummy = 0;
+    ulong uWidth = 0, uHeight = 0, uDummy = 0;
+    uimachine()->acquireVideoModeHint(screenId(), fDummy, fDummy,
+                                      iDummy, iDummy, uWidth, uHeight,
+                                      uDummy);
 
     /* Acquire effective frame-buffer size otherwise: */
     if (uWidth == 0 || uHeight == 0)

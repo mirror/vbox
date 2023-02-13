@@ -437,6 +437,24 @@ bool UIMachine::acquireGuestScreenParameters(ulong uScreenId,
                                                      xOrigin, yOrigin, enmMonitorStatus);
 }
 
+bool UIMachine::setVideoModeHint(ulong uScreenId, bool fEnabled, bool fChangeOrigin,
+                                 long xOrigin, long yOrigin, ulong uWidth, ulong uHeight,
+                                 ulong uBitsPerPixel, bool fNotify)
+{
+    return uisession()->setVideoModeHint(uScreenId, fEnabled, fChangeOrigin,
+                                         xOrigin, yOrigin, uWidth, uHeight,
+                                         uBitsPerPixel, fNotify);
+}
+
+bool UIMachine::acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fChangeOrigin,
+                                     long &xOrigin, long &yOrigin, ulong &uWidth, ulong &uHeight,
+                                     ulong &uBitsPerPixel)
+{
+    return uisession()->acquireVideoModeHint(uScreenId, fEnabled, fChangeOrigin,
+                                             xOrigin, yOrigin, uWidth, uHeight,
+                                             uBitsPerPixel);
+}
+
 bool UIMachine::isGuestAdditionsActive() const
 {
     return uisession()->isGuestAdditionsActive();

@@ -148,6 +148,11 @@ void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
 
 void UIMachineViewNormal::resendSizeHint()
 {
+    /* Skip if VM isn't running/paused yet: */
+    if (   !uimachine()->isRunning()
+        && !uimachine()->isPaused())
+        return;
+
     /* Skip if another visual representation mode requested: */
     if (uimachine()->requestedVisualState() == UIVisualStateType_Seamless) // Seamless only for now.
         return;
@@ -173,9 +178,13 @@ void UIMachineViewNormal::resendSizeHint()
      * hardware as before shutdown), and notifying would interfere with the Windows
      * guest driver which saves the video mode to the registry on shutdown. */
     uimachine()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
-    display().SetVideoModeHint(screenId(),
-                               guestScreenVisibilityStatus(),
-                               false, 0, 0, effectiveSizeHint.width(), effectiveSizeHint.height(), 0, false);
+    uimachine()->setVideoModeHint(screenId(),
+                                  guestScreenVisibilityStatus(),
+                                  false /* change origin? */,
+                                  0 /* origin x */, 0 /* origin y */,
+                                  effectiveSizeHint.width(), effectiveSizeHint.height(),
+                                  0 /* bits per pixel */,
+                                  false /* notify? */);
 }
 
 void UIMachineViewNormal::adjustGuestScreenSize()
